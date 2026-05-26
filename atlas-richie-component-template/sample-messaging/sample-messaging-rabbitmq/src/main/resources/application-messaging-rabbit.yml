@@ -1,0 +1,208 @@
+spring:
+    main:
+        allow-bean-definition-overriding: true
+    # RabbitMQ全局配置
+    rabbitmq:
+        host: 10.100.0.87
+        port: 5672
+        username: admin
+        password: admin
+        virtual-host: /
+        listener:
+            simple:
+                # 是否开启自动启动
+                auto-startup: true
+                # 每次拉取消息的最大数量
+                batch-size: 1
+                # 是否开启自动ack
+                acknowledge-mode: auto
+                # 每个消费者可以从 RabbitMQ 服务器预取但尚未确认的消息的最大数量
+                prefetch: 1
+                # 重试机制
+                retry:
+                    # 是否开启重试机制
+                    enabled: true
+                    # 第一次重试前等待的时间间隔，这是第一次重试之前的延迟时间
+                    initial-interval: 1000ms
+                    # 最大重试次数（意味着如果消息处理失败，最多会重试N次（加上最初的尝试，总共N+1次））
+                    max-attempts: 3
+                    # 最大重试间隔时间,这个值限制了每次重试之间的最大等待时间。
+                    max-interval: 10000ms
+                    # 重试间隔倍数，这表示每次重试的时间间隔不会增加，保持为初始间隔 initial-interval。如果设置为大于1的值，则每次重试的等待时间将是上一次的 multiplier 倍。
+                    multiplier: 1
+                    # 是否无状态（默认：true，重试是无状态的。这意味着每个重试都是独立的，不依赖于之前的状态。对于有状态的应用，可能需要根据应用逻辑调整此设置。）
+                    stateless: true
+                # 消费者线程池的最小线程数，即同时可以运行的消费者实例数量
+                concurrency: 10
+                # 消费者线程池的最大线程数，允许系统根据负载动态增加消费者实例的数量上限
+                max-concurrency: 100
+                # 批量消费模式（默认值：false，当设置为 true 时，消费者会尝试一次性处理一批消息而不是逐条处理。)
+                consumer-batch-enabled: false
+                # 如果启用了批量消费（consumer-batch-enabled: true），此选项控制是否将接收到的消息批次分解成单个消息进行处理。
+                de-batching-enabled: true
+                # 决定当消息处理失败被拒绝时，RabbitMQ 是否应该将消息重新放回队列。这对于确保没有消息丢失非常重要，但也可能导致死循环。默认值：true
+                default-requeue-rejected: true
+                # 指定在关闭容器时是否强制停止消费者，而不等待它们完成当前正在处理的消息
+                force-stop: false
+                # 监听器发送空闲事件的时间间隔（以毫秒为单位）。这可以帮助监控消费者的工作状态
+                # 默认值：null（即不发送空闲事件，可能会存在长时间不消费时导致消费者的Socket端口被关闭，到需要用的时候无法进行消费）
+                idle-event-interval: 1000
+                # 则当发现队列不存在时，监听器将会抛出异常并停止启动。这有助于防止应用程序在错误配置的情况下继续运行，默认值：true
+                missing-queues-fatal: true
+                # 是否启用观察者（默认：false，如果设置为true，可收集关于消息消费的额外信息，如性能指标等）
+                observation-enabled: false
+
+    # Cloud 配置
+    cloud:
+        function:
+            definition: normalProcess;delayProcess
+            ineligible-definitions: empty
+        stream:
+            # 默认binder器
+            default-binder: rabbit
+            # 幂等去重服务使用的数据源类型
+            datasource: redis
+            # RabbitMQ配置
+            rabbit:
+                bindings:
+                    demo1-out-0:
+                        producer:
+                            delayed-exchange: false
+                            exchange-type: topic
+                            queue-name-group-only: true
+                            exchange-durable: true
+                            queue-binding-arguments:
+                                x-queue-type: quorum
+                    demo1-out-1:
+                        producer:
+                            delayed-exchange: false
+                            exchange-type: direct
+                            queue-name-group-only: true
+                            exchange-durable: true
+                            queue-binding-arguments:
+                                x-queue-type: quorum
+
+                    demo2-out-0:
+                        producer:
+                            delayed-exchange: true
+                            exchange-type: topic
+                            queue-name-group-only: true
+                            queue-binding-arguments:
+                                x-queue-type: quorum
+                    delayProcess-in-0:
+                        consumer:
+                            delayed-exchange: true
+                            exchange-type: topic
+                            queue-name-group-only: true
+                            queue-binding-arguments:
+                                x-queue-type: quorum
+                    normalProcess-in-0:
+                        consumer:
+                            delayed-exchange: false
+                            exchange-type: topic
+                            queue-name-group-only: true
+                            queue-binding-arguments:
+                                x-queue-type: quorum
+                    # Rabbit管理控制台配置
+            #                binder:
+            #                    admin-addresses:
+            #                        - http://10.200.0.61:15672
+            #                    nodes:
+            #                        - 10.200.0.61:5672
+            #                    # 压缩级别（默认：1级）
+            #                    compression-level: 1
+            #                    # 客户端连接名前缀
+            #                    connection-name-prefix: brand-client-
+            binders:
+                # 实例别名，在bindings里面的in、out中进行引用，指定对应的topic使用的实例
+                rabbit:
+                    type: rabbit
+                    inherit-environment: true
+                    default-candidate: true
+                    environment:
+                        #                        management:
+                        #                            health:
+                        #                                rabbit:
+                        #                                    enabled: false
+                        spring:
+                            rabbitmq:
+                                host: 10.100.0.87
+                                port: 5672
+                                username: admin
+                                password: admin
+                                virtual-host: /
+            # binding 相关配置
+            bindings:
+                # OUTPUT：交换器1输出通道
+                demo1-out-0:
+                    binder: rabbit
+                    # 指定当前队列所属Exchange
+                    destination: demo1Exchange
+                    # 指定当前队列的消息类型
+                    content-type: application/json
+                    group: normalGroup
+                # OUTPUT：交换器1输出通道
+                demo1-out-1:
+                    binder: rabbit
+                    # 指定当前队列所属Exchange
+                    destination: demo2Exchange
+                    # 指定当前队列的消息类型
+                    content-type: application/json
+                    group: test-queue
+                    # 指定当前生产者的消息由指定分组内的消费者进行消费
+                    # 说明：所有的content-type类型的消息都建议使用公共消费者组进行订阅，无需自己去实现消费者组了。
+                #                    group: commonGroup
+                # OUTPUT：交换器2输出通道
+                #                demo2-out-0:
+                #                    binder: rabbit
+                #                    # 指定当前队列所属Exchange
+                #                    destination: demo2Exchange
+                #                    # 指定当前队列的消息类型
+                #                    content-type: application/json
+                #                    group: delayGroup
+                # INPUT：默认输入通道定义（如需多通道请复制该节点后修改自定义节点）
+                # 此处不要修改该INPUT，如果需要在项目中使用多个消费者监听，请
+                # 在下方自行添加消费者监听节点，此节点为默认消费者监听器，平台
+                # 组件提供了一套默认API
+                normalProcess-in-0:
+                    binder: rabbit
+                    # 指定当前队列所属Exchange
+                    destination: demo1Exchange,demo2Exchange,demo3Exchange,demo4Exchange
+                    # 指定当前队列的消息类型
+                    content-type: application/json
+                    # 当前消费者作为公共组的消费者，其他业务组请勿使用该Group
+                    group: normalGroup
+                    # 消费者相关配置
+                    consumer:
+                        # 最大尝试次数
+                        max-attempts: 3
+                        # 重试起始间隔时间
+                        back-off-initial-interval: 500
+                        # 重试最大间隔时间
+                        back-off-max-interval: 1000
+                        # 重试间隔时间乘数
+                        back-off-multiplier: 2.0
+
+                        concurrency: 10
+#                delayProcess-in-0:
+#                    binder: rabbit
+#                    # 指定当前队列所属Exchange
+#                    destination: demo2Exchange
+#                    # 指定当前队列的消息类型
+#                    content-type: application/json
+#                    # 当前消费者作为公共组的消费者，其他业务组请勿使用该Group
+#                    group: delayGroup
+#                    # 消费者相关配置
+#                    consumer:
+#                        # 最大尝试次数
+#                        max-attempts: 3
+#                        # 重试起始间隔时间
+#                        back-off-initial-interval: 500
+#                        # 重试最大间隔时间
+#                        back-off-max-interval: 1000
+#                        # 重试间隔时间乘数
+#                        back-off-multiplier: 2.0
+management:
+    health:
+        rabbit:
+            enabled: false

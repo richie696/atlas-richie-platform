@@ -1,0 +1,48 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0003-add-indexes-for-performance
+      author: richie696
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rd_file_metadata
+      changes:
+        # 去重（如历史存在重复数据，执行前请先清理）
+        - addUniqueConstraint:
+            tableName: rd_file_metadata
+            columnNames: hash_value
+            constraintName: uq_meta_hash
+        # 按 key 快速定位
+        - createIndex:
+            tableName: rd_file_metadata
+            indexName: uq_meta_key_path
+            unique: true
+            columns:
+              - column:
+                  name: key_path
+        # 物理路径反查（使用前缀索引，避免 utf8mb4 下 key 长度超限）
+        - createIndex:
+            tableName: rd_file_metadata
+            indexName: idx_meta_physical_path
+            columns:
+              - column:
+                  name: physical_path
+                  type: VARCHAR(255)
+        # 逻辑删除与清理（状态+删除时间）
+        - createIndex:
+            tableName: rd_file_metadata
+            indexName: idx_meta_state_deleted_time
+            columns:
+              - column:
+                  name: storage_state
+              - column:
+                  name: deleted_time
+        # 过期扫描优化（状态+最后访问时间）
+        - createIndex:
+            tableName: rd_file_metadata
+            indexName: idx_meta_state_last_access
+            columns:
+              - column:
+                  name: storage_state
+              - column:
+                  name: last_access_time

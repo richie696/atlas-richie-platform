@@ -1,0 +1,11 @@
+platform:
+  component:
+    vector:
+      provider: weaviate
+      weaviate:
+        scheme: http
+        host: localhost:8080
+        apiKey: your-api-key         # Weaviate API Key（无需认证时可留空）
+        objectClass: MyVectorClass   # Weaviate中用于存储向量的Class名称
+        consistencyLevel: QUORUM    # 一致性级别，可选ONE/QUORUM/ALL
+        filterMetadataFields: country:text,year:number # 可过滤的元数据字段及类型 

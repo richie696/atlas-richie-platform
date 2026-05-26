@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: statemachine-003-indexes
+      author: statemachine
+      changes:
+        - createIndex:
+            tableName: statemachine_state_history
+            indexName: idx_history_state_machine_business_id
+            columns:
+              - column:
+                  name: state_machine
+              - column:
+                  name: business_id
+        - createIndex:
+            tableName: statemachine_state_history
+            indexName: idx_history_occurred_at
+            columns:
+              - column:
+                  name: occurred_at
+
+

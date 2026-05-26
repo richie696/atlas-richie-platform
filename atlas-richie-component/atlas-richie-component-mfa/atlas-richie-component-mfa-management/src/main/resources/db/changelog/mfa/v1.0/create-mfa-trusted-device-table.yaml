@@ -1,0 +1,111 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-mfa-trusted-device-table
+      author: richie-platform
+      changes:
+        - createTable:
+            tableName: mfa_trusted_device
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: true
+                  remarks: "租户ID（可选，如果系统没有租户概念则为NULL）"
+              - column:
+                  name: user_id
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: device_id
+                  type: VARCHAR(128)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: device_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: device_fingerprint
+                  type: VARCHAR(512)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: trusted_until
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: last_used_time
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: is_primary
+                  type: TINYINT
+                  defaultValueNumeric: '0'
+                  constraints:
+                    nullable: true
+                  remarks: "是否为主管理设备，每用户仅允许一台主设备"
+              - column:
+                  name: create_id
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: create_time
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: update_id
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: update_time
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: true
+              - column:
+                  name: deleted
+                  type: TINYINT
+                  defaultValueNumeric: '0'
+                  constraints:
+                    nullable: true
+        # 唯一约束：(tenant_id, user_id, device_id)
+        - createIndex:
+            tableName: mfa_trusted_device
+            indexName: mfa_uk_trusted_device_tenant_user_device
+            columns:
+              - column:
+                  name: tenant_id
+              - column:
+                  name: user_id
+              - column:
+                  name: device_id
+            unique: true
+        - createIndex:
+            tableName: mfa_trusted_device
+            indexName: mfa_idx_trusted_device_user_device
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: device_id
+        - createIndex:
+            tableName: mfa_trusted_device
+            indexName: mfa_idx_trusted_device_trusted_until
+            columns:
+              - column:
+                  name: trusted_until

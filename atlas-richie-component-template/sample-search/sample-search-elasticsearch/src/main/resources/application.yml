@@ -1,0 +1,29 @@
+server:
+  port: 9516
+
+spring:
+  application:
+    name: sample-search-elasticsearch
+
+logging:
+  level:
+    root: info
+    com.richie.component.search: debug
+
+platform:
+  component:
+    search:
+      provider: elasticsearch # 选择 Elasticsearch 作为搜索引擎
+      hosts: http://localhost:9200 # 本地开发默认地址，生产请改为内网集群域名
+      username: elastic # 开启安全认证后需要用户名
+      password: changeme # 请使用安全密码并通过密钥管理注入
+      connect-timeout: 5000 # ms，连接/租用连接超时，内网 3-5s，公网 5-8s
+      read-timeout: 60000 # ms，读取超时，复杂查询/聚合建议 60-120s
+    
+    # 可选：Elasticsearch 特有配置
+    search.elasticsearch:
+      shards: 1
+      replicas: 1
+      refresh-interval: 1s
+
+

@@ -1,0 +1,114 @@
+# Neo4j Driver 5.28.5 兼容配置示例
+# 只包含实际支持的配置参数
+
+platform:
+  component:
+    vector:
+      provider: neo4j
+      neo4j:
+        # ==================== 基础连接配置 ====================
+        uri: "bolt://localhost:7687"
+        username: "${NEO4J_USERNAME:neo4j}"
+        password: "${NEO4J_PASSWORD:password}"
+        
+        # ==================== 连接池配置 (Neo4j Driver 5.28.5支持) ====================
+        max-connection-pool-size: 50                    # 最大连接池大小
+        max-connection-lifetime-millis: 3600000         # 连接最大生命周期：1小时
+        connection-acquisition-timeout-millis: 10000    # 获取连接超时：10秒
+        connection-timeout-millis: 5000                 # 连接超时：5秒
+        
+        # ==================== 事务配置 ====================
+        max-transaction-retry-time-millis: 15000        # 事务重试最大时间：15秒
+        
+        # ==================== 安全配置 ====================
+        encryption-enabled: true                        # 启用加密
+        
+        # ==================== 应用标识 ====================
+        application-name: "richie-vector-neo4j"
+        
+        # ==================== 监控配置 ====================
+        connection-pool-monitoring-enabled: true        # 连接池监控
+        connection-pool-monitoring-interval-millis: 60000
+        
+        health-check-enabled: true                      # 健康检查
+        health-check-interval-millis: 30000
+        health-check-timeout-millis: 5000
+        health-check-query: "RETURN 1 as health"
+        
+        connection-leak-detection-enabled: true         # 连接泄漏检测
+        connection-leak-detection-threshold-millis: 60000
+        
+        slow-query-monitoring-enabled: true             # 慢查询监控
+        slow-query-threshold-millis: 1000
+        
+        diagnostic-enabled: false                       # 诊断信息收集
+        diagnostic-interval-millis: 300000
+        
+        # ==================== 连接池预热 ====================
+        connection-pool-warmup-enabled: true
+        connection-pool-warmup-size: 5
+        connection-validation-query: "RETURN 1"
+
+---
+# 集群配置示例
+spring:
+  profiles: cluster
+
+platform:
+  component:
+    vector:
+      neo4j:
+        # 集群URI配置
+        uri: "neo4j://host1:7687,host2:7687,host3:7687"
+        
+        # 集群环境使用更大的连接池
+        max-connection-pool-size: 100
+        
+        # 集群环境增加超时时间
+        connection-acquisition-timeout-millis: 30000
+        connection-timeout-millis: 10000
+        max-transaction-retry-time-millis: 30000
+        
+        # 集群环境应用名称
+        application-name: "richie-vector-neo4j-cluster"
+
+---
+# 开发环境配置
+spring:
+  profiles: dev
+
+platform:
+  component:
+    vector:
+      neo4j:
+        uri: "bolt://localhost:7687"
+        username: "neo4j"
+        password: "password"
+        
+        # 开发环境使用较小的连接池
+        max-connection-pool-size: 20
+        
+        # 开发环境关闭加密
+        encryption-enabled: false
+        
+        # 开发环境应用名称
+        application-name: "richie-vector-neo4j-dev"
+
+---
+# 测试环境配置
+spring:
+  profiles: test
+
+platform:
+  component:
+    vector:
+      neo4j:
+        uri: "bolt://test-neo4j:7687"
+        username: "${NEO4J_TEST_USERNAME}"
+        password: "${NEO4J_TEST_PASSWORD}"
+        
+        # 测试环境配置
+        max-connection-pool-size: 50
+        
+        # 测试环境应用名称
+        application-name: "richie-vector-neo4j-test" 

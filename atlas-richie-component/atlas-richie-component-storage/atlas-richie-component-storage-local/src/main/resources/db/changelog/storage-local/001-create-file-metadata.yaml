@@ -1,0 +1,85 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0001-create-file-metadata
+      author: richie696
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: rd_file_metadata
+      changes:
+        - createTable:
+            tableName: rd_file_metadata
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                  remarks: 主键ID
+              - column:
+                  name: key_path
+                  type: VARCHAR(512)
+                  constraints:
+                    nullable: false
+                  remarks: 存储键路径（逻辑路径）
+              - column:
+                  name: original_name
+                  type: VARCHAR(256)
+                  constraints:
+                    nullable: false
+                  remarks: 原始文件名
+              - column:
+                  name: content_type
+                  type: VARCHAR(128)
+                  constraints:
+                    nullable: false
+                  remarks: 内容类型（MIME）
+              - column:
+                  name: size_bytes
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                  remarks: 文件大小（字节）
+              - column:
+                  name: hash_value
+                  type: VARCHAR(128)
+                  remarks: 文件哈希值（用于去重）
+              - column:
+                  name: version_id
+                  type: VARCHAR(64)
+                  remarks: 版本ID（对象存储版本）
+              - column:
+                  name: physical_path
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                  remarks: 物理存储路径
+              - column:
+                  name: upload_time
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+                  remarks: 上传时间
+              - column:
+                  name: last_access_time
+                  type: TIMESTAMP
+                  remarks: 最近访问时间
+              - column:
+                  name: access_count
+                  type: BIGINT
+                  defaultValueNumeric: "0"
+                  remarks: 访问次数
+              - column:
+                  name: tenant_id
+                  type: VARCHAR(64)
+                  remarks: 租户ID
+              - column:
+                  name: user_id
+                  type: VARCHAR(64)
+                  remarks: 用户ID
+              - column:
+                  name: category
+                  type: VARCHAR(64)
+                  remarks: 分类标识

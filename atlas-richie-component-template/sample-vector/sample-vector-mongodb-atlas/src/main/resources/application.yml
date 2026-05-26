@@ -1,0 +1,22 @@
+server:
+  port: 9523
+
+spring:
+  application:
+    name: sample-vector-mongodb-atlas
+
+logging:
+  level:
+    root: info
+    com.richie.component.vector.mongodb: debug
+
+platform:
+  component:
+    vector:
+      mongodb:
+        uri: ${MONGODB_URI:mongodb+srv://user:pass@cluster0.mongodb.net}
+        database: vectors
+        collection: embeddings
+        dimension: 768
+
+

@@ -1,0 +1,28 @@
+[package]
+name = "richie-http-client"
+version = "1.0.0"
+edition = "2021"
+authors = ["richie696"]
+description = "润典网关Rust客户端库 - 支持ECC+AES-GCM加密和防重复提交"
+license = "MIT"
+
+[dependencies]
+# HTTP客户端库
+reqwest = { version = "0.11", features = ["json"] }
+
+# 序列化库
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# 加密库（可选，如果使用ring或其他加密库）
+# ring = "0.17"
+# 或使用 openssl（如果使用openssl-sys）
+# openssl = "0.10"
+# openssl-sys = "0.9"
+
+# 异步运行时（reqwest需要）
+tokio = { version = "1", features = ["full"] }
+
+[dev-dependencies]
+# 示例代码可能需要
+

@@ -1,0 +1,266 @@
+### 01.注册新的客户ID【仅测试】
+POST http://127.0.0.1:9500/api/oauth2/test/client/register
+Accept: application/json
+Content-Type: application/json
+
+{
+  "client_name": "test-client"
+}
+
+> {%
+    // 定义工具函数（在当前响应处理脚本上下文中）
+    function parseResponseBody(responseBody) {
+        if (!responseBody) {
+            return null;
+        }
+        if (typeof responseBody === 'string') {
+            if (responseBody.trim() === '') {
+                return null;
+            }
+            try {
+                return JSON.parse(responseBody);
+            } catch (e) {
+                client.log("JSON 解析失败: " + e.message);
+                return null;
+            }
+        } else if (typeof responseBody === 'object') {
+            return responseBody;
+        }
+        return null;
+    }
+
+    function logErrorResponse(status, responseBody) {
+        client.log("请求失败: status=" + status);
+        if (responseBody) {
+            try {
+                const errorData = parseResponseBody(responseBody);
+                client.log("错误详情: " + JSON.stringify(errorData || responseBody));
+            } catch (e) {
+                client.log("响应体: " + JSON.stringify(responseBody));
+            }
+        }
+    }
+
+    // 响应处理脚本：自动将注册结果存储到全局变量
+
+    if (response.status === 200) {
+        try {
+            const registerData = parseResponseBody(response.body);
+
+            // 响应格式：{"client_id": "...", "client_secret": "..."}（直接返回 VO，未包装在 ResultVO 中）
+            if (registerData) {
+                const clientId = registerData.client_id || registerData.clientId;
+                const clientSecret = registerData.client_secret || registerData.clientSecret;
+
+                if (clientId && clientSecret) {
+                    client.global.set("clientId", clientId);
+                    client.global.set("clientSecret", clientSecret);
+                    // 同时生成 Authorization header 并保存
+                    const authorization = `Basic ${btoa(clientId + ':' + clientSecret)}`;
+                    client.global.set("authorization", authorization);
+                    client.log("已自动保存客户端凭据到全局变量: clientId=" + clientId);
+                    client.log("现在可以直接运行'获取 access_token'请求，无需手动配置");
+                } else {
+                    client.log("注册接口响应格式错误，未找到 client_id 或 client_secret: " + JSON.stringify(registerData));
+                }
+            }
+        } catch (e) {
+            client.log("处理响应失败: " + e.message);
+            client.log("响应体类型: " + typeof response.body);
+            client.log("响应体内容: " + JSON.stringify(response.body));
+        }
+    } else {
+        logErrorResponse(response.status, response.body);
+    }
+%}
+<> 2025-12-24T135948.200.json
+<> 2025-12-24T135907.200.json
+<> 2025-12-24T135542.400.json
+<> 2025-12-24T135526.400.json
+<> 2025-12-24T135424.400.json
+<> 2025-12-24T135356.400.json
+
+### 02.获取 access_token（Client Credentials）
+< {%
+    // 从全局变量获取 clientId 和 clientSecret（如果已通过注册接口设置）
+    // 如果没有，使用下面硬编码的默认值（请先运行注册接口）
+    let clientId = client.global.get("clientId") || 'client-20251224-450';
+    let clientSecret = client.global.get("clientSecret") || 'Sv4ljDbG3tzQTLJsUZoTq6POD2RBrvbv';
+
+    // 生成 Authorization header
+    const authorization = `Basic ${btoa(clientId + ':' + clientSecret)}`;
+    client.global.set("authorization", authorization);
+    client.log("使用客户端凭据: clientId=" + clientId);
+%}
+POST http://localhost:9500/api/oauth2/token
+Authorization: {{authorization}}
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials
+
+> {%
+    // 定义工具函数（在当前响应处理脚本上下文中）
+    function parseResponseBody(responseBody) {
+        if (!responseBody) {
+            return null;
+        }
+        if (typeof responseBody === 'string') {
+            if (responseBody.trim() === '') {
+                return null;
+            }
+            try {
+                return JSON.parse(responseBody);
+            } catch (e) {
+                client.log("JSON 解析失败: " + e.message);
+                return null;
+            }
+        } else if (typeof responseBody === 'object') {
+            return responseBody;
+        }
+        return null;
+    }
+
+    function logErrorResponse(status, responseBody) {
+        client.log("请求失败: status=" + status);
+        if (responseBody) {
+            try {
+                const errorData = parseResponseBody(responseBody);
+                client.log("错误详情: " + JSON.stringify(errorData || responseBody));
+            } catch (e) {
+                client.log("响应体: " + JSON.stringify(responseBody));
+            }
+        }
+    }
+
+    // 响应处理脚本：将 token 响应存储到全局变量
+
+    if (response.status === 200) {
+        try {
+            const tokenData = parseResponseBody(response.body);
+
+            // 响应格式：{"access_token": "...", "token_type": "Bearer", "expires_in": 3600, "refresh_token": "...", "scope": "..."}
+            if (tokenData) {
+                if (tokenData.access_token) {
+                    client.global.set("accessToken", tokenData.access_token);
+                    client.log("已保存 access_token 到全局变量");
+                }
+                if (tokenData.refresh_token) {
+                    client.global.set("refreshToken", tokenData.refresh_token);
+                    client.log("已保存 refresh_token 到全局变量");
+                }
+                if (tokenData.expires_in) {
+                    client.global.set("tokenExpiresIn", tokenData.expires_in);
+                    client.log("Token 有效期: " + tokenData.expires_in + " 秒");
+                }
+                if (tokenData.token_type) {
+                    client.global.set("tokenType", tokenData.token_type);
+                    client.log("Token 类型: " + tokenData.token_type);
+                }
+            }
+        } catch (e) {
+            client.log("处理响应失败: " + e.message);
+            client.log("响应体类型: " + typeof response.body);
+            client.log("响应体内容: " + JSON.stringify(response.body));
+        }
+    } else {
+        logErrorResponse(response.status, response.body);
+    }
+%}
+
+<> 2025-12-24T154759.200.json
+
+### 03.刷新 access_token（Refresh Token）
+POST http://localhost:9500/api/oauth2/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token&refresh_token={{refreshToken}}
+
+> {%
+    // 定义工具函数（在当前响应处理脚本上下文中）
+    function parseResponseBody(responseBody) {
+        if (!responseBody) {
+            return null;
+        }
+        if (typeof responseBody === 'string') {
+            if (responseBody.trim() === '') {
+                return null;
+            }
+            try {
+                return JSON.parse(responseBody);
+            } catch (e) {
+                client.log("JSON 解析失败: " + e.message);
+                return null;
+            }
+        } else if (typeof responseBody === 'object') {
+            return responseBody;
+        }
+        return null;
+    }
+
+    function logErrorResponse(status, responseBody) {
+        client.log("请求失败: status=" + status);
+        if (responseBody) {
+            try {
+                const errorData = parseResponseBody(responseBody);
+                client.log("错误详情: " + JSON.stringify(errorData || responseBody));
+            } catch (e) {
+                client.log("响应体: " + JSON.stringify(responseBody));
+            }
+        }
+    }
+
+    // 响应处理脚本：更新 token 到全局变量
+
+    if (response.status === 200) {
+        try {
+            const tokenData = parseResponseBody(response.body);
+
+            if (tokenData) {
+                if (tokenData.access_token) {
+                    client.global.set("accessToken", tokenData.access_token);
+                    client.log("已更新 access_token 到全局变量");
+                }
+                if (tokenData.refresh_token) {
+                    client.global.set("refreshToken", tokenData.refresh_token);
+                    client.log("已更新 refresh_token 到全局变量");
+                }
+            }
+        } catch (e) {
+            client.log("处理响应失败: " + e.message);
+        }
+    } else {
+        logErrorResponse(response.status, response.body);
+    }
+%}
+
+<> 2025-12-17T214022.200.json
+
+### 04.验证 access_token 令牌
+POST http://localhost:9500/api/oauth2/introspect
+Content-Type: application/x-www-form-urlencoded
+
+token_type_hint=access_token&token={{accessToken}}
+
+<> 2025-12-17T213907.200.json
+<> 2025-12-17T213237.200.json
+<> 2025-12-17T213110.200.json
+<> 2025-12-17T213041.400.json
+<> 2025-12-17T212925.404.json
+
+### 05.吊销 access_token 令牌
+POST http://localhost:9500/api/oauth2/revoke
+Content-Type: application/x-www-form-urlencoded
+
+token_type_hint=access_token&token={{accessToken}}
+
+<> 2025-12-17T213842.200.json
+<> 2025-12-17T213209.200.json
+<> 2025-12-17T213201.404.json
+
+### 06.吊销 refresh_token 令牌
+POST http://localhost:9500/api/oauth2/revoke
+Content-Type: application/x-www-form-urlencoded
+
+token_type_hint=refresh_token&token={{refreshToken}}
+
+

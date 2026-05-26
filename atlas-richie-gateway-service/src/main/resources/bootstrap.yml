@@ -1,0 +1,67 @@
+spring:
+    profiles:
+        active: ${ENV:prod}
+    main:
+        allow-circular-references: true
+        allow-bean-definition-overriding: true
+    mvc:
+        pathmatch:
+            matching-strategy: ant_path_matcher
+    config:
+        import:
+            - optional:nacos:platform-cache.yaml?refreshEnabled=true     # Redis配置
+            - optional:nacos:platform-gateway.yaml?refreshEnabled=true   # 应用网关配置
+#            - optional:nacos:platform-gateway-openapi.yaml?refreshEnabled=true   # OpenAPI网关配置
+    cloud:
+        inetutils:
+            ignored-interfaces:
+                - lo
+            preferred-networks:
+                - 10.100
+                - 10.200
+        # Nacos配置
+        nacos:
+            server-addr: 127.0.0.1:8848
+            discovery:
+                namespace: public
+                group: global
+            config:
+                namespace: public
+                group: global
+                file-extension: yaml
+                refresh-enabled: true
+                enable-remote-sync-config: true
+
+# 是否启用swagger文档展示
+springdoc:
+    api-docs:
+        enabled: true
+    swagger-ui:
+        enabled: true
+
+# 日志文件挂载
+logging:
+    config: classpath:logback-spring.xml
+    level:
+      com.richie.gateway.com.richie.gateway.GatewayApplication: info
+
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: "*"
+    #                include: "health,info,metrics,prometheus,sentinel"
+    endpoint:
+        health:
+            show-details: always
+            access: unrestricted
+        metrics:
+            access: unrestricted
+        prometheus:
+            access: unrestricted
+    prometheus:
+        metrics:
+            export:
+                enabled: true
+

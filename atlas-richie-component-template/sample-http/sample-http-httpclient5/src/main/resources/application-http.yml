@@ -1,0 +1,15 @@
+platform:
+    component:
+        http:
+            provider: httpclient5 # 使用 Apache HttpClient 5：服务端场景成熟稳定，线程与连接池可控
+
+            # 超时配置（HttpClient5 生效项，适配公网与三方接口特性）
+            connect-timeout: 5 # 连接/连接租用超时 5s：平衡失败快速与网络抖动（DNS/TLS握手）
+            connect-timeout-time-unit: seconds # 秒级更符合接口 SLA 与观测口径
+            read-timeout: 10 # 响应读取超时 10s：多数接口 200ms-3s，10s 为高峰与限流场景兜底
+            read-timeout-time-unit: seconds # 秒级单位，便于统一管理
+
+            # 并发与连接池（由 HttpClient5 的连接管理器与 Dispatcher 使用）
+            max-requests: 250 # 客户端全局最大并发：避免本机资源打满，同时保留足够吞吐
+            max-requests-per-host: 25 # 单主机并发上限：保护同一三方域名，降低突发压测风险
+

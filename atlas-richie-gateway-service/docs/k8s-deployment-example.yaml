@@ -1,0 +1,209 @@
+# K8s 灰度发布 Deployment 示例
+# 
+# 使用说明：
+# 1. 正式版本和灰度版本使用独立的 Deployment
+# 2. 通过 Nacos 元数据区分灰度实例和正式实例
+# 3. Gateway 根据元数据自动路由流量
+
+---
+# 正式版本 Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service-stable
+  namespace: production
+  labels:
+    app: order-service
+    version: stable
+spec:
+  replicas: 3  # 正式版本实例数
+  selector:
+    matchLabels:
+      app: order-service
+      version: stable
+  template:
+    metadata:
+      labels:
+        app: order-service
+        version: stable
+    spec:
+      containers:
+      - name: order-service
+        image: registry.example.com/order-service:v1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        # 应用名称（必须与 Service 名称一致）
+        - name: SPRING_APPLICATION_NAME
+          value: "order-service"
+        # Nacos 服务发现配置
+        - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
+          value: "nacos-server:8848"
+        - name: SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE
+          value: "production"
+        # 关键：正式实例的 Nacos 元数据
+        - name: SPRING_CLOUD_NACOS_DISCOVERY_METADATA_CANARY
+          value: "false"
+        - name: SPRING_CLOUD_NACOS_DISCOVERY_METADATA_CANARY_CATEGORY
+          value: "CUSTOM"
+        # 资源限制
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        # 健康检查
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+
+---
+# 灰度版本 Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service-canary
+  namespace: production
+  labels:
+    app: order-service
+    version: canary
+spec:
+  replicas: 1  # 灰度版本实例数（通常较小）
+  selector:
+    matchLabels:
+      app: order-service
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: order-service
+        version: canary
+    spec:
+      containers:
+      - name: order-service
+        image: registry.example.com/order-service:v1.1.0  # 新版本
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        # 应用名称（必须与 Service 名称一致）
+        - name: SPRING_APPLICATION_NAME
+          value: "order-service"
+        # Nacos 服务发现配置
+        - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
+          value: "nacos-server:8848"
+        - name: SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE
+          value: "production"
+        # 关键：灰度实例的 Nacos 元数据
+        - name: SPRING_CLOUD_NACOS_DISCOVERY_METADATA_CANARY
+          value: "true"
+        - name: SPRING_CLOUD_NACOS_DISCOVERY_METADATA_CANARY_CATEGORY
+          value: "ID"
+        # 资源限制（灰度实例可以设置较小的资源）
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        # 健康检查
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+
+---
+# Service（统一服务发现）
+# 注意：selector 只选择 app=order-service，不包含 version
+# 这样会同时选择 stable 和 canary 的 Pod
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: production
+  labels:
+    app: order-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: order-service  # 同时选择 stable 和 canary 的 Pod
+    # 注意：不包含 version 标签
+
+---
+# 可选：HorizontalPodAutoscaler（自动扩缩容）
+# 可以为正式版本和灰度版本分别配置 HPA
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: order-service-stable-hpa
+  namespace: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: order-service-stable
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+# 可选：灰度版本的 HPA（通常设置较小的 maxReplicas）
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: order-service-canary-hpa
+  namespace: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: order-service-canary
+  minReplicas: 1
+  maxReplicas: 3  # 灰度版本通常较小
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

@@ -1,0 +1,4 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/sample-mfa/v1.0/create-user-info-table.yaml
+

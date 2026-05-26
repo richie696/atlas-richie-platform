@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.richie.component.mfa.management.mapper.MfaUserMapper">
+
+    <!-- 根据租户ID和用户ID查询（只查询未删除的记录） -->
+    <select id="selectByTenantAndUser" resultType="com.richie.component.mfa.core.entity.MfaUserInfo">
+        SELECT *
+        FROM mfa_user_info
+        WHERE user_id = #{userId}
+        <choose>
+            <when test="tenantId != null and tenantId != ''">
+                AND tenant_id = #{tenantId}
+            </when>
+            <otherwise>
+                AND (tenant_id IS NULL OR tenant_id = '')
+            </otherwise>
+        </choose>
+        AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <!-- 根据租户ID和用户ID查询所有记录（包括已删除的记录） -->
+    <select id="selectAllByTenantAndUser" resultType="com.richie.component.mfa.core.entity.MfaUserInfo">
+        SELECT *
+        FROM mfa_user_info
+        WHERE user_id = #{userId}
+        <choose>
+            <when test="tenantId != null and tenantId != ''">
+                AND tenant_id = #{tenantId}
+            </when>
+            <otherwise>
+                AND (tenant_id IS NULL OR tenant_id = '')
+            </otherwise>
+        </choose>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

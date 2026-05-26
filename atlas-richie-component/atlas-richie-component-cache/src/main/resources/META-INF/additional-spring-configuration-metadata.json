@@ -1,0 +1,112 @@
+{
+    "groups": [
+        {
+            "name": "spring.data.redis",
+            "type": "com.richie.component.cache.redis.config.base.AtlasRedisProperties",
+            "sourceType": "com.richie.component.cache.redis.config.base.AtlasRedisProperties"
+        },
+        {
+            "name": "spring.data.local",
+            "type": "com.richie.component.cache.local.config.LocalCacheProperties",
+            "sourceType": "com.richie.component.cache.local.config.LocalCacheProperties"
+        }
+    ],
+    "properties": [
+        {
+            "name": "spring.data.redis.server-type",
+            "type": "java.lang.String",
+            "description": "Redis服务类型（可选值：standalone、sentinel、cluster）.",
+            "defaultValue": "standalone"
+        },
+        {
+            "name": "spring.data.redis.perf.enabled",
+            "type": "java.lang.Boolean",
+            "description": "是否启用 Redis 调用性能守卫（非 O(1) 告警、慢查询、可选阻断）。",
+            "defaultValue": false
+        },
+        {
+            "name": "spring.data.redis.perf.warn-non-o1",
+            "type": "java.lang.Boolean",
+            "description": "非 O(1) 调用是否输出 WARN（仅在 perf.enabled=true 时生效）。",
+            "defaultValue": true
+        },
+        {
+            "name": "spring.data.redis.perf.toc-soft-ms",
+            "type": "java.lang.Long",
+            "description": "ToC 软耗时阈值（毫秒），超过则 WARN 提示优化。",
+            "defaultValue": 8
+        },
+        {
+            "name": "spring.data.redis.perf.toc-hard-ms",
+            "type": "java.lang.Long",
+            "description": "ToC 硬耗时阈值（毫秒），超过则 ERROR（疑似 BIGKEY/热 key）。",
+            "defaultValue": 50
+        },
+        {
+            "name": "spring.data.redis.perf.block-forbidden-tiers",
+            "type": "java.lang.Boolean",
+            "description": "是否对 LINEAR_N/WORSE 复杂度调用直接抛异常阻断（默认 false，仅打日志）；为 true 时，若配置了 tocAllowedComplexities 且当前分级不在白名单内也会抛异常。",
+            "defaultValue": false
+        },
+        {
+            "name": "spring.data.redis.perf.log-big-key-probe-hints",
+            "type": "java.lang.Boolean",
+            "description": "非 O(1) 调用时是否输出 BIGKEY 探测建议（HLEN/LLEN/SCARD 等，默认 true）。",
+            "defaultValue": true
+        },
+        {
+            "name": "spring.data.redis.perf.toc-allowed-complexities",
+            "type": "java.util.List<java.lang.String>",
+            "description": "可选：ToC 允许的复杂度枚举名白名单（如 O1、LOG_N）；为空不限制。",
+            "defaultValue": []
+        },
+        {
+            "name": "spring.data.redis.perf.warn-string-payload-anti-patterns",
+            "type": "java.lang.Boolean",
+            "description": "是否检测 Redis String 写入滥用（集合/Map/数组/JavaBean 整包、超大文本、疑似 JSON 整包等，依赖 perf.enabled）。",
+            "defaultValue": true
+        },
+        {
+            "name": "spring.data.redis.perf.warn-json-like-string-blob",
+            "type": "java.lang.Boolean",
+            "description": "是否对疑似整包 JSON 的 String 值输出 WARN（以 { 或 [ 开头且长度超阈值）。",
+            "defaultValue": true
+        },
+        {
+            "name": "spring.data.redis.perf.json-like-min-chars-for-warn",
+            "type": "java.lang.Integer",
+            "description": "JSON 形状启发式最小字符数阈值。",
+            "defaultValue": 128
+        },
+        {
+            "name": "spring.data.redis.perf.string-payload-max-chars-warn",
+            "type": "java.lang.Integer",
+            "description": "String/CharSequence 字符数 WARN 阈值。",
+            "defaultValue": 100000
+        },
+        {
+            "name": "spring.data.redis.perf.string-payload-max-chars-error",
+            "type": "java.lang.Integer",
+            "description": "String/CharSequence 字符数 ERROR 阈值。",
+            "defaultValue": 1000000
+        },
+        {
+            "name": "spring.data.redis.perf.string-payload-max-bytes-warn",
+            "type": "java.lang.Integer",
+            "description": "byte[] 写入 String 时的字节数 WARN 阈值。",
+            "defaultValue": 262144
+        },
+        {
+            "name": "spring.data.redis.perf.string-payload-max-bytes-error",
+            "type": "java.lang.Integer",
+            "description": "byte[] 写入 String 时的字节数 ERROR 阈值。",
+            "defaultValue": 1048576
+        },
+        {
+            "name": "spring.data.redis.perf.block-string-payload-violations",
+            "type": "java.lang.Boolean",
+            "description": "是否在 String 载荷 ERROR 级别问题时抛异常阻断写入（默认 false）。",
+            "defaultValue": false
+        }
+    ]
+}

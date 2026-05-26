@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/mfa/v1.0/create-mfa-user-info-table.yaml
+  - include:
+      file: db/changelog/mfa/v1.0/create-mfa-trusted-device-table.yaml

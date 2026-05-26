@@ -1,0 +1,66 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0001-create-access-log-table
+      author: richie696
+      comment: 创建访问日志表
+      changes:
+        - createTable:
+            tableName: access_log_info
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                  remarks: 日志ID
+              - column:
+                  name: tenant_id
+                  type: varchar(200)
+                  remarks: 租户ID
+              - column:
+                  name: operator_id
+                  type: varchar(200)
+                  remarks: 操作人ID
+              - column:
+                  name: operator
+                  type: varchar(200)
+                  remarks: 操作人
+              - column:
+                  name: ip
+                  type: varchar(45)
+                  remarks: 操作人IP
+              - column:
+                  name: operate_time
+                  type: datetime(3)
+                  remarks: 操作时间
+              - column:
+                  name: elapsed_time
+                  type: bigint
+                  remarks: 耗时（单位：毫秒）
+              - column:
+                  name: title
+                  type: varchar(200)
+                  remarks: 日志标题
+              - column:
+                  name: method
+                  type: varchar(10)
+                  remarks: 请求方法（POST/GET/DELETE/PUT）
+              - column:
+                  name: url
+                  type: varchar(500)
+                  remarks: 访问地址
+              - column:
+                  name: request_body
+                  type: longtext
+                  remarks: 请求消息体
+              - column:
+                  name: response_body
+                  type: longtext
+                  remarks: 应答消息体
+              - column:
+                  name: extra
+                  type: longtext
+                  remarks: 扩展信息
+

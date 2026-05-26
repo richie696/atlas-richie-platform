@@ -1,0 +1,1074 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.0.6</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.richie.base</groupId>
+    <artifactId>atlas-richie-platform</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+    <name>Richie Java Platform</name>
+
+    <properties>
+        <!-- 项目版本统一管理 -->
+        <revision>1.0.0-SNAPSHOT</revision>
+        <maven.version>3.9.0</maven.version>
+
+        <!-- JDK版本配置-->
+        <java.version>25</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+
+        <!-- 字符集配置 -->
+        <encoding>UTF-8</encoding>
+        <file.encoding>${encoding}</file.encoding>
+        <project.build.sourceEncoding>${encoding}</project.build.sourceEncoding>
+        <project.build.propertiesEncoding>${encoding}</project.build.propertiesEncoding>
+
+        <lombok.version>1.18.46</lombok.version>
+        <mapstruct.version>1.6.3</mapstruct.version>
+
+        <!-- spring properties -->
+        <spring-boot.version>${spring-boot-dependencies.version}</spring-boot.version>
+        <spring-boot-dependencies.version>4.0.6</spring-boot-dependencies.version>
+        <spring-cloud-alibaba-dependencies.version>2025.1.0.0</spring-cloud-alibaba-dependencies.version>
+        <spring-cloud-dependencies.version>2025.1.1</spring-cloud-dependencies.version>
+        <spring-cloud-azure-dependencies.version>7.0.0</spring-cloud-azure-dependencies.version>
+        <spring-ai.version>2.0.0-M4</spring-ai.version>
+        <spring-ai-alibaba.version>1.1.2.2</spring-ai-alibaba.version>
+        <agentscope.version>1.0.11</agentscope.version>
+
+        <!-- Maven构建的文件名时间戳格式 -->
+        <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
+
+        <!-- Maven 插件版本管理 -->
+        <!-- 生成的Javadoc插件 -->
+        <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
+        <!-- 额外的构建功能的插件(全局替换、增加编译目录等) -->
+        <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
+        <!-- 编译目标包的插件 -->
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+        <!-- maven-enforcer-plugin 主要用于在构建过程中执行一些必要的规则检查 -->
+        <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
+        <!-- 同maven-enforcer-plugin，但是只检查依赖的插件 -->
+        <check-enforcer.version>3.5.0</check-enforcer.version>
+        <!-- 这个插件主要用于处理项目中的资源文件 -->
+        <maven-resources-plugin.version>3.4.0</maven-resources-plugin.version>
+        <!-- 这个插件用于创建包含项目源代码的jar文件 -->
+        <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+        <!-- 这个插件用于运行项目的单元测试 -->
+        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <!-- jib-maven-plugin 是一个由 Google 提供的 Maven 插件，用于构建 Docker 和 OCI 镜像 -->
+        <jib-maven-plugin.version>3.5.1</jib-maven-plugin.version>
+        <!-- 版本管理插件 -->
+        <versions-maven-plugin.version>2.21.0</versions-maven-plugin.version>
+        <!-- POM 扁平化插件 -->
+        <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
+        <!-- 依赖插件 -->
+        <maven-dependency-plugin.version>3.9.0</maven-dependency-plugin.version>
+        <!-- 漏洞扫描插件 -->
+        <spotbugs-maven-plugin.version>4.9.8.2</spotbugs-maven-plugin.version>
+        <!-- 代码检查插件 -->
+        <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+        <!-- Checkstyle 核心库版本 - 使用 11.x 以支持 JDK 21 -->
+        <checkstyle.version>13.4.2</checkstyle.version>
+        <!-- 集成测试插件 -->
+        <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
+        <!-- 代码覆盖率插件 -->
+        <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
+        <!-- 部署插件 -->
+        <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
+        <!-- 安装插件 -->
+        <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
+        <!-- 清理插件 -->
+        <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
+        <!-- JAR 打包插件 -->
+        <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+        <!-- Fat JAR 打包插件 -->
+        <maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
+        <!-- PMD 代码质量检查插件 -->
+        <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
+        <!-- Maven 发布插件 -->
+        <maven-release-plugin.version>3.2.0</maven-release-plugin.version>
+        <!-- Maven 帮助插件 - 用于查看项目信息、有效 POM、依赖树等 -->
+        <maven-help-plugin.version>3.5.1</maven-help-plugin.version>
+        <!-- Maven 站点插件 - 用于生成项目站点文档 -->
+        <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
+        <maven-fluido-skin.version>2.1.0</maven-fluido-skin.version>
+        <!-- Maven 依赖解析插件 - 用于解析和管理依赖关系 -->
+        <maven-resolver-plugin.version>1.4.1</maven-resolver-plugin.version>
+        <!-- Maven 变更日志插件 - 用于生成项目变更日志 -->
+        <maven-changes-plugin.version>3.0.0-M3</maven-changes-plugin.version>
+        <!-- Maven 许可证插件 - 用于管理项目许可证信息 -->
+        <license-maven-plugin.version>2.7.0</license-maven-plugin.version>
+        <!-- Maven 项目信息报告插件 - 用于生成项目信息报告 -->
+        <maven-project-info-reports-plugin.version>3.6.2</maven-project-info-reports-plugin.version>
+    </properties>
+
+    <modules>
+        <module>atlas-richie-base</module>
+        <module>atlas-richie-component</module>
+        <module>atlas-richie-component-template</module>
+        <module>atlas-richie-gateway-service</module>
+    </modules>
+
+    <!-- Maven 仓库配置 -->
+    <repositories>
+        <!-- Richie技术中台 快照分支 -->
+        <repository>
+            <id>2149740-snapshot-ZYP0VW</id>
+            <url>https://packages.aliyun.com/6177fef9474364dd1dfbe5ce/maven/2149740-snapshot-zyp0vw</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <!-- Richie技术中台 正式分支 -->
+        <repository>
+            <id>2149740-release-cGAgN8</id>
+            <url>https://packages.aliyun.com/6177fef9474364dd1dfbe5ce/maven/2149740-release-cgagn8</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <!-- 私服发布地址配置 -->
+    <distributionManagement>
+        <!-- 快照版本发布地址 -->
+        <snapshotRepository>
+            <id>2149740-snapshot-ZYP0VW</id>
+            <name>platform-snapshot</name>
+            <url>https://packages.aliyun.com/6177fef9474364dd1dfbe5ce/maven/2149740-snapshot-zyp0vw</url>
+        </snapshotRepository>
+        <!-- 正式版本发布地址 -->
+        <repository>
+            <id>2149740-release-cGAgN8</id>
+            <name>platform-release</name>
+            <url>https://packages.aliyun.com/6177fef9474364dd1dfbe5ce/maven/2149740-release-cgagn8</url>
+        </repository>
+    </distributionManagement>
+
+    <!-- SCM 配置 - 用于 maven-release-plugin -->
+    <!-- TODO: 待确认地址 -->
+    <!--<scm>
+        <connection>scm:git:git@codeup.aliyun.com:rydeen/platform/platform-java/richie-platform.git</connection>
+        <developerConnection>scm:git:git@codeup.aliyun.com:rydeen/platform/platform-java/richie-platform.git</developerConnection>
+        <url>https://codeup.aliyun.com/rydeen/platform/platform-java/richie-platform</url>
+        <tag>HEAD</tag>
+    </scm>-->
+
+    <!-- 开发团队信息 - 用于生成团队信息页面 -->
+    <developers>
+        <developer>
+            <id>richie696</id>
+            <name>王锦阳</name>
+            <email>richie696@icloud.com</email>
+            <organization>Richie Technology Co., Ltd.</organization>
+            <organizationUrl>https://www.richie696.cn</organizationUrl>
+            <roles>
+                <role>Architect</role>
+            </roles>
+            <timezone>Asia/Shanghai</timezone>
+        </developer>
+    </developers>
+
+    <!-- 贡献者信息 - 用于生成团队信息页面 -->
+    <contributors>
+        <!-- 可以添加贡献者信息 -->
+        <!--
+        <contributor>
+            <name>Contributor Name</name>
+            <email>contributor@example.com</email>
+            <organization>Organization Name</organization>
+            <organizationUrl>https://www.example.com</organizationUrl>
+            <roles>
+                <role>Contributor</role>
+            </roles>
+            <timezone>Asia/Shanghai</timezone>
+        </contributor>
+        -->
+    </contributors>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <!-- POM 扁平化插件 - 用于处理 ${revision} 占位符 -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>${flatten-maven-plugin.version}</version>
+                    <configuration>
+                        <flattenMode>oss</flattenMode>
+                        <updatePomFile>true</updatePomFile>
+                        <pomElements>
+                            <parent>expand</parent>
+                            <groupId>expand</groupId>
+                            <artifactId>expand</artifactId>
+                            <version>expand</version>
+                            <dependencies>expand</dependencies>
+                            <dependencyManagement>expand</dependencyManagement>
+                            <properties>expand</properties>
+                        </pomElements>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>flatten</id>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>flatten</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>flatten.clean</id>
+                            <phase>clean</phase>
+                            <goals>
+                                <goal>clean</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- 版本管理插件 -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>${versions-maven-plugin.version}</version>
+                    <configuration>
+                        <generateBackupPoms>false</generateBackupPoms>
+                    </configuration>
+                </plugin>
+
+                <!-- 依赖分析插件 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>${maven-dependency-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>analyze</id>
+                            <goals>
+                                <goal>analyze-only</goal>
+                            </goals>
+                            <configuration>
+                                <failOnWarning>false</failOnWarning>
+                                <ignoreNonCompile>true</ignoreNonCompile>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- SpotBugs 代码质量检查插件 -->
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${spotbugs-maven-plugin.version}</version>
+                    <configuration>
+                        <effort>Max</effort>
+                        <threshold>Low</threshold>
+                        <xmlOutput>true</xmlOutput>
+                        <!-- 如果 spotbugs-exclude.xml 文件存在则使用，否则忽略 -->
+                        <!-- <excludeFilterFile>${project.basedir}/spotbugs-exclude.xml</excludeFilterFile> -->
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>spotbugs</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- Checkstyle 代码规范检查插件 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${maven-checkstyle-plugin.version}</version>
+                    <dependencies>
+                        <!-- 显式指定 Checkstyle 版本以支持 JDK 21 -->
+                        <!-- Checkstyle 11.0.0 支持 JDK 17+，包括 JDK 21 的 Pattern Matching for instanceof 等新特性 -->
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>${checkstyle.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <configuration>
+                        <configLocation>checkstyle.xml</configLocation>
+                        <consoleOutput>true</consoleOutput>
+                        <!-- 站点生成时不因 checkstyle 错误而失败 -->
+                        <failsOnError>false</failsOnError>
+                        <linkXRef>false</linkXRef>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>validate</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- 集成测试插件 - 启用 JDK 预览特性 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven-failsafe-plugin.version}</version>
+                    <configuration>
+                        <includes>
+                            <include>**/*IT.java</include>
+                            <include>**/*ITCase.java</include>
+                            <include>**/*IntegrationTest.java</include>
+                        </includes>
+                        <argLine>--enable-preview</argLine>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>integration-test</id>
+                            <goals>
+                                <goal>integration-test</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>verify</id>
+                            <goals>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- JaCoCo 代码覆盖率插件 -->
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco-maven-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>prepare-agent</id>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>report</id>
+                            <phase>test</phase>
+                            <goals>
+                                <goal>report</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>jacoco-check</id>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <rule>
+                                        <element>PACKAGE</element>
+                                        <limits>
+                                            <limit>
+                                                <counter>LINE</counter>
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>0.50</minimum>
+                                            </limit>
+                                        </limits>
+                                    </rule>
+                                </rules>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- 部署插件 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${maven-deploy-plugin.version}</version>
+                    <configuration>
+                        <deployAtEnd>true</deployAtEnd>
+                    </configuration>
+                </plugin>
+
+                <!-- 安装插件 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>${maven-install-plugin.version}</version>
+                </plugin>
+
+                <!-- 清理插件 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${maven-clean-plugin.version}</version>
+                    <configuration>
+                        <filesets>
+                            <fileset>
+                                <directory>${project.basedir}</directory>
+                                <includes>
+                                    <include>**/.flattened-pom.xml</include>
+                                </includes>
+                            </fileset>
+                        </filesets>
+                    </configuration>
+                </plugin>
+
+                <!-- JAR 打包插件 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven-jar-plugin.version}</version>
+                    <configuration>
+                        <archive>
+                            <manifest>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            </manifest>
+                            <manifestEntries>
+                                <Implementation-Version>${project.version}</Implementation-Version>
+                                <Implementation-Title>${project.name}</Implementation-Title>
+                                <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
+                                <Build-Time>${maven.build.timestamp}</Build-Time>
+                            </manifestEntries>
+                        </archive>
+                    </configuration>
+                </plugin>
+
+                <!-- Fat JAR 打包插件 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven-shade-plugin.version}</version>
+                    <configuration>
+                        <createDependencyReducedPom>false</createDependencyReducedPom>
+                        <filters>
+                            <filter>
+                                <artifact>*:*</artifact>
+                                <excludes>
+                                    <exclude>META-INF/*.SF</exclude>
+                                    <exclude>META-INF/*.DSA</exclude>
+                                    <exclude>META-INF/*.RSA</exclude>
+                                </excludes>
+                            </filter>
+                        </filters>
+                    </configuration>
+                </plugin>
+
+                <!-- PMD 代码质量检查插件 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>${maven-pmd-plugin.version}</version>
+                    <configuration>
+                        <linkXRef>false</linkXRef>
+                        <inputEncoding>${project.build.sourceEncoding}</inputEncoding>
+                        <outputEncoding>${project.build.sourceEncoding}</outputEncoding>
+                        <minimumTokens>100</minimumTokens>
+                        <targetJdk>${java.version}</targetJdk>
+                        <excludeRoots>
+                            <excludeRoot>target/generated-sources</excludeRoot>
+                        </excludeRoots>
+                        <rulesets>
+                            <ruleset>/category/java/bestpractices.xml</ruleset>
+                            <ruleset>/category/java/codestyle.xml</ruleset>
+                            <ruleset>/category/java/design.xml</ruleset>
+                            <ruleset>/category/java/errorprone.xml</ruleset>
+                            <ruleset>/category/java/performance.xml</ruleset>
+                            <ruleset>/category/java/security.xml</ruleset>
+                        </rulesets>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>pmd</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- Maven 发布插件 - 用于自动化发布流程 -->
+                <!--
+                    混合方案：${revision} + flatten-maven-plugin + maven-release-plugin
+
+                    1. 开发阶段：
+                       - 使用 ${revision} 属性统一管理版本号（在根 POM 中定义）
+                       - flatten-maven-plugin 在构建时自动展开 ${revision} 占位符
+                       - 只需修改一个地方的版本号即可
+
+                    2. 发布阶段：
+                       - maven-release-plugin 会自动查找并替换所有 POM 文件中的 ${revision} 属性
+                       - 自动更新版本号（5.0.0-SNAPSHOT -> 5.0.0）
+                       - 自动创建 Git 标签（v5.0.0）
+                       - 自动构建并部署到 Nexus
+                       - 自动更新为下一个开发版本（5.0.0 -> 4.6.1-SNAPSHOT）
+
+                    使用方式（在项目根目录执行）：
+                    - mvn release:prepare          (准备发布，会提示输入发布版本和下一个开发版本)
+                    - mvn release:perform           (执行发布，构建并部署)
+                    或者一步完成：
+                    - mvn release:prepare release:perform
+
+                    注意：
+                    - 确保 Git 工作目录干净（没有未提交的更改）
+                    - 确保有推送权限
+                    - 确保 Nexus 仓库配置正确
+                -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>${maven-release-plugin.version}</version>
+                    <configuration>
+                        <!-- 自动更新子模块版本 -->
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <!-- 推送变更到 Git -->
+                        <pushChanges>true</pushChanges>
+                        <!-- Git 标签名称格式 -->
+                        <tagNameFormat>v@{project.version}</tagNameFormat>
+                        <!-- SCM 注释前缀 -->
+                        <scmCommentPrefix>[maven-release-plugin]</scmCommentPrefix>
+                        <!-- 发布前检查 - 排除 flatten 生成的文件 -->
+                        <checkModificationExcludes>
+                            <checkModificationExclude>**/*.flattened-pom.xml</checkModificationExclude>
+                            <checkModificationExclude>.flattened-pom.xml</checkModificationExclude>
+                        </checkModificationExcludes>
+                        <!-- 发布时使用的目标 -->
+                        <goals>deploy</goals>
+                        <!-- 版本号更新策略：使用 revision 属性 -->
+                        <!-- maven-release-plugin 会自动查找并替换所有 ${revision} 为发布版本 -->
+                    </configuration>
+                </plugin>
+
+                <!-- Maven 帮助插件 - 用于查看项目信息、有效 POM、依赖树等 -->
+                <!--
+                    常用命令：
+                    - mvn help:effective-pom          (查看有效 POM)
+                    - mvn help:effective-settings     (查看有效 Settings)
+                    - mvn help:dependency-tree       (查看依赖树)
+                    - mvn help:evaluate -Dexpression=project.version  (评估表达式)
+                    - mvn help:system                (查看系统属性)
+                    - mvn help:describe -Dplugin=org.apache.maven.plugins:maven-compiler-plugin  (查看插件信息)
+                -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-help-plugin</artifactId>
+                    <version>${maven-help-plugin.version}</version>
+                </plugin>
+
+                <!-- Maven 站点插件 - 用于生成项目站点文档 -->
+                <!--
+                    功能：生成项目的站点文档，包括项目概述、依赖关系、插件信息、报告等
+
+                    常用命令：
+                    - mvn site                        (生成站点文档，输出到 target/site)
+                    - mvn site:stage                   (生成并暂存站点)
+                    - mvn site:deploy                 (部署站点到远程服务器)
+                    - mvn site:run                    (启动本地服务器预览站点)
+                    - mvn site:stage-deploy           (暂存并部署站点)
+
+                    配置说明：
+                    - 站点内容可以通过 src/site 目录下的文件自定义
+                    - 可以配置多个报告插件（如 Javadoc、测试报告、覆盖率等）
+                    - 生成的站点默认位于 target/site 目录
+                -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>${maven-site-plugin.version}</version>
+                    <configuration>
+                        <!-- 站点输出目录 -->
+                        <outputDirectory>${project.build.directory}/site</outputDirectory>
+                        <!-- 站点部署目录 -->
+                        <stagingDirectory>${project.build.directory}/staging</stagingDirectory>
+                    </configuration>
+                </plugin>
+
+                <!-- Maven 依赖解析插件 - 用于解析和管理依赖关系 -->
+                <!--
+                    功能：提供依赖解析、冲突检测、依赖树分析等功能
+
+                    常用命令：
+                    - mvn dependency:tree              (显示依赖树)
+                    - mvn dependency:analyze           (分析依赖，检测未使用和缺失的依赖)
+                    - mvn dependency:analyze-duplicate (检测重复依赖)
+                    - mvn dependency:analyze-dep-mgt   (分析依赖管理)
+                    - mvn dependency:resolve           (解析依赖)
+                    - mvn dependency:resolve-sources   (解析源码依赖)
+                    - mvn dependency:resolve-transitive (解析传递依赖)
+                    - mvn dependency:copy              (复制依赖到指定目录)
+                    - mvn dependency:copy-dependencies (复制所有依赖到指定目录)
+                    - mvn dependency:unpack            (解压依赖)
+                    - mvn dependency:unpack-dependencies (解压所有依赖)
+
+                    注意：maven-resolver-plugin 是 Maven 3.x 引入的新插件，
+                    用于替代部分 maven-dependency-plugin 的功能，提供更强大的依赖解析能力
+                -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resolver-plugin</artifactId>
+                    <version>${maven-resolver-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>resolve-dependencies</id>
+                            <goals>
+                                <goal>resolve</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- Maven 变更日志插件 - 用于生成项目变更日志 -->
+                <!--
+                    功能：从变更日志文件（CHANGES.txt 或 changes.xml）生成变更报告
+
+                    常用命令：
+                    - mvn changes:changes-report        (生成变更日志报告)
+                    - mvn changes:announcement-generate (生成发布公告)
+                    - mvn changes:announcement-validate (验证发布公告)
+
+                    配置说明：
+                    - 需要在项目根目录创建 CHANGES.txt 或 src/changes/changes.xml 文件
+                    - 变更日志格式示例：
+                      [yyyy-mm-dd] [version] [type] description
+                      - type 可以是: Added, Changed, Deprecated, Removed, Fixed, Security
+                    - 生成的报告位于 target/site/changes-report.html
+
+                    变更日志文件格式（CHANGES.txt）：
+                    ========================================
+                    Release Notes - version - YYYY-MM-DD
+                    ========================================
+
+                    [yyyy-mm-dd] [version] Added
+                    - 新功能描述
+
+                    [yyyy-mm-dd] [version] Fixed
+                    - Bug 修复描述
+
+                    [yyyy-mm-dd] [version] Changed
+                    - 变更描述
+                    ========================================
+
+                    注意：reportSets 配置需要在 reporting 部分或子模块中配置
+                -->
+                <!-- Maven 变更日志插件 - 用于生成项目变更日志 -->
+                <!--
+                    版本：3.0.0-M3
+
+                    功能：从 changes.xml 文件生成变更日志报告
+
+                    配置说明（3.0.0-M3 版本）：
+                    - xmlPath: 变更日志文件路径（默认：src/changes/changes.xml）
+                    - outputDirectory: 报告输出目录（默认：${project.build.directory}/reports）
+                    - addActionDate: 是否在报告中包含操作日期（默认：false）
+                    - escapeText: 是否转义文本中的 HTML（默认：true）
+                    - filteringChanges: 是否过滤变更（默认：false）
+                    - locale: 本地化设置（默认：default）
+                    - publishDateFormat: 发布日期格式（默认：yyyy-MM-dd）
+                    - publishDateLocale: 发布日期本地化（默认：en）
+
+                    注意：
+                    - 3.0.0-M3 版本主要支持 changes.xml 格式（XML格式）
+                    - 配置参数名称从 changesXmlFile 改为 xmlPath
+                    - 如果需要在 pluginManagement 中配置，可以使用 xmlPath 参数
+                    - 生成的报告位于 target/reports/changes-report.html（新版本默认路径）
+
+                    常用命令：
+                    - mvn changes:changes-report        (生成变更日志报告)
+                    - mvn changes:announcement-generate (生成发布公告)
+                    - mvn changes:announcement-validate (验证发布公告)
+
+                    配置示例（在 reporting 部分或子模块中）：
+                    <configuration>
+                        <xmlPath>src/changes/changes.xml</xmlPath>
+                        <addActionDate>true</addActionDate>
+                        <escapeText>true</escapeText>
+                    </configuration>
+                -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-changes-plugin</artifactId>
+                    <version>${maven-changes-plugin.version}</version>
+                </plugin>
+
+                <!-- Maven 许可证插件 - 用于管理项目许可证信息 -->
+                <!--
+                    功能：管理项目的许可证信息，确保源代码文件中包含正确的许可证头
+
+                    常用命令：
+                    - mvn license:check                (检查所有源文件是否包含许可证头)
+                    - mvn license:format                (格式化许可证头)
+                    - mvn license:update-file-header    (更新文件头中的许可证信息)
+                    - mvn license:update-project-license (更新项目许可证)
+                    - mvn license:add-third-party       (添加第三方依赖的许可证信息)
+                    - mvn license:download-licenses     (下载依赖的许可证文件)
+                    - mvn license:license-list          (列出所有许可证)
+                    - mvn license:license-check         (检查许可证兼容性)
+
+                    配置说明：
+                    - 需要在项目根目录创建 LICENSE 文件
+                    - 可以配置许可证头模板（license-header.txt）
+                    - 可以配置需要检查的文件类型和排除的文件
+                    - 许可证头模板示例（src/main/resources/license-header.txt）：
+                      /*
+                       * Copyright (c) ${year} ${owner}
+                       *
+                       * Licensed under the Apache License, Version 2.0 (the "License");
+                       * you may not use this file except in compliance with the License.
+                       * You may obtain a copy of the License at
+                       *
+                       *     http://www.apache.org/licenses/LICENSE-2.0
+                       *
+                       * Unless required by applicable law or agreed to in writing, software
+                       * distributed under the License is distributed on an "AS IS" BASIS,
+                       * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+                       * See the License for the specific language governing permissions and
+                       * limitations under the License.
+                       */
+                -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>${license-maven-plugin.version}</version>
+                    <configuration>
+                        <!-- 许可证名称：使用自定义专有许可证 -->
+                        <!-- 注意：org.codehaus.mojo:license-maven-plugin 2.0.0 不支持 licenseHeaderFile 参数 -->
+                        <!-- 该插件主要用于管理项目许可证和第三方依赖许可证，不支持自定义许可证头文件 -->
+                        <licenseName>proprietary</licenseName>
+                        <!-- 版权所有者 -->
+                        <organizationName>Richie Technology Co., Ltd.</organizationName>
+                        <!-- 版权年份 -->
+                        <inceptionYear>2024</inceptionYear>
+                        <!-- 第三方依赖许可证输出目录 -->
+                        <thirdPartyFilename>${project.build.directory}/generated-sources/license</thirdPartyFilename>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>update-file-header</id>
+                            <goals>
+                                <goal>update-file-header</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- Maven 编译插件 - 启用 JDK 预览特性 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <source>${maven.compiler.source}</source>
+                        <target>${maven.compiler.target}</target>
+                        <encoding>${file.encoding}</encoding>
+                        <release>${java.version}</release>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                            <path>
+                                <groupId>org.mapstruct</groupId>
+                                <artifactId>mapstruct-processor</artifactId>
+                                <version>${mapstruct.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                        <compilerArgs>
+                            <arg>-parameters</arg>
+                            <arg>--enable-preview</arg>
+                        </compilerArgs>
+                    </configuration>
+                </plugin>
+
+                <!-- Maven 测试插件 - 启用 JDK 预览特性 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                    <configuration>
+                        <argLine>--enable-preview</argLine>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <!-- Maven Enforcer 插件 - 约束 Maven 和 JDK 版本 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven-enforcer-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-maven</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>${maven.version}</version>
+                                    <message>需要 Maven ${maven.version} 或更高版本。请访问 https://maven.apache.org/download.cgi 下载最新版。</message>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>${java.version}</version>
+                                    <message>需要 JDK ${java.version} 或更高版本。</message>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 启用 flatten-maven-plugin 处理 ${revision} -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- 确保 Lombok / MapStruct 注解处理在所有模块生效 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                    <encoding>${file.encoding}</encoding>
+                    <release>${java.version}</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                        <arg>--enable-preview</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!-- 报告配置 - 用于生成项目站点报告 -->
+    <reporting>
+        <plugins>
+            <!-- Maven 项目信息报告插件 - 生成项目基本信息报告 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>${maven-project-info-reports-plugin.version}</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <!-- 项目信息 -->
+                            <report>index</report>
+                            <!-- 项目摘要 -->
+                            <report>summary</report>
+                            <!-- 依赖信息 -->
+                            <report>dependencies</report>
+                            <!-- 依赖管理 -->
+                            <report>dependency-info</report>
+                            <!-- 依赖树 -->
+                            <report>dependency-management</report>
+                            <!-- 依赖收敛 -->
+                            <report>dependency-convergence</report>
+                            <!-- 插件信息 -->
+                            <report>plugins</report>
+                            <!-- 团队信息 -->
+                            <report>team</report>
+                            <!-- CI 管理 -->
+                            <report>ci-management</report>
+                            <!-- 问题管理 -->
+                            <report>issue-management</report>
+                            <!-- 邮件列表 -->
+                            <report>mailing-lists</report>
+                            <!-- 许可证 -->
+                            <report>licenses</report>
+                            <!-- 源码仓库 -->
+                            <report>scm</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+
+            <!-- JavaDoc 报告插件 - 生成 API 文档 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven-javadoc-plugin.version}</version>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <charset>${project.build.sourceEncoding}</charset>
+                    <docencoding>${project.build.sourceEncoding}</docencoding>
+                    <failOnError>false</failOnError>
+                    <additionalJOption>-Xdoclint:none</additionalJOption>
+                    <!-- 排除 reference：避免“use of default constructor, which does not provide a comment”等警告 -->
+                    <doclint>all,-missing,-reference</doclint>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>javadoc</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+
+            <!-- 测试报告插件 - 生成单元测试报告 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+            </plugin>
+
+            <!-- JaCoCo 代码覆盖率报告 -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-maven-plugin.version}</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>report</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+
+            <!-- SpotBugs 代码质量报告 -->
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs-maven-plugin.version}</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>Low</threshold>
+                    <xmlOutput>true</xmlOutput>
+                </configuration>
+            </plugin>
+
+            <!-- Checkstyle 代码规范报告 -->
+            <!-- 注意：reporting 部分不支持 dependencies，需要在 pluginManagement 中配置 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${maven-checkstyle-plugin.version}</version>
+                <configuration>
+                    <!-- 使用默认的 Sun 检查配置 -->
+                    <configLocation>sun_checks.xml</configLocation>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>false</failsOnError>
+                    <linkXRef>true</linkXRef>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                </configuration>
+            </plugin>
+
+            <!-- PMD 代码质量报告 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>${maven-pmd-plugin.version}</version>
+                <configuration>
+                    <linkXRef>true</linkXRef>
+                    <minimumTokens>100</minimumTokens>
+                    <targetJdk>${java.version}</targetJdk>
+                    <excludeRoots>
+                        <excludeRoot>target/generated-sources</excludeRoot>
+                    </excludeRoots>
+                    <rulesets>
+                        <ruleset>/category/java/bestpractices.xml</ruleset>
+                        <ruleset>/category/java/codestyle.xml</ruleset>
+                        <ruleset>/category/java/design.xml</ruleset>
+                        <ruleset>/category/java/errorprone.xml</ruleset>
+                        <ruleset>/category/java/performance.xml</ruleset>
+                        <ruleset>/category/java/security.xml</ruleset>
+                    </rulesets>
+                </configuration>
+            </plugin>
+
+            <!-- 依赖分析报告 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${maven-dependency-plugin.version}</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>analyze-report</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+
+            <!-- 变更日志报告 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-changes-plugin</artifactId>
+                <version>${maven-changes-plugin.version}</version>
+                <configuration>
+                    <!-- 变更日志文件路径（3.0.0-M3 使用 xmlPath） -->
+                    <xmlPath>src/changes/changes.xml</xmlPath>
+                    <!-- 是否包含操作日期 -->
+                    <addActionDate>true</addActionDate>
+                    <!-- 是否转义 HTML -->
+                    <escapeText>true</escapeText>
+                    <!-- 发布日期格式 -->
+                    <publishDateFormat>yyyy-MM-dd</publishDateFormat>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>changes-report</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+
+            <!-- 许可证报告 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>${license-maven-plugin.version}</version>
+                <configuration>
+                    <licenseName>proprietary</licenseName>
+                    <organizationName>Richie Technology Co., Ltd.</organizationName>
+                    <inceptionYear>2024</inceptionYear>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>license-list</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+        </plugins>
+    </reporting>
+
+</project>

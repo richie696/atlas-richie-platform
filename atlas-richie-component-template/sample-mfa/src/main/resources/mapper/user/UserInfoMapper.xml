@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.richie.component.mfa.mapper.UserInfoMapper">
+
+    <!-- 这里主要使用 MyBatis-Plus 提供的通用方法，暂不定义自定义 SQL -->
+
+</mapper>
+

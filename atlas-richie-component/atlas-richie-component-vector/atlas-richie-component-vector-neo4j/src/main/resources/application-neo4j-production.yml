@@ -1,0 +1,195 @@
+# Neo4j向量数据库生产环境配置示例
+# 该配置文件展示了生产环境的最佳实践配置
+
+platform:
+  component:
+    vector:
+      provider: neo4j
+      neo4j:
+        # ==================== 基础连接配置 ====================
+        # Neo4j连接URI - 支持多种连接方式
+        uri: "bolt+routing://neo4j-cluster.example.com:7687"
+        # 单节点: bolt://localhost:7687
+        # 集群: bolt+routing://localhost:7687
+        # AuraDB: neo4j+s://your-instance.neo4j.io:7687
+        
+        # 认证信息
+        username: "neo4j"
+        password: "${NEO4J_PASSWORD}"  # 使用环境变量
+        
+        # 数据库名称（Neo4j 4.0+支持多数据库）
+        database: "neo4j"
+        
+        # ==================== 连接池配置 ====================
+        # 连接池大小配置 - 根据并发量和服务器资源调整
+        max-connection-pool-size: 100      # 生产环境建议: 50-100
+        min-connection-pool-size: 10       # 生产环境建议: 5-10
+        
+        # 连接生命周期配置
+        max-connection-lifetime-millis: 7200000    # 2小时，避免连接过长时间占用
+        connection-idle-timeout-millis: 1800000    # 30分钟，及时释放空闲连接
+        
+        # 连接获取和超时配置
+        connection-acquisition-timeout-millis: 30000   # 30秒，避免长时间等待
+        connection-timeout-millis: 10000               # 10秒，快速失败
+        connection-validation-timeout-millis: 5000     # 5秒
+        
+        # 连接验证配置
+        connection-validation-enabled: true
+        connection-validation-query: "RETURN 1"
+        
+        # ==================== 负载均衡配置 ====================
+        # 集群环境配置
+        load-balancing-enabled: true
+        load-balancing-strategy: "least_connected"  # 可选: least_connected, round_robin
+        load-balancer-max-connection-pool-size: 150
+        
+        # ==================== 重试和容错配置 ====================
+        # 重试策略配置
+        retry-strategy: "exponential_backoff"  # 可选: exponential_backoff, fixed_delay
+        max-retry-attempts: 5                  # 生产环境建议: 3-5次
+        retry-delay-millis: 1000               # 1秒
+        max-retry-delay-millis: 30000          # 30秒
+        
+        # 断路器配置 - 防止级联故障
+        circuit-breaker-enabled: true
+        circuit-breaker-failure-threshold: 5
+        circuit-breaker-recovery-time-millis: 60000  # 1分钟
+        
+        # ==================== 安全配置 ====================
+        # 加密配置
+        encryption-enabled: true
+        trust-strategy: "trust_system_certificates"  # 可选: trust_system_certificates, trust_all_certificates, trust_custom_ca_signed_certificates
+        
+        # 自定义CA证书配置（如果需要）
+        # custom-ca-certificate-path: "/path/to/custom-ca.crt"
+        
+        # 客户端证书配置（如果需要）
+        # client-certificate-enabled: true
+        # client-certificate-path: "/path/to/client.crt"
+        # client-private-key-path: "/path/to/client.key"
+        # client-certificate-password: "${CLIENT_CERT_PASSWORD}"
+        
+        # Kerberos认证配置（如果需要）
+        # kerberos-enabled: true
+        # kerberos-service-principal-name: "neo4j/example.com@EXAMPLE.COM"
+        
+        # ==================== 会话和事务配置 ====================
+        # 事务配置
+        max-transaction-retry-time-millis: 30000  # 30秒
+        session-timeout-millis: 30000             # 30秒
+        transaction-timeout-millis: 60000         # 60秒
+        auto-commit-enabled: false
+        
+        # 读写分离配置（集群环境）
+        read-write-separation-enabled: true
+        
+        # ==================== 查询和性能配置 ====================
+        # 查询超时和限制
+        query-timeout-millis: 60000               # 60秒
+        max-query-result-size: 10000              # 防止内存溢出
+        
+        # 查询缓存配置
+        query-cache-enabled: true
+        query-cache-size: 1000
+        query-cache-expire-millis: 300000         # 5分钟
+        query-plan-cache-enabled: true
+        
+        # ==================== 监控和日志配置 ====================
+        # 应用标识
+        application-name: "richie-vector-neo4j-prod"
+        
+        # 连接池监控
+        connection-pool-monitoring-enabled: true
+        connection-pool-monitoring-interval-millis: 60000  # 1分钟
+        
+        # 查询日志配置 - 生产环境建议关闭，避免性能影响
+        query-logging-enabled: false
+        query-logging-level: "INFO"
+        
+        # 性能监控
+        performance-monitoring-enabled: true
+        performance-monitoring-sampling-rate: 0.1  # 10%采样率
+        
+        # 慢查询监控
+        slow-query-monitoring-enabled: true
+        slow-query-threshold-millis: 1000         # 1秒
+        
+        # 连接泄漏检测
+        connection-leak-detection-enabled: true
+        connection-leak-detection-threshold-millis: 60000  # 1分钟
+        
+        # ==================== 健康检查和诊断配置 ====================
+        # 健康检查
+        health-check-enabled: true
+        health-check-interval-millis: 30000       # 30秒
+        health-check-timeout-millis: 5000         # 5秒
+        health-check-query: "RETURN 1 as health"
+        
+        # 诊断信息收集
+        diagnostic-enabled: true
+        diagnostic-interval-millis: 300000        # 5分钟
+        
+        # ==================== 高级配置 ====================
+        # 连接池预热
+        connection-pool-warmup-enabled: true
+        connection-pool-warmup-size: 10
+        
+        # 连接池统计信息
+        connection-pool-stats-enabled: true
+        
+        # 网络配置
+        network-event-listening-enabled: false
+        protocol-negotiation-enabled: true
+        
+        # 连接压缩
+        connection-compression-enabled: true
+        connection-compression-level: 6           # 1-9，平衡压缩率和CPU使用
+        
+        # 连接复用
+        connection-reuse-enabled: true
+        connection-reuse-timeout-millis: 300000   # 5分钟
+
+# ==================== 日志配置 ====================
+logging:
+  level:
+    com.richie.component.vector: INFO
+    org.neo4j.driver: WARN
+    org.springframework.ai.vectorstore.neo4j: INFO
+  
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# ==================== 监控配置 ====================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# ==================== 应用配置 ====================
+spring:
+  application:
+    name: richie-vector-service
+  
+  # 健康检查配置
+  health:
+    neo4j:
+      enabled: true
+      timeout: 5s
+  
+  # 指标配置
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        descriptions: true
+        step: 1m 

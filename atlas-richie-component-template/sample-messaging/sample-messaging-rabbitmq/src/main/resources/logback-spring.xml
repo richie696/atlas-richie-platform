@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 从 Spring 环境读取应用名称 -->
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name"/>
+
+    <!-- 从 Spring 环境读取日志级别 -->
+    <springProperty scope="context" name="LOG_LEVEL" source="logging.level.root" default="INFO"/>
+
+    <!-- OpenTelemetry 相关属性 -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [traceId=%X{trace_id:-},spanId=%X{span_id:-}] - %msg%n"/>
+
+    <!-- 控制台输出（仅输出到 stdout，k8s 会自动收集） -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 异步控制台输出（性能优化） -->
+    <appender name="ASYNC_CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+        <!-- 队列容量 -->
+        <queueSize>512</queueSize>
+        <!-- 丢弃级别：如果队列满了，丢弃 WARN 及以下级别的日志，保留 ERROR -->
+        <discardingThreshold>0</discardingThreshold>
+        <!-- 是否包含调用者信息 -->
+        <includeCallerData>false</includeCallerData>
+        <appender-ref ref="CONSOLE"/>
+    </appender>
+
+    <!-- 应用根 logger -->
+    <root level="${LOG_LEVEL}">
+        <appender-ref ref="ASYNC_CONSOLE"/>
+    </root>
+
+    <!-- 框架日志级别控制 -->
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.mybatis" level="INFO"/>
+    <logger name="com.axyz.ply" level="DEBUG"/>
+
+    <!-- HTTP 请求日志 -->
+    <logger name="com.richie.component.http" level="DEBUG"/>
+
+    <!-- OkHttp 日志 -->
+    <logger name="okhttp3" level="INFO"/>
+</configuration>

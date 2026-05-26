@@ -1,0 +1,117 @@
+# OpenTelemetry 配置示例
+# 将此文件复制为 application-otel.yml 并根据实际情况修改
+
+# ============================================================================
+# OpenTelemetry 导出配置
+# ============================================================================
+management:
+  otlp:
+    metrics:
+      # 启用 OTLP 导出（主开关）
+      enabled: true
+      
+      # OTLP Collector 地址
+      # 注意：使用 HTTP 协议时端口为 4318，gRPC 协议时端口为 4317
+      endpoint: http://localhost:4318/v1/metrics
+      
+      # 服务名称（会显示在监控系统中）
+      service-name: my-service
+      
+      # 超时时间（秒）
+      timeout-seconds: 30
+
+# ============================================================================
+# 高级配置（可选）
+# ============================================================================
+# 以下配置通常不需要修改，组件会自动设置
+# 如果需要自定义，可以取消注释并修改
+
+#otel:
+#  # OpenTelemetry SDK 配置
+#  sdk:
+#    disabled: false
+#  
+#  # 服务信息
+#  service:
+#    name: my-service
+#    version: 1.0.0
+#  
+#  # 导出器配置
+#  exporter:
+#    otlp:
+#      # 基础端点（组件会自动从 management.otlp.metrics.endpoint 提取）
+#      endpoint: http://localhost:4318
+#      
+#      # 协议类型：http/protobuf（默认）或 grpc
+#      protocol: http/protobuf
+#      
+#      # 超时时间
+#      timeout: 30s
+#      
+#      # 压缩方式：none（默认）、gzip
+#      compression: none
+#  
+#  # Traces 导出配置
+#  traces:
+#    exporter: otlp
+#    
+#    # 采样策略
+#    sampler:
+#      # always_on: 采样所有请求
+#      # always_off: 不采样
+#      # traceidratio: 按比例采样
+#      type: always_on
+#  
+#  # Metrics 导出配置
+#  metrics:
+#    exporter: otlp
+#  
+#  # Logs 导出配置
+#  logs:
+#    exporter: otlp
+
+# ============================================================================
+# 环境特定配置
+# ============================================================================
+
+---
+# 开发环境（默认禁用）
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+management:
+  otlp:
+    metrics:
+      enabled: false
+
+---
+# 测试环境
+spring:
+  config:
+    activate:
+      on-profile: test
+
+management:
+  otlp:
+    metrics:
+      enabled: true
+      endpoint: http://otel-collector.test.svc:4318/v1/metrics
+      service-name: my-service-test
+
+---
+# 生产环境
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+management:
+  otlp:
+    metrics:
+      enabled: true
+      endpoint: http://otel-collector.prod.svc:4318/v1/metrics
+      service-name: my-service-prod
+      timeout-seconds: 10
+

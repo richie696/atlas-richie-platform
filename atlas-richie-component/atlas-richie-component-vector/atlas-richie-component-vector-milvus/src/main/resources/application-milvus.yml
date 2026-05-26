@@ -1,0 +1,32 @@
+platform:
+  component:
+    vector:
+      provider: milvus
+      milvus:
+        # 基础连接配置
+        host: localhost
+        port: 19530
+        username: root
+        password: Milvus
+
+        # 数据库和集合配置
+        database-name: default
+        collection-name: documents
+        embedding-dimension: 1536
+        index-type: IVF_FLAT
+        metric-type: COSINE
+
+        # 连接池配置
+        connect-timeout-ms: 10000
+        keep-alive-time-ms: 30000
+        keep-alive-timeout-ms: 10000
+        keep-alive-without-calls: true
+        idle-timeout-ms: 300000
+
+        # SSL/TLS配置（可选）
+        secure: false
+        # server-pem-path: /path/to/server.pem
+        # server-name: milvus-server
+        # ca-cert-path: /path/to/ca.crt
+        # client-key-path: /path/to/client.key
+        # client-pem-path: /path/to/client.pem

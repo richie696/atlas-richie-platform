@@ -1,0 +1,31 @@
+platform:
+    component:
+        http:
+            provider: okhttp # 选择 OkHttp 作为 HTTP 客户端，生态成熟、性能稳定，默认即可
+            level: BASIC # 生产环境建议 BASIC：记录起止行与状态码，避免 BODY 级敏感/高开销日志
+
+            # 超时配置（通用推荐值，兼顾公网/三方接口波动）
+            connect-timeout: 5 # 连接超时 5s：公网 DNS/握手偶发慢，5s 兼顾可用性与失败快速
+            connect-timeout-time-unit: seconds # 以秒为单位，便于和其他 SLA 口径统一
+            read-timeout: 10 # 读取超时 10s：多数三方接口 200ms-3s 返回；10s 给重载/高峰冗余
+            read-timeout-time-unit: seconds # 秒级可读性更高
+            write-timeout: 10 # 写入超时 10s：适配大报文/慢网速上送场景
+            write-timeout-time-unit: seconds # 秒级单位
+            call-timeout-timeout: 30 # 整体调用上限 30s：兜底，防止请求卡死；兼容某些慢查询接口
+            call-timeout-time-unit: seconds # 秒级单位
+
+            # 连接池与并发（兼顾吞吐与后端保护）
+            max-requests: 250 # 客户端全局最大并发请求数：防止压垮本地资源
+            max-requests-per-host: 25 # 单主机并发上限：避免对单一三方域名的突发打满
+            keep-alive-duration: 5 # 连接保活 5 分钟：复用 TLS/握手，降低延迟与 CPU 消耗
+            keep-alive-time-unit: minutes # 分钟级更直观
+
+            # 缓存（默认关闭；多数 API 为实时数据，命中价值不高）
+            enable-cache: false # 按需开启：GET/幂等响应且三方允许缓存时可启用
+            cache-path: /opt/okhttp3/cache/ # 统一缓存目录，便于容器挂载与观测
+            cache-size: 100 # 100MB：足够多数简单 GET 接口；增大需评估磁盘与淘汰策略
+
+            # TLS/证书（生产环境务必保持安全）
+            insecure-trust-all: false # 禁止信任所有证书；仅联调/测试可暂时开启
+            hostname-verification: true # 启用主机名校验，防中间人攻击
+

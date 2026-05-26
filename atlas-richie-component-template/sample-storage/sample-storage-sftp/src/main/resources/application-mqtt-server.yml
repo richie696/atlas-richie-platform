@@ -1,0 +1,40 @@
+platform:
+    component:
+        mqtt:
+            # 是否启动项目时就执行连接（true：启动时连接，false：启动时不连接）
+            enable: true
+            # 客户端类型（可选值：aliyun、general）
+            type: general
+            # 幂等去重服务使用的数据源类型
+            datasource: memory
+            # MQTT 客户端类型（server：服务端，client：客户端）
+            client-type: server
+            # 根主题
+            parent-topic: richie696
+            # 分组ID
+            group-id: GID_test
+            server:
+                # 默认网络类型
+                default-network-type: PUBLIC
+                # MQTT 使用的交互协议
+                protocol: tcp
+                # MQTT 公网地址
+                host: 10.100.0.117
+                # MQTT 公网端口
+                port: 11883
+                # MQTT 内网地址
+                vpc-host: 10.100.0.117
+                # MQTT 内网端口
+                vpc-port: 11883
+                # 是否清空会话（true：清空，false：保留）
+                clear-session: false
+                # MQTT 服务器用户名
+                username: savills
+                # MQTT 服务器密码
+                password: Savills20191213
+                # QoS 等级
+                qos: 1
+                # 推送消息超时时长（单位：毫秒）
+                time-to-wait: 3000
+                # 服务器连接超时时长（单位：毫秒）
+                connection-timeout: 6000

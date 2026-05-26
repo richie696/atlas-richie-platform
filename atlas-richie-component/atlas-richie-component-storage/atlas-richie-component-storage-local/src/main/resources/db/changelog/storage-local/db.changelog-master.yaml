@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/storage-local/001-create-file-metadata.yaml
+  - include:
+      file: db/changelog/storage-local/002-add-metadata-state.yaml
+  - include:
+      file: db/changelog/storage-local/003-add-indexes-for-performance.yaml

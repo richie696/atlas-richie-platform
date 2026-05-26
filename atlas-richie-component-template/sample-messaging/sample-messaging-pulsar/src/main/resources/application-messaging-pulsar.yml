@@ -1,0 +1,149 @@
+spring:
+    main:
+        allow-bean-definition-overriding: true
+    # Pulsar 全局配置
+    pulsar:
+        client:
+            service-url: pulsar://10.100.0.90:6650
+            # Pulsar客户端与Broker的连接线程数
+            # 效果：
+            #   提高并发能力：增加 I/O 线程数可以提升客户端处理与 Pulsar broker 之间网络通信的能力，适合高负载场景。
+            #   减少延迟：在高并发情况下，更多的线程可以减少消息处理的排队时间，从而降低延迟。
+            # 可能的副作用：
+            #   资源消耗增加：更多的线程会占用更多的 CPU 和内存资源，可能导致系统资源不足，尤其是在资源有限的环境中。
+            #   线程上下文切换开销：线程数过多可能导致线程上下文切换频繁，从而降低整体性能。
+            #   配置不当可能导致性能下降：如果线程数设置过高，而负载不足，可能导致资源浪费，甚至影响其他服务的性能。
+            # 建议：
+            #   根据实际负载和硬件资源进行调整。
+            #   在生产环境中逐步调试，观察性能指标（如 CPU 使用率、延迟等）。
+            #   避免将线程数设置过高，超过硬件资源的承载能力。
+            #   调整此参数一定要根据实际生产环境的负载情况来进行测试、监控和修改。
+            threads:
+                io: 4
+                # Pulsar 客户端在处理消息监听器时分配的线程数量，此参数影响消息消费的并发能力和性能。
+                # 关联性：
+                #   独立性：这两个参数控制不同的线程池，分别用于 I/O 和消息监听，彼此独立。
+                #   潜在关联：如果你的应用需要高吞吐量，可能需要同时调整这两个参数以平衡 I/O 和消息处理的性能。例如：
+                #   如果 I/O 线程数不足，可能会导致连接瓶颈。
+                #   如果监听线程数不足，可能会限制消息消费的并发能力。
+                #修改建议：
+                #   根据应用的具体需求和负载情况调整。
+                #   如果你的应用在高负载下表现出 I/O 或消息处理的瓶颈，可以分别调整这两个参数。
+                #   监控应用性能，确保 I/O 和监听线程池的配置能够满足需求。
+                listener: 5
+        admin:
+            service-url: http://10.100.0.90:9080
+            # Pulsar Admin 客户端的连接超时时间
+            # 参数作用
+            #    定义客户端与 Pulsar Admin 服务建立连接的超时时间。
+            #    如果超时时间过短，在网络波动或服务压力较大时可能导致连接失败。
+            #    如果超时时间过长，可能会延迟故障检测，影响系统的快速恢复能力。
+            connection-timeout: 1m
+            # Pulsar Admin 客户端的读取超时时间
+            # 参数作用
+            #    定义客户端从 Pulsar Admin 服务读取数据的超时时间。
+            #    如果超时时间过短，可能导致读取操作频繁失败，影响系统的正常运行。
+            #    如果超时时间过长，可能会导致线程长时间阻塞，降低系统吞吐量。
+            read-timeout: 1m
+            # Pulsar Admin 客户端的写入超时时间
+            # 参数作用
+            #    定义客户端向 Pulsar Admin 服务发送请求的总超时时间（包括连接、读取等操作）。
+            #    如果超时时间过短，可能导致请求失败率上升，尤其是在高负载或网络延迟较高的情况下。
+            #    如果超时时间过长，可能会延迟失败请求的重试，影响系统的响应速度。
+            request-timeout: 5m
+
+
+    # Cloud 配置
+    cloud:
+        function:
+            definition: normalProcess;delayProcess
+            ineligible-definitions: empty
+        stream:
+            # 默认binder器
+            default-binder: pulsar
+            # 幂等去重服务使用的数据源类型
+            datasource: redis
+            binders:
+                # 实例别名，在bindings里面的in、out中进行引用，指定对应的topic使用的实例
+                pulsar:
+                    type: pulsar
+                    # Pulsar broker的连接地址
+                    environment:
+                        spring:
+                            pulsar:
+                                client:
+                                    service-url: pulsar://localhost:6650
+                                admin:
+                                    service-url: http://localhost:8080
+            # binding 相关配置
+            bindings:
+                # OUTPUT：交换器1输出通道
+                demo1-out-0:
+                    binder: pulsar
+                    # 指定当前队列所属Exchange
+                    destination: demo1Exchange
+                    # 指定当前队列的消息类型
+                    content-type: application/json
+                    group: normalGroup
+                # OUTPUT：交换器1输出通道
+                demo1-out-1:
+                    binder: pulsar
+                    # 指定当前队列所属Exchange
+                    destination: demo2Exchange
+                    # 指定当前队列的消息类型
+                    content-type: application/json
+                    group: test-queue
+                # OUTPUT：交换器2输出通道
+                demo2-out-0:
+                    binder: pulsar
+                    # 指定当前队列所属Exchange
+                    destination: demo2Exchange
+                    # 指定当前队列的消息类型
+                    content-type: application/json
+                    group: delayGroup
+
+                # INPUT：默认输入通道定义（如需多通道请复制该节点后修改自定义节点）
+                # 此处不要修改该INPUT，如果需要在项目中使用多个消费者监听，请
+                # 在下方自行添加消费者监听节点，此节点为默认消费者监听器，平台
+                # 组件提供了一套默认API
+                normalProcess-in-0:
+                    binder: pulsar
+                    # 指定当前队列所属Exchange
+                    destination: demo1Exchange,demo2Exchange,demo3Exchange,demo4Exchange
+                    # 指定当前队列的消息类型
+                    content-type: application/json
+                    # 当前消费者作为公共组的消费者，其他业务组请勿使用该Group
+                    group: normalGroup
+                    # 消费者相关配置
+                    consumer:
+                        # 最大尝试次数
+                        max-attempts: 3
+                        # 重试起始间隔时间
+                        back-off-initial-interval: 500
+                        # 重试最大间隔时间
+                        back-off-max-interval: 1000
+                        # 重试间隔时间乘数
+                        back-off-multiplier: 2.0
+
+                        concurrency: 10
+                delayProcess-in-0:
+                    binder: pulsar
+                    # 指定当前队列所属Exchange
+                    destination: demo2Exchange
+                    # 指定当前队列的消息类型
+                    content-type: application/json
+                    # 当前消费者作为公共组的消费者，其他业务组请勿使用该Group
+                    group: delayGroup
+                    # 消费者相关配置
+                    consumer:
+                        # 最大尝试次数
+                        max-attempts: 3
+                        # 重试起始间隔时间
+                        back-off-initial-interval: 500
+                        # 重试最大间隔时间
+                        back-off-max-interval: 1000
+                        # 重试间隔时间乘数
+                        back-off-multiplier: 2.0
+            rabbit:
+                binder:
+                    admin-addresses:

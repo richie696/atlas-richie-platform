@@ -1,0 +1,22 @@
+spring:
+    dynamic:
+        tp:
+            enabled: true
+            enabled-collect: true          # 是否开启监控指标采集，默认false
+            collector-types: micrometer,logging    # 监控数据采集器类型（logging | micrometer | internal_logging），默认micrometer
+            etcd:
+                authority:
+            monitor-interval: 5            # 监控时间间隔（报警判断、指标采集），默认5s
+            # okhttp3 线程池配置
+            okhttp3-tp:
+                -   thread-pool-name: okHttpTp
+                    core-pool-size: 10
+                    maximum-pool-size: 200
+                    keep-alive-time: 60
+            # tomcat webserver 线程池配置
+            tomcat-tp:
+                thread-pool-name: tomcatTp
+                core-pool-size: 10
+                maximum-pool-size: 200
+                keep-alive-time: 60
+

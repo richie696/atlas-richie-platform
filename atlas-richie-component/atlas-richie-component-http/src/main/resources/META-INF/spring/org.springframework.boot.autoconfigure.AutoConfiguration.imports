@@ -1,0 +1,4 @@
+com.richie.component.http.config.HttpAutoConfiguration
+com.richie.component.http.config.OkhttpConfiguration
+com.richie.component.http.config.HttpClient5Configuration
+

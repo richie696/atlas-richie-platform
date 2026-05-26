@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name"/>
+    <!-- 日志配置继承的父配置 -->
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+    <!-- 日志文件保存位置 -->
+    <property name="LOG_PATH" value="${user.home}/logs/${APP_NAME}"/>
+    <!-- 日志保留1天(云日志会自动搜集，无需长时间保存) -->
+    <property name="LOGBACK_ROLLINGPOLICY_MAX_HISTORY" value="1"/>
+    <!-- 控制台日志输出格式 -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%d{HH:mm:ss} [%thread] %-5level %logger{10} [traceId=%X{trace_id} spanId=%X{span_id}] %msg%n"/>
+    <!-- 文件日志输出格式 -->
+    <property name="FILE_LOG_PATTERN"
+              value="%d{HH:mm:ss} [%thread] %-5level %logger{10} [traceId=%X{trace_id} spanId=%X{span_id}] %msg%n"/>
+</configuration>

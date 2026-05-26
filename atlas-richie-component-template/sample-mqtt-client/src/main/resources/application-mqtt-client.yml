@@ -1,0 +1,48 @@
+platform:
+    component:
+        mqtt:
+            # 是否启用MQTT客户端
+            enable: true
+            # 是否在启动时就执行连接（true：启动时连接，false：启动时不连接）
+            init-client: true
+            # 客户端类型（可选值：ALIYUN、GENERAL）
+            type: general
+            # 幂等去重服务使用的数据源类型
+            datasource: memory
+            # MQTT 客户端类型（SERVER：服务端，CLIENT：客户端）
+            client-type: client
+            # 根主题
+            parent-topic: richie696
+            # 分组ID
+            group-id: GID_test
+            # 服务器配置
+            server:
+                # 默认网络类型
+                default-network-type: PUBLIC
+                # MQTT 使用的交互协议
+                protocol: tcp
+                # MQTT 公网地址
+                host: 10.100.0.117
+                # MQTT 公网端口
+                port: 11883
+                # MQTT 内网地址
+                vpc-host: 10.100.0.117
+                # MQTT 内网端口
+                vpc-port: 11883
+                # 是否清空会话（true：清空，false：保留）
+                clear-session: false
+                # MQTT 服务器用户名
+                username: savills
+                # MQTT 服务器密码
+                password: Savills20191213
+                # QoS 等级
+                qos: at_least_once
+                # 推送消息超时时长（单位：毫秒）
+                time-to-wait: 5000
+                # 服务器连接超时时长（单位：毫秒）
+                connection-timeout: 20000
+#                ssl:
+#                    ca-cert: MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsFADA5MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6b24gUm9vdCBDQSAxMB4XDTE1MDUyNjAwMDAwMFoXDTM4MDExNzAwMDAwMFowOTELMAkGA1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJvb3QgQ0EgMTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALJ4gHHKeNXjca9HgFB0fW7Y14h29Jlo91ghYPl0hAEvrAIthtOgQ3pOsqTQNroBvo3bSMgHFzZM9O6II8c+6zf1tRn4SWiw3te5djgdYZ6k/oI2peVKVuRF4fn9tBb6dNqcmzU5L/qwIFAGbHrQgLKm+a/sRxmPUDgH3KKHOVj4utWp+UhnMJbulHheb4mjUcAwhmahRWa6VOujw5H5SNz/0egwLX0tdHA114gk957EWW67c4cX8jJGKLhD+rcdqsq08p8kDi1L93FcXmn/6pUCyziKrlA4b9v7LWIbxcceVOF34GfID5yHI9Y/QCB/IIDEgEw+OyQmjgSubJrIqg0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAYYwHQYDVR0OBBYEFIQYzIU07LwMlJQuCFmcx7IQTgoIMA0GCSqGSIb3DQEBCwUAA4IBAQCY8jdaQZChGsV2USggNiMOruYou6r4lK5IpDB/G/wkjUu0yKGX9rbxenDIU5PMCCjjmCXPI6T53iHTfIUJrU6adTrCC2qJeHZERxhlbI1Bjjt/msv0tadQ1wUsN+gDS63pYaACbvXy8MWy7Vu33PqUXHeeE6V/Uq2V8viTO96LXFvKWlJbYK8U90vvo/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU5MsI+yMRQ+hDKXJioaldXgjUkK642M4UwtBV8ob2xJNDd2ZhwLnoQdeXeGADbkpyrqXRfboQnoZsG4q5WTP468SQvvG5
+#                    client-cert: MIIDWTCCAkGgAwIBAgIUbm6vJI27xd6xz0IPB236VX/tmDgwDQYJKoZIhvcNAQELBQAwTTFLMEkGA1UECwxCQW1hem9uIFdlYiBTZXJ2aWNlcyBPPUFtYXpvbi5jb20gSW5jLiBMPVNlYXR0bGUgU1Q9V2FzaGluZ3RvbiBDPVVTMB4XDTIzMDMxNTExMTY0M1oXDTQ5MTIzMTIzNTk1OVowHjEcMBoGA1UEAwwTQVdTIElvVCBDZXJ0aWZpY2F0ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALt5hcWCFiVIiSHUnx+TWIOvNOCI7IWuxputoudanIicwEJZfW925PIaZSJ5cmJIWeL3m70IkDfyPSnbrD8f1mprJEugsA/KGOeiRF9z3cVZFlVQDIAlAEZbAvX3C6QMfm1p0zkcWWyGiGQagrSMG2px3cKP7+nNRstZgKF5Z4FXX4h4Fhvu8rwVhpohemDtI/nZ2UDnG2bUrx0CFGPeR7U1GGLb3kW6SDE53/rQiYeIL0Z6pT/G01r3RPLW/MjMqAnglBhNhTbQEVGMGHecJRKTfUZs/PW4SRzCbzb3KOW3WKkESCpd/uGmCkJo/sMOIaY28sZQTPkl93AXbuWeWH0CAwEAAaNgMF4wHwYDVR0jBBgwFoAU5Cziw9S6BSs9gZrPKiPRvV5pq6wwHQYDVR0OBBYEFPkaAi+D7pRxaFktZ0gXMRIVWBESMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMA0GCSqGSIb3DQEBCwUAA4IBAQB/+UO8o2VxPDRDuwoZrprQZ1U2xGiJot/4lK9Ly15KWvgGEkr5MTPWj0e+LamOPCLBne091kkdCQGHSvHvtD7iQTqaUshAdDwh3sz5oMCz4rf4rQqQ42BJn5ruBRXNl5zaERkXHH+rfPRn8RZEG3z3n7lbqo3hu4o70ytMgI9RiDRmlaRXn3Cl1D8E8Ypc0WtqyOExZp/aW4G8/Ba4/DlOmyk8NZrjQW2tIgYY4zJ9W6BhcX2zzt5Xt3epIpz8Jy/c4th5at7Kzm0XX1gP5u/IuZt7dVi1Ufp48prP86DHqtfW/6AOjOxgF5P+ZnOwZO6f3QAFBju3w4bZv/YO0Pu7
+#                    client-key: MIIEpAIBAAKCAQEAu3mFxYIWJUiJIdSfH5NYg6804Ijsha7Gm62i51qciJzAQll9b3bk8hplInlyYkhZ4vebvQiQN/I9KdusPx/WamskS6CwD8oY56JEX3PdxVkWVVAMgCUARlsC9fcLpAx+bWnTORxZbIaIZBqCtIwbanHdwo/v6c1Gy1mAoXlngVdfiHgWG+7yvBWGmiF6YO0j+dnZQOcbZtSvHQIUY95HtTUYYtveRbpIMTnf+tCJh4gvRnqlP8bTWvdE8tb8yMyoCeCUGE2FNtARUYwYd5wlEpN9Rmz89bhJHMJvNvco5bdYqQRIKl3+4aYKQmj+ww4hpjbyxlBM+SX3cBdu5Z5YfQIDAQABAoIBAC1pc2jzaO/hES67tUvNwlwrnbBiGoELZBqjxdkqzs4cwkmQKd1NPIoUsLjYGEgMZJGhDv2MTHrw17YC+0dTK/odN+6F3wAEIWJCoTNJ+sdqHAnQWSbVT6q7Mw1nqU80o49XWg30ewjZ0cIF1fFsGtv+9wvBGAlXazWo2YrDwLnIiSYOZNOtSrFwnnngM8N89OLTbrUQZC5F3opIbOV6lZY6aLqgzSlOaAKOb0XEjbhtaaVL7OV0roH/wScESB5pWA9BqEx+yKkU4sek5Ij9hMd4ng8vfNnMzdTHhrw2yra+VSDAuqN1hMK5RBchgcgEjyUZrQmXT36NLiefJ0IZmxUCgYEA5IZ8Vxo/DXkuhAeBTMcbjnFhxbK1CEHWBMtL4pjgShv5ZfquPe9IrHQSQCi7cXUNkJpaB8GdzAHUd6KCF1e4EXqDtXkInRhRDnWXODmStcZw0A9Pu10XffJl1b79oCeE6Y8WtT/Pf0GSuThjqItWu0eLxwRv9V7oEgkZy8brdysCgYEA0gOWVOmgDcpOpzHoQD9bPuAkEUow1EIyuRaP6JUfpP1DQrvhMUrbLhlS4H+qUOaEdJq337Mwdp9kg1C6T3V5sMFLGx/XHlY8H3Eo0JodiA0LUVEFGVMx9zZWajlEtvOOoNk7ngpGHx+djS7DKDvnVv243BMUyFNK7j4XHkD8GvcCgYB1vay2m/k8keEbeVpvGm7iNxyu5WJMfM8t7SiN+UImLL+UgVHg6zZAVBVLJTFeRXbVuBEGygTpJVA4y2vHZxSZPMw7Zb7AYdTxZDijaVZjfXiGWj00RcRiyc8aD6tRJsteIrEKdXQNFtXnxFvkbNYk67nisjCU9W8QS8wUp8qNvQKBgQCZpLo0wP6xWBKWyzJI3pEYvM5mP8rdXtjRBCqgU4jlIcw1ZFJpx4P2g9xYFc46hYrd69sds3B/ODlGwKatPxqaL6+M1oyAy0INFrJvenCkejaPdSCv2GeznnM2H1OgLStpjcPJ6WZHms+e3Fk2dCzZPaIij2si65zkE1TCc3R9HQKBgQDDIxyyzsKKB8ZpiWsYIUnoGMc/upuncz7ySpicL1xG7j10Wdj6MryMpll/EpNMqhNgtYDbArCTMP9g4gwzU1cpupo9GyGj35qxN+sbK3qI2DmKVeoS82GWaSXQExQZHFibc5g3jvVDPDJ8rR8Mr/2Qya2MXCgji7YXBrI55TK7jw==
+

@@ -1,0 +1,55 @@
+databaseChangeLog:
+  - changeSet:
+      id: statemachine-002-create-history
+      author: statemachine
+      changes:
+        - createTable:
+            tableName: statemachine_state_history
+            remarks: 状态机历史记录表，用于持久化状态机的状态变更历史到数据库
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  remarks: 主键ID，自增
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_statemachine_state_history
+              - column:
+                  name: state_machine
+                  type: varchar(128)
+                  remarks: 状态机名称（如：payment、fulfillment、delivery），用于区分不同的状态机维度
+                  constraints:
+                    nullable: false
+              - column:
+                  name: business_id
+                  type: BIGINT
+                  remarks: 业务对象ID（如：订单ID），用于标识具体的业务对象。使用 BIGINT 类型以支持与业务表的数值型主键直接关联查询，避免类型转换带来的性能损失。
+                  constraints:
+                    nullable: false
+              - column:
+                  name: prev_state
+                  type: varchar(128)
+                  remarks: 前一个状态值（如：PENDING），状态变更前的状态
+              - column:
+                  name: curr_state
+                  type: varchar(128)
+                  remarks: 当前状态值（如：SUCCESS），状态变更后的状态
+                  constraints:
+                    nullable: false
+              - column:
+                  name: event_name
+                  type: varchar(128)
+                  remarks: 触发事件名称（如：START_PAYMENT、PAYMENT_SUCCESS），用于标识触发状态变更的事件
+              - column:
+                  name: occurred_at
+                  type: timestamp
+                  remarks: 发生时间，状态变更发生的业务时间（如：支付完成时间）
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: statemachine_state_history
+            columnNames: state_machine, business_id, occurred_at
+            constraintName: uq_statemachine_history_unique
+
+
