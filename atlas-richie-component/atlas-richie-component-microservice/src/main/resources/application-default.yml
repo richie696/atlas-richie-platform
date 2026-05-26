@@ -1,0 +1,32 @@
+# OpenFeign OkHttp 默认配置
+spring:
+    cloud:
+        openfeign:
+            okhttp:
+                enabled: true
+            httpclient:
+                # 连接池配置
+                max-connections: 200
+                max-connections-per-route: 50
+                time-to-live: 5
+                time-to-live-unit: minutes
+
+                # Okhttp客户端配置
+                ok-http:
+                    # 超时配置（生产环境推荐值）
+                    read-timeout: 20s
+                    connect-timeout: 8s
+                    write-timeout: 15s
+                    call-timeout: 50
+
+                    # 日志配置（开发环境可以考虑用BODY，生产使用BASIC，否则日志会爆炸）
+                    level: basic
+
+                    # 缓存配置（生产环境默认关闭）
+                    enable-cache: false
+                    cache-path: /tmp/okhttp3/cache/
+                    cache-size: 100
+
+                    # 安全配置（生产环境安全设置）
+                    insecure-trust-all: false
+                    hostname-verification: true

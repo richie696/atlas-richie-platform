@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: statemachine-005-add-seq-columns
+      author: statemachine
+      changes:
+        - addColumn:
+            tableName: statemachine_state_current
+            columns:
+              - column:
+                  name: seq
+                  type: BIGINT
+                  remarks: 状态迁转序列号（单实例单调递增，用于乱序防护）
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: statemachine_state_history
+            columns:
+              - column:
+                  name: seq
+                  type: BIGINT
+                  remarks: 状态迁转序列号（单实例单调递增，用于幂等去重）
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: statemachine_state_current
+            indexName: idx_st_current_seq
+            columns:
+              - column:
+                  name: seq
+        - createIndex:
+            tableName: statemachine_state_history
+            indexName: idx_st_history_seq
+            columns:
+              - column:
+                  name: state_machine
+              - column:
+                  name: business_id
+              - column:
+                  name: seq
+        - addUniqueConstraint:
+            tableName: statemachine_state_history
+            columnNames: state_machine, business_id, seq
+            constraintName: uq_st_history_machine_business_seq
+

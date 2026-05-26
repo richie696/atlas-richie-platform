@@ -1,0 +1,69 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.richie.base</groupId>
+        <artifactId>atlas-richie-dependencies</artifactId>
+        <version>${revision}</version>
+        <relativePath>../atlas-richie-base/atlas-richie-dependencies/pom.xml</relativePath>
+    </parent>
+
+    <name>atlas-richie-component</name>
+    <description>Richie技术中台组件</description>
+
+    <groupId>com.richie.component</groupId>
+    <artifactId>atlas-richie-component</artifactId>
+    <packaging>pom</packaging>
+
+    <properties>
+        <maven.version>3.9.0</maven.version>
+        <main.basedir>${basedir}</main.basedir>
+    </properties>
+
+    <modules>
+        <!-- RichieAI服务组件 -->
+        <module>atlas-richie-component-ai</module>
+        <!-- 通用缓存服务组件 -->
+        <module>atlas-richie-component-cache</module>
+        <!-- 通用数据库访问层服务组件 -->
+        <module>atlas-richie-component-dao</module>
+        <!-- 组件依赖关系管理 -->
+        <module>atlas-richie-component-dependencies</module>
+        <!-- HTTP/HTTPS 客户端组件 -->
+        <module>atlas-richie-component-http</module>
+        <!-- 国际化组件 -->
+        <module>atlas-richie-component-i18n</module>
+        <!-- 通用 Liquibase 组件 -->
+        <module>atlas-richie-component-liquibase</module>
+        <!-- 通用消息队列服务组件 -->
+        <module>atlas-richie-component-messaging</module>
+        <!-- 通用MongoDB客户端服务组件 -->
+        <module>atlas-richie-component-mongodb</module>
+        <!-- 通用MQTT客户端服务组件 -->
+        <module>atlas-richie-component-mqtt</module>
+        <!-- 通用MFA服务组件 -->
+        <module>atlas-richie-component-mfa</module>
+        <!-- 微服务通用组件 -->
+        <module>atlas-richie-component-microservice</module>
+        <!-- 通用切面日志服务组件 -->
+        <module>atlas-richie-component-logging</module>
+        <!-- 通用追踪组件 -->
+        <module>atlas-richie-component-tracing</module>
+        <!-- 动态线程池组件 -->
+        <module>atlas-richie-component-threadpool</module>
+        <!-- 通用 Spring MVC 服务组件 -->
+        <module>atlas-richie-component-web</module>
+        <!-- APM 监控组件 -->
+        <module>atlas-richie-component-skywalking</module>
+        <!-- 通用存储服务组件 -->
+        <module>atlas-richie-component-storage</module>
+        <!-- 向量数据库组件 -->
+        <module>atlas-richie-component-vector</module>
+        <!-- 状态机组件 -->
+        <module>atlas-richie-component-statemachine</module>
+        <!-- Elasticsearch 组件 -->
+        <module>atlas-richie-component-search</module>
+    </modules>
+
+</project>

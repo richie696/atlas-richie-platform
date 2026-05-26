@@ -1,0 +1,10 @@
+platform:
+  component:
+    liquibase:
+      # 默认不开启，避免多模块冲突；业务侧需要时自行开启
+      enable: true
+      # 默认通配扫描所有 jar 内的 master 文件
+      change-logs:
+        - classpath*:db/changelog/**/db.changelog-master.yaml
+      # 默认执行模式（非 dry-run），业务侧如需仅输出 SQL 可改为 true
+      dry-run: false

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.richie.component</groupId>
+        <artifactId>atlas-richie-component-storage</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>atlas-richie-component-storage-ks3</artifactId>
+    <name>atlas-richie-component-storage-ks3</name>
+    <description>Richie对象存储组件 - 金山云KS3</description>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.richie.component</groupId>
+            <artifactId>atlas-richie-component-storage-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- 金山云 KS3 对象存储 SDK -->
+        <dependency>
+            <groupId>com.ksyun</groupId>
+            <artifactId>ks3-kss-java-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+
+</project>

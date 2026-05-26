@@ -1,0 +1,119 @@
+spring:
+    cache:
+        redis:
+            # 不允许缓存null值
+            cache-null-values: false
+    data:
+        # Redis连接配置
+        redis:
+            # 启用 L2 缓存（默认：false）
+            enable-l2-caching: true
+            # 启用 L2 缓存数据类型（默认：无，支持类型：string, hash, set, list）
+            l2-caching-data:
+                - string
+                - hash
+            # 启用 Redisson 锁（默认：false）
+            enable-redisson-lock: true
+            # Redis服务类型（根据此处的设置来确定下方使用哪种模式，可用值：standalone、sentinel、cluster）
+            server-type: standalone
+            # Redis客户端名称
+            client-name: platform-redis
+            # Redis客户端类型
+            client-type: lettuce
+            # Redis 主机地址
+            host: 127.0.0.1
+            # Redis 主机端口
+            port: 16379
+            # Redis 主机密码
+            password: Redis2025!Local
+            # 连接的库索引
+            database: 15
+            # 读取超时时间
+            timeout: 2000m
+            # 连接超时时长
+            connect-timeout: 5000
+            # 是否启用SSL
+            ssl:
+                enabled: false
+            # lettuce 配置
+            lettuce:
+                # 连接池配置
+                pool:
+                    # 是否启用连接池
+                    enabled: true
+                    # 连接池最大连接数（使用负值表示没有限制）
+                    max-active: 100
+                    # 连接池中的最大空闲连接
+                    max-idle: 10
+                    # 连接池中的最小空闲连接
+                    min-idle: 5
+                    # 连接池最大阻塞等待时间（使用负值表示没有限制）
+                    max-wait: 10000
+                    # 空闲连接回收的时间间隔，与test-while-idle一起使用，设置5分钟
+                    time-between-eviction-runs: 300000
+                # 客户端连接保活策略配置（采用Linux的Epoll模型，仅支持Linux x86_64、aarch64 和 riscv64 版本，其他系统不可用）
+                # 在非Linux系统下会收到lettuce的⚠️警告日志，无法应用该配置用于Socket通道
+                cluster:
+                    # 集群状态刷新配置
+                    refresh:
+                        # 该配置位于Spring Boot Redis Lettuce客户端的集群刷新配置中，它控制是否启用自适应集群拓扑刷新。
+                        #
+                        # 当这个选项设置为true时，Lettuce客户端将启用自适应拓扑刷新功能，这意味着它会使用所有可用的刷新
+                        # 触发器来自动更新Redis集群的拓扑结构。在实际应用中，这使得客户端能够在以下情况下自动刷新集群拓扑信息：
+                        #   * 当收到Redis集群节点变更的通知时
+                        #   * 当出现集群重定向错误（MOVED/ASK重定向）时
+                        #   * 当定期刷新时间到达时（由period参数控制）
+                        #   * 这个功能对于维护与Redis集群的可靠连接非常重要，特别是在集群节点发生变化时（如添加新节点、节点故障转移等场景），能够确保客户端及时获取最新的集群拓扑结构。
+                        adaptive: true
+                        # 主动刷新的间隔时间
+                        period: 30s
+                        # 在 Spring Boot Redis Lettuce 客户端配置中，dynamic-refresh-sources 参数控制集群拓扑刷新的节点来源。
+                        #
+                        # 当设置为 true 时（默认值），Lettuce 客户端会发现并查询所有集群节点来获取集群拓扑信息。这意味着客户端在更
+                        # 新集群状态时不仅仅依赖初始配置的种子节点，而是会使用所有已知的集群节点作为拓扑信息的来源。
+                        #
+                        # 当设置为 false 时，客户端只会使用初始配置的种子节点（即 spring.data.redis.cluster.nodes 中指定的节点
+                        # 列表）作为拓扑发现的来源。
+                        #
+                        # 这个配置在大型 Redis 集群环境中特别重要，因为它影响：
+                        #  * 集群拓扑信息的全面性
+                        #  * 在部分节点不可用时的弹性能力
+                        #  * 集群状态刷新的可靠性
+                        # 通常，除非有特殊需求，建议保持为 true，以确保客户端能够获取最完整的集群拓扑信息。
+                        dynamic-refresh-sources: true
+                keep-alive:
+                    # 是否启用保活策略
+                    enabled: true
+                    # TCP连接在彻底断开前至少发送的探针数量
+                    count: 6
+                    # 探针检测空闲连接时长
+                    idle: 90
+                    # 探针检测空闲连接时长单位
+                    idle-unit: seconds
+                    # 探针检测间隔时长
+                    interval: 60
+                    # 探针检测间隔时长单位
+                    interval-unit: seconds
+                    # TCP用户超时阈值时长
+                    #（Netty推荐配置该值的公式：idle + count * interval【请勿乱配】
+                    # 过于密集影响服务器性能，过于稀疏可能起不到效果）
+                    tcp-user-timeout: 450
+                    # TCP用户超时阈值时长单位
+                    tcp-user-timeout-unit: seconds
+
+        local:
+            # 本地缓存配置
+            cache-definitions:
+                # 全局本地缓存
+                -   name: template_cache
+                    # 过期时间
+                    expiry: 60
+                    # 过期时间单位
+                    expiry-unit: minutes
+                    # 过期策略（可用值：accessed、touched、created、eternal、modified）
+                    expiry-policy: accessed
+                    # 以引用类型存储
+                    store-by-value: false
+                    # 是否开启统计
+                    statistics-enabled: true
+            provider: caffeine

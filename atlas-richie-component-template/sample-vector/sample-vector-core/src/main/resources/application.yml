@@ -1,0 +1,13 @@
+server:
+  port: 9520
+
+spring:
+  application:
+    name: sample-vector-core
+
+logging:
+  level:
+    root: info
+    com.richie.component.vector: debug
+
+

@@ -1,0 +1,32 @@
+server:
+  port: 9518
+
+spring:
+  application:
+    name: sample-mongodb-basic
+
+logging:
+  level:
+    root: info
+    org.springframework.data.mongodb: info
+    com.richie.component.mongodb: debug
+
+platform:
+  component:
+    mongodb:
+      # 推荐优先使用 URI，兼容 SRV/Atlas 与多节点连接串
+      uri: ${MONGODB_URI:mongodb://localhost:27017/sample}
+      # 如未使用 uri，可按需启用下列分项配置
+      host: ${MONGODB_HOST:localhost}
+      port: ${MONGODB_PORT:27017}
+      database: ${MONGODB_DB:sample}
+      username: ${MONGODB_USERNAME:}
+      password: ${MONGODB_PASSWORD:}
+      # 连接池与超时（按 README 建议的合理默认）
+      max-connections: 100
+      min-connections: 0
+      connect-timeout-ms: 5000
+      socket-timeout-ms: 60000
+      max-wait-time-ms: 120000
+
+

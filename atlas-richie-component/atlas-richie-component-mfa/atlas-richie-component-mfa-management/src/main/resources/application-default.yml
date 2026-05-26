@@ -1,0 +1,11 @@
+spring:
+    liquibase:
+        enabled: false   # 由业务应用统一开启，避免多模块冲突
+
+# 润典日志组件默认配置
+platform:
+    component:
+        logging:
+            # 数据库模式管理配置
+            schema:
+                enable-liquibase: true

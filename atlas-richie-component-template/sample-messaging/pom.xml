@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.richie.sample</groupId>
+        <artifactId>atlas-richie-component-template</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>sample-messaging</artifactId>
+    <name>消息队列组件示例服务</name>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>sample-messaging-core</module>
+        <module>sample-messaging-rabbitmq</module>
+        <module>sample-messaging-rocketmq</module>
+        <module>sample-messaging-pulsar</module>
+        <module>sample-messaging-kafka</module>
+        <module>sample-messaging-servicebus</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.richie.sample</groupId>
+                <artifactId>sample-messaging-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>

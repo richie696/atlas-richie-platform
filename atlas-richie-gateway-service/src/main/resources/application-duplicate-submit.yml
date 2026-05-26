@@ -1,0 +1,47 @@
+# 防重复提交配置
+platform:
+    gateway:
+        duplicate-submit:
+            # 是否启用防重复提交功能
+            enabled: true
+
+            # 需要防重复提交的路径模式（支持Ant风格路径匹配）
+            include-paths:
+                - "/api/**"
+                - "/api/user/**"
+                - "/api/order/**"
+                - "/api/payment/**"
+
+            # 不需要防重复提交的路径模式（优先级高于include-paths）
+            exclude-paths:
+                - "/api/health/**"
+                - "/api/public/**"
+                - "/api/crypto/exchange"
+                - "/api/auth/login"
+                - "/api/auth/logout"
+
+            # 防重复提交的时间窗口（毫秒）
+            # 默认3秒内不允许重复提交
+            time-window: 3000
+
+            # 缓存过期时间（毫秒）
+            # 建议设置为time-window的2-3倍
+            cache-expire: 10000
+
+            # 是否启用请求体哈希校验
+            # 如果启用，相同请求体在时间窗口内也会被拦截
+            enable-body-hash: true
+
+            # 是否启用用户级别防重复提交
+            # 如果启用，同一用户在同一时间窗口内不能重复提交
+            enable-user-level: true
+
+            # 是否启用IP级别防重复提交
+            # 如果启用，同一IP在同一时间窗口内不能重复提交
+            enable-ip-level: true
+
+            # 错误消息
+            error-message: "请求过于频繁，请稍后再试"
+
+            # 错误码
+            error-code: "DUPLICATE_SUBMIT"

@@ -1,0 +1,116 @@
+# Neo4j 向量数据库配置示例
+# 生产环境最佳实践配置
+
+platform:
+  component:
+    vector:
+      provider: neo4j
+      neo4j:
+        # 基础连接配置
+        uri: "bolt://neo4j-cluster.example.com:7687"
+        username: "${NEO4J_USERNAME:neo4j}"
+        password: "${NEO4J_PASSWORD:password}"
+        
+        # 连接池配置（生产环境推荐）
+        max-connection-pool-size: 100          # 最大连接池大小
+        min-connection-pool-size: 10           # 最小连接池大小
+        max-connection-lifetime-millis: 3600000  # 连接最大生命周期：1小时
+        connection-idle-timeout-millis: 1800000  # 连接空闲超时：30分钟
+        
+        # 超时配置
+        connection-acquisition-timeout-millis: 30000  # 获取连接超时：30秒
+        connection-timeout-millis: 10000              # 连接超时：10秒
+        connection-validation-timeout-millis: 5000    # 连接验证超时：5秒
+        max-transaction-retry-time-millis: 30000      # 事务重试最大时间：30秒
+        
+        # 连接验证
+        connection-validation-enabled: true
+        
+        # 负载均衡配置（集群环境）
+        # 注意：Neo4j Driver的负载均衡主要通过URI配置实现
+        # 集群URI格式：neo4j://host1:port1,host2:port2,host3:port3
+        # 或者使用bolt+routing://协议
+        load-balancing-enabled: true
+        load-balancing-strategy: "least_connected"  # 主要用于日志记录和监控
+        
+        # 重试策略配置
+        retry-strategy: "exponential_backoff"        # 可选：exponential_backoff, fixed_delay
+        max-retry-attempts: 5                        # 最大重试次数
+        retry-delay-millis: 1000                     # 初始重试延迟：1秒
+        max-retry-delay-millis: 60000                # 最大重试延迟：60秒
+        
+        # 安全配置
+        encryption-enabled: true
+        trust-strategy: "trust_system_certificates"  # 可选：trust_system_certificates, trust_all_certificates, trust_custom_ca_signed_certificates
+        # custom-ca-certificate-path: "/path/to/ca-certificate.pem"  # 自定义CA证书路径
+        
+        # 客户端证书配置（可选）
+        client-certificate-enabled: false
+        # client-certificate-path: "/path/to/client-certificate.pem"
+        # client-private-key-path: "/path/to/client-private-key.pem"
+        
+        # 应用标识
+        application-name: "richie-vector-service-prod"
+        
+        # 监控配置
+        connection-pool-monitoring-enabled: true
+        connection-pool-monitoring-interval-millis: 60000  # 监控间隔：1分钟
+        
+        # 日志配置
+        query-logging-enabled: false              # 生产环境建议关闭查询日志
+        query-logging-level: "INFO"               # 可选：DEBUG, INFO, WARN, ERROR
+        
+        # 性能监控
+        performance-monitoring-enabled: true
+        performance-monitoring-sampling-rate: 0.1  # 采样率：10%
+
+---
+# 开发环境配置示例
+spring:
+  profiles: dev
+
+platform:
+  component:
+    vector:
+      neo4j:
+        uri: "bolt://localhost:7687"
+        username: "neo4j"
+        password: "password"
+        
+        # 开发环境使用较小的连接池
+        max-connection-pool-size: 20
+        min-connection-pool-size: 2
+        
+        # 开发环境启用查询日志
+        query-logging-enabled: true
+        query-logging-level: "DEBUG"
+        
+        # 开发环境关闭加密（如果Neo4j未配置SSL）
+        encryption-enabled: false
+        
+        # 开发环境应用名称
+        application-name: "richie-vector-service-dev"
+
+---
+# 测试环境配置示例
+spring:
+  profiles: test
+
+platform:
+  component:
+    vector:
+      neo4j:
+        uri: "bolt://test-neo4j.example.com:7687"
+        username: "${NEO4J_TEST_USERNAME}"
+        password: "${NEO4J_TEST_PASSWORD}"
+        
+        # 测试环境配置
+        max-connection-pool-size: 50
+        min-connection-pool-size: 5
+        
+        # 测试环境启用监控
+        connection-pool-monitoring-enabled: true
+        performance-monitoring-enabled: true
+        
+        # 测试环境应用名称
+        application-name: "richie-vector-service-test" 

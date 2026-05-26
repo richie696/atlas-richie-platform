@@ -1,0 +1,36 @@
+server:
+    port: 8080
+
+spring:
+    application:
+        name: sample-storage-local
+    servlet:
+        multipart:
+            max-file-size: 100MB
+            max-request-size: 100MB
+
+# 本地存储配置
+platform:
+    component:
+        storage:
+            local:
+                enable: true
+                # 本地存储路径，请根据实际情况修改
+                path: /tmp/storage/local
+                cache:
+                    # 是否启用缓存
+                    enable: true
+                    # 缓存最大条数
+                    max-size: 1000
+                schema:
+                    # 是否自动建表
+                    auto-create: true
+                cleanup:
+                    # 是否启用清理
+                    enable: false
+                    # 清理周期（天）
+                    days: 30
+
+logging:
+    level:
+        com.richie: DEBUG

@@ -1,0 +1,139 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-mfa-user-info-table
+      author: richie-platform
+      changes:
+        - createTable:
+            tableName: mfa_user_info
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: true
+                  remarks: "租户ID（可选，如果系统没有租户概念则为NULL）"
+              - column:
+                  name: user_id
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+                  remarks: "业务系统User表的主键ID（只关联主键，不存储其他用户信息）"
+              - column:
+                  name: device_type
+                  type: VARCHAR(32)
+              - column:
+                  name: algorithm
+                  type: VARCHAR(16)
+                  defaultValue: SHA1
+              - column:
+                  name: digits
+                  type: INT
+                  defaultValueNumeric: 6
+              - column:
+                  name: period
+                  type: INT
+                  defaultValueNumeric: 30
+              - column:
+                  name: status
+                  type: TINYINT
+                  defaultValueNumeric: 0
+                  remarks: "0=未激活，1=已启用，2=已禁用"
+              - column:
+                  name: bind_time
+                  type: TIMESTAMP
+              - column:
+                  name: activated_time
+                  type: TIMESTAMP
+              - column:
+                  name: last_used_time
+                  type: TIMESTAMP
+              - column:
+                  name: failed_attempts
+                  type: INT
+                  defaultValueNumeric: 0
+              - column:
+                  name: locked_until
+                  type: TIMESTAMP
+              - column:
+                  name: key_rotation_time
+                  type: TIMESTAMP
+              - column:
+                  name: backup_codes_hashed
+                  type: TEXT
+              - column:
+                  name: create_id
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: true
+                  remarks: "创建人ID（BaseDomain字段）"
+              - column:
+                  name: create_time
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  remarks: "创建时间（BaseDomain字段）"
+              - column:
+                  name: update_id
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: true
+                  remarks: "更新人ID（BaseDomain字段）"
+              - column:
+                  name: update_time
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  remarks: "更新时间（BaseDomain字段）"
+              - column:
+                  name: deleted
+                  type: TINYINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+                  remarks: "删除标识（BaseDomain字段，0=未删除，1=已删除）"
+        # 唯一约束处理：
+        # 由于tenant_id可能为NULL，MySQL的唯一索引允许多个NULL值（NULL != NULL）
+        #
+        # 策略说明：
+        # 1. 创建(tenant_id, user_id)的唯一索引：当tenant_id不为NULL时，保证(tenant_id, user_id)唯一
+        # 2. 创建user_id的唯一索引（条件唯一）：当tenant_id为NULL时，保证user_id唯一
+        #
+        # 注意：MySQL不支持条件唯一索引，因此需要应用层保证：
+        # - 当tenant_id为NULL时，user_id必须唯一（通过应用层检查）
+        # - 当tenant_id不为NULL时，(tenant_id, user_id)唯一（由数据库唯一索引保证）
+        #
+        # 实际实现：
+        # - 创建(tenant_id, user_id)的唯一索引（允许不同租户有相同的user_id）
+        # - 创建user_id的普通索引（用于查询优化，不保证唯一）
+        # - 应用层在bindDevice()方法中检查：当tenant_id为NULL时，user_id是否已存在
+        - createIndex:
+            tableName: mfa_user_info
+            indexName: mfa_idx_user_info_user_id
+            columns:
+              - column:
+                  name: user_id
+        # 组合唯一索引：当tenant_id不为NULL时，保证(tenant_id, user_id)唯一
+        # 当tenant_id为NULL时，MySQL允许多个NULL值，需要应用层保证user_id唯一
+        - createIndex:
+            tableName: mfa_user_info
+            indexName: mfa_uk_user_info_tenant_user
+            columns:
+              - column:
+                  name: tenant_id
+              - column:
+                  name: user_id
+            unique: true
+        - createIndex:
+            tableName: mfa_user_info
+            indexName: mfa_idx_user_info_status
+            columns:
+              - column:
+                  name: status

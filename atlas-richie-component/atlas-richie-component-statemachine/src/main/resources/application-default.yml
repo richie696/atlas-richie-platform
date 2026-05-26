@@ -1,0 +1,103 @@
+spring:
+    liquibase:
+        enabled: true
+        change-log: classpath:db/changelog/statemachine/db.changelog-master.yaml
+
+# 状态机组件配置
+platform:
+    component:
+        statemachine:
+            # 是否启用状态机
+            enabled: true
+
+            # 规则引擎配置
+            rules-engine:
+                # 是否跳过失败的规则
+                skip-on-first-failed-rule: false
+                # 是否跳过第一个应用的规则
+                skip-on-first-applied-rule: false
+                # 是否跳过第一个非触发的规则
+                skip-on-first-non-triggered-rule: false
+
+            # Redis 存储配置（仅在 storage-type=REDIS 时生效）
+            redis-stream:
+                # Redis缓存键前缀，用于归类和管理状态机相关的Redis key
+                # 默认值：platform:statemachine
+                # 最终生成的key格式：{keyPrefix}:state:{stateMachineName}:{businessId}
+                # 示例：platform:statemachine:state:order:123456
+                key-prefix: platform:statemachine
+                # 状态数据过期时间（单位：毫秒），仅对历史记录生效
+                # 当前状态永不过期，建议通过 cleanup 配置定期清理终态数据
+                timeout: 2592000000
+                # 终态自动清理配置
+                cleanup:
+                    enabled: true               # 是否启用自动清理（默认：不启用）
+                    batch-size: 500             # 单次触发清理批次数量
+                    clean-interval-ms: 3600000  # 清理任务时间间隔，毫秒级
+                    ttl-days: 30                # 清理三十天前的数据
+            # 存储类型：REDIS（使用 Redis 存储，需要 Redis 支持）或 ASYNC_DB（直接异步持久化到数据库，不依赖 Redis）
+            storage-type: REDIS  # REDIS | ASYNC_DB
+            # 数据库持久化模式：ASYNC（默认，异步） | SYNC（同步）
+            db-persistence-mode: ASYNC
+            # 严格持久化模式校验：当全局为 SYNC 时，不允许状态级覆盖为 ASYNC
+            strict-persistence-mode: true
+            # 同步落库失败重试次数
+            sync-retry-times: 2
+            # 同步落库重试间隔（毫秒）
+            sync-retry-interval-ms: 100
+            # 异步数据库持久化配置（仅在 storage-type=ASYNC_THREAD 时生效）
+            thread-pool:
+                enabled: true  # 是否启用异步数据库持久化
+                # 批量保存配置
+                batch-size: 200  # 批量写入数据库的记录数，达到此数量时触发批量写入
+                # 最大缓冲条数（触发紧急刷写），当缓冲区达到此大小时立即触发刷写
+                buffer-capacity: 10000
+                # 定时刷新间隔（毫秒），定期检查缓冲区，如果有数据则触发刷写，确保数据及时持久化
+                flush-interval-ms: 2000
+                # 注意：使用虚拟线程执行器，由 JVM 自动管理，无需配置线程池大小
+    # Redis Stream 消费者配置（用于数据库持久化）
+    cache:
+        redis:
+            stream:
+                consumers:
+                    enabled: true
+                    configs:
+                        # 状态同步消费者配置
+                        state-sync:
+                            # Stream key（会自动使用 keyBuilder.buildDbSyncStreamKey()）
+                            stream-key: platform:statemachine:db:sync
+                            # 消费者组名
+                            group: statemachine-db-sync-group
+                            # 消费者名称（每个实例应该不同，建议使用实例ID或主机名）
+                            consumer: statemachine-db-sync-consumer
+                            # 消息类型
+                            target-type: com.richie.component.statemachine.event.StateSyncMessage
+                            # 单次拉取消息数量（批量拉取多条消息）
+                            count: 50
+                            # 并发处理数（建议设置为CPU核心数，框架默认值为CPU核心数的一半）
+                            # 可以通过环境变量 STATEMACHINE_DB_SYNC_CONCURRENCY 设置，或直接在此配置
+                            # 示例：如果CPU是8核，设置为 concurrency: 8
+                            # 或者通过环境变量：export STATEMACHINE_DB_SYNC_CONCURRENCY=8
+                            concurrency: ${STATEMACHINE_DB_SYNC_CONCURRENCY:8}
+                            # 自动确认消息
+                            auto-ack: true
+                            # 错误处理策略
+                            error-strategy: SKIP
+                            # 是否启用幂等去重
+                            idempotency-enabled: true
+                            # 自动启动
+                            auto-start: true
+                            # Stream 最大保留消息数（用于自动清理已消费的消息）
+                            # 设置为 0 表示不限制，不清理（默认）
+                            # 设置为正数：保留最新的 maxLen 条消息，自动清理旧消息
+                            # 建议值：根据业务需求和消息量设置，例如 10000、50000 等
+                            max-len: 10000
+                    # Stream 清理服务配置
+                    cleanup:
+                        interval: 1h  # 清理间隔，支持 Duration 格式（如：1h、30m、PT1H），默认1小时
+                        # Stream 最大保留消息数（全局默认值）
+                        # 如果某个消费者配置中没有设置 max-len 或设置为 0，则使用此全局默认值
+                        # 设置为 0 表示不限制，不清理（默认）
+                        # 设置为正数：保留最新的 defaultMaxLen 条消息，自动清理旧消息
+                        # 建议值：根据业务需求和消息量设置，例如 10000、50000 等
+                        default-max-len: 10000

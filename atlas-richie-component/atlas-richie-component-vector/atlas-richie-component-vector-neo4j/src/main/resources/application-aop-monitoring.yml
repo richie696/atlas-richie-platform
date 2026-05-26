@@ -1,0 +1,72 @@
+# Neo4j AOP 慢查询监控配置示例
+# 复制此配置到您的 application.yml 中
+
+platform:
+  component:
+    vector:
+      # 向量数据库提供商
+      provider: neo4j
+      
+      neo4j:
+        # ==================== 基础连接配置 ====================
+        uri: "bolt://localhost:7687"
+        username: "neo4j"
+        password: "password"
+        database: "neo4j"
+        
+        # ==================== AOP 慢查询监控配置 ====================
+        # 启用慢查询监控
+        slow-query-monitoring-enabled: true
+        
+        # 慢查询阈值（毫秒）- 超过此时间的查询将被记录
+        slow-query-threshold-millis: 1000
+        
+        # ==================== 连接池配置 ====================
+        max-connection-pool-size: 50
+        max-connection-lifetime-millis: 3600000  # 1小时
+        connection-idle-timeout-millis: 1800000  # 30分钟
+        connection-acquisition-timeout-millis: 10000  # 10秒
+        connection-timeout-millis: 5000  # 5秒
+        
+        # ==================== 安全配置 ====================
+        encryption-enabled: true
+        trust-strategy: "trust_system_certificates"
+        
+        # ==================== 其他监控配置 ====================
+        # 连接池监控
+        connection-pool-monitoring-enabled: true
+        connection-pool-monitoring-interval-millis: 60000  # 1分钟
+        
+        # 性能监控
+        performance-monitoring-enabled: true
+        performance-monitoring-sampling-rate: 0.1
+        
+        # 连接泄漏检测
+        connection-leak-detection-enabled: true
+        connection-leak-detection-threshold-millis: 60000  # 1分钟
+        
+        # 健康检查
+        health-check-enabled: true
+        health-check-interval-millis: 30000  # 30秒
+        health-check-timeout-millis: 5000  # 5秒
+
+# ==================== AOP 配置 ====================
+spring:
+  aop:
+    auto: true
+    proxy-target-class: true
+
+# ==================== 日志配置 ====================
+logging:
+  level:
+    com.richie.component.vector.aspect: INFO
+    com.richie.component.vector.service: INFO
+    org.aspectj: DEBUG  # 可选：查看 AOP 拦截日志
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# ==================== 服务器配置 ====================
+server:
+  port: 8080
+  servlet:
+    context-path: / 

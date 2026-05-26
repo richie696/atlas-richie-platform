@@ -1,0 +1,3 @@
+com.richie.component.mfa.management.config.MfaManagementAutoConfiguration
+com.richie.component.mfa.core.config.MfaAutoConfiguration
+com.richie.component.mfa.core.config.VaultDependencyChecker

@@ -1,0 +1,40 @@
+server:
+    port: 8089
+
+spring:
+    application:
+        name: sample-storage-sftp
+    servlet:
+        multipart:
+            max-file-size: 100MB
+            max-request-size: 100MB
+
+# SFTP存储配置
+platform:
+    component:
+        storage:
+            ftp:
+                # 是否启用FTP/SFTP
+                enable: true
+                # SFTP服务器主机地址
+                host: localhost
+                # SFTP服务器端口（默认22）
+                port: 22
+                # 用户名
+                username: sftp-user
+                # 密码
+                password: sftp-password
+                # 字符集
+                charset: UTF-8
+                # 服务器语言代码
+                server-language-code: en
+                # 系统类型（UNIX, WINDOWS）
+                system-key: UNIX
+                # FTP模式（Passive, Active）
+                ftp-mode: Passive
+                # 基础路径
+                base-path: /upload
+
+logging:
+    level:
+        com.richie: DEBUG

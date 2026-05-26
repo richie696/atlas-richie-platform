@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 引入 Spring Boot 默认配置 -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- 简化日志格式：只保留时间、级别、简单类名和消息 -->
+            <!-- 格式：HH:mm:ss.SSS LEVEL SimpleClassName: 消息 -->
+            <!-- %logger{0} 表示只显示类名，不显示包名 -->
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %logger{0}: %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 文件输出（可选，用于生产环境） -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/sample-mfa.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/sample-mfa.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <!-- 文件日志格式可以保留更多信息 -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50}: %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 日志级别配置 -->
+    <springProfile name="!prod">
+        <!-- 开发/测试环境：控制台输出，DEBUG级别 -->
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+        <!-- MFA组件日志级别 -->
+        <logger name="com.richie.component.mfa" level="DEBUG"/>
+    </springProfile>
+
+    <springProfile name="prod">
+        <!-- 生产环境：文件输出，INFO级别 -->
+        <root level="INFO">
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- 第三方库日志级别 -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+    <logger name="org.apache.ibatis" level="WARN"/>
+    <logger name="com.baomidou.mybatisplus" level="WARN"/>
+</configuration>

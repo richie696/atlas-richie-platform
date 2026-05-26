@@ -1,0 +1,166 @@
+spring:
+    cloud:
+        # Sentinel限流熔断配置
+        sentinel:
+            # Sentinel控制台配置
+            transport:
+                # Sentinel控制台地址
+                dashboard: 10.100.0.90:8899
+                # 心跳发送间隔，单位：毫秒
+                heartbeat-interval-ms: 20000
+                port: 8719
+                # Sentinel Nacos数据源配置，Nacos中的规则会⾃动同步到sentinel控制台的流控规则中
+            datasource:
+                # 流控规则数据源配置
+                # 作用：限制资源的访问频率，防止系统被突发流量压垮
+                # 应用场景：API接口限流、用户访问频率控制、防止恶意刷接口
+                # 控制方式：可按QPS、并发线程数进行限制，支持快速失败、预热、排队等流控效果
+                flow:
+                    nacos:
+                        server-addr: 10.100.0.112:8848
+                        namespace: development
+                        data-id: gateway-flow-rules.json
+                        groupId: gateway
+                        data-type: json
+                        rule-type: flow       # 使用Gateway流控规则类型
+
+                # 降级规则数据源配置（熔断规则）
+                # 作用：当服务调用出现异常或响应时间过长时自动熔断，避免级联故障
+                # 应用场景：下游服务不可用时的服务保护、慢调用比例过高时的熔断保护
+                # 触发条件：异常比例、异常数量、慢调用比例超过阈值时触发熔断
+                # 恢复机制：熔断时间窗口过后会进入半开状态，逐步恢复调用
+                degrade:
+                    nacos:
+                        server-addr: 10.100.0.112:8848
+                        namespace: development
+                        data-id: gateway-degrade-rules.json
+                        groupId: gateway
+                        data-type: json
+                        rule-type: degrade    # 类型定义参考{com.alibaba.cloud.sentinel.datasource.RuleType}枚举类
+
+                # 热点参数规则数据源配置
+                # 作用：针对请求中的特定参数进行更细粒度的流量控制
+                # 应用场景：
+                #   1. 对VIP用户和普通用户设置不同的访问频率限制
+                #   2. 针对不同商品ID、用户ID设置个性化限流策略
+                #   3. 防止某个热点商品或用户占用过多系统资源
+                # 特色功能：支持参数例外项，可为特定参数值设置不同的限流阈值
+                param-flow:
+                    nacos:
+                        server-addr: 10.100.0.112:8848
+                        namespace: development
+                        data-id: gateway-param-flow-rules.json
+                        groupId: gateway
+                        data-type: json
+                        rule-type: param-flow
+
+                # 系统自适应规则数据源配置
+                # 作用：从整体维度保护系统，根据系统的负载情况自动调节入口流量
+                # 监控维度：
+                #   1. 系统负载 (Load)：基于当前系统的CPU负载进行流控
+                #   2. CPU使用率：当CPU使用率超过阈值时限制流量
+                #   3. 平均响应时间：当系统响应时间过长时进行保护
+                #   4. 入口QPS：限制系统整体的QPS上限
+                #   5. 并发线程数：限制系统的并发处理能力
+                # 应用场景：系统过载保护、资源不足时的流量控制、确保系统稳定性
+                system:
+                    nacos:
+                        server-addr: 10.100.0.112:8848
+                        namespace: development
+                        data-id: gateway-system-rules.json
+                        groupId: gateway
+                        data-type: json
+                        rule-type: system
+
+                # 授权规则数据源配置（黑白名单控制）
+                # 作用：基于调用来源对资源访问进行权限控制
+                # 控制模式：
+                #   1. 白名单模式：只允许指定来源的调用通过
+                #   2. 黑名单模式：拒绝指定来源的调用，其他来源正常通过
+                # 应用场景：
+                #   1. 服务间调用的安全控制
+                #   2. 防止恶意应用或IP的访问
+                #   3. 为敏感接口设置访问权限控制
+                #   4. 合作伙伴API的访问控制
+                # 来源识别：通过请求Header中的来源标识进行判断
+                authority:
+                    nacos:
+                        server-addr: 10.100.0.112:8848
+                        namespace: development
+                        data-id: gateway-authority-rules.json
+                        groupId: gateway
+                        data-type: json
+                        rule-type: authority
+        # 网关配置
+        gateway:
+            server:
+                webflux:
+                    globalcors:
+                        add-to-simple-url-handler-mapping: true
+                        cors-configurations:
+                            '[/**]':
+                                allowed-headers: "*"
+                                allowed-origin-patterns: "*"
+                                allow-credentials: true
+                                allowed-methods: "*"
+                                exposed-headers: "*"
+                    # 超时配置
+                    httpclient:
+                        # 连接超时时间（默认：30，单位：秒）
+                        connect-timeout: 30
+                        # 响应超时时间（默认：无限制，单位：秒）
+                        response-timeout: 10s
+                        # 连接池配置
+                        pool:
+                            # 最大连接数
+                            max-connections: 200
+                            # 最大空闲时间
+                            max-idle-time: 15s
+                            # 获取连接超时(毫秒)
+                            acquire-timeout: 45000
+                            # 连接类型
+                            type: elastic
+
+                    # 路由配置（去除CircuitBreaker相关配置）
+                    routes:
+                        -   id: sample-mfa
+                            uri: lb://sample-mfa
+                            predicates:
+                                - Path=/api/user/**
+                            filters:
+                                - StripPrefix=1
+                        # MFA 管理接口（可信设备、绑定、状态等）原样转发，后端 Controller 为 /api/mfa
+                        -   id: sample-mfa-mfa
+                            uri: lb://sample-mfa
+                            predicates:
+                                - Path=/api/mfa/**
+
+
+# 平台配置
+platform:
+    # 网关配置
+    gateway:
+        # 访问记录保存路径配置
+        visit-record-path: "platform:gateway:visit:"
+        # OPENAPI认证配置
+        interface-auth:
+            enable: true
+            token-secret: 'inYZeYSKJS34WEt6k6EBQm0XCyN6K0FP'
+        token:
+            enable: false
+
+    component:
+        i18n:
+            default-locale: zh_CN
+
+# 日志配置
+logging:
+    level:
+      org.springframework.cloud.gateway: DEBUG
+        com.richie.gateway.filter.EccCryptoFilter: DEBUG
+        com.richie.gateway.service.com.richie.gateway.service.EccCryptoServiceImpl: DEBUG
+      com.richie.gateway.utils.com.richie.gateway.utils.EccCryptoUtils: DEBUG
+        # 添加Sentinel相关日志，帮助诊断规则加载问题
+        com.alibaba.cloud.sentinel: DEBUG
+        com.alibaba.csp.sentinel: DEBUG
+        com.alibaba.csp.sentinel.adapter.gateway: DEBUG

@@ -1,0 +1,23 @@
+server:
+  port: 9526
+
+spring:
+  application:
+    name: sample-vector-qdrant
+
+logging:
+  level:
+    root: info
+    com.richie.component.vector.qdrant: debug
+
+platform:
+  component:
+    vector:
+      qdrant:
+        host: localhost
+        port: 6333
+        collection: vectors
+        dimension: 768
+        metric: COSINE
+
+

@@ -1,0 +1,23 @@
+server:
+  port: 9524
+
+spring:
+  application:
+    name: sample-vector-neo4j
+
+logging:
+  level:
+    root: info
+    com.richie.component.vector.neo4j: debug
+
+platform:
+  component:
+    vector:
+      neo4j:
+        uri: bolt://localhost:7687
+        username: neo4j
+        password: password
+        label: VectorNode
+        dimension: 768
+
+

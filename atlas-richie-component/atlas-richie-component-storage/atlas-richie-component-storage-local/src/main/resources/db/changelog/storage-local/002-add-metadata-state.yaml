@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0002-add-metadata-state
+      author: richie696
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rd_file_metadata
+      changes:
+        - addColumn:
+            tableName: rd_file_metadata
+            columns:
+              - column:
+                  name: storage_state
+                  type: VARCHAR(16)
+                  defaultValue: ACTIVE
+                  remarks: 存储状态（ACTIVE/ARCHIVED/DELETED 等）
+              - column:
+                  name: deleted_time
+                  type: TIMESTAMP
+                  remarks: 删除时间（逻辑删除）

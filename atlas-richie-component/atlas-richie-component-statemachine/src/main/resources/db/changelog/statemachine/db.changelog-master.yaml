@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/statemachine/001-create-statemachine-state-current.yaml
+  - include:
+      file: db/changelog/statemachine/002-create-statemachine-state-history.yaml
+  - include:
+      file: db/changelog/statemachine/003-indexes.yaml
+  - include:
+      file: db/changelog/statemachine/004-migrate-business-id-to-bigint.yaml
+  - include:
+      file: db/changelog/statemachine/005-add-seq-columns.yaml
+
+

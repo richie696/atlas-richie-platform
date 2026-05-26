@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.richie.component</groupId>
+        <artifactId>atlas-richie-component-dependencies</artifactId>
+        <version>${revision}</version>
+        <relativePath>../atlas-richie-component-dependencies/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>atlas-richie-component-messaging</artifactId>
+    <name>atlas-richie-component-messaging-parent</name>
+    <description>Richie消息队列父模块（聚合core及各provider实现）</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>atlas-richie-component-messaging-core</module>
+        <module>atlas-richie-component-messaging-kafka</module>
+        <module>atlas-richie-component-messaging-rabbitmq</module>
+        <module>atlas-richie-component-messaging-rocketmq</module>
+        <module>atlas-richie-component-messaging-kinesis</module>
+        <module>atlas-richie-component-messaging-gcp-pubsub</module>
+        <module>atlas-richie-component-messaging-eventhubs</module>
+        <module>atlas-richie-component-messaging-servicebus</module>
+        <module>atlas-richie-component-messaging-sqs</module>
+        <module>atlas-richie-component-messaging-sns</module>
+        <module>atlas-richie-component-messaging-pulsar</module>
+        <module>atlas-richie-component-messaging-solace</module>
+    </modules>
+
+</project>

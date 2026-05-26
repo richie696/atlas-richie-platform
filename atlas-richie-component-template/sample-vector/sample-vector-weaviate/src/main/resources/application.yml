@@ -1,0 +1,23 @@
+server:
+  port: 9528
+
+spring:
+  application:
+    name: sample-vector-weaviate
+
+logging:
+  level:
+    root: info
+    com.richie.component.vector.weaviate: debug
+
+platform:
+  component:
+    vector:
+      weaviate:
+        host: http://localhost:8080
+        api-key: ${WEAVIATE_API_KEY:}
+        class: VectorObject
+        dimension: 768
+        metric: COSINE
+
+

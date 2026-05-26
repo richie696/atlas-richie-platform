@@ -1,0 +1,75 @@
+spring:
+    application:
+        name: sample-logging
+    profiles:
+        include: cache,dao
+    main:
+        allow-bean-definition-overriding: true
+        allow-circular-references: true
+    mvc:
+        pathmatch:
+            matching-strategy: ant_path_matcher
+        format:
+            date-time: yyyy-MM-dd HH:mm:ss
+    liquibase:
+        enabled: false
+
+server:
+    port: 8890
+    undertow:
+        threads:
+            worker: 200
+
+# 日志组件配置
+platform:
+    component:
+        logging:
+            # 是否启用操作日志
+            enable: true
+            # 记录类型：FILE（文件）、REDIS（缓存）、MQ（消息队列）
+            record-type: FILE
+            # 是否启用请求参数体持久化
+            request-body-persistent: true
+            # 是否限制请求参数体大小
+            request-body-size-limit: false
+            # 请求参数体最大字符长度
+            request-body-max-length: 200
+            # 是否启用响应参数体持久化
+            response-body-persistent: true
+            # 是否限制响应参数体大小
+            response-body-size-limit: false
+            # 响应参数体最大字符长度
+            response-body-max-length: 200
+            # 是否启用数据库持久化
+            db-persistent: true
+            # 持久化数据库时一次获取的数据量
+            db-batch-size: 500
+            # 记录类型为消息队列时，消息队列的 topic 名称
+            mq-topic-name: access-log-out-0
+            # 日志保存到redis时临时暂存的路径
+            cache-access-log-key: platform:access-log
+            # 启用全局切点，进入Controller的所有请求都会被拦截
+            enable-global-advice: false
+            # 是否打印异常信息
+            print-exception: false
+            # 数据库模式管理配置
+            schema:
+                # 是否启用自动 DDL
+                enable-auto-ddl: false
+                # 表前缀
+                table-prefix: ""
+                # 访问日志表名
+                access-log-table: access_log_info
+                # 是否启用 Liquibase 迁移
+                enable-liquibase: true
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: "health,info,metrics"
+    endpoint:
+        health:
+            show-details: always
+            access: unrestricted
+

@@ -1,0 +1,6 @@
+com.richie.component.cache.config.CacheAutoConfiguration
+com.richie.component.cache.redis.config.base.RedisBaseAutoConfiguration
+com.richie.component.cache.local.config.LocalCacheAutoConfiguration
+com.richie.component.cache.redis.config.monitor.RedisStreamMonitoringAutoConfiguration
+com.richie.component.cache.redis.config.tracing.RedisStreamTracingAutoConfiguration
+com.richie.component.cache.redis.config.stream.RedisStreamAutoConfiguration

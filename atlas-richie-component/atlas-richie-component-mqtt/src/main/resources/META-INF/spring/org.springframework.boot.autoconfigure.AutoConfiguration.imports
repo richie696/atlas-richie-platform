@@ -1,0 +1,3 @@
+com.richie.component.mqtt.config.MqttClientAutoConfiguration
+com.richie.component.mqtt.generator.impl.DefaultMqttClientDeviceIdGenerator
+com.richie.component.mqtt.generator.impl.DefaultClientIdRuler

@@ -1,0 +1,8 @@
+server:
+    port: 9500
+
+spring:
+    application:
+        name: platform-gateway-service
+#    profiles:
+#        include: cache,gateway

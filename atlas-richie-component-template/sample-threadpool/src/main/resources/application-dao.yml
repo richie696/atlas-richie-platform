@@ -1,0 +1,66 @@
+# 技术平台配置
+platform:
+    component:
+        dao:
+            # 是否启用 p6spy 的日志输出（true：启用，false：禁用【出于性能考虑，生产环境请禁用，切记！！！】）
+            enable-logging: true
+            enable-tenant: false
+
+
+spring:
+    datasource:
+        # 数据库连接池类型
+        type: com.zaxxer.hikari.HikariDataSource
+        # 连接驱动
+        driver-class-name: com.p6spy.engine.spy.P6SpyDriver
+        # 连接地址
+        url: jdbc:p6spy:mysql://10.100.0.112:3306/platform_v2_demo?autoReconnect=true&characterEncoding=UTF-8&useUnicode=true&useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+        # 用户名
+        username: root
+        # 密码
+        password: root.qwe123
+        # 数据库连接池配置
+        hikari:
+            # 连接池名称
+            pool-name: platform-db-pool
+            # 最小空闲连接数
+            minimum-idle: 3
+            # 最大线程池数量
+            maximum-pool-size: 64
+            # 是否自动提交
+            auto-commit: true
+            # 空闲连接超时时间（默认：10分钟）
+            idle-timeout: 600000
+            # 连接池连接的最大存活时间，此存活时间和是否使用无关，
+            # 当一个Connection被创建出来后无论是否刚使用过，其存货
+            # 周期都是固定的，通过此值配置（当前值：30分钟），本值
+            # 需要比数据库的 wait_timeout 小几秒钟
+            # 查看数据库超时配置 show variables like '%timeout%';
+            max-lifetime: 1800000
+            # 数据库连接等待超时时长（20秒）
+            connection-timeout: 20000
+            # 数据库连接心跳检测语句
+            connection-test-query: SELECT 1
+
+#mybatis plus 设置
+mybatis-plus:
+    # mybatis xml 文件路径
+    mapper-locations: classpath*:mapper/**/*Mapper.xml
+    # 全局配置
+    global-config:
+        # 关闭MP3.0自带的banner
+        banner: false
+        db-config:
+            #主键类型  0:"数据库ID自增",1:"该类型为未设置主键类型", 2:"用户输入ID",3:"全局唯一ID (数字类型唯一ID)", 4:"全局唯一ID UUID",5:"字符串全局唯一ID (idWorker 的字符串表示)";
+            id-type: ASSIGN_ID
+            # 默认数据库表下划线命名
+            table-underline: true
+            # 逻辑未删除值（N：表示未删除）
+            logic-not-delete-value: N
+            # 逻辑删除值（Y：表示已删除）
+            logic-delete-value: Y
+    configuration:
+        # 这个配置会将执行的sql打印出来，在开发或测试的时候可以用
+        log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+        # 返回类型为Map,显示null对应的字段
+        call-setters-on-nulls: true

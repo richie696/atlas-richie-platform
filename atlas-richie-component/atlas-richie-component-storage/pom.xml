@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.richie.component</groupId>
+        <artifactId>atlas-richie-component-dependencies</artifactId>
+        <version>${revision}</version>
+        <relativePath>../atlas-richie-component-dependencies/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>atlas-richie-component-storage</artifactId>
+    <name>atlas-richie-component-storage-parent</name>
+    <description>Richie对象存储父模块（聚合core及各provider实现）</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>atlas-richie-component-storage-core</module>
+        <module>atlas-richie-component-storage-local</module>
+        <module>atlas-richie-component-storage-s3</module>
+        <module>atlas-richie-component-storage-oss</module>
+        <module>atlas-richie-component-storage-cos</module>
+        <module>atlas-richie-component-storage-obs</module>
+        <module>atlas-richie-component-storage-minio</module>
+        <module>atlas-richie-component-storage-ks3</module>
+        <module>atlas-richie-component-storage-tos</module>
+        <module>atlas-richie-component-storage-azure</module>
+        <module>atlas-richie-component-storage-sftp</module>
+        <module>atlas-richie-component-storage-smb</module>
+    </modules>
+
+</project>

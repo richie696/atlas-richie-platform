@@ -1,0 +1,59 @@
+# 文件存储组件默认配置
+# 包含本地缓存配置，Redis 配置需要由使用者提供
+
+spring:
+  liquibase:
+    enabled: false   # 由业务应用统一开启，避免多模块冲突
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  data:
+    # 本地缓存配置（Caffeine）
+    local:
+      provider: CAFFEINE
+      cache-definitions:
+        - name: file_metadata
+          expiry-policy: ACCESSED
+          expiry: 30
+          expiry-unit: MINUTES
+          statistics-enabled: true
+          store-by-value: false
+        - name: file_exists
+          expiry-policy: ACCESSED
+          expiry: 10
+          expiry-unit: MINUTES
+          statistics-enabled: true
+          store-by-value: false
+        - name: file_content
+          expiry-policy: ACCESSED
+          expiry: 10
+          expiry-unit: MINUTES
+          statistics-enabled: true
+          store-by-value: false
+
+# 文件存储组件配置
+rydeen:
+  storage:
+    local:
+      path: ./storage/files
+      cache:
+        # 文件存在性缓存过期时间（毫秒）
+        exists-ttl: 3600000  # 1小时
+        # 文件元数据缓存过期时间（毫秒）
+        metadata-ttl: 1800000  # 30分钟
+        # 文件内容缓存过期时间（毫秒）
+        content-ttl: 600000  # 10分钟
+        # 文件内容缓存大小限制（字节）
+        content-max-size: 1048576  # 1MB
+        # 是否启用缓存统计
+        statistics-enabled: true
+
+# 使用者需要在自己的配置文件中添加以下 Redis 配置：
+# spring:
+#   data:
+#     redis:
+#       host: localhost
+#       port: 6379
+#       database: 0
+#       enable-l2-caching: true
+#       l2-caching-data:
+#         - STRING
+#         - HASH

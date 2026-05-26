@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.richie.component.mfa.management.mapper.MfaTrustedDeviceMapper">
+
+    <!-- 根据租户ID和用户ID查询所有可信设备 -->
+    <select id="selectByTenantAndUser" resultType="com.richie.component.mfa.core.entity.MfaTrustedDevice">
+        SELECT *
+        FROM mfa_trusted_device
+        WHERE user_id = #{userId}
+        <choose>
+            <when test="tenantId != null and tenantId != ''">
+                AND tenant_id = #{tenantId}
+            </when>
+            <otherwise>
+                AND (tenant_id IS NULL OR tenant_id = '')
+            </otherwise>
+        </choose>
+        AND deleted = 0
+        ORDER BY last_used_time DESC, create_time DESC
+    </select>
+
+    <!-- 根据租户ID、用户ID和设备ID查询可信设备 -->
+    <select id="selectByDeviceId" resultType="com.richie.component.mfa.core.entity.MfaTrustedDevice">
+        SELECT *
+        FROM mfa_trusted_device
+        WHERE user_id = #{userId}
+          AND device_id = #{deviceId}
+        <choose>
+            <when test="tenantId != null and tenantId != ''">
+                AND tenant_id = #{tenantId}
+            </when>
+            <otherwise>
+                AND (tenant_id IS NULL OR tenant_id = '')
+            </otherwise>
+        </choose>
+        AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <!-- 统计用户的可信设备数量 -->
+    <select id="countByTenantAndUser" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM mfa_trusted_device
+        WHERE user_id = #{userId}
+        <choose>
+            <when test="tenantId != null and tenantId != ''">
+                AND tenant_id = #{tenantId}
+            </when>
+            <otherwise>
+                AND (tenant_id IS NULL OR tenant_id = '')
+            </otherwise>
+        </choose>
+        AND deleted = 0
+    </select>
+
+    <!-- 查询用户的主管理设备 -->
+    <select id="selectPrimaryByTenantAndUser" resultType="com.richie.component.mfa.core.entity.MfaTrustedDevice">
+        SELECT *
+        FROM mfa_trusted_device
+        WHERE user_id = #{userId}
+        <choose>
+            <when test="tenantId != null and tenantId != ''">
+                AND tenant_id = #{tenantId}
+            </when>
+            <otherwise>
+                AND (tenant_id IS NULL OR tenant_id = '')
+            </otherwise>
+        </choose>
+        AND deleted = 0
+        AND is_primary = 1
+        LIMIT 1
+    </select>
+
+    <!-- 清除该用户下所有设备的主标记 -->
+    <update id="clearPrimaryByTenantAndUser">
+        UPDATE mfa_trusted_device
+        SET is_primary = 0
+        WHERE user_id = #{userId}
+        <choose>
+            <when test="tenantId != null and tenantId != ''">
+                AND tenant_id = #{tenantId}
+            </when>
+            <otherwise>
+                AND (tenant_id IS NULL OR tenant_id = '')
+            </otherwise>
+        </choose>
+        AND deleted = 0
+    </update>
+
+    <!-- 将指定设备设为主设备 -->
+    <update id="setPrimaryByTenantAndUserAndDevice">
+        UPDATE mfa_trusted_device
+        SET is_primary = 1
+        WHERE user_id = #{userId}
+          AND device_id = #{deviceId}
+        <choose>
+            <when test="tenantId != null and tenantId != ''">
+                AND tenant_id = #{tenantId}
+            </when>
+            <otherwise>
+                AND (tenant_id IS NULL OR tenant_id = '')
+            </otherwise>
+        </choose>
+        AND deleted = 0
+    </update>
+
+</mapper>

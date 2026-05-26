@@ -1,0 +1,89 @@
+spring:
+    main:
+        allow-bean-definition-overriding: true
+    # Cloud 配置
+    cloud:
+        function:
+            definition: process
+        # Kafka 配置
+        stream:
+            # 默认binder器（此处支持kafka、RabbitMQ、RocketMQ，但是配置文件内容有少许差异，请参考各队列各自的配置文件）
+            default-binder: rocketmq
+            # 幂等去重服务使用的数据源类型
+            datasource: memory
+            # RocketMQ 配置
+            rocketmq:
+                binder:
+                    # 是否启用队列
+                    enabled: true
+                    # 命名服务器地址
+                    name-server: 127.0.0.1:9876
+                    # 用户名
+                    access-key: xxx
+                    # 密码
+                    secret-key: xxx
+                    # 对消费者或生产者进行分组的组名
+                    group: xxx
+                    # 用于 RocketMQ 在数据存储层面，进行多租户数据存储的命名空间，默认为空，可选值
+                    namespace:
+                    # 用于构建 ClientID 的单位名称，默认为空，可选值
+                    unit-name:
+                    # 服务访问类型
+                    # local：IDC机房的自建服务
+                    # cloud：云 PaaS 服务（目前针对阿里云的 RocketMQ、华为云和腾讯云待确认）
+                    access-channel: local
+                    # 获取 Topic 路由信息的间隔时间（默认：30000ms）
+                    poll-name-server-interval: 30000
+                    # 客户端和 Broker 之间的心跳间隔时间（默认：30000ms）
+                    heartbeat-broker-interval: 30000
+                    # 持久化消费者间隔时间（默认：5000ms）
+                    persist-consumer-offset-interval: 5000
+                    # 是否使用 VIP 通道（VIP 通道和非 VIP 通道的区别是使用不同的端口号进行通信）
+                    vip-channel-enabled: false
+                    # 是否启用消息追踪（默认：true）
+                    enable-msg-trace: true
+                    # 自定义追踪的主题（默认 null）
+                    customized-trace-topic: custom-topic
+                    # 是否启用 TLS 协议（默认：false）
+                    use-t-l-s: false
+
+            # binding 相关配置
+            bindings:
+                # OUTPUT：主题1输出通道
+                demo1-out-0:
+                    destination: demo1-topic
+                    content-type: application/json
+                    # 生产者参数配置
+                    producer:
+                        # 指定该生产者是否自动启动（默认：true）
+                        auto-startup: true
+                        # 生产者配置请参考 org.springframework.cloud.stream.binder.ProducerProperties
+
+                # OUTPUT：主题2输出通道
+                demo2-out-0:
+                    destination: demo2-topic
+                    content-type: application/json
+                    # 生产者参数配置
+                    producer:
+                        # 指定该生产者是否自动启动（默认：true）
+                        auto-startup: true
+                        # 生产者配置请参考 org.springframework.cloud.stream.binder.ProducerProperties
+
+                # INPUT：默认输入通道定义（如需多通道请复制该节点后修改自定义节点）
+                # 此处不要修改该INPUT，如果需要在项目中使用多个消费者监听，请
+                # 在下方自行添加消费者监听节点，此节点为默认消费者监听器，平台
+                # 组件提供了一套默认API
+                process-in-0:
+                    destination: demo1-topic,demo2-topic
+                    content-type: application/json
+                    # 消费者相关配置
+                    consumer:
+                        # 最大尝试次数
+                        max-attempts: 3
+                        # 重试起始间隔时间
+                        back-off-initial-interval: 500
+                        # 重试最大间隔时间
+                        back-off-max-interval: 1000
+                        # 重试间隔时间乘数
+                        back-off-multiplier: 2.0
+                        # 更多配置参考 org.springframework.cloud.stream.binder.ConsumerProperties
