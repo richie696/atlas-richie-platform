@@ -43,8 +43,8 @@
         <s3.version>2.44.7</s3.version>
         <ve-tos-java-sdk.version>2.9.4</ve-tos-java-sdk.version>
         <ks3-kss-java-sdk.version>1.5.0</ks3-kss-java-sdk.version>
-        <jcifs.version>2.1.40</jcifs.version>
-        <jsch.version>0.1.55</jsch.version>
+        <jcifs.version>3.0.2</jcifs.version>
+        <sshd.version>3.0.0-M3</sshd.version>
 
         <mybatis-plus.version>3.5.16</mybatis-plus.version>
         <dynamic-datasource.version>4.5.0</dynamic-datasource.version>
@@ -483,10 +483,11 @@
                 <version>${jcifs.version}</version>
             </dependency>
             <!-- FTP/FTPS/SFTP 对象存储 SDK -->
+            <!-- SSH/SFTP 客户端（Apache MINA SSHD） -->
             <dependency>
-                <groupId>com.jcraft</groupId>
-                <artifactId>jsch</artifactId>
-                <version>${jsch.version}</version>
+                <groupId>org.apache.sshd</groupId>
+                <artifactId>sshd-sftp</artifactId>
+                <version>${sshd.version}</version>
             </dependency>
 
             <!-- 单元测试组件 -->

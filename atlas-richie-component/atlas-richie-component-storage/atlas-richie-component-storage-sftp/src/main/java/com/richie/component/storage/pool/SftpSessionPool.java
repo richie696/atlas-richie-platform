@@ -1,31 +1,34 @@
 package com.richie.component.storage.pool;
 
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
 import com.richie.component.storage.bean.SftpConfig;
+import org.apache.sshd.client.SshClient;
+import org.apache.sshd.client.session.ClientSession;
+import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
 import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
-public class SftpSessionPool extends GenericObjectPool<ChannelSftp> {
+public class SftpSessionPool extends GenericObjectPool<ClientSession> {
 
-    public SftpSessionPool(SftpConfig config) {
-        super(new SftpSessionFactory(config), buildPoolConfig(config));
+    public SftpSessionPool(SshClient sshClient, SftpConfig config) {
+        super(new SftpSessionFactory(sshClient, config), buildPoolConfig(config));
     }
 
-    private static GenericObjectPoolConfig<ChannelSftp> buildPoolConfig(SftpConfig config) {
-        var cfg = new GenericObjectPoolConfig<ChannelSftp>();
+    private static GenericObjectPoolConfig<ClientSession> buildPoolConfig(SftpConfig config) {
+        var cfg = new GenericObjectPoolConfig<ClientSession>();
         cfg.setMaxTotal(config.getMaxTotal());
         cfg.setMaxIdle(config.getMaxIdle());
         cfg.setMinIdle(config.getMinIdle());
         cfg.setTestOnBorrow(config.isTestOnBorrow());
         cfg.setTestWhileIdle(config.isTestWhileIdle());
+        cfg.setTestOnReturn(true);
         cfg.setTimeBetweenEvictionRuns(Duration.ofMinutes(1));
         cfg.setMinEvictableIdleDuration(Duration.ofMinutes(5));
         cfg.setBlockWhenExhausted(true);
@@ -33,56 +36,52 @@ public class SftpSessionPool extends GenericObjectPool<ChannelSftp> {
         return cfg;
     }
 
-    private static class SftpSessionFactory extends BasePooledObjectFactory<ChannelSftp> {
+    private static class SftpSessionFactory extends BasePooledObjectFactory<ClientSession> {
 
+        private final SshClient sshClient;
         private final SftpConfig config;
 
-        SftpSessionFactory(SftpConfig config) {
+        SftpSessionFactory(SshClient sshClient, SftpConfig config) {
+            this.sshClient = sshClient;
             this.config = config;
         }
 
         @Override
-        public ChannelSftp create() throws Exception {
-            var jsch = new JSch();
+        public ClientSession create() throws Exception {
+            var session = sshClient
+                    .connect(config.getUsername(), config.getHost(), config.getPort())
+                    .verify(15, TimeUnit.SECONDS)
+                    .getSession();
+
             if (config.isSshLogin()) {
-                jsch.addIdentity(config.getIdentityFile());
+                var keyPath = Paths.get(config.getIdentityFile());
+                var keyProvider = new FileKeyPairProvider(keyPath);
+                for (var kp : keyProvider.loadKeys(session)) {
+                    session.addPublicKeyIdentity(kp);
+                }
+            } else {
+                session.addPasswordIdentity(config.getPassword());
             }
-            var session = jsch.getSession(config.getUsername(), config.getHost(), config.getPort());
-            if (!config.isSshLogin()) {
-                session.setPassword(config.getPassword());
-            }
-            var props = new Properties();
-            props.put("StrictHostKeyChecking", "no");
-            session.setConfig(props);
-            session.connect();
 
-            var channel = (ChannelSftp) session.openChannel("sftp");
-            channel.connect();
-            return channel;
+            session.auth().verify(10, TimeUnit.SECONDS);
+            return session;
         }
 
         @Override
-        public PooledObject<ChannelSftp> wrap(ChannelSftp channel) {
-            return new DefaultPooledObject<>(channel);
+        public PooledObject<ClientSession> wrap(ClientSession session) {
+            return new DefaultPooledObject<>(session);
         }
 
         @Override
-        public boolean validateObject(PooledObject<ChannelSftp> p) {
+        public boolean validateObject(PooledObject<ClientSession> p) {
+            return p.getObject().isOpen();
+        }
+
+        @Override
+        public void destroyObject(PooledObject<ClientSession> p) {
             try {
-                p.getObject().pwd();
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
-        }
-
-        @Override
-        public void destroyObject(PooledObject<ChannelSftp> p) {
-            var channel = p.getObject();
-            channel.disconnect();
-            try {
-                channel.getSession().disconnect();
-            } catch (JSchException ignored) {
+                p.getObject().close();
+            } catch (IOException ignored) {
             }
         }
     }
