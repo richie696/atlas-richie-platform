@@ -3,7 +3,7 @@ package com.richie.component.storage.config;
 import com.richie.component.storage.pool.SftpSessionPool;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.sshd.client.SshClient;
-import org.apache.sshd.common.CoreModuleProperties;
+import org.apache.sshd.core.CoreModuleProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
