@@ -27,6 +27,7 @@
         <module>atlas-richie-component-storage-tos</module>
         <module>atlas-richie-component-storage-azure</module>
         <module>atlas-richie-component-storage-sftp</module>
+        <module>atlas-richie-component-storage-ftp</module>
         <module>atlas-richie-component-storage-smb</module>
     </modules>
 
