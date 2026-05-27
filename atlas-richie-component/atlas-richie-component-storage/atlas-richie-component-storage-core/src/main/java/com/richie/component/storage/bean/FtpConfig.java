@@ -1,6 +1,5 @@
 package com.richie.component.storage.bean;
 
-import cn.hutool.extra.ftp.FtpMode;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -10,16 +9,10 @@ import org.springframework.context.annotation.Configuration;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-
-import static com.richie.component.storage.bean.FtpConfig.FtpType.FTP;
-import static com.richie.component.storage.bean.FtpConfig.LoginType.ANONYMOUS;
+import java.time.Duration;
 
 /**
- * FTP配置
- *
- * @author richie696
- * @version 1.0
- * @since 2023-09-04 13:42:35
+ * FTP 连接配置。
  */
 @Data
 @Configuration
@@ -27,82 +20,58 @@ import static com.richie.component.storage.bean.FtpConfig.LoginType.ANONYMOUS;
 @ConfigurationProperties(prefix = "platform.component.storage.ftp")
 public class FtpConfig {
 
-    /**
-     * 是否启用FTP存储（true：启用，false：禁用[默认]）
-     */
     private Boolean enable = false;
 
-    /**
-     * FTP类型
-     */
-    private FtpType ftpType = FTP;
+    private FtpType ftpType = FtpType.FTP;
 
-    /**
-     * 主机（IP或域名，默认：localhost）
-     */
     private String host = "localhost";
 
-    /**
-     * 端口（默认：21）
-     */
     private int port = 21;
 
-    /**
-     * 登录类型（正常、匿名）
-     */
-    private LoginType loginType = ANONYMOUS;
+    private LoginType loginType = LoginType.ANONYMOUS;
 
-    /**
-     * 用户名
-     */
     private String username;
 
-    /**
-     * 密码
-     */
     private String password;
 
-    /**
-     * Base路径（默认：/）
-     */
     private String basePath = "/";
 
-    /**
-     * 编码（默认：UTF-8）
-     */
     private Charset charset = StandardCharsets.UTF_8;
 
-    /**
-     * 服务语言编码（默认：zh）
-     */
     private String serverLanguageCode = "zh";
 
-    /**
-     * 系统标识符
-     */
     private SystemKey systemKey;
 
-    /**
-     * 是否启用被动模式（默认：true）
-     */
-    private FtpMode ftpMode;
-
+    private boolean passiveMode = true;
 
     /**
-     * 登录类型枚举
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2023-09-04 13:45:31
+     * 连接池最大连接数
      */
+    private int maxTotal = 8;
+    /**
+     * 连接池最大空闲数
+     */
+    private int maxIdle = 4;
+    /**
+     * 连接池最小空闲数
+     */
+    private int minIdle = 1;
+    /**
+     * 借出时是否校验连接可用性
+     */
+    private boolean testOnBorrow = true;
+    /**
+     * 空闲时是否校验连接可用性
+     */
+    private boolean testWhileIdle = true;
+
+    /** 连接超时 */
+    private Duration connectTimeout = Duration.ofSeconds(15);
+    /** 数据传输超时 */
+    private Duration dataTimeout = Duration.ofSeconds(30);
+
     public enum LoginType {
-        /**
-         * 正常
-         */
         NORMAL,
-        /**
-         * 匿名
-         */
         ANONYMOUS
     }
 

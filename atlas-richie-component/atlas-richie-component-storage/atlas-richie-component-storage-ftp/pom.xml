@@ -10,9 +10,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>atlas-richie-component-storage-sftp</artifactId>
-    <name>atlas-richie-component-storage-sftp</name>
-    <description>Richie对象存储组件 - SFTP</description>
+    <artifactId>atlas-richie-component-storage-ftp</artifactId>
+    <name>atlas-richie-component-storage-ftp</name>
+    <description>对象存储组件 - FTP</description>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -21,11 +21,12 @@
             <artifactId>atlas-richie-component-storage-core</artifactId>
             <scope>provided</scope>
         </dependency>
-        <!-- SFTP 对象存储 SDK -->
+
         <dependency>
-            <groupId>com.jcraft</groupId>
-            <artifactId>jsch</artifactId>
+            <groupId>commons-net</groupId>
+            <artifactId>commons-net</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
