@@ -1,6 +1,6 @@
 package com.richie.component.storage.config;
 
-import com.richie.component.storage.pool.SftpSessionPool;
+import com.richie.component.storage.pool.FtpClientPool;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -12,12 +12,12 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ComponentScan("com.richie.component.storage")
 @EnableConfigurationProperties({StorageProperties.class})
-public class SftpAutoConfiguration {
+public class FtpAutoConfiguration {
 
     @Bean(destroyMethod = "close")
-    @ConditionalOnProperty(prefix = "platform.component.storage.sftp", name = "enable", havingValue = "true")
-    public SftpSessionPool sftpSessionPool(StorageProperties properties) {
-        return new SftpSessionPool(properties.getSftp());
+    @ConditionalOnProperty(prefix = "platform.component.storage.ftp", name = "enable", havingValue = "true")
+    public FtpClientPool ftpClientPool(StorageProperties properties) {
+        return new FtpClientPool(properties.getFtp());
     }
 
 }

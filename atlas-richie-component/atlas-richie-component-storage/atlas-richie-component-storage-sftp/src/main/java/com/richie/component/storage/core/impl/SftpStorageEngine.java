@@ -1,12 +1,14 @@
 package com.richie.component.storage.core.impl;
 
+import com.richie.component.storage.core.StorageEngine;
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.context.utils.security.HashUtils;
 import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.UploadResponse;
 import com.richie.component.storage.bean.image.ImageOptions;
 import com.richie.component.storage.config.StorageProperties;
-import cn.hutool.core.lang.UUID;
+import com.richie.component.storage.pool.SftpSessionPool;
+import java.util.UUID;
 import tools.jackson.core.type.TypeReference;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.SftpException;
@@ -25,11 +27,12 @@ import java.util.Objects;
 
 @Slf4j
 @Service("sftpStorageEngine")
-@ConditionalOnBean(ChannelSftp.class)
+@ConditionalOnBean(SftpSessionPool.class)
 @RequiredArgsConstructor
-public final class SftpStorageEngine extends AbstractDestroyEngine<ChannelSftp> {
+public final class SftpStorageEngine implements StorageEngine {
 
     private final StorageProperties properties;
+    private final SftpSessionPool sftpSessionPool;
 
     @Override
     public UploadResponse putData(@Nonnull String key, @Nonnull Map<?, ?> collection) {
@@ -59,15 +62,9 @@ public final class SftpStorageEngine extends AbstractDestroyEngine<ChannelSftp> 
     public UploadResponse putObject(@Nonnull String key, @Nonnull File file) {
         key = getRealPath(key);
         try (var fis = new FileInputStream(file)) {
-            var allBytes = fis.readAllBytes();
-            return getUploadResponse(key, allBytes);
+            return getUploadResponse(key, fis.readAllBytes());
         } catch (IOException e) {
-            return UploadResponse.builder()
-                    .success(false)
-                    .errorMessage(e.getMessage())
-                    .requestId(UUID.fastUUID().toString(true))
-                    .key(key)
-                    .build();
+            return fail(e);
         }
     }
 
@@ -75,15 +72,9 @@ public final class SftpStorageEngine extends AbstractDestroyEngine<ChannelSftp> 
     public UploadResponse putObject(@Nonnull String key, @Nonnull InputStream inputStream) {
         key = getRealPath(key);
         try {
-            var allBytes = inputStream.readAllBytes();
-            return getUploadResponse(key, allBytes);
+            return getUploadResponse(key, inputStream.readAllBytes());
         } catch (IOException e) {
-            return UploadResponse.builder()
-                    .success(false)
-                    .errorMessage(e.getMessage())
-                    .requestId(UUID.fastUUID().toString(true))
-                    .key(key)
-                    .build();
+            return fail(e);
         }
     }
 
@@ -100,27 +91,28 @@ public final class SftpStorageEngine extends AbstractDestroyEngine<ChannelSftp> 
     @Override
     public <T> DownloadResponse<T> getData(@Nonnull String key, @Nonnull TypeReference<T> typeReference) {
         key = getRealPath(key);
-        var client = getClient(ChannelSftp.class);
-        try (var inputStream = client.get(getRealPath(key))) {
-            if (inputStream == null) {
+        ChannelSftp client = null;
+        try {
+            client = acquire();
+            try (var inputStream = client.get(key)) {
+                if (inputStream == null) {
+                    return new DownloadResponse<T>()
+                            .setSuccess(false)
+                            .setErrorMessage("The file does not exist.")
+                            .setRequestId(uid()).setKey(key);
+                }
                 return new DownloadResponse<T>()
-                        .setSuccess(false)
-                        .setErrorMessage("The file does not exist.")
-                        .setRequestId(UUID.fastUUID().toString(true))
-                        .setKey(key);
+                        .setSuccess(true).setKey(key)
+                        .setVersionId(uid())
+                        .setContentType("application/json")
+                        .setData(JsonUtils.getInstance().deserialize(inputStream, typeReference));
             }
-            return new DownloadResponse<T>()
-                    .setSuccess(true)
-                    .setKey(key)
-                    .setVersionId(UUID.fastUUID().toString(true))
-                    .setContentType("application/json")
-                    .setData(JsonUtils.getInstance().deserialize(inputStream, typeReference));
         } catch (SftpException | IOException e) {
             return new DownloadResponse<T>()
-                    .setSuccess(false)
-                    .setErrorMessage(e.getMessage())
-                    .setRequestId(UUID.fastUUID().toString(true))
-                    .setKey(key);
+                    .setSuccess(false).setErrorMessage(e.getMessage())
+                    .setRequestId(uid()).setKey(key);
+        } finally {
+            release(client);
         }
     }
 
@@ -131,57 +123,64 @@ public final class SftpStorageEngine extends AbstractDestroyEngine<ChannelSftp> 
             return new DownloadResponse<byte[]>()
                     .setSuccess(false)
                     .setErrorMessage("The directory does not have permission to write to files.")
-                    .setRequestId(UUID.fastUUID().toString(true))
-                    .setKey(key);
+                    .setRequestId(uid()).setKey(key);
         }
-        var client = getClient(ChannelSftp.class);
+        ChannelSftp client = null;
         try {
-            client.get(getRealPath(key), targetPath.getAbsolutePath());
+            client = acquire();
+            client.get(key, targetPath.getAbsolutePath());
             if (returnData) {
                 return new DownloadResponse<byte[]>()
-                        .setSuccess(true)
-                        .setKey(key)
-                        .setRequestId(UUID.fastUUID().toString(true))
-                        .setVersionId("1")
+                        .setSuccess(true).setKey(key)
+                        .setRequestId(uid()).setVersionId("1")
                         .setContentType("application/octet-stream")
                         .setData(Files.readAllBytes(targetPath.toPath()));
             }
             return new DownloadResponse<byte[]>()
-                    .setSuccess(true)
-                    .setKey(key)
-                    .setRequestId(UUID.fastUUID().toString(true))
-                    .setVersionId("1")
+                    .setSuccess(true).setKey(key)
+                    .setRequestId(uid()).setVersionId("1")
                     .setContentType("application/octet-stream");
         } catch (SftpException | IOException e) {
             return new DownloadResponse<byte[]>()
-                    .setSuccess(false)
-                    .setErrorMessage(e.getMessage())
-                    .setRequestId(UUID.fastUUID().toString(true))
-                    .setKey(key);
+                    .setSuccess(false).setErrorMessage(e.getMessage())
+                    .setRequestId(uid()).setKey(key);
+        } finally {
+            release(client);
         }
     }
 
     @Override
     public DownloadResponse<byte[]> getResumableObject(@Nonnull String key, @Nonnull String targetPath, boolean returnData) {
-        key = getRealPath(key);
         return getObject(key, new File(targetPath), returnData);
     }
 
     @Override
     public boolean existsObject(@Nonnull String key) {
         key = getRealPath(key);
-        var client = getClient(ChannelSftp.class);
+        ChannelSftp client = null;
         try {
-            client.lstat(getRealPath(key));
+            client = acquire();
+            client.lstat(key);
             return true;
         } catch (SftpException e) {
             return false;
+        } finally {
+            release(client);
         }
     }
 
-    @Override
-    public void destroy(@Nonnull ChannelSftp sftpClient) {
-        sftpClient.disconnect();
+    private ChannelSftp acquire() {
+        try {
+            return sftpSessionPool.borrowObject();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to borrow SFTP session from pool", e);
+        }
+    }
+
+    private void release(ChannelSftp client) {
+        if (client != null) {
+            sftpSessionPool.returnObject(client);
+        }
     }
 
     private String getRealPath(String key) {
@@ -189,25 +188,21 @@ public final class SftpStorageEngine extends AbstractDestroyEngine<ChannelSftp> 
     }
 
     private UploadResponse getUploadResponse(String key, byte[] serialize) {
-        try (var byteArrayInputStream = new ByteArrayInputStream(serialize)) {
-            var filePath = getRealPath(key);
-            var client = getClient(ChannelSftp.class);
-            mkDirs(client, filePath);
-            client.put(byteArrayInputStream, filePath);
+        ChannelSftp client = null;
+        try (var input = new ByteArrayInputStream(serialize)) {
+            client = acquire();
+            mkDirs(client, key);
+            client.put(input, key);
             return UploadResponse.builder()
-                    .success(true)
-                    .key(key)
-                    .versionId(UUID.fastUUID().toString(true))
+                    .success(true).key(key)
+                    .versionId(uid())
                     .hashValue(HashUtils.sha256(new String(serialize)))
                     .uploadTime(OffsetDateTime.now())
                     .build();
         } catch (SftpException | IOException e) {
-            return UploadResponse.builder()
-                    .success(false)
-                    .errorMessage(e.getMessage())
-                    .requestId(UUID.fastUUID().toString(true))
-                    .key(key)
-                    .build();
+            return fail(e);
+        } finally {
+            release(client);
         }
     }
 
@@ -216,13 +211,21 @@ public final class SftpStorageEngine extends AbstractDestroyEngine<ChannelSftp> 
         sftp.cd("/");
         for (var folder : folders) {
             if (!folder.isEmpty()) {
-                try {
-                    sftp.cd(folder);
-                } catch (Exception e) {
-                    sftp.mkdir(folder);
-                    sftp.cd(folder);
-                }
+                try { sftp.cd(folder); }
+                catch (SftpException e) { sftp.mkdir(folder); sftp.cd(folder); }
             }
         }
     }
+
+    private static String uid() {
+        return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    private static UploadResponse fail(Exception e) {
+        return UploadResponse.builder()
+                .success(false).errorMessage(e.getMessage())
+                .requestId(uid()).key(null)
+                .build();
+    }
+
 }
