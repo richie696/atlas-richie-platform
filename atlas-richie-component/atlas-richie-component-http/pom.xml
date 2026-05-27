@@ -12,8 +12,16 @@
 
     <artifactId>atlas-richie-component-http</artifactId>
     <name>atlas-richie-component-http</name>
-    <description>RichieRedis缓存管理器组件</description>
-    <packaging>jar</packaging>
+    <description>HTTP 客户端组件</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>atlas-richie-component-http-core</module>
+        <module>atlas-richie-component-http-jdk</module>
+        <module>atlas-richie-component-http-okhttp</module>
+        <module>atlas-richie-component-http-httpclient5</module>
+        <module>atlas-richie-component-http-restclient</module>
+    </modules>
 
     <properties>
     </properties>

@@ -54,7 +54,7 @@
 platform:
   component:
     http:
-      provider: OKHTTP  # 或 HTTPCLIENT5
+      provider: okhttp  # 或 http_client_5
       # 超时配置
       read-timeout: 5                    # 读取超时（秒）
       write-timeout: 5                   # 写入超时（秒）
@@ -417,7 +417,7 @@ XmlResponse response = httpClient.doPostXml(XmlResponse.class, url, xml);
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `platform.component.http.provider` | String | `OKHTTP` | HTTP客户端提供商：`OKHTTP`、`HTTPCLIENT5` |
+| `platform.component.http.provider` | String | `okhttp` | HTTP客户端提供商：`okhttp`、`http_client_5` |
 | `platform.component.http.read-timeout` | Integer | `5` | 读取超时时间（秒） |
 | `platform.component.http.write-timeout` | Integer | `5` | 写入超时时间（秒） |
 | `platform.component.http.connect-timeout` | Integer | `5` | 连接超时时间（秒） |
@@ -590,7 +590,7 @@ platform:
 platform:
   component:
     http:
-      provider: HTTPCLIENT5  # 或 OKHTTP
+      provider: http_client_5  # 或 okhttp
 ```
 
 ### Q2: 如何处理请求超时？
