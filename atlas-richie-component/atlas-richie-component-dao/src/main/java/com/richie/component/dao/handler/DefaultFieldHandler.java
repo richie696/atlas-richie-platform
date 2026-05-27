@@ -6,10 +6,10 @@ import com.richie.component.dao.config.DaoProperties;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.reflection.MetaObject;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+
 
 /**
  * 默认字段处理器
@@ -36,7 +36,7 @@ public class DefaultFieldHandler implements MetaObjectHandler {
             return;
         }
         String username = getUsername();
-        LocalDateTime currentDateTime = LocalDateTime.now(LocaleContextHolder.getTimeZone().toZoneId());
+        var currentDateTime = Instant.now();
         if (metaObject.hasGetter(CREATE_ID) && metaObject.getValue(CREATE_ID) == null) {
             this.strictInsertFill(metaObject, CREATE_ID, String.class, username);
         }
@@ -44,10 +44,10 @@ public class DefaultFieldHandler implements MetaObjectHandler {
             this.strictInsertFill(metaObject, UPDATE_ID, String.class, username);
         }
         if (metaObject.hasGetter(CREATE_TIME) && metaObject.getValue(CREATE_TIME) == null) {
-            this.strictInsertFill(metaObject, CREATE_TIME, LocalDateTime.class, currentDateTime);
+            this.strictInsertFill(metaObject, CREATE_TIME, Instant.class, currentDateTime);
         }
         if (metaObject.hasGetter(UPDATE_TIME) && metaObject.getValue(UPDATE_TIME) == null) {
-            this.strictInsertFill(metaObject, UPDATE_TIME, LocalDateTime.class, currentDateTime);
+            this.strictInsertFill(metaObject, UPDATE_TIME, Instant.class, currentDateTime);
         }
         if (metaObject.hasGetter(DELETED) && metaObject.getValue(DELETED) == null) {
             this.strictInsertFill(metaObject, DELETED, Boolean.class, false);
@@ -63,7 +63,7 @@ public class DefaultFieldHandler implements MetaObjectHandler {
             this.strictUpdateFill(metaObject, UPDATE_ID, String.class, getUsername());
         }
         if (metaObject.hasGetter(UPDATE_TIME) && metaObject.getValue(UPDATE_TIME) == null) {
-            this.strictUpdateFill(metaObject, UPDATE_TIME, LocalDateTime.class, LocalDateTime.now(LocaleContextHolder.getTimeZone().toZoneId()));
+            this.strictUpdateFill(metaObject, UPDATE_TIME, Instant.class, Instant.now());
         }
     }
 
