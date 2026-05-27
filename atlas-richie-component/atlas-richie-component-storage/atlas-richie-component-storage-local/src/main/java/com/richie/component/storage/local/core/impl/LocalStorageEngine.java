@@ -11,7 +11,7 @@ import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.core.impl.AbstractDestroyEngine;
 import com.richie.component.storage.local.repository.entity.FileMetadata;
 import com.richie.component.storage.local.repository.mapper.FileMetadataMapper;
-import cn.hutool.core.lang.UUID;
+import java.util.UUID;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import tools.jackson.core.type.TypeReference;
 import lombok.RequiredArgsConstructor;
@@ -126,7 +126,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
                         .setData(JsonUtils.getInstance().deserialize(cachedContent, typeReference));
                 success.setSuccess(true)
                         .setKey(key)
-                        .setVersionId(UUID.fastUUID().toString(true))
+                        .setVersionId(UUID.randomUUID().toString().replace("-", ""))
                         .setContentMD5(HashUtils.md5(cachedContent))
                         .setContentType("application/json")
                         .setContentEncoding(StandardCharsets.UTF_8.name());
@@ -152,7 +152,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
                         .setData(JsonUtils.getInstance().deserialize(content, typeReference));
                 success.setSuccess(true)
                         .setKey(key)
-                        .setVersionId(UUID.fastUUID().toString(true))
+                        .setVersionId(UUID.randomUUID().toString().replace("-", ""))
                         .setContentMD5(HashUtils.md5(content))
                         .setContentType("application/json")
                         .setContentEncoding(StandardCharsets.UTF_8.name());
@@ -175,7 +175,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
             return new DownloadResponse<byte[]>()
                     .setSuccess(false)
                     .setErrorMessage("The directory does not have permission to write to files.")
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
         var absolutePath = getAbsolutePath(key);
@@ -184,7 +184,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
                 return new DownloadResponse<byte[]>()
                         .setSuccess(true)
                         .setKey(key)
-                        .setRequestId(UUID.fastUUID().toString(true))
+                        .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                         .setVersionId("1")
                         .setContentType("application/octet-stream")
                         .setData(Files.readAllBytes(absolutePath));
@@ -253,7 +253,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
                         return UploadResponse.builder()
                                 .success(true)
                                 .key(key)
-                                .versionId(UUID.fastUUID().toString(true))
+                                .versionId(UUID.randomUUID().toString().replace("-", ""))
                                 .hashValue(hashValue)
                                 .uploadTime(OffsetDateTime.now())
                                 .build();
@@ -302,7 +302,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
                         return UploadResponse.builder()
                                 .success(true)
                                 .key(key)
-                                .versionId(UUID.fastUUID().toString(true))
+                                .versionId(UUID.randomUUID().toString().replace("-", ""))
                                 .hashValue(hashValue)
                                 .uploadTime(OffsetDateTime.from(LocalDateTime.now()))
                                 .build();
@@ -330,7 +330,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
             return UploadResponse.builder()
                     .success(true)
                     .key(key)
-                    .versionId(UUID.fastUUID().toString(true))
+                    .versionId(UUID.randomUUID().toString().replace("-", ""))
                     .hashValue(hashValue)
                     .uploadTime(OffsetDateTime.from(LocalDateTime.now()))
                     .build();
@@ -388,7 +388,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
         try {
             Long exists = fileMetadataMapper.selectCount(new LambdaQueryWrapper<FileMetadata>().eq(FileMetadata::getKeyPath, key));
             var now = LocalDateTime.now();
-            var versionId = UUID.fastUUID().toString(true);
+            var versionId = UUID.randomUUID().toString().replace("-", "");
             if (exists != null && exists > 0L) {
                 FileMetadata update = new FileMetadata();
                 update.setSizeBytes(sizeBytes);

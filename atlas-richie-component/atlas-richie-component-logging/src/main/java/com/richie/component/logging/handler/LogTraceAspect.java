@@ -4,9 +4,9 @@ import com.richie.context.utils.time.Timer;
 import com.richie.component.logging.annotations.LogMethodTrace;
 import com.richie.component.logging.annotations.LogTrace;
 import com.richie.component.logging.domain.LogTraceInfo;
-import cn.hutool.core.exceptions.ExceptionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -121,7 +121,7 @@ public class LogTraceAspect {
             var stackTrace = e.getStackTrace();
             // 记录异常堆栈
             logBuilder
-                    .stacktrace(ExceptionUtil.stacktraceToString(e))
+                    .stacktrace(ExceptionUtils.getStackTrace(e))
                     .stacktraceLine(stackTrace.length > 0 ? stackTrace[0].getLineNumber() : null);
             log.error(logBuilder.build().toString());
             throw e;
@@ -131,7 +131,7 @@ public class LogTraceAspect {
     /**
      * 获取方法的代码行数
      *
-     * @param method  要访问的切面方法
+     * @param method 要访问的切面方法
      * @return 返回方法的代码行数
      */
     private String getLineNumber(@Nonnull Method method) {

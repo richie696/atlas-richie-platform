@@ -6,7 +6,7 @@ import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.UploadResponse;
 import com.richie.component.storage.bean.image.ImageOptions;
 import com.richie.component.storage.config.StorageProperties;
-import cn.hutool.core.lang.UUID;
+import java.util.UUID;
 import tools.jackson.core.type.TypeReference;
 import jcifs.CIFSContext;
 import jcifs.smb.SmbFile;
@@ -142,7 +142,7 @@ public final class SmbStorageEngine extends AbstractDestroyEngine<SmbFile> {
             return new DownloadResponse<T>()
                     .setSuccess(true)
                     .setKey(key)
-                    .setVersionId(UUID.fastUUID().toString(true))
+                    .setVersionId(UUID.randomUUID().toString().replace("-", ""))
                     .setContentMD5("")
                     .setContentType("application/json")
                     .setContentEncoding(StandardCharsets.UTF_8.name())
@@ -151,7 +151,7 @@ public final class SmbStorageEngine extends AbstractDestroyEngine<SmbFile> {
             return new DownloadResponse<T>()
                     .setSuccess(false)
                     .setErrorMessage(e.getMessage())
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
     }
@@ -163,7 +163,7 @@ public final class SmbStorageEngine extends AbstractDestroyEngine<SmbFile> {
             return new DownloadResponse<byte[]>()
                     .setSuccess(false)
                     .setErrorMessage("The directory does not have permission to write to files.")
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
         try (var smbFile = new SmbFile(getKeyPath(key), cifsContext);
@@ -181,7 +181,7 @@ public final class SmbStorageEngine extends AbstractDestroyEngine<SmbFile> {
             return new DownloadResponse<byte[]>()
                     .setSuccess(true)
                     .setKey(key)
-                    .setVersionId(UUID.fastUUID().toString(true))
+                    .setVersionId(UUID.randomUUID().toString().replace("-", ""))
                     .setContentMD5("")
                     .setContentType("application/json")
                     .setContentEncoding(StandardCharsets.UTF_8.name())
@@ -190,7 +190,7 @@ public final class SmbStorageEngine extends AbstractDestroyEngine<SmbFile> {
             return new DownloadResponse<byte[]>()
                     .setSuccess(false)
                     .setErrorMessage(e.getMessage())
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
     }
@@ -203,7 +203,7 @@ public final class SmbStorageEngine extends AbstractDestroyEngine<SmbFile> {
             return new DownloadResponse<byte[]>()
                     .setSuccess(false)
                     .setErrorMessage("The directory does not have permission to write to files.")
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
         return getObject(key, targetFile, returnData);
