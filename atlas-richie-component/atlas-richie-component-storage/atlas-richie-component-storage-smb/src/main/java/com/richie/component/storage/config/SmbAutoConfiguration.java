@@ -1,9 +1,9 @@
 package com.richie.component.storage.config;
 
-import jcifs.CIFSContext;
-import jcifs.CIFSException;
-import jcifs.config.PropertyConfiguration;
-import jcifs.context.BaseContext;
+import org.codelibs.jcifs.smb.CIFSContext;
+import org.codelibs.jcifs.smb.CIFSException;
+import org.codelibs.jcifs.smb.config.PropertyConfiguration;
+import org.codelibs.jcifs.smb.context.BaseContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -31,7 +31,6 @@ public class SmbAutoConfiguration {
      *
      * @param properties 存储配置
      * @return 返回CIFS上下文
-     * @throws CIFSException CIFS异常
      */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.storage.smb3", name = "enable", havingValue = "true")
