@@ -9,7 +9,7 @@ import com.richie.component.storage.bean.image.ImageOptions;
 import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.converter.StorageTypeConverter;
 import com.richie.component.storage.core.StorageEngine;
-import cn.hutool.core.lang.UUID;
+import java.util.UUID;
 import tools.jackson.core.type.TypeReference;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.http.HttpMethodName;
@@ -154,7 +154,7 @@ public final class CosStorageEngine extends AbstractObjectStorageEngine<COSClien
                     .setSuccess(false)
                     .setErrorMessage("The directory does not have permission to write to files.")
                     .setBucketName(getBucketName())
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
         return download(returnData, key, targetPath, context -> {
@@ -172,7 +172,7 @@ public final class CosStorageEngine extends AbstractObjectStorageEngine<COSClien
                     .setSuccess(false)
                     .setErrorMessage("The directory does not have permission to write to files.")
                     .setBucketName(getBucketName())
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
         return download(returnData, key, targetFile, context -> {

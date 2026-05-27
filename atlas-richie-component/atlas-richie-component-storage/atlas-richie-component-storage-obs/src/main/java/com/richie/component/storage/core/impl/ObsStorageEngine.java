@@ -8,7 +8,7 @@ import com.richie.component.storage.bean.image.ImageOptions;
 import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.converter.StorageTypeConverter;
 import com.richie.component.storage.core.StorageEngine;
-import cn.hutool.core.lang.UUID;
+import java.util.UUID;
 import tools.jackson.core.type.TypeReference;
 import com.obs.services.ObsClient;
 import com.obs.services.exception.ObsException;
@@ -189,7 +189,7 @@ public final class ObsStorageEngine extends AbstractObjectStorageEngine<ObsClien
                     .setSuccess(false)
                     .setErrorMessage("The directory does not have permission to write to files.")
                     .setBucketName(getBucketName())
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
         var client = getClient(ObsClient.class);
@@ -247,7 +247,7 @@ public final class ObsStorageEngine extends AbstractObjectStorageEngine<ObsClien
                     .setSuccess(false)
                     .setErrorMessage("The directory does not have permission to write to files.")
                     .setBucketName(getBucketName())
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
         var client = getClient(ObsClient.class);
