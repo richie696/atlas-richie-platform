@@ -182,8 +182,8 @@ public final class SmbStorageEngine implements StorageEngine {
         }
     }
 
-    private String serialize(Object obj) {
-        var json = JsonUtils.getInstance().serialize(obj, true);
+    private byte[] serialize(Object obj) {
+        var json = JsonUtils.getInstance().serializeBytes(obj);
         Objects.requireNonNull(json, "The serialized string cannot be null.");
         return json;
     }
