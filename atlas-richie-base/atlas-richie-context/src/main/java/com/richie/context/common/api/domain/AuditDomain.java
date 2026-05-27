@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableLogic;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * 审计领域基类
@@ -31,19 +31,13 @@ public abstract class AuditDomain extends Domain implements SoftDeletable {
      * 创建时间
      */
     @TableField(value = "create_time", fill = FieldFill.INSERT)
-    protected LocalDateTime createTime;
+    protected Instant createTime;
 
-    /**
-     * 更新人 ID
-     */
     @TableField(value = "update_id", fill = FieldFill.INSERT_UPDATE)
     protected String updateId;
 
-    /**
-     * 更新时间
-     */
     @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
-    protected LocalDateTime updateTime;
+    protected Instant updateTime;
 
     /**
      * 逻辑删除标识
