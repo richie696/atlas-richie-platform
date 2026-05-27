@@ -12,23 +12,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 2023-09-24 21:49:37
  */
 @Data
-@ConfigurationProperties(prefix = DaoConstant.DAO_PREFIX)
+@ConfigurationProperties(prefix = "platform.component.dao")
 public class DaoProperties {
 
     /**
      * 分页功能使用的数据库类型
      */
     private DbType dbType = DbType.MYSQL;
-
-    /**
-     * 是否格式化输出日志信息
-     */
-    private boolean enableLogging = false;
-
-    /**
-     * 是否启用多租户组件
-     */
-    private boolean enableTenant = false;
 
     /**
      * 批量更新限制阈值
