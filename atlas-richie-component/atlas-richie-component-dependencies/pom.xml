@@ -36,6 +36,12 @@
                 <artifactId>atlas-richie-component-dao</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
+            <!-- 多租户数据访问增强组件（可选） -->
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-dao-tenant</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
             <!-- 消息队列文档组件（支持Kafka、RabbitMQ、RocketMQ） -->
             <dependency>
                 <groupId>com.richie.component</groupId>
@@ -234,6 +240,11 @@
             <dependency>
                 <groupId>com.richie.component</groupId>
                 <artifactId>atlas-richie-component-storage-sftp</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-storage-ftp</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>

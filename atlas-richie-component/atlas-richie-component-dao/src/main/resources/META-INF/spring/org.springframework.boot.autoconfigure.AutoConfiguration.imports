@@ -1,4 +1,3 @@
 com.richie.component.dao.config.DaoAutoConfiguration
-com.richie.component.dao.tenant.MybatisPlusTenantAutoConfiguration
 com.richie.component.dao.snowflake.IdBuilderAutoConfiguration
 
