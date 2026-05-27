@@ -8,7 +8,7 @@ import com.richie.component.storage.bean.image.ImageOptions;
 import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.converter.StorageTypeConverter;
 import com.richie.component.storage.core.StorageEngine;
-import cn.hutool.core.lang.UUID;
+import java.util.UUID;
 import tools.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -228,7 +228,7 @@ public final class S3StorageEngine extends AbstractObjectStorageEngine<S3Client>
                     .setSuccess(false)
                     .setErrorMessage("The directory does not have permission to write to files.")
                     .setBucketName(getBucketName())
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
         var client = getClient(S3Client.class);
@@ -294,7 +294,7 @@ public final class S3StorageEngine extends AbstractObjectStorageEngine<S3Client>
                     .setSuccess(false)
                     .setErrorMessage("The directory does not have permission to write to files.")
                     .setBucketName(getBucketName())
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
         var client = getClient(S3Client.class);

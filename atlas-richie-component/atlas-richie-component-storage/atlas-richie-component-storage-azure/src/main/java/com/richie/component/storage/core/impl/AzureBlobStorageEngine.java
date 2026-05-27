@@ -7,7 +7,7 @@ import com.richie.component.storage.bean.UploadResponse;
 import com.richie.component.storage.bean.image.ImageOptions;
 import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.core.StorageEngine;
-import cn.hutool.core.lang.UUID;
+import java.util.UUID;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
@@ -121,7 +121,7 @@ public final class AzureBlobStorageEngine extends AbstractObjectStorageEngine<Bl
                     .setSuccess(false)
                     .setErrorMessage("The directory does not have permission to write to files.")
                     .setBucketName(getBucketName())
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
         var blobContainerClient = getClient(BlobContainerClient.class);

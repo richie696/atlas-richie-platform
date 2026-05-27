@@ -8,7 +8,7 @@ import com.richie.component.storage.bean.image.ImageOptions;
 import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.converter.StorageTypeConverter;
 import com.richie.component.storage.core.StorageEngine;
-import cn.hutool.core.lang.UUID;
+import java.util.UUID;
 import com.aliyun.oss.*;
 import com.aliyun.oss.internal.OSSHeaders;
 import com.aliyun.oss.model.*;
@@ -234,7 +234,7 @@ public final class OssStorageEngine extends AbstractObjectStorageEngine<OSS> imp
                     .setSuccess(false)
                     .setErrorMessage("The directory does not have permission to write to files.")
                     .setBucketName(getBucketName())
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
         var request = new GetObjectRequest(getBucketName(), key);
@@ -272,12 +272,12 @@ public final class OssStorageEngine extends AbstractObjectStorageEngine<OSS> imp
             return new DownloadResponse<byte[]>()
                     .setSuccess(false)
                     .setErrorMessage(ce.getErrorMessage())
-                    .setRequestId(UUID.fastUUID().toString(true));
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""));
         } catch (IOException e) {
             return new DownloadResponse<byte[]>()
                     .setSuccess(false)
                     .setErrorMessage(e.getMessage())
-                    .setRequestId(UUID.fastUUID().toString(true));
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""));
         } finally {
             destroy(ossClient);
         }
@@ -292,7 +292,7 @@ public final class OssStorageEngine extends AbstractObjectStorageEngine<OSS> imp
                     .setSuccess(false)
                     .setErrorMessage("The directory does not have permission to write to files.")
                     .setBucketName(getBucketName())
-                    .setRequestId(UUID.fastUUID().toString(true))
+                    .setRequestId(UUID.randomUUID().toString().replace("-", ""))
                     .setKey(key);
         }
         var ossClient = getClient(OSS.class);
