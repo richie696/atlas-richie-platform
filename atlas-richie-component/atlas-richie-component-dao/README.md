@@ -90,8 +90,8 @@ public class User {
     // 以下字段会自动填充（如果启用默认字段处理器）
     private String createId;      // 创建人
     private String updateId;      // 更新人
-    private LocalDateTime createTime;  // 创建时间
-    private LocalDateTime updateTime;  // 更新时间
+    private ZonedDateTime createTime;  // 创建时间
+    private ZonedDateTime updateTime;  // 更新时间
     private Boolean deleted;      // 逻辑删除标记
 }
 ```
@@ -483,8 +483,8 @@ public class User {
     // 自动填充字段
     private String createId;
     private String updateId;
-    private LocalDateTime createTime;
-    private LocalDateTime updateTime;
+    private ZonedDateTime createTime;
+    private ZonedDateTime updateTime;
     private Boolean deleted;
     
     @Version  // 乐观锁字段

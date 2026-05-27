@@ -15,6 +15,13 @@
     <packaging>pom</packaging>
     <name>Richie Java Platform</name>
 
+    <modules>
+        <module>atlas-richie-base</module>
+        <module>atlas-richie-component</module>
+<!--        <module>atlas-richie-component-template</module>-->
+        <module>atlas-richie-gateway-service</module>
+    </modules>
+
     <properties>
         <!-- 项目版本统一管理 -->
         <revision>1.0.0-SNAPSHOT</revision>
@@ -110,13 +117,6 @@
         <!-- Maven 项目信息报告插件 - 用于生成项目信息报告 -->
         <maven-project-info-reports-plugin.version>3.6.2</maven-project-info-reports-plugin.version>
     </properties>
-
-    <modules>
-        <module>atlas-richie-base</module>
-        <module>atlas-richie-component</module>
-        <module>atlas-richie-component-template</module>
-        <module>atlas-richie-gateway-service</module>
-    </modules>
 
     <!-- Maven 仓库配置 -->
     <repositories>
