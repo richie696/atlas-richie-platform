@@ -5,10 +5,10 @@ import com.richie.component.i18n.annotation.I18nControl;
 import com.richie.component.i18n.annotation.I18nDict;
 import com.richie.component.i18n.config.I18nProperties;
 import com.richie.component.i18n.handle.I18nHandle;
-import cn.hutool.core.util.ClassUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -179,7 +179,7 @@ public class I18nDictAspect {
                         i18nFieldsMap.putAll(i18nFields);
                     }
                 }
-            } else if (!ClassUtil.isBasicType(field.getType()) && !ClassUtil.isPrimitiveWrapper(field.getType())) {
+            } else if (!ClassUtils.isPrimitiveOrWrapper(field.getType())) {
                 field.setAccessible(true);
                 var object = field.get(result);
                 var i18nFields = getI18nFields(object);

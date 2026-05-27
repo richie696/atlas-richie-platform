@@ -6,6 +6,7 @@ import com.richie.contract.model.ApiResult;
 import com.richie.contract.constant.GlobalConstants;
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.context.utils.spring.JwtUtils;
+import com.richie.context.utils.web.ServletUtils;
 import com.richie.context.utils.spring.SpringBeanUtils;
 import com.richie.component.cache.GlobalCache;
 import com.richie.component.dao.snowflake.IdBuilder;
@@ -14,8 +15,7 @@ import com.richie.component.logging.callback.LogLifecycleCallback;
 import com.richie.component.logging.config.OperateLogProperties;
 import com.richie.component.logging.domain.AccessLogInfo;
 import com.richie.component.logging.service.AccessLogService;
-import cn.hutool.core.exceptions.ExceptionUtil;
-import cn.hutool.extra.servlet.JakartaServletUtil;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import tools.jackson.databind.JsonNode;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -134,10 +134,10 @@ public class AccessLogAspect {
                 if (customResult != null) {
                     originResult = customResult;
                 } else {
-                    originResult = ApiResult.error("500", ExceptionUtil.getRootCause(throwable));
+                    originResult = ApiResult.error("500", ExceptionUtils.getRootCause(throwable));
                 }
             } else {
-                originResult = ApiResult.error("500", ExceptionUtil.getRootCause(throwable));
+                originResult = ApiResult.error("500", ExceptionUtils.getRootCause(throwable));
             }
             ex = throwable;
         }
@@ -316,7 +316,7 @@ public class AccessLogAspect {
 
         // 从响应数据中提取用户信息
         if (result instanceof JsonNode jsonNode) {
-            var loginToken = jsonNode.asText("token");
+            var loginToken = jsonNode.asString("token");
             if (StringUtils.isNotBlank(loginToken)) {
                 logInfo.setOperator(JwtUtils.getUsername(loginToken))
                         .setTenantId(JwtUtils.getTenantCode(loginToken));
@@ -445,7 +445,7 @@ public class AccessLogAspect {
                 .setRequestBody(requestBody)
                 .setResponseBody(responseBody)
                 .setElapsedTime(elapsedTime)
-                .setIp(JakartaServletUtil.getClientIP(request));
+                .setIp(ServletUtils.getClientIP(request));
 
         var extra = HeaderContextHolder.getHeader(GlobalConstants.X_RD_REQUEST_EXTRA);
         if (StringUtils.isNotBlank(extra)) {
