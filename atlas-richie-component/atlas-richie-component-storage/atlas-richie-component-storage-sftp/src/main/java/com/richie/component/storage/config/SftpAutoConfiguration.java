@@ -22,7 +22,7 @@ public class SftpAutoConfiguration {
     @ConditionalOnProperty(prefix = "platform.component.storage.sftp", name = "enable", havingValue = "true")
     public SshClient sshClient() {
         var client = SshClient.setUpDefaultClient();
-        client.setServerKeyVerifier((session, address, key) -> true);
+        client.setServerKeyVerifier((_, _, _) -> true);
         CoreModuleProperties.IDLE_TIMEOUT.set(client, Duration.ofMinutes(5));
         client.start();
         log.info("SSHD client started");

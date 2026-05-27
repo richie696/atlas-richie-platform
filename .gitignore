@@ -148,3 +148,4 @@ target
 # Flattened POM
 ######################
 .flattened-pom.xml
+/.history/
