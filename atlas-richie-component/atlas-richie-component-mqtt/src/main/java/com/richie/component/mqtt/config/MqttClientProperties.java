@@ -2,7 +2,6 @@ package com.richie.component.mqtt.config;
 
 import com.richie.component.mqtt.enums.ClientTypeEnum;
 import com.richie.component.mqtt.enums.DatasourceTypeEnum;
-import com.richie.component.mqtt.enums.MqttVersion;
 import com.richie.component.mqtt.enums.ServerTypeEnum;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -48,7 +47,7 @@ public class MqttClientProperties {
     /**
      * 当前MQTT Client是服务端还是客户端
      */
-    private MqttVersion mqttVersion = MqttVersion.MQTT_5_0;
+    private String mqttVersion = "mqtt_5_0";
 
     /**
      * 根Topic名称

@@ -7,17 +7,15 @@ package com.richie.component.mqtt.filter.handler;
  * <p>
  * <strong>泛型设计：</strong>
  * <ul>
- *   <li><strong>Paho MQTT 客户端</strong>：使用 {@code MessageHandler<ConsumerMessage>}，消息格式为 ConsumerMessage</li>
  *   <li><strong>HiveMQ MQTT 客户端</strong>：使用 {@code MessageHandler<Mqtt5Publish>}，消息格式为 Mqtt5Publish（payload 直接是业务数据）</li>
  * </ul>
  * <p>
  * <strong>实现类：</strong>
  * <ul>
- *   <li>{@code MessageHandlerImpl<ConsumerMessage>}：用于 Paho MQTT 客户端</li>
  *   <li>{@code HiveMqMessageHandlerImpl<Mqtt5Publish>}：用于 HiveMQ MQTT 客户端</li>
  * </ul>
  *
- * @param <T> 消息类型，Paho 使用 ConsumerMessage，HiveMQ 使用 Mqtt5Publish
+ * @param <T> 消息类型，HiveMQ 使用 Mqtt5Publish
  * @author richie696
  * @version 2.0
  * @since 2022-09-16 17:42:58
