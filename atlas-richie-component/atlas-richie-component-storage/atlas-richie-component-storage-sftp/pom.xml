@@ -12,7 +12,7 @@
 
     <artifactId>atlas-richie-component-storage-sftp</artifactId>
     <name>atlas-richie-component-storage-sftp</name>
-    <description>Richie对象存储组件 - SFTP</description>
+    <description>对象存储组件 - SFTP（基于 Apache MINA SSHD）</description>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -21,11 +21,13 @@
             <artifactId>atlas-richie-component-storage-core</artifactId>
             <scope>provided</scope>
         </dependency>
-        <!-- SFTP 对象存储 SDK -->
+        <!-- Apache MINA SSHD SFTP 客户端 -->
         <dependency>
-            <groupId>com.jcraft</groupId>
-            <artifactId>jsch</artifactId>
+            <groupId>org.apache.sshd</groupId>
+            <artifactId>sshd-sftp</artifactId>
+            <version>${sshd.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
