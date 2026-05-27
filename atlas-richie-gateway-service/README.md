@@ -260,15 +260,7 @@ graph LR
 - Nacos 2.0+（用于服务发现和配置管理）
 - Sentinel Dashboard（用于限流规则管理，可选）
 
-### 2. 下载和配置
-
-#### 下载网关
-
-从 Nexus 仓库下载最新版本的网关 JAR 包：
-
-```
-http://nexus.rydeen.com.cn/#browse/browse:platform-snapshot:com%2Frydeen%2Fgateway%2Frichie-gateway-service
-```
+### 2. 配置
 
 #### 创建配置文件
 
