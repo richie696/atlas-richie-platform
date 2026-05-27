@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 可信设备视图对象
@@ -49,21 +49,21 @@ public class TrustedDeviceVO {
      * <p>
      * 超过此时间后，设备信任失效，需要重新进行 MFA 验证
      */
-    private LocalDateTime trustedUntil;
+    private OffsetDateTime trustedUntil;
 
     /**
      * 最后使用时间
      * <p>
      * 设备最后一次用于跳过 MFA 验证的时间
      */
-    private LocalDateTime lastUsedTime;
+    private OffsetDateTime lastUsedTime;
 
     /**
      * 创建时间
      * <p>
      * 设备注册为可信设备的时间
      */
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     /**
      * 是否为主管理设备

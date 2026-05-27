@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * MFA用户信息实体
@@ -79,17 +79,11 @@ public class MfaUserInfo extends AuditDomain {
     /**
      * 绑定时间
      */
-    private LocalDateTime bindTime;
+    private OffsetDateTime bindTime;
 
-    /**
-     * 激活时间
-     */
-    private LocalDateTime activatedTime;
+    private OffsetDateTime activatedTime;
 
-    /**
-     * 最后使用时间
-     */
-    private LocalDateTime lastUsedTime;
+    private OffsetDateTime lastUsedTime;
 
     /**
      * 失败尝试次数
@@ -99,12 +93,9 @@ public class MfaUserInfo extends AuditDomain {
     /**
      * 锁定截止时间
      */
-    private LocalDateTime lockedUntil;
+    private OffsetDateTime lockedUntil;
 
-    /**
-     * 密钥轮换时间
-     */
-    private LocalDateTime keyRotationTime;
+    private OffsetDateTime keyRotationTime;
 
     /**
      * 备份码（哈希后，JSON格式）

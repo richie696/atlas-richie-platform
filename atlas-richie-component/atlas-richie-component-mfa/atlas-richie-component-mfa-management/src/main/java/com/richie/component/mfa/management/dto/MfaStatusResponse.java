@@ -4,7 +4,7 @@ import com.richie.component.mfa.core.constant.MfaStatusEnum;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * MFA状态响应DTO
@@ -54,16 +54,9 @@ public class MfaStatusResponse {
      * <p>
      * 如果未绑定，此字段为 null
      */
-    private LocalDateTime bindTime;
+    private OffsetDateTime bindTime;
 
-    /**
-     * 最后使用时间
-     * <p>
-     * 如果已使用，返回最后使用时间
-     * <p>
-     * 如果未使用，此字段为 null
-     */
-    private LocalDateTime lastUsedTime;
+    private OffsetDateTime lastUsedTime;
 
     /**
      * 可信设备数量

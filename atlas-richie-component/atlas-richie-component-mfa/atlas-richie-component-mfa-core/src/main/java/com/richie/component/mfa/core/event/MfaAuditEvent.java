@@ -4,7 +4,8 @@ import com.richie.component.mfa.core.constant.MfaOperationTypeEnum;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 /**
  * MFA 审计事件
@@ -78,7 +79,7 @@ public class MfaAuditEvent extends ApplicationEvent {
     /**
      * 事件时间戳
      */
-    private final LocalDateTime eventTimestamp;
+    private final OffsetDateTime eventTimestamp;
 
     /**
      * 构造函数
@@ -109,8 +110,8 @@ public class MfaAuditEvent extends ApplicationEvent {
                         String errorCode,
                         String errorMessage,
                         Long durationMs,
-                        LocalDateTime eventTimestamp) {
-        super(source);
+                        OffsetDateTime eventTimestamp) {
+        this.eventTimestamp = eventTimestamp != null ? eventTimestamp : OffsetDateTime.now(ZoneOffset.UTC);
         this.tenantId = tenantId;
         this.userId = userId;
         this.operationType = operationType;
@@ -122,7 +123,7 @@ public class MfaAuditEvent extends ApplicationEvent {
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
         this.durationMs = durationMs;
-        this.eventTimestamp = eventTimestamp != null ? eventTimestamp : LocalDateTime.now();
+        super(source);
     }
 
     /**
@@ -151,7 +152,7 @@ public class MfaAuditEvent extends ApplicationEvent {
         private String errorCode;
         private String errorMessage;
         private Long durationMs;
-        private LocalDateTime timestamp;
+        private OffsetDateTime timestamp;
 
         public MfaAuditEventBuilder(Object source) {
             this.source = source;
@@ -212,7 +213,7 @@ public class MfaAuditEvent extends ApplicationEvent {
             return this;
         }
 
-        public MfaAuditEventBuilder timestamp(LocalDateTime timestamp) {
+        public MfaAuditEventBuilder timestamp(OffsetDateTime timestamp) {
             this.timestamp = timestamp;
             return this;
         }

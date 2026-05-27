@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * MFA可信设备实体
@@ -85,15 +85,9 @@ public class MfaTrustedDevice extends AuditDomain {
      * <p>超过此时间后，设备信任失效，需要重新进行MFA验证
      */
     @TableField("trusted_until")
-    private LocalDateTime trustedUntil;
+    private OffsetDateTime trustedUntil;
 
-    /**
-     * 最后使用时间
-     *
-     * <p>设备最后一次用于跳过MFA验证的时间
-     */
-    @TableField("last_used_time")
-    private LocalDateTime lastUsedTime;
+    private OffsetDateTime lastUsedTime;
 
     /**
      * 是否为主管理设备（0=否，1=是）
