@@ -28,7 +28,6 @@ import java.util.Objects;
  * <p>
  * <strong>使用场景：</strong>
  * <ul>
- *   <li>Paho MQTT 客户端：通过 {@link #createSocketFactory(ServerInfo.Ssl, MqttProtocolEnum)} 创建 SSLSocketFactory</li>
  *   <li>HiveMQ MQTT 客户端：通过 {@link #createTrustManagerFactory(ServerInfo.Ssl, MqttProtocolEnum)} 和
  *       {@link #createKeyManagerFactory(ServerInfo.Ssl, MqttProtocolEnum)} 创建 TrustManagerFactory 和 KeyManagerFactory</li>
  * </ul>
@@ -39,21 +38,6 @@ import java.util.Objects;
  */
 @Slf4j
 public class MqttSslUtils {
-
-    /**
-     * 创建 SSL/TLS Socket Factory（用于 Paho MQTT 客户端）
-     * <p>
-     * 根据配置自动选择 X.509 证书认证模式或简单 TLS 模式。
-     *
-     * @param ssl      SSL配置对象，如果为 null 或未配置证书信息，则使用简单 TLS 模式
-     * @param protocol 连接协议类型，用于判断是否需要 SSL/TLS
-     * @return SSLSocketFactory 实例
-     * @throws Exception 当创建 Socket Factory 失败时抛出异常
-     */
-    public static SSLSocketFactory createSocketFactory(ServerInfo.Ssl ssl, MqttProtocolEnum protocol) throws Exception {
-        SSLContext sslContext = createSslContext(ssl, protocol);
-        return sslContext.getSocketFactory();
-    }
 
     /**
      * 创建 SSL/TLS Context（用于 HiveMQ MQTT 客户端）
