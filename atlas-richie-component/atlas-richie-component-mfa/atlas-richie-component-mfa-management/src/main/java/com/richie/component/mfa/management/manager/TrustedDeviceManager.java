@@ -14,7 +14,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
 import java.util.List;
 import java.util.concurrent.StructuredTaskScope;
 
@@ -107,7 +109,7 @@ public class TrustedDeviceManager {
                     tenantId, userId, deviceId);
 
                 existing.setTrustedUntil(calculateTrustUntil());
-                existing.setLastUsedTime(LocalDateTime.now());
+                existing.setLastUsedTime(OffsetDateTime.now(ZoneOffset.UTC));
                 if (StringUtils.isNotBlank(deviceName)) {
                     existing.setDeviceName(deviceName);
                 }
@@ -131,7 +133,7 @@ public class TrustedDeviceManager {
             device.setDeviceName(deviceName);
             device.setDeviceFingerprint(deviceFingerprint);
             device.setTrustedUntil(calculateTrustUntil());
-            device.setLastUsedTime(LocalDateTime.now());
+            device.setLastUsedTime(OffsetDateTime.now(ZoneOffset.UTC));
             device.setIsPrimary(isFirstDevice ? 1 : 0);
 
             trustedDeviceMapper.insert(device);
@@ -226,7 +228,7 @@ public class TrustedDeviceManager {
         MfaTrustedDevice device = trustedDeviceMapper.selectByDeviceId(actualTenantId, userId, deviceId);
 
         if (device != null) {
-            device.setLastUsedTime(LocalDateTime.now());
+            device.setLastUsedTime(OffsetDateTime.now(ZoneOffset.UTC));
             trustedDeviceMapper.updateById(device);
 
             // 同步到缓存
@@ -417,9 +419,9 @@ public class TrustedDeviceManager {
      *
      * @return 信任过期时间（当前时间 + 默认信任天数）
      */
-    private LocalDateTime calculateTrustUntil() {
+    private OffsetDateTime calculateTrustUntil() {
         int days = properties.getSecurity().getTrustedDevice().getDefaultTrustDays();
-        return LocalDateTime.now().plusDays(days);
+        return OffsetDateTime.now(ZoneOffset.UTC).plusDays(days);
     }
 
     /**
@@ -438,7 +440,7 @@ public class TrustedDeviceManager {
         if (device == null || device.getTrustedUntil() == null) {
             return false;
         }
-        return device.getTrustedUntil().isAfter(LocalDateTime.now());
+        return device.getTrustedUntil().isAfter(OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     /**
@@ -465,7 +467,7 @@ public class TrustedDeviceManager {
         );
 
         // 计算TTL（信任过期时间 - 当前时间）
-        long ttl = Duration.between(LocalDateTime.now(), device.getTrustedUntil()).toMillis();
+        long ttl = Duration.between(OffsetDateTime.now(ZoneOffset.UTC), device.getTrustedUntil()).toMillis();
         if (ttl > 0) {
             GlobalCache.addObjectToHash(cacheKey, device, ttl);
             log.debug("可信设备信息同步到缓存成功，tenantId: {}, userId: {}, deviceId: {}",
@@ -520,7 +522,7 @@ public class TrustedDeviceManager {
             device.getTenantId(), device.getUserId(), tenantSupport.isTenantEnabled());
 
         // 计算TTL（信任过期时间 - 当前时间）
-        long ttl = Duration.between(LocalDateTime.now(), device.getTrustedUntil()).toMillis();
+        long ttl = Duration.between(OffsetDateTime.now(ZoneOffset.UTC), device.getTrustedUntil()).toMillis();
         if (ttl > 0) {
             GlobalCache.addSetItem(listKey, device.getDeviceId());
             log.debug("设备ID已添加到列表，tenantId: {}, userId: {}, deviceId: {}",

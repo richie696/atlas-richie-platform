@@ -25,7 +25,9 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Set;
 import java.util.Set;
 
 /**
@@ -102,13 +104,13 @@ public class MfaValidationServiceImpl implements MfaValidationService {
         }
 
         // 3. 检查账户是否已锁定
-        if (userInfo.getLockedUntil() != null && LocalDateTime.now().isBefore(userInfo.getLockedUntil())) {
+        if (userInfo.getLockedUntil() != null && OffsetDateTime.now(ZoneOffset.UTC).isBefore(userInfo.getLockedUntil())) {
             return MfaValidationResult.builder()
                 .success(false)
                 .mfaRequired(true)
                 .mfaBound(true)
                 .accountLocked(true)
-                .lockedUntil(userInfo.getLockedUntil().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli())
+                .lockedUntil(userInfo.getLockedUntil().toInstant().toEpochMilli())
                 .errorCode("ACCOUNT_LOCKED")
                 .errorMessage("账户已锁定，请稍后再试")
                 .build();
@@ -161,14 +163,14 @@ public class MfaValidationServiceImpl implements MfaValidationService {
         }
 
         // 3. 检查账户是否已锁定
-        if (userInfo.getLockedUntil() != null && LocalDateTime.now().isBefore(userInfo.getLockedUntil())) {
+        if (userInfo.getLockedUntil() != null && OffsetDateTime.now(ZoneOffset.UTC).isBefore(userInfo.getLockedUntil())) {
             // 发布审计事件：账户已锁定
             publishAuditEvent(tenantId, userId, MfaOperationTypeEnum.VERIFY, "TOTP", null, "BLOCKED",
                 "ACCOUNT_LOCKED", "账户已锁定，请稍后再试", null);
             return MfaValidationResult.builder()
                 .success(false)
                 .accountLocked(true)
-                .lockedUntil(userInfo.getLockedUntil().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli())
+                .lockedUntil(userInfo.getLockedUntil().toInstant().toEpochMilli())
                 .errorCode("ACCOUNT_LOCKED")
                 .errorMessage("账户已锁定，请稍后再试")
                 .build();
@@ -324,7 +326,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
         }
 
         // 检查设备信任是否有效（未过期）
-        if (device.getTrustedUntil() == null || LocalDateTime.now().isAfter(device.getTrustedUntil())) {
+        if (device.getTrustedUntil() == null || OffsetDateTime.now(ZoneOffset.UTC).isAfter(device.getTrustedUntil())) {
             // 设备已过期
             return MfaValidationResult.builder()
                 .success(false)
@@ -370,7 +372,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
                 String deviceKey = MfaKeyUtils.getTrustedDeviceCacheKey(tenantId, userId, deviceId, tenantSupport.isTenantEnabled());
                 MfaTrustedDevice device = GlobalCache.getObjectFromHash(deviceKey, MfaTrustedDevice.class);
                 if (device != null && device.getTrustedUntil() != null
-                    && LocalDateTime.now().isBefore(device.getTrustedUntil())) {
+                    && OffsetDateTime.now(ZoneOffset.UTC).isBefore(device.getTrustedUntil())) {
                     validCount++;
                 }
             }
@@ -418,7 +420,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
                 .errorCode(errorCode)
                 .errorMessage(errorMessage)
                 .durationMs(durationMs)
-                .timestamp(LocalDateTime.now())
+                .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
                 .build();
 
             eventPublisher.publishEvent(event);

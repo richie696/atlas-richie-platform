@@ -38,7 +38,7 @@ public class MfaTrustedDeviceProperties {
      * <p>
      * 使用场景：
      * <ul>
-     *   <li>management 模块：用于计算 {@code trustedUntil} 时间：{@code LocalDateTime.now().plusDays(defaultTrustDays)}</li>
+     *   <li>management 模块：用于计算 {@code trustedUntil} 时间：{@code OffsetDateTime.now(ZoneOffset.UTC).plusDays(defaultTrustDays)}</li>
      *   <li>validation 模块：用于前端提示用户"信任此设备后，将在 X 天内免验证"</li>
      * </ul>
      */

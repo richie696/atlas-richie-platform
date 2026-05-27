@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.ZoneOffset;
 import java.util.List;
 
 /**
@@ -29,10 +30,10 @@ import java.util.List;
 @RestController
 @RequestMapping("${platform.component.mfa.management.api-prefix:/mfa}")
 @ConditionalOnProperty(
-    prefix = "platform.component.mfa.management",
-    name = "controller-enabled",
-    havingValue = "true",
-    matchIfMissing = true
+        prefix = "platform.component.mfa.management",
+        name = "controller-enabled",
+        havingValue = "true",
+        matchIfMissing = true
 )
 @RequiredArgsConstructor
 public class MfaManagementController {
@@ -89,9 +90,9 @@ public class MfaManagementController {
         String tenantId = tenantSupport.isTenantEnabled() ? request.getTenantId() : null;
 
         MfaBindResult result = bindManager.bindDevice(
-            tenantId,
-            request.getUserId(),
-            request.getDeviceType()
+                tenantId,
+                request.getUserId(),
+                request.getDeviceType()
         );
 
         MfaBindResponse response = new MfaBindResponse();
@@ -132,13 +133,13 @@ public class MfaManagementController {
         String tenantId = tenantSupport.isTenantEnabled() ? request.getTenantId() : null;
 
         boolean success = bindManager.activateDevice(
-            tenantId,
-            request.getUserId(),
-            request.getCode(),
-            request.getDeviceId(),
-            request.getDeviceName(),
-            request.getDeviceFingerprint(),
-            request.getTrustDevice()
+                tenantId,
+                request.getUserId(),
+                request.getCode(),
+                request.getDeviceId(),
+                request.getDeviceName(),
+                request.getDeviceFingerprint(),
+                request.getTrustDevice()
         );
 
         if (success) {
@@ -172,8 +173,8 @@ public class MfaManagementController {
         String tenantId = tenantSupport.isTenantEnabled() ? request.getTenantId() : null;
 
         boolean success = bindManager.unbindDevice(
-            tenantId,
-            request.getUserId()
+                tenantId,
+                request.getUserId()
         );
 
         if (success) {
@@ -220,7 +221,7 @@ public class MfaManagementController {
      * <p>
      * API路径：POST /api/mfa/trusted-devices
      *
-     * @param request            注册请求（body）
+     * @param request             注册请求（body）
      * @param hardwareFingerprint 设备指纹，从请求头 X-Hardware-Fingerprint 注入；body 未传时使用此值写入数据库
      * @return 注册成功的可信设备信息
      * <ul>
@@ -238,25 +239,25 @@ public class MfaManagementController {
         String actualTenantId = tenantSupport.isTenantEnabled() ? request.getTenantId() : null;
         // 设备指纹：优先用 body，未传则用请求头 X-Hardware-Fingerprint（前端框架会自动附带）
         String deviceFingerprint = StringUtils.isNotBlank(request.getDeviceFingerprint())
-            ? request.getDeviceFingerprint()
-            : hardwareFingerprint;
+                ? request.getDeviceFingerprint()
+                : hardwareFingerprint;
 
         MfaTrustedDevice device = trustedDeviceManager.registerTrustedDevice(
-            actualTenantId,
-            request.getUserId(),
-            request.getDeviceId(),
-            request.getDeviceName(),
-            deviceFingerprint
+                actualTenantId,
+                request.getUserId(),
+                request.getDeviceId(),
+                request.getDeviceName(),
+                deviceFingerprint
         );
 
         TrustedDeviceVO vo = TrustedDeviceVO.builder()
-            .deviceId(device.getDeviceId())
-            .deviceName(device.getDeviceName())
-            .trustedUntil(device.getTrustedUntil())
-            .lastUsedTime(device.getLastUsedTime())
-            .createdAt(device.getCreateTime())
-            .isPrimary(device.getIsPrimary() != null && device.getIsPrimary() == 1)
-            .build();
+                .deviceId(device.getDeviceId())
+                .deviceName(device.getDeviceName())
+                .trustedUntil(device.getTrustedUntil())
+                .lastUsedTime(device.getLastUsedTime())
+                .createdAt(device.getCreateTime().atOffset(ZoneOffset.UTC))
+                .isPrimary(device.getIsPrimary() != null && device.getIsPrimary() == 1)
+                .build();
 
         return ApiResult.success(vo);
     }
@@ -287,25 +288,25 @@ public class MfaManagementController {
         List<MfaTrustedDevice> devices = trustedDeviceManager.listTrustedDevices(actualTenantId, userId);
         MfaTrustedDevice primary = trustedDeviceManager.getPrimaryDevice(actualTenantId, userId);
         boolean currentDeviceIsPrimary = primary != null && StringUtils.isNotBlank(currentDeviceId)
-            && currentDeviceId.equals(primary.getDeviceId());
+                && currentDeviceId.equals(primary.getDeviceId());
 
         List<TrustedDeviceVO> deviceVOList = devices.stream()
-            .map(device -> TrustedDeviceVO.builder()
-                .deviceId(device.getDeviceId())
-                .deviceName(device.getDeviceName())
-                .trustedUntil(device.getTrustedUntil())
-                .lastUsedTime(device.getLastUsedTime())
-                .createdAt(device.getCreateTime())
-                .isPrimary(device.getIsPrimary() != null && device.getIsPrimary() == 1)
-                .build())
-            .toList();
+                .map(device -> TrustedDeviceVO.builder()
+                        .deviceId(device.getDeviceId())
+                        .deviceName(device.getDeviceName())
+                        .trustedUntil(device.getTrustedUntil())
+                        .lastUsedTime(device.getLastUsedTime())
+                        .createdAt(device.getCreateTime().atOffset(ZoneOffset.UTC))
+                        .isPrimary(device.getIsPrimary() != null && device.getIsPrimary() == 1)
+                        .build())
+                .toList();
 
         TrustedDeviceListResponse response = TrustedDeviceListResponse.builder()
-            .devices(deviceVOList)
-            .total(deviceVOList.size())
-            .maxDevices(properties.getSecurity().getTrustedDevice().getMaxDevices())
-            .currentDeviceIsPrimary(currentDeviceIsPrimary)
-            .build();
+                .devices(deviceVOList)
+                .total(deviceVOList.size())
+                .maxDevices(properties.getSecurity().getTrustedDevice().getMaxDevices())
+                .currentDeviceIsPrimary(currentDeviceIsPrimary)
+                .build();
 
         return ApiResult.success(response);
     }
@@ -402,15 +403,15 @@ public class MfaManagementController {
     @PostMapping("/backup-codes/verify")
     public ApiResult<Void> verifyAndConsumeBackupCode(@RequestBody MfaBackupCodeVerifyRequest request) {
         if (request == null || StringUtils.isBlank(request.getUserId())
-            || StringUtils.isBlank(request.getCode())) {
+                || StringUtils.isBlank(request.getCode())) {
             return ApiResult.error("用户ID和备份码不能为空");
         }
 
         String tenantId = tenantSupport.isTenantEnabled() ? request.getTenantId() : null;
         boolean success = bindManager.verifyAndConsumeBackupCode(
-            tenantId,
-            request.getUserId(),
-            request.getCode()
+                tenantId,
+                request.getUserId(),
+                request.getCode()
         );
 
         if (success) {

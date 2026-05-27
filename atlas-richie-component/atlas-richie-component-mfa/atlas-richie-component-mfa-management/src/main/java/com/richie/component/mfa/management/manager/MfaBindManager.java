@@ -24,7 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.annotation.PostConstruct;
 import tools.jackson.core.type.TypeReference;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -213,7 +214,7 @@ public class MfaBindManager {
         userInfo.setDigits(properties.getTotp().getDigits());
         userInfo.setPeriod(properties.getTotp().getPeriod());
         userInfo.setStatus(MfaStatusEnum.NOT_ACTIVATED);  // 未激活
-        userInfo.setBindTime(LocalDateTime.now());
+        userInfo.setBindTime(OffsetDateTime.now(ZoneOffset.UTC));
 
         mfaUserMapper.insert(userInfo);
 
@@ -323,7 +324,7 @@ public class MfaBindManager {
 
         // 3. 更新状态为已激活
         // 使用 LambdaUpdateWrapper 显式更新字段，确保状态和激活时间被正确更新
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<MfaUserInfo> updateWrapper =
             new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<>();
         updateWrapper.eq(MfaUserInfo::getId, userInfo.getId())

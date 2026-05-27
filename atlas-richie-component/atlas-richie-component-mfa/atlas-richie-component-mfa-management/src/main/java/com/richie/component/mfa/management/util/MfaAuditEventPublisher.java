@@ -9,7 +9,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 /**
  * MFA 审计事件发布工具类
@@ -70,7 +71,7 @@ public class MfaAuditEventPublisher {
                 .errorCode(errorCode)
                 .errorMessage(errorMessage)
                 .durationMs(durationMs)
-                .timestamp(LocalDateTime.now())
+                .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
                 .build();
 
             eventPublisher.publishEvent(event);
