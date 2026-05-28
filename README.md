@@ -206,6 +206,11 @@ mvn clean install -DskipTests
 
 <dependency>
     <groupId>com.richie.component</groupId>
+    <artifactId>atlas-richie-component-storage-core</artifactId>
+</dependency>
+
+<dependency>
+    <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-storage-oss</artifactId>
 </dependency>
 </dependencies>
@@ -436,20 +441,23 @@ platform:
 
 ## 📄 许可证
 
-本项目采用公司内部许可证。
+本项目采用 [Apache License 2.0](./LICENSE) 开源协议。
+
+请同时参考仓库根目录的 [NOTICE](./NOTICE) 文件。
 
 ## 🔗 相关链接
 
-- [Richie技术中台](https://docs.richie696.cn/)
+- [Atlas Richie技术中台](https://docs.richie696.cn/)
 - [问题反馈](richie696@icloud.com)
 - [功能建议](richie696@icloud.com)
+- [贡献指南](./CONTRIBUTING.md)
 
 ## 📞 联系方式
 
-- **维护者**：王锦阳
+- **维护者**：Richie Wang
 - **邮箱**：richie696@icloud.com
 
 ---
 
-**Richie Platform** - 让技术更简单，让业务更专注 🚀
+**Atlas Richie Platform** - 让技术更简单，让业务更专注 🚀
 
