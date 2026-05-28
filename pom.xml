@@ -748,10 +748,10 @@
                     <artifactId>license-maven-plugin</artifactId>
                     <version>${license-maven-plugin.version}</version>
                     <configuration>
-                        <!-- 许可证名称：使用自定义专有许可证 -->
+                        <!-- 许可证名称：与仓库根目录 LICENSE 保持一致（Apache License 2.0） -->
                         <!-- 注意：org.codehaus.mojo:license-maven-plugin 2.0.0 不支持 licenseHeaderFile 参数 -->
                         <!-- 该插件主要用于管理项目许可证和第三方依赖许可证，不支持自定义许可证头文件 -->
-                        <licenseName>proprietary</licenseName>
+                        <licenseName>apache_v2</licenseName>
                         <!-- 版权所有者 -->
                         <organizationName>Richie Technology Co., Ltd.</organizationName>
                         <!-- 版权年份 -->
@@ -1056,7 +1056,7 @@
                 <artifactId>license-maven-plugin</artifactId>
                 <version>${license-maven-plugin.version}</version>
                 <configuration>
-                    <licenseName>proprietary</licenseName>
+                    <licenseName>apache_v2</licenseName>
                     <organizationName>Richie Technology Co., Ltd.</organizationName>
                     <inceptionYear>2024</inceptionYear>
                 </configuration>
