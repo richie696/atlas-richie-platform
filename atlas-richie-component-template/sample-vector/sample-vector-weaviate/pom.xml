@@ -12,7 +12,6 @@
     </parent>
 
     <artifactId>sample-vector-weaviate</artifactId>
-    <name>sample-vector-weaviate</name>
 
     <dependencies>
         <dependency>

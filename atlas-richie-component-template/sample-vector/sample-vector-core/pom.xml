@@ -12,7 +12,6 @@
     </parent>
 
     <artifactId>sample-vector-core</artifactId>
-    <name>sample-vector-core</name>
 
     <dependencies>
         <dependency>

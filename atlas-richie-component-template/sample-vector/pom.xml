@@ -12,7 +12,6 @@
     </parent>
 
     <artifactId>sample-vector</artifactId>
-    <name>向量数据库组件示例服务</name>
     <packaging>pom</packaging>
 
     <modules>

@@ -9,9 +9,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>atlas-richie-component-http-restclient</artifactId>
-    <name>HTTP客户端 - Spring RestClient</name>
+    <name>atlas-richie-component-http-restclient</name>
     <description>基于 Spring Boot RestClient 的 HTTP 客户端实现</description>
+    <artifactId>atlas-richie-component-http-restclient</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>

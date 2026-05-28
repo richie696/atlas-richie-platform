@@ -14,7 +14,6 @@
     <groupId>com.richie.sample</groupId>
     <artifactId>atlas-richie-component-template</artifactId>
     <version>${revision}</version>
-    <name>atlas-richie-component-template</name>
     <description>Richie中台组件Demo工程</description>
     <packaging>pom</packaging>
 
@@ -62,6 +61,23 @@
 
     <build>
         <plugins>
+            <!-- 强制 sample 子模块不参与 install / deploy，避免随全局发布进入私服 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+
             <!-- 与平台一致：使用 flatten-maven-plugin 解析 ${revision}，由全局 revision 控制版本号 -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

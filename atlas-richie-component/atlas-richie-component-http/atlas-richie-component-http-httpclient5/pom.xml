@@ -9,9 +9,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>atlas-richie-component-http-httpclient5</artifactId>
-    <name>HTTP客户端 - HttpClient5</name>
+    <name>atlas-richie-component-http-httpclient5</name>
     <description>基于 Apache HttpClient5 的 HTTP 客户端实现</description>
+    <artifactId>atlas-richie-component-http-httpclient5</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>

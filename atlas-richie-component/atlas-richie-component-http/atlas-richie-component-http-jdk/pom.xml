@@ -9,9 +9,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>atlas-richie-component-http-jdk</artifactId>
-    <name>HTTP客户端 - JDK</name>
+    <name>atlas-richie-component-http-jdk</name>
     <description>基于 JDK 内置 java.net.http.HttpClient 的 HTTP 客户端实现</description>
+    <artifactId>atlas-richie-component-http-jdk</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>

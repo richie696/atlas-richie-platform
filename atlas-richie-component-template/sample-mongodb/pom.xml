@@ -12,7 +12,6 @@
     </parent>
 
     <artifactId>sample-mongodb</artifactId>
-    <name>MongoDB组件示例服务</name>
     <packaging>jar</packaging>
 
     <dependencies>

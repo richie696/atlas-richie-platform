@@ -12,7 +12,6 @@
     </parent>
 
     <artifactId>sample-vector-milvus</artifactId>
-    <name>sample-vector-milvus</name>
 
     <dependencies>
         <dependency>

@@ -11,7 +11,6 @@
     </parent>
 
     <artifactId>sample-storage-sftp</artifactId>
-    <name>SFTP文件存储示例服务</name>
 
 
     <dependencies>

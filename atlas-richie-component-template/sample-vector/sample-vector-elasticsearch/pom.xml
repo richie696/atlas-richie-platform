@@ -12,7 +12,6 @@
     </parent>
 
     <artifactId>sample-vector-elasticsearch</artifactId>
-    <name>sample-vector-elasticsearch</name>
 
     <dependencies>
         <dependency>

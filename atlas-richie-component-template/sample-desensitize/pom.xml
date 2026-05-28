@@ -11,7 +11,6 @@
     </parent>
 
     <artifactId>sample-desensitize</artifactId>
-    <name>数据脱敏组件示例服务</name>
 
     <dependencies>
         <dependency>

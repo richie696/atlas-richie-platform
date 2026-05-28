@@ -11,7 +11,6 @@
     </parent>
 
     <artifactId>sample-http-restclient</artifactId>
-    <name>RestClient客户端实现演示程序</name>
 
     <dependencies>
         <dependency>

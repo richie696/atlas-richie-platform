@@ -12,7 +12,6 @@
     </parent>
 
     <artifactId>sample-vector-mongodb-atlas</artifactId>
-    <name>sample-vector-mongodb-atlas</name>
 
     <dependencies>
         <dependency>

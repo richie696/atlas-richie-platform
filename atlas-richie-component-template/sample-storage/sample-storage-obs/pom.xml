@@ -11,7 +11,6 @@
     </parent>
 
     <artifactId>sample-storage-obs</artifactId>
-    <name>华为云OBS文件存储示例服务</name>
 
 
     <dependencies>
