@@ -10,8 +10,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
+    <name>atlas-richie-component-desensitize-core</name>
     <artifactId>atlas-richie-component-desensitize-core</artifactId>
-    <name>数据脱敏 - Core</name>
     <description>脱敏规则、策略注册、统一脱敏服务与 Spring Boot 自动配置</description>
     <packaging>jar</packaging>
 

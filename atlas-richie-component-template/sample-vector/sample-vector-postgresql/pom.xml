@@ -12,7 +12,6 @@
     </parent>
 
     <artifactId>sample-vector-postgresql</artifactId>
-    <name>sample-vector-postgresql</name>
 
     <dependencies>
         <dependency>

@@ -11,7 +11,6 @@
     </parent>
 
     <artifactId>sample-logging</artifactId>
-    <name>日志组件示例服务</name>
 
     <dependencies>
         <dependency>

@@ -12,7 +12,6 @@
     </parent>
 
     <artifactId>sample-vector-neo4j</artifactId>
-    <name>sample-vector-neo4j</name>
 
     <dependencies>
         <dependency>

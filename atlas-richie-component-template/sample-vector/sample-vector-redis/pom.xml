@@ -12,7 +12,6 @@
     </parent>
 
     <artifactId>sample-vector-redis</artifactId>
-    <name>sample-vector-redis</name>
 
     <dependencies>
         <dependency>
