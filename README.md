@@ -1,8 +1,8 @@
-# Richie Platform
+# Atlas Richie Platform
 
 ## 📖 概述
 
-**Richie Platform** 是Richie技术中台的核心平台，提供统一的技术基础设施和组件库，支持快速构建企业级微服务应用。平台采用分层架构设计，通过统一接口、依赖管理和最佳实践，实现技术与业务的完全隔离，提升开发效率和系统可维护性。
+**Atlas Richie Platform** 是Atlas Richie技术中台的核心平台，提供统一的技术基础设施和组件库，支持快速构建企业级微服务应用。平台采用分层架构设计，通过统一接口、依赖管理和最佳实践，实现技术与业务的完全隔离，提升开发效率和系统可维护性。
 
 ## 🎯 设计理念
 
@@ -154,10 +154,6 @@ atlas-richie-platform/
 **文档**：[atlas-richie-gateway-service/README.md](atlas-richie-gateway-service/README.md)
 
 ### atlas-richie-general-service
-
-**通用服务**，提供通用的业务服务能力。
-
-**文档**：[atlas-richie-general-service/README.md](./atlas-richie-general-service/README.md)
 
 ## 🚀 快速开始
 
