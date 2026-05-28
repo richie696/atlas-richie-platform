@@ -15,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
  * 通过 {@link HttpClient#get(String)} / {@link HttpClient#post(String, Object)} 等方法获得实例，
  * 链式配置请求参数、请求头、超时等，最后调用 {@link #execute()} 或 {@link #async(AsyncCallback, Class)} 执行。
  *
- * <h3>典型用法</h3>
+ * <h2>典型用法</h2>
  * <pre>{@code
  *   // 简单 GET
  *   User user = http.get("https://api/users/123").execute(User.class);

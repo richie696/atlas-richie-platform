@@ -26,9 +26,9 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
     public boolean save(UserInfo entity) {
         ZonedDateTime now = ZonedDateTime.now();
         if (entity.getCreateTime() == null) {
-            entity.setCreateTime(now);
+            entity.setCreateTime(now.toInstant());
         }
-        entity.setUpdateTime(now);
+        entity.setUpdateTime(now.toInstant());
         return super.save(entity);
     }
 }

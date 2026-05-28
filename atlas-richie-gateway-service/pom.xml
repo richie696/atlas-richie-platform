@@ -16,11 +16,11 @@
     <groupId>com.richie.gateway</groupId>
     <artifactId>atlas-richie-gateway-service</artifactId>
     <version>${revision}</version>
-    <description>Richie通用网关服务</description>
+    <description>Atlas Richie Gateway Service 是面向企业级微服务体系的统一网关服务，支持 OpenAPI 接口网关、微服务接口网关、内网接口网关等多种部署模式，并可通过配置化方式快速切换；同时提供路由转发、鉴权校验、流量治理、服务发现、配置中心集成与接口文档聚合等能力，支持高可用接入与稳定演进。</description>
 
     <properties>
         <docker.image.version>4.0.0</docker.image.version>
-        <adapter.version>1.8.9-preview</adapter.version>
+        <adapter.version>1.8.10</adapter.version>
     </properties>
 
     <dependencyManagement>

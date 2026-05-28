@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
  * 实现类通过 Spring Boot 自动配置按 {@code platform.component.http.provider} 加载，
  * 支持 OkHttp、HttpClient5、Spring RestClient 三种底层实现，调用方代码无需感知。
  *
- * <h3>典型用法</h3>
+ * <h2>典型用法</h2>
  * <pre>{@code
  *   @Autowired
  *   private HttpClient http;

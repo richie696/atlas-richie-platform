@@ -9,11 +9,12 @@
         <relativePath/>
     </parent>
 
+    <name>Atlas Richie Platform</name>
+    <description>Atlas Richie 技术中台，提供统一的基础能力支撑，支持toB和toC业务场景的快速开发，提供了健全的组件库和最佳实践，支持快速构建企业级微服务应用。提供了泛云化、泛中间件和泛技术组件的解决方案，方便日后切换和扩展。</description>
     <groupId>com.richie.base</groupId>
     <artifactId>atlas-richie-platform</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
-    <name>Richie Java Platform</name>
 
     <modules>
         <module>atlas-richie-base</module>
