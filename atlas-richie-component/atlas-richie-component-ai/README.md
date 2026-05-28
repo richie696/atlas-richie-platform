@@ -46,7 +46,7 @@
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-ai</artifactId>
-    <version>5.0.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -356,7 +356,7 @@ RichieAI组件是一个基于Spring AI的统一AI模型调用组件，完全屏�
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-ai</artifactId>
-    <version>5.0.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 

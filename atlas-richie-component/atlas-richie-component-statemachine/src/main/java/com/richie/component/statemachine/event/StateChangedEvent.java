@@ -16,7 +16,7 @@ import java.util.Map;
  *
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Getter
 public class StateChangedEvent extends ApplicationEvent {

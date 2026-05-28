@@ -1,0 +1,38 @@
+platform:
+  component:
+    http:
+      provider: ${HTTP_PROVIDER:rest_client}
+      strict-ssl: true
+
+      okhttp:
+        level: BASIC
+        read-timeout: 10
+        read-timeout-time-unit: seconds
+        write-timeout: 10
+        write-timeout-time-unit: seconds
+        connect-timeout: 5
+        connect-timeout-time-unit: seconds
+        call-timeout-timeout: 30
+        call-timeout-time-unit: seconds
+        max-requests: 250
+        max-requests-per-host: 25
+        keep-alive-duration: 5
+        keep-alive-time-unit: minutes
+        enable-cache: false
+        cache-path: /opt/okhttp3/cache/
+        cache-size: 100
+
+      httpclient5:
+        connection-request-timeout: 5
+        connection-request-timeout-time-unit: seconds
+        response-timeout: 10
+        response-timeout-time-unit: seconds
+        max-total: 250
+        default-max-per-route: 25
+
+      jdk:
+        connect-timeout: 5s
+        version: HTTP_2
+        follow-redirects: false
+        priority: 16
+        use-virtual-threads: true

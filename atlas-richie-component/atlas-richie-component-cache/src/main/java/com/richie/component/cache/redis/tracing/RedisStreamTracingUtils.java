@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
  * </ul>
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-09-15
  */
 @Component

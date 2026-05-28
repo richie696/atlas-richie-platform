@@ -20,7 +20,7 @@ import java.util.Base64;
  * API文档：https://help.aliyun.com/zh/kms/key-management-service/developer-reference/select-an-api-version
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @Component

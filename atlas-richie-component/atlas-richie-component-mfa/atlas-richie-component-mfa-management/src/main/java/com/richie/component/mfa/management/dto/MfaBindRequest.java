@@ -10,7 +10,7 @@ import lombok.Data;
  * API路径：POST /api/mfa/bind
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 public class MfaBindRequest {

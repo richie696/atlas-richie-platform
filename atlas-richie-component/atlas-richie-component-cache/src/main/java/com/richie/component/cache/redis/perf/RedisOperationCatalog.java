@@ -4,7 +4,7 @@ package com.richie.component.cache.redis.perf;
  * 常用 Redis 封装场景的 {@link RedisCommandMeta} 预设，供 Manager 与文档引用。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2026-04-03
  */
 public final class RedisOperationCatalog {

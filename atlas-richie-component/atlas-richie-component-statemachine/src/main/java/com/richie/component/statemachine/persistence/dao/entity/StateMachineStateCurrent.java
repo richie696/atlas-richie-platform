@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 状态机当前状态实体
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 @NoArgsConstructor

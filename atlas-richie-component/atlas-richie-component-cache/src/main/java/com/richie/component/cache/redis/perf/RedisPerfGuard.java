@@ -13,7 +13,7 @@ import java.util.function.Supplier;
  * <p>支持 {@link RedisStringPayloadInspector} 与 {@link #checkStringWritePayload} 检测 String 值滥用（集合/JavaBean 整包序列化、超大 value 等）。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2026-04-03
  */
 @Slf4j

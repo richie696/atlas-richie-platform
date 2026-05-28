@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
  * 推荐配合布隆过滤器等高性能场景使用。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-06-25 17:38:43
  */
 @Component

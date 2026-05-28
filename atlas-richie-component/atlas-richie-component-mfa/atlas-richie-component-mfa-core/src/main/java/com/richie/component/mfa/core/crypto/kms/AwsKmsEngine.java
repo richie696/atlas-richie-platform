@@ -18,7 +18,7 @@ import java.util.Base64;
  * 依赖：com.amazonaws:aws-java-sdk-kms
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @Component

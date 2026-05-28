@@ -255,7 +255,7 @@ java -javaagent:/path/to/opentelemetry-javaagent.jar \
 ## 🔄 版本历史
 
 - **5.0.1**：采用分层 optional 策略，完美解决
-- **5.0.0**：初始尝试（全部 optional，有问题）
+- **1.0.0**：初始尝试（全部 optional，有问题）
 
 ## ✨ 总结
 

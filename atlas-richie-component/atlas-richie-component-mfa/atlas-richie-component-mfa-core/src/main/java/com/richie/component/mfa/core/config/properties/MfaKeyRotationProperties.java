@@ -13,7 +13,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 此配置类位于 core 模块，供 management 和 validation 模块共同使用
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 @ConfigurationProperties(prefix = "platform.component.mfa.security.key-management.vault.rotation")

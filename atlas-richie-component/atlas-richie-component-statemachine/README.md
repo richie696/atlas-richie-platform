@@ -901,7 +901,7 @@ public class OrderService {
 
 ## 📝 更新日志
 
-### v5.0.0
+### v1.0.0
 
 - ✅ 实现 Redis Stream 异步持久化
 - ✅ 实现缓存预热机制

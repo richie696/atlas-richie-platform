@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * 后端可配置为 Redisson 或自有实现（SET NX + Lua 解锁）。可重入仅 Redisson 路径支持，自有实现不做同线程重入计数。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-06-25 18:28:56
  */
 @Slf4j

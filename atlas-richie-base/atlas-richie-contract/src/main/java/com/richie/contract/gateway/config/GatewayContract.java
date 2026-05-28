@@ -25,7 +25,7 @@ import java.io.Serializable;
  *
  * @author richie696
  * @version 1.0
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 @Configuration

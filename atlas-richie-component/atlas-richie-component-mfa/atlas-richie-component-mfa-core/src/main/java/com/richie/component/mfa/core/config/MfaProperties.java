@@ -14,7 +14,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 此配置类统一管理 MFA 管理模块和验证模块的所有配置，避免配置重复和分散。
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 @ConfigurationProperties(prefix = "platform.component.mfa")

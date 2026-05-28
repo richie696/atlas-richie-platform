@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Component
 public class StateMachineDefinitionRegistry {

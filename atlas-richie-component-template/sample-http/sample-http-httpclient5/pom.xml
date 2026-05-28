@@ -13,6 +13,18 @@
     <artifactId>sample-http-httpclient5</artifactId>
     <name>HttpClient5客户端实现演示程序</name>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.richie.sample</groupId>
+            <artifactId>sample-http-core</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.richie.component</groupId>
+            <artifactId>atlas-richie-component-http-httpclient5</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>

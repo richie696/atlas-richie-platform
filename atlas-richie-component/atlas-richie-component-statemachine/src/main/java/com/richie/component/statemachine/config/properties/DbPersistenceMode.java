@@ -4,7 +4,7 @@ package com.richie.component.statemachine.config.properties;
  * 数据库持久化模式
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 public enum DbPersistenceMode {
     /**

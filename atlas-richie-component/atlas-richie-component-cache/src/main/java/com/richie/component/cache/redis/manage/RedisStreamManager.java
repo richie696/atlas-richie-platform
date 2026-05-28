@@ -50,7 +50,7 @@ import java.util.Objects;
  * <p>与 Pub/Sub 区别：Stream 持久化、可回溯、支持消费组与 ACK；Pub/Sub 即时广播、无持久化与确认。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-06-25 17:51:00
  */
 @Slf4j

@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 可信设备配置属性
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 @ConfigurationProperties(prefix = "platform.component.mfa.security.trusted-device")

@@ -28,7 +28,7 @@ import org.springframework.context.annotation.Configuration;
  * }</pre>
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-01-29
  */
 @Slf4j

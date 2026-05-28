@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * <p>用于配置 OTLP 指标导出的相关参数。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-01-29
  */
 @Data

@@ -26,7 +26,7 @@ import java.util.List;
  * 适用于LBS、附近的人、地图服务等应用。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-06-25 17:38:22
  */
 @Component

@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  *
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @Component

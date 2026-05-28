@@ -24,7 +24,7 @@ import java.util.List;
  * 职责：提供MFA管理相关的RESTful API
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @RestController

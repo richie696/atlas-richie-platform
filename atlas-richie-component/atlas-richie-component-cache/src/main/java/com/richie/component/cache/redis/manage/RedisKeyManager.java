@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * Key管理与元数据操作子管理器
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2024-06-27
  */
 @Slf4j

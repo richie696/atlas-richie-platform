@@ -36,7 +36,7 @@ import java.util.function.Supplier;
  * 时由 {@link RedisPerfGuard#checkStringWritePayload} 在写入前检测并打 WARN/ERROR。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-09-15 16:50:54
  */
 @Slf4j

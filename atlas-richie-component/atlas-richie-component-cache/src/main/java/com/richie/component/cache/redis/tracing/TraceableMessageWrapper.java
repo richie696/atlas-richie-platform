@@ -30,7 +30,7 @@ import java.util.Map;
  * @param originalMessage 原始业务消息
  * @param traceContext    链路追踪上下文（traceId、spanId、sampled 等）
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-09-15
  */
 @Slf4j

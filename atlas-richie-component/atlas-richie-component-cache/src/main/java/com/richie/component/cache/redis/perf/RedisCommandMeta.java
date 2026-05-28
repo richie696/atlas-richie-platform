@@ -12,7 +12,7 @@ package com.richie.component.cache.redis.perf;
  * @param suggestZcardProbe       读 ZSet 大范围前建议 ZCARD
  * @param description             简短说明（Redis 命令主导项、变量 n/k 含义）
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2026-04-03
  */
 public record RedisCommandMeta(

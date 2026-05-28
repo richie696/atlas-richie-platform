@@ -38,7 +38,7 @@ cd web  # 或 ts
 
 **依赖说明**：
 - **运行时**: 零外部依赖，仅使用浏览器原生API（Web Crypto API、Fetch API）
-- **开发时**: 如使用TypeScript，需要 `typescript@^5.0.0`
+- **开发时**: 如使用TypeScript，需要 `typescript@^1.0.0`
 - **框架**: 如使用框架集成，需要对应的框架包（`react@^18.0.0`、`@angular/core@^17.0.0`、`vue@^3.0.0`）
 
 详见: [web/README.md](./web/README.md#📦-依赖说明)
@@ -108,7 +108,7 @@ cd nodejs
 **依赖说明**：
 - **运行时**: 零外部依赖，仅使用Node.js内置模块（`crypto`、`fetch`）
 - **要求**: Node.js 18.0.0+
-- **开发时**: 如使用TypeScript，需要 `typescript@^5.0.0`、`@types/node@^20.0.0`、`ts-node@^10.9.0`
+- **开发时**: 如使用TypeScript，需要 `typescript@^1.0.0`、`@types/node@^20.0.0`、`ts-node@^10.9.0`
 
 详见: [nodejs/README.md](./nodejs/README.md#依赖说明)
 
@@ -486,7 +486,7 @@ Response response = client.request(helper, body);
 **开发依赖**（可选）:
 ```bash
 # TypeScript
-npm install --save-dev typescript@^5.0.0
+npm install --save-dev typescript@^1.0.0
 
 # React框架
 npm install react@^18.0.0 react-dom@^18.0.0
@@ -508,7 +508,7 @@ npm install vue@^3.0.0
 
 **开发依赖**（可选）:
 ```bash
-npm install --save-dev typescript@^5.0.0
+npm install --save-dev typescript@^1.0.0
 npm install --save-dev @types/node@^20.0.0
 npm install --save-dev ts-node@^10.9.0
 ```

@@ -28,8 +28,8 @@ import java.util.Map;
  * 使用 Cypher 查询语言进行向量检索操作。</p>
  *
  * @author 王锦阳
- * @version 5.0.0
- * @since 5.0.0
+ * @version 1.0.0
+ * @since 1.0.0
  * @see VectorService
  */
 @Service

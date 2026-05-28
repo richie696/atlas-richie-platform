@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
  * 后根据返回值判断是否需要 MFA 验证、是否已绑定 MFA 等。
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 @Builder

@@ -41,8 +41,8 @@ import java.util.*;
   * </ul>
  *
  * @author Rydeen Platform Team
- * @version 5.0.0
- * @since 5.0.0
+ * @version 1.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @Service

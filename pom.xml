@@ -18,7 +18,7 @@
     <modules>
         <module>atlas-richie-base</module>
         <module>atlas-richie-component</module>
-<!--        <module>atlas-richie-component-template</module>-->
+        <module>atlas-richie-component-template</module>
         <module>atlas-richie-gateway-service</module>
     </modules>
 
@@ -516,10 +516,10 @@
 
                     2. 发布阶段：
                        - maven-release-plugin 会自动查找并替换所有 POM 文件中的 ${revision} 属性
-                       - 自动更新版本号（5.0.0-SNAPSHOT -> 5.0.0）
-                       - 自动创建 Git 标签（v5.0.0）
+                       - 自动更新版本号（1.0.0-SNAPSHOT -> 1.0.0）
+                       - 自动创建 Git 标签（v1.0.0）
                        - 自动构建并部署到 Nexus
-                       - 自动更新为下一个开发版本（5.0.0 -> 4.6.1-SNAPSHOT）
+                       - 自动更新为下一个开发版本（1.0.0 -> 4.6.1-SNAPSHOT）
 
                     使用方式（在项目根目录执行）：
                     - mvn release:prepare          (准备发布，会提示输入发布版本和下一个开发版本)

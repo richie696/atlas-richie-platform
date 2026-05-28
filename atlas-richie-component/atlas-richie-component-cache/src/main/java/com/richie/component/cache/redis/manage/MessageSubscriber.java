@@ -17,7 +17,7 @@ import java.util.Objects;
  *
  * @param <T> 消息类型
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2024-08-12 22:56:38
  */
 @Slf4j

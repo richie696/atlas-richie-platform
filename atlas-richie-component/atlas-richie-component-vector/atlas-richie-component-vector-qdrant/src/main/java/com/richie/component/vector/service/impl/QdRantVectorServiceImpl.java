@@ -38,8 +38,8 @@ import java.util.concurrent.TimeUnit;
  * （创建/删除索引），因此相关方法会抛出UnsupportedOperationException。</p>
  *
  * @author Rydeen Platform Team
- * @version 5.0.0-SNAPSHOT
- * @since 5.0.0
+ * @version 1.0.0-SNAPSHOT
+ * @since 1.0.0
  */
 @Slf4j
 @Service

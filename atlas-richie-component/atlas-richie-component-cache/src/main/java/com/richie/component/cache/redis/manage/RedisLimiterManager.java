@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
  * 适用于接口防刷、限流、突发流量控制等场景。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-06-25 17:49:40
  */
 @Component

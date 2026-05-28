@@ -18,7 +18,7 @@ import java.util.Base64;
  * API文档：https://www.volcengine.com/docs/6476/164575?lang=zh
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @Component

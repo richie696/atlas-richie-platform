@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
  * </ul>
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Component
 @RequiredArgsConstructor

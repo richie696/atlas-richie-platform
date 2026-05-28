@@ -9,7 +9,7 @@ import java.util.Map;
  * 状态历史记录
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 public class StateHistory {

@@ -34,6 +34,8 @@
         <module>atlas-richie-component-dependencies</module>
         <!-- HTTP/HTTPS 客户端组件 -->
         <module>atlas-richie-component-http</module>
+        <!-- 数据脱敏组件 -->
+        <module>atlas-richie-component-desensitize</module>
         <!-- 国际化组件 -->
         <module>atlas-richie-component-i18n</module>
         <!-- 通用 Liquibase 组件 -->

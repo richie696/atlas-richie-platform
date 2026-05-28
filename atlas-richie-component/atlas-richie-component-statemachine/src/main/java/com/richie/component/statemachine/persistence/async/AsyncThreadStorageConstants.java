@@ -7,7 +7,7 @@ package com.richie.component.statemachine.persistence.async;
  * 
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 interface AsyncThreadStorageConstants {
 

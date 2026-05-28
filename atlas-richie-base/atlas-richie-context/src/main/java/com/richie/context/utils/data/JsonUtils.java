@@ -21,6 +21,7 @@ import tools.jackson.databind.MapperFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.cfg.MapperBuilder;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.JsonNode;
@@ -41,10 +42,12 @@ import java.io.*;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 工具类：JSON转换/序列化工具类
@@ -60,6 +63,7 @@ public class JsonUtils {
     private ObjectMapper MAPPER_LOWER_CAMEL_CASE;
     private ObjectMapper MAPPER_SNAKE_CASE;
     private static final ConcurrentMap<String, JsonUtils> CUSTOM_MAPPER = Maps.newConcurrentMap();
+    private static final CopyOnWriteArrayList<JacksonModule> GLOBAL_MODULES = new CopyOnWriteArrayList<>();
 
     private static class Bean {
         static final JsonUtils INSTANCE = new JsonUtils();
@@ -201,13 +205,37 @@ public class JsonUtils {
         return customUtils;
     }
 
+    /**
+     * 注册全局 Jackson Module（用于 JsonUtils 默认与定制 Mapper）。
+     * <p>
+     * 该方法可被自动配置调用；重复类型的 Module 会被忽略。
+     *
+     * @param modules 需要注册的模块列表
+     */
+    public static synchronized void registerGlobalModules(List<? extends JacksonModule> modules) {
+        if (modules == null || modules.isEmpty()) {
+            return;
+        }
+        boolean changed = false;
+        for (JacksonModule module : modules) {
+            if (module == null) {
+                continue;
+            }
+            boolean exists = GLOBAL_MODULES.stream()
+                    .anyMatch(registered -> registered.getClass() == module.getClass());
+            if (!exists) {
+                GLOBAL_MODULES.add(module);
+                changed = true;
+            }
+        }
+        if (changed) {
+            Bean.INSTANCE.rebuildDefaultMappers();
+            CUSTOM_MAPPER.clear();
+        }
+    }
+
     private JsonUtils() {
-        JsonConfiguration defaultConfiguration = defaultConfiguration();
-        MAPPER_LOWER_CAMEL_CASE = rebuildMapper(defaultConfiguration);
-        // Jackson 3.0: ObjectMapper 不可变，需要使用 rebuild() 重新构建
-        MAPPER_SNAKE_CASE = MAPPER_LOWER_CAMEL_CASE.rebuild()
-                .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
-                .build();
+        rebuildDefaultMappers();
     }
 
     private JsonUtils(ObjectMapper mapper) {
@@ -215,6 +243,15 @@ public class JsonUtils {
         MAPPER_LOWER_CAMEL_CASE = mapper.rebuild()
                 .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE)
                 .build();
+        MAPPER_SNAKE_CASE = MAPPER_LOWER_CAMEL_CASE.rebuild()
+                .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+                .build();
+    }
+
+    private void rebuildDefaultMappers() {
+        JsonConfiguration defaultConfiguration = defaultConfiguration();
+        MAPPER_LOWER_CAMEL_CASE = rebuildMapper(defaultConfiguration);
+        // Jackson 3.0: ObjectMapper 不可变，需要使用 rebuild() 重新构建
         MAPPER_SNAKE_CASE = MAPPER_LOWER_CAMEL_CASE.rebuild()
                 .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
                 .build();
@@ -296,6 +333,10 @@ public class JsonUtils {
             jsonBuilder.changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(include));
         } else if (config.allowEmptyValue != null) {
             jsonBuilder.changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_EMPTY));
+        }
+
+        for (JacksonModule module : GLOBAL_MODULES) {
+            jsonBuilder.addModule(module);
         }
 
         return jsonBuilder.addModule(javaTimeModule).build();

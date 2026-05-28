@@ -36,7 +36,7 @@ import java.util.List;
  * 所有方法只需要传入userId（业务系统User表的主键ID）即可。
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @Component

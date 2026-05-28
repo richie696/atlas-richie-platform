@@ -15,7 +15,7 @@ import java.util.Set;
  * </ul>
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2023-11-01 14:05:20
  */
 public class CacheBatchLock implements Closeable {

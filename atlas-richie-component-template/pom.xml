@@ -34,6 +34,7 @@
         <module>sample-vector</module>
         <module>sample-logging</module>
         <module>sample-mfa</module>
+        <module>sample-desensitize</module>
     </modules>
 
     <properties>

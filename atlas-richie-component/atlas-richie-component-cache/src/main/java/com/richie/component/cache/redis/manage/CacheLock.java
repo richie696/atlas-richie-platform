@@ -29,7 +29,7 @@ import java.util.concurrent.locks.Lock;
  * </ul>
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2022-06-14 21:40:13
  */
 @Data

@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * 用于生成和解析 MFA 临时 Token（用于 MFA 验证流程中的临时凭证）
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @Component

@@ -93,7 +93,7 @@ const result = await client.request(AppUrl.PAYMENT_CREATE, {
 如果使用TypeScript开发，需要安装：
 
 ```bash
-npm install --save-dev typescript@^5.0.0
+npm install --save-dev typescript@^1.0.0
 ```
 
 如果使用框架集成（React/Angular/Vue），需要安装对应的框架：

@@ -26,7 +26,7 @@ import java.util.concurrent.StructuredTaskScope;
  * 职责：管理用户的可信设备（注册、查询、撤销等）
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @SuppressWarnings("preview")
 @Slf4j

@@ -18,7 +18,7 @@ import java.time.ZoneOffset;
  * 封装审计事件的发布逻辑，自动提取 IP 和 User-Agent 等信息。
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Slf4j
 public class MfaAuditEventPublisher {
