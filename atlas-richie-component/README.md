@@ -305,7 +305,7 @@ graph TB
         <dependency>
             <groupId>com.richie.component</groupId>
             <artifactId>atlas-richie-component-dependencies</artifactId>
-            <version>5.0.0-SNAPSHOT</version>
+            <version>1.0.0-SNAPSHOT</version>
             <scope>import</scope>
             <type>pom</type>
         </dependency>

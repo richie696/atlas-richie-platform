@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true">
+    <conversionRule conversionWord="desensitizeMsg"
+                    converterClass="com.richie.component.desensitize.logging.logback.DesensitizeConverter"/>
+    <conversionRule conversionWord="desensitizeJsonMsg"
+                    converterClass="com.richie.component.desensitize.logging.logback.DesensitizeJsonMessageConverter"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [traceId=%X{traceId} phone=%X{phone}] - msg=%msg | safe=%desensitizeMsg | jsonSafe=%desensitizeJsonMsg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
+

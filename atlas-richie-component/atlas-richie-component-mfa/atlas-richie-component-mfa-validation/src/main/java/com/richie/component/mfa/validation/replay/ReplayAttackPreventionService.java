@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
  * 限制：可写GlobalCache（标记验证码已使用）
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @Service

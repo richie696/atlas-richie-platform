@@ -14,7 +14,7 @@ import java.util.Optional;
  * 此枚举位于 core 模块，供 management 和 validation 模块共同使用
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Getter
 @RequiredArgsConstructor

@@ -6,7 +6,7 @@ import lombok.Data;
  * MFA 验证请求 DTO
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 public class MfaVerifyRequest {

@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentMap;
  * </ul>
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-06-25 16:04:26
  */
 public final class CacheLockManager {

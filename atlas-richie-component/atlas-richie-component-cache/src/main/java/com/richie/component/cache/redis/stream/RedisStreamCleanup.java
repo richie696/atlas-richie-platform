@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author richie696
  * @since 2025/11/05
- * @version 5.0.0
+ * @version 1.0.0
  */
 @Slf4j
 @Component

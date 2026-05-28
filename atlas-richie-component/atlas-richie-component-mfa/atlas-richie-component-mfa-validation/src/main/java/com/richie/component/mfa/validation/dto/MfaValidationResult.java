@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
  * 用于封装 MFA 验证相关的所有状态和结果信息，供网关层使用。
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 @Builder

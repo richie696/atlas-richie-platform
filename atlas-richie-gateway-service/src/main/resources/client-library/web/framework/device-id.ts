@@ -28,7 +28,7 @@ import { sha256 as jsSha256 } from 'js-sha256';
  *
  * @author richie696
  * @version 1.0
- * @since 5.0.0
+ * @since 1.0.0
  */
 
 /**

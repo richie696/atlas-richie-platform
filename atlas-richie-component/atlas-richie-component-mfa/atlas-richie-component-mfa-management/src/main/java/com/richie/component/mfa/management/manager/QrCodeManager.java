@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
  * 职责：生成TOTP二维码URL
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @Component

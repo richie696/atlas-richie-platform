@@ -21,7 +21,7 @@ import java.util.Set;
  * @param transition 转换定义对象，包含转换的源状态、目标状态、事件、条件、动作等信息
  * @param context    状态上下文对象，包含当前状态、事件、属性等信息
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Rule(name = "StateTransitionRule", description = "状态转换规则")
 @Slf4j

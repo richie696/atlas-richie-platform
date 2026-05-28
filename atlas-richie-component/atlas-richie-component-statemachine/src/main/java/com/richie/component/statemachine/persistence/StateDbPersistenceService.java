@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  * 状态机数据库持久化服务
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @Service

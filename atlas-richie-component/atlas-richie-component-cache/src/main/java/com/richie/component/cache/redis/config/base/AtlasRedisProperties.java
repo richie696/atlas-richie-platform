@@ -133,7 +133,7 @@ public class AtlasRedisProperties extends DataRedisProperties {
      * Redis 性能守卫配置（绑定前缀 {@code spring.data.redis.perf.*}）
      *
      * @author richie696
-     * @version 5.0.0
+     * @version 1.0.0
      * @since 2026-04-03
      */
     @Data

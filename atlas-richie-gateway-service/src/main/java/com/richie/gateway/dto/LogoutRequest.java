@@ -8,7 +8,7 @@ import lombok.Data;
  * 普通访问令牌通过请求头 X-Access-Token 传递，MFA 临时令牌可通过 body 传递。
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 public class LogoutRequest {

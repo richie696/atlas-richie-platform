@@ -16,7 +16,7 @@ import java.time.ZoneOffset;
  * MFA 组件只负责发布事件，不直接写数据库，保持组件轻量化和独立性。
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Getter
 public class MfaAuditEvent extends ApplicationEvent {

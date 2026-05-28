@@ -14,7 +14,7 @@ import java.util.List;
  * userId参数是业务系统User表的主键ID，用于关联，但不查询User表。
  * 
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Mapper
 public interface MfaUserMapper extends BaseMapper<MfaUserInfo> {

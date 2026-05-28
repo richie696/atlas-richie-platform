@@ -11,7 +11,7 @@ import lombok.Data;
  * 保持同名同结构，便于通过 JSON 直接映射，无需在网关侧依赖 management 模块。
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 public class TrustedDeviceRegisterRequest {

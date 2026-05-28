@@ -14,7 +14,7 @@ import java.util.Map;
  * 自定义RedisCacheManager
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2023-11-01 15:42:24
  */
 public class AtlasRedisCacheManager extends RedisCacheManager {

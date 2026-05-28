@@ -317,5 +317,5 @@ java -javaagent:/path/to/opentelemetry-javaagent.jar \
 ## 🔄 版本历史
 
 - **5.0.1**：采用分层 optional 策略，解决自动连接问题
-- **5.0.0**：初始版本，所有依赖都设为 optional（有问题）
+- **1.0.0**：初始版本，所有依赖都设为 optional（有问题）
 

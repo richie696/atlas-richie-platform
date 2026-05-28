@@ -29,8 +29,8 @@ import java.util.Map;
  * 对于常规的向量存取操作，建议使用父类VectorServiceImpl中基于VectorStore的实现。
  *
  * @author jinyang.wang
- * @version 5.0.0
- * @since 5.0.0
+ * @version 1.0.0
+ * @since 1.0.0
  * @see VectorServiceImpl
  * @see <a href="https://github.com/pgvector/pgvector">pgvector扩展</a>
  */

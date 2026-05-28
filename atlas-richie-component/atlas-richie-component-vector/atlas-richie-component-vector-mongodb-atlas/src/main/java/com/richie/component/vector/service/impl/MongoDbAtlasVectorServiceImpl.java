@@ -34,8 +34,8 @@ import java.util.List;
  * {@code platform.component.vector.provider=mongodb} 时生效.
  *
  * @author Rydeen Platform Team
- * @version 5.0.0
- * @since 5.0.0
+ * @version 1.0.0
+ * @since 1.0.0
  */
 @Service
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "mongodb")

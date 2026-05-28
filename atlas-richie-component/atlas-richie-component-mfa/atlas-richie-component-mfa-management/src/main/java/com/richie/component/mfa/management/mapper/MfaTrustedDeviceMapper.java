@@ -11,7 +11,7 @@ import java.util.List;
  * MFA可信设备Mapper
  * 
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Mapper
 public interface MfaTrustedDeviceMapper extends BaseMapper<MfaTrustedDevice> {

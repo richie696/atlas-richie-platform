@@ -10,7 +10,7 @@ import lombok.Data;
  * API 路径：POST /api/mfa/backup-codes/verify
  *
  * @author richie-platform
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 public class MfaBackupCodeVerifyRequest {

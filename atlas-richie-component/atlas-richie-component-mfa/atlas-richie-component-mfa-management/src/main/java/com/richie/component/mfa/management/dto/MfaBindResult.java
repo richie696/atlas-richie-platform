@@ -14,7 +14,7 @@ import java.util.List;
  * 前端应使用 {@link MfaBindResponse} 作为响应对象。
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 @Builder

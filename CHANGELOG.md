@@ -1,4 +1,4 @@
-## 5.0.0-SNAPSHOT (2026年04月21日)
+## 1.0.0-SNAPSHOT (2026年04月21日)
 
 #### 重大变更：
 
@@ -13,7 +13,7 @@
 - 新增 `richie-sso` 模块，提供完整的 **SSO统一认证系统**，包含用户端门户和管理后台
 - 新增 `MCP BOM` 依赖管理
 - `richie-component-cache` 组件对 `GlobalCache` 进行破坏性重构：移除已废弃及高时间复杂度方法，删除 `LowPerformanceFunction` 与 `RedisLowPerformanceManager` 低性能管理入口，统一收敛到受控 API 体系
-- `richie-component-statemachine` 组件完成 Jackson 相关能力迁移至 tools 包并升级至 5.0.0 版本体系
+- `richie-component-statemachine` 组件完成 Jackson 相关能力迁移至 tools 包并升级至 1.0.0 版本体系
 - 适配 **Spring Boot 4.x HTTP 消息转换器新 API**
 - 在 richie-base 中拆分独立 contract 模块，承载跨服务共享契约（如网关公共配置/事件模型），将“稳定契约”与“运行实现”解耦，避免上下游对上下文实现包产生不必要依赖。
 - 对 GatewayConfig 及相关网关配置类进行拆分迁移（由 base context 向 gateway service/contract 边界收敛），将网关治理规则与基础上下文职责分离，降低配置耦合与变更扩散风险，提升网关模块自治能力。
@@ -74,14 +74,14 @@
 - `richie-component-cache`组件，增加布隆过滤器的支持，默认情况下不启用布隆过滤器，需通过配置文件参数`spring.data.redis.bloom-filter.enable: true`手工启用布隆过滤器
 - `richie-component-cache`组件，增加常用数据类型的可防止缓存击穿的系列API方法：`getStringCacheWithLock`|`getObjectCacheWithLock`|`getListCacheWithLock`|`getSetCacheWithLock`|`getHashCacheWithLock`
 - `richie-component-cache`组件，优化Redis客户端的配置，提升Redis连接客户端的健壮性
-- `richie-component-cache`组件，优化性能和协议安全，默认不支持Redis6.0以下版本的支持，从5.0.0版本开始Redis中间件支持的最低版本为6.0~最新，如需支持老版本redis，请在配置中将`protocol-version`参数设置为`RESP2`，否则默认使用`RESP3`协议
+- `richie-component-cache`组件，优化性能和协议安全，默认不支持Redis6.0以下版本的支持，从1.0.0版本开始Redis中间件支持的最低版本为6.0~最新，如需支持老版本redis，请在配置中将`protocol-version`参数设置为`RESP2`，否则默认使用`RESP3`协议
 - `richie-component-mqtt`组件，优化消息发布重试机制，将原有递归重试改为最大5次循环重试，避免因网络异常导致内存栈溢出，提升健壮性。
 - `richie-component-mqtt`组件，优化持久化机制，默认使用数据库持久化（MqttPersistenceDB，路径为 /tmp/mqtt_persistence），防止客户端重启或断电导致消息丢失，更适合强网环境。
 - `richie-component-mqtt`组件，优化自动重连与会话持久化，客户端连接参数强制启用 automaticReconnect（自动重连）和 cleanSession=false（持久化会话），保证断线期间消息和订阅状态不丢失。
 - `richie-component-mqtt`组件，优化心跳线程健壮性提升，心跳线程在检测到断线时，最多重试3次自动重连，异常捕获更健壮，防止线程意外终止。
 - `richie-component-mqtt`组件，优化断线重连处理，断线后仅做日志记录，重连交由 Paho 内部自动处理，避免多线程环境下的重连冲突。
 - `richie-component-mqtt`组件，优化日志与监控增强，所有关键重试、失败、异常均有详细日志输出，便于后续监控和问题排查。
-- `richie-component-mqtt`组件，新增`hivemq mqtt client`客户端支持，提供更高性能的 MQTT 客户端，支持 MQTT 3.x 和 5.0，API更加现代，性能优异，文档完善，支持异步和响应式编程，其从5.0.0版本开始作为默认客户端，如需使用`paho`客户端，请在配置文件中设置`platform.component.mqtt.provider=paho`，否则默认使用`hivemq`客户端。
+- `richie-component-mqtt`组件，新增`hivemq mqtt client`客户端支持，提供更高性能的 MQTT 客户端，支持 MQTT 3.x 和 5.0，API更加现代，性能优异，文档完善，支持异步和响应式编程，其从1.0.0版本开始作为默认客户端，如需使用`paho`客户端，请在配置文件中设置`platform.component.mqtt.provider=paho`，否则默认使用`hivemq`客户端。
 - `richie-component-cache`组件，进一步重构分布式锁与本地缓存管理逻辑，引入高性能序列化框架以优化本地缓存深拷贝性能。
 - `richie-component-cache`组件，优化布隆过滤器保护策略，移除高风险的List批量写入接口，统一通过`getListCacheWithLock`进行回源写入以降低缓存击穿风险。
 - `richie-component-cache`组件，优化 Redis Stream 数据处理实现，使用 `MultiStringRedisTemplate` 提升处理稳定性。
@@ -126,7 +126,7 @@
 - `springdoc` 更新版本至 2.8.8
 - `commons-io` 更新版本至 2.19.0
 - `modelmapper` 更新版本至 3.2.3
-- `commons-collections4` 更新版本至 5.0.0
+- `commons-collections4` 更新版本至 1.0.0
 - `lettuce` 更新版本至 6.6.0.RELEASE
 - `netty` 更新版本至 4.2.1.Final
 - `guava` 更新版本至 33.4.8-jre

@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * List类型缓存管理器
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-09-15 16:49:51
  */
 @Slf4j

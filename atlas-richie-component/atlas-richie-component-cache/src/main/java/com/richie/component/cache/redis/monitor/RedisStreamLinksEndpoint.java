@@ -27,7 +27,7 @@ import java.util.Map;
  * </ul>
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-09-16
  */
 @Component

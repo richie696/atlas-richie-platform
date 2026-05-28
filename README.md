@@ -194,7 +194,7 @@ mvn clean install -DskipTests
 <parent>
     <groupId>com.richie.base</groupId>
     <artifactId>atlas-richie-base</artifactId>
-    <version>5.0.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
 </parent>
 
 <dependencies>
@@ -407,7 +407,7 @@ platform:
 
 ### 当前版本
 
-- **Platform Version**: `5.0.0-SNAPSHOT`
+- **Platform Version**: `1.0.0-SNAPSHOT`
 - **Spring Boot**: `4.0.5`
 - **Spring Cloud**: `2025.1.1`
 - **JDK**: `25`

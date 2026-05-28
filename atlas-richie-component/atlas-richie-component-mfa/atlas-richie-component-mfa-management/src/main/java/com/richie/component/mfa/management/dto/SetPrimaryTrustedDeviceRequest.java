@@ -8,7 +8,7 @@ import lombok.Data;
  * 仅当前主设备可将另一台设备设为主设备；主设备可移除其他可信设备，非主设备仅可查看。
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 public class SetPrimaryTrustedDeviceRequest {

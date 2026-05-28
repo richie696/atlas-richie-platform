@@ -16,7 +16,7 @@ import java.util.UUID;
  * {@code spring.data.redis.perf.enabled} 与 {@code warn-string-payload-anti-patterns} 开启时生效。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2026-04-03
  */
 public final class RedisStringPayloadInspector {

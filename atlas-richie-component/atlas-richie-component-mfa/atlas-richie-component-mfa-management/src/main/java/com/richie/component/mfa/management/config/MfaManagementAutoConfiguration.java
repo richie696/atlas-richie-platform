@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Primary;
  * 职责：自动配置管理相关的Bean，注册Liquibase变更集，自动读取网关租户配置
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @AutoConfiguration

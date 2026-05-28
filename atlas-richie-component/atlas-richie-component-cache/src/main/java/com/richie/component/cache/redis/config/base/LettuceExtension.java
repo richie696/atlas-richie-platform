@@ -13,7 +13,7 @@ import java.time.temporal.ChronoUnit;
  * Lettuce扩展配置
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2024-03-04 14:42:34
  */
 @Data

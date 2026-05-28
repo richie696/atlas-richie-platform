@@ -11,7 +11,7 @@ import java.util.Arrays;
  * 用于表示 MFA 审计事件中的操作类型
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Getter
 @RequiredArgsConstructor

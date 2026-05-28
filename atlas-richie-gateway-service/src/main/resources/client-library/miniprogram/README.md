@@ -88,7 +88,7 @@ const result = await client.request(AppUrl.PAYMENT_CREATE, {
 
 ### 开发依赖
 
-- `typescript`: ^5.0.0（如果使用TypeScript）
+- `typescript`: ^1.0.0（如果使用TypeScript）
 
 ### 安装命令
 

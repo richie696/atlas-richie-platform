@@ -15,7 +15,7 @@ import java.util.Optional;
  * 注意：NOT_BOUND 仅用于响应场景，不会存储到数据库（用户未绑定时没有记录）
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Getter
 @RequiredArgsConstructor

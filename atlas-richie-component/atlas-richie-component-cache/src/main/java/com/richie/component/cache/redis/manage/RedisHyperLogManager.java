@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
  * 主要用于大规模基数统计（如UV、去重计数）等场景，具有极低内存消耗和可接受误差。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-06-25 17:47:07
  */
 @Component

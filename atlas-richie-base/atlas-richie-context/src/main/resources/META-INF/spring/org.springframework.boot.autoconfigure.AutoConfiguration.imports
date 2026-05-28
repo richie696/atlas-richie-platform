@@ -1,1 +1,2 @@
 com.richie.context.common.api.SpringContextHolder
+com.richie.context.utils.data.config.JsonUtilsModuleAutoConfiguration

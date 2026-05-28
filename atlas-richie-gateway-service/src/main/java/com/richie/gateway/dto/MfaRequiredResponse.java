@@ -9,7 +9,7 @@ import java.util.List;
  * MFA 挑战响应 DTO
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Data
 @Builder

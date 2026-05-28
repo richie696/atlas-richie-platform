@@ -20,7 +20,7 @@ import java.util.stream.Stream;
  * 适用于复杂原子操作、分布式事务、批量处理等场景。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-06-25 17:49:54
  */
 @Component

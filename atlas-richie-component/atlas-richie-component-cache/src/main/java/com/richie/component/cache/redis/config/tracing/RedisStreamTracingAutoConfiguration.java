@@ -33,7 +33,7 @@ import java.util.List;
  * 根据 RedisStreamTracingProperties 初始化 OpenTelemetry，并按配置启用导出器与采样。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-09-15 16:44:51
  */
 @Slf4j

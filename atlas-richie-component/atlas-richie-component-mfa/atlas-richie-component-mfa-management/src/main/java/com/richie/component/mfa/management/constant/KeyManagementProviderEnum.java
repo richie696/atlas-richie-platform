@@ -12,7 +12,7 @@ import java.util.Optional;
  * 用于指定MFA密钥管理使用的后端服务类型
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Getter
 @RequiredArgsConstructor

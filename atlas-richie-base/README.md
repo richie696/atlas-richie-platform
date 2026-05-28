@@ -552,7 +552,7 @@ public class DataService {
 
 ### 当前版本
 
-- **richie-base**: `5.0.0-SNAPSHOT`
+- **richie-base**: `1.0.0-SNAPSHOT`
 - **Spring Boot**: `4.0.5`
 - **Spring Cloud**: `2025.1.1`
 - **JDK**: `25`

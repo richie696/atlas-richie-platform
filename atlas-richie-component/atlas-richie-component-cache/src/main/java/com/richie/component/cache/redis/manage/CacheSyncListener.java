@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
  * <b>注意：</b> 仅在spring.data.redis.enableL2Caching=true时生效。
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-06-16 03:12:39
  */
 @Slf4j

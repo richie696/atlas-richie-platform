@@ -19,7 +19,7 @@ import com.richie.contract.model.BaseStreamMessage;
  *
  * @param syncKey 同步键，格式：stateMachineName:businessId
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 public record StateSyncMessage(String syncKey) implements BaseStreamMessage {
 

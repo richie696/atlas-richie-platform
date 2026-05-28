@@ -206,6 +206,27 @@
                 <artifactId>atlas-richie-component-http-restclient</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
+            <!-- 数据脱敏组件 -->
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-desensitize</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-desensitize-core</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-desensitize-jackson</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-desensitize-logging</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
             <!-- 对象存储组件 -->
             <dependency>
                 <groupId>com.richie.component</groupId>

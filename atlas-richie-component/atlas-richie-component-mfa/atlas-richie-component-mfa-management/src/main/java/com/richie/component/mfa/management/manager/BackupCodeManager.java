@@ -14,7 +14,7 @@ import java.util.List;
  * 职责：生成、哈希和验证备份码
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @Component

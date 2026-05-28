@@ -8,7 +8,7 @@ import java.util.List;
  * 状态存储接口
  *
  * @author richie696
- * @since 5.0.0
+ * @since 1.0.0
  */
 public interface StateStorage {
 

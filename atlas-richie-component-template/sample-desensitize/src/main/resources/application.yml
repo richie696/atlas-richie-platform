@@ -1,0 +1,100 @@
+spring:
+  application:
+    name: sample-desensitize
+  main:
+    allow-bean-definition-overriding: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+server:
+  port: 8891
+
+# 脱敏组件示例配置（推荐基线：默认全场景脱敏，例外通过权限白名单放行）
+platform:
+  component:
+    desensitize:
+      # 总开关：true 表示启用脱敏组件
+      enabled: true
+      # 全局掩码字符（未指定时统一使用）
+      default-mask-char: "*"
+
+      # 场景开关：推荐全部保持 true，避免因场景关闭导致明文外泄
+      scenes:
+        api-response: true
+        log: true
+        audit: true
+        exception: true
+
+      # 明文放行白名单：默认关闭（即全部脱敏）
+      # 业务上仅在“本人资料查看/编辑”“受控审计明文查看”等例外场景启用
+      permission:
+        enabled: false
+        # 角色白名单：命中任一角色时可返回明文；enabled=false 时该列表不生效
+        plain-text-roles:
+          - ROLE_SELF_PROFILE
+          - ROLE_AUDIT_PLAINTEXT
+
+      # Map 键名 -> 脱敏类型（API 返回与日志 Map 共用）
+      # key 不区分大小写，建议业务统一命名避免歧义
+      sensitive-keys:
+        phone: PHONE
+        mobile: PHONE
+        idCard: ID_CARD
+        id_card: ID_CARD
+        email: EMAIL
+        bankCard: BANK_CARD
+
+      # 按脱敏类型定义规则模板（type-rules）
+      # 用于统一控制每种 MaskType 的保留位和掩码字符；未配置时使用组件内置默认规则
+      type-rules:
+        PHONE:
+          keep-left: 3
+          keep-right: 4
+          mask-char: "*"
+        ID_CARD:
+          keep-left: 6
+          keep-right: 4
+        EMAIL:
+          # 邮箱策略通常只关心本地部分，这里给出示例；具体生效取决于策略实现
+          keep-left: 1
+          keep-right: 0
+        PASSWORD:
+          keep-left: 0
+          keep-right: 0
+          mask-char: "#"
+
+      # API 场景覆盖：只在 API_RESPONSE 生效；未配置的 key 仍沿用全局 sensitive-keys
+      api-response:
+        sensitive-keys:
+          # 示例：对外 API 将 userName 也按姓名规则脱敏
+          userName: NAME
+
+      log:
+        # 日志场景覆盖：LOG/AUDIT 场景优先使用这里的配置，再回退到全局 sensitive-keys
+        sensitive-keys:
+          # 示例：日志里常见 account 字段按手机号规则脱敏
+          account: PHONE
+        # Logging 模块增强能力开关（sample 默认开启，便于演示）
+        features:
+          # 是否自动向 Logback 注册脱敏 TurboFilter；关闭后需手工在 logback-spring.xml 中配置
+          auto-register-turbo-filters: true
+          # 是否启用 SensitiveLogArg 参数脱敏（如 SensitiveLogArg.phone(...)），即使用 %msg 也会在日志事件创建前替换
+          sensitive-log-arg-turbo-filter-enabled: true
+          # 是否启用 MDC 敏感键脱敏（如 MDC 中的 phone/idCard），适配 includeMdc 或自定义 pattern 输出
+          sensitive-mdc-turbo-filter-enabled: true
+        # 日志整行正则兜底：默认关闭，仅用于遗留系统兜底
+        regex-fallback:
+          enabled: false
+          # key 为 MaskType，value 为匹配正则；enabled=false 时仅保留配置样例，不参与运行
+          rules:
+            PHONE: "(?<!\\d)1\\d{10}(?!\\d)"
+            EMAIL: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
+
+      # 异常文本兜底规则：默认关闭，建议仍以显式脱敏为主
+      exception-regex-fallback:
+        enabled: false
+        # 用于异常 message/堆栈中的敏感信息兜底匹配；enabled=false 时不生效
+        rules:
+          ID_CARD: "(?<!\\d)\\d{17}[\\dXx](?!\\d)"
+

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
  * 缓存管理器
  *
  * @author richie696
- * @version 5.0.0
+ * @version 1.0.0
  * @since 2025-06-26 18:18:32
  */
 @Component
