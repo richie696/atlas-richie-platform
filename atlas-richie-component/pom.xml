@@ -10,7 +10,7 @@
     </parent>
 
     <name>atlas-richie-component</name>
-    <description>Richie技术中台组件</description>
+    <description>Atlas Richie Component 是面向企业级应用的基础组件平台，提供缓存、数据访问、HTTP 通信、数据脱敏、消息集成、对象存储、向量检索、搜索与可观测性等标准化能力，支持多实现适配、配置驱动切换与稳定演进。</description>
 
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component</artifactId>

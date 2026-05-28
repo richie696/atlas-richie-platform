@@ -8,9 +8,10 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
+    <name>atlas-richie-base</name>
+    <description>Atlas Richie Base 是平台基础层聚合模块，提供统一依赖管理、契约模型与上下文能力等底座支撑，为上层组件库与业务应用提供一致、稳定、可演进的基础设施规范。</description>
     <artifactId>atlas-richie-base</artifactId>
     <packaging>pom</packaging>
-    <name>atlas-richie-base</name>
 
     <properties>
         <!-- 中台组件版本 -->
