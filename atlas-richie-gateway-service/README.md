@@ -54,6 +54,8 @@ The gateway is **configuration-driven**: one artifact switches microservice / Op
 
 Production usually runs on **ECS** or **Kubernetes**. Logically you may still operate separate clusters for external ToB/ToC, intranet, and OpenAPI.
 
+Application name: `platform-gateway-service`, default port **9500**. The `prod` profile is activated by default (via `${ENV:prod}` in `bootstrap.yml`). Functional profiles (`cache`, `gateway`) can be included via `spring.profiles.include`.
+
 ### ECS (summary)
 
 ```
@@ -63,7 +65,8 @@ Intranet: internal client → internal gateway → services
 
 - External and internal gateway clusters are **isolated**.
 - **All ingress** (including intranet) should pass through the gateway for authentication.
-- Discovery: Nacos; upstream URIs: `lb://service-id`.
+- Discovery: Nacos (`server-addr: 127.0.0.1:8848`, namespace `public`, group `global`); upstream URIs: `lb://service-id`.
+- Nacos config imports: `platform-cache.yaml` (Redis), `platform-gateway.yaml` (routes & features); append `platform-gateway-openapi.yaml` for OpenAPI mode.
 
 ### Kubernetes (summary)
 
@@ -74,15 +77,34 @@ East-west: pod → target Service (CoreDNS), typically **without** the gateway
 
 - Public traffic goes through the gateway; pod-to-pod calls rely on **NetworkPolicy** instead of app-level signing.
 - Scale via Deployment / HPA; config still from Nacos.
+- Image build: **Jib Maven Plugin** pushes to Harbor registry (`${harbor.url}/platform/${project.artifactId}`) with tags `${docker.image.version}` (current `4.0.0`) and `latest`.
+- Base image: `ghcr.io/graalvm/jdk-community:25`; JVM args `-Xmx8g` with Java 25 `--add-opens` flags.
+- Alternative Dockerfile: supports `docker build`, exposes port 9500, entrypoint `nohup java -jar /app.jar`.
+
+### Observability
+
+The gateway exposes all Actuator endpoints (`management.endpoints.web.exposure.include: "*"`), including:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/actuator/health` | Health check (with details) |
+| `/actuator/metrics` | Application metrics |
+| `/actuator/prometheus` | Prometheus scraping |
+| `/actuator/sentinel` | Sentinel rules & monitoring |
+| `springdoc` | API docs (`springdoc.api-docs.enabled: true`) |
 
 ### ECS vs K8s
 
 | Dimension | ECS | K8s |
 |-----------|-----|-----|
 | Entry | LB + Nginx | LB + Ingress |
-| Discovery | Nacos | CoreDNS + Service |
-| Service-to-service | Optional gateway / signing | Often direct calls |
+| Discovery | Nacos | Nacos (cross-cluster) / CoreDNS + Service (in-cluster) |
+| Config center | Nacos | Nacos |
+| Service-to-service | Optional gateway / signing | Often direct calls, NetworkPolicy |
 | Isolation | Separate gateway fleets | Namespace / NetworkPolicy |
+| Log collection | File → Logstash / Filebeat | Stdout → Fluentd / Promtail |
+| Scaling | Manual add/remove instances | Deployment / HPA automation |
+| Image build | Manual docker build + push | Jib plugin auto-push to Harbor |
 | Operations | Manual Nginx / Keepalive | Orchestration, HPA |
 
 See [Gateway Design Document · Deployment](docs/en/gateway-design.md).
