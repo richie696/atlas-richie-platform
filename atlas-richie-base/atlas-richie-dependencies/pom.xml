@@ -56,7 +56,7 @@
         <powerjob.version>5.1.2</powerjob.version>
         <ehcache.version>3.12.0</ehcache.version>
         <caffeine.version>3.2.4</caffeine.version>
-        <liquibase.version>5.0.2</liquibase.version>
+        <liquibase.version>5.0.3</liquibase.version>
         <fury-core.version>0.10.3</fury-core.version>
 
         <java-jwt.version>4.5.2</java-jwt.version>
