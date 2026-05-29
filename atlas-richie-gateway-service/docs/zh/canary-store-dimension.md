@@ -751,7 +751,7 @@ curl http://localhost:8080/actuator/canary/status
   "gatewayCanaryServiceList": ["order-service", "payment-service"],
   "isServiceInCanary": true,
   "isCanaryInstance": false,
-  "applicationName": "richie-order-service",
+  "applicationName": "atlas-richie-order-service",
   "configSource": "platform.gateway.deploy (Global Control)"
 }
 ```
