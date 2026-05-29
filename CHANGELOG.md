@@ -1,4 +1,4 @@
-**Languages:** [English](CHANGELOG.en.md) | [中文](CHANGELOG.md)
+**Languages:** [English](CHANGELOG.md) | [中文](CHANGELOG.zh.md)
 
 ---
 
