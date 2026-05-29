@@ -120,6 +120,7 @@ public class AtlasRedisProperties extends DataRedisProperties {
      * @since 2026-02-07 19:29:00
      */
     @Data
+    @ConfigurationProperties(prefix = "spring.data.redis.stream-idempotency")
     public static class StreamIdempotency {
         /** Redis 幂等窗口（默认 24h） */
         private Duration redisTtl = Duration.ofHours(24);
@@ -137,6 +138,7 @@ public class AtlasRedisProperties extends DataRedisProperties {
      * @since 2026-04-03
      */
     @Data
+    @ConfigurationProperties(prefix = "spring.data.redis.perf")
     public static class RedisPerf {
         /**
          * 是否启用性能守卫（默认 false，避免对存量环境产生日志噪声）

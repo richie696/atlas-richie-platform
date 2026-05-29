@@ -1,5 +1,7 @@
 # Contributing to atlas-richie-platform
 
+**Languages:** [English](CONTRIBUTING.en.md) | [中文](CONTRIBUTING.md)
+
 感谢你对 `atlas-richie-platform` 的关注与贡献。
 
 ## 基本原则
@@ -27,6 +29,19 @@
 
 ## 行为规范
 
-- 保持专业、尊重、建设性的沟通方式。
-- 对安全问题请勿公开提交细节，可先通过维护者邮箱私下联系。
+- 保持专业、尊重、建设性的沟通方式，参见 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)。
+- 对安全问题请勿公开提交细节，请遵循 [SECURITY.md](./SECURITY.md) 中的报告流程。
+
+## 本地构建建议
+
+```bash
+# 全量构建（排除示例工程）
+mvn clean verify -DskipTests -pl '!atlas-richie-component-template' -am
+```
+
+## 相关文档
+
+- [SECURITY.md](./SECURITY.md) / [SECURITY.en.md](./SECURITY.en.md) — 安全漏洞报告与支持版本
+- [CHANGELOG.md](./CHANGELOG.md) / [CHANGELOG.en.md](./CHANGELOG.en.md) — 版本变更记录
+- [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) / [CODE_OF_CONDUCT.en.md](./CODE_OF_CONDUCT.en.md) — 社区行为准则
 
