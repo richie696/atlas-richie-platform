@@ -6,6 +6,7 @@
 
 <p align="center">
   <a href="README.md">English</a> ·
+  <a href="README.zh.md">简体中文</a> ·
   <a href="https://docs.richie696.cn/">文档</a> ·
   <a href="https://github.com/richie696/atlas-richie-platform/issues">Issues</a> ·
   <a href="./CONTRIBUTING.zh.md">贡献指南</a> ·
