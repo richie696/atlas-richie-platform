@@ -1,45 +1,45 @@
-# Contributor Covenant 行为准则
+# Contributor Covenant Code of Conduct
 
 **Languages:** [English](CODE_OF_CONDUCT.en.md) | [中文](CODE_OF_CONDUCT.md)
 
-## 我们的承诺
+## Our Pledge
 
-作为成员、贡献者和维护者，我们承诺使参与本项目的每个人都不受骚扰，无论年龄、体型、可见或不可见的残疾、种族、民族、性别特征、性别认同与表达、经验水平、教育程度、社会经济地位、国籍、个人外貌、种族、宗教或性取向如何。
+We as members, contributors, and leaders pledge to make participation in our community a harassment-free experience for everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation.
 
-我们承诺以有助于建立开放、友好、多元化、包容且健康社区的方式行事与互动。
+We pledge to act and interact in ways that contribute to an open, welcoming, diverse, inclusive, and healthy community.
 
-## 我们的标准
+## Our Standards
 
-有助于营造积极环境的行为包括：
+Examples of behavior that contributes to a positive environment:
 
-- 对他人表现出同理心与善意
-- 尊重不同的观点、反馈与经历
-- 建设性地提出并接受批评
-- 承担责任，并向受我们错误影响的人道歉，并从经验中学习
-- 关注不仅对我们个人，而且对整个社区最有利的事情
+- Demonstrating empathy and kindness toward other people
+- Being respectful of differing opinions, viewpoints, and experiences
+- Giving and gracefully accepting constructive feedback
+- Accepting responsibility and apologizing to those affected by our mistakes, and learning from the experience
+- Focusing on what is best not just for us as individuals, but for the overall community
 
-不可接受的行为包括：
+Examples of unacceptable behavior:
 
-- 使用性化语言或图像，以及任何形式的性关注或挑逗
-- 挑衅、侮辱/贬损性评论，以及人身或政治攻击
-- 公开或私下骚扰
-- 未经明确许可发布他人的私人信息（如物理地址或电子邮件）
-- 其他在专业环境中可合理认为不适当的行为
+- The use of sexualized language or imagery, and sexual attention or advances of any kind
+- Trolling, insulting or derogatory comments, and personal or political attacks
+- Public or private harassment
+- Publishing others' private information, such as a physical or email address, without their explicit permission
+- Other conduct which could reasonably be considered inappropriate in a professional setting
 
-## 执行责任
+## Enforcement Responsibilities
 
-项目维护者负责澄清和执行本行为准则的标准，并有权对任何他们认为不适当、威胁、冒犯或有害的行为采取适当且公平的纠正措施。
+Community leaders are responsible for clarifying and enforcing our standards of acceptable behavior and will take appropriate and fair corrective action in response to any behavior that they deem inappropriate, threatening, offensive, or harmful.
 
-## 适用范围
+## Scope
 
-本行为准则适用于项目空间，也适用于个人在公共空间正式代表项目或社区时（例如使用官方电子邮件、社交媒体账号，或作为指定代表参加活动）。
+This Code of Conduct applies within all community spaces, and also applies when an individual is officially representing the community in public spaces (e.g. via official email, social media, or as an appointed representative at an event).
 
-## 执行
+## Enforcement
 
-可向项目维护者 **richie696@icloud.com** 报告辱骂、骚扰或其他不可接受的行为。  
-所有投诉将被及时、公正地审查和调查，维护者有义务对事件报告方保密。具体执行措施详见 [Contributor Covenant 常见问题](https://www.contributor-covenant.org/faq)。
+Report unacceptable behavior to the maintainers at **richie696@icloud.com**.  
+All complaints will be reviewed and investigated promptly and fairly. Maintainers are obligated to respect the privacy and security of reporters. See the [Contributor Covenant FAQ](https://www.contributor-covenant.org/faq) for enforcement guidelines.
 
-## 归属
+## Attribution
 
-本行为准则改编自 [Contributor Covenant](https://www.contributor-covenant.org) 2.1 版，  
-参见 https://www.contributor-covenant.org/version/2/1/code_of_conduct.html
+This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 2.1, available at  
+https://www.contributor-covenant.org/version/2/1/code_of_conduct.html
