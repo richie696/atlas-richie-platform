@@ -6,13 +6,13 @@
 <p align="center"><b>Enterprise middle platform · Unified components · Config-driven switching · Microservices at speed</b></p>
 
 <p align="center">
-  <a href="README.en.md">English</a> ·
-  <a href="README.md">简体中文</a> ·
+  <a href="README.md">English</a> ·
+  <a href="README.zh.md">简体中文</a> ·
   <a href="https://docs.richie696.cn/">Docs</a> ·
   <a href="https://github.com/richie696/atlas-richie-platform/issues">Issues</a> ·
-  <a href="./CONTRIBUTING.en.md">Contributing</a> ·
-  <a href="./SECURITY.en.md">Security</a> ·
-  <a href="./CHANGELOG.en.md">Changelog</a>
+  <a href="./CONTRIBUTING.md">Contributing</a> ·
+  <a href="./SECURITY.md">Security</a> ·
+  <a href="./CHANGELOG.md">Changelog</a>
 </p>
 
 <p align="center">
@@ -311,7 +311,6 @@ mvn spring-boot:run
 ### Services
 
 - [atlas-richie-gateway-service/README.md](atlas-richie-gateway-service/README.md)
-- [atlas-richie-general-service/README.md](./atlas-richie-general-service/README.md)
 
 ## 🏗️ Architecture
 
@@ -443,10 +442,10 @@ See also [NOTICE](./NOTICE).
 ## 🔗 Links
 
 - [Atlas Richie documentation](https://docs.richie696.cn/)
-- [Contributing](./CONTRIBUTING.en.md) | [贡献指南](./CONTRIBUTING.md)
-- [Security](./SECURITY.en.md) | [安全策略](./SECURITY.md)
-- [Code of Conduct](./CODE_OF_CONDUCT.en.md) | [行为准则](./CODE_OF_CONDUCT.md)
-- [Changelog](./CHANGELOG.en.md) | [变更日志](./CHANGELOG.md)
+- [Contributing](./CONTRIBUTING.md) | [贡献指南](./CONTRIBUTING.md)
+- [Security](./SECURITY.md) | [安全策略](./SECURITY.md)
+- [Code of Conduct](./CODE_OF_CONDUCT.md) | [行为准则](./CODE_OF_CONDUCT.md)
+- [Changelog](./CHANGELOG.md) | [变更日志](./CHANGELOG.md)
 - [Issues](https://github.com/richie696/atlas-richie-platform/issues)
 
 ## 📞 Contact

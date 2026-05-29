@@ -5,12 +5,12 @@
 <p align="center"><b>企业级技术中台 · 统一组件 · 配置化切换 · 快速构建微服务</b></p>
 
 <p align="center">
-  <a href="README.en.md">English</a> ·
+  <a href="README.md">English</a> ·
   <a href="https://docs.richie696.cn/">文档</a> ·
   <a href="https://github.com/richie696/atlas-richie-platform/issues">Issues</a> ·
-  <a href="./CONTRIBUTING.md">贡献指南</a> ·
-  <a href="./SECURITY.md">安全策略</a> ·
-  <a href="./CHANGELOG.md">变更日志</a>
+  <a href="./CONTRIBUTING.zh.md">贡献指南</a> ·
+  <a href="./SECURITY.zh.md">安全策略</a> ·
+  <a href="./CHANGELOG.zh.md">变更日志</a>
 </p>
 
 <p align="center">
@@ -319,7 +319,6 @@ mvn spring-boot:run
 ### 服务文档
 
 - [atlas-richie-gateway-service/README.md](atlas-richie-gateway-service/README.md) - 网关服务文档
-- [atlas-richie-general-service/README.md](./atlas-richie-general-service/README.md) - 通用服务文档
 
 ## 🏗️ 架构设计
 
@@ -467,10 +466,10 @@ platform:
 ## 🔗 相关链接
 
 - [Atlas Richie技术中台](https://docs.richie696.cn/)
-- [贡献指南](./CONTRIBUTING.md) | [Contributing (EN)](./CONTRIBUTING.en.md)
-- [安全策略](./SECURITY.md) | [Security (EN)](./SECURITY.en.md)
-- [行为准则](./CODE_OF_CONDUCT.md) | [Code of Conduct (EN)](./CODE_OF_CONDUCT.en.md)
-- [变更日志](./CHANGELOG.md) | [Changelog (EN)](./CHANGELOG.en.md)
+- [贡献指南](./CONTRIBUTING.zh.md) | [Contributing (EN)](./CONTRIBUTING.md)
+- [安全策略](./SECURITY.zh.md) | [Security (EN)](./SECURITY.md)
+- [行为准则](./CODE_OF_CONDUCT.zh.md) | [Code of Conduct (EN)](./CODE_OF_CONDUCT.md)
+- [变更日志](./CHANGELOG.zh.md) | [Changelog (EN)](./CHANGELOG.md)
 - [问题反馈](https://github.com/richie696/atlas-richie-platform/issues)
 
 ## 📞 联系方式
