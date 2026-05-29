@@ -4,7 +4,7 @@
 
 <p align="center"><b>企业级技术中台 · 统一组件 · 配置化切换 · 快速构建微服务</b></p>
 
-<p>
+<p align="center">
   <a href="README.en.md">English</a> ·
   <a href="https://docs.richie696.cn/">文档</a> ·
   <a href="https://github.com/richie696/atlas-richie-platform/issues">Issues</a> ·
@@ -13,7 +13,7 @@
   <a href="./CHANGELOG.md">变更日志</a>
 </p>
 
-<p>
+<p align="center">
   <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/License-Apache%202.0-4EB1BA.svg" alt="License"/></a>
   <img src="https://img.shields.io/badge/JDK-25-orange?logo=openjdk&logoColor=white" alt="JDK 25"/>
   <img src="https://img.shields.io/badge/Spring%20Boot-4.0.x-6DB33F?logo=springboot&logoColor=white" alt="Spring Boot"/>
