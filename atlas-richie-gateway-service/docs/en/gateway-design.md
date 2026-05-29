@@ -21,25 +21,25 @@
 
 ### 1.1 Core Features
 
-| Feature | Description | Status |
-|---------|-------------|--------|
-| 🔐 **ECC Encryption** | ECC+AES-GCM end-to-end encryption | ✅ Production Ready |
-| 🛡️ **Duplicate Submit Prevention** | Multi-dimensional duplicate submission protection | ✅ Production Ready |
-| 🔑 **Authentication & Authorization** | JWT tokens, SSO single sign-on | ✅ Production Ready |
-| 🏢 **Multi-Tenant** | Tenant isolation and access control | ✅ Production Ready |
-| 🚀 **Canary Release** | Multi-dimensional Canary release | ✅ Production Ready |
-| ⚡ **Circuit Breaker & Rate Limiting** | Sentinel unified protection | ✅ Production Ready |
-| 🌍 **Internationalization** | Multi-language support | ✅ Production Ready |
+| Feature                               | Description                                       | Status             |
+|---------------------------------------|---------------------------------------------------|--------------------|
+| 🔐 **ECC Encryption**                 | ECC+AES-GCM end-to-end encryption                 | ✅ Production Ready |
+| 🛡️ **Duplicate Submit Prevention**   | Multi-dimensional duplicate submission protection | ✅ Production Ready |
+| 🔑 **Authentication & Authorization** | JWT tokens, SSO single sign-on                    | ✅ Production Ready |
+| 🏢 **Multi-Tenant**                   | Tenant isolation and access control               | ✅ Production Ready |
+| 🚀 **Canary Release**                 | Multi-dimensional Canary release                  | ✅ Production Ready |
+| ⚡ **Circuit Breaker & Rate Limiting** | Sentinel unified protection                       | ✅ Production Ready |
+| 🌍 **Internationalization**           | Multi-language support                            | ✅ Production Ready |
 
 ### 1.2 Technology Stack
 
-| Technology | Version |
-|------------|--------|
-| Spring Cloud Gateway | 4.x |
-| Java | 25 (ZGC) |
-| Sentinel | Latest |
-| Redis | 6.x+ |
-| Nacos | 2.x |
+| Technology           | Version  |
+|----------------------|----------|
+| Spring Cloud Gateway | 4.x      |
+| Java                 | 25 (ZGC) |
+| Sentinel             | Latest   |
+| Redis                | 6.x+     |
+| Nacos                | 2.x      |
 
 ---
 
@@ -420,18 +420,18 @@ flowchart LR
 
 ### 2.3 Comparison of Two Deployment Modes
 
-| Comparison Dimension | ECS Deployment | K8S Deployment |
-|---------------------|----------------|-----------------|
-| **Frontend Layer** | LB Load Balancer → Nginx Multi-Instance or Nginx Multi-Instance + Keepalive | LB Load Balancer → Ingress Controller Multi-Instance |
-| **Gateway Deployment** | Multi-instance independent deployment | Multi-Pod deployment through Deployment |
-| **Request Path** | All requests must pass through Gateway | Public requests pass through Gateway, inter-service direct connection |
-| **Load Balancing** | Nginx/LB | CoreDNS + Service |
-| **Service Discovery** | Registration Center (Nacos) | CoreDNS + Service |
-| **Security Mechanism** | Gateway Authentication + Request Signature | K8s NetworkPolicy + RBAC |
-| **Inter-Service Communication** | Requires signature, optionally through Gateway | No signature required, direct connection, secured by K8s |
-| **Isolation Strategy** | Internal/external network independent gateway, ToB/ToC independent | Isolated through Namespace |
-| **Operational Complexity** | Requires manual configuration of Nginx, Keepalive | K8s automated management |
-| **Scalability** | Manual scaling | Auto scaling (HPA) |
+| Comparison Dimension            | ECS Deployment                                                              | K8S Deployment                                                        |
+|---------------------------------|-----------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| **Frontend Layer**              | LB Load Balancer → Nginx Multi-Instance or Nginx Multi-Instance + Keepalive | LB Load Balancer → Ingress Controller Multi-Instance                  |
+| **Gateway Deployment**          | Multi-instance independent deployment                                       | Multi-Pod deployment through Deployment                               |
+| **Request Path**                | All requests must pass through Gateway                                      | Public requests pass through Gateway, inter-service direct connection |
+| **Load Balancing**              | Nginx/LB                                                                    | CoreDNS + Service                                                     |
+| **Service Discovery**           | Registration Center (Nacos)                                                 | CoreDNS + Service                                                     |
+| **Security Mechanism**          | Gateway Authentication + Request Signature                                  | K8s NetworkPolicy + RBAC                                              |
+| **Inter-Service Communication** | Requires signature, optionally through Gateway                              | No signature required, direct connection, secured by K8s              |
+| **Isolation Strategy**          | Internal/external network independent gateway, ToB/ToC independent          | Isolated through Namespace                                            |
+| **Operational Complexity**      | Requires manual configuration of Nginx, Keepalive                           | K8s automated management                                              |
+| **Scalability**                 | Manual scaling                                                              | Auto scaling (HPA)                                                    |
 
 #### 2.3.1 Selection Recommendations
 
@@ -524,54 +524,54 @@ flowchart TD
 
 #### ECC+AES-GCM vs Simple HTTPS Comparison
 
-| Comparison Dimension | ECC+AES-GCM Hybrid Encryption | Simple HTTPS Encryption | Description |
-|---------------------|------------------------------|------------------------|-------------|
-| **🔐 Encryption Method** |
-| Transport Layer Encryption | ❌ None (Application Layer Encryption) | ✅ TLS/SSL | HTTPS relies on TLS protocol |
-| Application Layer Encryption | ✅ ECC Key Exchange + AES-GCM | ❌ None | Double encryption, more secure |
-| End-to-End Encryption | ✅ Client↔Gateway↔Backend (Optional) | ❌ Client↔Gateway only | ECC can extend to backend |
-| **🛡️ Security** |
-| Confidentiality | ✅ AES-256 | ✅ TLS 1.2+ (AES-128/256) | Comparable encryption strength |
-| Integrity Protection | ✅ AES-GCM Tag Authentication | ✅ TLS MAC | Both have integrity checks |
-| Forward Secrecy | ✅ KeyPair periodic update (24 hours) | ⚠️ Depends on TLS version | ECC can actively rotate keys |
-| Key Leakage Risk | ✅ Independent key per session | ⚠️ Long-term certificate key | ECC session keys more secure |
-| Man-in-the-Middle Attack Protection | ✅ ECC Key Exchange Verification | ✅ Certificate Chain Verification | Different protection mechanisms |
-| **⚡ Performance** |
-| Encryption/Decryption Overhead | ⚠️ Application layer processing (10-50ms) | ✅ TLS hardware acceleration (<5ms) | HTTPS has hardware acceleration advantage |
-| Initial Handshake Latency | ⚠️ Key exchange (100-200ms) | ✅ TLS handshake (50-100ms) | HTTPS handshake slightly faster |
-| Data Transfer Performance | ✅ AES-GCM efficient | ✅ TLS encryption efficient | Comparable performance |
-| CPU Usage | ⚠️ Higher (ECC computation) | ✅ Lower (hardware acceleration) | HTTPS more CPU-efficient |
-| **🔧 Deployment & Operations** |
-| Certificate Management | ✅ No CA certificate required | ❌ Requires CA certificate/Let's Encrypt | ECC no certificate management |
-| Certificate Expiration Issue | ✅ None | ❌ Requires periodic renewal | ECC avoids certificate expiration |
-| Certificate Cost | ✅ Zero cost | ⚠️ Enterprise certificates require payment | ECC no certificate cost |
-| Configuration Complexity | ⚠️ Requires client integration | ✅ Server configuration only | HTTPS simpler to configure |
-| Client Adaptation | ⚠️ Requires client library integration | ✅ Browser/HTTP client native support | HTTPS better compatibility |
-| **🎯 Applicable Scenarios** |
-| Public Websites | ❌ Not applicable | ✅ Preferred | HTTPS more suitable |
-| Mobile Apps | ✅ Perfect fit | ✅ Also applicable | Both can be used |
-| Internal Systems | ✅ More flexible | ✅ Also applicable | ECC more flexible |
-| High Security Requirements | ✅ End-to-end encryption | ⚠️ Transport encryption only | ECC higher security |
-| Financial Payment | ✅ Recommended | ✅ Also applicable | ECC more suitable for sensitive data |
-| **🔑 Key Management** |
-| Key Generation | ✅ Client and server each generate independently | ❌ Server certificate only | ECC key pairs independently generated |
-| Key Rotation | ✅ Can rotate dynamically (24 hours) | ⚠️ Rotates only when certificate expires | ECC more flexible rotation |
-| Key Storage | ✅ In memory, not persisted | ❌ Certificate file storage | ECC keys more secure |
-| Multi-Tenant Keys | ✅ Can support multiple KeyPairs | ⚠️ Requires multiple certificates | ECC more flexible |
-| **🌍 Compatibility** |
-| Browser Support | ✅ Web Crypto API | ✅ Native TLS | Both supported |
-| Mobile Support | ✅ Requires library integration | ✅ Native support | HTTPS better compatibility |
-| Backend Services | ✅ Optional encryption | ✅ Must use HTTPS | ECC optional |
-| Legacy System Compatibility | ⚠️ Requires client upgrade | ✅ Widely compatible | HTTPS better compatibility |
-| **💰 Cost** |
-| Certificate Fees | ✅ Free | ⚠️ Enterprise certificates require payment | ECC no certificate cost |
-| Development Cost | ⚠️ Requires client development | ✅ Almost no development required | HTTPS lower development cost |
-| Operations Cost | ✅ No certificate management | ⚠️ Requires certificate management | ECC simpler operations |
-| **📊 Controllability** |
-| Encryption Granularity | ✅ Configurable per interface/path | ❌ Full site encryption | ECC fine-grained control |
-| Encryption Algorithm Selection | ✅ Fully controllable | ⚠️ Depends on TLS version | ECC algorithm controllable |
-| Performance Tuning | ✅ Can optimize encryption path | ⚠️ Depends on TLS configuration | ECC more controllable |
-| Logging & Audit | ✅ Can record encryption information | ⚠️ TLS layer not visible | ECC better auditability |
+| Comparison Dimension                | ECC+AES-GCM Hybrid Encryption                   | Simple HTTPS Encryption                    | Description                               |
+|-------------------------------------|-------------------------------------------------|--------------------------------------------|-------------------------------------------|
+| **🔐 Encryption Method**            |
+| Transport Layer Encryption          | ❌ None (Application Layer Encryption)           | ✅ TLS/SSL                                  | HTTPS relies on TLS protocol              |
+| Application Layer Encryption        | ✅ ECC Key Exchange + AES-GCM                    | ❌ None                                     | Double encryption, more secure            |
+| End-to-End Encryption               | ✅ Client↔Gateway↔Backend (Optional)             | ❌ Client↔Gateway only                      | ECC can extend to backend                 |
+| **🛡️ Security**                    |
+| Confidentiality                     | ✅ AES-256                                       | ✅ TLS 1.2+ (AES-128/256)                   | Comparable encryption strength            |
+| Integrity Protection                | ✅ AES-GCM Tag Authentication                    | ✅ TLS MAC                                  | Both have integrity checks                |
+| Forward Secrecy                     | ✅ KeyPair periodic update (24 hours)            | ⚠️ Depends on TLS version                  | ECC can actively rotate keys              |
+| Key Leakage Risk                    | ✅ Independent key per session                   | ⚠️ Long-term certificate key               | ECC session keys more secure              |
+| Man-in-the-Middle Attack Protection | ✅ ECC Key Exchange Verification                 | ✅ Certificate Chain Verification           | Different protection mechanisms           |
+| **⚡ Performance**                   |
+| Encryption/Decryption Overhead      | ⚠️ Application layer processing (10-50ms)       | ✅ TLS hardware acceleration (<5ms)         | HTTPS has hardware acceleration advantage |
+| Initial Handshake Latency           | ⚠️ Key exchange (100-200ms)                     | ✅ TLS handshake (50-100ms)                 | HTTPS handshake slightly faster           |
+| Data Transfer Performance           | ✅ AES-GCM efficient                             | ✅ TLS encryption efficient                 | Comparable performance                    |
+| CPU Usage                           | ⚠️ Higher (ECC computation)                     | ✅ Lower (hardware acceleration)            | HTTPS more CPU-efficient                  |
+| **🔧 Deployment & Operations**      |
+| Certificate Management              | ✅ No CA certificate required                    | ❌ Requires CA certificate/Let's Encrypt    | ECC no certificate management             |
+| Certificate Expiration Issue        | ✅ None                                          | ❌ Requires periodic renewal                | ECC avoids certificate expiration         |
+| Certificate Cost                    | ✅ Zero cost                                     | ⚠️ Enterprise certificates require payment | ECC no certificate cost                   |
+| Configuration Complexity            | ⚠️ Requires client integration                  | ✅ Server configuration only                | HTTPS simpler to configure                |
+| Client Adaptation                   | ⚠️ Requires client library integration          | ✅ Browser/HTTP client native support       | HTTPS better compatibility                |
+| **🎯 Applicable Scenarios**         |
+| Public Websites                     | ❌ Not applicable                                | ✅ Preferred                                | HTTPS more suitable                       |
+| Mobile Apps                         | ✅ Perfect fit                                   | ✅ Also applicable                          | Both can be used                          |
+| Internal Systems                    | ✅ More flexible                                 | ✅ Also applicable                          | ECC more flexible                         |
+| High Security Requirements          | ✅ End-to-end encryption                         | ⚠️ Transport encryption only               | ECC higher security                       |
+| Financial Payment                   | ✅ Recommended                                   | ✅ Also applicable                          | ECC more suitable for sensitive data      |
+| **🔑 Key Management**               |
+| Key Generation                      | ✅ Client and server each generate independently | ❌ Server certificate only                  | ECC key pairs independently generated     |
+| Key Rotation                        | ✅ Can rotate dynamically (24 hours)             | ⚠️ Rotates only when certificate expires   | ECC more flexible rotation                |
+| Key Storage                         | ✅ In memory, not persisted                      | ❌ Certificate file storage                 | ECC keys more secure                      |
+| Multi-Tenant Keys                   | ✅ Can support multiple KeyPairs                 | ⚠️ Requires multiple certificates          | ECC more flexible                         |
+| **🌍 Compatibility**                |
+| Browser Support                     | ✅ Web Crypto API                                | ✅ Native TLS                               | Both supported                            |
+| Mobile Support                      | ✅ Requires library integration                  | ✅ Native support                           | HTTPS better compatibility                |
+| Backend Services                    | ✅ Optional encryption                           | ✅ Must use HTTPS                           | ECC optional                              |
+| Legacy System Compatibility         | ⚠️ Requires client upgrade                      | ✅ Widely compatible                        | HTTPS better compatibility                |
+| **💰 Cost**                         |
+| Certificate Fees                    | ✅ Free                                          | ⚠️ Enterprise certificates require payment | ECC no certificate cost                   |
+| Development Cost                    | ⚠️ Requires client development                  | ✅ Almost no development required           | HTTPS lower development cost              |
+| Operations Cost                     | ✅ No certificate management                     | ⚠️ Requires certificate management         | ECC simpler operations                    |
+| **📊 Controllability**              |
+| Encryption Granularity              | ✅ Configurable per interface/path               | ❌ Full site encryption                     | ECC fine-grained control                  |
+| Encryption Algorithm Selection      | ✅ Fully controllable                            | ⚠️ Depends on TLS version                  | ECC algorithm controllable                |
+| Performance Tuning                  | ✅ Can optimize encryption path                  | ⚠️ Depends on TLS configuration            | ECC more controllable                     |
+| Logging & Audit                     | ✅ Can record encryption information             | ⚠️ TLS layer not visible                   | ECC better auditability                   |
 
 #### Selection Recommendations
 
@@ -742,7 +742,7 @@ platform:
 
 #### Client Integration
 
-See: [client-library/examples/](../src/main/resources/client-library/examples/)
+See: [client-library/examples/](../../src/main/resources/client-library/)
 
 ---
 
@@ -883,14 +883,14 @@ sequenceDiagram
 
 #### Multi-Dimensional Protection
 
-| Dimension | Description | Configuration Item | Applicable Scenario |
-|-----------|-------------|-------------------|---------------------|
-| **Path** | Specify which APIs need checking | `include-paths`<br/>`exclude-paths` | All scenarios |
-| **Method** | Only check write operations | Auto-identify | All scenarios |
-| **Time Window** | Deduplicate within same window | `time-window: 3000` | All scenarios |
-| **User** | Same user cannot submit duplicate within time window | `enable-user-level: true` | Post-login operations |
-| **IP** | Same IP cannot submit duplicate within time window | `enable-ip-level: true` | Prevent malicious attacks |
-| **Request Body** | Deduplicate by same request body hash | `enable-body-hash: true` | Prevent duplicate data |
+| Dimension        | Description                                          | Configuration Item                  | Applicable Scenario       |
+|------------------|------------------------------------------------------|-------------------------------------|---------------------------|
+| **Path**         | Specify which APIs need checking                     | `include-paths`<br/>`exclude-paths` | All scenarios             |
+| **Method**       | Only check write operations                          | Auto-identify                       | All scenarios             |
+| **Time Window**  | Deduplicate within same window                       | `time-window: 3000`                 | All scenarios             |
+| **User**         | Same user cannot submit duplicate within time window | `enable-user-level: true`           | Post-login operations     |
+| **IP**           | Same IP cannot submit duplicate within time window   | `enable-ip-level: true`             | Prevent malicious attacks |
+| **Request Body** | Deduplicate by same request body hash                | `enable-body-hash: true`            | Prevent duplicate data    |
 
 #### Time Window Mechanism
 
@@ -1062,11 +1062,11 @@ platform:
 
 #### Three Dimensions
 
-| Dimension | Description | Use Case |
-|-----------|-------------|----------|
-| **VERSION** | Based on version number | Server-side control |
-| **ID** | Based on characteristic ID (user ID, store ID, etc.) | Specified user testing |
-| **CUSTOM** | Client dynamically specifies | Flexible control |
+| Dimension   | Description                                          | Use Case               |
+|-------------|------------------------------------------------------|------------------------|
+| **VERSION** | Based on version number                              | Server-side control    |
+| **ID**      | Based on characteristic ID (user ID, store ID, etc.) | Specified user testing |
+| **CUSTOM**  | Client dynamically specifies                         | Flexible control       |
 
 #### Configuration
 
@@ -1094,7 +1094,7 @@ platform:
 
 #### Architecture Diagram
 
-> 📊 **Detailed Architecture Diagram**: Please refer to [Gateway Circuit Breaker Architecture](./网关熔断器架构图.md), this document details the complete architecture of Sentinel in the gateway, including:
+> 📊 **Detailed Architecture Diagram**: Please refer to [Gateway Circuit Breaker Architecture](circuit-breaker-architecture.md), this document details the complete architecture of Sentinel in the gateway, including:
 > - Client to gateway request flow
 > - Internal/external network routing division
 > - Sentinel rule execution entry and connection pool hosting
@@ -1218,17 +1218,17 @@ platform:
 
 ### 5.2 Core Configuration Reference Table
 
-| Feature | Configuration Path | Default Value | Description |
-|---------|-------------------|---------------|-------------|
-| ECC Encryption | `platform.gateway.ecc-crypto.enabled` | false | Whether to enable |
-| Duplicate Submit Prevention | `platform.gateway.duplicate-submit.enabled` | false | Whether to enable |
-| Time Window | `platform.gateway.duplicate-submit.time-window` | 3000 | Milliseconds |
-| JWT Validity Period | `platform.gateway.token.expire-time` | 2 | Hours |
-| Token Renewal | `platform.gateway.token.expiration-renewal-time` | 10 | Minutes |
-| IP Rate Limiting | `platform.gateway.security.security-threshold` | 120 | Times/minute |
-| SSO | `platform.gateway.sso.enable` | false | Whether to enable |
-| Multi-Tenant | `platform.gateway.tenant.enable` | false | Whether to enable |
-| Canary Release | `platform.gateway.deploy.enable` | false | Whether to enable |
+| Feature                     | Configuration Path                               | Default Value | Description       |
+|-----------------------------|--------------------------------------------------|---------------|-------------------|
+| ECC Encryption              | `platform.gateway.ecc-crypto.enabled`            | false         | Whether to enable |
+| Duplicate Submit Prevention | `platform.gateway.duplicate-submit.enabled`      | false         | Whether to enable |
+| Time Window                 | `platform.gateway.duplicate-submit.time-window`  | 3000          | Milliseconds      |
+| JWT Validity Period         | `platform.gateway.token.expire-time`             | 2             | Hours             |
+| Token Renewal               | `platform.gateway.token.expiration-renewal-time` | 10            | Minutes           |
+| IP Rate Limiting            | `platform.gateway.security.security-threshold`   | 120           | Times/minute      |
+| SSO                         | `platform.gateway.sso.enable`                    | false         | Whether to enable |
+| Multi-Tenant                | `platform.gateway.tenant.enable`                 | false         | Whether to enable |
+| Canary Release              | `platform.gateway.deploy.enable`                 | false         | Whether to enable |
 
 ---
 
@@ -1342,26 +1342,26 @@ java -Xms3g -Xmx6g \
 
 **Configuration Item Detailed Explanation**:
 
-| Configuration Item | Value | Reason | Description |
-|-------------------|-------|--------|-------------|
-| `-Xms3g -Xmx6g` | 3GB-6GB | Heap memory configuration | Reserve 2GB for system and other processes, avoid OOM |
-| `-XX:+UseZGC` | Enable ZGC | Low-latency garbage collector | ZGC pause time <1ms, suitable for gateway high-concurrency scenarios |
-| `-XX:+ZGenerational` | Enable Generational ZGC | Improve throughput and memory reclamation efficiency | Generational ZGC not enabled by default in JDK25, need to add this parameter manually |
-| `-XX:+UnlockExperimentalVMOptions` | Enable Experimental Options | Support experimental features like ZGC | ZGC still requires this parameter in JDK25 |
-| `-XX:+UseStringDeduplication` | Enable String Deduplication | Reduce memory usage | Gateway processes many HTTP requests, string deduplication can save memory |
-| `-XX:MaxMetaspaceSize=512m` | 512MB | Metaspace size limit | Prevent metaspace from growing infinitely, affecting system stability |
-| `-XX:MaxDirectMemorySize=1g` | 1GB | Direct memory limit | Limit NIO buffer usage, prevent memory leaks |
-| `-XX:+HeapDumpOnOutOfMemoryError` | Enable Heap Dump | Fault diagnosis | Auto-generate heap dump file when OOM occurs, convenient for problem analysis |
-| `-XX:HeapDumpPath=/app/logs/gateway/heapdump.hprof` | Heap dump path | File storage location | Specify heap dump file save path |
-| `-XX:+PrintGCDetails` | Enable Detailed GC Logs | Performance monitoring | Record detailed GC information, convenient for performance tuning |
-| `-XX:+PrintGCDateStamps` | Enable GC Timestamp | Time tracking | Add timestamp to GC logs, convenient for problem location |
-| `-Xloggc:/app/logs/gateway/gc.log` | GC log path | Log storage | Specify GC log file save path |
-| `-XX:+UseGCLogFileRotation` | Enable Log Rotation | Disk space management | Prevent GC log files from becoming too large, auto rotate |
-| `-XX:NumberOfGCLogFiles=5` | 5 log files | History retention | Keep the most recent 5 GC log files |
-| `-XX:GCLogFileSize=100M` | 100MB | Single file size | Maximum 100MB per GC log file |
-| `-Djava.security.egd=file:/dev/./urandom` | Random number generator | Startup performance | Use /dev/urandom to speed up startup, avoid blocking |
-| `-Dfile.encoding=UTF-8` | UTF-8 encoding | Character encoding | Ensure correct encoding of logs and messages |
-| `-Duser.timezone=Asia/Shanghai` | Shanghai timezone | Time handling | Set system timezone, ensure correct log time |
+| Configuration Item                                  | Value                       | Reason                                               | Description                                                                           |
+|-----------------------------------------------------|-----------------------------|------------------------------------------------------|---------------------------------------------------------------------------------------|
+| `-Xms3g -Xmx6g`                                     | 3GB-6GB                     | Heap memory configuration                            | Reserve 2GB for system and other processes, avoid OOM                                 |
+| `-XX:+UseZGC`                                       | Enable ZGC                  | Low-latency garbage collector                        | ZGC pause time <1ms, suitable for gateway high-concurrency scenarios                  |
+| `-XX:+ZGenerational`                                | Enable Generational ZGC     | Improve throughput and memory reclamation efficiency | Generational ZGC not enabled by default in JDK25, need to add this parameter manually |
+| `-XX:+UnlockExperimentalVMOptions`                  | Enable Experimental Options | Support experimental features like ZGC               | ZGC still requires this parameter in JDK25                                            |
+| `-XX:+UseStringDeduplication`                       | Enable String Deduplication | Reduce memory usage                                  | Gateway processes many HTTP requests, string deduplication can save memory            |
+| `-XX:MaxMetaspaceSize=512m`                         | 512MB                       | Metaspace size limit                                 | Prevent metaspace from growing infinitely, affecting system stability                 |
+| `-XX:MaxDirectMemorySize=1g`                        | 1GB                         | Direct memory limit                                  | Limit NIO buffer usage, prevent memory leaks                                          |
+| `-XX:+HeapDumpOnOutOfMemoryError`                   | Enable Heap Dump            | Fault diagnosis                                      | Auto-generate heap dump file when OOM occurs, convenient for problem analysis         |
+| `-XX:HeapDumpPath=/app/logs/gateway/heapdump.hprof` | Heap dump path              | File storage location                                | Specify heap dump file save path                                                      |
+| `-XX:+PrintGCDetails`                               | Enable Detailed GC Logs     | Performance monitoring                               | Record detailed GC information, convenient for performance tuning                     |
+| `-XX:+PrintGCDateStamps`                            | Enable GC Timestamp         | Time tracking                                        | Add timestamp to GC logs, convenient for problem location                             |
+| `-Xloggc:/app/logs/gateway/gc.log`                  | GC log path                 | Log storage                                          | Specify GC log file save path                                                         |
+| `-XX:+UseGCLogFileRotation`                         | Enable Log Rotation         | Disk space management                                | Prevent GC log files from becoming too large, auto rotate                             |
+| `-XX:NumberOfGCLogFiles=5`                          | 5 log files                 | History retention                                    | Keep the most recent 5 GC log files                                                   |
+| `-XX:GCLogFileSize=100M`                            | 100MB                       | Single file size                                     | Maximum 100MB per GC log file                                                         |
+| `-Djava.security.egd=file:/dev/./urandom`           | Random number generator     | Startup performance                                  | Use /dev/urandom to speed up startup, avoid blocking                                  |
+| `-Dfile.encoding=UTF-8`                             | UTF-8 encoding              | Character encoding                                   | Ensure correct encoding of logs and messages                                          |
+| `-Duser.timezone=Asia/Shanghai`                     | Shanghai timezone           | Time handling                                        | Set system timezone, ensure correct log time                                          |
 
 ### 7.2 ZGC Garbage Collector Advantages
 
@@ -1413,12 +1413,12 @@ In Kubernetes (K8s) environment, it is recommended to adopt a "small and many" P
 
 **Recommended Configuration Table**:
 
-| Business Scale | POD Replica Count | CPU | Memory | JVM Heap Recommendation | Applicable Scenario |
-|---------------|------------------|------|--------|------------------------|---------------------|
-| Dev/Test | 1-2 | 0.5-1 core | 1-2G | 512m-1g | Low concurrency/Functional verification |
-| Small Production | 2-3 | 1-2 cores | 2-3G | 1g-1.5g | Daily active <50k |
-| Medium Production | 3-5 | 2 cores | 2-4G | 1.5g-2g | Daily active 50k-200k |
-| Large Production | 5-8 | 2-4 cores | 3-6G | 2g-3g | Daily active 200k-1M |
+| Business Scale    | POD Replica Count | CPU        | Memory | JVM Heap Recommendation | Applicable Scenario                     |
+|-------------------|-------------------|------------|--------|-------------------------|-----------------------------------------|
+| Dev/Test          | 1-2               | 0.5-1 core | 1-2G   | 512m-1g                 | Low concurrency/Functional verification |
+| Small Production  | 2-3               | 1-2 cores  | 2-3G   | 1g-1.5g                 | Daily active <50k                       |
+| Medium Production | 3-5               | 2 cores    | 2-4G   | 1.5g-2g                 | Daily active 50k-200k                   |
+| Large Production  | 5-8               | 2-4 cores  | 3-6G   | 2g-3g                   | Daily active 200k-1M                    |
 
 > **Description**: JVM parameter recommendation `-Xms=-Xmx=`, the rest of memory allocated to direct memory, metaspace and system.
 
@@ -1496,13 +1496,13 @@ curl -X GET http://localhost:8080/api/user/profile \
 
 #### Key Metrics
 
-| Metric | Monitoring Item | Alert Threshold |
-|--------|-----------------|----------------|
-| Response Time | P95 Response Time | >1s |
-| Error Rate | 5xx Error Rate | >1% |
-| Throughput | QPS | Based on capacity planning |
-| Memory | Heap Memory Usage | >80% |
-| GC | GC Pause Time | >10ms |
+| Metric        | Monitoring Item   | Alert Threshold            |
+|---------------|-------------------|----------------------------|
+| Response Time | P95 Response Time | >1s                        |
+| Error Rate    | 5xx Error Rate    | >1%                        |
+| Throughput    | QPS               | Based on capacity planning |
+| Memory        | Heap Memory Usage | >80%                       |
+| GC            | GC Pause Time     | >10ms                      |
 
 #### Prometheus Configuration
 

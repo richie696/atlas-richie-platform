@@ -71,15 +71,15 @@ graph TB
 
 ### 2.2 Core Component Description
 
-| Component | Responsibility | Technology Implementation |
-|-----------|----------------|--------------------------|
-| **Management Page** | Provides CRUD interface for third-party company and client configuration | HTML + JavaScript / Vue / React |
-| **general-service** | Manages third-party company and client configuration, provides REST API | Spring Boot + MyBatis-Plus |
-| **Database** | Persistently stores third-party company and client configuration | MySQL + Liquibase |
-| **Redis Cache** | Stores client configuration for fast gateway access | Redis |
-| **Scheduled Sync Task** | Periodically performs full sync from database to Redis (fallback guarantee) | Spring @Scheduled |
-| **Third-Party Gateway** | Independently deployed gateway service handling third-party system requests | Spring Cloud Gateway |
-| **InterfaceAuthFilter** | OAuth2.0 authentication filter validating access_token | Gateway Filter |
+| Component               | Responsibility                                                              | Technology Implementation       |
+|-------------------------|-----------------------------------------------------------------------------|---------------------------------|
+| **Management Page**     | Provides CRUD interface for third-party company and client configuration    | HTML + JavaScript / Vue / React |
+| **general-service**     | Manages third-party company and client configuration, provides REST API     | Spring Boot + MyBatis-Plus      |
+| **Database**            | Persistently stores third-party company and client configuration            | MySQL + Liquibase               |
+| **Redis Cache**         | Stores client configuration for fast gateway access                         | Redis                           |
+| **Scheduled Sync Task** | Periodically performs full sync from database to Redis (fallback guarantee) | Spring @Scheduled               |
+| **Third-Party Gateway** | Independently deployed gateway service handling third-party system requests | Spring Cloud Gateway            |
+| **InterfaceAuthFilter** | OAuth2.0 authentication filter validating access_token                      | Gateway Filter                  |
 
 ---
 
@@ -563,27 +563,27 @@ sequenceDiagram
 
 **Table Name: `third_party_client`**
 
-| Field Name | Type | Description | Constraint |
-|-----------|------|-------------|------------|
-| id | BIGINT | Primary key ID | PRIMARY KEY |
-| company_id | BIGINT | Associated company ID | FOREIGN KEY, NOT NULL |
-| client_id | VARCHAR(64) | Client ID (appId) | UNIQUE, NOT NULL |
-| client_secret | VARCHAR(256) | Client secret (encrypted storage) | NOT NULL |
-| client_name | VARCHAR(128) | Client name | NOT NULL |
-| description | VARCHAR(512) | Description | |
-| scopes | VARCHAR(512) | Permission scopes (JSON array or comma-separated) | |
-| enabled | TINYINT(1) | Whether enabled | DEFAULT 1 |
-| ip_whitelist | TEXT | IP whitelist (JSON array) | |
-| token_valid_duration | INT | Token validity duration (hours) | DEFAULT 24 |
-| expiration_renewal_time | INT | Pre-expiration renewal time (minutes) | DEFAULT 60 |
-| contact_name | VARCHAR(64) | Contact person name | |
-| contact_email | VARCHAR(128) | Contact email | |
-| contact_phone | VARCHAR(32) | Contact phone | |
-| create_id | VARCHAR(64) | Creator ID | |
-| create_time | DATETIME | Create time | |
-| update_id | VARCHAR(64) | Updater ID | |
-| update_time | DATETIME | Update time | |
-| deleted | TINYINT(1) | Delete flag | DEFAULT 0 |
+| Field Name              | Type         | Description                                       | Constraint            |
+|-------------------------|--------------|---------------------------------------------------|-----------------------|
+| id                      | BIGINT       | Primary key ID                                    | PRIMARY KEY           |
+| company_id              | BIGINT       | Associated company ID                             | FOREIGN KEY, NOT NULL |
+| client_id               | VARCHAR(64)  | Client ID (appId)                                 | UNIQUE, NOT NULL      |
+| client_secret           | VARCHAR(256) | Client secret (encrypted storage)                 | NOT NULL              |
+| client_name             | VARCHAR(128) | Client name                                       | NOT NULL              |
+| description             | VARCHAR(512) | Description                                       |                       |
+| scopes                  | VARCHAR(512) | Permission scopes (JSON array or comma-separated) |                       |
+| enabled                 | TINYINT(1)   | Whether enabled                                   | DEFAULT 1             |
+| ip_whitelist            | TEXT         | IP whitelist (JSON array)                         |                       |
+| token_valid_duration    | INT          | Token validity duration (hours)                   | DEFAULT 24            |
+| expiration_renewal_time | INT          | Pre-expiration renewal time (minutes)             | DEFAULT 60            |
+| contact_name            | VARCHAR(64)  | Contact person name                               |                       |
+| contact_email           | VARCHAR(128) | Contact email                                     |                       |
+| contact_phone           | VARCHAR(32)  | Contact phone                                     |                       |
+| create_id               | VARCHAR(64)  | Creator ID                                        |                       |
+| create_time             | DATETIME     | Create time                                       |                       |
+| update_id               | VARCHAR(64)  | Updater ID                                        |                       |
+| update_time             | DATETIME     | Update time                                       |                       |
+| deleted                 | TINYINT(1)   | Delete flag                                       | DEFAULT 0             |
 
 **Indexes:**
 - `idx_company_id` (company_id) - Company ID index (foreign key)
@@ -700,15 +700,15 @@ HMACSHA256(
 
 #### 6.3.3 Differences from Internal System JWT
 
-| Feature | Internal System JWT | Third-Party System JWT |
-|---------|---------------------|------------------------|
-| **User Identifier** | `username` | `client_id` |
-| **Tenant Information** | `tenantCode` (optional) | None |
-| **Permission Scope** | User role permissions | `scopes` (OAuth2.0 standard) |
-| **Signing Key** | Internal system dedicated key | Third-party system dedicated key |
-| **Subject** | `"Interactive token"` | `"client_credentials"` |
-| **Audience** | Username | API service address |
-| **Purpose** | User login authentication | OAuth2.0 Client Credentials authentication |
+| Feature                | Internal System JWT           | Third-Party System JWT                     |
+|------------------------|-------------------------------|--------------------------------------------|
+| **User Identifier**    | `username`                    | `client_id`                                |
+| **Tenant Information** | `tenantCode` (optional)       | None                                       |
+| **Permission Scope**   | User role permissions         | `scopes` (OAuth2.0 standard)               |
+| **Signing Key**        | Internal system dedicated key | Third-party system dedicated key           |
+| **Subject**            | `"Interactive token"`         | `"client_credentials"`                     |
+| **Audience**           | Username                      | API service address                        |
+| **Purpose**            | User login authentication     | OAuth2.0 Client Credentials authentication |
 
 #### 6.3.4 Token Generation Example
 
@@ -1309,20 +1309,14 @@ public ResultVO<List<Long>> batchCreate(@RequestBody List<ThirdPartyClientDTO> c
 
 ### 13.2 Glossary
 
-| Term | Description |
-|------|-------------|
-| **company_id** | Company ID, associated with third-party company information table |
-| **company_code** | Unified social credit code, uniquely identifies third-party company |
-| **client_id** | Client identifier, uniquely identifies third-party system |
-| **client_secret** | Client secret, used to verify client identity |
-| **access_token** | Access token, used to access protected resources (JWT format, short validity like 1 hour) |
-| **refresh_token** | Refresh token, used to obtain new access_token (random string format, long validity like 30 days) |
-| **scopes** | Permission scopes, defines resources the client can access |
-| **JWT** | JSON Web Token, a compact, URL-safe token format |
-| **grant_type** | Authorization type, specifies how to obtain token in OAuth2.0 (e.g., client_credentials, refresh_token) |
-
----
-
-**Document Version:** v1.0  
-**Creation Date:** 2025-01-XX  
-**Author:** richie696
+| Term              | Description                                                                                             |
+|-------------------|---------------------------------------------------------------------------------------------------------|
+| **company_id**    | Company ID, associated with third-party company information table                                       |
+| **company_code**  | Unified social credit code, uniquely identifies third-party company                                     |
+| **client_id**     | Client identifier, uniquely identifies third-party system                                               |
+| **client_secret** | Client secret, used to verify client identity                                                           |
+| **access_token**  | Access token, used to access protected resources (JWT format, short validity like 1 hour)               |
+| **refresh_token** | Refresh token, used to obtain new access_token (random string format, long validity like 30 days)       |
+| **scopes**        | Permission scopes, defines resources the client can access                                              |
+| **JWT**           | JSON Web Token, a compact, URL-safe token format                                                        |
+| **grant_type**    | Authorization type, specifies how to obtain token in OAuth2.0 (e.g., client_credentials, refresh_token) |

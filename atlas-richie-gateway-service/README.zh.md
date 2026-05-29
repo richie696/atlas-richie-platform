@@ -54,6 +54,8 @@
 
 网关在生产中常见两种基础设施形态；**逻辑上**还可拆为外网 ToB/ToC、内网、OpenAPI 等多套实例，物理隔离。
 
+应用名称：`platform-gateway-service`，默认端口 **9500**。默认激活 `prod` profile（通过 `bootstrap.yml` 中 `${ENV:prod}` 控制），也可通过 `spring.profiles.include=cache,gateway` 按需启用功能 profile。
+
 ### ECS 部署（摘要）
 
 ```
@@ -63,7 +65,8 @@
 
 - 内外网 Gateway **集群独立**，公网与内网流量隔离。
 - **所有入口流量**（含内网）建议经网关鉴权，避免绕过身份校验直连业务。
-- 服务发现：Nacos；下游路由：`lb://service-id`。
+- 服务发现：Nacos（`server-addr: 127.0.0.1:8848`，命名空间 `public`，分组 `global`）；下游路由：`lb://service-id`。
+- Nacos 配置导入：`platform-cache.yaml`（Redis）、`platform-gateway.yaml`（网关路由与功能配置）；OpenAPI 模式追加 `platform-gateway-openapi.yaml`。
 
 ### K8s 部署（摘要）
 
@@ -74,15 +77,34 @@
 
 - 公网流量必经 Gateway；Pod 间调用可用 Service + **NetworkPolicy**，无需应用层签名。
 - 扩缩容：Deployment / HPA；配置仍可由 Nacos 下发。
+- 镜像构建：通过 **Jib Maven Plugin** 推送至 Harbor 镜像仓库（`${harbor.url}/platform/${project.artifactId}`），镜像标签为 `${docker.image.version}`（当前 `4.0.0`）及 `latest`。
+- 基础镜像：`ghcr.io/graalvm/jdk-community:25`，JVM 参数 `-Xmx8g` 并附加 Java 25 模块开放（`--add-opens`）。
+- Dockerfile 备选方案：支持 `docker build`，暴露端口 9500，入口 `nohup java -jar /app.jar`。
+
+### 可观测性
+
+网关默认暴露全部 Actuator 端点（`management.endpoints.web.exposure.include: "*"`），包含：
+
+| 端点 | 用途 |
+|------|------|
+| `/actuator/health` | 健康检查（含详细状态） |
+| `/actuator/metrics` | 应用指标 |
+| `/actuator/prometheus` | Prometheus 指标抓取 |
+| `/actuator/sentinel` | Sentinel 规则与监控 |
+| `springdoc` | API 文档（`springdoc.api-docs.enabled: true`） |
 
 ### ECS vs K8s
 
 | 维度 | ECS | K8s |
 |------|-----|-----|
 | 入口 | LB + Nginx | LB + Ingress |
-| 服务发现 | Nacos | CoreDNS + Service |
+| 服务发现 | Nacos | Nacos（跨集群） / CoreDNS + Service（集群内） |
+| 配置中心 | Nacos | Nacos |
 | 服务间调用 | 可选经 Gateway / 签名 | 多直连，NetworkPolicy 兜底 |
 | 隔离 | 独立 Gateway 集群（内外网、ToB/ToC） | Namespace / NetworkPolicy |
+| 日志采集 | 文件 → Logstash / Filebeat | 标准输出 → Fluentd / Promtail |
+| 扩缩容 | 手工添加/移除实例 | Deployment / HPA 自动化 |
+| 镜像构建 | 手工 docker build + push | Jib 插件自动化推送 Harbor |
 | 运维 | Nginx、Keepalive 手工维护 | 编排与 HPA 自动化 |
 
 详见 [网关设计文档 · 部署架构](docs/zh/gateway-design.md)。

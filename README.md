@@ -71,8 +71,10 @@ Sensible defaults and auto-configuration reduce setup effort.
 atlas-richie-platform/
 ├── atlas-richie-base/                    # Base platform
 │   ├── atlas-richie-dependencies/        # Dependency BOM
-│   └── atlas-richie-context/             # Context & utilities
+│   ├── atlas-richie-context/             # Context & utilities
+│   └── atlas-richie-contract/            # Cross-service shared contract package
 ├── atlas-richie-component/               # Component library
+│   ├── atlas-richie-component-ai/
 │   ├── atlas-richie-component-cache/
 │   ├── atlas-richie-component-dao/
 │   ├── atlas-richie-component-http/
@@ -86,7 +88,6 @@ atlas-richie-platform/
 │   ├── sample-storage/
 │   └── ...
 ├── atlas-richie-gateway-service/         # API gateway
-└── atlas-richie-general-service/         # General service
 ```
 
 ## 📦 Core Modules
