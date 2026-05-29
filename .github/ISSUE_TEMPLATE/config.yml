@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全漏洞报告
+    url: https://github.com/richie696/atlas-richie-platform/security/policy
+    about: 请通过 Security Policy 私下报告，勿在公开 Issue 中披露细节
+  - name: 文档与使用问题
+    url: https://docs.richie696.cn/
+    about: 查阅 Atlas Richie 技术中台文档

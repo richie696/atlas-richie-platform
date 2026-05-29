@@ -442,7 +442,7 @@ public class AsyncThreadStorageManager {
                 .prevState(history.getFromState())
                 .currState(history.getToState())
                 .eventName(history.getEvent())
-                .seq(history.getSeq())
+                .seq(java.util.Objects.requireNonNullElse(history.getSeq(), 0L))
                 .occurredAt(history.getCreateTime())
                 .build();
     }
@@ -556,10 +556,7 @@ public class AsyncThreadStorageManager {
                         new LambdaQueryWrapper<StateMachineStateCurrent>()
                                 .eq(StateMachineStateCurrent::getStateMachine, current.getStateMachine())
                                 .eq(StateMachineStateCurrent::getBusinessId, current.getBusinessId())
-                                .and(current.getSeq() != null,
-                                        w -> w.isNull(StateMachineStateCurrent::getSeq)
-                                                .or()
-                                                .lt(StateMachineStateCurrent::getSeq, current.getSeq()))
+                                .lt(StateMachineStateCurrent::getSeq, current.getSeq())
                 );
             }
         }
@@ -607,10 +604,9 @@ public class AsyncThreadStorageManager {
      * @return 历史记录键
      */
     private String buildHistoryKey(StateMachineStateHistory history) {
-        Object uniquePart = history.getSeq() != null ? history.getSeq() : history.getOccurredAt();
         return history.getStateMachine() + HISTORY_KEY_SEPARATOR
                 + history.getBusinessId() + HISTORY_KEY_SEPARATOR
-                + uniquePart;
+                + history.getSeq();
     }
 
     /**
@@ -630,9 +626,8 @@ public class AsyncThreadStorageManager {
             return 0L;
         }
         return histories.stream()
-                .map(StateHistory::getSeq)
-                .filter(java.util.Objects::nonNull)
-                .max(Long::compareTo)
+                .mapToLong(history -> java.util.Objects.requireNonNullElse(history.getSeq(), 0L))
+                .max()
                 .orElse(0L);
     }
 

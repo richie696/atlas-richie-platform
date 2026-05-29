@@ -233,7 +233,7 @@ public class StateSyncStreamConsumer extends AbstractStreamConsumer<StateSyncMes
                                     .prevState(history.getFromState())
                                     .currState(history.getToState())
                                     .eventName(history.getEvent())
-                                    .seq(history.getSeq())
+                                    .seq(java.util.Objects.requireNonNullElse(history.getSeq(), 0L))
                                     .occurredAt(history.getCreateTime())
                                     .build());
                             if (businessTime == null || history.getCreateTime().isAfter(businessTime)) {
@@ -308,10 +308,7 @@ public class StateSyncStreamConsumer extends AbstractStreamConsumer<StateSyncMes
                             new LambdaQueryWrapper<StateMachineStateCurrent>()
                                     .eq(StateMachineStateCurrent::getStateMachine, current.getStateMachine())
                                     .eq(StateMachineStateCurrent::getBusinessId, current.getBusinessId())
-                                    .and(current.getSeq() != null,
-                                            w -> w.isNull(StateMachineStateCurrent::getSeq)
-                                                    .or()
-                                                    .lt(StateMachineStateCurrent::getSeq, current.getSeq()))
+                                    .lt(StateMachineStateCurrent::getSeq, current.getSeq())
                     );
                 }
             }
@@ -336,13 +333,13 @@ public class StateSyncStreamConsumer extends AbstractStreamConsumer<StateSyncMes
 
                 // 构建已存在记录的键集合（stateMachine:businessId:occurredAt）
                 java.util.Set<String> existingKeys = existingList.stream()
-                        .map(e -> e.getStateMachine() + ":" + e.getBusinessId() + ":" + (e.getSeq() != null ? e.getSeq() : e.getOccurredAt()))
+                        .map(e -> e.getStateMachine() + ":" + e.getBusinessId() + ":" + e.getSeq())
                         .collect(java.util.stream.Collectors.toSet());
 
                 // 过滤出不存在的记录，批量插入
                 List<StateMachineStateHistory> toInsert = historyBatch.stream()
                         .filter(h -> {
-                            String key = h.getStateMachine() + ":" + h.getBusinessId() + ":" + (h.getSeq() != null ? h.getSeq() : h.getOccurredAt());
+                            String key = h.getStateMachine() + ":" + h.getBusinessId() + ":" + h.getSeq();
                             return !existingKeys.contains(key);
                         })
                         .toList();
@@ -380,9 +377,8 @@ public class StateSyncStreamConsumer extends AbstractStreamConsumer<StateSyncMes
             return 0L;
         }
         return histories.stream()
-                .map(StateHistory::getSeq)
-                .filter(java.util.Objects::nonNull)
-                .max(Long::compareTo)
+                .mapToLong(history -> java.util.Objects.requireNonNullElse(history.getSeq(), 0L))
+                .max()
                 .orElse(0L);
     }
 
