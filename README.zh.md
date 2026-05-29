@@ -70,7 +70,8 @@ flowchart TB
 atlas-richie-platform/
 ├── atlas-richie-base/                    # 基础包
 │   ├── atlas-richie-dependencies/        # 依赖管理模块
-│   └── atlas-richie-context/             # 上下文和工具类模块
+│   ├── atlas-richie-context/             # 上下文和工具类模块
+│   └── atlas-richie-contract/             # 跨服务共享契约包
 ├── atlas-richie-component/               # 组件库
 │   ├── atlas-richie-component-cache/    # 缓存组件
 │   ├── atlas-richie-component-dao/      # 数据访问组件
