@@ -1,0 +1,57 @@
+name: Feature Request
+description: 提出新功能或改进建议
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你的建议。请说明业务场景与预期收益，便于维护者评估优先级。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题/动机
+      description: 当前遇到了什么问题？希望解决什么痛点？
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+      description: 你期望的 API、配置或行为设计（可含伪代码）
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: 目标模块
+      options:
+        - atlas-richie-base
+        - atlas-richie-component（请在下文补充子模块）
+        - atlas-richie-gateway-service
+        - atlas-richie-component-template
+        - 跨模块/平台级
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 备选方案
+      description: 是否考虑过其他实现方式？
+    validations:
+      required: false
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: 是否可能引入破坏性变更
+      options:
+        - "否"
+        - "是（请说明迁移方式）"
+        - "不确定"
+    validations:
+      required: true

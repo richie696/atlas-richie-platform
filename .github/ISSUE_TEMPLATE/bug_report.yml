@@ -1,0 +1,72 @@
+name: Bug Report
+description: 报告缺陷或异常行为
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请尽量提供可复现信息；如涉及安全漏洞，请勿在此提交，请参阅 [SECURITY.md](../../SECURITY.md)。
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 清晰描述遇到的问题与期望行为
+      placeholder: 实际结果 vs 期望结果
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本信息
+      description: Git tag、分支或制品版本（如 1.0.0-SNAPSHOT）
+      placeholder: "1.0.0-SNAPSHOT"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: 相关模块
+      options:
+        - atlas-richie-base
+        - atlas-richie-component（请在下文补充子模块）
+        - atlas-richie-gateway-service
+        - atlas-richie-component-template
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 尽量提供最小复现步骤
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 运行环境
+      description: JDK、OS、Spring Boot 版本、中间件等
+      value: |
+        - JDK:
+        - OS:
+        - Spring Boot:
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志/堆栈
+      description: 相关错误日志或堆栈（可脱敏）
+    validations:
+      required: false

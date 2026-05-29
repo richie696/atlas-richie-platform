@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="120" viewBox="0 0 480 120" role="img" aria-label="Atlas Richie Platform">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f766e"/>
+      <stop offset="100%" style="stop-color:#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#5eead4"/>
+      <stop offset="100%" style="stop-color:#93c5fd"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="120" rx="16" fill="url(#bg)"/>
+  <!-- layered platform blocks -->
+  <rect x="32" y="68" width="56" height="14" rx="3" fill="#ffffff" opacity="0.22"/>
+  <rect x="32" y="50" width="56" height="14" rx="3" fill="#ffffff" opacity="0.35"/>
+  <rect x="32" y="32" width="56" height="14" rx="3" fill="url(#accent)"/>
+  <!-- monogram -->
+  <text x="118" y="58" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="36" font-weight="700" fill="#ffffff">Atlas Richie</text>
+  <text x="118" y="82" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="15" font-weight="500" fill="#cbd5e1" letter-spacing="0.08em">Enterprise Technology Platform</text>
+</svg>

@@ -62,7 +62,12 @@ import static org.springframework.data.redis.connection.lettuce.LettucePoolingCl
  */
 @Slf4j
 @Configuration
-@EnableConfigurationProperties({AtlasRedisProperties.class, LettuceExtension.class})
+@EnableConfigurationProperties({
+        AtlasRedisProperties.class,
+        LettuceExtension.class,
+        AtlasRedisProperties.StreamIdempotency.class,
+        AtlasRedisProperties.RedisPerf.class
+})
 @NoArgsConstructor
 public class RedisBaseAutoConfiguration {
 
