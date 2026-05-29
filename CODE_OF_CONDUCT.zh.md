@@ -1,6 +1,6 @@
 # Contributor Covenant 行为准则
 
-**Languages:** [English](CODE_OF_CONDUCT.en.md) | [中文](CODE_OF_CONDUCT.md)
+**Languages:** [English](CODE_OF_CONDUCT.md) | [中文](CODE_OF_CONDUCT.zh.md)
 
 ## 我们的承诺
 

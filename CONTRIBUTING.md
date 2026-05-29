@@ -1,6 +1,6 @@
 # Contributing to atlas-richie-platform
 
-**Languages:** [English](CONTRIBUTING.en.md) | [中文](CONTRIBUTING.md)
+**Languages:** [English](CONTRIBUTING.md) | [中文](CONTRIBUTING.zh.md)
 
 Thank you for your interest in contributing to `atlas-richie-platform`.
 
