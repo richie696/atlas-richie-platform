@@ -67,7 +67,7 @@
         <!-- 同maven-enforcer-plugin，但是只检查依赖的插件 -->
         <check-enforcer.version>3.5.0</check-enforcer.version>
         <!-- 这个插件主要用于处理项目中的资源文件 -->
-        <maven-resources-plugin.version>3.4.0</maven-resources-plugin.version>
+        <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
         <!-- 这个插件用于创建包含项目源代码的jar文件 -->
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <!-- 这个插件用于运行项目的单元测试 -->
