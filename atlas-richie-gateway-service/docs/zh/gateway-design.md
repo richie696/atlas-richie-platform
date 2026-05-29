@@ -1137,7 +1137,7 @@ server:
 
 spring:
   application:
-    name: richie-gateway-service
+    name: atlas-richie-gateway-service
   cloud:
     nacos:
       discovery:
@@ -1337,7 +1337,7 @@ java -Xms3g -Xmx6g \
      -Djava.security.egd=file:/dev/./urandom \
      -Dfile.encoding=UTF-8 \
      -Duser.timezone=Asia/Shanghai \
-     -jar richie-gateway-service.jar
+     -jar atlas-richie-gateway-service.jar
 ```
 
 **配置项详细说明**：

@@ -154,7 +154,7 @@ platform:
 
 ## 技术实现
 
-- **配置类**：`FallbackConfig`（位于 `richie-base` 模块）
-- **控制器**：`GlobalFallbackController`（位于 `richie-gateway-service` 模块）
+- **配置类**：`FallbackConfig`（位于 `atlas-richie-base` 模块）
+- **控制器**：`GlobalFallbackController`（位于 `atlas-richie-gateway-service` 模块）
 - **路径匹配**：使用 Spring 的 `AntPathMatcher` 进行路径匹配
 - **配置刷新**：通过 `@RefreshScope` 注解支持 Nacos 动态刷新
