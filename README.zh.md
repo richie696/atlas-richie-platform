@@ -98,7 +98,7 @@ atlas-richie-platform/
 - `atlas-richie-dependencies` - 依赖管理模块，统一管理所有第三方依赖版本
 - `atlas-richie-context` - 上下文和工具类模块，提供上下文管理、领域模型、统一响应、异常体系、工具类等
 
-**文档**：[atlas-richie-base/README.md](./atlas-richie-base/README.md)
+**文档**：[atlas-richie-base/README.zh.md](./atlas-richie-base/README.zh.md)
 
 **核心能力**：
 - ✅ 统一依赖版本管理
@@ -172,7 +172,7 @@ atlas-richie-platform/
 - ✅ SSO 单点登录
 - ✅ 国际化支持
 
-**文档**：[atlas-richie-gateway-service/README.md](atlas-richie-gateway-service/README.md)
+**文档**：[atlas-richie-gateway-service/README.zh.md](atlas-richie-gateway-service/README.zh.md)
 
 ### atlas-richie-general-service
 
@@ -289,7 +289,7 @@ mvn spring-boot:run
 
 ### 基础文档
 
-- [atlas-richie-base/README.md](./atlas-richie-base/README.md) - 基础包文档
+- [atlas-richie-base/README.zh.md](./atlas-richie-base/README.zh.md) - 基础包文档
     - 依赖管理
     - 上下文管理
     - 领域模型
@@ -316,7 +316,7 @@ mvn spring-boot:run
 
 ### 服务文档
 
-- [atlas-richie-gateway-service/README.md](atlas-richie-gateway-service/README.md) - 网关服务文档
+- [atlas-richie-gateway-service/README.zh.md](atlas-richie-gateway-service/README.zh.md) - 网关服务文档
 
 ## 🏗️ 架构设计
 

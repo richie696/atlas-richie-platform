@@ -282,7 +282,7 @@ mvn spring-boot:run
 
 ## 📚 Documentation Index
 
-> Module-level README files are currently primarily in Chinese; English module docs may be added later.
+> Some module READMEs are still Chinese-only; prefer `README.md` (English) and `README.zh.md` (简体中文) where both exist.
 
 ### Base
 
