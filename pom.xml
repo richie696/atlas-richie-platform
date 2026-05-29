@@ -71,7 +71,7 @@
         <!-- 这个插件用于创建包含项目源代码的jar文件 -->
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <!-- 这个插件用于运行项目的单元测试 -->
-        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
         <!-- jib-maven-plugin 是一个由 Google 提供的 Maven 插件，用于构建 Docker 和 OCI 镜像 -->
         <jib-maven-plugin.version>3.5.1</jib-maven-plugin.version>
         <!-- 版本管理插件 -->
