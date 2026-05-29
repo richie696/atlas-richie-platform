@@ -26,16 +26,6 @@
         <module>sample-vector-weaviate</module>
     </modules>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.richie.sample</groupId>
-                <artifactId>sample-vector-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
 </project>
 
 
