@@ -1,16 +1,18 @@
 <p align="center">
-  <img src="docs/assets/atlas-richie-logo.svg" alt="Atlas Richie Platform" width="48%" />
+  <img src="./docs/assets/atlas-richie-logo.svg" alt="Atlas Richie Platform" width="60%" />
 </p>
 
-<p align="center"><b>企业级技术中台 · 统一组件 · 配置化切换 · 快速构建微服务</b></p>
+
+<p align="center"><b>Enterprise middle platform · Unified components · Config-driven switching · Microservices at speed</b></p>
 
 <p align="center">
   <a href="README.en.md">English</a> ·
-  <a href="https://docs.richie696.cn/">文档</a> ·
+  <a href="README.md">简体中文</a> ·
+  <a href="https://docs.richie696.cn/">Docs</a> ·
   <a href="https://github.com/richie696/atlas-richie-platform/issues">Issues</a> ·
-  <a href="./CONTRIBUTING.md">贡献指南</a> ·
-  <a href="./SECURITY.md">安全策略</a> ·
-  <a href="./CHANGELOG.md">变更日志</a>
+  <a href="./CONTRIBUTING.en.md">Contributing</a> ·
+  <a href="./SECURITY.en.md">Security</a> ·
+  <a href="./CHANGELOG.en.md">Changelog</a>
 </p>
 
 <p align="center">
@@ -23,191 +25,193 @@
 
 ---
 
-## 📖 概述
+## 📖 Overview
 
-**Atlas Richie Platform** 是Atlas Richie技术中台的核心平台，提供统一的技术基础设施和组件库，支持快速构建企业级微服务应用。平台采用分层架构设计，通过统一接口、依赖管理和最佳实践，实现技术与业务的完全隔离，提升开发效率和系统可维护性。
+**Atlas Richie Platform** is the core of the Atlas Richie technology middle platform. It provides unified technical infrastructure and a component library for building enterprise microservice applications quickly. With a layered architecture, unified interfaces, dependency management, and best practices, it separates technology from business concerns to improve development efficiency and maintainability.
 
-## 🎯 设计理念
+## 🎯 Design Philosophy
 
-### 1. 分层架构（Layered Architecture）
+### 1. Layered Architecture
 
-平台采用清晰的分层架构，每一层都有明确的职责：
+Each layer has a clear responsibility:
 
 ```
 ┌─────────────────────────────────────────┐
-│         业务应用层                        │
+│         Application Layer               │
 │  (Gateway Service, General Service)     │
 └────────────────┬──────────────────────────┘
                  │
 ┌────────────────▼──────────────────────────┐
-│         组件库层                            │
-│  (Component Library)                       │
+│         Component Library Layer           │
+│  (Component Library)                      │
 └────────────────┬──────────────────────────┘
                  │
 ┌────────────────▼──────────────────────────┐
-│         基础包层                            │
+│         Base Platform Layer               │
 │  (Base Platform)                          │
 └───────────────────────────────────────────┘
 ```
 
-### 2. 统一接口（Unified Interface）
+### 2. Unified Interfaces
 
-所有组件都提供统一的接口，屏蔽底层技术实现差异：
+Components expose unified interfaces that hide underlying technology differences:
 
-- **存储组件**：统一的 `StorageEngine` 接口，支持 S3、OSS、COS 等
-- **向量数据库**：统一的 `VectorService` 接口，支持 Redis、Milvus、MongoDB 等
-- **消息队列**：统一的 `MessageService` 接口，支持 Kafka、RabbitMQ、RocketMQ 等
+- **Storage**: unified `StorageEngine` — S3, OSS, COS, etc.
+- **Vector store**: unified `VectorService` — Redis, Milvus, MongoDB, etc.
+- **Messaging**: unified `MessageService` — Kafka, RabbitMQ, RocketMQ, etc.
 
-### 3. 依赖管理（Dependency Management）
+### 3. Dependency Management
 
-通过 `atlas-richie-dependencies` 统一管理所有第三方依赖版本，确保版本一致性。
+`atlas-richie-dependencies` centralizes third-party dependency versions for consistency.
 
-### 4. 开箱即用（Convention over Configuration）
+### 4. Convention over Configuration
 
-提供合理的默认配置和自动配置，减少配置工作量。
+Sensible defaults and auto-configuration reduce setup effort.
 
-## 🏗️ 项目结构
+## 🏗️ Project Structure
 
 ```
 atlas-richie-platform/
-├── atlas-richie-base/                    # 基础包
-│   ├── atlas-richie-dependencies/        # 依赖管理模块
-│   └── atlas-richie-context/             # 上下文和工具类模块
-├── atlas-richie-component/               # 组件库
-│   ├── atlas-richie-component-cache/    # 缓存组件
-│   ├── atlas-richie-component-dao/      # 数据访问组件
-│   ├── atlas-richie-component-http/     # HTTP 客户端组件
-│   ├── atlas-richie-component-storage/  # 存储组件
-│   ├── atlas-richie-component-vector/   # 向量数据库组件
-│   ├── atlas-richie-component-messaging/# 消息队列组件
-│   └── ...                        # 更多组件
-├── atlas-richie-component-template/     # 组件示例工程
-│   ├── sample-cache/              # 缓存示例
-│   ├── sample-messaging/          # 消息队列示例
-│   ├── sample-storage/            # 存储示例
-│   └── ...                       # 更多示例
-├── atlas-richie-gateway-service/        # 网关服务
-└── atlas-richie-general-service/        # 通用服务
+├── atlas-richie-base/                    # Base platform
+│   ├── atlas-richie-dependencies/        # Dependency BOM
+│   └── atlas-richie-context/             # Context & utilities
+├── atlas-richie-component/               # Component library
+│   ├── atlas-richie-component-cache/
+│   ├── atlas-richie-component-dao/
+│   ├── atlas-richie-component-http/
+│   ├── atlas-richie-component-storage/
+│   ├── atlas-richie-component-vector/
+│   ├── atlas-richie-component-messaging/
+│   └── ...
+├── atlas-richie-component-template/      # Sample projects
+│   ├── sample-cache/
+│   ├── sample-messaging/
+│   ├── sample-storage/
+│   └── ...
+├── atlas-richie-gateway-service/         # API gateway
+└── atlas-richie-general-service/         # General service
 ```
 
-## 📦 核心模块
+## 📦 Core Modules
 
 ### atlas-richie-base
 
-**基础包**，提供统一的基础能力支撑。
+**Base platform** — shared foundation for all services.
 
-**包含模块**：
-- `atlas-richie-dependencies` - 依赖管理模块，统一管理所有第三方依赖版本
-- `atlas-richie-context` - 上下文和工具类模块，提供上下文管理、领域模型、统一响应、异常体系、工具类等
+**Modules:**
 
-**文档**：[atlas-richie-base/README.md](./atlas-richie-base/README.md)
+- `atlas-richie-dependencies` — centralized third-party dependency versions
+- `atlas-richie-context` — context management, domain models, unified responses, exceptions, utilities
 
-**核心能力**：
-- ✅ 统一依赖版本管理
-- ✅ 上下文管理（用户上下文、请求头上下文、Spring 上下文）
-- ✅ 统一响应格式（ResultVO）
-- ✅ 领域模型抽象（BaseDomain、TenantDomain）
-- ✅ 异常体系（BaseException、BusinessException）
-- ✅ 工具类（JsonUtils、JwtUtils、HashUtils 等）
+**Docs:** [atlas-richie-base/README.md](./atlas-richie-base/README.md)
+
+**Capabilities:**
+
+- ✅ Unified dependency version management
+- ✅ Context management (user, request headers, Spring context)
+- ✅ Unified response format (`ResultVO`)
+- ✅ Domain abstractions (`BaseDomain`, `TenantDomain`)
+- ✅ Exception hierarchy (`BaseException`, `BusinessException`)
+- ✅ Utilities (`JsonUtils`, `JwtUtils`, `HashUtils`, etc.)
 
 ### atlas-richie-component
 
-**组件库**，提供统一、泛化、可复用的技术能力。
+**Component library** — reusable, pluggable technical capabilities.
 
-**包含组件**：
-- **存储组件**：统一的对象存储接口，支持 S3、OSS、COS、MinIO 等
-- **向量数据库组件**：统一的向量存储和检索接口，支持 Redis、Milvus、MongoDB 等
-- **消息队列组件**：统一的消息队列接口，支持 Kafka、RabbitMQ、RocketMQ 等
-- **缓存组件**：Redis 统一 API，提供 KV、Hash、List、Set、ZSet、分布式锁等
-- **数据访问组件**：MyBatis Plus 增强，提供分页、多租户、分布式 ID 等
-- **HTTP 客户端组件**：支持 OkHttp 和 HttpClient5
-- **Web 组件**：CORS、国际化、异常处理、WebSocket、SSE
-- **状态机组件**：基于 Easy Rules 的状态机引擎
-- **AI 组件**：统一 AI 模型调用接口
-- **更多组件**：OCR、搜索、MongoDB、MQTT、微服务、日志、追踪等
+**Components include:**
 
-**文档**：[atlas-richie-component/README.md](atlas-richie-component/README.md)
+- **Storage** — object storage (S3, OSS, COS, MinIO, …)
+- **Vector** — vector storage & search (Redis, Milvus, MongoDB, …)
+- **Messaging** — Kafka, RabbitMQ, RocketMQ, …
+- **Cache** — Redis APIs (KV, Hash, List, Set, ZSet, distributed locks, …)
+- **DAO** — MyBatis Plus enhancements (pagination, multi-tenant, distributed IDs, …)
+- **HTTP** — OkHttp, HttpClient5, JDK, RestClient
+- **Web** — CORS, i18n, exception handling, WebSocket, SSE
+- **State machine** — Easy Rules–based engine
+- **AI** — unified model invocation
+- **More** — OCR, search, MongoDB, MQTT, microservice helpers, logging, tracing, …
 
-**核心特性**：
-- ✅ 统一接口抽象，屏蔽技术差异
-- ✅ 多实现支持，配置化切换
-- ✅ 开箱即用，自动配置
-- ✅ 技术与业务隔离
-- ✅ 完整的文档和示例
+**Docs:** [atlas-richie-component/README.md](atlas-richie-component/README.md)
+
+**Highlights:**
+
+- ✅ Unified abstractions across implementations
+- ✅ Switch implementations via configuration
+- ✅ Spring Boot auto-configuration
+- ✅ Technology / business separation
+- ✅ Documentation and samples
 
 ### atlas-richie-component-template
 
-**组件示例工程**，提供各个组件的完整使用示例和最佳实践。
+**Sample projects** — examples and best practices per component.
 
-**包含示例**：
-- `sample-cache` - 缓存组件示例
-- `sample-messaging` - 消息队列示例（Kafka、RabbitMQ、RocketMQ 等）
-- `sample-storage` - 对象存储示例（S3、OSS、COS 等）
-- `sample-vector` - 向量数据库示例（Redis、Milvus、MongoDB 等）
-- `sample-mqtt-client` / `sample-mqtt-server` - MQTT 示例
-- `sample-ai` - AI 组件示例
-- `sample-http` - HTTP 客户端示例
-- `sample-threadpool` - 线程池示例
-- `sample-search` - 搜索组件示例
-- `sample-mongodb` - MongoDB 示例
+**Samples:**
 
-**文档**：[atlas-richie-component-template/README.md](atlas-richie-component-template/README.md)
+- `sample-cache`, `sample-messaging`, `sample-storage`, `sample-vector`
+- `sample-mqtt-client` / `sample-mqtt-server`, `sample-ai`, `sample-http`
+- `sample-threadpool`, `sample-search`, `sample-mongodb`, …
 
-**用途**：
-- 📚 学习参考：快速理解组件使用方法
-- 🎯 最佳实践：展示推荐的使用方式
-- 🧪 功能演示：演示组件核心功能
-- ✅ 测试验证：验证组件功能和性能
+**Docs:** [atlas-richie-component-template/README.md](atlas-richie-component-template/README.md)
+
+**Purpose:**
+
+- 📚 Learning reference
+- 🎯 Best practices
+- 🧪 Feature demos
+- ✅ Validation & testing
 
 ### atlas-richie-gateway-service
 
-**通用网关服务**，提供统一的 API 网关能力。
+**API gateway** — unified edge capabilities.
 
-**核心功能**：
-- ✅ 统一鉴权认证
-- ✅ Token 令牌管理
-- ✅ 请求路由和转发
-- ✅ 限流、熔断、降级
-- ✅ 防重复提交
-- ✅ ECC+AES-GCM 加密通信
-- ✅ 多租户支持
-- ✅ SSO 单点登录
-- ✅ 国际化支持
+**Features:**
 
-**文档**：[atlas-richie-gateway-service/README.md](atlas-richie-gateway-service/README.md)
+- ✅ Authentication & authorization
+- ✅ Token management
+- ✅ Routing & forwarding
+- ✅ Rate limiting, circuit breaking, degradation
+- ✅ Idempotency / duplicate submission protection
+- ✅ ECC + AES-GCM encrypted communication
+- ✅ Multi-tenant support
+- ✅ SSO
+- ✅ Internationalization
+
+**Docs:** [atlas-richie-gateway-service/README.md](atlas-richie-gateway-service/README.md)
 
 ### atlas-richie-general-service
 
-## 🚀 快速开始
+General-purpose service module (see module README for details).
 
-### 1. 环境要求
+## 🚀 Quick Start
+
+### 1. Requirements
 
 - **JDK**: 25
 - **Maven**: 3.9.0+
-- **Redis**: 6.0+（部分组件需要）
-- **数据库**: MySQL 8.0+ / PostgreSQL 12+（部分组件需要）
+- **Redis**: 6.0+ (some components)
+- **Database**: MySQL 8.0+ / PostgreSQL 12+ (some components)
 
-### 2. 克隆项目
+### 2. Clone
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/richie696/atlas-richie-platform.git
 cd atlas-richie-platform
 ```
 
-### 3. 构建项目
+### 3. Build
 
 ```bash
-# 构建整个项目
+# Full build
 mvn clean install -DskipTests
 
-# 或构建特定模块
+# Or a single module
 cd atlas-richie-base
 mvn clean install -DskipTests
 ```
 
-### 4. 使用组件
+### 4. Use Components
 
-#### 在业务应用中添加依赖
+#### Add dependencies
 
 ```xml
 <parent>
@@ -217,55 +221,49 @@ mvn clean install -DskipTests
 </parent>
 
 <dependencies>
-<!-- 添加需要的组件 -->
-<dependency>
-    <groupId>com.richie.component</groupId>
-    <artifactId>atlas-richie-component-cache</artifactId>
-</dependency>
-
-<dependency>
-    <groupId>com.richie.component</groupId>
-    <artifactId>atlas-richie-component-storage-core</artifactId>
-</dependency>
-
-<dependency>
-    <groupId>com.richie.component</groupId>
-    <artifactId>atlas-richie-component-storage-oss</artifactId>
-</dependency>
+    <dependency>
+        <groupId>com.richie.component</groupId>
+        <artifactId>atlas-richie-component-cache</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.richie.component</groupId>
+        <artifactId>atlas-richie-component-storage-core</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.richie.component</groupId>
+        <artifactId>atlas-richie-component-storage-oss</artifactId>
+    </dependency>
 </dependencies>
 ```
 
-#### 配置组件
+#### Configure
 
 ```yaml
 platform:
-    component:
-        cache:
-            redis:
-                host: localhost
-                port: 6379
-
-        storage:
-            object:
-                engine: ALIYUN_OSS
-                endpoint: oss-cn-hangzhou.aliyuncs.com
-                accessKeyId: your-key
-                accessKeySecret: your-secret
-                bucketName: my-bucket
+  component:
+    cache:
+      redis:
+        host: localhost
+        port: 6379
+    storage:
+      object:
+        engine: ALIYUN_OSS
+        endpoint: oss-cn-hangzhou.aliyuncs.com
+        accessKeyId: your-key
+        accessKeySecret: your-secret
+        bucketName: my-bucket
 ```
 
-#### 使用组件
+#### Example usage
 
 ```java
 @Service
 public class BusinessService {
 
-    // 使用缓存
     public void cacheData(String key, String value) {
         GlobalCache.addStringCache(key, value, 3600_000L);
     }
 
-    // 使用存储
     @Autowired
     private StorageEngine storageEngine;
 
@@ -275,82 +273,76 @@ public class BusinessService {
 }
 ```
 
-### 5. 运行示例
+### 5. Run Samples
 
 ```bash
-# 运行缓存示例
 cd atlas-richie-component-template/sample-cache
 mvn spring-boot:run
 
-# 运行消息队列示例
 cd atlas-richie-component-template/sample-messaging/sample-messaging-kafka
 mvn spring-boot:run
 ```
 
-## 📚 文档索引
+## 📚 Documentation Index
 
-### 基础文档
+> Module-level README files are currently primarily in Chinese; English module docs may be added later.
 
-- [atlas-richie-base/README.md](./atlas-richie-base/README.md) - 基础包文档
-    - 依赖管理
-    - 上下文管理
-    - 领域模型
-    - 统一响应
-    - 异常体系
-    - 工具类
+### Base
 
-### 组件文档
+- [atlas-richie-base/README.md](./atlas-richie-base/README.md)
 
-- [atlas-richie-component/README.md](atlas-richie-component/README.md) - 组件库总览
-    - [缓存组件](atlas-richie-component/atlas-richie-component-cache/README.md)
-    - [数据访问组件](atlas-richie-component/atlas-richie-component-dao/README.md)
-    - [HTTP 客户端组件](atlas-richie-component/atlas-richie-component-http/README.md)
-    - [存储组件](atlas-richie-component/atlas-richie-component-storage/README.md)
-    - [向量数据库组件](atlas-richie-component/atlas-richie-component-vector/README.md)
-    - [消息队列组件](atlas-richie-component/atlas-richie-component-messaging/README.md)
-    - [状态机组件](atlas-richie-component/atlas-richie-component-statemachine/README.md)
-    - [AI 组件](atlas-richie-component/atlas-richie-component-ai/README.md)
-    - [更多组件...](atlas-richie-component/README.md#组件分类)
+### Components
 
-### 示例文档
+- [atlas-richie-component/README.md](atlas-richie-component/README.md)
+    - [Cache](atlas-richie-component/atlas-richie-component-cache/README.md)
+    - [DAO](atlas-richie-component/atlas-richie-component-dao/README.md)
+    - [HTTP](atlas-richie-component/atlas-richie-component-http/README.md)
+    - [Storage](atlas-richie-component/atlas-richie-component-storage/README.md)
+    - [Vector](atlas-richie-component/atlas-richie-component-vector/README.md)
+    - [Messaging](atlas-richie-component/atlas-richie-component-messaging/README.md)
+    - [State machine](atlas-richie-component/atlas-richie-component-statemachine/README.md)
+    - [AI](atlas-richie-component/atlas-richie-component-ai/README.md)
+    - [More…](atlas-richie-component/README.md)
 
-- [atlas-richie-component-template/README.md](atlas-richie-component-template/README.md) - 组件示例工程文档
+### Samples
 
-### 服务文档
+- [atlas-richie-component-template/README.md](atlas-richie-component-template/README.md)
 
-- [atlas-richie-gateway-service/README.md](atlas-richie-gateway-service/README.md) - 网关服务文档
-- [atlas-richie-general-service/README.md](./atlas-richie-general-service/README.md) - 通用服务文档
+### Services
 
-## 🏗️ 架构设计
+- [atlas-richie-gateway-service/README.md](atlas-richie-gateway-service/README.md)
+- [atlas-richie-general-service/README.md](./atlas-richie-general-service/README.md)
 
-### 整体架构
+## 🏗️ Architecture
+
+### Overview
 
 ```mermaid
 graph TB
-    subgraph "业务应用层"
+    subgraph "Application Layer"
         A1[Gateway Service]
         A2[General Service]
-        A3[业务服务]
+        A3[Business Services]
     end
 
-    subgraph "组件库层"
+    subgraph "Component Layer"
         B1[Cache Component]
         B2[Storage Component]
         B3[Vector Component]
         B4[Messaging Component]
-        B5[其他组件...]
+        B5[Other Components...]
     end
 
-    subgraph "基础包层"
+    subgraph "Base Layer"
         C1[atlas-richie-context]
         C2[atlas-richie-dependencies]
     end
 
-    subgraph "基础设施"
+    subgraph "Infrastructure"
         D1[Redis]
-        D2[数据库]
-        D3[消息队列]
-        D4[对象存储]
+        D2[Databases]
+        D3[Message Brokers]
+        D4[Object Storage]
     end
 
     A1 --> B1
@@ -374,111 +366,94 @@ graph TB
     B4 --> D3
 ```
 
-### 核心设计原则
+### Design Principles
 
-1. **接口隔离原则（ISP）**：每个组件提供清晰的接口定义
-2. **依赖倒置原则（DIP）**：业务代码依赖抽象接口，而非具体实现
-3. **开闭原则（OCP）**：对扩展开放，对修改封闭
-4. **单一职责原则（SRP）**：每个组件专注于单一技术领域
+1. **Interface Segregation (ISP)** — clear per-component APIs
+2. **Dependency Inversion (DIP)** — depend on abstractions, not implementations
+3. **Open/Closed (OCP)** — extend without modifying core code
+4. **Single Responsibility (SRP)** — one technical domain per component
 
-## 🎯 核心特性
+## 🎯 Key Features
 
-### 1. 统一接口抽象
-
-所有组件都提供统一的接口，屏蔽底层技术实现差异：
+### Unified abstractions
 
 ```java
-// 存储接口 - 可以是 S3、OSS、COS 等任意实现
-StorageEngine storageEngine;
-
-// 向量数据库接口 - 可以是 Redis、Milvus、MongoDB 等任意实现
-VectorService vectorService;
-
-// 消息队列接口 - 可以是 Kafka、RabbitMQ、RocketMQ 等任意实现
-MessageService messageService;
+StorageEngine storageEngine;   // S3, OSS, COS, ...
+VectorService vectorService;   // Redis, Milvus, MongoDB, ...
+MessageService messageService; // Kafka, RabbitMQ, RocketMQ, ...
 ```
 
-### 2. 配置化切换
-
-通过配置文件即可切换不同的技术实现，无需修改代码：
+### Configuration-driven switching
 
 ```yaml
-# 切换存储后端
 platform:
-    component:
-        storage:
-            object:
-                engine: ALIYUN_OSS  # 可以切换为 S3、COS、MinIO 等
+  component:
+    storage:
+      object:
+        engine: ALIYUN_OSS  # or S3, COS, MinIO, ...
 ```
 
-### 3. 技术与业务隔离
+### Technology / business separation
 
-通过分层架构和接口抽象，实现技术与业务的完全隔离：
+- **Technology layer** — encapsulates infrastructure
+- **Abstraction layer** — stable APIs for applications
+- **Business layer** — domain logic only
 
-- **技术层**：封装底层技术细节
-- **抽象层**：提供统一的业务接口
-- **业务层**：专注于业务逻辑
+### Batteries included
 
-### 4. 开箱即用
+- Spring Boot auto-configuration
+- Sensible defaults
+- Environment-aware setup
 
-提供合理的默认配置和自动配置，减少配置工作量：
+## 🔧 Versions
 
-- Spring Boot 自动配置
-- 默认配置值
-- 智能检测环境
+### Current
 
-## 🔧 版本信息
-
-### 当前版本
-
-- **Platform Version**: `1.0.0-SNAPSHOT`
+- **Platform**: `1.0.0-SNAPSHOT`
 - **Spring Boot**: `4.0.5`
 - **Spring Cloud**: `2025.1.1`
 - **JDK**: `25`
 
-### 版本管理
+### Versioning policy
 
-版本升级遵循以下原则：
+1. **Backward compatibility** where feasible
+2. **Unified upgrades** via the BOM
+3. **Testing** after dependency bumps
 
-1. **向后兼容**：尽量保持 API 向后兼容
-2. **统一升级**：所有依赖版本统一管理
-3. **测试验证**：升级后进行全面测试
+## 📋 Development
 
-## 📋 开发指南
+### Code style
 
-### 代码规范
+- Follow project conventions
+- Use JDK 25 features where appropriate
+- Document public APIs
+- Add unit tests for new behavior
 
-- 遵循项目代码风格
-- 使用 JDK 25 语法特性
-- 提供完整的注释和文档
-- 编写单元测试
+### Branches
 
-### 分支管理
+- `master` — main development (snapshot iterations)
+- `x.y.z` or `x.y.z-RELEASE` — stable release lines
 
-- `master` - 主分支，快速迭代快照版本。
-- `x.y.z` 或 `x.y.z-RELEASE` - 稳定上线版本。
+## 📄 License
 
-## 📄 许可证
+This project is licensed under the [Apache License 2.0](./LICENSE).
 
-本项目采用 [Apache License 2.0](./LICENSE) 开源协议。
+See also [NOTICE](./NOTICE).
 
-请同时参考仓库根目录的 [NOTICE](./NOTICE) 文件。
+## 🔗 Links
 
-## 🔗 相关链接
+- [Atlas Richie documentation](https://docs.richie696.cn/)
+- [Contributing](./CONTRIBUTING.en.md) | [贡献指南](./CONTRIBUTING.md)
+- [Security](./SECURITY.en.md) | [安全策略](./SECURITY.md)
+- [Code of Conduct](./CODE_OF_CONDUCT.en.md) | [行为准则](./CODE_OF_CONDUCT.md)
+- [Changelog](./CHANGELOG.en.md) | [变更日志](./CHANGELOG.md)
+- [Issues](https://github.com/richie696/atlas-richie-platform/issues)
 
-- [Atlas Richie技术中台](https://docs.richie696.cn/)
-- [贡献指南](./CONTRIBUTING.md) | [Contributing (EN)](./CONTRIBUTING.en.md)
-- [安全策略](./SECURITY.md) | [Security (EN)](./SECURITY.en.md)
-- [行为准则](./CODE_OF_CONDUCT.md) | [Code of Conduct (EN)](./CODE_OF_CONDUCT.en.md)
-- [变更日志](./CHANGELOG.md) | [Changelog (EN)](./CHANGELOG.en.md)
-- [问题反馈](https://github.com/richie696/atlas-richie-platform/issues)
+## 📞 Contact
 
-## 📞 联系方式
-
-- **维护者**：Richie Wang
-- **邮箱**：richie696@icloud.com
+- **Maintainer**: Richie Wang
+- **Email**: richie696@icloud.com
 
 ---
 
-**Atlas Richie Platform** - 让技术更简单，让业务更专注 🚀
-
+**Atlas Richie Platform** — Simpler technology, sharper business focus 🚀
