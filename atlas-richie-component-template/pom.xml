@@ -37,9 +37,8 @@
     </modules>
 
     <properties>
-        <!-- 跳过部署和安装 -->
+        <!-- 跳过部署；子模块允许 install 到本地仓库，供分包 sample 互相依赖（IDE/单模块构建） -->
         <maven.deploy.skip>true</maven.deploy.skip>
-        <maven.install.skip>true</maven.install.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -53,6 +52,22 @@
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
+            <!-- 分包 sample 内部依赖统一版本，避免子模块单独构建时版本解析不一致 -->
+            <dependency>
+                <groupId>com.richie.sample</groupId>
+                <artifactId>sample-http-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.sample</groupId>
+                <artifactId>sample-messaging-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.sample</groupId>
+                <artifactId>sample-vector-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -61,15 +76,7 @@
 
     <build>
         <plugins>
-            <!-- 强制 sample 子模块不参与 install / deploy，避免随全局发布进入私服 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-
+            <!-- 仅跳过 deploy，避免 sample 进入私服；允许 install 到本地仓库，供分包 sample 互相依赖 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>

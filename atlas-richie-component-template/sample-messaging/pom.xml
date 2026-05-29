@@ -22,14 +22,4 @@
         <module>sample-messaging-servicebus</module>
     </modules>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.richie.sample</groupId>
-                <artifactId>sample-messaging-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
 </project>

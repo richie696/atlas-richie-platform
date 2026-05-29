@@ -162,19 +162,18 @@
     </distributionManagement>
 
     <!-- SCM 配置 - 用于 maven-release-plugin -->
-    <!-- TODO: 待确认地址 -->
-    <!--<scm>
-        <connection>scm:git:git@codeup.aliyun.com:rydeen/platform/platform-java/richie-platform.git</connection>
-        <developerConnection>scm:git:git@codeup.aliyun.com:rydeen/platform/platform-java/richie-platform.git</developerConnection>
-        <url>https://codeup.aliyun.com/rydeen/platform/platform-java/richie-platform</url>
+    <scm>
+        <connection>scm:git:git@github.com:richie696/atlas-richie-platform.git</connection>
+        <developerConnection>scm:git:git@github.com:richie696/atlas-richie-platform.git</developerConnection>
+        <url>https://github.com/richie696/atlas-richie-platform</url>
         <tag>HEAD</tag>
-    </scm>-->
+    </scm>
 
     <!-- 开发团队信息 - 用于生成团队信息页面 -->
     <developers>
         <developer>
             <id>richie696</id>
-            <name>王锦阳</name>
+            <name>Richie Wang</name>
             <email>richie696@icloud.com</email>
             <organization>Richie Technology Co., Ltd.</organization>
             <organizationUrl>https://www.richie696.cn</organizationUrl>
@@ -188,9 +187,8 @@
     <!-- 贡献者信息 - 用于生成团队信息页面 -->
     <contributors>
         <!-- 可以添加贡献者信息 -->
-        <!--
         <contributor>
-            <name>Contributor Name</name>
+            <name>Nessis</name>
             <email>contributor@example.com</email>
             <organization>Organization Name</organization>
             <organizationUrl>https://www.example.com</organizationUrl>
@@ -199,7 +197,6 @@
             </roles>
             <timezone>Asia/Shanghai</timezone>
         </contributor>
-        -->
     </contributors>
 
     <build>
