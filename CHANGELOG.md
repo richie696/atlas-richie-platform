@@ -1,3 +1,7 @@
+**Languages:** [English](CHANGELOG.en.md) | [中文](CHANGELOG.md)
+
+---
+
 ## 1.0.0-SNAPSHOT (2026-05-28)
 
 > 当前版本为 **Atlas Richie Platform 首次公开基线版本**，采用全新架构与模块边界设计，基于最新的 JDK25 + Spring Boot 4.x 版本编写

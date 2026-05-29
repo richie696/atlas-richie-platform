@@ -86,7 +86,7 @@ public class StateDbPersistenceService {
                         .eq(StateMachineStateCurrent::getStateMachine, stateMachineName)
                         .eq(StateMachineStateCurrent::getBusinessId, businessId)
         );
-        if (current != null && current.getSeq() != null && incomingSeq <= current.getSeq()) {
+        if (current != null && incomingSeq <= current.getSeq()) {
             log.info("忽略过期/重复当前状态写入: stateMachine={}, businessId={}, incomingSeq={}, persistedSeq={}",
                     stateMachineName, businessId, incomingSeq, current.getSeq());
             return;
