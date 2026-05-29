@@ -87,7 +87,7 @@
         <!-- Checkstyle 核心库版本 - 使用 11.x 以支持 JDK 21 -->
         <checkstyle.version>13.4.2</checkstyle.version>
         <!-- 集成测试插件 -->
-        <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
+        <maven-failsafe-plugin.version>3.5.6</maven-failsafe-plugin.version>
         <!-- 代码覆盖率插件 -->
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <!-- 部署插件 -->
