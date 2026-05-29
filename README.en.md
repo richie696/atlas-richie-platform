@@ -1,9 +1,9 @@
-<p>
+<p align="center">
   <img src="./docs/assets/atlas-richie-logo.svg" alt="Atlas Richie Platform" width="60%" />
 </p>
 
 
-<p><b>Enterprise middle platform · Unified components · Config-driven switching · Microservices at speed</b></p>
+<p align="center"><b>Enterprise middle platform · Unified components · Config-driven switching · Microservices at speed</b></p>
 
 <p>
   <a href="README.en.md">English</a> ·
