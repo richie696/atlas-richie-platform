@@ -16,7 +16,6 @@
         <dependency>
             <groupId>com.richie.sample</groupId>
             <artifactId>sample-http-core</artifactId>
-            <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>com.richie.component</groupId>
