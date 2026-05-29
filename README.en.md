@@ -5,7 +5,7 @@
 
 <p align="center"><b>Enterprise middle platform · Unified components · Config-driven switching · Microservices at speed</b></p>
 
-<p>
+<p align="center">
   <a href="README.en.md">English</a> ·
   <a href="README.md">简体中文</a> ·
   <a href="https://docs.richie696.cn/">Docs</a> ·
@@ -15,7 +15,7 @@
   <a href="./CHANGELOG.en.md">Changelog</a>
 </p>
 
-<p>
+<p align="center">
   <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/License-Apache%202.0-4EB1BA.svg" alt="License"/></a>
   <img src="https://img.shields.io/badge/JDK-25-orange?logo=openjdk&logoColor=white" alt="JDK 25"/>
   <img src="https://img.shields.io/badge/Spring%20Boot-4.0.x-6DB33F?logo=springboot&logoColor=white" alt="Spring Boot"/>
