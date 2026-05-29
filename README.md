@@ -35,21 +35,18 @@
 
 Each layer has a clear responsibility:
 
-```
-┌─────────────────────────────────────────┐
-│         Application Layer               │
-│  (Gateway Service, General Service)     │
-└────────────────┬──────────────────────────┘
-                 │
-┌────────────────▼──────────────────────────┐
-│         Component Library Layer           │
-│  (Component Library)                      │
-└────────────────┬──────────────────────────┘
-                 │
-┌────────────────▼──────────────────────────┐
-│         Base Platform Layer               │
-│  (Base Platform)                          │
-└───────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph L1["Application Layer"]
+        A["Gateway Service · General Service"]
+    end
+    subgraph L2["Component Library Layer"]
+        B["Component Library"]
+    end
+    subgraph L3["Base Platform Layer"]
+        C["atlas-richie-dependencies · atlas-richie-context"]
+    end
+    L1 --> L2 --> L3
 ```
 
 ### 2. Unified Interfaces

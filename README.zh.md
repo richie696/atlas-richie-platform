@@ -34,21 +34,18 @@
 
 平台采用清晰的分层架构，每一层都有明确的职责：
 
-```
-┌─────────────────────────────────────────┐
-│         业务应用层                        │
-│  (Gateway Service, General Service)     │
-└────────────────┬──────────────────────────┘
-                 │
-┌────────────────▼──────────────────────────┐
-│         组件库层                            │
-│  (Component Library)                       │
-└────────────────┬──────────────────────────┘
-                 │
-┌────────────────▼──────────────────────────┐
-│         基础包层                            │
-│  (Base Platform)                          │
-└───────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph L1["业务应用层"]
+        A["Gateway Service · General Service"]
+    end
+    subgraph L2["组件库层"]
+        B["Component Library"]
+    end
+    subgraph L3["基础包层"]
+        C["atlas-richie-dependencies · atlas-richie-context"]
+    end
+    L1 --> L2 --> L3
 ```
 
 ### 2. 统一接口（Unified Interface）
