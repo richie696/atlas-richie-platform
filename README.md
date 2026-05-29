@@ -1,8 +1,8 @@
-<p>
+<p align="center">
   <img src="docs/assets/atlas-richie-logo.svg" alt="Atlas Richie Platform" width="48%" />
 </p>
 
-<p><b>企业级技术中台 · 统一组件 · 配置化切换 · 快速构建微服务</b></p>
+<p align="center"><b>企业级技术中台 · 统一组件 · 配置化切换 · 快速构建微服务</b></p>
 
 <p>
   <a href="README.en.md">English</a> ·
