@@ -81,7 +81,7 @@
         <!-- 依赖插件 -->
         <maven-dependency-plugin.version>3.9.0</maven-dependency-plugin.version>
         <!-- 漏洞扫描插件 -->
-        <spotbugs-maven-plugin.version>4.9.8.2</spotbugs-maven-plugin.version>
+        <spotbugs-maven-plugin.version>4.9.8.3</spotbugs-maven-plugin.version>
         <!-- 代码检查插件 -->
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
         <!-- Checkstyle 核心库版本 - 使用 11.x 以支持 JDK 21 -->
