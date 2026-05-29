@@ -15,12 +15,16 @@
     <description>Google PubSub 队列依赖管理</description>
     <packaging>jar</packaging>
 
+    <properties>
+        <spring-cloud-gcp-pubsub-stream-binder.version>8.0.4</spring-cloud-gcp-pubsub-stream-binder.version>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>spring-cloud-gcp-pubsub-stream-binder</artifactId>
-                <version>5.0.1</version>
+                <version>${spring-cloud-gcp-pubsub-stream-binder.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
