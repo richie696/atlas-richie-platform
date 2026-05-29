@@ -67,11 +67,11 @@
         <!-- 同maven-enforcer-plugin，但是只检查依赖的插件 -->
         <check-enforcer.version>3.5.0</check-enforcer.version>
         <!-- 这个插件主要用于处理项目中的资源文件 -->
-        <maven-resources-plugin.version>3.4.0</maven-resources-plugin.version>
+        <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
         <!-- 这个插件用于创建包含项目源代码的jar文件 -->
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <!-- 这个插件用于运行项目的单元测试 -->
-        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
         <!-- jib-maven-plugin 是一个由 Google 提供的 Maven 插件，用于构建 Docker 和 OCI 镜像 -->
         <jib-maven-plugin.version>3.5.1</jib-maven-plugin.version>
         <!-- 版本管理插件 -->
@@ -81,13 +81,13 @@
         <!-- 依赖插件 -->
         <maven-dependency-plugin.version>3.9.0</maven-dependency-plugin.version>
         <!-- 漏洞扫描插件 -->
-        <spotbugs-maven-plugin.version>4.9.8.2</spotbugs-maven-plugin.version>
+        <spotbugs-maven-plugin.version>4.9.8.3</spotbugs-maven-plugin.version>
         <!-- 代码检查插件 -->
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
         <!-- Checkstyle 核心库版本 - 使用 11.x 以支持 JDK 21 -->
         <checkstyle.version>13.4.2</checkstyle.version>
         <!-- 集成测试插件 -->
-        <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
+        <maven-failsafe-plugin.version>3.5.6</maven-failsafe-plugin.version>
         <!-- 代码覆盖率插件 -->
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <!-- 部署插件 -->
