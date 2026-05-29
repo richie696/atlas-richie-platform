@@ -177,6 +177,8 @@ public class RedisStateStorage implements StateStorage {
         Object seqValue = context.getAttribute("seq");
         if (seqValue instanceof Number number) {
             history.setSeq(number.longValue());
+        } else {
+            history.setSeq(0L);
         }
 
         // 历史记录必须有过期时间，避免Redis数据量过大

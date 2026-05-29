@@ -1,4 +1,27 @@
-# Atlas Richie Platform
+<p align="center">
+  <img src="docs/assets/atlas-richie-logo.svg" alt="Atlas Richie Platform" width="48%" />
+</p>
+
+<p align="center"><b>企业级技术中台 · 统一组件 · 配置化切换 · 快速构建微服务</b></p>
+
+<p align="center">
+  <a href="README.en.md">English</a> ·
+  <a href="https://docs.richie696.cn/">文档</a> ·
+  <a href="https://github.com/richie696/atlas-richie-platform/issues">Issues</a> ·
+  <a href="./CONTRIBUTING.md">贡献指南</a> ·
+  <a href="./SECURITY.md">安全策略</a> ·
+  <a href="./CHANGELOG.md">变更日志</a>
+</p>
+
+<p align="center">
+  <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/License-Apache%202.0-4EB1BA.svg" alt="License"/></a>
+  <img src="https://img.shields.io/badge/JDK-25-orange?logo=openjdk&logoColor=white" alt="JDK 25"/>
+  <img src="https://img.shields.io/badge/Spring%20Boot-4.0.x-6DB33F?logo=springboot&logoColor=white" alt="Spring Boot"/>
+  <img src="https://img.shields.io/badge/Maven-3.9+-blue?logo=apachemaven&logoColor=white" alt="Maven"/>
+  <img src="https://img.shields.io/badge/Version-1.0.0--SNAPSHOT-informational" alt="Version"/>
+</p>
+
+---
 
 ## 📖 概述
 
@@ -444,9 +467,11 @@ platform:
 ## 🔗 相关链接
 
 - [Atlas Richie技术中台](https://docs.richie696.cn/)
-- [问题反馈](richie696@icloud.com)
-- [功能建议](richie696@icloud.com)
-- [贡献指南](./CONTRIBUTING.md)
+- [贡献指南](./CONTRIBUTING.md) | [Contributing (EN)](./CONTRIBUTING.en.md)
+- [安全策略](./SECURITY.md) | [Security (EN)](./SECURITY.en.md)
+- [行为准则](./CODE_OF_CONDUCT.md) | [Code of Conduct (EN)](./CODE_OF_CONDUCT.en.md)
+- [变更日志](./CHANGELOG.md) | [Changelog (EN)](./CHANGELOG.en.md)
+- [问题反馈](https://github.com/richie696/atlas-richie-platform/issues)
 
 ## 📞 联系方式
 
