@@ -48,7 +48,7 @@
 
         <mybatis-plus.version>3.5.16</mybatis-plus.version>
         <dynamic-datasource.version>4.5.0</dynamic-datasource.version>
-        <mybatis-plus-join.version>1.5.6</mybatis-plus-join.version>
+        <mybatis-plus-join.version>1.5.7</mybatis-plus-join.version>
         <mysql-connector-j.version>9.6.0</mysql-connector-j.version>
         <postgresql.version>42.7.11</postgresql.version>
         <elasticsearch-client.version>9.4.1</elasticsearch-client.version>
