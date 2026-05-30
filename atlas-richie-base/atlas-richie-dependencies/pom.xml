@@ -80,7 +80,7 @@
         <feign.version>13.11</feign.version>
         <guava.version>33.6.0-jre</guava.version>
         <snakeyaml.version>2.6</snakeyaml.version>
-        <netty.version>4.2.13.Final</netty.version>
+        <netty.version>4.2.14.Final</netty.version>
         <protobuf.version>4.35.0</protobuf.version>
 
         <!-- OpenTelemetry 相关版本 -->
