@@ -38,7 +38,7 @@
         <aliyun-sdk-oss.version>3.18.5</aliyun-sdk-oss.version>
         <tencentcloud.cos_api.version>5.6.251</tencentcloud.cos_api.version>
         <tencentcloud.cos-sts_api.version>3.1.1</tencentcloud.cos-sts_api.version>
-        <huaweicloud.esdk-obs-java.version>3.25.7</huaweicloud.esdk-obs-java.version>
+        <huaweicloud.esdk-obs-java.version>3.25.10</huaweicloud.esdk-obs-java.version>
         <minio.version>9.0.1</minio.version>
         <s3.version>2.44.7</s3.version>
         <ve-tos-java-sdk.version>2.9.15</ve-tos-java-sdk.version>
