@@ -1,46 +1,52 @@
-# RichieAI组件 (richie-component-ai)
+# Atlas Richie AI Component (atlas-richie-component-ai)
 
-## 概述
+[TOC]
 
-`richie-component-ai` 是基于 Spring AI 的统一大模型接入组件，目标是让业务系统以统一方式管理和调用不同模型。
+------
 
-当前组件同时支持两种初始化模式：
 
-- **配置文件初始化**：通过 `application.yml` 固定配置模型
-- **代码动态初始化**：业务系统从数据库读取模型配置后，运行时注入组件
 
-这两种方式可并存，运行时动态初始化可覆盖同名模型。
+## Overview
 
-## 核心能力
+`richie-component-ai` is a unified LLM integration component based on Spring AI, designed to let business systems manage and invoke different models through a unified interface.
 
-- 统一调用接口：同一个 `AiModelService` 调用不同厂商模型
-- 多模型管理：支持查看可用模型、切换默认模型、按模型名调用
-- 动态模型注册：支持 `initializeModels(List<ModelOptions>)` 运行时装载
-- 兼容协议兜底：动态注册遇到未知 provider 时，自动降级为 OpenAI 协议
-- 统一响应结构：包含内容、耗时、模型信息、token 使用统计
+The component supports two initialization modes simultaneously:
 
-## 当前支持模型
+- **Configuration File Initialization**: Define models via `application.yml`
+- **Runtime Dynamic Initialization**: Business systems load model configurations from a database and inject them at runtime
 
-### 1) 组件内置 Provider（配置文件模式）
+Both modes can coexist; runtime dynamic initialization can override models with the same name.
 
-`AiModelProperties.AiProviderType` 当前支持：
+## Core Capabilities
+
+- Unified invocation interface: Call different vendor models through the same `AiModelService`
+- Multi-model management: List available models, switch default model, invoke by model name
+- Dynamic model registration: Support `initializeModels(List<ModelOptions>)` for runtime loading
+- Compatibility fallback: Unknown providers during dynamic registration automatically degrade to OpenAI-compatible protocol
+- Unified response structure: Includes content, duration, model info, token usage statistics
+
+## Currently Supported Models
+
+### 1) Built-in Providers (Configuration File Mode)
+
+`AiModelProperties.AiProviderType` currently supports:
 
 - `OPENAI`
 - `DEEPSEEK`
-- `ZHIPUAI`（通过 OpenAI 兼容协议接入）
+- `ZHIPUAI` (via OpenAI-compatible protocol)
 - `ANTHROPIC`
 - `OLLAMA`
 - `MINIMAX`
-- `MOONSHOT`（通过 OpenAI 兼容协议接入）
+- `MOONSHOT` (via OpenAI-compatible protocol)
 
-### 2) 动态模式的未知 Provider 兜底
+### 2) Unknown Provider Fallback in Dynamic Mode
 
-当调用 `initializeModels(List<ModelOptions>)` 时，`ModelOptions.provider` 是字符串。
+When calling `initializeModels(List<ModelOptions>)`, `ModelOptions.provider` is a string.
 
-- 若可识别为上述内置 Provider，则按内置逻辑初始化
-- 若不可识别，则自动降级为 `OPENAI` 协议初始化，不会因枚举未定义而失败
+- If recognizable as one of the built-in providers above, it initializes via the corresponding logic
+- If unrecognizable, it automatically degrades to the `OPENAI` protocol — no failure due to undefined enum
 
-## 依赖
+## Dependency
 
 ```xml
 <dependency>
@@ -50,21 +56,21 @@
 </dependency>
 ```
 
-## EmbeddingModel 自动注入
+## EmbeddingModel Auto-Configuration
 
-从当前版本开始，`richie-component-ai` 在配置文件初始化模式下会自动注册 `EmbeddingModel` Bean（Bean 名称：`aiEmbeddingModel`）。
+Starting from the current version, `richie-component-ai` automatically registers an `EmbeddingModel` Bean (Bean name: `aiEmbeddingModel`) in configuration file initialization mode.
 
-- 默认策略：**跟随默认模型**（即 `platform.component.ai.models` 中第一个模型）
-- 适用场景：`richie-component-vector` 与各 provider 子组件需要 `EmbeddingModel` 时可直接复用
-- 覆盖机制：业务侧若自行声明 `EmbeddingModel` Bean，会覆盖默认自动注入
+- Default strategy: **Follows the default model** (i.e., the first model in `platform.component.ai.models`)
+- Use case: `richie-component-vector` and other provider sub-components can reuse the `EmbeddingModel` directly
+- Override mechanism: Business-side `EmbeddingModel` Bean declarations will override the auto-injected one
 
-注意：
+Note:
 
-- 当 `config-initialization-enabled: false` 时，组件不会创建默认 `EmbeddingModel`
-- 当未配置任何模型时，也不会创建默认 `EmbeddingModel`
-- 上述场景请在业务侧手工声明 `EmbeddingModel` Bean
+- When `config-initialization-enabled: false`, the component will not create a default `EmbeddingModel`
+- When no models are configured, no default `EmbeddingModel` is created either
+- In the above scenarios, declare the `EmbeddingModel` Bean manually on the business side
 
-## 使用方式一：配置文件初始化
+## Usage Method 1: Configuration File Initialization
 
 ```yaml
 platform:
@@ -126,11 +132,11 @@ platform:
             model: qwen2.5:7b
 ```
 
-## 使用方式二：数据库配置 + 动态初始化（推荐业务场景）
+## Usage Method 2: Database Configuration + Dynamic Initialization (Recommended)
 
-### 0) 关闭配置文件初始化（仅动态初始化模式）
+### 0) Disable Configuration File Initialization (Dynamic-Only Mode)
 
-当你希望模型全部来自数据库，而不是 `application.yml`，请先关闭启动时 `@Bean` 初始化：
+To have all models come from the database instead of `application.yml`, disable `@Bean` initialization at startup:
 
 ```yaml
 platform:
@@ -139,19 +145,19 @@ platform:
       config-initialization-enabled: false
 ```
 
-行为说明：
+Behavior:
 
-- 组件启动时不会构造任何 `ChatClient`
-- 必须先调用 `initializeModels(List<ModelOptions>)` 才可执行 AI 调用
-- 若在初始化前调用 `AiModelService.call/callAsync/callWithModel`，将返回：
+- No `ChatClient` instances are created at component startup
+- `initializeModels(List<ModelOptions>)` must be called before any AI invocation
+- If `AiModelService.call/callAsync/callWithModel` is called before initialization, it returns:
   - `errorCode = MODEL_NOT_INITIALIZED`
-  - `errorMessage = AI模型尚未初始化，无法执行调用，请先通过配置文件或 initializeModels 完成初始化`
+  - `errorMessage = AI model not initialized. Please initialize via configuration file or initializeModels first.`
 
-### 1) 业务系统构造模型配置列表
+### 1) Construct Model Configuration List
 
 ```java
-import config.com.richie.component.ai.AiModelProperties;
-import model.com.richie.component.ai.ModelOptions;
+import com.richie.component.ai.config.AiModelProperties;
+import com.richie.component.ai.model.ModelOptions;
 
 List<ModelOptions> options = List.of(
         new ModelOptions()
@@ -166,7 +172,7 @@ List<ModelOptions> options = List.of(
 
         new ModelOptions()
                 .setModelName("tenant-a-custom-compat")
-                .setProvider("MY_PRIVATE_PROVIDER") // 未定义provider
+                .setProvider("MY_PRIVATE_PROVIDER") // undefined provider
                 .setBaseUrl("https://your-openai-compatible-endpoint/v1")
                 .setApiKey("ak-yyy")
                 .setOptions(new AiModelProperties.AiModelOptions()
@@ -174,52 +180,42 @@ List<ModelOptions> options = List.of(
 );
 ```
 
-### 2) 调用组件动态初始化
+### 2) Invoke Dynamic Initialization
 
 ```java
-
-
 aiModelService.initializeModels(options);
 ```
 
-执行后：
+After execution:
 
-- `tenant-a-openai` 按 OpenAI 逻辑初始化
-- `tenant-a-custom-compat` 因 provider 未识别，自动按 OpenAI 兼容协议初始化
+- `tenant-a-openai` initializes via OpenAI logic
+- `tenant-a-custom-compat` initializes via OpenAI-compatible protocol (provider unrecognized)
 
-## 统一调用示例
+## Unified Call Examples
 
 ```java
-import model.com.richie.component.ai.AiRequest;
-import model.com.richie.component.ai.AiResponse;
+import com.richie.component.ai.model.AiRequest;
+import com.richie.component.ai.model.AiResponse;
 
-// 1. 默认模型调用
-AiResponse r1 = aiModelService.call(AiRequest.ofUserMessage("请简要介绍你自己"));
+// 1. Default model call
+AiResponse r1 = aiModelService.call(AiRequest.ofUserMessage("Please briefly introduce yourself"));
 
-        // 2. 指定模型调用
-        AiResponse r2 = aiModelService.callWithModel(
-                "tenant-a-openai",
-                AiRequest.ofSystemAndUser("你是Java架构师", "请解释DDD分层")
-        );
+// 2. Specify model call
+AiResponse r2 = aiModelService.callWithModel(
+        "tenant-a-openai",
+        AiRequest.ofSystemAndUser("You are a Java architect", "Please explain DDD layering")
+);
 
-// 3. 异步调用
-aiModelService.
-
-        callAsync(AiRequest.ofUserMessage("生成一个Spring Boot Controller示例"))
-        .
-
-        thenAccept(resp ->{
-        if(resp.
-
-        isSuccess()){
-        System.out.
-
-        println(resp.getContent());
-        }
+// 3. Async call
+aiModelService.callAsync(AiRequest.ofUserMessage("Generate a Spring Boot Controller example"))
+        .thenAccept(resp -> {
+            if (resp.isSuccess()) {
+                System.out.println(resp.getContent());
+            }
         });
 ```
 
-## AiModelService 接口
+## AiModelService Interface
 
 ```java
 AiResponse call(AiRequest request);
@@ -234,42 +230,97 @@ String getDefaultModel();
 void setDefaultModel(String modelName);
 
 void initializeModels(List<ModelOptions> modelOptionsList);
+void removeModel(String modelName);
+
+AiHealthResult probe(String modelName);
+List<AiHealthResult> probeAll();
+
+Flux<AiStreamChunk> stream(AiRequest request);
 ```
 
-## 关键数据结构
+## Key Data Structures
 
 ### 1) `AiRequest`
 
-- `modelName`：可选，指定调用模型名
-- `messages`：对话消息
-- `options`：请求级参数（如温度、最大 token）
+- `modelName`: Optional, specifies the model name for invocation
+- `scene`: Business scene identifier, used with `routing.scene-rules` for scene-based routing
+- `fallbackModelNames`: Request-level fallback model chain (tried sequentially if the primary model fails)
+- `toolNames`: Tool invocation name list, referencing `ToolCallback` Beans
+- `messages`: Conversation messages (`AiRequest.Message`)
+- `options`: Request-level parameter overrides (`AiRequest.ModelOptions`, non-null fields override defaults)
+- `metadata`: Request metadata (user ID, session ID, etc., does not affect AI responses)
 
-便捷工厂方法：
+Message type `AiRequest.Message`:
+- `role`: Role (`system` / `user` / `assistant`)
+- `content`: Message content
+- `name`: Message name (optional)
 
-- `AiRequest.ofUserMessage(...)`
-- `AiRequest.ofSystemAndUser(...)`
-- `AiRequest.ofMessages(...)`
+Request-level parameters `AiRequest.ModelOptions` (same structure as config parameters, overrides defaults per request):
+- `model` / `maxTokens` / `temperature` / `topP` / `topK`
+- `frequencyPenalty` / `presencePenalty` / `stop`
+- `logprobs` / `topLogprobs` / `enableThinking` / `thinkingBudgetTokens`
 
-### 2) `ModelOptions`（动态初始化输入）
+Factory methods:
 
-- `modelName`：组件内部模型唯一标识
-- `provider`：字符串 provider（支持未知值）
-- `baseUrl`：模型 API 地址
-- `apiKey`：模型 APIKey
-- `options`：模型参数（`AiModelProperties.AiModelOptions`）
+- `AiRequest.ofUserMessage(content)`: Single user message
+- `AiRequest.ofSystemAndUser(systemPrompt, userMessage)`: System instruction + user message
+- `AiRequest.ofMessages(messages)`: Full conversation history
+
+### 2) `ModelOptions` (Dynamic Initialization Input)
+
+- `modelName`: Unique model identifier within the component
+- `provider`: String provider (supports unknown values for fallback)
+- `baseUrl`: Model API endpoint
+- `apiKey`: Model API key
+- `options`: Model parameters (`AiModelProperties.AiModelOptions`)
 
 ### 3) `AiResponse`
 
-- `success`：是否成功
-- `content`：模型文本输出
-- `modelName` / `provider`：实际调用模型信息
-- `duration`：耗时（毫秒）
-- `usage`：token 统计
-- `errorMessage` / `errorCode`：失败信息
+- `success`: Whether the call succeeded
+- `content`: Model text output
+- `modelName` / `provider`: Actual model info used
+- `duration`: Response time (milliseconds)
+- `usage`: Token statistics (`AiResponse.Usage`, includes `promptTokens` / `completionTokens` / `totalTokens`)
+- `errorMessage` / `errorCode`: Error info
+- `rawResponse`: Raw response data
+- `metadata`: Response metadata
 
-## 参数说明（AiModelOptions）
+### 4) `AiStreamChunk` (Stream Output Chunk)
 
-常用参数：
+- `delta`: Incremental text
+- `finished`: Whether this is the last chunk
+- `modelName` / `provider`: Model info
+- `usage`: Token statistics at stream end (`AiResponse.Usage`)
+- `errorCode` / `errorMessage`: Error info
+
+Factory methods:
+- `AiStreamChunk.delta(text, modelName, provider)`: Incremental chunk
+- `AiStreamChunk.finished(modelName, provider, usage)`: Final chunk (with usage stats)
+- `AiStreamChunk.error(message, code)`: Error chunk
+
+### 5) `AiHealthResult` (Health Check Result)
+
+- `modelName` / `provider`: Model info
+- `healthy`: Whether healthy
+- `liveProbe`: Whether a real LLM call was made
+- `durationMs`: Probe duration (milliseconds)
+- `message`: Status message
+- `checkedAt`: Check timestamp
+
+### 6) `AiModelInfo` (Model Information)
+
+- `name` / `provider`: Model name and provider
+- `description`: Model description
+- `available`: Whether available (ChatClient exists and not circuit-broken)
+- `defaultModel`: Whether this is the current default model
+- `type`: Model type (`CHAT` / `TEXT_GENERATION` / `EMBEDDING` / `IMAGE_GENERATION` / `MULTIMODAL`)
+- `capabilities`: Capability configuration (`ModelCapabilities`, see capability matrix)
+- `lastChecked`: Status check timestamp
+- `errorMessage`: Error message when unavailable
+
+## Parameters Reference (AiModelOptions)
+
+Common parameters:
 
 - `model`
 - `maxTokens`
@@ -279,400 +330,716 @@ void initializeModels(List<ModelOptions> modelOptionsList);
 - `presencePenalty`
 - `stop`
 
-特定模型参数：
+Provider-specific parameters:
 
-- `topK`（Anthropic）
-- `logprobs`、`topLogprobs`（OpenAI/DeepSeek 等支持时）
-- `enableThinking`、`thinkingBudgetTokens`（预留思考参数）
+- `topK` (Anthropic)
+- `logprobs` / `topLogprobs` (OpenAI/DeepSeek, etc.)
+- `enableThinking` / `thinkingBudgetTokens` (Anthropic thinking mode)
 
-## 默认与覆盖规则
+Provider capability matrix:
 
-- 启动时：先加载配置文件模型
-- 运行时：调用 `initializeModels(...)` 后新增/覆盖同名模型
-- 默认模型：
-  - 如果未主动设置，使用当前可用模型集合中的第一个
-  - 若当前默认模型被覆盖或不可用，会自动回退到可用模型
+| Parameter | OpenAI | DeepSeek | Anthropic | MiniMax | Ollama |
+|---|---|---|---|---|---|
+| `temperature` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `topP` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `topK` | ❌ | ❌ | ✅ | ❌ | ❌ |
+| `frequencyPenalty` | ✅ | ✅ | ❌ | ✅ | ❌ |
+| `presencePenalty` | ✅ | ✅ | ❌ | ✅ | ❌ |
+| `stop` | ✅ | ✅ | ❌ | ✅ | ✅ |
+| `logprobs` / `topLogprobs` | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `enableThinking` | ❌ | ❌ | ✅ | ❌ | ❌ |
 
-## 生产建议
+## Default & Override Rules
 
-- API Key 不要写死在代码或明文配置中，建议使用配置中心/密钥管理
-- 动态初始化前建议先做连通性探测，再落库并生效
-- 业务可按租户、业务线、场景维护模型路由策略（模型名映射）
-- 对调用失败增加熔断/降级策略，避免外部模型波动影响主链路
+- Startup: Configuration file models are loaded first
+- Runtime: Calling `initializeModels(...)` adds/overrides models with the same name
+- Default model:
+  - If not explicitly set, the first model in the current model collection is used
+  - If the current default model is overridden or becomes unavailable, it automatically falls back to the first available model
 
-# RichieAI组件 (richie-component-ai)
+## Production Recommendations
 
-## 📖 概述
+- Never hardcode API keys in code or plaintext configuration; use a configuration center or secret management service
+- Perform connectivity probing before dynamic initialization, then persist and activate
+- Maintain model routing strategies per tenant, business line, or scenario (model name mapping)
+- Add circuit breaker / degradation strategies for call failures to prevent upstream model fluctuations from impacting the main service chain
 
-RichieAI组件是一个基于Spring AI的统一AI模型调用组件，完全屏蔽了不同AI提供商之间的接口差异，提供统一的配置方式和调用接口。支持同时配置多个AI模型，可以像GitHub Copilot一样通过选择框动态切换不同的AI模型。
+## Complete Configuration Reference
 
-## ✨ 特性
-
-- **🔄 统一接口**：屏蔽不同AI提供商的接口差异，提供统一的调用方式
-- **🎯 多模型支持**：同时支持OpenAI、DeepSeek、智谱AI、Anthropic、Ollama等主流AI模型
-- **⚙️ 配置化切换**：通过配置文件即可切换不同的AI模型，无需修改代码
-- **🚀 动态选择**：支持运行时动态选择AI模型，类似GitHub Copilot的模型选择
-- **📊 详细监控**：提供完整的调用监控、性能统计和错误处理
-- **🛡️ 异常处理**：完善的异常处理机制，确保系统稳定性
-- **📝 中文文档**：详细的中文注释和使用说明
-
-## 🏗️ 架构设计
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    RichieAI组件架构                            │
-├─────────────────────────────────────────────────────────────┤
-│  AiModelService (统一服务接口)                               │
-│  ├── 同步调用                                                │
-│  ├── 异步调用                                                │
-│  ├── 模型管理                                                │
-│  └── 动态切换                                                │
-├─────────────────────────────────────────────────────────────┤
-│  AiModelServiceImpl (服务实现)                               │
-│  ├── 请求处理                                                │
-│  ├── 模型选择                                                │
-│  ├── 响应转换                                                │
-│  └── 异常处理                                                │
-├─────────────────────────────────────────────────────────────┤
-│  AiModelAutoConfiguration (自动配置)                         │
-│  ├── ChatClient创建                                          │
-│  ├── 模型初始化                                              │
-│  └── 配置验证                                                │
-├─────────────────────────────────────────────────────────────┤
-│  Spring AI (底层实现)                                        │
-│  ├── OpenAI                                                 │
-│  ├── DeepSeek                                               │
-│  ├── 智谱AI                                                 │
-│  ├── Anthropic                                              │
-│  └── Ollama                                                 │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## 🚀 快速开始
-
-### 1. 添加依赖
-
-```xml
-<dependency>
-    <groupId>com.richie.component</groupId>
-    <artifactId>atlas-richie-component-ai</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-</dependency>
-```
-
-### 2. 配置AI模型
-
-在`application.yml`中添加配置：
+### platform.component.ai Configuration Tree
 
 ```yaml
 platform:
   component:
     ai:
+      # --- Initialization Control ---
+      config-initialization-enabled: true  # false = disable config file init, dynamic only
+
+      # --- Model Definitions ---
       models:
-        # OpenAI GPT-4
-        gpt-4:
+        gpt-4o:
           provider: OPENAI
-          api-key: ${OPENAI_API_KEY:your-openai-api-key}
+          api-key: ${OPENAI_API_KEY}
           base-url: ${OPENAI_BASE_URL:https://api.openai.com}
           options:
-            model: gpt-4
+            model: gpt-4o
             max-tokens: 2000
             temperature: 0.7
-            top-p: 0.9
 
-        # DeepSeek
-        deepseek-chat:
-          provider: DEEPSEEK
-          api-key: ${DEEPSEEK_API_KEY:your-deepseek-api-key}
-          base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
-          options:
-            model: deepseek-chat
-            max-tokens: 2000
-            temperature: 0.7
-            top-p: 0.9
+      # --- Routing & Fallback ---
+      routing:
+        enabled: false              # Enable scene-based routing
+        fallback-enabled: true      # Try fallback chain when primary model fails
+        fallback-models: []         # Global fallback model list
+        scene-rules:                # Scene-based model chain (takes effect when enabled=true)
+          translation: [ "gpt-4o", "claude-sonnet" ]
+          code-review: [ "deepseek-chat", "gpt-4o" ]
 
-        # 智谱AI
-        zhipu-chatglm:
-          provider: ZHIPUAI
-          api-key: ${ZHIPUAI_API_KEY:your-zhipuai-api-key}
-          base-url: ${ZHIPUAI_BASE_URL:https://open.bigmodel.cn}
-          options:
-            model: glm-4
-            max-tokens: 2000
-            temperature: 0.7
-            top-p: 0.9
+      # --- Circuit Breaker ---
+      resilience:
+        circuit-breaker-enabled: true   # Enable simple circuit breaker
+        failure-threshold: 3            # Open circuit after 3 consecutive failures
+        open-duration-ms: 60000          # Circuit stays open for 60 seconds
 
-        # Anthropic Claude
-        claude-3:
-          provider: ANTHROPIC
-          api-key: ${ANTHROPIC_API_KEY:your-anthropic-api-key}
-          base-url: ${ANTHROPIC_BASE_URL:https://api.anthropic.com}
-          options:
-            model: claude-3-sonnet-20240229
-            max-tokens: 2000
-            temperature: 0.7
-            top-p: 0.9
-            top-k: 40
-
-        # Ollama本地模型
-        ollama-llama2:
-          provider: OLLAMA
-          base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
-          options:
-            model: llama2
-            max-tokens: 2000
-            temperature: 0.7
-            top-p: 0.9
+      # --- Health Check ---
+      health-check:
+        live-probe: true        # Whether probe() makes real LLM calls
+        probe-max-tokens: 1     # Minimum output tokens for live probe
 ```
 
-### 3. 使用AI服务
+### Auto-Registered Beans
+
+| Bean Type | Bean Name | Registration Condition |
+|---|---|---|
+| `Map<String, ChatClient>` | `aiChatClients` | `config-initialization-enabled = true` |
+| `EmbeddingModel` | `aiEmbeddingModel` | Above condition + non-empty models + `@ConditionalOnMissingBean` |
+| `AiModelProperties` | — | `@EnableConfigurationProperties` |
+| `ToolRegistry` | — | Always registered (`@Component`) |
+| `retryTemplate` | — | Auto-registered by `spring-ai-autoconfigure-retry` |
+
+### Routing Decision Chain
+
+`AiModelRouter.resolveModelChain` merges the invocation chain with the following priority:
+
+```
+request.modelName（explicitly specified）
+  └── routing.scene-rules[request.scene]（scene routing, requires enabled=true）
+       └── defaultModel（global default model）
+            └── request.fallbackModelNames（request-level fallback chain）
+                 └── routing.fallbackModels（global fallback chain）
+                      └── filter out models without a ChatClient
+```
+
+The final chain is deduplicated and invoked serially; the first success is returned immediately.
+
+## Tool Calling
+
+`richie-component-ai` supports tool calling (Function Calling) via Spring AI M8's `ToolCallback` mechanism.
+
+### 1) Register Tools
+
+Businesses declare `ToolCallback` Beans. `ToolRegistry` indexes them by `ToolDefinition.name()` at startup:
 
 ```java
-@Autowired
-private AiModelService aiModelService;
+public record WeatherQuery(String city) {}
 
-// 简单调用（使用默认模型）
-AiRequest request = AiRequest.ofUserMessage("你好，请介绍一下自己");
-AiResponse response = aiModelService.call(request);
-
-if (response.isSuccess()) {
-    System.out.println("AI回复: " + response.getContent());
-    System.out.println("使用模型: " + response.getModelName());
-    System.out.println("响应时间: " + response.getDuration() + "ms");
-} else {
-    System.err.println("调用失败: " + response.getErrorMessage());
+public class WeatherService implements java.util.function.Function<WeatherQuery, String> {
+    @Override
+    public String apply(WeatherQuery query) {
+        return "Current temperature in Beijing: 22°C, sunny";
+    }
 }
 
-// 指定模型调用
-AiResponse response = aiModelService.callWithModel("gpt-4", request);
-
-// 异步调用
-CompletableFuture<AiResponse> future = aiModelService.callAsync(request);
-future.thenAccept(response -> {
-    if (response.isSuccess()) {
-        System.out.println("异步调用成功: " + response.getContent());
-    }
-});
+@Bean
+public ToolCallback weatherTool() {
+    return FunctionToolCallback.builder("get_weather", new WeatherService())
+            .description("Query weather for a specified city")
+            .inputType(WeatherQuery.class)
+            .build();
+}
 ```
 
-## 📋 API文档
+### 2) Declare Tools at Invocation Time
 
-### AiModelService 接口
-
-| 方法 | 描述 | 参数 | 返回值 |
-|------|------|------|--------|
-| `call(AiRequest)` | 同步调用AI模型 | AI请求对象 | AI响应对象 |
-| `callAsync(AiRequest)` | 异步调用AI模型 | AI请求对象 | CompletableFuture<AiResponse> |
-| `callWithModel(String, AiRequest)` | 使用指定模型调用 | 模型名称, AI请求对象 | AI响应对象 |
-| `getAvailableModels()` | 获取所有可用模型 | 无 | List<AiModelInfo> |
-| `getModelInfo(String)` | 获取指定模型信息 | 模型名称 | AiModelInfo |
-| `isModelAvailable(String)` | 检查模型是否可用 | 模型名称 | boolean |
-| `getDefaultModel()` | 获取默认模型名称 | 无 | String |
-| `setDefaultModel(String)` | 设置默认模型 | 模型名称 | void |
-
-### AiRequest 请求对象
+`AiRequest.toolNames` references registered tools by name:
 
 ```java
-// 简单用户消息
-AiRequest request = AiRequest.ofUserMessage("你好");
-
-// 带系统提示的对话
-AiRequest request = AiRequest.ofSystemAndUser(
-    "你是一个专业的Java工程师", 
-    "请解释Spring Boot的自动配置"
+AiResponse response = aiModelService.call(
+    AiRequest.ofUserMessage("What's the weather like in Beijing today?")
+        .setToolNames(List.of("get_weather"))
 );
-
-// 多轮对话
-List<AiRequest.Message> messages = Arrays.asList(
-    new AiRequest.Message().setRole("user").setContent("你好"),
-    new AiRequest.Message().setRole("assistant").setContent("你好！有什么可以帮助你的？"),
-    new AiRequest.Message().setRole("user").setContent("我想学习Java")
-);
-AiRequest request = AiRequest.ofMessages(messages);
-
-// 带自定义参数的请求
-AiRequest.ModelOptions options = new AiRequest.ModelOptions()
-    .setTemperature(0.3)
-    .setMaxTokens(500)
-    .setTopP(0.8);
-
-AiRequest request = new AiRequest()
-    .setMessages(List.of(new AiRequest.Message().setRole("user").setContent("生成代码")))
-    .setOptions(options);
 ```
 
-### AiResponse 响应对象
+Tool calling works with both synchronous `call()` and streaming `stream()`. Missing tool names silently log a WARN and are skipped.
 
-```java
-AiResponse response = aiModelService.call(request);
+### 3) Notes
 
-if (response.isSuccess()) {
-    String content = response.getContent();           // 响应内容
-    String modelName = response.getModelName();       // 使用的模型名称
-    String provider = response.getProvider();         // 模型提供商
-    Long duration = response.getDuration();           // 响应时间（毫秒）
-    AiResponse.Usage usage = response.getUsage();     // 令牌使用情况
-    
-    // 令牌使用详情
-    Integer promptTokens = usage.getPromptTokens();      // 提示令牌数
-    Integer completionTokens = usage.getCompletionTokens(); // 完成令牌数
-    Integer totalTokens = usage.getTotalTokens();        // 总令牌数
-} else {
-    String errorMessage = response.getErrorMessage();  // 错误信息
-    String errorCode = response.getErrorCode();        // 错误代码
-}
+- **Duplicate names**: First registered wins; duplicates are silently discarded
+- **Name matching**: Uses `ToolDefinition.name()` (typically matches the name in `FunctionToolCallback.builder(name, ...)`)
+- **Activation**: Currently only explicitly enabled via `AiRequest.toolNames`; no global default tools
+
+## Error Code Reference
+
+| Error Code | Trigger Condition | Source Method |
+|---|---|---|
+| `MODEL_NOT_INITIALIZED` | `chatClients` is empty when `call` / `stream` is invoked | `checkInitialized()` |
+| `NO_MODEL_AVAILABLE` | Resolved model chain is empty | `resolveChain()` |
+| `CIRCUIT_OPEN` | Model is in circuit-open state, skipped | `circuitBreaker.allow()` |
+| `ALL_MODELS_FAILED` | All models in the chain failed | `call()` / `stream()` |
+| `MODEL_UNAVAILABLE` | Corresponding `ChatClient` not found at call time | `callSingleModel()` |
+| `STREAM_FAILED` | Exception during streaming | `stream()` onErrorResume |
+| `UNKNOWN_ERROR` | Default error code for `AiResponse.failure(msg)` without explicit code | — |
+
+## 📐 API Implementation Documentation
+
+> This section documents the **business flow**, **sequence diagram**, and **implementation logic** for each of the 13 public API methods in `AiModelService`.
+> Implementation version: M8 (2.0.0-M8), with Observation, Spring 7 built-in Retry, and Tool Calling integrated.
+
+### Overall Component Architecture
+
+```mermaid
+graph LR
+    Caller[Caller] --> Service[AiModelServiceImpl]
+    Service --> Router[AiModelRouter]
+    Service --> CB[AiModelCircuitBreaker]
+    Service --> ToolReg[ToolRegistry]
+    Service --> Factory[AiChatClientFactory]
+    Factory --> Models[5 ChatModel Types<br/>OpenAI/DeepSeek/Anthropic/Ollama/MiniMax]
+    Factory --> Retry[RetryTemplate<br/>spring-ai-autoconfigure-retry]
+    Factory --> Obs[ObservationRegistry<br/>autoconfigure-model-*-observation]
+    Models --> LLM[LLM API]
+    ToolReg --> Tools[ToolCallback Beans]
 ```
 
-## 🔧 配置说明
+### 1. `call(AiRequest request)` — Synchronous Call
 
-### 支持的AI提供商
+Entry method that orchestrates routing / circuit breaker / retry / tool calling.
 
-| 提供商 | 配置值 | 说明 |
-|--------|--------|------|
-| OpenAI | `OPENAI` | ChatGPT系列模型 |
-| DeepSeek | `DEEPSEEK` | DeepSeek大语言模型 |
-| 智谱AI | `ZHIPUAI` | 智谱AI大语言模型 |
-| Anthropic | `ANTHROPIC` | Claude系列模型 |
-| Ollama | `OLLAMA` | 本地部署的模型 |
+#### Business Flow
 
-### 模型参数配置
-
-| 参数 | 类型 | 说明 | 支持范围 |
-|------|------|------|----------|
-| `model` | String | 模型名称 | 各提供商的具体模型名称 |
-| `maxTokens` | Integer | 最大输出令牌数 | 1-8192（取决于模型） |
-| `temperature` | Double | 温度参数 | 0.0-2.0（DeepSeek支持到2.0） |
-| `topP` | Double | Top P参数 | 0.0-1.0 |
-| `topK` | Integer | Top K参数 | 1-100（Anthropic特有） |
-| `frequencyPenalty` | Double | 频率惩罚 | -2.0-2.0 |
-| `presencePenalty` | Double | 存在惩罚 | -2.0-2.0 |
-| `stop` | List<String> | 停止词列表 | 最多4个停止词 |
-| `logprobs` | Boolean | 是否返回对数概率 | true/false |
-| `topLogprobs` | Integer | Top对数概率数量 | 0-20 |
-| `enableThinking` | Boolean | 启用思考模式 | true/false（Anthropic特有） |
-| `thinkingBudgetTokens` | Integer | 思考预算令牌数 | 正整数（Anthropic特有） |
-
-### 环境变量配置
-
-```bash
-# OpenAI
-export OPENAI_API_KEY=sk-your-openai-api-key
-export OPENAI_BASE_URL=https://api.openai.com
-
-# DeepSeek
-export DEEPSEEK_API_KEY=sk-your-deepseek-api-key
-export DEEPSEEK_BASE_URL=https://api.deepseek.com
-
-# 智谱AI
-export ZHIPUAI_API_KEY=your-zhipuai-api-key
-export ZHIPUAI_BASE_URL=https://open.bigmodel.cn
-
-# Anthropic
-export ANTHROPIC_API_KEY=sk-ant-your-anthropic-api-key
-export ANTHROPIC_BASE_URL=https://api.anthropic.com
-
-# Ollama
-export OLLAMA_BASE_URL=http://localhost:11434
+```mermaid
+flowchart TD
+    A[call] --> B{Initialized?}
+    B -- No --> X1[Return MODEL_NOT_INITIALIZED]
+    B -- Yes --> C[Resolve model chain]
+    C --> D{Chain empty?}
+    D -- Yes --> X2[Return NO_MODEL_AVAILABLE]
+    D -- No --> E[Iterate each model in chain]
+    E --> F{Circuit breaker allows?}
+    F -- No --> Y1[Record CIRCUIT_OPEN failure<br/>Continue next]
+    F -- Yes --> G[callSingleModel]
+    G --> H{Succeeded?}
+    H -- Yes --> I[Record success → Return response]
+    H -- No --> J[Record failure → Continue next]
+    Y1 --> E
+    J --> E
+    E -- Chain exhausted --> K{Any failure?}
+    K -- Yes --> X3[Return last failure<br/>or ALL_MODELS_FAILED]
+    K -- No --> I
 ```
 
-## 🎯 使用场景
+#### Sequence Diagram
 
-### 1. 代码生成
+```mermaid
+sequenceDiagram
+    participant U as Caller
+    participant S as AiModelServiceImpl
+    participant R as AiModelRouter
+    participant CB as AiModelCircuitBreaker
+    participant CC as ChatClient
+    participant L as LLM Provider
 
-```java
-String systemPrompt = "你是一个专业的Java开发工程师，请生成简洁高效的代码。";
-String userMessage = "请生成一个Spring Boot REST API控制器，用于用户管理";
-
-AiRequest request = AiRequest.ofSystemAndUser(systemPrompt, userMessage);
-AiResponse response = aiModelService.callWithModel("gpt-4", request);
+    U->>S: call(request)
+    S->>S: checkInitialized()
+    alt Not initialized
+        S-->>U: AiResponse.failure(MODEL_NOT_INITIALIZED)
+    else Initialized
+        S->>R: resolveModelChain(req, defaultModel, chatClients, props)
+        R-->>S: List<String> chain
+        loop Each model in chain
+            S->>CB: allow(model, resilience)
+            alt Circuit open
+                CB-->>S: false → skip
+            else Allowed
+                S->>CC: prompt().messages().options().tools().call()
+                CC->>L: HTTP/SSE
+                L-->>CC: ChatResponse
+                CC-->>S: AiResponse
+                alt Success
+                    S->>CB: recordSuccess
+                    S-->>U: AiResponse (success)
+                else Failure
+                    S->>CB: recordFailure
+                    Note over S: Continue next
+                end
+            end
+        end
+        alt All failed
+            S-->>U: Return last failure / ALL_MODELS_FAILED
+        end
+    end
 ```
 
-### 2. 文档生成
+#### Implementation Logic
 
-```java
-String prompt = "请为以下Java类生成详细的API文档：\n" + javaCode;
-AiRequest request = AiRequest.ofUserMessage(prompt);
-AiResponse response = aiModelService.call(request);
+1. **Initialization check** (`checkInitialized`): Returns `MODEL_NOT_INITIALIZED` immediately when `chatClients` is empty.
+2. **Chain resolution** (`resolveChain`): Delegates to `AiModelRouter` to merge `request.modelName` + `request.fallbackModelNames` + `request.scene` routing + global `fallbackModels`, producing an ordered candidate list.
+3. **Circuit breaker protection**: For each candidate, first checks `AiModelCircuitBreaker.allow(modelName, resilience)`; circuit-open models are skipped (not counted as failures).
+4. **Single call** (`callSingleModel`): Gets `ChatClient` → injects `messages` + request-level `options` + `tools` → `.call()` → wraps into `AiResponse` (with `Usage` + `duration`).
+5. **Success path**: Calls `recordSuccess` to reset the model's failure count, returns immediately.
+6. **Failure path**: Calls `recordFailure` to increment failure count; after `failureThreshold` consecutive failures, the circuit opens for `openDurationMs`; continues to the next model in chain.
+7. **Fallback**: If all models fail, returns the last failure; if no model was attempted at all, returns `ALL_MODELS_FAILED`.
+
+### 2. `callAsync(AiRequest request)` — Asynchronous Call
+
+#### Business Flow
+
+```mermaid
+flowchart TD
+    A[callAsync] --> B[CompletableFuture.supplyAsync]
+    B --> C[Offload to ForkJoinPool.commonPool]
+    C --> D[Execute call synchronously]
+    D --> E[Return AiResponse]
 ```
 
-### 3. 代码审查
+#### Sequence Diagram
 
-```java
-String systemPrompt = "你是一个资深的代码审查专家，请从代码质量、安全性、性能等方面进行审查。";
-String userMessage = "请审查以下代码：\n" + codeToReview;
-
-AiRequest request = AiRequest.ofSystemAndUser(systemPrompt, userMessage);
-AiResponse response = aiModelService.callWithModel("claude-3", request);
+```mermaid
+sequenceDiagram
+    participant U as Caller
+    participant S as AiModelServiceImpl
+    participant P as ForkJoinPool
+    U->>S: callAsync(request)
+    S->>P: supplyAsync(call)
+    P-->>S: CompletableFuture<AiResponse>
+    S-->>U: CompletableFuture<AiResponse>
+    Note over U: Caller can chain
+    U->>S: future.join / thenAccept
+    S-->>U: AiResponse
 ```
 
-### 4. 多模型对比
+#### Implementation Logic
 
-```java
-String question = "请解释什么是微服务架构";
-List<String> models = Arrays.asList("gpt-4", "claude-3", "deepseek-chat");
+Simple wrapper: `CompletableFuture.supplyAsync(() -> call(request), defaultExecutor)`, offloading synchronous logic to `ForkJoinPool.commonPool()`. All routing / circuit breaker / retry / tool calling semantics are identical to `call`. Callers can use `thenAccept` / `thenApply` / `exceptionally` for chaining.
 
-for (String model : models) {
-    if (aiModelService.isModelAvailable(model)) {
-        AiRequest request = AiRequest.ofUserMessage(question);
-        AiResponse response = aiModelService.callWithModel(model, request);
-        
-        if (response.isSuccess()) {
-            System.out.println("模型 " + model + " 的回答：");
-            System.out.println(response.getContent());
-            System.out.println("---");
-        }
-    }
-}
+### 3. `stream(AiRequest request)` — Streaming Call
+
+#### Business Flow
+
+```mermaid
+flowchart TD
+    A[stream] --> B{Initialized?}
+    B -- No --> X1[Return error Flux]
+    B -- Yes --> C[Resolve chain]
+    C --> D{Chain empty?}
+    D -- Yes --> X2[Return ALL_MODELS_FAILED]
+    D -- No --> E[Iterate each model]
+    E --> F{Circuit allows?}
+    F -- No --> Y[Continue next]
+    F -- Yes --> G{ChatClient exists?}
+    G -- No --> Y
+    G -- Yes --> H[streamSingleModel]
+    H --> I[Return first available model's stream]
+    Y --> E
+    E -- Exhausted --> X3[Return ALL_MODELS_FAILED]
 ```
 
-## 🔍 监控和调试
+#### Sequence Diagram
 
-### 日志配置
-
-```yaml
-logging:
-  level:
-    com.richie.component.ai: DEBUG
-    org.springframework.ai: INFO
+```mermaid
+sequenceDiagram
+    participant U as Caller
+    participant S as AiModelServiceImpl
+    participant CC as ChatClient
+    participant L as LLM Provider
+    U->>S: stream(request)
+    S->>S: Init + route + circuit check
+    S->>CC: prompt().stream().chatResponse()
+    loop Each ChatResponse chunk
+        CC->>L: SSE / chunked
+        L-->>CC: chunk
+        CC-->>S: ChatResponse
+        S-->>U: AiStreamChunk.delta(text)
+    end
+    S-->>U: AiStreamChunk.finished(usage)
+    Note over S,L: On error → onErrorResume → AiStreamChunk.error
 ```
 
-### 性能监控
+#### Implementation Logic
 
-```java
-// 监控响应时间
-long startTime = System.currentTimeMillis();
-AiResponse response = aiModelService.call(request);
-long duration = System.currentTimeMillis() - startTime;
+1. Initialization check, chain resolution, and circuit breaker logic are the same as `call`, but **only the first available model** (not circuit-broken, not missing) starts streaming — no chain-level fallback.
+2. `ChatClient.prompt().stream().chatResponse()` returns `Flux<ChatResponse>`. Each chunk extracts `getOutput().getText()`, filters empty values, and wraps into `AiStreamChunk.delta(text, modelName, provider)`.
+3. When the stream ends naturally, an `AiStreamChunk.finished(modelName, provider, usage)` terminal chunk is appended (with `Usage`).
+4. **Error path**: `onErrorResume` triggers `circuitBreaker.recordFailure` + returns `AiStreamChunk.error(message, STREAM_FAILED)`. Callers identify the error by error code.
+5. **No retry**: Errors mid-stream fail immediately without calling `recordSuccess` (avoiding half-success state).
 
-// 监控令牌使用
-AiResponse.Usage usage = response.getUsage();
-if (usage != null) {
-    log.info("令牌使用情况 - 提示: {}, 完成: {}, 总计: {}", 
-        usage.getPromptTokens(), 
-        usage.getCompletionTokens(), 
-        usage.getTotalTokens());
-}
+### 4. `callWithModel(String modelName, AiRequest request)` — Specify Model Call
+
+#### Business Flow
+
+```mermaid
+flowchart TD
+    A[callWithModel] --> B[request.setModelName modelName]
+    B --> C[Delegate to call]
+    C --> D[Router puts modelName at chain head]
+    D --> E[Full call flow]
 ```
 
-### 错误处理
+#### Sequence Diagram
 
-```java
-try {
-    AiResponse response = aiModelService.call(request);
-    if (!response.isSuccess()) {
-        log.error("AI调用失败: {} - {}", response.getErrorCode(), response.getErrorMessage());
-        // 处理错误逻辑
-    }
-} catch (Exception e) {
-    log.error("AI调用异常", e);
-    // 处理异常逻辑
-}
+```mermaid
+sequenceDiagram
+    participant U as Caller
+    participant S as AiModelServiceImpl
+    U->>S: callWithModel("gpt-4o", req)
+    S->>S: req.setModelName("gpt-4o")
+    S->>S: call(req)
+    S-->>U: AiResponse
 ```
 
-## 🚨 注意事项
+#### Implementation Logic
 
-1. **API密钥安全**：请妥善保管API密钥，建议使用环境变量或配置中心
-2. **请求频率限制**：注意各AI提供商的请求频率限制
-3. **成本控制**：监控令牌使用量，控制API调用成本
-4. **模型选择**：根据具体需求选择合适的模型和参数
-5. **错误处理**：实现完善的错误处理机制，确保系统稳定性
+Forwarder: Writes `modelName` into `AiRequest.modelName` and delegates to `call`. Internally, `resolveChain` places `modelName` at the head of the chain. **Note**: If `callWithModel` fails, it still falls back through `request.fallbackModelNames` / global fallback chain — to prevent fallback, set `request.fallbackModelNames` to empty.
+
+### 5. `initializeModels(List<ModelOptions>)` — Dynamic Initialization
+
+#### Business Flow
+
+```mermaid
+flowchart TD
+    A[initializeModels] --> B{List empty?}
+    B -- Yes --> X1[WARN exit]
+    B -- No --> C[AiChatClientFactory.createChatClients]
+    C --> D{Generated ChatClients empty?}
+    D -- Yes --> X2[WARN exit]
+    D -- No --> E[Iterate ModelOptions]
+    E --> F{modelName valid?}
+    F -- No --> Y[Skip]
+    F -- Yes --> G[runtimeModels.put]
+    E --> H[chatClients.putAll override/add]
+    H --> I[modelInfoCache.clear]
+    I --> J{Default model invalid?}
+    J -- Yes --> K[Fallback to chain head]
+    J -- No --> L[Keep]
+```
+
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as Caller
+    participant S as AiModelServiceImpl
+    participant F as AiChatClientFactory
+    U->>S: initializeModels(options)
+    S->>F: createChatClients(options)
+    F->>F: Build ChatModel + ChatClient per entry
+    F-->>S: Map<String, ChatClient>
+    S->>S: runtimeModels.put
+    S->>S: chatClients.putAll (override by name)
+    S->>S: modelInfoCache.clear
+    alt Default model invalid
+        S->>S: Reset to chain head
+    end
+    S-->>U: void
+```
+
+#### Implementation Logic
+
+Protected by `synchronized` for concurrency safety.
+
+1. Delegates to `AiChatClientFactory.createChatClients(modelOptionsList)` to build the `ChatClient` map (with OpenAI-compatible fallback, ZHIPUAI/MOONSHOT via OpenAI path, unknown provider fallback).
+2. Each `ModelOptions` is converted to `AiModelProperties.AiModel` and stored in `runtimeModels` (`getCurrentModels` = `properties.models` ∪ `runtimeModels`).
+3. `chatClients.putAll(dynamicClients)`: **Models with the same name are overridden** — this is the core advantage of dynamic initialization, common in multi-tenant / multi-line hot-update scenarios.
+4. Invalidates `modelInfoCache`; subsequent `getModelInfo` calls rebuild from new data.
+5. Default model fallback: If the current `defaultModel` is not in the new `chatClients`, it resets to `chatClients.keySet().iterator().next()`.
+
+### 6. `removeModel(String modelName)` — Remove Model
+
+#### Business Flow
+
+```mermaid
+flowchart TD
+    A[removeModel] --> B[chatClients.remove]
+    B --> C[runtimeModels.remove]
+    C --> D[modelInfoCache.remove]
+    D --> E{Removed model is default?}
+    E -- Yes --> F{Other models exist?}
+    F -- Yes --> G[Default = chain head]
+    F -- No --> H[Default = null]
+    E -- No --> I[Keep]
+```
+
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as Caller
+    participant S as AiModelServiceImpl
+    U->>S: removeModel("gpt-4")
+    S->>S: chatClients.remove
+    S->>S: runtimeModels.remove
+    S->>S: modelInfoCache.remove
+    alt Removed default
+        S->>S: Reset default model
+    end
+```
+
+#### Implementation Logic
+
+Protected by `synchronized`. `properties.models` (configuration file models) are **not cleaned** — subsequent `getCurrentModels` calls still include them. To fully remove a config model, businesses can reset the `chatClients` reference or call `initializeModels` without that model. INFO-level logging records the operation.
+
+### 7. `probe(String modelName)` — Single Model Health Probe
+
+#### Business Flow
+
+```mermaid
+flowchart TD
+    A[probe] --> B{modelName empty?}
+    B -- Yes --> X1[unhealthy]
+    B -- No --> C{ChatClient exists?}
+    C -- No --> X2[unhealthy]
+    C -- Yes --> D{liveProbe disabled?}
+    D -- Yes --> E[healthy liveProbe=false]
+    D -- No --> F[Build ping request]
+    F --> G[callSingleModel]
+    G --> H{Succeeded?}
+    H -- Yes --> I[healthy with duration]
+    H -- No --> J[unhealthy with error]
+```
+
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as Caller
+    participant S as AiModelServiceImpl
+    participant CC as ChatClient
+    U->>S: probe("gpt-4")
+    S->>S: Validate params
+    alt liveProbe=false
+        S-->>U: healthy (liveProbe=false, 0ms)
+    else liveProbe=true
+        S->>CC: Send minimal ping (maxTokens=probeMaxTokens)
+        CC-->>S: response
+        alt Success
+            S-->>U: healthy (liveProbe=true, duration=ms)
+        else Failure
+            S-->>U: unhealthy (error)
+        end
+    end
+```
+
+#### Implementation Logic
+
+1. Validates `modelName` is non-null + `chatClients.containsKey`; either check failing returns `unhealthy`.
+2. If `health-check.live-probe = false` (default `true`), only returns ChatClient existence (`healthy` + `liveProbe=false` + `0ms`) — no token consumption.
+3. If live probe is enabled: builds a minimal request (`maxTokens = probeMaxTokens`, default 1), calls `callSingleModel` to measure actual duration.
+4. Returns `AiHealthResult` (with `modelName` / `provider` / `liveProbe` / `durationMs` / `errorMessage`).
+5. **Not counted for circuit breaker**: Probe calls do not affect `recordSuccess` / `recordFailure`, preventing business traffic misjudgment.
+
+### 8. `probeAll()` — Probe All Models
+
+#### Business Flow
+
+```mermaid
+flowchart TD
+    A[probeAll] --> B[Iterate chatClients.keySet]
+    B --> C[Serial probe calls]
+    C --> D[Collect as List]
+```
+
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as Caller
+    participant S as AiModelServiceImpl
+    U->>S: probeAll()
+    loop Each model (serial)
+        S->>S: probe(model)
+    end
+    S-->>U: List<AiHealthResult>
+```
+
+#### Implementation Logic
+
+`chatClients.keySet().stream().map(this::probe).toList()`, **serial** invocation. Total latency = N models × average probe latency. For large model counts or slow probes, consider switching to `parallelStream` or `Flux.parallel()`.
+
+### 9. `getAvailableModels()` — Get All Available Models
+
+#### Business Flow
+
+```mermaid
+flowchart TD
+    A[getAvailableModels] --> B[Iterate getCurrentModels]
+    B --> C[Build AiModelInfo]
+    C --> D{ChatClient exists?}
+    D -- Yes --> E{Circuit broken?}
+    E -- Yes --> F[available=false<br/>error=circuit broken]
+    E -- No --> G[available=true]
+    D -- No --> H[available=false<br/>error=ChatClient not found]
+    F --> I[Add to list + write modelInfoCache]
+    G --> I
+    H --> I
+```
+
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as Caller
+    participant S as AiModelServiceImpl
+    U->>S: getAvailableModels()
+    S->>S: Merge config + runtime
+    loop Each model
+        S->>S: Build AiModelInfo
+        S->>S: Check ChatClient + circuit breaker state
+    end
+    S-->>U: List<AiModelInfo>
+```
+
+#### Implementation Logic
+
+Merges `properties.models` (config) + `runtimeModels` (dynamic), builds `AiModelInfo` for each:
+
+- `name` / `provider` / `description` (generated per provider via `getModelDescription` switch)
+- `defaultModel` flag (compared against current `defaultModel`)
+- `capabilities` (per-provider capability matrix: `temperature` / `topP` / `topK` / `frequencyPenalty` / `thinking` / `logprobs`, etc.)
+- `available` (ChatClient exists + not circuit-broken; otherwise `false` + error reason)
+
+Also populates `modelInfoCache` (keyed by `modelName`), used by `getModelInfo` via `computeIfAbsent`.
+
+### 10. `getModelInfo(String modelName)` — Get Model Info
+
+#### Business Flow
+
+```mermaid
+flowchart TD
+    A[getModelInfo] --> B{modelInfoCache hit?}
+    B -- Yes --> X[Return cached]
+    B -- No --> C[getCurrentModels.get]
+    C --> D{Config exists?}
+    D -- No --> Y[Return unavailable UNKNOWN]
+    D -- Yes --> E[Build full AiModelInfo]
+    E --> X
+```
+
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as Caller
+    participant S as AiModelServiceImpl
+    U->>S: getModelInfo("gpt-4")
+    alt Cache hit
+        S-->>U: cached AiModelInfo
+    else Cache miss
+        S->>S: getCurrentModels
+        alt Exists
+            S-->>U: Newly built AiModelInfo
+        else Not found
+            S-->>U: unavailable(UNKNOWN, "Model config not found")
+        end
+    end
+```
+
+#### Implementation Logic
+
+Uses `modelInfoCache.computeIfAbsent(name, ...)` caching:
+
+- **Hit**: Returns directly (O(1))
+- **Miss**: Merges config + runtime to find the model; if found, builds full `AiModelInfo` (with `description` + `capabilities` + `defaultModel` flag); if not found, returns `AiModelInfo.unavailable(name, "UNKNOWN", "Model config not found")`
+- **Cache population**: Done during `getAvailableModels` path; subsequent queries use cache
+
+### 11. `isModelAvailable(String modelName)` — Check Model Availability
+
+#### Business Flow
+
+```mermaid
+flowchart TD
+    A[isModelAvailable] --> B{chatClients contains?}
+    B -- No --> X[false]
+    B -- Yes --> C{circuitBreaker.isOpen?}
+    C -- Yes --> X
+    C -- No --> Y[true]
+```
+
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as Caller
+    participant S as AiModelServiceImpl
+    participant CB as AiModelCircuitBreaker
+    U->>S: isModelAvailable("gpt-4")
+    S->>CB: isOpen("gpt-4")
+    CB-->>S: boolean
+    S-->>U: chatClients.containsKey && !isOpen
+```
+
+#### Implementation Logic
+
+`chatClients.containsKey(modelName) && !circuitBreaker.isOpen(modelName)` — **only checks ChatClient existence + circuit breaker state**, no actual call. Commonly used for quick routing decisions and model switching checks.
+
+### 12. `getDefaultModel()` — Get Default Model
+
+#### Business Flow
+
+```mermaid
+flowchart TD
+    A[getDefaultModel] --> B{defaultModel already set?}
+    B -- Yes --> X[Return]
+    B -- No --> C{getCurrentModels non-empty?}
+    C -- Yes --> D[defaultModel = chain head<br/>Return]
+    C -- No --> Y[Return null]
+```
+
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as Caller
+    participant S as AiModelServiceImpl
+    U->>S: getDefaultModel()
+    S->>S: Lazy load defaultModel
+    S-->>U: String modelName or null
+```
+
+#### Implementation Logic
+
+Lazy loading: On first access, if `defaultModel == null`, takes `getCurrentModels().keySet().iterator().next()` (the first model from config or dynamic init). `LinkedHashMap` preserves insertion order, so **the first model in the configuration file is the default**.
+
+### 13. `setDefaultModel(String modelName)` — Set Default Model
+
+#### Business Flow
+
+```mermaid
+flowchart TD
+    A[setDefaultModel] --> B{Initialized?}
+    B -- No --> X1[Throw IllegalStateException]
+    B -- Yes --> C{getCurrentModels contains?}
+    C -- No --> X2[Throw IllegalArgumentException]
+    C -- Yes --> D[defaultModel = modelName]
+```
+
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as Caller
+    participant S as AiModelServiceImpl
+    U->>S: setDefaultModel("gpt-4")
+    S->>S: Validate
+    alt Validation failed
+        S-->>U: throw IllegalStateException / IllegalArgumentException
+    else Success
+        S-->>U: void
+    end
+```
+
+#### Implementation Logic
+
+1. If not initialized, throws `IllegalStateException("AI model not initialized, cannot set default model")`.
+2. If model not in `getCurrentModels()`, throws `IllegalArgumentException("Model does not exist: %s")`.
+3. Otherwise assigns `this.defaultModel = modelName`, INFO-level log.
+4. **Not persisted**: Only modifies the runtime field; on restart, `getDefaultModel`'s lazy loading re-determines the default.

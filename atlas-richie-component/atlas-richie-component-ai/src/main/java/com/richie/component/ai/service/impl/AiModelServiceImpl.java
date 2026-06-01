@@ -12,6 +12,7 @@ import com.richie.component.ai.service.AiModelService;
 import com.richie.component.ai.support.AiChatOptionsResolver;
 import com.richie.component.ai.support.AiModelCircuitBreaker;
 import com.richie.component.ai.support.AiModelRouter;
+import com.richie.component.ai.support.ToolRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -20,6 +21,7 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -47,6 +49,7 @@ public class AiModelServiceImpl implements AiModelService {
     private final AiChatOptionsResolver optionsResolver;
     private final AiModelRouter aiModelRouter;
     private final AiModelCircuitBreaker circuitBreaker;
+    private final ToolRegistry toolRegistry;
 
     private String defaultModel;
     private final Map<String, AiModelInfo> modelInfoCache = new ConcurrentHashMap<>();
@@ -279,6 +282,7 @@ public class AiModelServiceImpl implements AiModelService {
             var promptBuilder = chatClient.prompt();
             promptBuilder.messages(buildMessages(request));
             applyRuntimeOptions(promptBuilder, modelName, request);
+            applyTools(promptBuilder, request);
 
             var response = promptBuilder.call();
             var chatResponse = response.chatResponse();
@@ -311,14 +315,16 @@ public class AiModelServiceImpl implements AiModelService {
         var promptBuilder = chatClient.prompt();
         promptBuilder.messages(buildMessages(request));
         applyRuntimeOptions(promptBuilder, modelName, request);
+        applyTools(promptBuilder, request);
 
         Flux<AiStreamChunk> deltas = promptBuilder.stream()
                 .chatResponse()
                 .doOnNext(lastResponse::set)
                 .flatMap(chatResponse -> {
-                    if (chatResponse == null || chatResponse.getResult() == null
-                            || chatResponse.getResult().getOutput() == null) {
+                    if (chatResponse.getResult() == null) {
                         return Flux.empty();
+                    } else {
+                        chatResponse.getResult();
                     }
                     String text = chatResponse.getResult().getOutput().getText();
                     if (text == null || text.isEmpty()) {
@@ -355,8 +361,17 @@ public class AiModelServiceImpl implements AiModelService {
         promptBuilder.options(chatOptions.mutate());
     }
 
+    private void applyTools(ChatClient.ChatClientRequestSpec promptBuilder, AiRequest request) {
+        List<ToolCallback> tools = toolRegistry.resolve(request.getToolNames());
+        if (tools.isEmpty()) {
+            return;
+        }
+        promptBuilder.tools((Object) tools.toArray(new ToolCallback[0]));
+        log.debug("已附加 {} 个工具到请求: {}", tools.size(), request.getToolNames());
+    }
+
     private AiResponse.Usage extractUsage(ChatResponse chatResponse) {
-        if (chatResponse == null || chatResponse.getMetadata() == null || chatResponse.getMetadata().getUsage() == null) {
+        if (chatResponse == null) {
             return null;
         }
         var usage = chatResponse.getMetadata().getUsage();

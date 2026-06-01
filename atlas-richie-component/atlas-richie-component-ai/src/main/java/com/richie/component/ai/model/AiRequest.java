@@ -75,6 +75,30 @@ public class AiRequest {
     private Map<String, Object> metadata;
 
     /**
+     * 工具调用名称列表（可选参数）
+     * 通过工具名引用应用上下文中注册的 {@link org.springframework.ai.tool.ToolCallback} Bean
+     * <p>
+     * 工具名匹配规则：以 {@code org.springframework.ai.tool.definition.ToolDefinition#name()} 为准
+     * （通常与 {@code FunctionToolCallback.builder(name, ...)} 的 name 一致）。
+     * <p>
+     * 业务侧注册示例：
+     * <pre>{@code
+     * @Bean
+     * public ToolCallback weatherTool() {
+     *     return FunctionToolCallback.builder("get_weather", new WeatherService())
+     *             .description("查询指定城市的天气")
+     *             .inputType(WeatherQuery.class)
+     *             .build();
+     * }
+     *
+     * // 调用时
+     * AiRequest request = AiRequest.ofUserMessage("北京今天天气怎么样？")
+     *         .setToolNames(List.of("get_weather"));
+     * }</pre>
+     */
+    private List<String> toolNames;
+
+    /**
      * 消息模型类
      * 表示单条对话消息，就像微信聊天中的一条消息
      * 每条消息都有角色（谁说的）和内容（说了什么）
