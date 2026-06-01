@@ -38,17 +38,17 @@
         <aliyun-sdk-oss.version>3.18.5</aliyun-sdk-oss.version>
         <tencentcloud.cos_api.version>5.6.251</tencentcloud.cos_api.version>
         <tencentcloud.cos-sts_api.version>3.1.1</tencentcloud.cos-sts_api.version>
-        <huaweicloud.esdk-obs-java.version>3.25.7</huaweicloud.esdk-obs-java.version>
-        <minio.version>8.5.17</minio.version>
+        <huaweicloud.esdk-obs-java.version>3.25.10</huaweicloud.esdk-obs-java.version>
+        <minio.version>9.0.1</minio.version>
         <s3.version>2.44.7</s3.version>
-        <ve-tos-java-sdk.version>2.9.4</ve-tos-java-sdk.version>
+        <ve-tos-java-sdk.version>2.9.15</ve-tos-java-sdk.version>
         <ks3-kss-java-sdk.version>1.5.0</ks3-kss-java-sdk.version>
         <jcifs.version>3.0.2</jcifs.version>
         <sshd.version>3.0.0-M3</sshd.version>
 
         <mybatis-plus.version>3.5.16</mybatis-plus.version>
         <dynamic-datasource.version>4.5.0</dynamic-datasource.version>
-        <mybatis-plus-join.version>1.5.6</mybatis-plus-join.version>
+        <mybatis-plus-join.version>1.5.7</mybatis-plus-join.version>
         <mysql-connector-j.version>9.6.0</mysql-connector-j.version>
         <postgresql.version>42.7.11</postgresql.version>
         <elasticsearch-client.version>9.4.1</elasticsearch-client.version>
@@ -80,8 +80,8 @@
         <feign.version>13.11</feign.version>
         <guava.version>33.6.0-jre</guava.version>
         <snakeyaml.version>2.6</snakeyaml.version>
-        <netty.version>4.2.13.Final</netty.version>
-        <protobuf.version>4.34.1</protobuf.version>
+        <netty.version>4.2.14.Final</netty.version>
+        <protobuf.version>4.35.0</protobuf.version>
 
         <!-- OpenTelemetry 相关版本 -->
         <opentelemetry-semconv.version>1.41.1</opentelemetry-semconv.version>
@@ -89,7 +89,7 @@
         <opentelemetry-instrumentation.version>2.27.0</opentelemetry-instrumentation.version>
 
         <mcp-bom.version>1.1.1</mcp-bom.version>
-        <jackson-bom.version>3.1.2</jackson-bom.version>
+        <jackson-bom.version>3.1.4</jackson-bom.version>
         <jackson-datatype-jsr310.version>3.0.0-rc2</jackson-datatype-jsr310.version>
         <grpc-bom.version>1.80.0</grpc-bom.version>
         <jakarta.jakartaee-bom.version>11.0.0</jakarta.jakartaee-bom.version>
