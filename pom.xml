@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.6</version>
+        <version>4.1.0-RC1</version>
         <relativePath/>
     </parent>
 
@@ -44,13 +44,13 @@
 
         <!-- spring properties -->
         <spring-boot.version>${spring-boot-dependencies.version}</spring-boot.version>
-        <spring-boot-dependencies.version>4.0.6</spring-boot-dependencies.version>
+        <spring-boot-dependencies.version>4.1.0-RC1</spring-boot-dependencies.version>
         <spring-cloud-alibaba-dependencies.version>2025.1.0.0</spring-cloud-alibaba-dependencies.version>
         <spring-cloud-dependencies.version>2025.1.1</spring-cloud-dependencies.version>
         <spring-cloud-azure-dependencies.version>7.0.0</spring-cloud-azure-dependencies.version>
-        <spring-ai.version>2.0.0-M4</spring-ai.version>
-        <spring-ai-alibaba.version>1.1.2.2</spring-ai-alibaba.version>
-        <agentscope.version>1.0.11</agentscope.version>
+        <spring-ai.version>2.0.0-M8</spring-ai.version>
+        <spring-ai-alibaba.version>1.1.2.3</spring-ai-alibaba.version>
+        <agentscope.version>1.1.0-RC2</agentscope.version>
 
         <!-- Maven构建的文件名时间戳格式 -->
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
