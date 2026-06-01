@@ -26,8 +26,8 @@ import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.ai.openai.setup.OpenAiSetup;
-import org.springframework.ai.retry.RetryUtils;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -48,11 +48,14 @@ public class AiChatClientFactory {
 
     private final AiChatOptionsResolver optionsResolver;
     private final ObservationRegistry observationRegistry;
+    private final RetryTemplate retryTemplate;
 
     public AiChatClientFactory(AiChatOptionsResolver optionsResolver,
-                               ObjectProvider<ObservationRegistry> observationRegistryProvider) {
+                               ObjectProvider<ObservationRegistry> observationRegistryProvider,
+                               RetryTemplate retryTemplate) {
         this.optionsResolver = optionsResolver;
         this.observationRegistry = observationRegistryProvider.getIfAvailable(() -> ObservationRegistry.NOOP);
+        this.retryTemplate = retryTemplate;
     }
 
     public Map<String, ChatClient> createChatClients(AiModelProperties properties) {
@@ -102,7 +105,7 @@ public class AiChatClientFactory {
                         deepSeekApi,
                         optionsResolver.toDeepSeekChatOptions(aiModel.getOptions()),
                         ToolCallingManager.builder().build(),
-                        RetryUtils.DEFAULT_RETRY_TEMPLATE,
+                        retryTemplate,
                         observationRegistry
                 );
             }
@@ -126,7 +129,7 @@ public class AiChatClientFactory {
                         miniMaxApi,
                         optionsResolver.toMiniMaxChatOptions(aiModel.getOptions()),
                         ToolCallingManager.builder().build(),
-                        RetryUtils.DEFAULT_RETRY_TEMPLATE,
+                        retryTemplate,
                         observationRegistry,
                         (options, response) -> false
                 );
