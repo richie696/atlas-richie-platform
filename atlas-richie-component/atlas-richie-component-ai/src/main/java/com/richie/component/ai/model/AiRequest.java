@@ -41,6 +41,16 @@ public class AiRequest {
     private String modelName;
 
     /**
+     * 业务场景标识，配合 {@code platform.component.ai.routing.scene-rules} 做模型路由
+     */
+    private String scene;
+
+    /**
+     * 请求级 fallback 模型链（在主模型失败后追加，优先级高于全局 fallback）
+     */
+    private List<String> fallbackModelNames;
+
+    /**
      * 消息列表
      * 这是与AI对话的核心内容，包含所有的对话消息
      * 消息按时间顺序排列，AI会根据这些消息理解上下文并生成回复
