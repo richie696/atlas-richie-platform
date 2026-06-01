@@ -2,6 +2,7 @@ package com.richie.component.cache.redis.config.base;
 
 import com.richie.component.cache.enums.KeyTypeEnum;
 import com.richie.component.cache.redis.enums.RedisTypeEnum;
+import com.richie.context.migration.MigrationWindow;
 import io.lettuce.core.protocol.ProtocolVersion;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -141,8 +142,16 @@ public class AtlasRedisProperties extends DataRedisProperties {
     @ConfigurationProperties(prefix = "spring.data.redis.perf")
     public static class RedisPerf {
         /**
-         * 是否启用性能守卫（默认 false，避免对存量环境产生日志噪声）
+         * 是否启用性能守卫（默认 false，避免对存量环境产生日志噪声）。
+         * <p><b>迁移窗口</b>：所有项目应于 {@code 2026-12-01} 前将本字段设为 {@code true}；
+         * 之后此字段会被物理删除，新项目默认即为 {@code true}。详见
+         * {@link com.richie.component.cache.redis.migration.MigrationWindowValidator}。
          */
+        @MigrationWindow(
+                until = "2026-12-01",
+                removedIn = "2.0.0",
+                owner = "richie696",
+                reason = "性能守卫必须默认开启；存量项目需在截止日期前完成业务代码适配")
         private boolean enabled = false;
 
         /**
@@ -161,8 +170,15 @@ public class AtlasRedisProperties extends DataRedisProperties {
         private long tocHardMs = 50L;
 
         /**
-         * 是否对 LINEAR_N、WORSE 复杂度直接抛异常阻断（默认 false）
+         * 是否对 LINEAR_N、WORSE 复杂度直接抛异常阻断（默认 false）。
+         * <p><b>迁移窗口</b>：依赖 {@link #enabled} 开启后，存量项目需于 {@code 2026-12-01} 前
+         * 把本字段设为 {@code true}（即默认阻断），否则到期后启动失败。
          */
+        @MigrationWindow(
+                until = "2026-12-01",
+                removedIn = "2.0.0",
+                owner = "richie696",
+                reason = "LINEAR_N / WORSE 复杂度在 ToC 核心路径必须硬阻断，不应仅 WARN")
         private boolean blockForbiddenTiers = false;
 
         /**
@@ -212,8 +228,15 @@ public class AtlasRedisProperties extends DataRedisProperties {
         private int stringPayloadMaxBytesError = 1_048_576;
 
         /**
-         * 是否在 ERROR 级别 String 载荷问题时抛异常阻断写入（默认 false，仅打日志）
+         * 是否在 ERROR 级别 String 载荷问题时抛异常阻断写入（默认 false，仅打日志）。
+         * <p><b>迁移窗口</b>：依赖 {@link #enabled} 开启后，存量项目需于 {@code 2026-12-01} 前
+         * 把本字段设为 {@code true}（即默认阻断大 value），否则到期后启动失败。
          */
+        @MigrationWindow(
+                until = "2026-12-01",
+                removedIn = "2.0.0",
+                owner = "richie696",
+                reason = "大 value 是 JVM GC 与网络热点的头号元凶，必须在写入边界硬阻断")
         private boolean blockStringPayloadViolations = false;
     }
 }
