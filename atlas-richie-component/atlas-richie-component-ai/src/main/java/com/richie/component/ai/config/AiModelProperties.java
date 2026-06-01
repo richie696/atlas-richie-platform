@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,21 @@ public class AiModelProperties {
      * false: 仅允许运行时通过 initializeModels 动态初始化
      */
     private boolean configInitializationEnabled = true;
+
+    /**
+     * 模型路由与降级配置
+     */
+    private RoutingConfig routing = new RoutingConfig();
+
+    /**
+     * 调用韧性配置（熔断等）
+     */
+    private ResilienceConfig resilience = new ResilienceConfig();
+
+    /**
+     * 健康检查配置
+     */
+    private HealthCheckConfig healthCheck = new HealthCheckConfig();
 
     private Map<String, AiModel> models;
 
@@ -327,5 +343,71 @@ public class AiModelProperties {
          */
         private Integer thinkingBudgetTokens;
 
+    }
+
+    /**
+     * 模型路由配置
+     */
+    @Data
+    public static class RoutingConfig {
+
+        /**
+         * 是否启用场景路由与自动降级链
+         */
+        private boolean enabled = false;
+
+        /**
+         * 主模型失败时是否尝试 fallback 链中的后续模型
+         */
+        private boolean fallbackEnabled = true;
+
+        /**
+         * 全局 fallback 模型链（在主模型失败后追加，去重）
+         */
+        private List<String> fallbackModels = new ArrayList<>();
+
+        /**
+         * 按场景（scene）选择模型链，按顺序尝试
+         */
+        private Map<String, List<String>> sceneRules = new java.util.LinkedHashMap<>();
+    }
+
+    /**
+     * 熔断与重试相关配置
+     */
+    @Data
+    public static class ResilienceConfig {
+
+        /**
+         * 是否启用简易熔断（连续失败后临时跳过该模型）
+         */
+        private boolean circuitBreakerEnabled = true;
+
+        /**
+         * 触发熔断的连续失败次数
+         */
+        private int failureThreshold = 3;
+
+        /**
+         * 熔断打开时长（毫秒）
+         */
+        private long openDurationMs = 60_000L;
+    }
+
+    /**
+     * 健康检查配置
+     */
+    @Data
+    public static class HealthCheckConfig {
+
+        /**
+         * probe 时是否发起真实 LLM 调用（false 则仅检查 ChatClient 是否存在）
+         */
+        private boolean liveProbe = true;
+
+        /**
+         * live probe 使用的最大输出 token
+         */
+        private int probeMaxTokens = 1;
     }
 }
