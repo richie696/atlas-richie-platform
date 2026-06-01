@@ -1,11 +1,14 @@
 package com.richie.component.ai.example;
 
+import com.richie.component.ai.model.AiHealthResult;
 import com.richie.component.ai.model.AiModelInfo;
 import com.richie.component.ai.model.AiRequest;
 import com.richie.component.ai.model.AiResponse;
+import com.richie.component.ai.model.AiStreamChunk;
 import com.richie.component.ai.model.ModelOptions;
 import com.richie.component.ai.service.AiModelService;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -125,6 +128,29 @@ class AiModelUsageExampleTest {
         @Override
         public void initializeModels(List<ModelOptions> modelOptionsList) {
             // no-op for mock
+        }
+
+        @Override
+        public Flux<AiStreamChunk> stream(AiRequest request) {
+            return Flux.just(
+                    AiStreamChunk.delta("mock-response", "mock-default", "OPENAI"),
+                    AiStreamChunk.finished("mock-default", "OPENAI", null)
+            );
+        }
+
+        @Override
+        public void removeModel(String modelName) {
+            // no-op for mock
+        }
+
+        @Override
+        public AiHealthResult probe(String modelName) {
+            return AiHealthResult.healthy(modelName, "OPENAI", false, 0L);
+        }
+
+        @Override
+        public List<AiHealthResult> probeAll() {
+            return List.of(AiHealthResult.healthy("mock-default", "OPENAI", false, 0L));
         }
     }
 }
