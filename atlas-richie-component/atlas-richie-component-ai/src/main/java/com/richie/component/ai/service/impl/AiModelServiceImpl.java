@@ -2,33 +2,38 @@ package com.richie.component.ai.service.impl;
 
 import com.richie.component.ai.config.AiChatClientFactory;
 import com.richie.component.ai.config.AiModelProperties;
+import com.richie.component.ai.model.AiHealthResult;
 import com.richie.component.ai.model.AiModelInfo;
 import com.richie.component.ai.model.AiRequest;
 import com.richie.component.ai.model.AiResponse;
+import com.richie.component.ai.model.AiStreamChunk;
 import com.richie.component.ai.model.ModelOptions;
 import com.richie.component.ai.service.AiModelService;
+import com.richie.component.ai.support.AiChatOptionsResolver;
+import com.richie.component.ai.support.AiModelCircuitBreaker;
+import com.richie.component.ai.support.AiModelRouter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * AI模型服务实现类
- * 提供统一的AI模型调用能力，支持多模型动态切换
- *
- * @author richie696
- * @version 1.0
- * @since 2025-07-02
  */
 @Slf4j
 @Service
@@ -39,15 +44,11 @@ public class AiModelServiceImpl implements AiModelService {
     private final Map<String, ChatClient> chatClients;
     private final AiModelProperties aiModelProperties;
     private final AiChatClientFactory aiChatClientFactory;
+    private final AiChatOptionsResolver optionsResolver;
+    private final AiModelRouter aiModelRouter;
+    private final AiModelCircuitBreaker circuitBreaker;
 
-    /**
-     * 默认模型名称
-     */
     private String defaultModel;
-
-    /**
-     * 模型信息缓存
-     */
     private final Map<String, AiModelInfo> modelInfoCache = new ConcurrentHashMap<>();
     private final Map<String, AiModelProperties.AiModel> runtimeModels = new ConcurrentHashMap<>();
 
@@ -57,59 +58,30 @@ public class AiModelServiceImpl implements AiModelService {
         if (initializationError != null) {
             return initializationError;
         }
-        try {
-            String modelName = getModelName(request);
-            ChatClient chatClient = getChatClient(modelName);
 
-            if (chatClient == null) {
-                return AiResponse.failure("模型不可用: %s".formatted(modelName), "MODEL_UNAVAILABLE");
-            }
-
-            long startTime = System.currentTimeMillis();
-
-            // 构建prompt
-            var promptBuilder = chatClient.prompt();
-            List<Message> messages = buildMessages(request);
-            promptBuilder.messages(messages);
-
-            // 调用AI模型
-            var response = promptBuilder.call();
-
-            var chatResponse = response.chatResponse();
-
-            if (chatResponse == null || chatResponse.getResult() == null) {
-                return AiResponse.failure("AI模型响应内容为空", "EMPTY_RESPONSE");
-            }
-
-            long duration = System.currentTimeMillis() - startTime;
-
-            // 构建响应
-            AiResponse aiResponse = AiResponse.success(
-                    response.content(),
-                    modelName,
-                    getProviderName(modelName)
-            );
-
-            // 设置使用情况
-            if (chatResponse.getMetadata() != null && chatResponse.getMetadata().getUsage() != null) {
-                var usage = chatResponse.getMetadata().getUsage();
-                aiResponse.setUsage(new AiResponse.Usage()
-                        .setPromptTokens(usage.getPromptTokens())
-                        .setCompletionTokens(usage.getCompletionTokens())
-                        .setTotalTokens(usage.getTotalTokens()));
-            }
-
-            aiResponse.setDuration(duration);
-            aiResponse.setRawResponse(aiResponse.getMetadata());
-
-            log.info("AI模型调用成功 - 模型: {}, 耗时: {}ms", modelName, duration);
-
-            return aiResponse;
-
-        } catch (Exception e) {
-            log.error("AI模型调用失败", e);
-            return AiResponse.failure("AI模型调用失败: %s".formatted(e.getMessage()), "CALL_FAILED");
+        List<String> chain = resolveChain(request);
+        if (chain.isEmpty()) {
+            return AiResponse.failure("无可用模型", "NO_MODEL_AVAILABLE");
         }
+
+        AiResponse lastFailure = null;
+        for (String modelName : chain) {
+            if (!circuitBreaker.allow(modelName, aiModelProperties.getResilience())) {
+                lastFailure = AiResponse.failure("模型熔断中: %s".formatted(modelName), "CIRCUIT_OPEN");
+                continue;
+            }
+            AiResponse response = callSingleModel(modelName, request);
+            if (response.isSuccess()) {
+                circuitBreaker.recordSuccess(modelName);
+                return response;
+            }
+            circuitBreaker.recordFailure(modelName, aiModelProperties.getResilience());
+            lastFailure = response;
+            log.warn("模型 {} 调用失败，errorCode={}，尝试降级", modelName, response.getErrorCode());
+        }
+        return lastFailure != null
+                ? lastFailure
+                : AiResponse.failure("所有模型调用失败", "ALL_MODELS_FAILED");
     }
 
     @Override
@@ -118,9 +90,33 @@ public class AiModelServiceImpl implements AiModelService {
     }
 
     @Override
+    public Flux<AiStreamChunk> stream(AiRequest request) {
+        AiResponse initializationError = checkInitialized();
+        if (initializationError != null) {
+            return Flux.just(AiStreamChunk.error(initializationError.getErrorMessage(), initializationError.getErrorCode()));
+        }
+
+        List<String> chain = resolveChain(request);
+        if (chain.isEmpty()) {
+            return Flux.just(AiStreamChunk.error("无可用模型", "NO_MODEL_AVAILABLE"));
+        }
+
+        for (String modelName : chain) {
+            if (!circuitBreaker.allow(modelName, aiModelProperties.getResilience())) {
+                continue;
+            }
+            ChatClient chatClient = getChatClient(modelName);
+            if (chatClient == null) {
+                continue;
+            }
+            return streamSingleModel(modelName, request, chatClient);
+        }
+        return Flux.just(AiStreamChunk.error("所有模型不可用或处于熔断状态", "ALL_MODELS_FAILED"));
+    }
+
+    @Override
     public AiResponse callWithModel(String modelName, AiRequest request) {
-        AiRequest requestWithModel = request.setModelName(modelName);
-        return call(requestWithModel);
+        return call(request.setModelName(modelName));
     }
 
     @Override
@@ -136,18 +132,14 @@ public class AiModelServiceImpl implements AiModelService {
                     .setDefaultModel(modelName.equals(getDefaultModel()))
                     .setCapabilities(getModelCapabilities(aiModel.getProvider()));
 
-            // 检查模型是否可用
-            try {
-                ChatClient chatClient = chatClients.get(modelName);
-                if (chatClient != null) {
-                    modelInfo.setAvailable(true);
-                } else {
-                    modelInfo.setAvailable(false)
-                            .setErrorMessage("ChatClient未找到");
+            ChatClient chatClient = chatClients.get(modelName);
+            if (chatClient != null) {
+                modelInfo.setAvailable(true);
+                if (circuitBreaker.isOpen(modelName)) {
+                    modelInfo.setAvailable(false).setErrorMessage("模型熔断中");
                 }
-            } catch (Exception e) {
-                modelInfo.setAvailable(false)
-                        .setErrorMessage("模型检查失败: %s".formatted(e.getMessage()));
+            } else {
+                modelInfo.setAvailable(false).setErrorMessage("ChatClient未找到");
             }
 
             models.add(modelInfo);
@@ -174,14 +166,12 @@ public class AiModelServiceImpl implements AiModelService {
 
     @Override
     public boolean isModelAvailable(String modelName) {
-        AiModelInfo modelInfo = getModelInfo(modelName);
-        return modelInfo.isAvailable();
+        return chatClients.containsKey(modelName) && !circuitBreaker.isOpen(modelName);
     }
 
     @Override
     public String getDefaultModel() {
         if (defaultModel == null) {
-            // 如果没有设置默认模型，使用第一个可用的模型
             Map<String, AiModelProperties.AiModel> models = getCurrentModels();
             if (!models.isEmpty()) {
                 defaultModel = models.keySet().iterator().next();
@@ -233,26 +223,162 @@ public class AiModelServiceImpl implements AiModelService {
         log.info("动态初始化AI模型完成，新增/覆盖 {} 个模型，当前总模型数 {}", dynamicClients.size(), chatClients.size());
     }
 
-    /**
-     * 获取模型名称
-     */
-    private String getModelName(AiRequest request) {
-        return request.getModelName() != null ? request.getModelName() : getDefaultModel();
+    @Override
+    public synchronized void removeModel(String modelName) {
+        chatClients.remove(modelName);
+        runtimeModels.remove(modelName);
+        modelInfoCache.remove(modelName);
+        if (modelName != null && modelName.equals(defaultModel)) {
+            defaultModel = chatClients.isEmpty() ? null : chatClients.keySet().iterator().next();
+        }
+        log.info("已移除AI模型: {}", modelName);
     }
 
-    /**
-     * 获取ChatClient
-     */
+    @Override
+    public AiHealthResult probe(String modelName) {
+        if (modelName == null || modelName.isBlank()) {
+            return AiHealthResult.unhealthy(modelName, "UNKNOWN", false, "模型名称为空");
+        }
+        if (!chatClients.containsKey(modelName)) {
+            return AiHealthResult.unhealthy(modelName, getProviderName(modelName), false, "ChatClient不存在");
+        }
+
+        String provider = getProviderName(modelName);
+        if (!aiModelProperties.getHealthCheck().isLiveProbe()) {
+            return AiHealthResult.healthy(modelName, provider, false, 0);
+        }
+
+        AiRequest ping = new AiRequest()
+                .setModelName(modelName)
+                .setMessages(List.of(new AiRequest.Message().setRole("user").setContent("ping")))
+                .setOptions(new AiRequest.ModelOptions()
+                        .setMaxTokens(aiModelProperties.getHealthCheck().getProbeMaxTokens()));
+
+        long start = System.currentTimeMillis();
+        AiResponse response = callSingleModel(modelName, ping);
+        long duration = System.currentTimeMillis() - start;
+        if (response.isSuccess()) {
+            return AiHealthResult.healthy(modelName, provider, true, duration);
+        }
+        return AiHealthResult.unhealthy(modelName, provider, true, response.getErrorMessage());
+    }
+
+    @Override
+    public List<AiHealthResult> probeAll() {
+        return chatClients.keySet().stream().map(this::probe).toList();
+    }
+
+    private AiResponse callSingleModel(String modelName, AiRequest request) {
+        try {
+            ChatClient chatClient = getChatClient(modelName);
+            if (chatClient == null) {
+                return AiResponse.failure("模型不可用: %s".formatted(modelName), "MODEL_UNAVAILABLE");
+            }
+
+            long startTime = System.currentTimeMillis();
+            var promptBuilder = chatClient.prompt();
+            promptBuilder.messages(buildMessages(request));
+            applyRuntimeOptions(promptBuilder, modelName, request);
+
+            var response = promptBuilder.call();
+            var chatResponse = response.chatResponse();
+
+            if (chatResponse == null || chatResponse.getResult() == null) {
+                return AiResponse.failure("AI模型响应内容为空", "EMPTY_RESPONSE");
+            }
+
+            long duration = System.currentTimeMillis() - startTime;
+            AiResponse aiResponse = AiResponse.success(
+                    response.content(),
+                    modelName,
+                    getProviderName(modelName)
+            );
+            aiResponse.setUsage(extractUsage(chatResponse));
+            aiResponse.setDuration(duration);
+
+            log.info("AI模型调用成功 - 模型: {}, 耗时: {}ms", modelName, duration);
+            return aiResponse;
+        } catch (Exception e) {
+            log.error("AI模型 {} 调用失败", modelName, e);
+            return AiResponse.failure("AI模型调用失败: %s".formatted(e.getMessage()), "CALL_FAILED");
+        }
+    }
+
+    private Flux<AiStreamChunk> streamSingleModel(String modelName, AiRequest request, ChatClient chatClient) {
+        String provider = getProviderName(modelName);
+        AtomicReference<ChatResponse> lastResponse = new AtomicReference<>();
+
+        var promptBuilder = chatClient.prompt();
+        promptBuilder.messages(buildMessages(request));
+        applyRuntimeOptions(promptBuilder, modelName, request);
+
+        Flux<AiStreamChunk> deltas = promptBuilder.stream()
+                .chatResponse()
+                .doOnNext(lastResponse::set)
+                .flatMap(chatResponse -> {
+                    if (chatResponse == null || chatResponse.getResult() == null
+                            || chatResponse.getResult().getOutput() == null) {
+                        return Flux.empty();
+                    }
+                    String text = chatResponse.getResult().getOutput().getText();
+                    if (text == null || text.isEmpty()) {
+                        return Flux.empty();
+                    }
+                    return Flux.just(AiStreamChunk.delta(text, modelName, provider));
+                });
+
+        return deltas.concatWith(Mono.fromSupplier(() -> {
+                    circuitBreaker.recordSuccess(modelName);
+                    return AiStreamChunk.finished(modelName, provider, extractUsage(lastResponse.get()));
+                }))
+                .onErrorResume(error -> {
+                    circuitBreaker.recordFailure(modelName, aiModelProperties.getResilience());
+                    log.error("AI流式调用失败 - 模型: {}", modelName, error);
+                    return Flux.just(AiStreamChunk.error(
+                            "AI流式调用失败: %s".formatted(error.getMessage()),
+                            "STREAM_FAILED"));
+                });
+    }
+
+    private void applyRuntimeOptions(ChatClient.ChatClientRequestSpec promptBuilder,
+                                     String modelName,
+                                     AiRequest request) {
+        if (!optionsResolver.hasRequestLevelOverride(request)) {
+            return;
+        }
+        AiModelProperties.AiModel aiModel = getCurrentModels().get(modelName);
+        if (aiModel == null) {
+            return;
+        }
+        AiModelProperties.AiModelOptions merged = optionsResolver.mergeOptions(aiModel.getOptions(), request.getOptions());
+        ChatOptions chatOptions = optionsResolver.toChatOptions(aiModel.getProvider(), merged);
+        promptBuilder.options(chatOptions.mutate());
+    }
+
+    private AiResponse.Usage extractUsage(ChatResponse chatResponse) {
+        if (chatResponse == null || chatResponse.getMetadata() == null || chatResponse.getMetadata().getUsage() == null) {
+            return null;
+        }
+        var usage = chatResponse.getMetadata().getUsage();
+        return new AiResponse.Usage()
+                .setPromptTokens(usage.getPromptTokens())
+                .setCompletionTokens(usage.getCompletionTokens())
+                .setTotalTokens(usage.getTotalTokens());
+    }
+
+    private List<String> resolveChain(AiRequest request) {
+        return aiModelRouter.resolveModelChain(request, getDefaultModel(), chatClients, aiModelProperties);
+    }
+
     private ChatClient getChatClient(String modelName) {
         return chatClients.get(modelName);
     }
 
-    /**
-     * 构建消息列表
-     */
     private List<Message> buildMessages(AiRequest request) {
         List<Message> messages = new ArrayList<>();
-
+        if (request.getMessages() == null) {
+            return messages;
+        }
         for (AiRequest.Message msg : request.getMessages()) {
             switch (msg.getRole().toLowerCase()) {
                 case "system" -> messages.add(new SystemMessage(msg.getContent()));
@@ -262,13 +388,9 @@ public class AiModelServiceImpl implements AiModelService {
                 default -> log.warn("未知的消息角色: {}", msg.getRole());
             }
         }
-
         return messages;
     }
 
-    /**
-     * 获取提供商名称
-     */
     private String getProviderName(String modelName) {
         AiModelProperties.AiModel aiModel = getCurrentModels().get(modelName);
         return aiModel != null ? aiModel.getProvider().name() : "UNKNOWN";
@@ -291,12 +413,11 @@ public class AiModelServiceImpl implements AiModelService {
         if (isInitialized()) {
             return null;
         }
-        return AiResponse.failure("AI模型尚未初始化，无法执行调用，请先通过配置文件或 initializeModels 完成初始化", "MODEL_NOT_INITIALIZED");
+        return AiResponse.failure(
+                "AI模型尚未初始化，无法执行调用，请先通过配置文件或 initializeModels 完成初始化",
+                "MODEL_NOT_INITIALIZED");
     }
 
-    /**
-     * 获取模型描述
-     */
     private String getModelDescription(AiModelProperties.AiProviderType provider) {
         return switch (provider) {
             case OPENAI -> "OpenAI GPT系列模型";
@@ -309,12 +430,8 @@ public class AiModelServiceImpl implements AiModelService {
         };
     }
 
-    /**
-     * 获取模型能力
-     */
     private AiModelInfo.ModelCapabilities getModelCapabilities(AiModelProperties.AiProviderType provider) {
         AiModelInfo.ModelCapabilities capabilities = new AiModelInfo.ModelCapabilities();
-
         switch (provider) {
             case OPENAI, DEEPSEEK, MINIMAX, MOONSHOT -> capabilities.setSupportsTemperature(true)
                     .setSupportsTopP(true)
@@ -330,7 +447,6 @@ public class AiModelServiceImpl implements AiModelService {
                     .setSupportsTopP(true)
                     .setSupportsStop(true);
         }
-
         return capabilities;
     }
 }
