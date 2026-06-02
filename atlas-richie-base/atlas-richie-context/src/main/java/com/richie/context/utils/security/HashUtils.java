@@ -4,6 +4,8 @@ import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.crypto.digests.SM3Digest;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -174,5 +176,29 @@ public class HashUtils {
             log.error(String.format("Do sha512 error! str = %s", message), e);
             return null;
         }
+    }
+
+    /**
+     * 使用 SM3 密码杂凑算法（国密标准 GM/T 0004-2012）生成指定消息的哈希值
+     *
+     * @param message 需要生成 SM3 值的字节数组
+     * @return 返回 SM3 哈希值（16 进制小写字符串，64 字符）
+     */
+    public static String sm3(byte[] message) {
+        SM3Digest digest = new SM3Digest();
+        digest.update(message, 0, message.length);
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.doFinal(hash, 0);
+        return Hex.toHexString(hash);
+    }
+
+    /**
+     * 使用 SM3 密码杂凑算法（国密标准 GM/T 0004-2012）生成指定消息的哈希值
+     *
+     * @param message 需要生成 SM3 值的字符串
+     * @return 返回 SM3 哈希值（16 进制小写字符串，64 字符）
+     */
+    public static String sm3(String message) {
+        return sm3(message.getBytes(StandardCharsets.UTF_8));
     }
 }
