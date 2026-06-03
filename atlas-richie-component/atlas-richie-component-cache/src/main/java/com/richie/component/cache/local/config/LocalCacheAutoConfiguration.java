@@ -1,8 +1,11 @@
 package com.richie.component.cache.local.config;
 
 import com.richie.component.cache.enums.L2CachingRegion;
+import com.richie.component.cache.local.enums.CacheProvider;
 import com.richie.component.cache.local.enums.ExpiryPolicy;
 import lombok.extern.slf4j.Slf4j;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.jcache.ExtendedMutableConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,14 +44,15 @@ public class LocalCacheAutoConfiguration {
      */
     @Bean("cacheManagerJsr107")
     public CacheManager cacheManager(LocalCacheProperties properties) {
-        CachingProvider provider = Caching.getCachingProvider(properties.getProvider().getCachingProvider());
-        CacheManager cacheManager = provider.getCacheManager();
+        CacheProvider provider = properties.getProvider();
+        CachingProvider cachingProvider = Caching.getCachingProvider(provider.getCachingProvider());
+        CacheManager cacheManager = cachingProvider.getCacheManager();
         properties.getCacheDefinitions().forEach(cacheDefinition -> {
-            MutableConfiguration<String, Object> configuration = getMutableConfiguration(cacheDefinition);
+            MutableConfiguration<String, Object> configuration = getMutableConfiguration(cacheDefinition, provider);
             cacheManager.createCache(cacheDefinition.getName(), configuration);
         });
         // 初始化全局缓存
-        initialGlobalCacheL2Caching(cacheManager);
+        initialGlobalCacheL2Caching(cacheManager, provider);
 
         // 访问日志专用
         cacheManager.createCache(ACCESS_LOG.getCache(), new MutableConfiguration<String, Object>()
@@ -59,11 +63,26 @@ public class LocalCacheAutoConfiguration {
         return cacheManager;
     }
 
-    private static MutableConfiguration<String, Object> getMutableConfiguration(CacheDefinition cacheDefinition) {
-        MutableConfiguration<String, Object> configuration = new MutableConfiguration<String, Object>()
+    private static MutableConfiguration<String, Object> getMutableConfiguration(
+            CacheDefinition cacheDefinition, CacheProvider provider) {
+        MutableConfiguration<String, Object> configuration;
+        if (provider == CacheProvider.CACHE2K && cacheDefinition.isCache2kRefreshAhead()) {
+            Cache2kConfig<String, Object> cache2kConfig = new Cache2kConfig<>();
+            cache2kConfig.setRefreshAhead(true);
+            if (cacheDefinition.getCache2kLoaderThreadCount() != null) {
+                cache2kConfig.setLoaderThreadCount(cacheDefinition.getCache2kLoaderThreadCount());
+            }
+            ExtendedMutableConfiguration<String, Object> extConfig = new ExtendedMutableConfiguration<>();
+            extConfig.setCache2kConfiguration(cache2kConfig);
+            configuration = extConfig;
+        } else {
+            configuration = new MutableConfiguration<>();
+        }
+        configuration
                 .setTypes(String.class, Object.class)
                 .setStoreByValue(cacheDefinition.isStoreByValue())
                 .setStatisticsEnabled(cacheDefinition.isStatisticsEnabled());
+
         Duration expiryDuration = new Duration(cacheDefinition.getExpiryUnit(), cacheDefinition.getExpiry());
         switch (cacheDefinition.getExpiryPolicy()) {
             case CREATED -> configuration.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(expiryDuration));
@@ -97,9 +116,9 @@ public class LocalCacheAutoConfiguration {
                 .setWriteThrough(false);
     }
 
-    private void initialGlobalCacheL2Caching(CacheManager cacheManager) {
+    private void initialGlobalCacheL2Caching(CacheManager cacheManager, CacheProvider provider) {
         CacheDefinition cacheDefinition = getGlobalCacheDefinition();
-        MutableConfiguration<String, Object> globalCacheConfiguration = getMutableConfiguration(cacheDefinition);
+        MutableConfiguration<String, Object> globalCacheConfiguration = getMutableConfiguration(cacheDefinition, provider);
         cacheManager.createCache(L2CachingRegion.GLOBAL_CACHE.getCache(), globalCacheConfiguration);
     }
 
