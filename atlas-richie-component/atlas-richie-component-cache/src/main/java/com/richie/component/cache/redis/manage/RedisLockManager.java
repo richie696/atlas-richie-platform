@@ -10,12 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.data.redis.connection.RedisStringCommands;
-import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -23,10 +19,10 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 分布式锁管理器，封装基于 Redis 的分布式锁能力。
+ * 分布式锁管理器，封装基于 Redisson 的分布式锁能力。
  * <p>
- * 按「本地锁 → 可重入 → Redis 获取」三层统一处理；锁类型分乐观（试一次）与悲观（阻塞直到获取或中断），
- * 后端可配置为 Redisson 或自有实现（SET NX + Lua 解锁）。可重入仅 Redisson 路径支持，自有实现不做同线程重入计数。
+ * 按「本地锁 → 可重入 → Redisson 获取」三层统一处理；锁类型分乐观（试一次）与悲观（阻塞直到获取或中断），
+ * 后端仅支持 Redisson 实现（FencedLock + Lua 原子解锁），可重入由 Redisson 内部维护。
  *
  * @author richie696
  * @version 1.0.0
@@ -86,7 +82,7 @@ public class RedisLockManager implements LockFunction {
                     try {
                         if (CacheLockManager.getLock(lock.getKey()) == lock) {
                             redisTemplate.expire(
-                                    new String(lock.getLockKey(), StandardCharsets.UTF_8),
+                                    getLockKeyString(lock.getKey()),
                                     seconds,
                                     TimeUnit.SECONDS
                             );
@@ -142,15 +138,14 @@ public class RedisLockManager implements LockFunction {
     }
 
     /**
-     * 可重入阶段：若当前线程已持 Redisson 锁则 addCounter 并返回该锁，否则返回 null。
-     * 自有实现不做可重入计数，直接进入 Redis 获取阶段。
+     * 可重入阶段：若当前线程已持锁则 addCounter 并返回该锁，否则返回 null。
      */
-    private CacheLock tryReentrantRedisson(String key) {
+    private CacheLock tryReentrant(String key) {
         if (!CacheLockManager.existLock(key)) {
             return null;
         }
         CacheLock lock = CacheLockManager.getLock(key);
-        if (lock != null && lock.isRedissonLock()) {
+        if (lock != null) {
             return lock.addCounter();
         }
         return null;
@@ -159,20 +154,17 @@ public class RedisLockManager implements LockFunction {
     // --------------- 统一获取：乐观 ---------------
 
     /**
-     * 乐观获取：试一次即返回。流程：本地锁（试一次）→ 可重入 → Redis（Redisson 或自有试一次）。
+     * 乐观获取：试一次即返回。流程：本地锁（试一次）→ 可重入 → Redisson 试一次。
      */
     private CacheLock acquireOptimistic(String key, long time, String requestId, boolean reentrant) {
         if (!tryLocalLock(key, reentrant)) {
             return new CacheLock(false, requestId, reentrant);
         }
-        CacheLock reentrantLock = tryReentrantRedisson(key);
+        CacheLock reentrantLock = tryReentrant(key);
         if (reentrantLock != null) {
             return reentrantLock;
         }
-        if (redisProperties.getEnableRedissonLock()) {
-            return acquireOptimisticRedisson(key, time, requestId, reentrant);
-        }
-        return acquireOptimisticPrivate(key, time, requestId, reentrant);
+        return acquireOptimisticRedisson(key, time, requestId, reentrant);
     }
 
     private CacheLock acquireOptimisticRedisson(String key, long time, String requestId, boolean reentrant) {
@@ -182,7 +174,7 @@ public class RedisLockManager implements LockFunction {
             if (!rLock.tryLock(0, time, TimeUnit.SECONDS)) {
                 return new CacheLock(false, requestId, reentrant);
             }
-            CacheLock cacheLock = new CacheLock(true, key, requestId, rLock, getLockKey(key), reentrant);
+            CacheLock cacheLock = new CacheLock(true, key, requestId, rLock, reentrant);
             CacheLockManager.addLock(key, cacheLock);
             return cacheLock;
         } catch (InterruptedException e) {
@@ -192,33 +184,20 @@ public class RedisLockManager implements LockFunction {
         }
     }
 
-    private CacheLock acquireOptimisticPrivate(String key, long time, String requestId, boolean reentrant) {
-        String lockKey = getLockKeyString(key);
-        if (!tryLock(lockKey, requestId, time)) {
-            return new CacheLock(false, requestId, reentrant);
-        }
-        CacheLock cacheLock = new CacheLock(true, key, requestId, redisTemplate, lockKey.getBytes(StandardCharsets.UTF_8), reentrant);
-        CacheLockManager.addLock(key, cacheLock);
-        return cacheLock;
-    }
-
     // --------------- 统一获取：悲观 ---------------
 
     /**
-     * 悲观获取：阻塞直到获取或中断。流程：本地锁（阻塞等待）→ 可重入 → Redis（Redisson 或自有阻塞）。
+     * 悲观获取：阻塞直到获取或中断。流程：本地锁（阻塞等待）→ 可重入 → Redisson。
      */
     private CacheLock acquirePessimistic(String key, long time, String requestId, boolean reentrant) {
         if (!waitLocalLock(key, reentrant)) {
             return new CacheLock(false, requestId, reentrant);
         }
-        CacheLock reentrantLock = tryReentrantRedisson(key);
+        CacheLock reentrantLock = tryReentrant(key);
         if (reentrantLock != null) {
             return reentrantLock;
         }
-        if (redisProperties.getEnableRedissonLock()) {
-            return acquirePessimisticRedisson(key, time, requestId, reentrant);
-        }
-        return acquirePessimisticPrivate(key, time, requestId, reentrant);
+        return acquirePessimisticRedisson(key, time, requestId, reentrant);
     }
 
     private CacheLock acquirePessimisticRedisson(String key, long time, String requestId, boolean reentrant) {
@@ -229,56 +208,15 @@ public class RedisLockManager implements LockFunction {
         } else {
             rLock.lock();
         }
-        CacheLock cacheLock = new CacheLock(true, key, requestId, rLock, lockKey.getBytes(StandardCharsets.UTF_8), reentrant);
+        CacheLock cacheLock = new CacheLock(true, key, requestId, rLock, reentrant);
         CacheLockManager.addLock(key, cacheLock);
         return cacheLock;
     }
 
-    private CacheLock acquirePessimisticPrivate(String key, long time, String requestId, boolean reentrant) {
-        String lockKey = getLockKeyString(key);
-        try {
-            while (!tryLock(lockKey, requestId, time)) {
-                TimeUnit.MILLISECONDS.sleep(PESSIMISTIC_LOCK_WAIT_MS);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("获取自有悲观锁失败。", e);
-            return new CacheLock(false, requestId, reentrant);
-        }
-        CacheLock cacheLock = new CacheLock(true, key, requestId, redisTemplate, lockKey.getBytes(StandardCharsets.UTF_8), reentrant);
-        CacheLockManager.addLock(key, cacheLock);
-        return cacheLock;
-    }
-
-    // --------------- 自有实现：SET NX + 键 ---------------
-
-    /** @param lockKey 已通过 getLockKeyString(key) 转换后的上锁 key，避免与数据 key 混用 */
-    private boolean tryLock(String lockKey, String requestId, long time) {
-        byte[] keyBytes = lockKey.getBytes(StandardCharsets.UTF_8);
-        log.debug("[CacheManager] The cache attempted to lock: {}", lockKey);
-        // time < 0 均视为不设过期（仅自有实现）；避免传入 -2 等导致 Expiration.seconds 异常
-        Expiration expiration = (time < 0)
-                ? Expiration.persistent()
-                : Expiration.seconds(TimeUnit.SECONDS.toSeconds(time));
-        try {
-            RedisCallback<Boolean> callback = connection -> connection.stringCommands().set(keyBytes,
-                    requestId.getBytes(StandardCharsets.UTF_8), expiration,
-                    RedisStringCommands.SetOption.SET_IF_ABSENT);
-            Boolean lockResult = redisTemplate.execute(callback);
-            log.debug("[CacheManager] The result of obtaining the lock: {}", lockResult);
-            return (lockResult != null && lockResult);
-        } catch (Exception e) {
-            log.warn("尝试获取 Redis 锁失败。", e);
-            return false;
-        }
-    }
+    // --------------- 工具方法 ---------------
 
     /** 业务 key 转成 Redis 上锁用的 key（与数据 key 隔离，避免冲突） */
     private String getLockKeyString(String key) {
         return LOCK_KEY + key;
-    }
-
-    private byte[] getLockKey(String key) {
-        return getLockKeyString(key).getBytes(StandardCharsets.UTF_8);
     }
 }

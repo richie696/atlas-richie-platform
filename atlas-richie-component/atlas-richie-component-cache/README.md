@@ -93,7 +93,7 @@
 |----------|--------|------|
 | `spring.data.redis` | `host`、`port`、`lettuce`、`server-type` | 继承 Spring Boot `DataRedisProperties`；扩展见 `RichieRedisProperties` |
 | `spring.data.redis` | `enable-l2-caching`、`l2-caching-data` | Redis 前加本地 L2（按 `KeyTypeEnum`） |
-| `spring.data.redis` | `enable-local-lock`、`enable-redisson-lock` | 本地锁竞争 / Redisson 分布式锁 |
+| `spring.data.redis` | `enable-local-lock` | 本地锁竞争（Redisson 分布式锁默认启用） |
 | `spring.data.redis` | `slaves` | 命名子 Redis，`MultiRedisTemplate` 按名路由 |
 | `spring.data.redis` | `stream-idempotency` | Stream 幂等键 TTL 与前缀 |
 | `spring.data.redis` | `perf` | 性能守卫（默认关闭） |
@@ -133,9 +133,8 @@ spring:
       l2-caching-data:
         - STRING
         - HASH
-      # 分布式锁：JVM 内二级锁，减少同 key 打 Redis
+      # 分布式锁：JVM 内二级锁，减少同 key 打 Redis（Redisson 默认启用）
       enable-local-lock: false
-      enable-redisson-lock: false
       # 性能守卫（生产建议先 false，灰度开启）
       perf:
         enabled: false
@@ -228,18 +227,18 @@ String v = GlobalCache.getStringCacheWithLock("product:sku:1", 600_000L,
         () -> productDao.findName("1"));
 ```
 
-### 分布式锁 — 本地二级锁 + Redis
+### 分布式锁 — 本地二级锁 + Redisson
 
 | 项 | 说明 |
 |----|------|
-| **顺序** | `enable-local-lock` 时先 `CacheLockManager`（JVM 锁池）→ 可选 Redisson 可重入 → Redis SET NX / Redisson |
-| **配置** | `enable-local-lock`、`enable-redisson-lock` |
+| **顺序** | `enable-local-lock` 时先 `CacheLockManager`（JVM 锁池）→ Redisson 获取 |
+| **后端** | Redisson FencedLock，可重入、看门狗续期 |
+| **配置** | `enable-local-lock` |
 | **守卫** | 加锁路径经 `RedisPerfGuard`（`LOCK_TRY`） |
 | **续期** | `optimisticLockWithRenewal` / `pessimisticLockWithRenewal`，虚拟线程池定时 `EXPIRE` |
 
 ```yaml
 spring.data.redis.enable-local-lock: true
-spring.data.redis.enable-redisson-lock: false
 ```
 
 ```java

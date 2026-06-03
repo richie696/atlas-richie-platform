@@ -12,8 +12,6 @@ spring:
             l2-caching-data:
                 - string
                 - hash
-            # 启用 Redisson 锁（默认：false）
-            enable-redisson-lock: true
             # Redis服务类型（根据此处的设置来确定下方使用哪种模式，可用值：standalone、sentinel、cluster）
             server-type: standalone
             # Redis客户端名称
