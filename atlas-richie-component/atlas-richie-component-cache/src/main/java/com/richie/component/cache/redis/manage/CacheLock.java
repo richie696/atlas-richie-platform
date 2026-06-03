@@ -7,21 +7,17 @@ import org.redisson.api.RFencedLock;
 
 import java.io.Closeable;
 import java.util.Optional;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.locks.Lock;
 
 /**
  * 缓存分布式锁
  *
- * <p>封装基于 Redis 的轻量分布式锁（Lua 原子解锁）与 Redisson FencedLock 两种模式，
- * 支持可重入计数与看门狗续期的释放管理。
+ * <p>基于 Redisson FencedLock 的可重入分布式锁，支持可重入计数。
  *
  * <p>主要功能：
  * <ul>
  *   <li>可重入计数：同线程重复加锁计数管理</li>
- *   <li>原子解锁：Lua 脚本按 requestId 安全释放</li>
- *   <li>Redisson 模式：通过 FencedLock 释放</li>
- *   <li>续期清理：关闭时取消续期任务</li>
+ *   <li>Redisson 释放：通过 FencedLock 释放</li>
  * </ul>
  *
  * @author richie696
@@ -50,9 +46,6 @@ public class CacheLock implements Closeable {
     /** 可重入计数 */
     private int nestTransaction = 1;
 
-    /** 看门狗续期任务 */
-    private ScheduledFuture<?> renewalFuture;
-
     /** 是否支持可重入 */
     @Getter
     private final boolean reentrant;
@@ -63,6 +56,9 @@ public class CacheLock implements Closeable {
 
     /**
      * 构造仅表示加锁结果的锁对象（无 Redis 关联）。
+     *
+     * @param success   是否加锁成功
+     * @param requestId 请求唯一标识
      */
     public CacheLock(boolean success, String requestId) {
         this(success, requestId, true);
@@ -70,6 +66,10 @@ public class CacheLock implements Closeable {
 
     /**
      * 构造仅表示加锁结果的锁对象（无 Redis 关联）。
+     *
+     * @param success   是否加锁成功
+     * @param requestId 请求唯一标识
+     * @param reentrant 是否可重入
      */
     public CacheLock(boolean success, String requestId, boolean reentrant) {
         this.success = success;
@@ -79,6 +79,12 @@ public class CacheLock implements Closeable {
 
     /**
      * 构造基于 Redisson FencedLock 的锁对象。
+     *
+     * @param success          是否加锁成功
+     * @param key              锁 key
+     * @param requestId        请求唯一标识
+     * @param redissonFencedLock Redisson 栅栏锁
+     * @param reentrant        是否可重入
      */
     public CacheLock(boolean success, String key, String requestId,
               RFencedLock redissonFencedLock, boolean reentrant) {
@@ -101,10 +107,6 @@ public class CacheLock implements Closeable {
         }
         if (!success) {
             return;
-        }
-        // 先取消续期，再解锁，避免续期任务误延长已释放的锁
-        if (renewalFuture != null) {
-            renewalFuture.cancel(true);
         }
         Optional.ofNullable(redissonFencedLock)
                 .ifPresent(Lock::unlock);

@@ -1,28 +1,20 @@
 package com.richie.component.cache.redis.manage;
 
 import com.richie.component.cache.function.LockFunction;
-import com.richie.component.cache.redis.bean.MultiRedisTemplate;
 import com.richie.component.cache.redis.config.base.AtlasRedisProperties;
-import com.richie.component.cache.redis.perf.RedisOperationCatalog;
-import com.richie.component.cache.redis.perf.RedisPerfGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 分布式锁管理器，封装基于 Redisson 的分布式锁能力。
+ * 分布式锁管理器，基于 Redisson FencedLock 实现。
  * <p>
- * 按「本地锁 → 可重入 → Redisson 获取」三层统一处理；锁类型分乐观（试一次）与悲观（阻塞直到获取或中断），
- * 后端仅支持 Redisson 实现（FencedLock + Lua 原子解锁），可重入由 Redisson 内部维护。
+ * 按「本地锁 → 可重入 → Redisson 获取」三层统一处理；锁类型分乐观（试一次）与悲观（阻塞直到获取或中断）。
  *
  * @author richie696
  * @version 1.0.0
@@ -34,67 +26,31 @@ import java.util.concurrent.TimeUnit;
 @ConditionalOnExpression("'${platform.cache.cache-provider:REDIS}'=='REDIS'")
 public class RedisLockManager implements LockFunction {
 
-    @Qualifier("jsonTemplate")
-    private final MultiRedisTemplate<Object> redisTemplate;
-
     private final RedissonClient redissonClient;
 
     private final AtlasRedisProperties redisProperties;
 
-    private final RedisPerfGuard redisPerfGuard;
-
-    /** 悲观锁阻塞获取时每次重试前的等待时间（毫秒），避免忙等 */
+    /** 本地锁阻塞等待时每次重试前的等待时间（毫秒），避免忙等 */
     private static final long PESSIMISTIC_LOCK_WAIT_MS = 20L;
-
-    private static final ScheduledExecutorService renewalPool =
-            Executors.newScheduledThreadPool(
-                    Runtime.getRuntime().availableProcessors(),
-                    Thread.ofVirtual().name("RedisLock-Renewal-", 0).factory()
-            );
 
     // --------------- LockFunction 公开接口 ---------------
 
     @Override
     public CacheLock optimisticLock(String key, long time) {
-        return redisPerfGuard.<CacheLock>execute("RedisLockManager", "optimisticLock", RedisOperationCatalog.LOCK_TRY,
-                () -> acquireOptimistic(key, time, UUID.randomUUID().toString(), true));
+        return acquireOptimistic(key, time, UUID.randomUUID().toString(), true);
     }
 
     @Override
     public CacheLock pessimisticLock(String key, long time) {
-        return redisPerfGuard.<CacheLock>execute("RedisLockManager", "pessimisticLock", RedisOperationCatalog.LOCK_TRY,
-                () -> acquirePessimistic(key, time, UUID.randomUUID().toString(), true));
+        return acquirePessimistic(key, time, UUID.randomUUID().toString(), true);
     }
 
     @Override
     public CacheLock lockWithRenewal(String key, long seconds, boolean optimistic) {
-        return redisPerfGuard.<CacheLock>execute("RedisLockManager", "lockWithRenewal", RedisOperationCatalog.LOCK_TRY, () -> {
-            if (seconds < 3) {
-                throw new IllegalArgumentException("锁续期时间不能小于3秒");
-            }
-            CacheLock lock = optimistic
-                    ? acquireOptimistic(key, seconds, UUID.randomUUID().toString(), true)
-                    : acquirePessimistic(key, seconds, UUID.randomUUID().toString(), true);
-            if (lock.isSuccess()) {
-                final int INITIAL_DELAY = 1;
-                long renewalInterval = seconds - INITIAL_DELAY;
-                ScheduledFuture<?> future = renewalPool.scheduleAtFixedRate(() -> {
-                    try {
-                        if (CacheLockManager.getLock(lock.getKey()) == lock) {
-                            redisTemplate.expire(
-                                    getLockKeyString(lock.getKey()),
-                                    seconds,
-                                    TimeUnit.SECONDS
-                            );
-                        }
-                    } catch (Exception e) {
-                        log.warn("锁续期失败：{}", lock.getKey(), e);
-                    }
-                }, INITIAL_DELAY, renewalInterval, TimeUnit.SECONDS);
-                lock.setRenewalFuture(future);
-            }
-            return lock;
-        });
+        if (seconds < 3) {
+            throw new IllegalArgumentException("锁续期时间不能小于3秒");
+        }
+        return optimistic ? optimisticLock(key, seconds) : pessimisticLock(key, seconds);
     }
 
     // --------------- 本地锁阶段 ---------------
