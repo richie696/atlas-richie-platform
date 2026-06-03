@@ -23,7 +23,7 @@ public class LocalCacheProperties implements Serializable {
     public LocalCacheProperties() {
     }
 
-    /** 缓存提供者（如 EHCACHE、CAFFEINE） */
+    /** 缓存提供者（如 EHCACHE、CAFFEINE、CACHE2K） */
     private CacheProvider provider = CacheProvider.EHCACHE;
 
     /**

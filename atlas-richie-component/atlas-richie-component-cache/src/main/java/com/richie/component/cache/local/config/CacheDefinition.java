@@ -83,4 +83,18 @@ public class CacheDefinition {
      * {@link javax.cache.integration.CacheWriter}
      */
     private String cacheWriterClassName;
+
+    /**
+     * 是否启用 cache2k refresh-ahead（过期前异步刷新），仅当 {@code provider=CACHE2K} 时生效
+     * <p>refresh-ahead 会在缓存条目即将过期时提前调用 loader 加载新值，避免到期后因回源造成的延迟。
+     * 此功能需同时设置 {@code readThrough=true} 和 {@link #cacheLoaderClassName} 才会实际生效。
+     */
+    private boolean cache2kRefreshAhead = false;
+
+    /**
+     * cache2k loader 线程数，用于 refresh-ahead 的后台刷新。
+     * 仅当 {@link #cache2kRefreshAhead} 为 {@code true} 时有效。
+     * <p>未设置时使用 cache2k 默认值（通常为 1）。
+     */
+    private Integer cache2kLoaderThreadCount;
 }
