@@ -7,13 +7,14 @@ import com.richie.component.mqtt.beans.NetworkQualityStats;
 import com.richie.component.mqtt.config.MqttClientProperties;
 import com.richie.component.mqtt.enums.ClientTypeEnum;
 import com.richie.component.mqtt.enums.NetworkTypeEnum;
+import com.richie.component.mqtt.enums.QosEnum;
 import com.richie.component.mqtt.exceptions.RydeenMqttClientException;
 import com.richie.component.mqtt.filter.handler.MessageHandler;
+import com.richie.component.mqtt.generator.IMqttClientDeviceIdGenerator;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 import jakarta.annotation.Nonnull;
-import org.springframework.beans.factory.annotation.Qualifier;
-import com.richie.component.mqtt.generator.IMqttClientDeviceIdGenerator;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -335,6 +336,24 @@ public class HiveMqMqttClient extends AbstractMqttClientApi implements MqttClien
         messageManager.sendMessage(topic, value, retained);
     }
 
+    @Override
+    public void doPublish(String topic, QosEnum qos, byte[] value) {
+        if (isConnectionNotReady()) {
+            log.warn("MQTT连接未就绪，无法发布消息到主题: {}", topic);
+            return;
+        }
+        messageManager.sendMessage(topic, value, false, qos);
+    }
+
+    @Override
+    public void doPublish(String topic, QosEnum qos, byte[] value, boolean retained) {
+        if (isConnectionNotReady()) {
+            log.warn("MQTT连接未就绪，无法发布消息到主题: {}", topic);
+            return;
+        }
+        messageManager.sendMessage(topic, value, retained, qos);
+    }
+
     // ==================== 公共方法 - 生命周期管理 ====================
 
     /**
@@ -440,7 +459,8 @@ public class HiveMqMqttClient extends AbstractMqttClientApi implements MqttClien
     @Override
     protected void doSubscribe(String topic) {
         if (messageManager != null) {
-            messageManager.doSubscribe(topic);
+            QosEnum qos = SUBSCRIBE_QOS_CACHE.get(topic);
+            messageManager.doSubscribe(topic, qos);
         } else {
             log.warn("消息管理器未初始化，无法订阅主题");
         }

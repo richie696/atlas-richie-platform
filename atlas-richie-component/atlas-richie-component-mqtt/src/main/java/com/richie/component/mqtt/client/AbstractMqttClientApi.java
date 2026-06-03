@@ -4,9 +4,10 @@ import com.richie.component.mqtt.beans.ConsumerListener;
 import com.richie.component.mqtt.beans.ConsumerMessage;
 import com.richie.component.mqtt.config.MqttClientProperties;
 import com.richie.component.mqtt.enums.NetworkTypeEnum;
+import com.richie.component.mqtt.enums.QosEnum;
 import com.richie.component.mqtt.generator.IMqttClientDeviceIdGenerator;
-import lombok.Getter;
 import jakarta.annotation.Nonnull;
+import lombok.Getter;
 
 import java.util.Map;
 import java.util.Set;
@@ -71,6 +72,18 @@ public abstract non-sealed class AbstractMqttClientApi extends MqttEventPublishe
     protected static final Map<String, Consumer<ConsumerMessage>> SHARED_LISTENER_CACHE = new ConcurrentHashMap<>(32);
 
     /**
+     * 订阅 QoS 缓存
+     * <p>
+     * Key：业务 topic
+     * Value：该 topic 指定的 QoS 级别（为 null 时表示使用全局默认 QoS）
+     * <p>
+     * 当调用 {@link #registerConsumer(String, QosEnum, Consumer)} 时存入，
+     * 在 {@link #unregisterConsumer(String)} 时清理。
+     * 子类在执行 {@link #doSubscribe(String)} 时应优先使用此缓存中的 QoS。
+     */
+    protected static final Map<String, QosEnum> SUBSCRIBE_QOS_CACHE = new ConcurrentHashMap<>(32);
+
+    /**
      * 获取心跳主题地址的方法
      *
      * @return 返回心跳主题地址
@@ -108,6 +121,16 @@ public abstract non-sealed class AbstractMqttClientApi extends MqttEventPublishe
         doSubscribe(topic);
     }
 
+    @Override
+    public void registerConsumer(@Nonnull String topic, @Nonnull QosEnum qos, @Nonnull Consumer<ConsumerMessage> callback) {
+        if (LISTENER_CACHE.containsKey(topic)) {
+            throw new IllegalArgumentException("当前主题已注册回调事件，请勿重复注册。");
+        }
+        LISTENER_CACHE.put(topic, callback);
+        SUBSCRIBE_QOS_CACHE.put(topic, qos);
+        doSubscribe(topic);
+    }
+
     /**
      * 注册共享订阅消费者
      * <p>
@@ -137,6 +160,7 @@ public abstract non-sealed class AbstractMqttClientApi extends MqttEventPublishe
     @Override
     public void unregisterConsumer(@Nonnull String topic) {
         LISTENER_CACHE.remove(topic);
+        SUBSCRIBE_QOS_CACHE.remove(topic);
         doUnsubscribe(topic);
     }
 
@@ -162,7 +186,12 @@ public abstract non-sealed class AbstractMqttClientApi extends MqttEventPublishe
     @Override
     public void registerConsumers(@Nonnull Set<ConsumerListener> listeners) {
         for (ConsumerListener listener : listeners) {
-            registerConsumer(listener.getTopic(), listener.getCallback());
+            QosEnum qos = listener.getQos();
+            if (qos != null) {
+                registerConsumer(listener.getTopic(), qos, listener.getCallback());
+            } else {
+                registerConsumer(listener.getTopic(), listener.getCallback());
+            }
         }
     }
 

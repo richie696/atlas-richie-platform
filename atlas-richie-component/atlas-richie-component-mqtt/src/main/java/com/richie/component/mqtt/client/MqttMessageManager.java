@@ -1,15 +1,11 @@
 package com.richie.component.mqtt.client;
 
-import com.richie.context.common.api.HeaderContextHolder;
-import com.richie.contract.constant.GlobalConstants;
-import com.richie.contract.exception.PlatformRuntimeException;
-import com.richie.context.utils.data.JsonUtils;
 import com.richie.component.mqtt.beans.ConnectionState;
 import com.richie.component.mqtt.beans.SubscriptionResult;
-import com.richie.component.mqtt.config.MqttClientProperties;
 import com.richie.component.mqtt.canary.MqttCanaryFilter;
+import com.richie.component.mqtt.config.MqttClientProperties;
+import com.richie.component.mqtt.enums.QosEnum;
 import com.richie.component.mqtt.filter.handler.MessageHandler;
-import tools.jackson.core.type.TypeReference;
 import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
@@ -19,11 +15,17 @@ import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperty;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PublishResult;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5Subscribe;
+import com.richie.context.common.api.HeaderContextHolder;
+import com.richie.context.utils.data.JsonUtils;
+import com.richie.contract.constant.GlobalConstants;
+import com.richie.contract.exception.PlatformRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import tools.jackson.core.type.TypeReference;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -464,6 +466,10 @@ public class MqttMessageManager {
      * @throws RuntimeException 当连接断开或重连失败时
      */
     public void sendMessage(String topic, byte[] value, boolean retained) {
+        sendMessage(topic, value, retained, null);
+    }
+
+    public void sendMessage(String topic, byte[] value, boolean retained, QosEnum qos) {
         try {
             // 检查连接状态
             if (!waitForConnectedWithStateCheck()) {
@@ -485,7 +491,7 @@ public class MqttMessageManager {
             int retry = 0;
             while (!published && retry < MAX_PUBLISH_RETRY) {
                 try {
-                    var result = publishContent(topic, value, retained);
+                    var result = publishContent(topic, value, retained, qos);
                     if (result.isEmpty()) {
                         published = true;
                         log.info("[MQTT] 消息发送成功，主题：{}", topic);
@@ -578,6 +584,10 @@ public class MqttMessageManager {
      * @return 错误信息，成功返回空字符串，失败返回详细错误描述
      */
     private String publishContent(String topic, byte[] value, boolean retained) {
+        return publishContent(topic, value, retained, null);
+    }
+
+    private String publishContent(String topic, byte[] value, boolean retained, QosEnum qos) {
         try {
             // 构建MQTT 5.0发布消息
             Mqtt5UserPropertiesBuilder userPropertiesBuilder = Mqtt5UserProperties.builder()
@@ -594,10 +604,12 @@ public class MqttMessageManager {
                 userPropertiesBuilder = userPropertiesBuilder.add(Mqtt5UserProperty.of(GlobalConstants.X_CANARY_ID, canaryId));
             }
 
+            MqttQos mqttQos = (qos != null) ? MqttQos.fromCode(qos.getValue()) : getMqttQos();
+            Objects.requireNonNull(mqttQos);
             Mqtt5Publish publish = Mqtt5Publish.builder()
                     .topic(topic)
                     .payload(value)
-                    .qos(getMqttQos())
+                    .qos(mqttQos)
                     .retain(retained)
                     .messageExpiryInterval(properties.getMqtt5().getMessageExpiryInterval())
                     .userProperties(userPropertiesBuilder.build())
@@ -618,7 +630,7 @@ public class MqttMessageManager {
         } catch (Exception e) {
             return "[MQTT] 消息发布失败！\n客户端ID：%s\n订阅主题：%s\n下发内容：%s\nQoS：%d\n错误原因：%s"
                     .formatted(clientId, topic, new String(value, StandardCharsets.UTF_8),
-                            properties.getServer().getQos().getValue(), e.getMessage());
+                            qos != null ? qos.getValue() : properties.getServer().getQos().getValue(), e.getMessage());
         }
     }
 
@@ -688,6 +700,10 @@ public class MqttMessageManager {
      * @param topic 要订阅的主题
      */
     public void doSubscribe(String topic) {
+        doSubscribe(topic, null);
+    }
+
+    public void doSubscribe(String topic, QosEnum qos) {
         if (!properties.getEnable()) {
             log.info("当前MQTT服务被禁用。");
             return;
@@ -700,9 +716,11 @@ public class MqttMessageManager {
                 return;
             }
 
+            MqttQos mqttQos = (qos != null) ? MqttQos.fromCode(qos.getValue()) : getMqttQos();
+            Objects.requireNonNull(mqttQos);
             Mqtt5Subscribe subscribe = Mqtt5Subscribe.builder()
                     .topicFilter(topic)
-                    .qos(getMqttQos())
+                    .qos(mqttQos)
                     .build();
 
             mqttClient.subscribe(subscribe)
