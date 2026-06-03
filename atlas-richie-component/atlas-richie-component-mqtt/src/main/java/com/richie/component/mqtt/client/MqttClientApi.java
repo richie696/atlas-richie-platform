@@ -4,6 +4,7 @@ import com.richie.component.mqtt.beans.ConsumerListener;
 import com.richie.component.mqtt.beans.ConsumerMessage;
 import com.richie.component.mqtt.beans.MqttServerInfo;
 import com.richie.component.mqtt.enums.NetworkTypeEnum;
+import com.richie.component.mqtt.enums.QosEnum;
 import jakarta.annotation.Nonnull;
 
 import java.util.Set;
@@ -28,6 +29,16 @@ public interface MqttClientApi {
     void doPublish(String topic, byte[] value);
 
     /**
+     * 下发消息的方法（指定 QoS）
+     * <p style="color: red">（注：本接口不会保留最新下发的消息内容，即：retained = false）
+     *
+     * @param topic 下发消息的主题
+     * @param qos   消息服务质量，覆盖全局配置
+     * @param value 下发的内容
+     */
+    void doPublish(String topic, QosEnum qos, byte[] value);
+
+    /**
      * 下发消息的方法
      *
      * @param topic    下发消息的主题
@@ -36,6 +47,17 @@ public interface MqttClientApi {
      *                 <p style="color:red">（注：服务器只会保留最新下发的1条消息在内存或磁盘文件中，当有新消息进行发送时会被最新的消息覆盖）
      */
     void doPublish(String topic, byte[] value, boolean retained);
+
+    /**
+     * 下发消息的方法（指定 QoS）
+     *
+     * @param topic    下发消息的主题
+     * @param qos      消息服务质量，覆盖全局配置
+     * @param value    下发的内容
+     * @param retained 是否在服务器中保留本条消息
+     *                 <p style="color:red">（注：服务器只会保留最新下发的1条消息在内存或磁盘文件中，当有新消息进行发送时会被最新的消息覆盖）
+     */
+    void doPublish(String topic, QosEnum qos, byte[] value, boolean retained);
 
     /**
      * 获取当前 MQTT 客户端 ID 的方法
@@ -64,6 +86,17 @@ public interface MqttClientApi {
      * @param callback 消费者监听事件
      */
     void registerConsumer(@Nonnull String topic, @Nonnull Consumer<ConsumerMessage> callback);
+
+    /**
+     * 注册消费者监听事件的方法（指定订阅 QoS）
+     * <p>
+     * 使用指定的 QoS 订阅该主题，覆盖全局配置中的默认 QoS。
+     *
+     * @param topic    绑定的主题
+     * @param qos      订阅服务质量，覆盖全局配置
+     * @param callback 消费者监听事件
+     */
+    void registerConsumer(@Nonnull String topic, @Nonnull QosEnum qos, @Nonnull Consumer<ConsumerMessage> callback);
 
     /**
      * 解绑对应主题监听事件的方法

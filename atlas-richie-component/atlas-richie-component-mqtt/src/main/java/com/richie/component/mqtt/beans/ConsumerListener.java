@@ -1,6 +1,7 @@
 package com.richie.component.mqtt.beans;
 
-import lombok.AllArgsConstructor;
+import com.richie.component.mqtt.enums.QosEnum;
+import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -18,7 +19,7 @@ import java.util.function.Consumer;
  */
 @Data
 @Accessors(chain = true)
-@AllArgsConstructor(staticName = "create")
+@Builder
 public class ConsumerListener implements Serializable {
 
     /**
@@ -32,5 +33,20 @@ public class ConsumerListener implements Serializable {
      * 当收到该主题的消息时，会调用此回调函数处理消息。
      */
     private Consumer<ConsumerMessage> callback;
+
+    /**
+     * 订阅 QoS
+     * <p>
+     * 指定该主题的订阅 QoS，为 null 时使用全局配置中的默认 QoS。
+     */
+    private QosEnum qos;
+
+    public static ConsumerListener create(String topic, Consumer<ConsumerMessage> callback) {
+        return ConsumerListener.builder().topic(topic).callback(callback).build();
+    }
+
+    public static ConsumerListener create(String topic, Consumer<ConsumerMessage> callback, QosEnum qos) {
+        return ConsumerListener.builder().topic(topic).callback(callback).qos(qos).build();
+    }
 
 }
