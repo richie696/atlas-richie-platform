@@ -45,15 +45,10 @@ public class AtlasRedisProperties extends DataRedisProperties {
     private LettuceExtension lettuce = new LettuceExtension();
 
     /**
-     * 是否启用 Redisson 作为默认的分布式锁实现（默认：false，使用自有实现的分布式锁锁）
-     */
-    private Boolean enableRedissonLock = false;
-
-    /**
      * 是否启用 Redis 二级缓存（默认：false）
      * <p>二级缓存将采用LocalCache实现进行缓存配置，LocalCache已实现 javax 的
-     * JSR107 标准缓存接口，支持 Ehcache 和 Redisson 两种缓存实现，根据您配置的
-     * LocalCache 的参数自动适配全局的本地缓存。默认：Caffeine
+     * JSR107 标准缓存接口，根据您配置的 LocalCache 的参数自动适配全局的本地缓存。
+     * 默认：Caffeine
      */
     private Boolean enableL2Caching = false;
 

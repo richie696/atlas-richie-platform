@@ -4,12 +4,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.redisson.api.RFencedLock;
-import org.springframework.data.redis.connection.ReturnType;
-import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.RedisTemplate;
 
 import java.io.Closeable;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.locks.Lock;
@@ -36,10 +32,6 @@ import java.util.concurrent.locks.Lock;
 @Accessors(chain = true)
 public class CacheLock implements Closeable {
 
-    private static final String UNLOCK_LUA =
-            "if redis.call(\"get\",KEYS[1]) == ARGV[1] then" +
-                    " return redis.call(\"del\",KEYS[1]) else return 0 end";
-
     /** 是否加锁成功 */
     private final boolean success;
 
@@ -52,20 +44,11 @@ public class CacheLock implements Closeable {
     /** 持有锁的线程 ID */
     private long holdThreadId;
 
-    /** Redis 模板（Lua 解锁时使用） */
-    private RedisTemplate<String, Object> redisTemplate;
-
-    /** Redisson 栅栏锁（Redisson 模式时使用） */
+    /** Redisson 栅栏锁 */
     private RFencedLock redissonFencedLock;
-
-    /** 锁 key 的字节数组 */
-    private byte[] lockKey;
 
     /** 可重入计数 */
     private int nestTransaction = 1;
-
-    /** 是否为 Redisson 锁 */
-    private boolean redissonLock = false;
 
     /** 看门狗续期任务 */
     private ScheduledFuture<?> renewalFuture;
@@ -80,9 +63,6 @@ public class CacheLock implements Closeable {
 
     /**
      * 构造仅表示加锁结果的锁对象（无 Redis 关联）。
-     *
-     * @param success   是否加锁成功
-     * @param requestId 请求唯一标识
      */
     public CacheLock(boolean success, String requestId) {
         this(success, requestId, true);
@@ -90,10 +70,6 @@ public class CacheLock implements Closeable {
 
     /**
      * 构造仅表示加锁结果的锁对象（无 Redis 关联）。
-     *
-     * @param success   是否加锁成功
-     * @param requestId 请求唯一标识
-     * @param reentrant 是否可重入
      */
     public CacheLock(boolean success, String requestId, boolean reentrant) {
         this.success = success;
@@ -102,43 +78,14 @@ public class CacheLock implements Closeable {
     }
 
     /**
-     * 构造基于 Redis Lua 解锁的锁对象。
-     *
-     * @param success      是否加锁成功
-     * @param key          锁 key
-     * @param requestId    请求唯一标识
-     * @param redisTemplate Redis 模板
-     * @param lockKey      锁 key 字节数组
-     * @param reentrant    是否可重入
-     */
-    public CacheLock(boolean success, String key, String requestId,
-              RedisTemplate<String, Object> redisTemplate, byte[] lockKey, boolean reentrant) {
-        this.success = success;
-        this.key = key;
-        this.requestId = requestId;
-        this.redisTemplate = redisTemplate;
-        this.lockKey = lockKey;
-        this.reentrant = reentrant;
-    }
-
-    /**
      * 构造基于 Redisson FencedLock 的锁对象。
-     *
-     * @param success          是否加锁成功
-     * @param key              锁 key
-     * @param requestId        请求唯一标识
-     * @param redissonFencedLock Redisson 栅栏锁
-     * @param lockKey          锁 key 字节数组
-     * @param reentrant        是否可重入
      */
     public CacheLock(boolean success, String key, String requestId,
-              RFencedLock redissonFencedLock, byte[] lockKey, boolean reentrant) {
+              RFencedLock redissonFencedLock, boolean reentrant) {
         this.success = success;
         this.key = key;
         this.requestId = requestId;
         this.redissonFencedLock = redissonFencedLock;
-        this.lockKey = lockKey;
-        this.redissonLock = true;
         this.reentrant = reentrant;
     }
 
@@ -155,28 +102,13 @@ public class CacheLock implements Closeable {
         if (!success) {
             return;
         }
-        if (redissonLock) {
-            destroyRedisson();
-        } else {
-            destroyPrivateLock();
-        }
-        // 释放看门狗监控
+        // 先取消续期，再解锁，避免续期任务误延长已释放的锁
         if (renewalFuture != null) {
             renewalFuture.cancel(true);
         }
-        CacheLockManager.removeLock(key, this);
-    }
-
-    private void destroyPrivateLock() {
-        RedisCallback<Boolean> callback = (connection) -> connection.scriptingCommands().eval(UNLOCK_LUA.getBytes(),
-                ReturnType.BOOLEAN, 1, lockKey,
-                requestId.getBytes(StandardCharsets.UTF_8));
-        redisTemplate.execute(callback);
-    }
-
-    private void destroyRedisson() {
         Optional.ofNullable(redissonFencedLock)
                 .ifPresent(Lock::unlock);
+        CacheLockManager.removeLock(key, this);
     }
 
     /**

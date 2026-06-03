@@ -82,8 +82,7 @@ String v2 = GlobalCache.getStringCacheWithLock("user:1", 3_600_000L,
 
 ```
 [1] enable-local-lock → CacheLockManager.LOCK_POOL（同 JVM）
-[2] enable-redisson-lock → Redisson 可重入
-[3] Redis SET NX + Lua 或 Redisson 阻塞获取
+[2] Redisson FencedLock 获取（可重入、看门狗）
 ```
 
 ### 2.2 配置
@@ -91,13 +90,12 @@ String v2 = GlobalCache.getStringCacheWithLock("user:1", 3_600_000L,
 ```yaml
 spring.data.redis:
   enable-local-lock: false
-  enable-redisson-lock: false
 ```
 
 | 项 | 说明 |
 |----|------|
 | 本地锁 | 同 key 高频争用先 JVM 内竞争，减轻 Redis |
-| Redisson | 可重入、看门狗；自有实现不做同线程重入计数 |
+| Redisson | FencedLock 实现，可重入、看门狗续期 |
 | Perf | 加锁经 `RedisPerfGuard` + `LOCK_TRY` |
 
 ```java
