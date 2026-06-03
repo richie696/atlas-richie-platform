@@ -56,6 +56,7 @@
         <powerjob.version>5.1.2</powerjob.version>
         <ehcache.version>3.12.0</ehcache.version>
         <caffeine.version>3.2.4</caffeine.version>
+        <cache2k.version>2.6.1.Final</cache2k.version>
         <liquibase.version>5.0.3</liquibase.version>
         <fury-core.version>0.10.3</fury-core.version>
 
@@ -546,6 +547,11 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.cache2k</groupId>
+                <artifactId>cache2k-jcache</artifactId>
+                <version>${cache2k.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.redisson</groupId>

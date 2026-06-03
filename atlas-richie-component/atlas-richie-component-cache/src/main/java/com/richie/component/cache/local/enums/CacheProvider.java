@@ -18,7 +18,10 @@ public enum CacheProvider {
     EHCACHE("org.ehcache.jsr107.EhcacheCachingProvider"),
 
     /** JSR-107 Caffeine 实现 */
-    CAFFEINE("com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider");
+    CAFFEINE("com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider"),
+
+    /** JSR-107 cache2k 实现 */
+    CACHE2K("org.cache2k.jcache.provider.JCacheProvider");
 
     /** JSR-107 CachingProvider 全类名 */
     private final String cachingProvider;
