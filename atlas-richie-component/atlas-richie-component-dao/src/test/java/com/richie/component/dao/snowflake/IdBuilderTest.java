@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class IdBuilderTest {
@@ -40,5 +41,28 @@ class IdBuilderTest {
     void constructor_rejectsNegativeWorkerId() {
         assertThatThrownBy(() -> new IdBuilder(-1L))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void constructor_acceptsBoundaryWorkerIds() {
+        assertThatCode(() -> new IdBuilder(0L)).doesNotThrowAnyException();
+        assertThatCode(() -> new IdBuilder(1023L)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void defaultConstructor_generatesIds() {
+        IdBuilder builder = new IdBuilder();
+        assertThat(builder.nextId()).isPositive();
+    }
+
+    @Test
+    void nextId_staysUniqueUnderRapidCalls() {
+        IdBuilder builder = new IdBuilder(0L);
+        long previous = builder.nextId();
+        for (int i = 0; i < 200; i++) {
+            long current = builder.nextId();
+            assertThat(current).isGreaterThan(previous);
+            previous = current;
+        }
     }
 }
