@@ -2,7 +2,7 @@ package com.richie.component.redis.streammq.stream;
 
 import com.richie.component.redis.streammq.StreamMQ;
 import com.richie.component.redis.streammq.function.StreamFunction;
-import com.richie.component.cache.redis.bean.RecordId;
+import org.springframework.data.redis.connection.stream.RecordId;
 
 /**
  * Redis Stream 消息事件上下文
@@ -105,6 +105,6 @@ public record EventContext(String streamKey, String group, RecordId recordId) {
         if (stream == null) {
             throw new IllegalStateException("StreamFunction 实例不可用，无法确认消息");
         }
-        stream.acknowledge(streamKey, group, recordId.value());
+        stream.acknowledge(streamKey, group, recordId.getValue());
     }
 }

@@ -1,6 +1,6 @@
 package com.richie.component.redis.streammq.stream;
 
-import com.richie.component.cache.redis.bean.RecordId;
+import org.springframework.data.redis.connection.stream.RecordId;
 import lombok.Builder;
 
 /**

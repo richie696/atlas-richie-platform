@@ -505,9 +505,9 @@ public abstract class AbstractStreamConsumer<T extends BaseStreamMessage> {
                         long startTime = System.currentTimeMillis();
 
                         // 幂等去重：优先业务键（如覆盖在子类中提供），否则使用 recordId
-                        String idempotencyKey = buildIdempotencyKey(casted, e.recordId().value());
+                        String idempotencyKey = buildIdempotencyKey(casted, e.recordId().getValue());
                         if (!idempotencyGuard.tryAcquire(idempotencyKey, idempotencyTtl)) {
-                            log.info("幂等去重命中，跳过处理: key={}, stream={}, group={}, recordId={}", idempotencyKey, e.streamKey(), e.group(), e.recordId().value());
+                            log.info("幂等去重命中，跳过处理: key={}, stream={}, group={}, recordId={}", idempotencyKey, e.streamKey(), e.group(), e.recordId().getValue());
                             // 已处理则直接 ACK
                             if (options.autoAck) {
                                 ctx.ack();

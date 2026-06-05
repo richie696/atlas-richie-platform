@@ -1,6 +1,6 @@
 package com.richie.component.redis.streammq.bean;
 
-import com.richie.component.cache.redis.bean.RecordId;
+import org.springframework.data.redis.connection.stream.RecordId;
 
 /**
  * Redis Stream 消息记录
