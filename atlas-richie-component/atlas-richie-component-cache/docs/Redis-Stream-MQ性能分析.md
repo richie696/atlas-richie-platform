@@ -303,7 +303,7 @@ public void onStateChanged(StateChangedEvent event) {
     );
     
     // 发布到 Redis Stream（替代 Redis List）
-    GlobalCache.stream().publish("statemachine:db:sync", 
+    StreamMQ.stream().publish("statemachine:db:sync",
         new StateSyncMessage(syncKey));
 }
 ```

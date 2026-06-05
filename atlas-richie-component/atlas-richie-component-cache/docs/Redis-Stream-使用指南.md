@@ -1,6 +1,8 @@
 # Richie Redis Stream 使用指南
 
-本文档面向使用 `richie-component-cache` 的业务团队，覆盖三大部分：
+> **注意（2026-06）**：Stream MQ 已独立为 `atlas-richie-component-redis-streammq`，门面为 `StreamMQ.stream()`。下文中的 `GlobalCache.stream()` 为历史写法，请以 streammq 模块为准。
+
+本文档面向使用 Stream MQ 的业务团队，覆盖三大部分：
 
 - 收发消息（发布与消费）
 - 链路追踪（Java Agent 接入与配置）
@@ -16,7 +18,7 @@
 
 ### 1.2 发布消息（Producer）
 
-- 推荐通过平台封装的 `StreamFunction` 发布消息，已由`GlobalCache`提供了静态方法进行实例获取，方法名`stream()`，即：`GlobalCache.stream()`即可访问。
+- 推荐通过 `StreamMQ.stream().publish(streamKey, payload)` 发布消息（依赖 `atlas-richie-component-redis-streammq`）。
 - 发布时框架会自动：
   - 根据您提供的`streamKey`和消息体，将消息发送到对应的队列中
   

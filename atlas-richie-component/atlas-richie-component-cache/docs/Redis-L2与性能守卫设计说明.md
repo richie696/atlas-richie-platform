@@ -45,8 +45,8 @@ getXxxCache(key)
   → 非 null 则 LocalCache.put 回写
 ```
 
-- 普通读：`GlobalCache.getWithLocalCache`（`getStringCache`、`getObjectFromHash` 等）
-- 防击穿读：`GlobalCache.getWithLocalCacheAndLock`（`*WithLock` 系列）
+- 普通读：`value().get` / `struct().get` / `field().get`（内部经 L2 加速层）
+- 防击穿读：`value().getWithLock` / `struct().getWithLock` / `field().getWithLock`
 
 **`*WithLock` 与 L2**（`RedisStringManager` / `RedisHashManager`）：
 
@@ -56,8 +56,8 @@ getXxxCache(key)
 4. 回写由 `GlobalCache` 统一 `LocalCache.put`。
 
 ```java
-String v = GlobalCache.getStringCache("user:1");
-String v2 = GlobalCache.getStringCacheWithLock("user:1", 3_600_000L,
+String v = GlobalCache.value().get("user:1", String.class);
+String v2 = GlobalCache.value().getWithLock("user:1", 3_600_000L,
         () -> userRepository.findName(1L));
 ```
 
@@ -99,7 +99,7 @@ spring.data.redis:
 | Perf | 加锁经 `RedisPerfGuard` + `LOCK_TRY` |
 
 ```java
-try (var lock = GlobalCache.optimisticLockWithRenewal("lock:order:1", 30L)) {
+try (var lock = GlobalCache.lock().optimisticWithRenewal("lock:order:1", 30L)) {
     if (lock.success()) { /* 临界区 */ }
 }
 ```
