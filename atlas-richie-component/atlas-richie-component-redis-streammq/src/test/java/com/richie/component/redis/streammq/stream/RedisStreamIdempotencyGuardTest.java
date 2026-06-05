@@ -19,11 +19,10 @@ class RedisStreamIdempotencyGuardTest {
     private RedisStreamIdempotencyGuard guard;
 
     @BeforeEach
+    @SuppressWarnings({"unchecked", "rawtypes"})
     void setUp() {
-        @SuppressWarnings("unchecked")
         MultiRedisTemplate<Object> redisTemplate = mock(MultiRedisTemplate.class);
-        @SuppressWarnings("unchecked")
-        ValueOperations<Object, Object> valueOps = mock(ValueOperations.class);
+        ValueOperations valueOps = mock(ValueOperations.class);
         when(redisTemplate.opsForValue()).thenReturn(valueOps);
         when(valueOps.setIfAbsent(any(), eq("1"), any(Duration.class))).thenReturn(true, false);
 

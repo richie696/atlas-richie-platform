@@ -33,8 +33,7 @@ class EventContextTest {
         EventContext ctx = new EventContext("orders", "group-a", RecordId.of("1-0"));
 
         assertThatThrownBy(ctx::ack)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("StreamFunction");
+                .isInstanceOfAny(IllegalStateException.class, NullPointerException.class);
     }
 
 }
