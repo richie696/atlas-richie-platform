@@ -1,0 +1,3 @@
+com.richie.component.redis.streammq.config.stream.RedisStreamAutoConfiguration
+com.richie.component.redis.streammq.config.monitor.RedisStreamMonitoringAutoConfiguration
+com.richie.component.redis.streammq.config.tracing.RedisStreamTracingAutoConfiguration
