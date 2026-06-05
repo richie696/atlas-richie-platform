@@ -4,7 +4,7 @@
 
 ## 目标
 
-- **行覆盖率 ≥ 80%**（JaCoCo `jacoco:check`，见 `pom.xml`）
+- **行覆盖率 ≥ 85%**（JaCoCo `jacoco:check`，见 `pom.xml`）
 - **单元测试**：快、Mock 外部 I/O，覆盖分支与异常
 - **集成测试**：Testcontainers（Docker）默认，验证 Ops 闭环
 
@@ -98,7 +98,7 @@ JaCoCo 采用 **includes 白名单 + excludes 接口** 策略（见 `pom.xml`）
 | `operations/BoundedList*`、`Set/ZSetCapacity*` | `BoundedQueue/Stack`（由 `*IT` 覆盖）              |
 | `redis.perf.*`、`redis.migration.*`            | `local/**`、`config/**`、`enums/**`             |
 
-`mvn verify` 合并 `jacoco.exec` + `jacoco-it.exec` 后执行 **行覆盖率 ≥ 80%** 门禁。
+`mvn verify` 合并 `jacoco.exec` + `jacoco-it.exec` 后执行 **行覆盖率 ≥ 85%** 门禁。
 
 ## 集成测试清单（本模块）
 
@@ -112,7 +112,7 @@ JaCoCo 采用 **includes 白名单 + excludes 接口** 策略（见 `pom.xml`）
 
 ## 复制到新模块的检查清单
 
-- [ ] `pom.xml`：surefire 排除 `*IT`、failsafe 包含 `*IT`、jacoco 80%
+- [ ] `pom.xml`：surefire 排除 `*IT`、failsafe 包含 `*IT`、jacoco 85%
 - [ ] 依赖 `atlas-richie-testing-support` + 声明 surefire/failsafe/jacoco 插件
 - [ ] `src/test/.../support/`：组件专属 `@SpringBootTest` 配置与基类
 - [ ] 纯逻辑类：`*Test` 优先
