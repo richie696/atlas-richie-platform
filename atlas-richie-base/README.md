@@ -6,13 +6,14 @@
 
 **Atlas Richie Base** (`atlas-richie-base`) is the **foundation aggregator** of the Atlas Richie middle platform. It provides unified dependency versions, cross-service contracts, and runtime context capabilities for the component library and business applications.
 
-After refactoring, the base layer consists of three submodules with clear boundaries:
+The base layer consists of four submodules with clear boundaries:
 
 | Module | ArtifactId | Responsibility |
 |--------|------------|----------------|
 | Dependency BOM | `atlas-richie-dependencies` | Third-party and internal dependency versions, Maven plugins, build conventions |
 | Shared contract | `atlas-richie-contract` | Cross-service models, exceptions, gateway configuration contracts (lightweight, optional standalone dependency) |
 | Runtime context | `atlas-richie-context` | Thread context, domain base classes, utilities, JSON auto-configuration (depends on contract) |
+| Testing support | `atlas-richie-testing-support` | Testcontainers orchestration, Redis integration test base classes, Spring property initializers |
 
 > **Design note:** Cross-service contracts were extracted from `context` into `contract`, so gateway, messaging, MFA, and similar modules can depend on a lightweight JAR without pulling in Servlet, JWT, and other runtime dependencies.
 
@@ -64,11 +65,18 @@ atlas-richie-base/
 │       ├── exception/               # Platform exception hierarchy
 │       ├── model/                   # API response, user principal, pagination, stream marker
 │       └── gateway/                 # Gateway cross-service configuration contracts
-└── atlas-richie-context/            # Runtime capabilities (packaging=jar)
-    └── src/main/java/com/richie/context/
-        ├── common/api/              # Context holders, Spring helpers
-        ├── common/api/domain/        # MyBatis-Plus domain base classes
-        └── utils/                   # data / security / spring / web / time
+├── atlas-richie-context/            # Runtime capabilities (packaging=jar)
+│   └── src/main/java/com/richie/context/
+│       ├── common/api/              # Context holders, Spring helpers
+│       ├── common/api/domain/        # MyBatis-Plus domain base classes
+│       └── utils/                   # data / security / spring / web / time
+└── atlas-richie-testing-support/    # Integration testing infrastructure (packaging=jar)
+    └── src/main/java/com/richie/testing/
+        ├── container/               # Reusable container mode enum
+        ├── docker/                  # Testcontainers environment setup
+        ├── env/                     # Integration test policies (CI/local)
+        ├── redis/                   # Redis container support & test base classes
+        └── spring/                  # Spring property initializer helpers
 ```
 
 ---
@@ -237,6 +245,54 @@ try {
 
 ---
 
+## 📦 atlas-richie-testing-support
+
+**Role:** Integration testing infrastructure — Testcontainers environment orchestration, Redis container lifecycle management, and Spring property injection utilities for component integration tests.
+
+### Key classes
+
+| Package | Class | Purpose |
+|---------|-------|---------|
+| `com.richie.testing.container` | `ContainerMode` | Enum for container reuse mode (local vs. CI) |
+| `com.richie.testing.docker` | `TestcontainersEnvironment` | Docker environment detection and resource settings |
+| `com.richie.testing.env` | `IntegrationTestPolicy` | Test execution policy — determines whether integration tests should run based on environment conditions |
+| `com.richie.testing.env` | `TestEnv` | Environment key constants for property-driven test behaviour |
+| `com.richie.testing.redis` | `RedisContainerSupport` | Manages a singleton Redis Testcontainer, reusable across all component integration tests |
+| `com.richie.testing.redis` | `AbstractRedisIntegrationTestBase` | Base class for Redis integration tests — auto-starts and configures the Redis container |
+| `com.richie.testing.redis` | `GenericRedisIntegrationTestSupport` | Generic support bean providing Redis connection coordinates (host, port, password) |
+| `com.richie.testing.redis` | `RedisIntegrationTestAccess` | Accessor interface for retrieving configured Redis parameters in test context |
+| `com.richie.testing.spring` | `SpringPropertyInitializer` | Applies dynamic properties (from test containers, etc.) to `ConfigurableApplicationContext` |
+| `com.richie.testing.spring` | `PropertyContributor` | Lambda-based callback interface for supplying property pairs to the initializer |
+
+### Design highlights
+
+- **Singleton container reuse** across multiple test suites — the Redis container is started once and reused, significantly reducing CI pipeline time.
+- **Environment-aware** — `IntegrationTestPolicy` checks system properties or environment variables to decide whether to start external containers (avoids Docker dependency in non-integration contexts).
+- **Declarative property injection** — `SpringPropertyInitializer` bridge makes container dynamic ports available to Spring `@DynamicPropertySource` or application context initializers.
+
+### Usage (within a component module)
+
+```java
+public class MyComponentRedisIntegrationTest extends AbstractRedisIntegrationTestBase {
+
+    @Test
+    void testWithRedis() {
+        // Redis is already available via inherited setUp()
+        // Connection details accessible via RedisIntegrationTestAccess
+    }
+}
+```
+
+```xml
+<dependency>
+    <groupId>com.richie.base</groupId>
+    <artifactId>atlas-richie-testing-support</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+---
+
 ## 🚀 Quick start
 
 ### 1. Inherit the BOM (recommended)
@@ -320,6 +376,7 @@ Business services that use `GatewayContract` read the **same** configuration sha
 | Unified Maven versions only | `parent` → `atlas-richie-dependencies` |
 | ApiResult, GatewayContract, exceptions only | `atlas-richie-contract` |
 | Web services, utilities, context, domain bases | `atlas-richie-context` (includes contract) |
+| Integration testing with Testcontainers | `atlas-richie-testing-support` (scope: test) |
 | Component BOM | `atlas-richie-component-dependencies` (manages context/contract versions) |
 
 ---

@@ -6,13 +6,14 @@
 
 **Atlas Richie Base**（`atlas-richie-base`）是 Atlas Richie 技术中台的**基础层聚合模块**，为组件库与业务应用提供统一的依赖版本、跨服务契约与运行时上下文能力。
 
-重构后的基础层由三个子模块组成，职责边界清晰：
+基础层由四个子模块组成，职责边界清晰：
 
-| 模块 | ArtifactId | 职责 |
-|------|------------|------|
-| 依赖 BOM | `atlas-richie-dependencies` | 统一第三方与平台内部依赖版本、Maven 插件与构建约定 |
-| 共享契约 | `atlas-richie-contract` | 跨服务共享的模型、异常、网关配置契约（轻量、可独立依赖） |
-| 运行时上下文 | `atlas-richie-context` | 线程上下文、领域基类、工具类、JSON 自动配置（依赖 contract） |
+| 模块        | ArtifactId                     | 职责                                                         |
+|-----------|--------------------------------|------------------------------------------------------------|
+| 依赖 BOM    | `atlas-richie-dependencies`    | 统一第三方与平台内部依赖版本、Maven 插件与构建约定                                 |
+| 共享契约      | `atlas-richie-contract`        | 跨服务共享的模型、异常、网关配置契约（轻量、可独立依赖）                                 |
+| 运行时上下文    | `atlas-richie-context`         | 线程上下文、领域基类、工具类、JSON 自动配置（依赖 contract）                        |
+| 测试支撑      | `atlas-richie-testing-support` | 集成测试基础设施——Testcontainers 容器编排、Redis 集成测试基类、Spring 属性注入工具 |
 
 > **设计要点**：将原先集中在 `context` 中的「跨服务契约」拆到 `contract`，使网关、消息、MFA 等模块只需依赖轻量 JAR，避免拉入 Servlet、JWT 等运行时依赖。
 
@@ -64,11 +65,18 @@ atlas-richie-base/
 │       ├── exception/               # 平台异常体系
 │       ├── model/                   # API 响应、用户主体、分页、流消息标记
 │       └── gateway/                 # 网关跨服务配置契约
-└── atlas-richie-context/            # 运行时能力（packaging=jar）
-    └── src/main/java/com/richie/context/
-        ├── common/api/              # 上下文 Holder、Spring 工具
-        ├── common/api/domain/        # MyBatis-Plus 领域基类
-        └── utils/                   # data / security / spring / web / time
+├── atlas-richie-context/            # 运行时能力（packaging=jar）
+│   └── src/main/java/com/richie/context/
+│       ├── common/api/              # 上下文 Holder、Spring 工具
+│       ├── common/api/domain/        # MyBatis-Plus 领域基类
+│       └── utils/                   # data / security / spring / web / time
+└── atlas-richie-testing-support/    # 集成测试基础设施（packaging=jar）
+    └── src/main/java/com/richie/testing/
+        ├── container/               # 容器复用模式枚举
+        ├── docker/                  # Testcontainers 环境配置
+        ├── env/                     # 集成测试策略（CI/本地）
+        ├── redis/                   # Redis 容器管理 & 测试基类
+        └── spring/                  # Spring 属性注入工具
 ```
 
 ---
@@ -109,13 +117,13 @@ atlas-richie-base/
 
 ### 包与类型说明
 
-| 包路径 | 主要内容 | 典型使用方 |
-|--------|----------|------------|
-| `com.richie.contract.model` | `ApiResult` 统一 API 响应；`LoginUserPrincipal` 登录用户主体；`SearchRequest` 分页查询；`BaseStreamMessage` 流消息标记 | 所有 REST 服务、网关 |
+| 包路径                                  | 主要内容                                                                                                | 典型使用方                         |
+|--------------------------------------|-----------------------------------------------------------------------------------------------------|-------------------------------|
+| `com.richie.contract.model`          | `ApiResult` 统一 API 响应；`LoginUserPrincipal` 登录用户主体；`SearchRequest` 分页查询；`BaseStreamMessage` 流消息标记    | 所有 REST 服务、网关                 |
 | `com.richie.contract.gateway.config` | `GatewayContract`（`platform.gateway` 前缀）；`TokenFilterConfig`；`TenantFilterConfig`；`DeployConfig` 灰度 | 网关、业务服务拦截器、Messaging/MQTT/MFA |
-| `com.richie.contract.gateway.model` | `OAuth2AuditEvent` / `OAuth2AuditEventType`；`OAuth2Constants` | 网关审计发布、general-service 消费 |
-| `com.richie.contract.exception` | `BaseException`、`BusinessException`、`PlatformRuntimeException`、`PlatformDataAccessException` | 全局异常处理 |
-| `com.richie.contract.constant` | `GlobalConstants` 平台级常量 | 全平台 |
+| `com.richie.contract.gateway.model`  | `OAuth2AuditEvent` / `OAuth2AuditEventType`；`OAuth2Constants`                                       | 网关审计发布、general-service 消费     |
+| `com.richie.contract.exception`      | `BaseException`、`BusinessException`、`PlatformRuntimeException`、`PlatformDataAccessException`        | 全局异常处理                        |
+| `com.richie.contract.constant`       | `GlobalConstants` 平台级常量                                                                             | 全平台                           |
 
 ### GatewayContract（核心）
 
@@ -160,16 +168,16 @@ atlas-richie-base/
 
 ### 包与能力说明
 
-| 包路径 | 能力 |
-|--------|------|
-| `com.richie.context.common.api` | `LoginUserContextHolder`、`HeaderContextHolder`、`SpringContextHolder`（基于 TTL / Spring） |
-| `com.richie.context.common.api.domain` | 领域基类体系（见下文） |
-| `com.richie.context.utils.data` | `JsonUtils`、`XmlUtils`、集合工具；`JsonUtilsModuleCustomizer` 扩展点 |
-| `com.richie.context.utils.data.config` | `JsonUtilsModuleAutoConfiguration`（Boot 自动配置） |
-| `com.richie.context.utils.security` | `HashUtils`、`RSAUtils`、`SignatureUtils` |
-| `com.richie.context.utils.spring` | `JwtUtils`、`SpringBeanUtils`、`CommonUtils` |
-| `com.richie.context.utils.web` | `ServletUtils` |
-| `com.richie.context.utils.time` | `Timer` |
+| 包路径                                    | 能力                                                                                    |
+|----------------------------------------|---------------------------------------------------------------------------------------|
+| `com.richie.context.common.api`        | `LoginUserContextHolder`、`HeaderContextHolder`、`SpringContextHolder`（基于 TTL / Spring） |
+| `com.richie.context.common.api.domain` | 领域基类体系（见下文）                                                                           |
+| `com.richie.context.utils.data`        | `JsonUtils`、`XmlUtils`、集合工具；`JsonUtilsModuleCustomizer` 扩展点                           |
+| `com.richie.context.utils.data.config` | `JsonUtilsModuleAutoConfiguration`（Boot 自动配置）                                         |
+| `com.richie.context.utils.security`    | `HashUtils`、`RSAUtils`、`SignatureUtils`                                               |
+| `com.richie.context.utils.spring`      | `JwtUtils`、`SpringBeanUtils`、`CommonUtils`                                            |
+| `com.richie.context.utils.web`         | `ServletUtils`                                                                        |
+| `com.richie.context.utils.time`        | `Timer`                                                                               |
 
 ### 自动配置
 
@@ -233,6 +241,54 @@ try {
 } finally {
     LoginUserContextHolder.clear();
 }
+```
+
+---
+
+## 📦 atlas-richie-testing-support
+
+**定位**：集成测试基础设施——Testcontainers 容器编排、Redis 容器生命周期管理、Spring 属性注入工具，面向各组件模块的集成测试场景。
+
+### 核心类说明
+
+| 包路径                                   | 类                           | 用途                                    |
+|---------------------------------------|-----------------------------|---------------------------------------|
+| `com.richie.testing.container`        | `ContainerMode`             | 容器复用模式枚举（本地/CI）                        |
+| `com.richie.testing.docker`           | `TestcontainersEnvironment` | Docker 环境探测与资源限制                        |
+| `com.richie.testing.env`              | `IntegrationTestPolicy`     | 测试执行策略——判断是否应运行集成测试（基于环境条件）               |
+| `com.richie.testing.env`              | `TestEnv`                   | 测试环境常量 Key                            |
+| `com.richie.testing.redis`            | `RedisContainerSupport`     | 管理全局单例 Redis Testcontainer，跨组件集测复用        |
+| `com.richie.testing.redis`            | `AbstractRedisIntegrationTestBase` | Redis 集成测试基类——自动启动并配置 Redis 容器         |
+| `com.richie.testing.redis`            | `GenericRedisIntegrationTestSupport` | 通用支撑 Bean，提供 Redis 连接坐标（host、port、password） |
+| `com.richie.testing.redis`            | `RedisIntegrationTestAccess` | 获取 Redis 配置参数的访问器接口                   |
+| `com.richie.testing.spring`           | `SpringPropertyInitializer` | 将动态属性（如容器端口）注入 `ConfigurableApplicationContext` |
+| `com.richie.testing.spring`           | `PropertyContributor`       | 函数式回调接口，提供属性键值对                        |
+
+### 设计要点
+
+- **单例容器复用**：整个测试会话中只启动一次 Redis 容器，大幅缩短 CI 流水线时间。
+- **环境感知**：`IntegrationTestPolicy` 根据系统属性或环境变量决定是否启动外部容器，避免非集成场景下的 Docker 依赖。
+- **声明式属性注入**：`SpringPropertyInitializer` 桥接 Testcontainers 动态端口与 Spring `@DynamicPropertySource`，开箱即用。
+
+### 使用方式（组件模块内）
+
+```java
+public class MyComponentRedisIntegrationTest extends AbstractRedisIntegrationTestBase {
+
+    @Test
+    void testWithRedis() {
+        // Redis 已通过基类 setUp() 自动就绪
+        // 通过 RedisIntegrationTestAccess 获取连接参数
+    }
+}
+```
+
+```xml
+<dependency>
+    <groupId>com.richie.base</groupId>
+    <artifactId>atlas-richie-testing-support</artifactId>
+    <scope>test</scope>
+</dependency>
 ```
 
 ---
@@ -315,24 +371,25 @@ platform:
 
 ## 📋 依赖选择指南
 
-| 需求 | 推荐依赖 |
-|------|----------|
-| 仅需统一 Maven 版本 | `parent` → `atlas-richie-dependencies` |
-| 仅需 ApiResult、GatewayContract、异常类 | `atlas-richie-contract` |
-| Web 服务、工具类、上下文、领域基类 | `atlas-richie-context`（已含 contract） |
-| 组件 BOM | `atlas-richie-component-dependencies`（内部已管理 context/contract 版本） |
+| 需求                                     | 推荐依赖                                                                    |
+|----------------------------------------|-------------------------------------------------------------------------|
+| 仅需统一 Maven 版本                          | `parent` → `atlas-richie-dependencies`                                  |
+| 仅需 ApiResult、GatewayContract、异常类       | `atlas-richie-contract`                                                 |
+| Web 服务、工具类、上下文、领域基类                    | `atlas-richie-context`（已含 contract）                                     |
+| 集成测试（Testcontainers 容器编排、Redis 集测基类）  | `atlas-richie-testing-support`（scope: test）                             |
+| 组件 BOM                                 | `atlas-richie-component-dependencies`（内部已管理 context/contract 版本）        |
 
 ---
 
 ## 🔧 版本信息
 
-| 项 | 版本 |
-|----|------|
+| 项                      | 版本               |
+|------------------------|------------------|
 | Platform `${revision}` | `1.0.0-SNAPSHOT` |
-| JDK | 25 |
-| Spring Boot | 4.0.6 |
-| Spring Cloud | 2025.1.1 |
-| MyBatis Plus | 3.5.16（BOM 内定义） |
+| JDK                    | 25               |
+| Spring Boot            | 4.0.6            |
+| Spring Cloud           | 2025.1.1         |
+| MyBatis Plus           | 3.5.16（BOM 内定义）  |
 
 版本升级原则：**在 `atlas-richie-dependencies` 单点调整**，全平台继承；契约类变更需评估网关与各业务服务的配置兼容性。
 
