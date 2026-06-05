@@ -10,7 +10,7 @@ public final class MfaRedisIntegrationTestInitializer
     @Override
     public void initialize(ConfigurableApplicationContext context) {
         SpringPropertyInitializer.applyIfAvailable(
-                MfaRedisIntegrationTestSupport::isEnabled,
+                MfaRedisIntegrationTestSupport::integrationTestsEnabled,
                 pairs -> MfaRedisIntegrationTestSupport.getInstance().appendPropertyPairs(pairs),
                 context);
     }

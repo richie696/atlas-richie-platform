@@ -10,7 +10,7 @@ public final class VectorRedisIntegrationTestInitializer
     @Override
     public void initialize(ConfigurableApplicationContext context) {
         SpringPropertyInitializer.applyIfAvailable(
-                VectorRedisIntegrationTestSupport::isEnabled,
+                VectorRedisIntegrationTestSupport::integrationTestsEnabled,
                 pairs -> VectorRedisIntegrationTestSupport.getInstance().appendPropertyPairs(pairs),
                 context);
     }

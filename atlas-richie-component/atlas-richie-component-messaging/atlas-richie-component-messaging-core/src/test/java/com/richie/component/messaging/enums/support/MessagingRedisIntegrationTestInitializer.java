@@ -10,7 +10,7 @@ public final class MessagingRedisIntegrationTestInitializer
     @Override
     public void initialize(ConfigurableApplicationContext context) {
         SpringPropertyInitializer.applyIfAvailable(
-                MessagingRedisIntegrationTestSupport::isEnabled,
+                MessagingRedisIntegrationTestSupport::integrationTestsEnabled,
                 pairs -> MessagingRedisIntegrationTestSupport.getInstance().appendPropertyPairs(pairs),
                 context);
     }

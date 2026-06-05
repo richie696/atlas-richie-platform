@@ -10,7 +10,7 @@ public final class StorageRedisIntegrationTestInitializer
     @Override
     public void initialize(ConfigurableApplicationContext context) {
         SpringPropertyInitializer.applyIfAvailable(
-                StorageRedisIntegrationTestSupport::isEnabled,
+                StorageRedisIntegrationTestSupport::integrationTestsEnabled,
                 pairs -> StorageRedisIntegrationTestSupport.getInstance().appendPropertyPairs(pairs),
                 context);
     }
