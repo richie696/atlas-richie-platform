@@ -153,7 +153,7 @@ class MigrationWindowsTest {
                     .contains("owner=richie696")
                     .contains("until=" + WINDOW_DEADLINE)
                     .contains("now=" + today)
-                    .contains("removedIn=2.0.0")
+                    .contains("removedIn=1.0.0")
                     .contains("value=false");
         }
     }
