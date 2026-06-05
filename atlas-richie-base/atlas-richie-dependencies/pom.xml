@@ -94,6 +94,7 @@
         <jackson-datatype-jsr310.version>3.0.0-rc2</jackson-datatype-jsr310.version>
         <grpc-bom.version>1.80.0</grpc-bom.version>
         <jakarta.jakartaee-bom.version>11.0.0</jakarta.jakartaee-bom.version>
+        <testcontainers.version>2.0.5</testcontainers.version>
     </properties>
 
 
@@ -245,6 +246,30 @@
                 <groupId>com.richie.base</groupId>
                 <artifactId>atlas-richie-context</artifactId>
                 <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.base</groupId>
+                <artifactId>atlas-richie-testing-support</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+
+            <!-- Testcontainers（集测 Docker 容器） -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-junit-jupiter</artifactId>
+                <version>${testcontainers.version}</version>
             </dependency>
 
             <!-- 配置第三方依赖 -->

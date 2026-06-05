@@ -22,6 +22,7 @@
         <module>atlas-richie-dependencies</module>
         <module>atlas-richie-contract</module>
         <module>atlas-richie-context</module>
+        <module>atlas-richie-testing-support</module>
     </modules>
 
     <dependencyManagement>
