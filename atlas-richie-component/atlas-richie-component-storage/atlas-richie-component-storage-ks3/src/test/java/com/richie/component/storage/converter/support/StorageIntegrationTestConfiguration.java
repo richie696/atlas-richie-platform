@@ -1,0 +1,13 @@
+package com.richie.component.storage.converter.support;
+
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.Import;
+
+@SpringBootConfiguration
+@EnableAutoConfiguration
+@Import({
+        com.richie.component.storage.config.Ks3AutoConfiguration.class,
+})
+public class StorageIntegrationTestConfiguration {
+}
