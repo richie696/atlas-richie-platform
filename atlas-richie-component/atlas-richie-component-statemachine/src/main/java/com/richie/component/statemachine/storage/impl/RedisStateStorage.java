@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -84,7 +85,7 @@ public class RedisStateStorage implements StateStorage {
         String key = keyBuilder.buildCurrentStateKey(stateMachineName, businessId);
 
         // 存储当前状态（永不过期，因为状态机状态需要持久化）
-        GlobalCache.addStringCache(key, currentState);
+        GlobalCache.value().set(key, currentState);
 
         log.debug("保存当前状态到Redis: {} -> {}", key, currentState);
     }
@@ -107,7 +108,7 @@ public class RedisStateStorage implements StateStorage {
         // 使用防缓存击穿方法：Redis -> DB -> null
         // 如果数据库持久化未启用，则直接从Redis读取
         if (!properties.getRedisStream().getDbReplication().isEnabled()) {
-            String currentState = GlobalCache.getStringCache(key);
+            String currentState = GlobalCache.value().get(key, String.class);
             log.debug("从Redis获取当前状态: {} -> {}", key, currentState);
             return currentState;
         }
@@ -116,7 +117,7 @@ public class RedisStateStorage implements StateStorage {
         // 当Redis中没有数据时，自动从数据库加载并回填到Redis
         if (currentStateMapper == null) {
             // 如果 Mapper 不存在（数据库持久化未启用），直接从 Redis 读取
-            String currentState = GlobalCache.getStringCache(key);
+            String currentState = GlobalCache.value().get(key, String.class);
             log.debug("从Redis获取当前状态: {} -> {}", key, currentState);
             return currentState;
         }
@@ -126,7 +127,7 @@ public class RedisStateStorage implements StateStorage {
         if (timeout <= 0) {
             timeout = TimeUnit.DAYS.toMillis(7);
         }
-        String currentState = GlobalCache.getStringCacheWithLock(key, timeout, () -> {
+        String currentState = GlobalCache.value().getWithLock(key, timeout, () -> {
             // 数据库加载器：从数据库查询当前状态
             try {
                 LambdaQueryWrapper<StateMachineStateCurrent> wrapper = new LambdaQueryWrapper<>();
@@ -186,16 +187,16 @@ public class RedisStateStorage implements StateStorage {
 
         // 存储单个历史记录对象到Hash（用于快速查询）
         String historyKey = keyBuilder.buildHistoryKey(stateMachineName, businessId, history.getCreateTime());
-        GlobalCache.addObjectToHash(historyKey, history, historyTimeout);
+        GlobalCache.struct().set(historyKey, history, historyTimeout);
 
         // 将历史记录添加到列表（用于批量查询）
         String listKey = keyBuilder.buildHistoryListKey(stateMachineName, businessId);
-        GlobalCache.addListItem(listKey, history);
+        GlobalCache.collection().add(listKey, history);
 
         // 设置列表过期时间（如果之前没有设置，则设置为历史记录过期时间）
-        Long expiredTime = GlobalCache.getExpiredTime(listKey);
+        Long expiredTime = GlobalCache.key().getExpire(listKey);
         if (expiredTime == null || expiredTime <= 0) {
-            GlobalCache.setExpiredTime(listKey, historyTimeout);
+            GlobalCache.key().setExpiredTime(listKey, historyTimeout);
         }
 
         log.debug("保存状态历史到Redis（过期时间: {}天）: {} -> {} -> {}",
@@ -218,9 +219,10 @@ public class RedisStateStorage implements StateStorage {
         String listKey = keyBuilder.buildHistoryListKey(stateMachineName, businessId);
 
         // 从列表获取历史记录
-        List<StateHistory> histories = GlobalCache.getListCache(listKey, StateHistory.class);
+        Set<StateHistory> historySet = GlobalCache.collection().get(listKey, StateHistory.class);
+        List<StateHistory> histories = historySet != null ? new ArrayList<>(historySet) : new ArrayList<>();
 
-        if (histories == null || histories.isEmpty()) {
+        if (histories.isEmpty()) {
             return new ArrayList<>();
         }
 
@@ -255,11 +257,11 @@ public class RedisStateStorage implements StateStorage {
     public void deleteState(String stateMachineName, Long businessId) {
         // 删除当前状态
         String currentStateKey = keyBuilder.buildCurrentStateKey(stateMachineName, businessId);
-        GlobalCache.removeCache(currentStateKey);
+        GlobalCache.key().removeCache(currentStateKey);
 
         // 删除历史记录列表
         String historyListKey = keyBuilder.buildHistoryListKey(stateMachineName, businessId);
-        GlobalCache.removeCache(historyListKey);
+        GlobalCache.key().removeCache(historyListKey);
 
         // 注意：历史记录Hash不会自动删除，因为key包含时间戳，可以通过定期清理任务处理
         // 或者根据业务需求设置合适的过期时间

@@ -64,7 +64,7 @@ public class UserContextInterceptor implements AsyncHandlerInterceptor {
             return createUnauthorizedError(response);
         }
         var userKey = JwtUtils.getUserKey(token);
-        var userInfo = GlobalCache.getObjectFromHash(userKey, LoginUserPrincipal.class);
+        var userInfo = GlobalCache.struct().get(userKey, LoginUserPrincipal.class);
         if (Objects.isNull(userInfo)) {
             return createUnauthorizedError(response);
         }

@@ -60,6 +60,11 @@
 
         <dependency>
             <groupId>com.richie.component</groupId>
+            <artifactId>atlas-richie-component-redis-streammq</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.richie.component</groupId>
             <artifactId>atlas-richie-component-i18n</artifactId>
         </dependency>
 

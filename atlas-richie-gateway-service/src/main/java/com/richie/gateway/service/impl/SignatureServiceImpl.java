@@ -54,7 +54,7 @@ public class SignatureServiceImpl implements SignatureService {
         }
         Date expiredTime = JwtUtils.getExpiredTime(token);
         long expired = expiredTime.getTime() - System.currentTimeMillis();
-        GlobalCache.addStringCache(config.getToken().getBlacklistPath() + token, JwtUtils.getUsername(token), expired);
+        GlobalCache.value().set(config.getToken().getBlacklistPath() + token, JwtUtils.getUsername(token), expired);
         return ApiResult.success();
     }
 
@@ -70,7 +70,7 @@ public class SignatureServiceImpl implements SignatureService {
                 long ttl = expiredTime.getTime() - System.currentTimeMillis();
                 if (ttl > 0) {
                     String blacklistKey = config.getToken().getBlacklistPath() + accessToken;
-                    GlobalCache.addStringCache(blacklistKey, "1", ttl);
+                    GlobalCache.value().set(blacklistKey, "1", ttl);
                     log.info("登出：普通 token 已加入黑名单，剩余有效期(ms)={}", ttl);
                 }
             }
@@ -85,7 +85,7 @@ public class SignatureServiceImpl implements SignatureService {
                 long ttl = mfaExpiredTime.getTime() - System.currentTimeMillis();
                 if (ttl > 0) {
                     String blacklistKey = config.getToken().getBlacklistPath() + mfaToken;
-                    GlobalCache.addStringCache(blacklistKey, "1", ttl);
+                    GlobalCache.value().set(blacklistKey, "1", ttl);
                     log.info("登出：MFA 令牌已加入黑名单，剩余有效期(ms)={}", ttl);
                 }
             }
@@ -102,7 +102,7 @@ public class SignatureServiceImpl implements SignatureService {
             String userCacheKey = StringUtils.isNotBlank(tenantId)
                 ? "login:user:%s:%s".formatted(tenantId, userId)
                 : "login:user:%s".formatted(userId);
-            GlobalCache.removeCache(userCacheKey);
+            GlobalCache.key().removeCache(userCacheKey);
             log.debug("登出：已移除用户缓存，cacheKey={}", userCacheKey);
         }
 

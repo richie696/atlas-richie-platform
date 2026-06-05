@@ -43,7 +43,7 @@ public class ReplayAttackPreventionService {
      */
     public boolean isCodeUsed(String userId, String tenantId, long timeStep) {
         String key = MfaKeyUtils.getReplayPreventionKey(tenantId, userId, timeStep, tenantSupport.isTenantEnabled());
-        return GlobalCache.hasKey(key);
+        return GlobalCache.key().hasKey(key);
     }
 
     /**
@@ -65,7 +65,7 @@ public class ReplayAttackPreventionService {
         int ttlMultiplier = properties.getSecurity().getReplayPreventionTtlMultiplier();
         long ttl = ((long) timeWindow * ttlMultiplier) * 1000L; // 转换为毫秒
 
-        GlobalCache.addStringCache(key, "1", ttl);
+        GlobalCache.value().set(key, "1", ttl);
         log.debug("标记验证码已使用，key: {}, ttl: {}ms", key, ttl);
     }
 }

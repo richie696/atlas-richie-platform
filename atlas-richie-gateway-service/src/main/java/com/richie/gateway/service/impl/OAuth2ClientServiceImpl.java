@@ -37,7 +37,7 @@ public class OAuth2ClientServiceImpl implements OAuth2ClientService {
         }
         String redisKey = GatewayRedisKey.OAUTH2_CLIENT_CONFIG.getKey(clientId);
         if (fields.length == 1) {
-            Object rawValue = GlobalCache.getHashCache(redisKey, fields[0].getName(), Object.class);
+            Object rawValue = GlobalCache.field().get(redisKey, fields[0].getName(), Object.class);
             Object parsedValue = fields[0].parseRawValue(rawValue);
             if (parsedValue == null) {
                 log.debug("客户端配置不存在: clientId={}, field={}", clientId, fields[0].getName());
@@ -47,7 +47,7 @@ public class OAuth2ClientServiceImpl implements OAuth2ClientService {
 
         Map<ThirdPartyClientConfigVO.Field, Object> resultMap = new EnumMap<>(ThirdPartyClientConfigVO.Field.class);
         List<String> hashKeys = Arrays.stream(fields).map(ThirdPartyClientConfigVO.Field::getName).toList();
-        List<Object> rawValues = GlobalCache.getHashCache(redisKey, hashKeys, new TypeReference<>() {
+        List<Object> rawValues = GlobalCache.field().get(redisKey, hashKeys, new TypeReference<>() {
         });
 
         if (rawValues.size() == fields.length) {
@@ -57,7 +57,7 @@ public class OAuth2ClientServiceImpl implements OAuth2ClientService {
         } else {
             // 当批量返回数量与请求数量不一致时回退到单字段查询，确保兼容性和准确性
             for (ThirdPartyClientConfigVO.Field field : fields) {
-                Object rawValue = GlobalCache.getHashCache(redisKey, field.getName(), Object.class);
+                Object rawValue = GlobalCache.field().get(redisKey, field.getName(), Object.class);
                 resultMap.put(field, field.parseRawValue(rawValue));
             }
         }
@@ -122,7 +122,7 @@ public class OAuth2ClientServiceImpl implements OAuth2ClientService {
         String redisKey = GatewayRedisKey.OAUTH2_CLIENT_CONFIG.getKey(clientId);
         // 测试用途：给一个较长的过期时间（例如 365 天）
         long ttl = TimeUnit.DAYS.toMillis(365);
-        GlobalCache.addObjectToHash(redisKey, clientConfig, ttl);
+        GlobalCache.struct().set(redisKey, clientConfig, ttl);
 
         log.info("[TEST] 注册第三方客户端成功: clientId={}, clientName={}", clientId, clientName);
         return config;
@@ -137,7 +137,7 @@ public class OAuth2ClientServiceImpl implements OAuth2ClientService {
             String seq = String.format("%03d", RANDOM.nextInt(1000));
             String candidate = "client-%s-%s".formatted(datePrefix, seq);
             String key = GatewayRedisKey.OAUTH2_CLIENT_CONFIG.getKey(candidate);
-            if (!GlobalCache.hasKey(key)) {
+            if (!GlobalCache.key().hasKey(key)) {
                 return candidate;
             }
         }

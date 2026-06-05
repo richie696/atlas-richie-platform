@@ -1,9 +1,9 @@
 package com.richie.component.cache.subscriber;
 
 import com.richie.component.cache.domain.UserInfo;
-import com.richie.component.cache.redis.stream.AbstractStreamConsumer;
-import com.richie.component.cache.redis.stream.EventContext;
-import com.richie.component.cache.redis.stream.RedisStreamConsumer;
+import com.richie.component.redis.streammq.stream.AbstractStreamConsumer;
+import com.richie.component.redis.streammq.stream.EventContext;
+import com.richie.component.redis.streammq.stream.RedisStreamConsumer;
 import com.richie.component.cache.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

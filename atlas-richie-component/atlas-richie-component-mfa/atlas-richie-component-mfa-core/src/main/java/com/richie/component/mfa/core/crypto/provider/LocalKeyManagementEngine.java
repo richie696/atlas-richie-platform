@@ -363,7 +363,7 @@ public class LocalKeyManagementEngine implements KeyManagementProvider {
             String cacheKey = MfaKeyUtils.getSecretKeyCacheKey(tenantId, userId, tenantSupport.isTenantEnabled());
 
             // 存储到 Redis（明文存储，不加密）
-            GlobalCache.addStringCache(cacheKey, plainSecret, SECRET_STORAGE_TTL_SECONDS * 1000L);
+            GlobalCache.value().set(cacheKey, plainSecret, SECRET_STORAGE_TTL_SECONDS * 1000L);
 
             log.info("密钥已存储到 Redis，路径: {}, cacheKey: {}, 密钥长度: {}（仅用于开发/测试）",
                 secretPath, cacheKey, plainSecret != null ? plainSecret.length() : 0);
@@ -386,7 +386,7 @@ public class LocalKeyManagementEngine implements KeyManagementProvider {
             log.info("从 Redis 检索密钥，secretReference: {}, 解析后 tenantId: {}, userId: {}, cacheKey: {}",
                 secretReference, tenantId, userId, cacheKey);
 
-            String secret = GlobalCache.getStringCache(cacheKey);
+            String secret = GlobalCache.value().get(cacheKey, String.class);
 
             if (secret == null || secret.isEmpty()) {
                 log.error("密钥不存在，secretReference: {}, cacheKey: {}", secretReference, cacheKey);
@@ -411,7 +411,7 @@ public class LocalKeyManagementEngine implements KeyManagementProvider {
             String userId = parts[1];
 
             String cacheKey = MfaKeyUtils.getSecretKeyCacheKey(tenantId, userId, tenantSupport.isTenantEnabled());
-            GlobalCache.removeCache(cacheKey);
+            GlobalCache.key().removeCache(cacheKey);
 
             log.debug("密钥已从 Redis 删除，路径: {}, cacheKey: {}（仅用于开发/测试）", secretReference, cacheKey);
         } catch (Exception e) {

@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
  * </ul>
  * <b>本类只封装了发布订阅（Pub/Sub）机制，适用于在线通知、推送、事件广播等对可靠性要求不高的场景。</b>
  * <br/>
- * 若需可靠消息、消费确认、消息堆积等能力，请使用{@link RedisStreamManager}
+ * 若需可靠消息、消费确认、消息堆积等能力，请使用 atlas-richie-component-redis-streammq 组件
  * <table style="border: 1px solid #ccc; border-collapse: collapse; width: 100%; margin-top: 10px;">
  *   <caption>Stream消息队列与发布订阅（Pub/Sub）对比</caption>
  *   <tr style="border: 1px solid #ccc;">

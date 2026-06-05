@@ -73,7 +73,7 @@ public class EccCryptoServiceImpl implements EccCryptoService {
         }
 
         String cacheKey = GatewayRedisKey.ECC_CLIENT_PUBLIC_KEY.getKey(clientId);
-        GlobalCache.addStringCache(cacheKey, clientPublicKey, TimeUnit.SECONDS.toMillis(config.getClientKeyCacheExpire()));
+        GlobalCache.value().set(cacheKey, clientPublicKey, TimeUnit.SECONDS.toMillis(config.getClientKeyCacheExpire()));
         log.debug("缓存客户端公钥: {}", clientId);
     }
 
@@ -90,7 +90,7 @@ public class EccCryptoServiceImpl implements EccCryptoService {
         }
 
         String cacheKey = GatewayRedisKey.ECC_CLIENT_PUBLIC_KEY.getKey(clientId);
-        String base64PublicKey = GlobalCache.getStringCache(cacheKey);
+        String base64PublicKey = GlobalCache.value().get(cacheKey, String.class);
 
         if (!StringUtils.hasText(base64PublicKey)) {
             log.warn("客户端公钥未找到: {}", clientId);
@@ -121,7 +121,7 @@ public class EccCryptoServiceImpl implements EccCryptoService {
         String cacheKey = GatewayRedisKey.ECC_SHARED_KEY.getKey(clientId);
 
         // 尝试从缓存获取共享密钥
-        SecretKey cachedKey = GlobalCache.getObjectFromHash(cacheKey, SecretKey.class);
+        SecretKey cachedKey = GlobalCache.struct().get(cacheKey, SecretKey.class);
         if (cachedKey != null) {
             return cachedKey;
         }
@@ -137,8 +137,8 @@ public class EccCryptoServiceImpl implements EccCryptoService {
             SecretKey sharedKey = EccCryptoUtils.generateSharedSecret(gatewayPrivateKey, clientPublicKey);
 
             // 缓存共享密钥
-            GlobalCache.addObjectToHash(cacheKey, sharedKey, config.getClientKeyCacheExpire());
-            GlobalCache.setExpiredTime(cacheKey, TimeUnit.SECONDS.toMillis(config.getClientKeyCacheExpire()));
+            GlobalCache.struct().set(cacheKey, sharedKey, config.getClientKeyCacheExpire());
+            GlobalCache.key().setExpiredTime(cacheKey, TimeUnit.SECONDS.toMillis(config.getClientKeyCacheExpire()));
 
             log.debug("生成新的共享密钥: {}", clientId);
             return sharedKey;
@@ -218,8 +218,8 @@ public class EccCryptoServiceImpl implements EccCryptoService {
         String publicKeyCacheKey = GatewayRedisKey.ECC_CLIENT_PUBLIC_KEY.getKey(clientId);
         String sharedKeyCacheKey = GatewayRedisKey.ECC_SHARED_KEY.getKey(clientId);
 
-        GlobalCache.removeCache(publicKeyCacheKey);
-        GlobalCache.removeCache(sharedKeyCacheKey);
+        GlobalCache.key().removeCache(publicKeyCacheKey);
+        GlobalCache.key().removeCache(sharedKeyCacheKey);
 
         log.debug("清理客户端缓存: {}", clientId);
     }

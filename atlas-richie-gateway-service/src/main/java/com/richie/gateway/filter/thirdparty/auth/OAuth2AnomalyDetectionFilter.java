@@ -313,23 +313,23 @@ public class OAuth2AnomalyDetectionFilter extends AbstractBaseFilter {
         long ttl = TimeUnit.SECONDS.toMillis(config.getTimeWindowSeconds());
 
         // 检查 IP 是否已存在
-        boolean ipExists = GlobalCache.existsInSet(key, ip);
+        boolean ipExists = GlobalCache.collection().exists(key, ip);
 
         // 如果 IP 不存在，则添加
         if (!ipExists) {
             // 由于 addSetItem 没有 TTL 参数，需要先检查 key 是否存在，如果不存在则先创建并设置 TTL
-            if (!GlobalCache.hasKey(key)) {
+            if (!GlobalCache.key().hasKey(key)) {
                 // 首次创建时设置 TTL
-                GlobalCache.addSetCache(key, new HashSet<>(java.util.Set.of(ip)), ttl);
+                GlobalCache.collection().set(key, new HashSet<>(java.util.Set.of(ip)), ttl);
             } else {
-                GlobalCache.addSetItem(key, ip);
+                GlobalCache.collection().add(key, ip);
                 // 更新 TTL（确保 key 不会过期）
-                GlobalCache.setExpiredTime(key, ttl);
+                GlobalCache.key().setExpiredTime(key, ttl);
             }
         }
 
         // 获取 Set 大小（用于检测）
-        Long setSize = GlobalCache.getSetSize(key);
+        Long setSize = GlobalCache.collection().size(key);
         if (setSize != null && setSize > config.getMaxIpsPerToken()) {
             log.warn("检测到 Token 重放攻击: token={}, ips={}, clientId={}",
                     token.length() > 20 ? token.substring(0, 20) + "..." : token, setSize, clientId);
@@ -357,7 +357,7 @@ public class OAuth2AnomalyDetectionFilter extends AbstractBaseFilter {
             String key = GatewayRedisKey.OAUTH2_ANOMALY_REFRESH_COUNT.getKey(clientId);
             long ttl = TimeUnit.SECONDS.toMillis(config.getTimeWindowSeconds());
 
-            long refreshCount = GlobalCache.increment(key, 1L, ttl);
+            long refreshCount = GlobalCache.value().increment(key, 1L, ttl);
 
             // 检测是否超过阈值
             if (refreshCount > config.getMaxRefreshesPerMinute()) {
@@ -391,7 +391,7 @@ public class OAuth2AnomalyDetectionFilter extends AbstractBaseFilter {
         String key = GatewayRedisKey.OAUTH2_ANOMALY_RATELIMIT.getKey(clientId);
         long ttl = TimeUnit.HOURS.toMillis(1); // 1 小时窗口
 
-        long count = GlobalCache.increment(key, 1L, ttl);
+        long count = GlobalCache.value().increment(key, 1L, ttl);
 
         // 检测是否超过阈值
         if (count > rateLimit) {

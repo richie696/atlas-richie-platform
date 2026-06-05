@@ -1,107 +1,17 @@
 # Richie Cache Component
 
-基于 Redis 的完整缓存与中间件解决方案，提供统一、便捷、线程安全的静态 API，涵盖 KV 存储、数据结构操作、分布式锁、消息队列、地理位置、基数统计、限流等全量能力。
+基于 Redis 的完整缓存与中间件解决方案。通过 `GlobalCache` 统一门面提供 KV 存储、数据结构操作、分布式锁、消息队列、限流等全量能力，内置二级缓存、布隆过滤器、性能守卫等企业级特性。
 
-## 📋 目录
-
-- [功能特性](#-功能特性)
-- [模块结构](#-模块结构)
-- [配置参考](#️-配置参考)
-- [快速开始](#-快速开始)
-- [平台能力设计（5.0）](#-平台能力设计50)
-- [核心功能](#-核心功能)
-- [Redis Stream 消息队列](#redis-stream-消息队列)
-- [专题文档](#-专题文档)
-- [最佳实践](#-最佳实践)
-- [常见问题](#-常见问题)
+> **目标读者**：业务服务开发者。如果你想知道"这个组件能帮我解决什么问题、怎么用"，这是你要的文档。
+> **深度设计**：L2/分布式锁/性能守卫的完整设计思路见 [docs/](./docs/README.md)。
 
 ---
 
-## ✨ 功能特性
+## 📖 目录
 
-### 基础缓存能力
+[TOC]
 
-- ✅ **KV 存储**：String、数值（Int/Long/Float/Double）、布尔类型，支持过期时间、条件写入
-- ✅ **Hash 操作**：对象缓存、字段读写、批量操作
-- ✅ **List 操作**：队列、列表、批量弹出/插入
-- ✅ **Set 操作**：不重复集合、交集并集差集、成员判断
-- ✅ **ZSet 操作**：有序集合、排行榜、分数排序、范围查询
-- ✅ **Key 管理**：删除、查询、过期时间、重命名、移动等
 
-### 高级特性
-
-- ✅ **二级缓存（L2）**：`GlobalCache` 读先本地 `global_cache`，写双写；`*WithLock` 与 L2 协同防击穿；`CacheSyncListener` 键空间同步
-- ✅ **分布式锁**：乐观/悲观 + 续期；`enable-local-lock` 时 JVM 二级锁池再落 Redis；可选 Redisson 可重入
-- ✅ **防缓存击穿**：`getStringCacheWithLock` 等，链路 L2 → 布隆 → Redis → `lock:{key}` → DB
-- ✅ **Redis 性能守卫**：各 Manager 经 `RedisPerfGuard` 包装；复杂度分级、慢查询阈值、String 反模式检测
-- ✅ **批量操作**：批量读写，减少网络往返，提升性能
-
-### 消息队列
-
-- ✅ **Redis Stream**：可靠消息队列，支持消费组、ACK、重试、死信队列
-- ✅ **自动 ACK**：消息处理成功后自动确认
-- ✅ **手动 ACK**：精确控制消息确认时机
-- ✅ **消息重试**：可配置重试次数和延迟
-- ✅ **死信队列**：处理失败的消息自动发送到死信队列
-- ✅ **监控统计**：实时统计处理数量、ACK 数量、失败数量
-
-### 扩展能力
-
-- ✅ **地理位置（GEO）**：存储、查询、距离计算
-- ✅ **HyperLogLog**：基数估算，适合 UV 统计
-- ✅ **Bitmap**：位图操作，适合签到、标签等场景
-- ✅ **Lua 脚本**：原子性执行复杂业务逻辑
-- ✅ **限流**：滑动窗口限流，防止接口滥用
-- ✅ **布隆过滤器**：`platform.cache.bloom-filter`，Guava / Redisson，与 String/Set 读写联动防穿透
-- ✅ **多 Redis 实例**：`spring.data.redis.slaves` 子节点 + `MultiRedisTemplate` 路由
-- ✅ **发布订阅 / 键空间通知**：L2 失效同步、业务 Topic
-- ✅ **性能守卫**：`spring.data.redis.perf`，非 O(1) 告警、慢查询、String 大载荷检测
-- ✅ **Stream 可观测性**：Tracing 透传、Actuator、OTLP 指标（见 [docs](./docs/README.md)）
-
-### 架构要点
-
-- **门面**：业务代码优先使用 `GlobalCache` 静态方法；需要按类型注入时使用 `GlobalCacheManager`（`string()`、`hash()`、`stream()` 等）。
-- **实现分层**：`*Function` 接口 → `redis.manage.*Manager` → Spring `RedisTemplate` / Lettuce。
-- **自动配置**：`CacheAutoConfiguration` 扫描组件；`RedisBaseAutoConfiguration` 连接与序列化；`RedisStreamAutoConfiguration` 等按条件装配。
-
----
-
-## 📦 模块结构
-
-| 包路径 | 职责 |
-|--------|------|
-| `config` | `platform.cache`、布隆过滤器、`CacheAutoConfiguration` |
-| `function` | 对外能力接口（String、Hash、Stream、Lock…） |
-| `redis.manage` | Redis 各数据结构 Manager 实现 |
-| `redis.config` | base / stream / tracing / monitor 自动配置与 Properties |
-| `redis.stream` | 消费者抽象、幂等、Reactor、清理、控制总线 |
-| `redis.perf` | 命令复杂度分级、`RedisPerfGuard` |
-| `redis.monitor` | Stream 指标、Actuator、健康检查 |
-| `redis.tracing` | 消息 Trace 包装与解析 |
-| `local` | `spring.data.local`，Caffeine / Ehcache（JSR-107） |
-| `bloom` | `BloomFilterFacade` 及 Guava / Redisson 实现 |
-
-源码约 **106** 个 Java 文件，专题说明见 [docs/README.md](./docs/README.md)。
-
----
-
-## ⚙️ 配置参考
-
-> **注意**：旧文档中的 `cache.redis.*` 前缀已废弃，请使用下表前缀。
-
-| 配置前缀 | 主要项 | 说明 |
-|----------|--------|------|
-| `spring.data.redis` | `host`、`port`、`lettuce`、`server-type` | 继承 Spring Boot `DataRedisProperties`；扩展见 `RichieRedisProperties` |
-| `spring.data.redis` | `enable-l2-caching`、`l2-caching-data` | Redis 前加本地 L2（按 `KeyTypeEnum`） |
-| `spring.data.redis` | `enable-local-lock` | 本地锁竞争（Redisson 分布式锁默认启用） |
-| `spring.data.redis` | `slaves` | 命名子 Redis，`MultiRedisTemplate` 按名路由 |
-| `spring.data.redis` | `stream-idempotency` | Stream 幂等键 TTL 与前缀 |
-| `spring.data.redis` | `perf` | 性能守卫（默认关闭） |
-| `spring.data.local` | `provider`、`cache-definitions` | 独立本地缓存区域（与 L2 可并存） |
-| `platform.cache` | `cache-provider`、`bloom-filter` | 组件级开关与布隆参数 |
-| `platform.cache.redis.stream.consumers` | `configs`、`cleanup` | 声明式 Stream 消费者 |
-| `platform.cache.redis.stream.tracing` | — | W3C 透传（见专题文档） |
-| `platform.cache.redis.stream.monitoring` | — | 指标与 Actuator |
 
 ---
 
@@ -116,10 +26,11 @@
 </dependency>
 ```
 
-### 2. 配置 Redis 连接
+### 2. 配置
+
+这是 **生产推荐配置**（带二级缓存 + 本地锁 + 性能守卫），复制后改 Redis 地址即可：
 
 ```yaml
-# application.yml
 spring:
   data:
     redis:
@@ -128,976 +39,1370 @@ spring:
       password:
       database: 0
       timeout: 3s
-      # 可选：二级缓存（本地 + Redis）
-      enable-l2-caching: true
-      l2-caching-data:
-        - STRING
-        - HASH
-      # 分布式锁：JVM 内二级锁，减少同 key 打 Redis（Redisson 默认启用）
-      enable-local-lock: false
-      # 性能守卫（生产建议先 false，灰度开启）
+
+      # ---------- 二级缓存 ----------
+      enable-l2-caching: true               # 开启 L2 本地缓存
+      l2-caching-data: [STRING, HASH]       # String/Hash 走 L2 加速
+
+      # ---------- 分布式锁 ----------
+      enable-local-lock: true               # JVM 锁池（默认已开启）
+
+      # ---------- 性能守卫 ----------
       perf:
-        enabled: false
-        warn-non-o1: true
-        toc-soft-ms: 8
-        toc-hard-ms: 50
+        enabled: true                       # 开启运行时检测
+        warn-non-o1: true                   # 非 O(1) 操作打 WARN
+        toc-soft-ms: 8                      # 超过 8ms 告警
+        toc-hard-ms: 50                     # 超过 50ms ERROR
+        block-forbidden-tiers: false        # 灰度阶段仅告警不阻断
+        warn-string-payload-anti-patterns: true
+        block-string-payload-violations: false
 
 platform:
   cache:
-    cache-provider: REDIS
     bloom-filter:
-      enable: false
+      enable: false                         # 有缓存穿透风险时开启
       type: REDISSON
       expected-insertions: 10000000
       false-probability: 0.001
 ```
 
-多实例示例：`spring.data.redis.slaves.order-redis.host=...`，业务侧通过 Manager 指定 slave 名称（见 `MultiRedisTemplate`）。
+### 3. 写代码
 
-### 3. 使用 GlobalCache 静态 API
+所有能力通过 `GlobalCache` 静态门面调用，无需注入任何 Bean：
 
 ```java
 import com.richie.component.cache.GlobalCache;
 
-@Service
-public class UserService {
+// KV 读写
+GlobalCache.addStringCache("user:123", "Tom", 3600_000L);
+String name = GlobalCache.getStringCache("user:123");
 
-    // 基础 KV 操作
-    public void cacheUser(String userId, String userName) {
-        GlobalCache.addStringCache("user:" + userId, userName, 3600_000L); // 1小时过期
-    }
+// Hash 对象缓存
+UserInfo user = new UserInfo("Tom", 25);
+GlobalCache.addObjectToHash("user:info:123", user, 3600_000L);
 
-    public String getUser(String userId) {
-        return GlobalCache.getStringCache("user:" + userId);
-    }
+// 防缓存击穿（带锁读）
+String value = GlobalCache.getStringCacheWithLock("config:pay_ratio",
+    3600_000L, () -> configService.getConfig("pay_ratio"));
 
-    // Hash 操作（对象缓存）
-    public void cacheUserInfo(String userId, UserInfo userInfo) {
-        GlobalCache.addObjectToHash("user:info:" + userId, userInfo, 3600_000L);
-    }
-
-    // 防缓存击穿（带锁读取）
-    public String getUserWithLock(String userId) {
-        return GlobalCache.getStringCacheWithLock(
-                "user:" + userId,
-                3600_000L,
-                () -> userRepository.findById(userId).getName() // 从数据库加载
-        );
-    }
-
-    // 分布式锁
-    public void updateUser(String userId) {
-        try (var lock = GlobalCache.optimisticLockWithRenewal("lock:user:" + userId, 5L)) {
-            if (lock.success()) {
-                // 临界区代码
-                userRepository.update(userId);
-            }
-        }
-    }
+// 分布式锁
+try (var lock = GlobalCache.optimisticLockWithRenewal("lock:order:123", 5L)) {
+    if (lock.success()) orderService.processOrder("123");
 }
 ```
 
----
-
-## 🏗 平台能力设计（5.0）
-
-以下三项为当前 Redis 层的**核心新设计**，业务接口查询、分布式锁、数据访问均默认经过统一门面治理。完整设计见 **[Redis-L2与性能守卫设计说明.md](./docs/Redis-L2与性能守卫设计说明.md)**。
-
-### 二级缓存（L2）— 业务查询
-
-| 项 | 说明 |
-|----|------|
-| **开关** | `spring.data.redis.enable-l2-caching` + `l2-caching-data`（`STRING`/`HASH`/`LIST`/`SET`） |
-| **读** | `GlobalCache.getXxx` → 先 `LocalCache`（区域 `global_cache`），未命中再 Redis，命中回写 L2 |
-| **写** | 经 `GlobalCache` 的写操作双写 L2；TTL 含 1~10 分钟随机偏移防雪崩 |
-| **防击穿** | `getStringCacheWithLock` / `getObjectFromHashWithLock` 等：L2 → 布隆 → Redis → `lock:{key}` → DB；持锁失败线程会**再次读 L2** |
-| **多实例** | `CacheSyncListener` 订阅 `notify-keyspace-events KEA`（`del`/`set`/`expired` 等）同步 L2 |
-
-```yaml
-spring.data.redis.enable-l2-caching: true
-spring.data.redis.l2-caching-data: [STRING, HASH]
-```
-
-```java
-// 热点读：L2 → Redis
-String v = GlobalCache.getStringCache("product:sku:1");
-
-// 回源读：L2 → Redis+锁+DB（推荐接口查询）
-String v = GlobalCache.getStringCacheWithLock("product:sku:1", 600_000L,
-        () -> productDao.findName("1"));
-```
-
-### 分布式锁 — 本地二级锁 + Redisson
-
-| 项 | 说明 |
-|----|------|
-| **顺序** | `enable-local-lock` 时先 `CacheLockManager`（JVM 锁池）→ Redisson 获取 |
-| **后端** | Redisson FencedLock，可重入、看门狗续期 |
-| **配置** | `enable-local-lock` |
-| **守卫** | 加锁路径经 `RedisPerfGuard`（`LOCK_TRY`） |
-| **续期** | `optimisticLockWithRenewal` / `pessimisticLockWithRenewal`，虚拟线程池定时 `EXPIRE` |
-
-```yaml
-spring.data.redis.enable-local-lock: true
-```
-
-```java
-try (var lock = GlobalCache.optimisticLockWithRenewal("lock:order:" + orderId, 30L)) {
-    if (lock.success()) { /* 更新订单 */ }
-}
-```
-
-### Redis 性能守卫 — 数据访问治理
-
-| 项 | 说明 |
-|----|------|
-| **开关** | `spring.data.redis.perf.enabled`（默认 `false`，建议灰度） |
-| **复杂度** | 非 O(1) WARN；`LINEAR_N`/`WORSE` 可 `block-forbidden-tiers` 抛异常 |
-| **耗时** | `toc-soft-ms` / `toc-hard-ms` 慢查询分级 |
-| **String** | 写入前检测集合/Map 整包、超大 JSON、大对象；可 `block-string-payload-violations` |
-| **覆盖** | 各 `*Manager` 的 `redisPerfGuard.execute`；`GlobalCache` 方法带 ToC 复杂度 @apiNote |
-
-```yaml
-spring.data.redis.perf:
-  enabled: true
-  warn-non-o1: true
-  toc-soft-ms: 8
-  toc-hard-ms: 50
-  block-forbidden-tiers: false
-  warn-string-payload-anti-patterns: true
-```
-
-**注意**：旁路直接使用 `RedisTemplate` 不经 `GlobalCache` 时，**不会**更新 L2、也不会触发 String 载荷检测；生产热点路径应统一走 `GlobalCache`。
+> 所有方法均已集成 L2 二级缓存、布隆过滤器、性能守卫——零额外配置，开箱即用。
 
 ---
 
 ## 🔧 核心功能
 
-### 基础能力与开关
+### String / 数值 / 布尔（KV 存储）
+
+**解决什么问题**：业务代码直接操作 `RedisTemplate` 需要处理序列化、异常、key 拼接等模板代码。不同开发者各自写工具类导致代码散乱，且无法统一做写入治理（大 Key 检测、慢查询监控）。
 
 ```java
-// 二级缓存总开关与按类型开关
-boolean l2 = GlobalCache.enableL2Caching();
-boolean hashL2 = GlobalCache.enableKeyTypeCache(KeyTypeEnum.HASH);
-
-// 过期时间、连接信息
-Long ttl = GlobalCache.getExpiredTime("user:123");
-String connStr = GlobalCache.getConnectionString();
-```
-
-**L2 注意**：跨实例依赖 Redis 键空间通知；旁路写 Redis 可能导致短暂脏读。详见 [设计说明](./docs/Redis-L2与性能守卫设计说明.md)。
-
-**Perf 注意**：开启 `perf.enabled` 后关注 `[RedisPerf]` 日志；ToC 核心链路避免 `KEYS`、全量 `HGETALL`/`SMEMBERS`。
-
-### String/数值/布尔（KV）
-
-```java
-// 写入（带过期时间）
+// 基础写读
 GlobalCache.addStringCache("key", "value", 10_000L);
-GlobalCache.addIntCache("count", 100, 5_000L);
-GlobalCache.addBooleanCache("flag", true, 3_600_000L);
+String val = GlobalCache.getStringCache("key");
 
-// 写入（仅当不存在）
+// 条件写入（不存在才写）
 boolean added = GlobalCache.addStringCacheIfAbsent("token", "abc", 60_000L);
 
-// 读取
-String value = GlobalCache.getStringCache("key");
-Integer count = GlobalCache.getIntCache("count");
-Boolean flag = GlobalCache.getBooleanCache("flag");
+// 数值操作（自动序列化/反序列化）
+GlobalCache.addIntCache("count", 100, 5_000L);
+Long newVal = GlobalCache.increment("counter", 1L);
 
-// 递增/递减
-Long newValue = GlobalCache.increment("counter", 1L);
-Long newValue2 = GlobalCache.decrement("counter", 1L);
+// 布尔
+GlobalCache.addBooleanCache("flag", true, 3_600_000L);
 ```
 
-**使用注意事项**：
-- 永不过期缓存（无 timeout 参数）慎用，可能导致内存持续增长
-- IfAbsent 操作在高并发下仍可能重复写入，如需严格防重复请使用分布式锁
-- 数值类型缓存会自动序列化，大对象建议使用 Hash 结构
+**带来的好处**：
+- 统一门面，代码风格一致，不再散落各种 Redis 工具类
+- 自动集成性能守卫——写入大 Value 会自动告警/阻断
+- 数值/布尔无需手动序列化，省去模板代码
 
-**性能优化建议**：
-- 频繁更新的计数器使用 increment/decrement，避免先读后写
-- 大字符串（>1KB）考虑压缩或分片存储
-- 批量操作使用 batchAddToString，减少网络往返
+---
 
-### Hash（对象与字段）
+### Hash 操作（对象缓存）
+
+**解决什么问题**：把整个对象序列化为 JSON 存入 String 是反模式——无法部分更新、读取整个大 JSON 有 BIGKEY 风险。Hash 按字段存储可以按需读写、部分更新。
 
 ```java
-// 写入单个字段
+// 单字段操作（部分更新）
 GlobalCache.addCache2Hash("user:1", "name", "Tom");
 GlobalCache.addCache2Hash("user:1", "age", 25);
-
-// 写入整个对象
-UserInfo user = new UserInfo("Tom", 25);
-GlobalCache.addObjectToHash("user:1", user, 3600_000L);
-
-// 批量写入
-Map<String, Object> fields = Map.of("name", "Tom", "age", 25);
-GlobalCache.addCacheAllHash("user:1", fields, 3600_000L);
-
-// 读取单个字段
 String name = GlobalCache.getHashCache("user:1", "name", String.class);
 
-// 读取整个对象
-UserInfo user = GlobalCache.getObjectFromHash("user:1", UserInfo.class);
+// 对象存取（自动序列化）
+UserInfo user = new UserInfo("Tom", 25);
+GlobalCache.addObjectToHash("user:2", user, 3600_000L);
+UserInfo cached = GlobalCache.getObjectFromHash("user:2", UserInfo.class);
 
-// 读取多个字段
-Map<String, String> fields = GlobalCache.getHashCache("user:1", String.class);
+// 批量写入
+GlobalCache.addCacheAllHash("user:3", Map.of("name", "Jerry", "age", 30), 3600_000L);
+
+// 防击穿回源
+UserInfo result = GlobalCache.getObjectFromHashWithLock("user:999",
+    UserInfo.class, 3600_000L, () -> userRepository.findById("999"));
 
 // 删除字段
 GlobalCache.removeHashItem("user:1", "name", "age");
 ```
 
-**使用注意事项**：
-- Hash 结构适合存储对象属性，避免序列化整个对象
-- 单个 Hash 的 field 数量不宜过多（建议<1000），影响查询性能
-- 删除 Hash 字段后，空 Hash 仍占用内存，需要手动清理
+**带来的好处**：
+- 对象字段级读写，无需序列化整个对象
+- 部分更新只改一个 field，不产生 BIGKEY
+- 配合 L2 本地缓存，高频读取的 Hash 字段零网络开销
 
-**性能优化建议**：
-- 批量读取 Hash 字段使用 `getHashCache(key, Collection<String>, clazz)`
-- 大 Hash 考虑分片存储，如 `user:1:basic`、`user:1:detail`
-- 频繁更新的字段单独存储，减少序列化开销
+**注意事项**：
+- **优先使用 `addObjectToHash`**，不要用 `addObjectCache` 整包序列化对象为 String 存入 Redis，后者已废弃（`@Deprecated` since 4.4.0）。Hash 存储支持按字段读写，避免反序列化整个对象。
+- **不要存储复杂嵌套对象**到 Redis Hash。嵌套结构序列化后数据膨胀，存取时序列化/反序列化开销大，建议拆解后存入 MongoDB 等文档数据库，Redis 只存文档 ID。
+- **单字段读写**：如果仅需获取或更新对象中的某几个字段，使用 `getHashCache(key, field, Class)` 和 `addCache2Hash(key, field, value)`，避免 `getObjectFromHash` 全量反序列化。
 
-### List（列表）
+---
+
+### List 操作
+
+**解决什么问题**：List 有两种使用场景——队列场景（pop 即删除）和全量列表缓存场景（防并发重复写入）。不同场景有不同的复杂度特征和并发风险，见下文「[List 结构专项注意](#list-结构专项注意)」。
 
 ```java
-// 添加元素（队列追加操作）
-GlobalCache.addListItem("queue", "item1");
-GlobalCache.addListItem("queue", "item2");
+// ========== 队列场景（Push/Pop） ==========
+// 尾部追加
+GlobalCache.addListItem("queue", "task1");
+GlobalCache.rightPushListElement("queue", "task2");
+GlobalCache.leftPushListElement("queue", "urgent_task");
 
-// 完整写入列表（必须使用防缓存击穿方法）
-// 场景：从数据库加载完整列表并写入缓存
-List<UserInfo> users = GlobalCache.getListCacheWithLock(
-    "user:list:active",           // 缓存键
-    -1,                           // -1 表示获取全部列表
-    UserInfo.class,               // 元素类型
-    3600_000L,                    // 过期时间（1小时）
-    () -> userRepository.findAllActiveUsers() // 数据库加载器
-);
-
-// 弹出元素（队列操作）
-String first = GlobalCache.leftPopListElement("queue", String.class);
-String last = GlobalCache.rightPopListElement("queue", String.class);
-
-// 批量弹出
+// 头部弹出（消费即删除）
+String task = GlobalCache.leftPopListElement("queue", String.class);
 List<String> batch = GlobalCache.leftPopListElement("queue", 5, String.class);
 
-// 读取列表
-List<String> all = GlobalCache.getListCache("queue", String.class);
-String first = GlobalCache.getFirstFromList("queue", String.class);
-String last = GlobalCache.getLastFromList("queue", String.class);
+// 尾部弹出（栈模式）
+String last = GlobalCache.rightPopListElement("queue", String.class);
+List<String> lastBatch = GlobalCache.rightPopListElement("queue", 3, String.class);
 
-// 获取长度
+// ========== 全量列表缓存场景 ==========
+// 获取全部（O(N)，N 为列表长度，大数据量警惕 BIGKEY）
+List<User> users = GlobalCache.getListCache("user:list:active", User.class);
+
+// 防缓存击穿全量读（带锁回源，推荐）
+List<User> usersSafe = GlobalCache.getListCacheWithLock("user:list:active",
+    -1, User.class, 3600_000L, () -> userRepository.findAllActiveUsers());
+
+// ========== 单元素访问（O(1)，推荐替代全量读的场景） ==========
+// 获取首个元素（LINDEX 0）
+User first = GlobalCache.getFirstFromList("user:list:active", User.class);
+
+// 获取最后一个元素（LINDEX -1）
+User last = GlobalCache.getLastFromList("user:list:active", User.class);
+
+// 获取指定下标元素（LINDEX index，支持负数下标）
+User specific = GlobalCache.getLastFromListIndex("user:list:active", 5, User.class);
+
+// ========== 更新/替换 ==========
+// 替换整条列表（Lua 原子，DEL + RPUSH）
+GlobalCache.replaceListCache("user:list:active", newUserList);
+
+// 更新指定索引位元素（LSET，O(1)）
+GlobalCache.replaceListItem("user:list:active", 3, updatedUser);
+
+// 删除指定值（LREM，O(N) 遍历删除，大数据量慎用）
+GlobalCache.removeListItem("user:list:active", "duplicate_value", 1);
+
+// ========== 元信息 ==========
 Long size = GlobalCache.getListSize("queue");
+
+// ========== 批量初始化（非原子，仅预热场景使用） ==========
+GlobalCache.batchAddToList(Map.of("list:a", listA, "list:b", listB));
 ```
 
-**重要说明：完整写入列表的安全机制**
+**推荐配置**：List 数据量大时不推荐走 L2（本地内存压力大）。
 
-**为什么必须使用防缓存击穿方法？**
+---
 
-在高并发场景下，如果多个线程同时发现缓存为空，都去数据库查询并直接写入，会导致 List 中出现大量重复数据：
+### Set / ZSet 操作
 
-```java
-// ❌ 错误示例（已移除，不再支持）
-// 多个线程同时执行以下代码会导致重复写入：
-GlobalCache.addListCache("user:list", usersFromDB, 3600_000L);
-// 结果：List 中可能变成 [user1, user2, user3, user1, user2, user3, ...]
-
-// ✅ 正确示例（使用防缓存击穿方法）
-// 通过分布式锁确保只有一个线程写入，其他线程等待并读取已写入的数据
-List<UserInfo> users = GlobalCache.getListCacheWithLock(
-    "user:list:active",
-    -1,
-    UserInfo.class,
-    3600_000L,
-    () -> userRepository.findAllActiveUsers()
-);
-```
-
-**工作原理**：
-1. 第一个线程获取分布式锁，从数据库加载数据并写入缓存
-2. 其他线程等待锁释放后，直接从缓存读取，避免重复查询数据库
-3. 使用 `addAndReplaceList()` 替换整个列表，确保数据一致性
-
-**使用场景区分**：
-- **`addListItem()`**：用于队列追加操作，允许多个线程追加不同元素（如消息队列、日志记录）
-- **`getListCacheWithLock()`**：用于完整列表写入，确保线程安全，避免重复数据
-
-**使用注意事项**：
-- List 操作在 pipeline/transaction 中返回值可能不准确
-- 大 List（>10000 元素）查询性能下降，考虑分页或分片
-- 频繁的中间插入操作性能较差，建议使用 ZSet
-- 完整列表写入必须使用 `getListCacheWithLock()`，避免并发重复写入
-
-**应用场景**：
-- 消息队列：leftPop + rightPush
-- 最新记录：rightPush + leftPop（保持最新 N 条）
-- 任务列表：批量获取任务，处理完成后删除
-
-### Set（不重复集合）
+**解决什么问题**：Set 天然去重，适合标签、黑白名单；ZSet 按分数排序，适合排行榜。
 
 ```java
-// 添加元素
+// Set
 GlobalCache.addSetItem("tags", "java");
-GlobalCache.addSetItem("tags", "redis");
-
-// 批量添加
-Set<String> tags = Set.of("java", "redis", "spring");
-GlobalCache.addSetCache("tags", tags, 3600_000L);
-
-// 判断是否存在
+GlobalCache.addSetCache("tags", Set.of("java", "redis"), 3600_000L);
 boolean exists = GlobalCache.existsInSet("tags", "java");
-
-// 读取集合
 Set<String> all = GlobalCache.getSetCache("tags", String.class);
 
-// 弹出元素
-String popped = GlobalCache.popDataFromSet("tags", String.class);
-Set<String> batch = GlobalCache.popMembersFromSet("tags", 3, String.class);
-
-// 获取大小
-Long size = GlobalCache.getSetSize("tags");
-```
-
-**使用注意事项**：
-- Set 适合去重场景，但内存占用较大
-- 大 Set（>10000 元素）的 existsInSet 性能下降
-- pop 操作会修改 Set，注意并发安全
-
-**应用场景**：
-- 用户标签：`user:tags:123`
-- 黑名单：`blacklist:users`
-- 在线用户：`online:users`
-
-### ZSet（有序集合）
-
-```java
-// 添加元素（带分数）
+// ZSet（排行榜）
 GlobalCache.addZSetItem("rank", "user1", 99.5);
-GlobalCache.addZSetItem("rank", "user2", 88.0);
-
-// 批量添加
-TreeSet<ZSetItem<String>> items = new TreeSet<>();
-items.add(new ZSetItem<>("user1", 99.5));
-items.add(new ZSetItem<>("user2", 88.0));
-GlobalCache.addZSet("rank", items);
-
-// 获取排名
-Long rank = GlobalCache.getZSetRank("rank", "user1");        // 正序排名
-Long reverseRank = GlobalCache.getZSetReverseRank("rank", "user1"); // 倒序排名
-
-// 范围查询
-Set<String> top10 = GlobalCache.reverseScoreRangeFromZSet("rank", 0, 9, new TypeReference<String>(){});
-Set<String> range = GlobalCache.scoreRangeFromZSet("rank", 80.0, 100.0, new TypeReference<String>(){});
-
-// 弹出最小元素
-ZSetItem<String> min = GlobalCache.popMinFromZSet("rank", new TypeReference<String>(){});
-List<ZSetItem<String>> batch = GlobalCache.popMinFromZSet("rank", 5, new TypeReference<String>(){});
-
-// 更新分数
+Long rank = GlobalCache.getZSetRank("rank", "user1");
+Set<String> top10 = GlobalCache.reverseScoreRangeFromZSet("rank", 0, 9,
+    new TypeReference<String>(){});
 Double newScore = GlobalCache.incrementScore("rank", "user1", 10.0);
-
-// 获取大小
-Long size = GlobalCache.getZSetSize("rank");
 ```
 
-**使用注意事项**：
-- Score 精度问题：浮点数比较时注意精度误差
-- 大 ZSet（>10000 元素）范围查询性能下降
-- 频繁的 score 更新会影响排序性能
-
-**应用场景**：
-- 排行榜：实时更新分数，定期清理过期数据
-- 时间排序：使用时间戳作为 score
-- 权重队列：按优先级处理任务
+---
 
 ### Key 管理
 
 ```java
-// 删除
-GlobalCache.removeCache("key1");
-GlobalCache.removeCache(List.of("key1", "key2", "key3"));
+// 批量删除
+GlobalCache.removeCache(List.of("k1", "k2", "k3"));
 
-// 查询
+// 存在判断
 boolean exists = GlobalCache.hasKey("key1");
-int count = GlobalCache.countExistingKeys(List.of("key1", "key2"));
+int count = GlobalCache.countExistingKeys(List.of("k1", "k2", "k3"));
 
 // 过期时间
 GlobalCache.setExpiredTime("key1", 10_000L);
-GlobalCache.expireAt("key1", LocalDateTime.now().plusHours(1));
-GlobalCache.persist("key1"); // 移除过期时间
-
-// 元数据
-GlobalCache.copy("source", "target", true);
 GlobalCache.rename("old", "new");
-boolean renamed = GlobalCache.renameIfAbsent("old", "new");
 ```
 
-**使用注意事项**：
-- 批量删除时 keys 数量不宜过多（建议<1000），避免阻塞
-- rename 操作会阻塞其他操作，大 key 谨慎使用
-- move 操作会改变数据库，注意数据一致性
+---
 
 ### 批量操作
 
+**解决什么问题**：逐 key 读写 N 个值 → N 次网络往返。批量操作合并为一次 pipeline，延迟从 N × RTT 降为 1 × RTT。
+
 ```java
 // 批量写入
-Map<String, String> data = Map.of("k1", "v1", "k2", "v2", "k3", "v3");
+Map<String, String> data = Map.of("k1", "v1", "k2", "v2");
 GlobalCache.batchAddToString(data, 3600_000L);
 
 // 批量读取
 Map<String, String> values = GlobalCache.getValueMap(
-    List.of("k1", "k2", "k3"),
-    new TypeReference<String>(){}
-);
-
-// 批量更新（仅当不存在）
-GlobalCache.batchUpdateIfAbsent(data, 3600_000L);
+    List.of("k1", "k2"), new TypeReference<String>(){});
 ```
 
-**使用注意事项**：
-- 批量操作非原子性，可能出现部分成功部分失败
-- 单次批量操作 key 数量建议<1000，避免超时
-- 批量操作失败时，需要手动处理部分成功的数据
+---
+
+## 🛡 高级能力
 
 ### 分布式锁
 
+**解决什么问题**：跨 JVM 实例的资源互斥访问（扣库存、下单、发放优惠券）。没有分布式锁，高并发下会出现超卖、重复发放等数据一致性问题。
+
+**三层架构**：JVM 本地锁池 → 可重入检测 → Redisson FencedLock。
+
+- **本地锁池**：同一 JVM 内线程争抢同一把锁时，在 `ConcurrentHashMap` 层面就感知到了，不需要穿透到 Redis（0.01ms vs 1-5ms）。对业务代码完全透明。
+- **看门狗续期**：Redisson 自动续期，业务处理超时不会意外释放锁。
+- **乐观/悲观双模式**：乐观锁试一次即返回；悲观锁阻塞直到超时。
+
 ```java
-// 乐观锁（推荐）
+// 乐观锁（推荐——试一次，不阻塞）
 try (var lock = GlobalCache.optimisticLockWithRenewal("lock:order:123", 5L)) {
     if (lock.success()) {
-        // 临界区代码
         orderService.processOrder("123");
-    } else {
-        log.warn("获取锁失败");
     }
 }
 
-// 悲观锁
-try (var lock = GlobalCache.pessimisticLock("lock:order:123", 10L)) {
+// 悲观锁（阻塞直到获取或超时）
+try (var lock = GlobalCache.pessimisticLock("lock:order:456", 10L)) {
     if (lock.success()) {
-        // 临界区代码
+        orderService.processOrder("456");
     }
 }
 ```
 
-**使用注意事项**：
-- 锁的过期时间要大于业务执行时间
-- 避免在锁内执行耗时操作，可能导致锁失效
-- 锁的 key 要具有业务含义，便于排查问题
+**推荐配置**：
 
-**最佳实践**：
-- 使用 try-with-resources 自动释放锁
-- 合理设置锁超时时间，避免死锁
-- 考虑使用锁续期机制（`WithRenewal` 方法）
-
-### 防缓存击穿（带锁读）
-
-```java
-// String 类型
-String value = GlobalCache.getStringCacheWithLock(
-    "config:app",
-    3600_000L,
-    () -> configRepository.findByKey("app").getValue() // 从数据库加载
-);
-
-// Hash 对象
-UserInfo user = GlobalCache.getObjectFromHashWithLock(
-    "user:123",
-    UserInfo.class,
-    3600_000L,
-    () -> userRepository.findById("123") // 从数据库加载
-);
-
-// Hash 字段
-String name = GlobalCache.getHashCacheWithLock(
-    "user:123",
-    "name",
-    String.class,
-    3600_000L,
-    () -> userRepository.findById("123").getName() // 从数据库加载
-);
+```yaml
+spring.data.redis:
+  enable-local-lock: true    # 已默认开启
 ```
 
-**使用注意事项**：
-- dbLoader 要幂等，避免重复执行
-- 锁的超时时间要大于数据库查询时间
-- 避免在 dbLoader 中执行耗时操作
+**带来的好处**：
+- 100 个线程并发抢同一把锁，本地锁池把 99 次网络 RTT 降为 0
+- `AutoCloseable` —— try-with-resources 自动释放，不会忘记 unlock
+- 可重入检测——同一线程重复加锁只在本地计数，不走 Redis
 
-**应用场景**：
-- 配置信息：系统配置、用户配置
-- 热点数据：排行榜、统计数据
-- 业务规则：风控规则、计费规则
+#### 批量锁（CacheBatchLock）
 
-### 地理位置（GEO）
+**解决什么问题**：某些业务场景需要同时锁定多个资源执行原子操作（如批量扣库存、批量状态变更）。如果逐 key 循环加锁，存在死锁风险（锁顺序不一致时互相等待），且单个 key 加锁失败后难以回滚已持有锁。
+
+`CacheBatchLock` 提供一次性锁定多个 key 的能力——要么全部锁定成功，要么全部释放。避免循环加锁的死锁和部分失败问题。
 
 ```java
-// 添加地理位置
-GlobalCache.addGeo("store:geo", 116.39, 39.9, "beijing");
-GlobalCache.addGeo("store:geo", 117.20, 39.13, "tianjin");
-
-// 计算距离
-Distance distance = GlobalCache.geoDist("store:geo", "beijing", "tianjin");
-double km = distance.getValue(); // 距离（千米）
-
-// 附近查询
-List<GeoPointResult> nearby = GlobalCache.geoRadius("store:geo", 116.4, 39.9, 50.0); // 50km 范围内
+Collection<String> keys = Set.of("lock:stock:1001", "lock:stock:1002", "lock:stock:1003");
+long timeout = 20000L;
+TimeUnit unit = TimeUnit.MINUTES;
+try (var lock = GlobalCache.batchLock(keys, timeout, unit)) {
+    if (!lock.isSuccess()) {
+        // 至少有一个 key 未获取到，已自动释放所有已获取的锁
+        return ResultVO.getError("获取批量锁失败。");
+    }
+    // 所有 key 已锁定，执行批量业务逻辑
+    stockService.batchDeduct(keys);
+}
 ```
 
-**使用注意事项**：
-- 经纬度精度：建议使用 6 位小数，精度约 1 米
-- 大 GEO 集合（>10000 成员）查询性能下降
-- 距离计算使用米为单位，注意单位转换
+> 内部实现：逐 key 尝试获取乐观锁，任何一个 key 失败后立即释放所有已获取锁，返回空的 `CacheBatchLock`。注意锁超时建议按业务最大执行时间预估，避免锁提前释放或过期残留。
+>
 
-**应用场景**：
-- 附近商家：根据用户位置查询
-- 配送范围：计算配送距离
-- 地理围栏：判断用户是否在指定区域
+---
 
-### HyperLogLog（基数估算）
+### 防缓存击穿（带锁回源）
+
+**解决什么问题**：高并发下热点 key 过期瞬间，大量请求同时穿透到数据库，瞬间打垮 DB。拦截链路：L2 → 布隆过滤器 → Redis → 分布式锁 → DB。
 
 ```java
-// 添加元素
-GlobalCache.pfAdd("uv:2025-01-01", "uid1", "uid2", "uid3");
+// String 防击穿
+String value = GlobalCache.getStringCacheWithLock("config:app:pay_ratio",
+    3600_000L, () -> configService.getConfig("pay_ratio"));
 
-// 获取基数
+// Hash 防击穿
+UserInfo user = GlobalCache.getObjectFromHashWithLock("user:profile:123",
+    UserInfo.class, 3600_000L, () -> userService.findById("123"));
+```
+
+**推荐配置**：
+
+```yaml
+platform.cache.bloom-filter:
+  enable: true                          # 数据量 > 1 万的热点推荐开启
+  type: REDISSON                        # 多实例推荐 REDISSON
+  expected-insertions: 10000000
+  false-probability: 0.001
+
+spring.data.redis.enable-l2-caching: true
+spring.data.redis.l2-caching-data: [STRING, HASH]
+```
+
+**带来的好处**：
+- 四层防护——每一层命中就直接返回，只有最终层才到 DB
+- 锁获取失败的线程不会空等，重试读已有缓存
+- DB 回填数据自动写入缓存和布隆过滤器
+
+---
+
+### L2 二级缓存
+
+**解决什么问题**：Redis 热点 key 被大量实例并发读取 → Redis CPU 瓶颈。缓存雪崩时大量 key 同时过期 → 全部打到 Redis。L2 在 Redis 前加一层 JVM 本地缓存，读路径 `L1 → L2 → DB`。
+
+**读写路径**：
+
+```
+读：GlobalCache.getXxx(key)
+  ├── LocalCache.get(key)          ← L1 本地，约 0.1ms
+  │     └── 命中 → return
+  ├── Redis GET(key)                ← L2 Redis，约 1-5ms
+  │     └── 命中 → 回写 L1 → return
+  └── 未命中 → *WithLock 回源 DB
+
+写：GlobalCache.addXxx(key, value, ttl)
+  ├── Redis SET
+  ├── 双写 L1 本地缓存
+  └── 键空间通知 → 其他实例失效 L1
+```
+
+**推荐配置**：
+
+```yaml
+spring.data.redis:
+  enable-l2-caching: true
+  l2-caching-data:
+    - STRING                          # 热点 String 推荐走 L2
+    - HASH                            # 高频对象推荐走 L2
+    # LIST/SET 谨慎——数据量大时本地内存压力大
+```
+
+**带来的好处**：
+- L1 命中 ≈ 0.1ms，远低于 Redis 的 1-5ms
+- 即使 Redis 大量 key 同时过期，L1 层仍有数据兜底
+- 跨实例通过键空间通知同步失效，短暂脏读窗口在可接受范围
+
+---
+
+### 布隆过滤器
+
+**解决什么问题**：大量请求查询不存在的 key（如恶意攻击）→ 缓存穿透到 DB。布隆过滤器高效判定 key "一定不存在"，直接在入口拦截。
+
+```java
+// 配置开启后，getStringCacheWithLock 自动联动布隆
+// 布隆判定"不存在" → 直接回源，不查 Redis
+String value = GlobalCache.getStringCacheWithLock("config:app",
+    3600_000L, () -> configRepo.findByKey("app"));
+```
+
+**推荐配置**：
+
+```yaml
+platform.cache.bloom-filter:
+  enable: true
+  type: REDISSON            # 多实例用 REDISSON，单实例用 GUAVA
+  expected-insertions: 10000000
+  false-probability: 0.001  # 0.1% 误判率
+```
+
+---
+
+### 性能守卫（RedisPerfGuard）
+
+**解决什么问题**：开发者在 ToC 核心链路上无意调用 `KEYS *`、全量 `HGETALL` 等 O(n) 操作；大 Value 导致网络瓶颈和 GC 压力，没有预警机制。性能守卫在运行时按三个维度治理：
+
+| 维度 | 检测内容 | 可选阻断 |
+|------|---------|----------|
+| 复杂度 | 非 O(1) 操作（`KEYS *`、全量 `HGETALL` 等）打 WARN | `block-forbidden-tiers: true` |
+| 延迟 | 超过 `toc-soft-ms` 软阈值 WARN，超过 `toc-hard-ms` ERROR | — |
+| String 载荷 | 集合/Map 整包写入 String、超大 JSON、大对象 | `block-string-payload-violations: true` |
+
+**推荐配置**：
+
+```yaml
+spring.data.redis.perf:
+  enabled: true                    # 开启运行时治理
+  warn-non-o1: true                # 非 O(1) 操作告警
+  toc-soft-ms: 8                   # 超过 8ms WARN
+  toc-hard-ms: 50                  # 超过 50ms ERROR
+```
+
+**带来的好处**：
+- 运行时检测，不依赖代码评审发现慢查询
+- 阶梯式灰度：先只告警不阻断 → 消除告警后开启阻断
+- `MigrationWindow` 到期后强制开启，防止治理被遗忘
+
+---
+
+### 多 Redis 实例路由
+
+```yaml
+spring.data.redis:
+  host: primary.redis.com
+  slaves:
+    order-redis:
+      host: order.redis.com
+      port: 6379
+    user-cache:
+      host: user.redis.com
+      port: 6380
+```
+
+**解决什么问题**：不同业务隔离到不同 Redis 实例；读写分离；多环境共享。
+
+---
+
+### Lua 脚本 / 限流 / GEO / HyperLogLog / Bitmap
+
+```java
+// Lua（原子执行多条命令）
+String result = GlobalCache.evalLua(
+    "return ARGV[1]", List.of(), List.of("ok"), String.class);
+
+// 限流（滑动窗口，60s 内最多 100 次）
+boolean pass = GlobalCache.tryAcquire("rl:/api/pay", 100, 60);
+
+// 地理位置
+GlobalCache.addGeo("geo:store", 116.39, 39.9, "beijing");
+Distance d = GlobalCache.geoDist("geo:store", "beijing", "shanghai");
+
+// HyperLogLog（UV 统计，12KB 统计 2^64 元素）
+GlobalCache.pfAdd("uv:2025-01-01", "uid1", "uid2");
 long uv = GlobalCache.pfCount("uv:2025-01-01");
-```
 
-**使用注意事项**：
-- 基数估算有误差，误差率约 0.81%
-- 适合大基数场景（>10000），小基数误差较大
-- 不支持删除操作，只能重置整个 key
-
-**应用场景**：
-- UV 统计：用户访问量统计
-- 去重统计：避免重复计算
-- 大数据分析：近似统计
-
-### Bitmap
-
-```java
-// 设置位
-GlobalCache.setBit("sign:202501", 1, true);  // 第 1 天签到
-GlobalCache.setBit("sign:202501", 2, true);  // 第 2 天签到
-
-// 获取位
+// Bitmap（签到打卡，极致压缩）
+GlobalCache.setBit("sign:202501", 1, true);
 boolean day1 = GlobalCache.getBit("sign:202501", 1);
 ```
-
-**使用注意事项**：
-- offset 从 0 开始，注意边界处理
-- 大 offset 会占用大量内存，建议合理规划
-- 不支持负数 offset
-
-**应用场景**：
-- 签到打卡：每天一个 bit
-- 用户标签：每个标签一个 bit
-- 在线状态：用户在线状态记录
-
-### Lua 脚本
-
-```java
-// 执行 Lua 脚本
-String result = GlobalCache.evalLua(
-    "return ARGV[1]",
-    List.of(),                    // keys
-    List.of("ok"),                // args
-    String.class                  // 返回类型
-);
-```
-
-**使用注意事项**：
-- Lua 脚本要幂等，避免副作用
-- 脚本执行时间不宜过长，避免阻塞
-- 注意脚本的原子性，适合复杂业务逻辑
-
-### 限流（滑动窗口）
-
-```java
-// 尝试获取许可
-boolean pass = GlobalCache.tryAcquire("rl:/api/pay", 100, 60); // 60秒内最多100次
-if (pass) {
-    // 允许访问
-} else {
-    // 限流，拒绝访问
-}
-```
-
-**使用注意事项**：
-- 限流粒度要合理，避免误杀正常请求
-- 时间窗口要适中，避免限流效果不明显
-- 限流失败时要有降级策略
-
-**应用场景**：
-- API 限流：防止接口被滥用
-- 用户限流：防止用户操作过于频繁
-- 业务限流：防止业务异常
 
 ---
 
 ## 📨 Redis Stream 消息队列
 
-### 概述
+基于 Redis Stream 的**真正消息队列**（组件内首选 MQ 能力）。适用于需要**可靠投递、消费组、消费者失效恢复**但不想引入 Kafka/RabbitMQ 的场景。
 
-基于 Redis Stream 的可靠消息队列功能，支持消费组、消息确认、回溯与堆积，适合可靠消息/任务队列场景。
+> **与 `GlobalCache.queue()` 的区别**：`queue()` 是有界 Redis List + **主动拉**（`poll` / `drain`），不拉不消费，无消费组/ACK/死信，满时丢最老——本质是**削峰缓冲工具**与轻量异步通道，不是 MQ。可靠投递、多消费者协作、可观测消费链路请用本节 Stream；仅在极轻量场景，或**云 PaaS Redis 不支持 Stream 部分特性**、又不愿为此上 RocketMQ/RabbitMQ 时，才将 `queue()` 作为退而求其次的 List 方案。
 
-**与发布订阅（Pub/Sub）的区别**：
-- Stream：可持久化与 ACK，消息不丢失
-- Pub/Sub：仅在线广播，无 ACK，消息可能丢失
+### 解决什么问题
 
-### 主要特性
+- 业务上需要一个轻量级消息队列，但不想维护 Kafka/RabbitMQ 集群
+- 项目已经依赖 Redis，零额外基础设施成本
+- 需要消费组、ACK 机制、死信队列、幂等去重
+- 需要监控积压、处理耗时、错误率等可观测性
 
-1. **消息顺序**：Redis Stream 保证同一消费者组内的消息顺序
-2. **消息持久化**：消息会持久化到 Redis，重启后不会丢失
-3. **消费者组**：同一消费者组内的消费者会分摊消息
-4. **自动 ACK**：消息处理成功后自动确认消费
-5. **手动 ACK**：精确控制消息确认时机
-6. **消息重试**：可配置重试次数和延迟
-7. **死信队列**：处理失败的消息自动发送到死信队列
-8. **监控统计**：实时统计处理数量、ACK 数量、失败数量
+### 架构总览
 
-### 生产消息
-
-```java
-// 发布消息到 Stream
-GlobalCache.stream().publish("stream:orders", Map.of("orderId", "1001", "amount", "99.99"));
-
-// 发布对象消息
-OrderEvent event = new OrderEvent("1001", "99.99");
-GlobalCache.stream().publish("stream:orders", event);
+```
+Producer → GlobalCache.stream().publish(key, message)
+                ↓
+         Redis Stream (XADD)
+                ↓
+    RedisStreamReactor (自适应轮询: 有消息 50ms 拉取 / 无消息长轮询)
+                ↓
+    RedisStreamEventBus (Reactor 多播, 1000 容量背压缓冲)
+                ↓
+    AbstractStreamConsumer (过滤 → 反序列化 → 幂等去重 → Tracing → handle())
+                ↓
+    EventContext.ack() / onError() / 死信队列
 ```
 
-### 消费消息
+### 快速使用
 
-#### 自动 ACK 模式（推荐）
+#### 1. YAML 配置消费者
+
+```yaml
+platform:
+  cache:
+    redis:
+      stream:
+        consumers:
+          enabled: true
+          cleanup:
+            interval: 1h
+            default-max-len: 3000
+          configs:
+            order-events:
+              stream-key: "order-events"
+              group: "order-processors"
+              consumer: "order-consumer-1"
+              target-type: "com.example.domain.OrderEvent"
+              auto-ack: true
+              concurrency: 2
+              error-strategy: RETRY
+              idempotency-enabled: true
+```
+
+#### 2. 编写消费者
 
 ```java
-StreamConsumerConfig config = StreamConsumerConfig.builder()
-    .streamKey("stream:orders")
-    .group("order-processors")
-    .consumer("processor-1")
-    .count(10)                           // 每次拉取10条消息
-    .pollIntervalMillis(5000)            // 5秒轮询一次
-    .autoAck(true)                       // 启用自动ACK
-    .maxRetryCount(3)                    // 最大重试3次
-    .retryDelayMs(1000)                  // 重试延迟1秒
-    .enableDeadLetterQueue(true)         // 启用死信队列
-    .messageHandler(this::processMessages)  // 消息处理函数
-    .errorHandler(this::handleError)        // 错误处理函数
-    .build();
+@RedisStreamConsumer("order-events")
+public class OrderEventConsumer extends AbstractStreamConsumer<OrderEvent> {
 
-// 注册消费者
-String consumerId = GlobalCache.stream().subscribe(config);
+    @Override
+    protected void handle(OrderEvent payload, EventContext ctx) {
+        orderService.processOrder(payload);
+        // autoAck=true 时框架自动 ACK
+    }
 
-// 消息处理函数
-private Boolean processMessages(List<StreamMessage> messages) {
-    try {
-        for (StreamMessage message : messages) {
-            // 处理消息
-            OrderEvent event = parseMessage(message);
-            orderService.processOrder(event);
-        }
-        return true; // 处理成功，自动ACK
-    } catch (Exception e) {
-        log.error("处理消息失败", e);
-        return false; // 处理失败，不ACK，将触发重试
+    @Override
+    protected void onError(Throwable e, OrderEvent payload, EventContext ctx) {
+        log.error("处理订单事件失败", e);
+        sendToDeadLetterQueue(payload, e, ctx);       // 可选：发到死信队列
+    }
+
+    @Override
+    protected String buildIdempotencyKey(OrderEvent payload, String recordId) {
+        return payload.getOrderId();  // 覆盖幂等键（默认 recordId）
     }
 }
 ```
 
-#### 手动 ACK 模式（精确控制）
+#### 3. 发布消息
 
 ```java
-StreamConsumerConfig config = StreamConsumerConfig.builder()
-    .autoAck(false)  // 禁用自动ACK
-    .messageHandlerWithAck((messages, ack) -> {
-        for (var m : messages) {
-            // 只ACK满足条件的消息
-            if (shouldAck(m)) {
-                ack.accept(m.id());
-            }
-        }
-        return false; // 整体不自动ACK，仅保留回调内已手工ACK的结果
-    })
-    .build();
+// 发布 Map
+GlobalCache.stream().publish("order-events", Map.of("orderId", "1001"));
+
+// 发布对象（需实现 BaseStreamMessage）
+OrderEvent event = new OrderEvent("1001", "99.99");
+GlobalCache.stream().publish("order-events", event);
 ```
 
-#### 自动 ACK + 局部手工 ACK
+### 核心特性
 
-```java
-StreamConsumerConfig config = StreamConsumerConfig.builder()
-    .autoAck(true)
-    .messageHandlerWithAck((messages, ack) -> {
-        for (var m : messages) {
-            if (mustAckImmediately(m)) {
-                ack.accept(m.id()); // 该条立即ACK，其余成功消息走批量自动ACK
-            }
-        }
-        return true; // 整体成功
-    })
-    .build();
+| 特性 | 说明 |
+|------|------|
+| **错误策略** | `SKIP`（跳过继续）、`RETRY`（重试后失败记录）、`NO_ACK`（留待后续） |
+| **幂等去重** | 内存 ConcurrentHashMap + Redis SETNX 双层，Redis 不可用时降级到纯内存 |
+| **死信队列** | GLOBAL / BY_MESSAGE_TYPE / BY_SOURCE_STREAM / HYBRID 四种策略 |
+| **消息清理** | 定时 XTRIM + 分布式锁互斥，多实例只有一个执行清理 |
+| **可观测性** | Actuator 端点 `/actuator/redis-stream` + Micrometer 指标 + 积压监控 |
+
+完整配置项和监控指标见 [docs/Redis-Stream-使用指南.md](./docs/Redis-Stream-使用指南.md)。
+
+---
+
+## 📦 本地缓存
+
+独立于 Redis 的 JVM 本地缓存（与 L2 不同，这是业务显式使用的独立区域）。基于 JSR-107 标准，支持切换 Caffeine / Ehcache / Cache2k。
+
+**解决什么问题**：业务需要缓存一些配置项、路由表等不需要 Redis 的数据。或者 L2 是按数据类型自动启用的，业务需要独立的命名缓存区域。
+
+```yaml
+spring.data.local:
+  provider: CAFFEINE          # CAFFEINE / EHCACHE / CACHE2K
+  cache-definitions:
+    - name: appConfig
+      expiry-policy: CREATED
+      ttl: 300_000             # 5 分钟
+    - name: routeTable
+      expiry-policy: ACCESSED
+      ttl: 3_600_000           # 1 小时
 ```
 
-**关键区别**：
-- **自动 ACK 模式**：回调返回 `true` 时，系统对"未手工 ACK"的成功消息执行批量 ACK
-- **手动 ACK 模式**：由回调内调用 `ack.accept(recordId)` 精确 ACK；回调返回 `false` 时，仅保留已手工 ACK 的结果
+Cache2k 额外支持 refresh-ahead（过期前异步刷新）：
 
-### ACK 设计原则
-
-#### 1. 单一职责
-- `messageHandler` 负责消息处理和 ACK 决策
-- `StreamConsumerManager` 负责消息拉取、重试、死信队列等基础设施
-- 避免在外部手动调用 ACK 方法，保持职责清晰
-
-#### 2. 声明式 ACK
-- 通过返回值声明消息处理结果
-- `true` = 处理成功，需要 ACK
-- `false` = 处理失败，不 ACK，触发重试
-- 异常 = 处理异常，不 ACK，触发重试
-
-#### 3. 自动重试机制
-- 当 `messageHandler` 返回 `false` 或抛出异常时，自动重试
-- 重试次数和延迟可配置
-- 超过重试次数后自动发送到死信队列
-
-#### 4. 性能优化
-- 批量 ACK 提高性能
-- 批量 ACK 失败时自动回退到单个 ACK
-- 支持配置批量大小和轮询间隔
-
-### 监控与统计
-
-```java
-// 获取消费者状态
-Map<String, ConsumerStatus> status = streamConsumerManager.getConsumerStatus();
-
-// 获取统计信息
-Map<String, Object> stats = streamConsumerManager.getStatistics();
-// 包含：
-// - totalConsumersRegistered: 总注册消费者数
-// - totalConsumersStopped: 总停止消费者数
-// - activeConsumers: 活跃消费者数
-// - totalMessagesProcessed: 总处理消息数
-// - totalMessagesAcked: 总ACK消息数
-// - totalMessagesFailed: 总失败消息数
-// - threadPoolSize: 线程池大小
-// - activeThreads: 活跃线程数
-// - queueSize: 队列大小
+```yaml
+spring.data.local:
+  provider: CACHE2K
+  cache-definitions:
+    - name: hotData
+      expiry-policy: ACCESSED
+      ttl: 30_000
+      read-through: true
+      cache-loader-class-name: com.example.MyCacheLoader
+      cache2k-refresh-ahead: true
+      cache2k-loader-thread-count: 2
 ```
 
-### StreamConsumerConfig 配置项
+---
+
+## ⚙️ 完整配置参考
+
+> 下方按 **配置前缀 + 功能** 双维度组织，每个配置项都标注默认值、取值范围及对功能的影响。
+> 标注 ⚠️ 的项有 @MigrationWindow 约束，到期未迁移会阻止应用启动。
+
+### 1. Redis 连接（`spring.data.redis`）
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
-| streamKey | String | - | Stream 键名（必填） |
-| group | String | - | 消费者组名（必填） |
-| consumer | String | - | 消费者名（必填） |
-| count | int | 10 | 每次拉取的消息数量 |
-| pollIntervalMillis | long | 5000 | 轮询间隔（毫秒） |
-| autoAck | boolean | true | 是否启用自动 ACK |
-| maxRetryCount | int | 3 | 最大重试次数 |
-| retryDelayMs | long | 1000 | 重试延迟（毫秒） |
-| enableDeadLetterQueue | boolean | true | 是否启用死信队列 |
-| deadLetterQueueSuffix | String | ":dlq" | 死信队列后缀 |
-| enabled | boolean | true | 是否启用消费者 |
+| `host` | String | `localhost` | Redis 主机 |
+| `port` | int | `6379` | Redis 端口 |
+| `password` | String | — | Redis 密码 |
+| `database` | int | `0` | Redis 库索引 |
+| `timeout` | Duration | `3s` | 操作超时时间 |
+| `server-type` | enum | `STANDALONE` | 部署类型：`STANDALONE` / `SENTINEL` / `CLUSTER` |
+| `slaves` | Map | — | 命名子 Redis 实例（用于读写分离 / 多业务隔离），详见下文 §1.1 |
 
-### 故障排查
+#### 1.1 多 Redis 实例路由（`spring.data.redis.slaves`）
 
-#### 常见问题
+```yaml
+spring.data.redis:
+  host: primary.redis.com       # 主 Redis
+  port: 6379
+  slaves:                       # 命名子 Redis，可独立配置连接
+    order-redis:
+      host: order.redis.com
+      port: 6379
+      password: order-pass
+    user-cache:
+      host: user.redis.com
+      port: 6380
+```
 
-1. **消息处理失败**
-   - 检查业务逻辑是否正确
-   - 查看重试日志
-   - 检查死信队列
+子 Redis 在 `MultiRedisTemplate` 中按名称路由。运行时新增/删除子 Redis 需要重启。
 
-2. **消费者停止**
-   - 检查消费者配置
-   - 查看错误日志
-   - 检查 Redis 连接
+#### 1.2 Lettuce 扩展（`spring.data.redis.lettuce.*`）
 
-3. **性能问题**
-   - 调整批量大小
-   - 优化消息处理逻辑
-   - 调整线程池配置
+> 本节扩展配置是为了解决 Spring Boot 原生 Lettuce 配置在**生产环境**中不够用的问题。涉及三个维度：**连接池调优**、**Socket 连接模式（epoll）**、**Netty 直接内存管理**。
 
-#### 日志级别
+---
 
-建议在生产环境中设置合适的日志级别：
-- DEBUG：详细的处理日志
-- INFO：重要的状态变更
-- WARN：警告信息
-- ERROR：错误信息
+##### 1.2.1 为什么选择 Lettuce（而非 Jedis）
+
+项目默认采用 **Lettuce** 作为 Redis 客户端。Jedis 本质上属于直连模式（每个实例对应一个 Redis 连接，非线程安全，需通过连接池来模拟复用），而 Lettuce 是**基于 Netty 的异步驱动客户端**，具有以下差异：
+
+| 对比维度 | Lettuce | Jedis |
+|---------|---------|-------|
+| 线程安全 | ✅ 是，单例复用 | ❌ 否，需连接池配合 |
+| 连接模式 | 异步 + 同步 + 响应式 | 同步阻塞 |
+| 底层 IO | Netty epoll（Linux 高性能） | BIO / NIO |
+| Redis 集群 | 原生支持 | 需要额外的哨兵/集群适配 |
+| 连接保活（epoll） | ✅ 支持 TCP_USER_TIMEOUT | ❌ JDK SO_KEEPALIVE 粗粒度 |
+
+结论：Lettuce 在连接复用、多线程并发、Linux 内核特性利用上优于 Jedis。Jedis 的优势仅在于上手简单，但生产环境推荐 Lettuce。
+
+---
+
+##### 1.2.2 连接池配置（`spring.data.redis.lettuce.pool.*`）
+
+> 这是继承自 Spring Boot `DataRedisProperties.Lettuce` 的标准连接池配置。
+
+Lettuce 虽然是异步驱动，但在同步调用模式下仍然使用连接池来限制并发连接数。**连接池没有通用标准配置**，因为最优值取决于 Redis 服务器性能、网络带宽、应用并发量等因素。推荐的调整方式：
+
+1. 根据从业务侧统计到的并发量、访问峰值做一个初步估算
+2. 设置一组初始值
+3. 通过压测工具压测，观察 `RedisPool Exhausted` 异常、连接等待耗时等指标
+4. 反复调整直到找到平衡点
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `pool.max-active` | int | `8` | 最大活跃连接数（压测重点调整项）|
+| `pool.max-idle` | int | `8` | 最大空闲连接数 |
+| `pool.min-idle` | int | `0` | 最小空闲连接数 |
+| `pool.max-wait` | Duration | `-1ms` | 获取连接的最大等待时间（-1 = 无限等待）|
+| `pool.time-between-eviction-runs` | Duration | — | 空闲连接驱逐线程运行间隔 |
+
+---
+
+##### 1.2.3 Epoll 连接模式（Linux 高性能 IO）
+
+> ⚠️ **本节特性仅 Linux x86_64 / aarch64 / riscv64 系统支持**。非 Linux 系统下会收到 Lettuce 的警告日志且配置不会生效。
+
+**什么是 epoll？**
+
+epoll 是 Linux 内核提供的**改进型 IO 多路复用接口**，是传统 `select` / `poll` 的增强替代。核心区别：
+
+| 特性 | select / poll | epoll |
+|------|-------------|-------|
+| **FD 上限** | 有限（默认 2048，需重新编译内核扩大） | 无上限（仅受 `/proc/sys/fs/file-max` 限制，1GB 内存约 10 万）|
+| **效率与连接数的关系** | 线性扫描全部 FD，连接越多越慢 | 仅操作"活跃的"FD，空闲连接不参与扫描 |
+| **内核通信方式** | 用户空间与内核空间消息拷贝 | **mmap 共享内存**，避免内核态/用户态数据拷贝 |
+| **触发模式** | 仅水平触发（持续通知直到状态变更） | 支持水平触发 + **边缘触发**（仅状态变化时通知一次） |
+| **适用场景** | 少量活跃连接 | 大量连接 + 少量活跃（典型 WAN 场景） |
+
+**为什么这个重要？**
+
+生产环境一个微服务实例可能需要同时维护数十到数百个 Redis 连接（主 Redis + 哨兵 + 各子 Redis 实例）。使用 `select` / `poll` 时，每次 IO 多路复用都要线性扫描全部 FD，即使绝大多数连接处于空闲状态。epoll 只会在活跃连接上有回调，空闲连接不消耗 CPU。在 WAN 场景（大量空闲 + 少量活跃）下，**epoll 的效率远高于 select/poll**。
+
+---
+
+##### 1.2.4 保活配置（Keep-Alive）
+
+**解决的问题**：Redis 长连接经过云负载均衡（SLB/ALB/NLB）、NAT 网关、防火墙时，这些设备有空闲超时策略（通常 60-300 秒）。一旦连接空闲超过设备超时时间，设备会**静默断开 TCP 连接**而客户端毫不知情。下次请求时才发现连接已死，触发连接重建，极端情况下会耗尽连接池。
+
+**为什么扩展配置？**
+- JDK 标准 `SO_KEEPALIVE` 只提供开启/关闭（boolean），无法细调 `idle`、`interval`、`count`
+- Linux sysctl 全局参数（`/proc/sys/net/ipv4/tcp_keepalive_time`）影响主机上所有进程
+- Netty epoll 原生传输支持逐连接设置 `TCP_KEEPIDLE`、`TCP_KEEPINTVL`、`TCP_KEEPCNT` + **`TCP_USER_TIMEOUT`（RFC 5482）**
+
+**`TCP_USER_TIMEOUT` 是什么？**
+RFC 5482 定义的 TCP 选项，指定 TCP 在未收到对端 ACK 的情况下，最多等待多久后强制关闭连接。它比单纯依赖 keep-alive 探针更可靠——keep-alive 探针只检测连接是否可达，而 `TCP_USER_TIMEOUT` 同时检测**数据是否被对端确认**。推荐公式：
+```
+tcpUserTimeout ≈ idle + interval × count
+```
+
+**生产推荐配置**：
+
+```yaml
+spring:
+  data:
+    redis:
+      lettuce:
+        keep-alive:
+          enabled: true                             # 启用保活（仅 Linux 有效）
+          count: 6                                  # 连续 6 次无响应判定连接死亡
+          idle: 90                                  # 空闲 90 秒后开始发送探针
+          idle-unit: seconds
+          interval: 60                              # 探针间隔 60 秒
+          interval-unit: seconds
+          tcp-user-timeout: 450                     # TCP 用户超时（RFC 5482）
+          tcp-user-timeout-unit: seconds             # 90 + 6 × 60 = 450 秒
+```
+
+**各参数的物理含义**：
+
+| 参数 | 含义 | 默认值 | 生产推荐 | 备注 |
+|------|------|--------|---------|------|
+| `idle` | 连接空闲多久后开始发 keep-alive 探针 | 2 小时 | 90s | Linux 内核默认 2h，对云环境过长 |
+| `interval` | 相邻探针的间隔 | 75s | 60s | 过于密集增加服务器负担，过于稀疏检测太慢 |
+| `count` | 连续无响应多少次后判定死亡 | 9 | 6 | 结合 interval 计算总检测时间 |
+| `tcp-user-timeout` | TCP 等待对端 ACK 的最长时间 | 7875s | 450s | 推荐 ≈ idle + interval × count |
+
+**非 Linux 系统降级**：非 Linux 下 epoll 不可用，保活配置不会应到 Socket 通道，Lettuce 会输出 ⚠️ 警告日志，不影响程序运行。
+
+---
+
+##### 1.2.5 内存释放策略（Netty Direct Buffer 管理）
+
+**解决的问题**：Lettuce 基于 Netty，Netty 使用**引用计数的 Direct Buffer（直接内存/堆外内存）池**。池化可以减少分配/释放开销，但有一个代价——**池只涨不缩**。流量高峰时 Netty 分配的 Direct Buffer 在低峰期不会自动释放回操作系统，堆积在池中。最终触达 `-XX:MaxDirectMemorySize`（默认 = `-Xmx`）上限后抛出 `OutOfMemoryError: Direct buffer memory`。
+
+```yaml
+spring:
+  data:
+    redis:
+      lettuce:
+        memory-release-policy: USAGE_RADIO    # 内存释放策略（默认）
+        memory-release-ratio: 3               # 使用率达到 75% 时触发释放（默认）
+```
+
+**`memory-release-policy` 可选值**：
+
+| 策略 | 行为 | 适用场景 |
+|------|------|---------|
+| `USAGE_RADIO`（默认） | 池使用率达到 `ratio/(ratio+1)` 时释放旧缓存 | 通用场景，平衡 CPU 和内存 |
+
+**`memory-release-ratio` 的影响**（仅 `USAGE_RADIO` 模式生效）：
+
+| ratio | 触发阈值 | 内存倾向 | CPU 倾向 | 推荐场景 |
+|-------|---------|---------|---------|---------|
+| 1 | 50% | 低内存 | 较高 CPU（频繁释放/再分配） | 低 QPS、内存敏感 |
+| 3（默认）| 75% | 中等 | 中等 | 通用场景 |
+| 5 | 83% | 较高 | 较低 | 高 QPS 服务 |
+| 10 | 90% | 高 | 低 | 极高 QPS、CPU 敏感 |
+
+**带来的好处**：
+- 直接内存在低峰期可收敛，避免 `OutOfDirectMemoryError`
+- 高 QPS 服务用高 ratio（减少释放/再分配的 CPU 开销），低 QPS 服务用低 ratio（节省内存）
+- 通过配置调节，无需堆 JVM 参数间接调优
+
+---
+
+#### 1.3 RESP 协议版本（`spring.data.redis.protocol-version`）
+
+| 取值 | 适用 | 特点 |
+|------|------|------|
+| `RESP2` | Redis 2 - 5 | 传统协议 |
+| `RESP3` | Redis 6+ | 性能更好、支持客户端缓存、避免响应数据二次转换 |
+
+Redis 6+ 强烈建议 RESP3。Redis 禁用 HELLO 命令时需用 RESP2 避免连接失败。
+
+---
+
+### 2. L2 二级缓存（`spring.data.redis`）
+
+| 配置项 | 类型 | 默认值 | 关联功能 | 说明 |
+|--------|------|--------|----------|------|
+| `enable-l2-caching` | boolean | `false` | L2 二级缓存 | 是否启用 L1 本地缓存 |
+| `l2-caching-data` | List<KeyTypeEnum> | `[]` | L2 二级缓存 | 哪些数据类型走 L2，可选 `STRING` / `HASH` / `LIST` / `SET` |
+
+> TTL 自动追加 1~10 分钟随机偏移防雪崩。`enable-l2-caching=false` 时配置无效但 `*WithLock` 的本地查路径仍会工作。
+
+**多实例一致性**：依赖 Redis 键空间通知
+
+```bash
+# Redis 服务端必须开启
+notify-keyspace-events KEA
+```
+
+短暂脏读窗口：写入 Redis 到收到通知之间，跨实例 L1 仍是旧值。建议 L1 TTL 不超过「原始 TTL × 2」。
+
+---
+
+### 3. 分布式锁（`spring.data.redis`）
+
+| 配置项 | 类型 | 默认值 | 关联功能 | 说明 |
+|--------|------|--------|----------|------|
+| `enable-local-lock` | boolean | **`true`** ⚠️ 已默认开启 | JVM 本地锁池 | 同一 JVM 内对同一锁 key 走 `ConcurrentHashMap` 查表，关闭则每次直接打 Redisson |
+
+> **何时考虑关闭**：极端情况下锁 key 极多、命中率极低、`ConcurrentHashMap` 内存膨胀。实际业务中几乎不会出现。
+
+---
+
+### 4. 性能守卫（`spring.data.redis.perf`）
+
+> 关联功能：[性能守卫](#性能守卫redisperfguard)。⚠️ = @MigrationWindow 约束，2026-12-01 前必须设为 `true`，否则启动失败。
+
+| 配置项                                  | 类型           | 默认值               | 说明                                                           |
+|--------------------------------------|--------------|-------------------|--------------------------------------------------------------|
+| `enabled` ⚠️                         | boolean      | `false`           | 总开关。关闭则 perf 治理全部失效                                          |
+| `warn-non-o1`                        | boolean      | `true`            | 非 O(1) 操作打 WARN                                              |
+| `toc-soft-ms`                        | long         | `8`               | 软阈值（毫秒），超过 WARN                                              |
+| `toc-hard-ms`                        | long         | `50`              | 硬阈值（毫秒），超过 ERROR                                             |
+| `block-forbidden-tiers` ⚠️           | boolean      | `false`           | 阻断 LINEAR_N / WORSE 复杂度操作（抛异常）                               |
+| `log-big-key-probe-hints`            | boolean      | `true`            | 非 O(1) 时输出 BIGKEY 探测建议                                       |
+| `toc-allowed-complexities`           | List<String> | `[]`              | 复杂度白名单（`O1` / `LOG_N` / `SCRIPT_OR_UNKNOWN`），非空则不在列表内即 ERROR |
+| `warn-string-payload-anti-patterns`  | boolean      | `true`            | String 写入前检测反模式（集合/Map 整包、超大 JSON）                           |
+| `warn-json-like-string-blob`         | boolean      | `true`            | 启用 JSON 形状启发式                                                |
+| `json-like-min-chars-for-warn`       | int          | `128`             | JSON 整包 WARN 阈值（去空白字符数）                                      |
+| `string-payload-max-chars-warn`      | int          | `100_000`         | String 字符数 WARN 阈值                                           |
+| `string-payload-max-chars-error`     | int          | `1_000_000`       | String 字符数 ERROR 阈值                                          |
+| `string-payload-max-bytes-warn`      | int          | `262_144` (256KB) | byte[] 写入 WARN 阈值                                            |
+| `string-payload-max-bytes-error`     | int          | `1_048_576` (1MB) | byte[] 写入 ERROR 阈值                                           |
+| `block-string-payload-violations` ⚠️ | boolean      | `false`           | 阻断 String 载荷违规写入（抛异常）                                        |
+
+**生产推荐**（灰度完成）：
+
+```yaml
+spring.data.redis.perf:
+  enabled: true
+  block-forbidden-tiers: true
+  block-string-payload-violations: true
+```
+
+---
+
+### 5. Stream 幂等去重（`spring.data.redis.stream-idempotency`）
+
+> 关联功能：[幂等去重](#-redis-stream-消息队列)。仅在 Stream 消费者启用且 `idempotency-enabled=true` 时生效。
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `redis-ttl` | Duration | `24h` | Redis 幂等键 TTL（跨实例兜底）|
+| `memory-ttl` | Duration | `1h` | 内存幂等键 TTL（进程内快速去重）|
+| `key-prefix` | String | `idemp:stream:` | 幂等键前缀 |
+
+**降级策略**：Redis 不可用时自动降级为纯内存去重，防止全量拒绝。
+
+---
+
+### 6. 本地缓存（`spring.data.local`）
+
+> 关联功能：[本地缓存](#-本地缓存)。独立于 L2 的业务显式使用区域，基于 JSR-107。
+
+#### 6.1 顶层配置
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `provider` | enum | `EHCACHE` | 底层实现：`EHCACHE` / `CAFFEINE` / `CACHE2K` |
+| `cache-definitions` | Set<CacheDefinition> | `[]` | 缓存定义列表，详见 §6.2 |
+
+#### 6.2 缓存定义（`spring.data.local.cache-definitions[].*`）
+
+每条 `CacheDefinition` 定义一个独立的本地缓存区域（按 `name` 区分）：
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `name` | String | — | 缓存区域名称（必填，业务按名获取）|
+| `expiry-policy` | enum | — | 过期策略：`CREATED` / `ACCESSED` / `ETERNAL` / `MODIFIED` / `TOUCHED` |
+| `expiry` | int | `5` | 过期时间数值（`ETERNAL` 时无效）|
+| `expiry-unit` | TimeUnit | `MINUTES` | 过期时间单位（`ETERNAL` 时无效）|
+| `statistics-enabled` | boolean | `false` | 是否启用命中率/操作数统计 |
+| `store-by-value` | boolean | `false` | `true` 按值存（深拷贝）、`false` 按引用存 |
+| `read-through` | boolean | `false` | 启用 read-through，miss 时调用 CacheLoader 回源（需配合 `cache-loader-class-name`）|
+| `cache-loader-class-name` | String | — | `javax.cache.integration.CacheLoader` 全类名 |
+| `write-through` | boolean | `false` | 启用 write-through，put/remove 时回调 CacheWriter（需配合 `cache-writer-class-name`）|
+| `cache-writer-class-name` | String | — | `javax.cache.integration.CacheWriter` 全类名 |
+| `cache2k-refresh-ahead` | boolean | `false` | **仅 CACHE2K** 生效：过期前异步刷新（需 `read-through=true`）|
+| `cache2k-loader-thread-count` | Integer | cache2k 默认 | **仅 CACHE2K** 生效：后台刷新线程数 |
+
+**示例**：
+
+```yaml
+spring.data.local:
+  provider: CAFFEINE
+  cache-definitions:
+    - name: appConfig
+      expiry-policy: CREATED
+      expiry: 5
+      expiry-unit: MINUTES
+      statistics-enabled: true
+    - name: hotData
+      provider: CACHE2K          # 单独 provider（需要在 CacheDefinition 中加）
+      expiry-policy: ACCESSED
+      expiry: 30
+      expiry-unit: SECONDS
+      read-through: true
+      cache-loader-class-name: com.example.MyCacheLoader
+      cache2k-refresh-ahead: true
+      cache2k-loader-thread-count: 2
+```
+
+---
+
+### 7. 组件级配置（`platform.cache`）
+
+| 配置项 | 类型 | 默认值 | 关联功能 | 说明 |
+|--------|------|--------|----------|------|
+| `cache-provider` | enum | `REDIS` | 全局选择 | 当前实现：仅 `REDIS` |
+| `bloom-filter.*` | — | — | 布隆过滤器 | 详见 §7.1 |
+
+#### 7.1 布隆过滤器（`platform.cache.bloom-filter`）
+
+> 关联功能：[布隆过滤器](#布隆过滤器)。`enable=false` 时其他配置无效。
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enable` | boolean | `false` | 总开关 |
+| `type` | enum | `REDISSON` | 实现：`REDISSON`（跨实例共享）/ `GUAVA`（单实例，零网络）|
+| `key` | String | `platform:cache:bloom:global` | 布隆数据 key（Redisson 模式）|
+| `expected-insertions` | long | `10_000_000` | 预期插入数量（建议略大于实际最大值 20~50%）|
+| `false-probability` | double | `0.001` | 误判率（0.001 = 0.1%，最低 0.0001 极低误判）|
+
+**内存估算**（公式：`bits ≈ -n × ln(p) / (ln2)²`）：
+
+| n | p | 内存 |
+|---|----|------|
+| 1_000_000 | 0.001 | 1.8 MB |
+| 10_000_000 | 0.001 | 18 MB |
+| 100_000_000 | 0.001 | 180 MB |
+
+---
+
+### 8. Stream 消费者（`platform.cache.redis.stream.consumers`）
+
+> 关联功能：[Redis Stream 消息队列](#-redis-stream-消息队列)。
+
+#### 8.1 顶层配置
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enabled` | boolean | `true` | 是否启用 YAML 自动装配消费者（关闭后需手动在构造函数初始化）|
+| `configs` | Map<String, ConsumerConfig> | `{}` | 消费者配置映射，key 对应 `@RedisStreamConsumer("xxx")` |
+| `cleanup.*` | — | — | 消息清理服务配置，详见 §8.3 |
+
+#### 8.2 单个消费者（`configs.<name>.*`）
+
+| 配置项 | 类型 | 默认值 | 必填 | 说明 |
+|--------|------|--------|:----:|------|
+| `stream-key` | String | — | ✅ | Stream 键名 |
+| `group` | String | — | ✅ | 消费者组名 |
+| `consumer` | String | `default-consumer` | — | 消费者名（多实例需不同）|
+| `target-type` | Class | — | ✅ | 消息负载类型全类名（DLQ 消费者可省略）|
+| `auto-ack` | boolean | `true` | — | 自动确认 |
+| `concurrency` | int | `1` | — | 并发处理数 |
+| `count` | int | `1` | — | 单次拉取消息数（量大可调 10-50）|
+| `error-strategy` | enum | `SKIP` | — | `SKIP` / `RETRY` / `NO_ACK` |
+| `max-retries` | int | `3` | — | `RETRY` 策略下最大重试次数 |
+| `retry-delay` | Duration | `1s` | — | `RETRY` 策略下重试间隔 |
+| `idempotency-enabled` | boolean | `true` | — | 启用幂等去重 |
+| `auto-start` | boolean | `true` | — | 自动启动消费者 |
+| `max-len` | Long | `0` | — | Stream 最大保留消息数（0 用全局 `cleanup.defaultMaxLen`）|
+
+**错误策略对比**：
+
+| 策略 | 行为 | 适用 |
+|------|------|------|
+| `SKIP` | 跳过错误消息并 ACK | 数据可丢弃的日志类 |
+| `RETRY` | 自动重试一次，失败后记录 | 大部分业务 |
+| `NO_ACK` | 不确认消息留待后续 | 不允许数据丢失 |
+
+#### 8.3 消息清理（`consumers.cleanup`）
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `interval` | Duration | `1h` | 清理任务执行间隔（Spring Boot Duration 格式：`1h` / `30m` / `PT1H`）|
+| `default-max-len` | Long | `3000` | 全局默认最大保留消息数（消费者 `maxLen=0` 时使用）|
+
+> 清理服务使用分布式锁 `redis:stream:cleanup:lock:{serviceName}`，多实例只有一个执行。
+
+---
+
+### 9. Stream 监控（`platform.cache.redis.stream.monitoring`）
+
+> 关联功能：[监控与可观测性](#9-stream-监控platformcacheredisstreammonitoring)。`enabled=false` 时所有子配置失效。
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enabled` | boolean | `false` | 监控总开关 |
+| `health-check.*` | — | — | 健康检查，详见 §9.1 |
+| `metrics.*` | — | — | 指标采集，详见 §9.2 |
+| `performance.*` | — | — | 性能指标，详见 §9.3 |
+| `error-monitoring.*` | — | — | 错误监控，详见 §9.4 |
+| `business-monitoring.*` | — | — | 业务监控，详见 §9.5 |
+
+#### 9.1 健康检查（`health-check`）
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enabled` | boolean | `false` | 启用健康检查（汇总到 `/actuator/health`）|
+| `interval` | Duration | `30s` | 检查间隔（建议 30s-60s）|
+| `timeout` | Duration | `5s` | 单次检查超时（建议 3s-5s）|
+
+#### 9.2 指标采集（`metrics`）
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enabled` | boolean | `false` | 上报 Micrometer 指标 |
+| `detailed` | boolean | `true` | 直方图 / 分位数（P50/P95/P99）。高 QPS 建议关 |
+| `sampling-rate` | double | `1.0` | 采样率 0.0-1.0，高 QPS 建议 0.05-0.3 |
+
+#### 9.3 性能指标（`performance`）
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enabled` | boolean | `false` | 启用性能统计 |
+| `record-processing-time` | boolean | `true` | 记录消息处理耗时 |
+| `record-polling-time` | boolean | `true` | 记录拉取操作耗时 |
+| `record-publishing-time` | boolean | `true` | 记录消息发布耗时 |
+
+#### 9.4 错误监控（`error-monitoring`）
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enabled` | boolean | `false` | 启用错误指标采集 |
+| `classify-by-type` | boolean | `true` | 按异常类型分类（便于差异化告警）|
+| `record-stack-trace` | boolean | `false` | 记录堆栈（开销大，仅定位时临时开）|
+
+#### 9.5 业务监控（`business-monitoring`）
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enabled` | boolean | `false` | 启用业务计数 |
+| `record-message-count` | boolean | `true` | 记录发布/消费/ACK 计数 |
+| `record-retry-count` | boolean | `true` | 记录重试计数 |
+| `record-ack-count` | boolean | `true` | 记录确认计数 |
+
+---
+
+### 10. Stream 链路追踪（`platform.cache.redis.stream.tracing`）
+
+> 关联功能：[监控与可观测性](#10-stream-链路追踪platformcacheredisstreamtracing)。W3C TraceContext 透传到 Stream 消息。
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enabled` | boolean | `false` | 启用追踪 |
+| `service-name` | String | `redis-stream-service` | 服务名称 |
+| `service-version` | String | `1.0.0` | 服务版本 |
+| `sampling.probability` | double | `1.0` | 采样率 0.0-1.0 |
+| `sampling.adaptive` | boolean | `false` | 启用自适应采样 |
+| `attributes.record-message-content` | boolean | `false` | 记录消息内容（注意敏感数据）|
+| `attributes.record-message-metadata` | boolean | `true` | 记录消息元数据 |
+| `attributes.record-processing-time` | boolean | `true` | 记录处理时间 |
+| `attributes.record-error-details` | boolean | `true` | 记录错误详情 |
+| `events.record-message-received` | boolean | `true` | 记录消息接收事件 |
+| `events.record-processing-started` | boolean | `true` | 记录处理开始事件 |
+| `events.record-processing-completed` | boolean | `true` | 记录处理完成事件 |
+| `events.record-message-acknowledged` | boolean | `true` | 记录 ACK 事件 |
+| `events.record-retry-events` | boolean | `true` | 记录重试事件 |
+| `error-tracing.record-stack-trace` | boolean | `false` | 记录错误堆栈 |
+| `error-tracing.record-error-context` | boolean | `true` | 记录错误上下文 |
+| `error-tracing.max-error-message-length` | int | `1000` | 错误消息最大长度 |
+| `otlp.*` | — | — | OTLP 导出器，详见 §10.1 |
+| `zipkin.*` | — | — | Zipkin 导出器，详见 §10.2 |
+| `logging.*` | — | — | 日志导出器，详见 §10.3 |
+
+#### 10.1 OTLP 导出器（`tracing.otlp`）
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enabled` | boolean | `false` | 启用 OTLP 导出（兼容 Jaeger / Zipkin / Elastic APM / New Relic / DataDog）|
+| `endpoint` | String | `http://localhost:4317` | OTLP 端点 |
+| `service-name` | String | `redis-stream-service` | 服务名 |
+| `protocol` | String | `http` | 协议：`grpc` / `http` |
+| `timeout-seconds` | int | `30` | 超时时间 |
+
+#### 10.2 Zipkin 导出器（`tracing.zipkin`）
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enabled` | boolean | `false` | 启用 Zipkin 导出 |
+| `endpoint` | String | `http://localhost:9411/api/v2/spans` | Zipkin 端点 |
+| `service-name` | String | `redis-stream-service` | 服务名 |
+
+#### 10.3 日志导出器（`tracing.logging`）
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enabled` | boolean | `true` | 启用日志导出（默认开）|
+| `level` | String | `INFO` | 日志级别 |
+
+---
+
+### 11. OTLP 指标导出（`management.otlp.metrics`）
+
+> 关联功能：[OpenTelemetry 指标导出](#11-otlp-指标导出managementotlpmetrics)。
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enabled` | boolean | `false` | 启用 OTLP 指标导出 |
+| `endpoint` | String | — | OTLP 端点 |
+| `service-name` | String | `redis-stream-service` | 服务名 |
+| `timeout-seconds` | int | `30` | 超时时间 |
+
+---
+
+### 12. 配置总览（按功能定位）
+
+> 不确定去哪儿查？按这个表反过来定位。
+
+| 你想改什么 | 配置前缀 | 章节 |
+|------------|----------|------|
+| Redis 连接 | `spring.data.redis` | §1 |
+| 多 Redis 实例 | `spring.data.redis.slaves` | §1.1 |
+| Lettuce 调优 | `spring.data.redis.lettuce` | §1.2 |
+| L2 二级缓存 | `spring.data.redis.enable-l2-caching` | §2 |
+| JVM 本地锁池 | `spring.data.redis.enable-local-lock` | §3 |
+| 性能守卫 | `spring.data.redis.perf` | §4 |
+| Stream 幂等 | `spring.data.redis.stream-idempotency` | §5 |
+| 本地缓存 | `spring.data.local` | §6 |
+| 布隆过滤器 | `platform.cache.bloom-filter` | §7.1 |
+| Stream 消费者 | `platform.cache.redis.stream.consumers` | §8 |
+| Stream 消息清理 | `platform.cache.redis.stream.consumers.cleanup` | §8.3 |
+| Stream 监控 | `platform.cache.redis.stream.monitoring` | §9 |
+| Stream 链路追踪 | `platform.cache.redis.stream.tracing` | §10 |
+| OTLP 指标导出 | `management.otlp.metrics` | §11 |
+
+---
+
+## 🎯 最佳实践
+
+### Key 命名规范
+
+```
+{business}:{object}:{id}:{field}
+user:info:123
+order:status:456
+lock:order:789
+```
+
+### 缓存策略选择
+
+| 场景 | 推荐方案 | 配置 |
+|------|---------|------|
+| 热点 KV 读多写少 | L2 + 防击穿 | `enable-l2-caching: true` + `*WithLock` |
+| 高并发锁争用 | 分布式锁 + 本地锁 | `enable-local-lock: true`（默认）|
+| 大列表缓存 | `*WithLock` 防重复 | 不走 L2，用防击穿方法 |
+| 排行榜 | ZSet | 无需额外配置 |
+| 去重统计（大量） | HyperLogLog | 12KB 统计 2^64 元素 |
+| 去重统计（少量） | Set | O(1) 成员判断 |
+| 限流 | `tryAcquire` | Lua 原子实现 |
+| 附近查询 | GEO | 无需额外配置 |
+| 签到打卡 | Bitmap | 1 亿用户每天约 12MB |
+| 轻量 MQ | Redis Stream | 零额外基础设施 |
+
+### 过期时间策略
+
+- **热点数据**：短过期（秒级），配合 L2 读放大
+- **配置数据**：中等过期（分钟级）
+- **基础数据**：长过期（小时级），TTL 加随机偏移防雪崩
+
+### 性能优化
+
+- 热点读必须开 L2 + `*WithLock`，避免 Redis 成为瓶颈
+- 批量操作代替循环逐 key 读写，减少网络 RTT
+- 预发环境灰度 `perf.enabled`，消除 `[RedisPerf]` 告警后再上生产
+- ToC 核心链路避免 `KEYS *`、全量 `HGETALL`/`SMEMBERS`
+
+### 大 Key 阈值参考
+
+大 Key 会导致 Redis 主线程阻塞、主从同步延迟、AOF 重写卡顿、集群迁移卡死等隐患。以下阈值综合了 **Redis 内部编码优化分界线**与**组件性能守卫默认值**，两者对齐、互为验证。
+
+#### 集合类型阈值
+
+| 类型   | 编码优化阈值                      | 推荐业务上限       | 越过编码线的影响                  | 典型隐患命令                                                                   |
+|------|-----------------------------|--------------|---------------------------|--------------------------------------------------------------------------|
+| list | 512 元素（quicklist 节点切换）      | **5,000** 元素 | 节点从 ziplist 退化为链表，单节点内存增大 | `LRANGE 0 -1`（O(N) 全量）；**List 无去重能力，任何去重方案都需 O(N) 遍历，必须借助伴生 Set 在写入前拦截** |
+| set  | 512 元素（intset → hashtable）  | **5,000** 元素 | 内存暴增 2~3 倍，rehash 卡顿      | `SMEMBERS`（O(N) 全量）                                                      |
+| zset | 128 元素（ziplist → skiplist）  | **5,000** 元素 | 内存暴增 2~3 倍                | `ZRANGE 0 -1`（O(N)）、`ZREMRANGEBYRANK`（O(log N+M)）                        |
+| hash | 512 字段（ziplist → hashtable） | **1,000** 字段 | 内存暴增 2~3 倍，rehash 卡顿      | `HGETALL`（O(N)）、`HKEYS`（O(N)）                                            |
+
+> **有界队列 / 栈**（非 Stream MQ）：`queue()` FIFO、**主动拉**消费，适合削峰与轻量缓冲；`stack()` LIFO、满则拒绝压入。二者均不能替代 [Redis Stream 消息队列](#-redis-stream-消息队列)。`maxLen` 合法 **1～4,999**；默认不可变，仅 `grow()` 单次 ×2 至封顶。勿与 `rawList()` 共 key；创建时校验 Redis 类型为 none/list。`drain` / `latest` 的 `count` 为 **1～20**；读路径反序列化失败打 **WARN**（批量跳过坏元素，`poll`/`pop` 已弹出但失败时返回 `null`）。
+
+> **说明**：「编码优化阈值」是 Redis 内部从紧凑编码切换到宽松编码的分界线，越过即导致内存与 CPU 代价跳变；「推荐业务上限」是在紧凑编码之上留出安全余量的经验值，超过后全量扫描类命令延迟明显上升。两者取**较小值**作为实际红线。
+
+#### String 值阈值（与 `RedisPerfGuard` 对齐）
+
+| 级别    | 字符数阈值             | 字节数阈值            | 配置项                                                                 | 行为                                                              |
+|-------|-------------------|------------------|---------------------------------------------------------------------|-----------------------------------------------------------------|
+| OK    | < 100,000（~100KB） | < 256KB          | —                                                                   | 正常写入                                                            |
+| WARN  | ≥ 100,000         | ≥ 262,144（256KB） | `string-payload-max-chars-warn` / `string-payload-max-bytes-warn`   | 输出 WARN 日志                                                      |
+| ERROR | ≥ 1,000,000（~1MB） | ≥ 1,048,576（1MB） | `string-payload-max-chars-error` / `string-payload-max-bytes-error` | 输出 ERROR 日志；若 `block-string-payload-violations=true` 则直接抛异常阻断写入 |
+
+此外，`RedisStringPayloadInspector` 还会检测以下反模式并直接报 ERROR：
+- 将 `Collection` / `Map` / 数组整包序列化进 String（应改用 Hash / List / ZSet）
+- 将任意 JavaBean 整包 JSON 塞进单 key（建议 Hash 字段建模）
+- 以 `{` 或 `[` 开头且长度 ≥ 128 字符的疑似整包 JSON（WARN）
+
+#### Key 名称
+
+| 项目 | 建议 |
+|------|------|
+| Key 长度 | < 128 字节（Redis 限制 512MB，但长 key 增加内存与比较开销） |
+| 命名规范 | `{业务}:{实体}:{ID}`，避免空格与特殊字符 |
+
+#### 大 Key 检测手段
+
+| 方式 | 适用场景 |
+|------|----------|
+| `redis-cli --bigkeys` | 离线扫描，快速定位 Top N 大 Key |
+| `MEMORY USAGE key` | 在线查看单 key 内存占用（Redis 4.0+） |
+| `redis-cli --scan --pattern '*' \| xargs -I{} redis-cli MEMORY USAGE {}` | 批量扫描（慎用，生产建议采样） |
+| 组件内置 `RedisPerfGuard` | 运行时自动检测：非 O(1) 调用 WARN + BIGKEY 探测建议（HLEN/LLEN/SCARD/ZCARD），受 `spring.data.redis.perf.log-big-key-probe-hints=true` 控制 |
+| 慢查询日志 `SLOWLOG GET` | 发现延迟 ≥ `toc-hard-ms`（默认 50ms）的可疑操作 |
+
+#### 大 Key 治理建议
+
+- **删除用 UNLINK 而非 DEL**：`GlobalCache.removeCache()` 内部已使用 `UNLINK`（异步释放内存），避免主线程阻塞。业务代码禁止自行调用 `DEL`。
+- **分片代替单 Key**：大 Hash 拆成 `key:shard:{0..N}`，大 List 拆成多段，大 Set 按业务维度分桶。
+- **渐进式扫描**：用 `HSCAN` / `SSCAN` / `ZSCAN` 代替 `HGETALL` / `SMEMBERS` / `ZRANGE 0 -1`，每次取有界批次。
+- **超限迁移**：单 key 体量持续超标（> 10MB 或元素 > 50,000）应迁至 MongoDB / HBase / ES 等专用存储，Redis 只做热点小数据缓存。
+
+#### List 结构专项注意
+
+List 是 Redis 五种基础类型中行为最特殊的结构——**唯一没有天然去重**（Set 拒绝重复、Hash 同 field 覆盖、ZSet 同 member 覆盖），所有写入操作都是**无条件追加**。同时 List 操作的时间复杂度跨度极大（O(1) ~ O(N)），错误使用在高并发下极易引发性能问题。
+
+##### 各方法时间复杂度总览
+
+| 方法 | 底层命令 | 时间复杂度 | 风险等级 | 说明 |
+|------|---------|-----------|---------|------|
+| `addListItem` / `rightPushListElement` / `leftPushListElement` | RPUSH / LPUSH | **O(1)** | ✅ 安全 | 单元素追加，原子 |
+| `rightPopListElement` / `leftPopListElement` (单个) | RPOP / LPOP | **O(1)** | ✅ 安全 | 单元素弹出，原子 |
+| `rightPopListElement(key, count)` / `leftPopListElement(key, count)` | RPOP count / LPOP count | **O(N)** | ⚠️ N=count | count 很大时可能阻塞；建议 ≤ 20 |
+| `indexOfList` | LINDEX | **O(1)** | ✅ 安全 | 单下标读，推荐替代 `getFromList` 单元素场景 |
+| `getFirstFromList` | LINDEX 0 | **O(1)** | ✅ 安全 | 取首元素，委托 `indexOfList` |
+| `getLastFromList` | LINDEX -1 | **O(1)** | ✅ 安全 | 取尾元素，委托 `indexOfList` |
+| `getLastFromListIndex` | LINDEX index | **O(1)** | ✅ 安全 | 取指定下标，委托 `indexOfList` |
+| `replaceListItem` | LSET | **O(1)** | ✅ 安全 | 按索引更新，原子 |
+| `getListSize` | LLEN | **O(1)** | ✅ 安全 | 取列表长度 |
+| `getListCache` / `getFromList(key, -1, ...)` | LLEN + LRANGE 0~N-1 | **O(N)** | 🔴 **BIGKEY 风险** | N=列表长度。全量读取，大量元素时延迟陡增 |
+| `getListCacheWithLock` | 同 `getListCache` + 分布式锁 | **O(N)** | 🔴 **BIGKEY 风险** | 同上，带防击穿保护但全量读取风险仍在 |
+| `removeListItem` | LREM | **O(N)** | 🔴 **BIGKEY 风险** | N=列表长度。遍历整表删除匹配值 |
+| `replaceListCache` / `addAndReplaceList` | Lua: DEL + RPUSH 循环 | **O(N)** | ⚠️ N=新列表大小 | 已 Lua 原子化，但替换期间列表不可读 |
+| `batchAddToList` | pipeline 多 RPUSH | 多条 O(1) | ⚠️ **非原子** | 多条之间无原子性保证，仅预热使用 |
+
+> **核心原则**：读取单元素永远用 `indexOfList`（O(1)），不要用 `getListCache` 全量读再取一个（O(N)）。只在你真的需要全量数据时才用 `getListCache` / `getListCacheWithLock`。
+
+##### 非 O(1) 方法详解与风险
+
+以下方法因时间复杂度与列表长度挂钩，在 List 元素数千以上时风险显著：
+
+**1. `getListCache(key, clazz)` / `getFromList(key, -1, ...)` — O(N) 全量读取**
+
+内部实现为 `LLEN + LRANGE 0 size-1`（两条独立命令）。元素越多，反序列化 + 网络传输耗时越大。**ToC 高并发链路严禁直接全量读**。如需获取单个元素，务必改用 `indexOfList`、`getFirstFromList`、`getLastFromList`。
+
+此外，`LLEN` 与 `LRANGE` 之间非原子——在此期间其他线程可能 `RPUSH`/`LPOP`，导致 LRANGE 读到的元素数与 `size` 不完全对应。对于读场景此窗口通常可接受，但需要知晓。
+
+**2. `removeListItem(key, value, count)` — O(N) LREM**
+
+LREM 需要遍历整个列表删除匹配值。大于数千元素的 List 执行 LREM 会阻塞 Redis 主线程，建议：
+- 如果业务语义允许，改用 Set/Hash 存储
+- 或在低峰期执行，或通过 Lua 限速
+
+**3. `leftPopListElement(key, count)` / `rightPopListElement(key, count)`** — O(N) count
+
+count 参数控制一次性弹出的元素数量。count 过大（如 10,000+）会占用 Redis 主线程处理该命令的时间。组件已通过 `BATCH_SIZE = 20` 上限约束（位于底层实现），恶意传大值会被拒绝。
+
+##### 并发场景风险矩阵
+
+| 风险场景 | 说明 | 影响级别 | 推荐做法 |
+|---------|------|---------|---------|
+| **并发重复 push** | 多个线程/实例同时 `addListItem(key, value)`，同一元素被追加多次 | 🟡 数据膨胀 | 维护伴生 Set `dedup:{key}`，写入前 `SADD dedup:{key} {item}`——返回 1 再 RPUSH，返回 0 则跳过（O(1)） |
+| **重试导致膨胀** | 消息重试 / 接口重入，每次都 push 同一条数据 | 🟡 数据膨胀 | 同上，用伴生 Set 拦截；或改用 `replaceListCache` 整体替换（已 Lua 原子化） |
+| **只增不减** | 日志型 List 持续 RPUSH 但从不做 LTRIM / LPOP | 🟡 内存泄漏 | 配合 `LTRIM key start stop` 限定窗口大小，并同步清理伴生 Set；或设置 TTL 自动回收 |
+| **全量读 TOCTOU** | `getListCache`（LLEN + LRANGE）之间另一线程写入 | 🟢 短暂不一致 | 全量读场景下可接受；精确读需加锁或改用 `getListCacheWithLock` |
+| **`addAndReplaceList` 并发窗口** | ✅ **已修复**：底层使用 Lua 脚本（DEL + RPUSH 循环），原子执行 | ✅ 无竞态 | 不再需要外部锁保护，`replaceListCache` 可直接使用 |
+| **`getFromList(key, index, clazz)` 单下标场景** | ✅ **已修复**：基于 `LINDEX`（O(1) 原子），之前为 `LLEN` + 边界检查 + `getFromList` 两步 | ✅ 无竞态 | 单元素访问直接使用 `indexOfList` / `getLastFromList` / `getLastFromListIndex` |
+
+##### 去重原则
+
+List 去重不能靠自身遍历（O(N) 本身就是大 Key 风险），正确做法是 **伴生 Set 前置拦截**（O(1)）：
+
+```
+写入路径：SADD dedup:list_key item_value → 返回 1（新元素）→ RPUSH list_key item_value
+                                      → 返回 0（已存在）→ 跳过
+```
+
+> **选型建议**：如果业务语义本质是「集合/去重」，直接用 Set 或 ZSet；只有语义确实是「有序队列/时间线」时才用 List，且必须配合伴生 Set + LTRIM 限定长度 + TTL 兜底回收。
+
+### 迁移窗口
+
+`perf.enabled`、`blockForbiddenTiers`、`blockStringPayloadViolations` 在 `2026-12-01` 前必须设为 `true`，到期未迁移会阻止应用启动。建议在截止日期前完成灰度验证。
+
+---
+
+## ❓ 常见问题
+
+### 缓存穿透 / 雪崩 / 击穿 怎么防？
+
+- **穿透**（不存在 key 反复打到 DB）：布隆过滤器 + `*WithLock` + 空值缓存
+- **雪崩**（大量 key 同时过期）：TTL 随机偏移 + L2 本地缓存
+- **击穿**（热点 key 过期瞬间高并发）：`*WithLock` 方法自动加分布式锁
+
+### 本地锁池和分布式锁什么关系？
+
+本地锁池是 JVM 内的请求合并优化。同一 JVM 内多个线程抢同一把锁时，在 `ConcurrentHashMap` 层面感知到锁状态，不需要每次都打 Redisson。跨 JVM 的互斥仍然由 Redisson FencedLock 保障。对业务代码完全透明。
+
+### Stream 消息堆积了怎么办？
+
+- 增加消费者 `concurrency`（如从 1 调为 3）
+- 优化 `handle()` 处理逻辑
+- 调整 `count` 批量大小
+- 通过 `GET /actuator/redis-stream/metrics/backlog` 监控积压
+
+### 迁移窗口报错导致启动失败？
+
+```
+[MigrationWindow] violation(s) detected
+```
+
+将以下配置设为 `true` 后重启：
+
+```yaml
+spring.data.redis.perf:
+  enabled: true
+  block-forbidden-tiers: true
+  block-string-payload-violations: true
+```
 
 ---
 
 ## 📚 专题文档
 
-深度内容（L2/锁/Perf 守卫、Stream、Tracing、OTLP）见 **[docs/README.md](./docs/README.md)**。
-
 | 主题 | 文档 |
 |------|------|
-| **L2 / 分布式锁 / 性能守卫** | [Redis-L2与性能守卫设计说明.md](./docs/Redis-L2与性能守卫设计说明.md) |
+| L2 / 分布式锁 / 性能守卫 设计 | [Redis-L2与性能守卫设计说明.md](./docs/Redis-L2与性能守卫设计说明.md) |
+| 缓存核心能力功能分析 | [缓存核心能力功能分析.md](./docs/缓存核心能力功能分析.md) |
 | Stream 使用与 YAML | [Redis-Stream-使用指南.md](./docs/Redis-Stream-使用指南.md) |
 | 架构选型 | [Redis-Stream-架构对比分析.md](./docs/Redis-Stream-架构对比分析.md) |
 | 性能调优 | [Redis-Stream-MQ性能分析.md](./docs/Redis-Stream-MQ性能分析.md) |
 | 监控端点 | [Redis-Stream-Actuator-结构说明.md](./docs/Redis-Stream-Actuator-结构说明.md) |
 | 链路追踪 | [Redis-Stream-Tracing-透传说明.md](./docs/Redis-Stream-Tracing-透传说明.md) |
 | OpenTelemetry | [OpenTelemetry-快速开始.md](./docs/OpenTelemetry-快速开始.md) |
-
----
-
-## 🎯 最佳实践
-
-### 1. Key 命名规范
-
-- 使用冒号分隔：`{业务}:{对象}:{ID}:{字段}`
-- 示例：`user:info:123`、`order:status:456`、`cache:config:app`
-- 避免特殊字符：只使用字母、数字、冒号、下划线
-- 长度适中：建议<100 字符，便于管理和调试
-
-### 2. 过期时间策略
-
-- **热点数据**：短过期时间（秒级），减少缓存不一致
-- **配置数据**：中等过期时间（分钟级），平衡性能和一致性
-- **基础数据**：长过期时间（小时级），减少数据库压力
-- **历史数据**：设置合理的过期时间，避免内存泄漏
-
-### 3. 内存优化
-
-- 合理设置过期时间，避免内存泄漏
-- 大对象考虑压缩或分片存储
-- 定期清理无用的 key
-- 监控 Redis 内存使用率
-
-### 4. 性能优化
-
-- 使用批量操作减少网络往返
-- 合理设置连接池大小
-- 避免在 Redis 中存储过大的数据
-- 使用 pipeline 提升批量操作性能
-- 热点读开启 `enable-l2-caching`，接口回源用 `*WithLock`，写删走 `GlobalCache` 保证 L2 一致
-- 高争用锁开启 `enable-local-lock`；预发灰度 `perf.enabled`，消除 `[RedisPerf]` 非 O(1) 与 BIGKEY 告警后再上生产
-
-### 5. 监控告警
-
-- 监控 Redis 内存使用率
-- 监控 key 数量变化
-- 监控慢查询和连接数
-- 监控 Stream 消费者状态和消息堆积
-
-### 6. 故障处理
-
-- 设置合理的超时时间
-- 实现降级策略
-- 建立回滚机制
-- 定期备份重要数据
-
----
-
-## ❓ 常见问题
-
-### 1. 缓存穿透
-
-**问题**：查询不存在的 key，每次都访问数据库
-
-**解决方案**：
-- 使用防击穿方法：`getStringCacheWithLock`
-- 使用布隆过滤器预判断
-- 空值缓存：将空结果也缓存起来（设置较短过期时间）
-
-### 2. 缓存雪崩
-
-**问题**：大量 key 同时过期，导致数据库压力激增
-
-**解决方案**：
-- 设置随机过期时间：`baseTime + random(0, 600)` 秒
-- 使用本地缓存（L2）作为二级缓存
-- 实现降级策略，缓存失效时返回默认值
-
-### 3. 缓存击穿
-
-**问题**：热点 key 过期，大量请求同时访问数据库
-
-**解决方案**：
-- 使用分布式锁：`getStringCacheWithLock`
-- 热点 key 设置永不过期，通过后台任务更新
-- 使用本地缓存（L2）减少 Redis 访问
-
-### 4. 内存不足
-
-**问题**：Redis 内存不足，影响性能
-
-**解决方案**：
-- 设置合理的过期时间
-- 清理无用数据
-- 大对象考虑压缩或分片存储
-- 扩容 Redis 实例
-
-### 5. 连接数过多
-
-**问题**：连接池耗尽，影响性能
-
-**解决方案**：
-- 优化连接池配置
-- 使用连接复用
-- 负载均衡分散连接
-- 监控连接数变化
-
-### 6. Stream 消息堆积
-
-**问题**：消费者处理速度慢，消息堆积
-
-**解决方案**：
-- 增加消费者并发数（`concurrency`）
-- 优化消息处理逻辑
-- 增加批量处理大小（`count`）
-- 监控消息堆积情况，及时告警
-
----
-
-## 📊 性能调优指南
-
-### 1. 网络优化
-
-- 使用 pipeline 减少网络往返
-- 合理设置批量大小
-- 使用连接池复用连接
-- 减少不必要的网络调用
-
-### 2. 内存优化
-
-- 设置合理的过期时间
-- 使用压缩算法（如 gzip）
-- 定期清理无用数据
-- 监控内存使用率
-
-### 3. 并发优化
-
-- 使用合适的锁粒度
-- 避免热点 key 竞争
-- 使用本地缓存减少竞争
-- 合理设置线程池大小
-
-### 4. 监控优化
-
-- 设置合理的告警阈值
-- 监控关键指标（内存、连接、QPS）
-- 建立性能基线
-- 定期性能测试
-
----
-
-## 📝 总结
-
-GlobalCache 提供了完整的缓存解决方案，涵盖了从基础 KV 操作到高级特性的各个方面。通过合理使用这些 API，可以构建高性能、高可用的缓存系统。
-
-**关键要点**：
-
-1. **选择合适的缓存策略**：根据业务场景选择合适的数据结构和过期策略
-2. **注意性能优化**：使用批量操作、合理设置过期时间、避免热点 key
-3. **建立监控体系**：监控关键指标，及时发现和解决问题
-4. **制定故障预案**：建立降级策略和回滚机制
-5. **持续优化**：根据实际使用情况持续优化配置和策略
-
-通过遵循这些最佳实践，可以充分发挥 GlobalCache 的性能优势，为业务系统提供稳定可靠的缓存支持。

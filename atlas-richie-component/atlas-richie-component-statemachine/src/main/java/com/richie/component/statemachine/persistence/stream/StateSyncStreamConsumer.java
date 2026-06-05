@@ -1,8 +1,8 @@
 package com.richie.component.statemachine.persistence.stream;
 
-import com.richie.component.cache.redis.stream.AbstractStreamConsumer;
-import com.richie.component.cache.redis.stream.EventContext;
-import com.richie.component.cache.redis.stream.RedisStreamConsumer;
+import com.richie.component.redis.streammq.stream.AbstractStreamConsumer;
+import com.richie.component.redis.streammq.stream.EventContext;
+import com.richie.component.redis.streammq.stream.RedisStreamConsumer;
 import com.richie.component.statemachine.config.StateMachineProperties;
 import com.richie.component.statemachine.event.StateSyncKey;
 import com.richie.component.statemachine.event.StateSyncMessage;

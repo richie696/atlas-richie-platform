@@ -102,9 +102,9 @@ public class FileCleanupJob implements SchedulingConfigurer {
                     Files.deleteIfExists(p);
                     // 同步清理缓存（存在性/内容/元数据），尽力而为
                     String key = root.relativize(p).toString().replace(File.separatorChar, '/');
-                    GlobalCache.removeCache("file:exists:" + key);
-                    GlobalCache.removeCache("file:content:" + key);
-                    GlobalCache.removeCache("file:metadata:" + key);
+                    GlobalCache.key().removeCache("file:exists:" + key);
+                    GlobalCache.key().removeCache("file:content:" + key);
+                    GlobalCache.key().removeCache("file:metadata:" + key);
                     // 可选：同时清理数据库元数据（若开启）
                     if (Boolean.TRUE.equals(localConfig.getCleanup().getRemoveMetadata())) {
                         softDeleteMetadata(key, p.toString());

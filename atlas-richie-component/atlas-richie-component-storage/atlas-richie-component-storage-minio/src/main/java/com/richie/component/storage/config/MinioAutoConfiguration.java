@@ -89,7 +89,7 @@ public class MinioAutoConfiguration {
         try {
             client.putObject(
                             PutObjectArgs.builder().bucket(bucket).object(key)
-                                    .stream(new ByteArrayInputStream(bytes), bytes.length, -1)
+                                    .stream(new ByteArrayInputStream(bytes), (long) bytes.length, -1L)
                                     .build())
                     .get(30, TimeUnit.SECONDS);
             try (var is = client.getObject(GetObjectArgs.builder().bucket(bucket).object(key).build())

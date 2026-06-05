@@ -36,7 +36,7 @@ public class OAuth2ScopeServiceImpl implements OAuth2ScopeService {
 
         // 1. 从 Redis 中获取所有已注册的接口编码（apiCode）
         // Key: gateway:api:index，Value: Set<apiCode>
-        Set<String> apiCodes = GlobalCache.getSetCache(GatewayRedisKey.GATEWAY_API_INDEX.getKey(), String.class);
+        Set<String> apiCodes = GlobalCache.collection().get(GatewayRedisKey.GATEWAY_API_INDEX.getKey(), String.class);
         if (apiCodes == null || apiCodes.isEmpty()) {
             // 未配置任何接口，认为不需要做 scope 校验（向后兼容）
             if (log.isDebugEnabled()) {
@@ -52,7 +52,7 @@ public class OAuth2ScopeServiceImpl implements OAuth2ScopeService {
         // 2. 遍历所有接口配置，使用 AntPathMatcher 进行路径匹配，选择最具体的匹配
         for (String apiCode : apiCodes) {
             String apiConfigKey = GatewayRedisKey.GATEWAY_API_CONFIG.getKey(apiCode);
-            Map<String, String> apiConfig = GlobalCache.getHashCache(apiConfigKey, String.class);
+            Map<String, String> apiConfig = GlobalCache.field().getAll(apiConfigKey, String.class);
             if (apiConfig == null || apiConfig.isEmpty()) {
                 continue;
             }
@@ -104,7 +104,7 @@ public class OAuth2ScopeServiceImpl implements OAuth2ScopeService {
 
         // 3. 检查是否需要做 scope 校验（requireScope 字段）
         String apiConfigKey = GatewayRedisKey.GATEWAY_API_CONFIG.getKey(bestApiCode);
-        Map<String, String> bestApiConfig = GlobalCache.getHashCache(apiConfigKey, String.class);
+        Map<String, String> bestApiConfig = GlobalCache.field().getAll(apiConfigKey, String.class);
         if (bestApiConfig == null || bestApiConfig.isEmpty()) {
             return Collections.emptyList();
         }
@@ -118,7 +118,7 @@ public class OAuth2ScopeServiceImpl implements OAuth2ScopeService {
 
         // 4. 从 Redis 中获取该接口所需的 scope 列表
         String scopesKey = GatewayRedisKey.GATEWAY_API_SCOPES.getKey(bestApiCode);
-        Set<String> scopeSet = GlobalCache.getSetCache(scopesKey, String.class);
+        Set<String> scopeSet = GlobalCache.collection().get(scopesKey, String.class);
         if (scopeSet == null || scopeSet.isEmpty()) {
             if (log.isDebugEnabled()) {
                 log.debug("接口未配置任何 scope，视为不需要 scope 校验: apiCode={}, pathPattern={}", bestApiCode, bestPathPattern);

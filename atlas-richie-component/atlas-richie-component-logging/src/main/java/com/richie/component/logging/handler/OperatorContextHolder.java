@@ -29,7 +29,7 @@ public final class OperatorContextHolder {
      * @param expiredTime 信息过期时间（单位：毫秒）
      */
     public static void setOperator(String token, String operatorId, String operatorName, long expiredTime) {
-        GlobalCache.addObjectToHash(OPERATOR_KEY + token, new OperatorInfo(operatorId, operatorName), expiredTime);
+        GlobalCache.struct().set(OPERATOR_KEY + token, new OperatorInfo(operatorId, operatorName), expiredTime);
     }
 
     /**
@@ -39,7 +39,7 @@ public final class OperatorContextHolder {
      * @return 返回检查结果（true：已存在，false：不存在）
      */
     public static boolean hasOperator(String token) {
-        return GlobalCache.hasKey(OPERATOR_KEY + token);
+        return GlobalCache.key().hasKey(OPERATOR_KEY + token);
     }
 
     /**
@@ -49,6 +49,6 @@ public final class OperatorContextHolder {
      * @return 返回操作人信息
      */
     public static OperatorInfo getOperator(String token) {
-        return GlobalCache.getObjectFromHash(OPERATOR_KEY + token, OperatorInfo.class);
+        return GlobalCache.struct().get(OPERATOR_KEY + token, OperatorInfo.class);
     }
 }

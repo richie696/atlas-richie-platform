@@ -16,7 +16,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <weaviate.client.version>5.6.0</weaviate.client.version>
+        <weaviate.client.version>6.2.1</weaviate.client.version>
     </properties>
     <dependencies>
         <dependency>
@@ -37,7 +37,7 @@
 
         <dependency>
             <groupId>io.weaviate</groupId>
-            <artifactId>client</artifactId>
+            <artifactId>client6</artifactId>
             <version>${weaviate.client.version}</version>
         </dependency>
 

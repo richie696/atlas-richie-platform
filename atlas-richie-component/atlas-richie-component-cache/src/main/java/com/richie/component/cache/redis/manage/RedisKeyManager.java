@@ -2,7 +2,8 @@ package com.richie.component.cache.redis.manage;
 
 import com.richie.component.cache.enums.KeyTypeEnum;
 import com.richie.component.cache.function.CacheFunction;
-import com.richie.component.cache.function.KeyFunction;
+import com.richie.component.cache.ops.CacheInfrastructure;
+import com.richie.component.cache.ops.KeyOps;
 import com.richie.component.cache.redis.bean.MultiRedisTemplate;
 import com.richie.component.cache.redis.config.base.AtlasRedisProperties;
 import com.richie.component.cache.redis.perf.RedisOperationCatalog;
@@ -31,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnExpression("'${platform.cache.cache-provider:REDIS}'=='REDIS'")
-public class RedisKeyManager implements KeyFunction {
+public class RedisKeyManager implements KeyOps, CacheInfrastructure {
 
     /** 多数据源 Redis 模板（JSON 序列化） */
     @Qualifier("jsonTemplate")

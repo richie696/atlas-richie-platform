@@ -1,6 +1,6 @@
 package com.richie.component.cache.controller;
 
-import com.richie.component.cache.GlobalCache;
+import com.richie.component.redis.streammq.StreamMQ;
 import com.richie.component.cache.domain.UserInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +49,7 @@ public class RedisStreamController {
             userInfo.setSlogan("%s - 发布时间: %s".formatted(userInfo.getSlogan(), Instant.now()));
 
             // 发布消息到 Redis Stream
-            String messageId = GlobalCache.stream().publish(STREAM_KEY, userInfo);
+            String messageId = StreamMQ.stream().publish(STREAM_KEY, userInfo);
 
             log.info("用户信息消息发布成功: messageId={}, userInfo={}", messageId, userInfo);
 

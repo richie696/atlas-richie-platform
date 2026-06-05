@@ -72,7 +72,7 @@ public class AuthenticationFilter extends AbstractBaseFilter {
             return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_3"));
         }
         // 验证令牌是否在黑名单中
-        if (GlobalCache.hasKey(config.getToken().getBlacklistPath() + token)) {
+        if (GlobalCache.key().hasKey(config.getToken().getBlacklistPath() + token)) {
             log.info("JWT令牌已被加入黑名单，token：{}", token);
             return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_2"));
         }
@@ -142,11 +142,11 @@ public class AuthenticationFilter extends AbstractBaseFilter {
             token = JwtUtils.renewToken(token, config.getToken().getSecret(), time);
             String userKey = JwtUtils.getUserKey(token);
             Date expiredDate = JwtUtils.getExpiredTime(token);
-            Optional.ofNullable(userKey).ifPresent(_ -> GlobalCache.expireAt(userKey, expiredDate));
+            Optional.ofNullable(userKey).ifPresent(_ -> GlobalCache.key().expireAt(userKey, expiredDate));
             // redis需要记录这个续期的token
             if (config.getSso().isEnable()) {
                 String lastOnlineTokenPath = getLastOnlineTokenPath(token);
-                GlobalCache.addSetItem(lastOnlineTokenPath, token);
+                GlobalCache.collection().add(lastOnlineTokenPath, token);
             }
         }
         exchange.getResponse().getHeaders().set(JwtUtils.X_ACCESS_TOKEN, token);
@@ -166,7 +166,7 @@ public class AuthenticationFilter extends AbstractBaseFilter {
      */
     private boolean repeatLogins(String token) {
         String lastOnlineTokenPath = getLastOnlineTokenPath(token);
-        Set<String> lastOnlineTokens = GlobalCache.getSetCache(lastOnlineTokenPath, String.class);
+        Set<String> lastOnlineTokens = GlobalCache.collection().get(lastOnlineTokenPath, String.class);
         return null != lastOnlineTokens && !lastOnlineTokens.contains(token);
     }
 

@@ -120,22 +120,22 @@ public class AnomalyDetectionFilter extends AbstractBaseFilter {
         long ttl = TimeUnit.SECONDS.toMillis(config.getTimeWindowSeconds());
 
         // 检查 IP 是否已存在
-        boolean ipExists = GlobalCache.existsInSet(key, ip);
+        boolean ipExists = GlobalCache.collection().exists(key, ip);
 
         // 如果 IP 不存在，则添加
         if (!ipExists) {
             // 首次创建时设置 TTL，否则直接添加并更新 TTL
-            if (!GlobalCache.hasKey(key)) {
-                GlobalCache.addSetCache(key, new HashSet<>(Set.of(ip)), ttl);
+            if (!GlobalCache.key().hasKey(key)) {
+                GlobalCache.collection().set(key, new HashSet<>(Set.of(ip)), ttl);
             } else {
-                GlobalCache.addSetItem(key, ip);
+                GlobalCache.collection().add(key, ip);
                 // 更新 TTL（确保 key 不会过期）
-                GlobalCache.setExpiredTime(key, ttl);
+                GlobalCache.key().setExpiredTime(key, ttl);
             }
         }
 
         // 获取 Set 大小（用于检测 IP 变化次数）
-        Long setSize = GlobalCache.getSetSize(key);
+        Long setSize = GlobalCache.collection().size(key);
         if (setSize != null && setSize > config.getMaxIpChangesPer10Min()) {
             log.warn("检测到异常 IP 访问: userId={}, ip={}, totalIps={}", userId, ip, setSize);
             // 记录可疑活动审计日志
@@ -161,7 +161,7 @@ public class AnomalyDetectionFilter extends AbstractBaseFilter {
         // 统计请求次数
         String key = GatewayRedisKey.ANOMALY_RATELIMIT.getKey(userId);
         long ttl = TimeUnit.SECONDS.toMillis(config.getTimeWindowSeconds());
-        long count = GlobalCache.increment(key, 1L, ttl);
+        long count = GlobalCache.value().increment(key, 1L, ttl);
 
         // 检测是否超过阈值
         if (count > rateLimit) {
@@ -254,11 +254,11 @@ public class AnomalyDetectionFilter extends AbstractBaseFilter {
 
         // 统计 userId 失败次数
         String userFailureKey = GatewayRedisKey.ANOMALY_FAILURES_USER.getKey(userId);
-        long userFailures = GlobalCache.increment(userFailureKey, 1L, ttl);
+        long userFailures = GlobalCache.value().increment(userFailureKey, 1L, ttl);
 
         // 统计 IP 失败次数
         String ipFailureKey = GatewayRedisKey.ANOMALY_FAILURES_IP.getKey(ip);
-        long ipFailures = GlobalCache.increment(ipFailureKey, 1L, ttl);
+        long ipFailures = GlobalCache.value().increment(ipFailureKey, 1L, ttl);
 
         // 检测是否超过阈值
         if (userFailures > config.getMaxFailuresPerUser()) {
@@ -290,11 +290,11 @@ public class AnomalyDetectionFilter extends AbstractBaseFilter {
     private void clearFailureCount(String userId, String ip) {
         if (StringUtils.isNotBlank(userId)) {
             String userFailureKey = GatewayRedisKey.ANOMALY_FAILURES_USER.getKey(userId);
-            GlobalCache.removeCache(userFailureKey);
+            GlobalCache.key().removeCache(userFailureKey);
         }
         if (StringUtils.isNotBlank(ip)) {
             String ipFailureKey = GatewayRedisKey.ANOMALY_FAILURES_IP.getKey(ip);
-            GlobalCache.removeCache(ipFailureKey);
+            GlobalCache.key().removeCache(ipFailureKey);
         }
     }
 
@@ -304,7 +304,7 @@ public class AnomalyDetectionFilter extends AbstractBaseFilter {
     private void banUserId(String userId, int banDurationSeconds) {
         String banKey = GatewayRedisKey.ANOMALY_BAN_USER.getKey(userId);
         long ttl = TimeUnit.SECONDS.toMillis(banDurationSeconds);
-        GlobalCache.addStringCache(banKey, "1", ttl);
+        GlobalCache.value().set(banKey, "1", ttl);
         log.info("临时封禁 userId: userId={}, duration={}秒", userId, banDurationSeconds);
     }
 
@@ -316,7 +316,7 @@ public class AnomalyDetectionFilter extends AbstractBaseFilter {
             return false;
         }
         String banKey = GatewayRedisKey.ANOMALY_BAN_USER.getKey(userId);
-        return GlobalCache.hasKey(banKey);
+        return GlobalCache.key().hasKey(banKey);
     }
 
     /**

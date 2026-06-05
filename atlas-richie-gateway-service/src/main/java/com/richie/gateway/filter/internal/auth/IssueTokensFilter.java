@@ -229,8 +229,8 @@ public class IssueTokensFilter extends AbstractBaseFilter {
         }
         String lastOnlineTokenPath = config.getSso().getOnlineTokenPath() + key;
         //存入缓存
-        GlobalCache.removeCache(lastOnlineTokenPath);
-        GlobalCache.addSetCache(lastOnlineTokenPath, Collections.setOf(signature), TimeUnit.HOURS.toMillis(1));
+        GlobalCache.key().removeCache(lastOnlineTokenPath);
+        GlobalCache.collection().set(lastOnlineTokenPath, Collections.setOf(signature), TimeUnit.HOURS.toMillis(1));
     }
 
     /**
@@ -351,7 +351,7 @@ public class IssueTokensFilter extends AbstractBaseFilter {
 
         // 存储用户信息到缓存，有效期 10 分钟（足够完成 MFA 验证流程）
         String userInfoJson = JsonUtils.getInstance().serialize(userVO);
-        GlobalCache.addStringCache(cacheKey, userInfoJson, TimeUnit.MINUTES.toMillis(10));
+        GlobalCache.value().set(cacheKey, userInfoJson, TimeUnit.MINUTES.toMillis(10));
         log.debug("用户信息已存储到缓存，cacheKey: {}", cacheKey);
     }
 

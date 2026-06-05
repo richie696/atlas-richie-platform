@@ -32,7 +32,7 @@ public class RedisDatasourceHandlerImpl implements DatasourceHandler {
         if (hash == null || hash.isEmpty()) {
             return true;
         }
-        return GlobalCache.hasKey(getCacheKey(hash));
+        return GlobalCache.key().hasKey(getCacheKey(hash));
     }
 
     @Override
@@ -43,6 +43,6 @@ public class RedisDatasourceHandlerImpl implements DatasourceHandler {
         if (isDuplicate(hash)) {
             throw new KeyAlreadyExistsException("当前数据已存在，无法重复保存。");
         }
-        GlobalCache.addStringCache(getCacheKey(hash), "1", expired);
+        GlobalCache.value().set(getCacheKey(hash), "1", expired);
     }
 }

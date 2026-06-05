@@ -23,7 +23,7 @@ public record I18nHandle() {
      * @param i18nDictMap 国际化字典
      */
     public static void addI18nDictionaries(Map<String, Map<String, String>> i18nDictMap) {
-        i18nDictMap.forEach((k, v) -> GlobalCache.addCacheAllHash(GlobalConstants.I18N_CACHE_KEY + k, v, TIME_OUT));
+        i18nDictMap.forEach((k, v) -> GlobalCache.field().setAll(GlobalConstants.I18N_CACHE_KEY + k, v, TIME_OUT));
     }
 
     /**
@@ -33,7 +33,7 @@ public record I18nHandle() {
      * @param localeValueMap 国际化字典
      */
     public static void addI18nDictionary(String key, Map<String, String> localeValueMap) {
-        localeValueMap.forEach((k, v) -> GlobalCache.addCache2Hash(GlobalConstants.I18N_CACHE_KEY + key, k, v));
+        localeValueMap.forEach((k, v) -> GlobalCache.field().set(GlobalConstants.I18N_CACHE_KEY + key, k, v));
     }
 
     /**
@@ -43,7 +43,7 @@ public record I18nHandle() {
      * @return 字典值
      */
     public static Map<String, String> getI18nDictionaries(String key) {
-        return Objects.requireNonNullElse(GlobalCache.getHashCache(GlobalConstants.I18N_CACHE_KEY + key, String.class), Map.of());
+        return Objects.requireNonNullElse(GlobalCache.field().getAll(GlobalConstants.I18N_CACHE_KEY + key, String.class), Map.of());
     }
 
     /**
@@ -54,7 +54,7 @@ public record I18nHandle() {
      * @return 字典值
      */
     public static String getI18nDictionary(String key, String locale) {
-        String mapCache = GlobalCache.getHashCache(GlobalConstants.I18N_CACHE_KEY + key, locale, String.class);
+        String mapCache = GlobalCache.field().get(GlobalConstants.I18N_CACHE_KEY + key, locale, String.class);
         return mapCache == null ? key : mapCache;
     }
 
@@ -64,7 +64,7 @@ public record I18nHandle() {
      * @param key 字典key
      */
     public static void deleteI18nDictionary(String key) {
-        GlobalCache.removeCache(GlobalConstants.I18N_CACHE_KEY + key);
+        GlobalCache.key().removeCache(GlobalConstants.I18N_CACHE_KEY + key);
     }
 
 }

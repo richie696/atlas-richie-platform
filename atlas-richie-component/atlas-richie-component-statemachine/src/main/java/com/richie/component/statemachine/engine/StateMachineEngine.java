@@ -1,6 +1,6 @@
 package com.richie.component.statemachine.engine;
 
-import com.richie.component.cache.GlobalCache;
+import com.richie.component.redis.streammq.StreamMQ;
 import com.richie.component.statemachine.StateMachineEvent;
 import com.richie.component.statemachine.StateMachineName;
 import com.richie.component.statemachine.config.StateMachineDefinition;
@@ -480,7 +480,7 @@ private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateM
                 StateSyncMessage syncMessage = StateSyncMessage.of(stateMachineName, businessId);
                 String streamKey = keyBuilder.buildDbSyncStreamKey();
                 try {
-                    GlobalCache.stream().publish(streamKey, syncMessage);
+                    StreamMQ.stream().publish(streamKey, syncMessage);
                     log.debug("发布状态同步消息到 Redis Stream: streamKey={}, syncKey={}", streamKey, syncMessage.syncKey());
                 } catch (Exception e) {
                     log.error("发布状态同步消息到 Redis Stream 失败: streamKey={}, syncKey={}", streamKey, syncMessage.syncKey(), e);

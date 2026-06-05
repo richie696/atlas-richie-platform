@@ -58,10 +58,10 @@ public class AtlasRedisProperties extends DataRedisProperties {
     private List<KeyTypeEnum> l2CachingData = new ArrayList<>(KeyTypeEnum.values().length);
 
     /**
-     * 是否启用本地二级锁（默认：false）
+     * 是否启用本地二级锁（默认：true）
      * <p>启用后，先在本地JVM内存中进行锁竞争，只有本地未持有锁时才会请求Redis分布式锁，缓解Redis压力。
      */
-    private boolean enableLocalLock = false;
+    private boolean enableLocalLock = true;
 
     /**
      * 是否在连接激活之前执行ping命令（默认：true）

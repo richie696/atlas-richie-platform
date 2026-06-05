@@ -41,7 +41,7 @@ public class StateDbPersistenceService {
 
     public long nextSeq(String stateMachineName, Long businessId) {
         String seqKey = keyBuilder.buildSeqKey(stateMachineName, businessId);
-        return GlobalCache.increment(seqKey, TimeUnit.DAYS.toMillis(30));
+        return GlobalCache.value().increment(seqKey, 1L, TimeUnit.DAYS.toMillis(30));
     }
 
     public void persistSync(String stateMachineName, Long businessId, String eventName, StateContext context) {

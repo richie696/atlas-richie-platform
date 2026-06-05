@@ -1,7 +1,11 @@
 package com.richie.component.cache.redis.manage;
 
 import com.richie.component.cache.enums.L2CachingRegion;
-import com.richie.component.cache.function.*;
+import com.richie.component.cache.function.HashFunction;
+import com.richie.component.cache.function.SetFunction;
+import com.richie.component.cache.function.StringFunction;
+import com.richie.component.cache.ops.CacheInfrastructure;
+import com.richie.component.cache.ops.KeyOps;
 import com.richie.component.cache.local.manage.LocalCache;
 import com.richie.component.cache.redis.config.base.AtlasRedisProperties;
 import lombok.RequiredArgsConstructor;
@@ -11,8 +15,6 @@ import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Component;
-
-
 
 /**
  * Redis本地缓存同步监听器
@@ -38,14 +40,14 @@ public class CacheSyncListener implements MessageListener {
     /** String 类型操作，用于获取/刷新字符串缓存 */
     private final StringFunction stringFunction;
 
-    /** Key 管理，用于判断 L2 是否启用及 key 类型等 */
-    private final KeyFunction keyFunction;
+    /** 缓存框架内部基础设施（L2 开关、key 类型注册等） */
+    private final CacheInfrastructure infra;
+
+    /** Key 元操作（获取 Redis key 类型等） */
+    private final KeyOps keyOps;
 
     /** Hash 类型操作，用于刷新 Hash 缓存 */
     private final HashFunction hashFunction;
-
-    /** List 类型操作，用于刷新 List 缓存 */
-    private final ListFunction listFunction;
 
     /** Set 类型操作，用于刷新 Set 缓存 */
     private final SetFunction setFunction;
@@ -62,7 +64,7 @@ public class CacheSyncListener implements MessageListener {
     @Override
     public void onMessage(@Nonnull Message message, byte[] pattern) {
         // 未启用L2缓存则直接返回
-        if (!keyFunction.enableL2Caching()) {
+        if (!infra.enableL2Caching()) {
             return;
         }
         try {
@@ -86,25 +88,29 @@ public class CacheSyncListener implements MessageListener {
             } else if (channel.endsWith(":set")
                     || isExpiredEvent(channel)) {
                 // set/expire事件，刷新本地缓存
-                var keyType = keyFunction.getKeyType(key);
+                var keyType = keyOps.getKeyType(key);
                 if (keyType == null) {
                     log.warn("Cache sync: key {} not found in Redis, skipping sync", key);
                     return;
                 }
-                var valueType = keyFunction.getValueType(key);
+                var valueType = infra.getValueType(key);
                 // 根据key类型和value类型从Redis加载最新数据
-                Object value = switch (keyType) {
+                var value = switch (keyType) {
                     case STRING -> switch (valueType.getSimpleName()) {
                         case "Integer" -> stringFunction.getFromString(key, Integer.class);
                         case "Long" -> stringFunction.getFromString(key, Long.class);
                         case "Float" -> stringFunction.getFromString(key, Float.class);
                         case "Double" -> stringFunction.getFromString(key, Double.class);
                         case "Boolean" -> stringFunction.getFromString(key, Boolean.class);
-                        default -> stringFunction.getFromString(key, String.class);
+                        case "String" -> stringFunction.getFromString(key, String.class);
+                        default -> null;
                     };
                     case HASH -> hashFunction.getObjectFromHash(key, valueType);
                     case SET -> setFunction.getFromSet(key, valueType);
-                    case LIST -> listFunction.getFromList(key, -1, valueType);
+                    case LIST -> {
+                        log.warn("Cache sync: LIST type key {} is not supported for local cache sync", key);
+                        yield null;
+                    }
                 };
                 if (value != null) {
                     // 更新本地缓存

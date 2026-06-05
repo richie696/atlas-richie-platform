@@ -24,14 +24,14 @@ public class CacheConfigurationChecker {
         log.info("=== 文件存储组件缓存配置检查 ===");
 
         // 检查二级缓存是否启用
-        boolean l2CachingEnabled = GlobalCache.enableL2Caching();
+        boolean l2CachingEnabled = GlobalCache.key().enableL2Caching();
         if (l2CachingEnabled) {
             log.info("✅ Redis 二级缓存已启用");
 
             // 检查缓存类型配置
-            boolean stringCacheEnabled = GlobalCache.enableKeyTypeCache(
+            boolean stringCacheEnabled = GlobalCache.key().enableKeyTypeCache(
                 KeyTypeEnum.STRING);
-            boolean hashCacheEnabled = GlobalCache.enableKeyTypeCache(
+            boolean hashCacheEnabled = GlobalCache.key().enableKeyTypeCache(
                 KeyTypeEnum.HASH);
 
             if (stringCacheEnabled) {
@@ -68,10 +68,10 @@ public class CacheConfigurationChecker {
             String testValue = "test_value";
 
             // 测试写入
-            GlobalCache.addStringCache(testKey, testValue, 5000); // 5秒过期
+            GlobalCache.value().set(testKey, testValue, 5000); // 5秒过期
 
             // 测试读取
-            String retrievedValue = GlobalCache.getStringCache(testKey);
+            String retrievedValue = GlobalCache.value().get(testKey, String.class);
             if (testValue.equals(retrievedValue)) {
                 log.info("✅ 缓存读写测试成功");
             } else {
@@ -79,7 +79,7 @@ public class CacheConfigurationChecker {
             }
 
             // 清理测试数据
-            GlobalCache.removeCache(testKey);
+            GlobalCache.key().removeCache(testKey);
 
         } catch (Exception e) {
             log.error("❌ 缓存连接测试失败: {}", e.getMessage());
@@ -92,14 +92,14 @@ public class CacheConfigurationChecker {
      */
     public void logCacheStatus() {
         log.info("=== 当前缓存状态 ===");
-        log.info("二级缓存启用状态: {}", GlobalCache.enableL2Caching());
+        log.info("二级缓存启用状态: {}", GlobalCache.key().enableL2Caching());
         log.info("STRING 缓存启用状态: {}",
-            GlobalCache.enableKeyTypeCache(KeyTypeEnum.STRING));
+            GlobalCache.key().enableKeyTypeCache(KeyTypeEnum.STRING));
         log.info("HASH 缓存启用状态: {}",
-            GlobalCache.enableKeyTypeCache(KeyTypeEnum.HASH));
+            GlobalCache.key().enableKeyTypeCache(KeyTypeEnum.HASH));
 
         try {
-            String connectionInfo = GlobalCache.getConnectionString();
+            String connectionInfo = GlobalCache.key().getConnectionString();
             log.info("Redis 连接信息: {}", connectionInfo);
         } catch (Exception e) {
             log.warn("无法获取 Redis 连接信息: {}", e.getMessage());

@@ -3,7 +3,7 @@ package com.richie.gateway.service.impl;
 import com.richie.gateway.config.GatewayConfig;
 import com.richie.contract.gateway.model.OAuth2AuditEvent;
 import com.richie.contract.gateway.model.OAuth2AuditEventType;
-import com.richie.component.cache.GlobalCache;
+import com.richie.component.redis.streammq.StreamMQ;
 import com.richie.gateway.constants.GatewayRedisKey;
 import com.richie.gateway.service.AuditService;
 import lombok.RequiredArgsConstructor;
@@ -218,7 +218,7 @@ public class AuditServiceImpl implements AuditService {
             }
 
             // 发布到 Redis Stream
-            GlobalCache.stream().publish(GatewayRedisKey.OAUTH2_AUDIT_EVENTS.getKey(), event);
+                StreamMQ.stream().publish(GatewayRedisKey.OAUTH2_AUDIT_EVENTS.getKey(), event);
 
             if (log.isDebugEnabled()) {
                 log.debug("审计事件已发布: eventType={}, clientId={}, ip={}",

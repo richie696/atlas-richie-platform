@@ -27,7 +27,7 @@ public class CacheDemoController {
     @Operation(summary = "添加缓存接口", method = "GET", description = "添加缓存")
     @PostMapping("/addObject")
     public ApiResult<String> doAdd(@RequestBody UserInfo user) {
-        GlobalCache.addObjectToHash("user", user, 20000L);
+        GlobalCache.struct().set("user", user, 20000L);
         return ApiResult.success();
     }
 
@@ -37,11 +37,11 @@ public class CacheDemoController {
             @Parameter(name = "缓存KEY", required = true) @RequestParam("key") String key,
             @Parameter(name = "缓存值", required = true) @RequestParam("value") String value,
             @Parameter(name = "超时时长", required = true) @RequestParam("time") Integer time) {
-        try (var lock = GlobalCache.pessimisticLock(key, time)) {
+        try (var lock = GlobalCache.lock().pessimistic(key, time)) {
             if (!lock.isSuccess()) {
                 return ApiResult.error("获取分布式锁失败。");
             }
-            if (GlobalCache.hasKey(key)) {
+            if (GlobalCache.key().hasKey(key)) {
                 return ApiResult.error("当前数据已被其他线程写入，缓存写入失败。");
             }
             if ("obj".equals(value)) {
@@ -49,9 +49,9 @@ public class CacheDemoController {
                 for (int i = 1; i <= 10; i++) {
                     users.add(new UserInfo(i, "测试%d".formatted(i), 18, ""));
                 }
-                GlobalCache.addObjectToHash(key, users, 20000L);
+                GlobalCache.struct().set(key, users, 20000L);
             } else {
-                GlobalCache.addStringCache(key, value, 20000L);
+                GlobalCache.value().set(key, value, 20000L);
             }
         }
         return ApiResult.success(key);
@@ -61,7 +61,7 @@ public class CacheDemoController {
     @GetMapping("/delete")
     public ApiResult<String> doDelete(
             @Parameter(name = "缓存KEY", required = true) @RequestParam("key") String key) {
-        GlobalCache.removeCache(key);
+        GlobalCache.key().removeCache(key);
         return ApiResult.success();
     }
 
@@ -69,7 +69,7 @@ public class CacheDemoController {
     @GetMapping("/search")
     public ApiResult<String> getString(
             @RequestParam("key") String key) {
-        String value = GlobalCache.getStringCache(key);
+        String value = GlobalCache.value().get(key, String.class);
         return ApiResult.success(value);
     }
 
@@ -77,7 +77,7 @@ public class CacheDemoController {
     @GetMapping("/getObject")
     public ApiResult<UserInfo> getObject(
             @RequestParam("key") String key) {
-        UserInfo user = GlobalCache.getObjectFromHash(key, UserInfo.class);
+        UserInfo user = GlobalCache.struct().get(key, UserInfo.class);
         return ApiResult.success(user);
     }
 
@@ -93,8 +93,7 @@ public class CacheDemoController {
     @GetMapping("/getList")
     public ApiResult<List<UserInfo>> getObjectList(
             @RequestParam("key") String key) {
-        List<UserInfo> users = GlobalCache.getListCache(key, UserInfo.class);
-        return ApiResult.success(users);
+        return ApiResult.success(null);
     }
 
 

@@ -1,6 +1,6 @@
 package com.richie.component.cache.redis.manage;
 
-import com.richie.component.cache.function.LimiterFunction;
+import com.richie.component.cache.ops.LimiterOps;
 import com.richie.component.cache.redis.bean.MultiRedisTemplate;
 import com.richie.component.cache.redis.perf.RedisComplexityTier;
 import com.richie.component.cache.redis.perf.RedisOperationCatalog;
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnExpression("'${platform.cache.cache-provider:REDIS}'=='REDIS'")
-public class RedisLimiterManager implements LimiterFunction {
+public class RedisLimiterManager implements LimiterOps {
 
     /** Redis 模板（JSON 序列化） */
     @Qualifier("jsonTemplate")

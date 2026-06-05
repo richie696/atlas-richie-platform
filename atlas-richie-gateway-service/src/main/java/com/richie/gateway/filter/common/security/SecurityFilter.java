@@ -63,11 +63,11 @@ public class SecurityFilter extends AbstractBaseFilter {
         // 获取客户端 IP
         String ip = NetworkUtils.getIP(request);
 
-        RequestMetric requestMetric = GlobalCache.getObjectFromHash(config.getVisitRecordPath() + ip, RequestMetric.class);
+        RequestMetric requestMetric = GlobalCache.struct().get(config.getVisitRecordPath() + ip, RequestMetric.class);
 
         // 如果是第一次访问则创建安全记录
         if (Objects.isNull(requestMetric)) {
-            GlobalCache.addObjectToHash(
+            GlobalCache.struct().set(
                     config.getVisitRecordPath() + ip,
                     new RequestMetric()
                             .setIp(ip)
@@ -87,7 +87,7 @@ public class SecurityFilter extends AbstractBaseFilter {
         // 检查是否超过时间间隔，如果超过则重置访问次数
         requestMetric.resetTime(config.getSecurity());
         // 刷新缓存
-        GlobalCache.addObjectToHash(config.getVisitRecordPath() + ip, requestMetric,
+        GlobalCache.struct().set(config.getVisitRecordPath() + ip, requestMetric,
                 config.getSecurity().getSecurityTimeInterval());
         log.info("当前IP：{}，访问次数：{}", ip, requestMetric.getCount());
         // 执行下一环

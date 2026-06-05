@@ -5,7 +5,7 @@ import com.richie.component.cache.bloom.BloomFilterFacade;
 import com.richie.component.cache.config.CacheProperties;
 import com.richie.component.cache.enums.L2CachingRegion;
 import com.richie.component.cache.function.CacheFunction;
-import com.richie.component.cache.function.KeyFunction;
+import com.richie.component.cache.ops.CacheInfrastructure;
 import com.richie.component.cache.function.SetFunction;
 import com.richie.component.cache.local.manage.LocalCache;
 import com.richie.component.cache.redis.bean.MultiRedisTemplate;
@@ -55,8 +55,8 @@ public class RedisSetManager implements SetFunction {
     /** 分布式锁管理器 */
     private final RedisLockManager lockManager;
 
-    /** 缓存键生成函数 */
-    private final KeyFunction keyFunction;
+    /** 缓存框架内部基础设施（L2 开关、key 类型等） */
+    private final CacheInfrastructure infra;
 
     /** Redis 性能守卫（可选启用） */
     private final RedisPerfGuard redisPerfGuard;
@@ -80,7 +80,7 @@ public class RedisSetManager implements SetFunction {
                 if (!lock.isSuccess()) {
                     Thread.sleep(50);
                     // 2. 加锁失败，再次查本地缓存，防止其他线程已写入
-                    if (keyFunction.enableL2Caching()) {
+                    if (infra.enableL2Caching()) {
                         value = LocalCache.get(L2CachingRegion.GLOBAL_CACHE, key);
                         if (value != null && !value.isEmpty()) {
                             return value;
@@ -91,7 +91,7 @@ public class RedisSetManager implements SetFunction {
                     return value;
                 }
                 // 3. 加锁成功后再查一次本地缓存，防止极端并发
-                if (keyFunction.enableL2Caching()) {
+                if (infra.enableL2Caching()) {
                     value = LocalCache.get(L2CachingRegion.GLOBAL_CACHE, key);
                     if (value != null && !value.isEmpty()) {
                         return value;

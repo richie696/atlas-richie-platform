@@ -119,7 +119,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
     public <T> DownloadResponse<T> getData(@Nonnull String key, @Nonnull TypeReference<T> typeReference) {
         // 1. 先查缓存
         String cacheKey = FILE_CONTENT_PREFIX + key;
-        String cachedContent = GlobalCache.getStringCache(cacheKey);
+        String cachedContent = GlobalCache.value().get(cacheKey, String.class);
         if (cachedContent != null) {
             try {
                 var success = new DownloadResponse<T>()
@@ -145,7 +145,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
 
                 // 3. 更新缓存（只缓存小文件）
                 if (content.length() <= 1024 * 1024) { // 1MB以下
-                    GlobalCache.addStringCache(cacheKey, content, FILE_CONTENT_TTL);
+                    GlobalCache.value().set(cacheKey, content, FILE_CONTENT_TTL);
                 }
 
                 var success = new DownloadResponse<T>()
@@ -204,7 +204,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
     public boolean existsObject(@Nonnull String key) {
         // 1. 先查缓存
         String cacheKey = FILE_EXISTS_PREFIX + key;
-        Boolean exists = GlobalCache.getBooleanCache(cacheKey);
+        Boolean exists = GlobalCache.value().get(cacheKey, Boolean.class);
         if (exists != null) {
             return exists;
         }
@@ -214,7 +214,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
         boolean fileExists = Files.exists(absolutePath, LinkOption.NOFOLLOW_LINKS);
 
         // 3. 更新缓存
-        GlobalCache.addBooleanCache(cacheKey, fileExists, FILE_EXISTS_TTL);
+        GlobalCache.value().set(cacheKey, fileExists, FILE_EXISTS_TTL);
 
         return fileExists;
     }
@@ -298,7 +298,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
                                 "size", Files.size(absolutePath),
                                 "uploadTime", LocalDateTime.now().toString()
                         );
-                        GlobalCache.addObjectToHash(metadataCacheKey, metadata, FILE_METADATA_TTL);
+                        GlobalCache.struct().set(metadataCacheKey, metadata, FILE_METADATA_TTL);
                         return UploadResponse.builder()
                                 .success(true)
                                 .key(key)
@@ -323,7 +323,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
                         "size", Files.size(absolutePath),
                         "uploadTime", LocalDateTime.now().toString()
                 );
-                GlobalCache.addObjectToHash(metadataCacheKey, metadata, FILE_METADATA_TTL);
+                GlobalCache.struct().set(metadataCacheKey, metadata, FILE_METADATA_TTL);
                 // 写入/更新元数据
                 upsertMetadata(key, null, "application/octet-stream", Files.size(absolutePath), hashValue, absolutePath.toString());
             }
@@ -427,7 +427,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
         // 更新文件内容缓存（只缓存小文件）
         if (content.length() <= 1024 * 1024) { // 1MB以下
             String contentCacheKey = FILE_CONTENT_PREFIX + key;
-            GlobalCache.addStringCache(contentCacheKey, content, FILE_CONTENT_TTL);
+            GlobalCache.value().set(contentCacheKey, content, FILE_CONTENT_TTL);
         }
 
         // 更新文件元数据缓存
@@ -439,7 +439,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
             "uploadTime", OffsetDateTime.now().toString(),
             "contentType", "application/json"
         );
-        GlobalCache.addObjectToHash(metadataCacheKey, metadata, FILE_METADATA_TTL);
+        GlobalCache.struct().set(metadataCacheKey, metadata, FILE_METADATA_TTL);
     }
 
     /**
@@ -447,7 +447,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
      */
     private void updateFileExistsCache(String key, boolean exists) {
         String existsCacheKey = FILE_EXISTS_PREFIX + key;
-        GlobalCache.addBooleanCache(existsCacheKey, exists, FILE_EXISTS_TTL);
+        GlobalCache.value().set(existsCacheKey, exists, FILE_EXISTS_TTL);
     }
 
     /**
@@ -458,9 +458,9 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
         String contentCacheKey = FILE_CONTENT_PREFIX + key;
         String metadataCacheKey = FILE_METADATA_PREFIX + key;
 
-        GlobalCache.removeCache(existsCacheKey);
-        GlobalCache.removeCache(contentCacheKey);
-        GlobalCache.removeCache(metadataCacheKey);
+        GlobalCache.key().removeCache(existsCacheKey);
+        GlobalCache.key().removeCache(contentCacheKey);
+        GlobalCache.key().removeCache(metadataCacheKey);
 
         log.debug("Cleared caches for file: {}", key);
     }

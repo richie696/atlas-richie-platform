@@ -10,8 +10,8 @@ import com.richie.component.storage.core.StorageEngine;
 import java.util.UUID;
 import tools.jackson.core.type.TypeReference;
 import io.minio.*;
-import io.minio.http.Method;
 import io.minio.errors.InsufficientDataException;
+import io.minio.Http;
 import io.minio.errors.InternalException;
 import io.minio.errors.XmlParserException;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +45,7 @@ public final class MinioStorageEngine extends AbstractObjectStorageEngine<MinioA
             var argsBuilder = PutObjectArgs.builder()
                     .bucket(getBucketName())
                     .object(key)
-                    .stream(bis, -1, 10485760);
+                    .stream(bis, -1L, 10485760L);
             // 设置 ACL（访问控制列表）
             String acl = getAcl();
             if (StringUtils.isNotBlank(acl)) {
@@ -86,7 +86,7 @@ public final class MinioStorageEngine extends AbstractObjectStorageEngine<MinioA
             var argsBuilder = PutObjectArgs.builder()
                     .bucket(getBucketName())
                     .object(key)
-                    .stream(inputStream, -1, 10485760);
+                    .stream(inputStream, -1L, 10485760L);
             // 设置 ACL（访问控制列表）
             String acl = getAcl();
             if (StringUtils.isNotBlank(acl)) {
@@ -254,7 +254,7 @@ public final class MinioStorageEngine extends AbstractObjectStorageEngine<MinioA
         var client = getClient(MinioAsyncClient.class);
         try {
             String uploadUrl = client.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
-                    .method(Method.PUT)
+                    .method(Http.Method.PUT)
                     .bucket(getBucketName())
                     .object(realKey)
                     .expiry(safeExpire)

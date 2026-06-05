@@ -111,7 +111,7 @@ public class StateCleanupScheduler {
         // 全局分布式锁，避免多实例重复执行清理逻辑
         String lockKey = properties.getRedisStream().getKeyPrefix() + ":cleanup:final-state-lock";
         // 锁过期时间：至少大于一次清理可能耗时，这里默认 60 秒，支持自动续期
-        try (CacheLock lock = GlobalCache.optimisticLockWithRenewal(lockKey, 60L)) {
+        try (CacheLock lock = GlobalCache.lock().optimisticWithRenewal(lockKey, 60L)) {
             if (lock == null || !lock.isSuccess()) {
                 // 获取不到锁，说明已有其他实例在执行清理任务，当前实例直接跳过
                 log.debug("状态机终态清理任务跳过，本实例未获取到分布式锁: {}", lockKey);

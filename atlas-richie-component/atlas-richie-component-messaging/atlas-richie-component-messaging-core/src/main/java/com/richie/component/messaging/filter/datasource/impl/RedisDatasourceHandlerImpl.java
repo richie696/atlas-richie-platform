@@ -53,7 +53,7 @@ public class RedisDatasourceHandlerImpl implements DatasourceHandler {
     @Override
     public boolean isDuplicate(Message<MessageEvent> message) {
         var key = getCacheKey(message);
-        return GlobalCache.hasKey(key);
+        return GlobalCache.key().hasKey(key);
     }
 
     /**
@@ -90,7 +90,7 @@ public class RedisDatasourceHandlerImpl implements DatasourceHandler {
         // 使用原子操作 SET NX，无需分布式锁
         // 如果 key 不存在，则设置并返回 true；如果 key 已存在，则返回 false
         // 底层实现：Redis SET key value NX EX timeout（原子操作）
-        boolean success = GlobalCache.addStringCacheIfAbsent(key, "1", expired);
+        boolean success = GlobalCache.value().setIfAbsent(key, "1", expired);
         
         if (!success) {
             // 消息已存在（重复），返回 false
@@ -117,7 +117,7 @@ public class RedisDatasourceHandlerImpl implements DatasourceHandler {
     @Override
     public void clearCache(Message<MessageEvent> message) {
         var key = getCacheKey(message);
-        GlobalCache.removeCache(key);
+        GlobalCache.key().removeCache(key);
         if (log.isTraceEnabled()) {
             log.trace("消息缓存已清除。key: {}, messageId: {}", key, message.getPayload().getMessageId());
         }

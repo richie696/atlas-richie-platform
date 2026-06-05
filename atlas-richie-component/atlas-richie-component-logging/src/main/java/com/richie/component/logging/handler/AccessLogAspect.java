@@ -469,7 +469,7 @@ public class AccessLogAspect {
      */
     private void recordRedis(AccessLogInfo logInfo) {
         var date = logInfo.getOperateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        GlobalCache.addObjectToHash(
+        GlobalCache.struct().set(
                 "%s:%s:%s".formatted(properties.getCacheAccessLogKey(), date, logInfo.getOperator()),
                 logInfo,
                 TimeUnit.DAYS.toMillis(3)

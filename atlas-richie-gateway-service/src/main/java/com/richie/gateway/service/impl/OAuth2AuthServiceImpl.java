@@ -121,7 +121,7 @@ public class OAuth2AuthServiceImpl implements OAuth2AuthService {
         String lockKey = GatewayRedisKey.OAUTH2_REFRESH_TOKEN_LOCK.getKey(refreshToken);
 
         // 1. 获取分布式锁（5秒超时，防止并发刷新）
-        try (CacheLock lock = GlobalCache.optimisticLockWithRenewal(lockKey, 5L)) {
+        try (CacheLock lock = GlobalCache.lock().optimisticWithRenewal(lockKey, 5L)) {
             if (!lock.isSuccess()) {
                 throw new BusinessException(OAuth2Constants.ERROR_RATE_LIMIT_EXCEEDED,
                         "刷新令牌正在处理中，请稍后重试");
@@ -129,7 +129,7 @@ public class OAuth2AuthServiceImpl implements OAuth2AuthService {
 
             // 2. 从 Redis 读取 refresh_token
             String refreshTokenKey = GatewayRedisKey.OAUTH2_REFRESH_TOKEN.getKey(refreshToken);
-            Map<String, String> tokenData = GlobalCache.getHashCache(refreshTokenKey, String.class);
+            Map<String, String> tokenData = GlobalCache.field().getAll(refreshTokenKey, String.class);
 
             if (tokenData == null || tokenData.isEmpty()) {
                 throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT, "刷新令牌无效或已使用");
@@ -143,7 +143,7 @@ public class OAuth2AuthServiceImpl implements OAuth2AuthService {
             }
 
             // 4. 删除旧的 refresh_token（包含 IP 绑定信息）
-            GlobalCache.removeCache(refreshTokenKey);
+            GlobalCache.key().removeCache(refreshTokenKey);
 
             // 5. 验证客户端状态
             String clientId = tokenData.get(OAuth2Constants.JWT_CLAIM_CLIENT_ID);
@@ -228,7 +228,7 @@ public class OAuth2AuthServiceImpl implements OAuth2AuthService {
         }
 
         String blacklistKey = GatewayRedisKey.OAUTH2_ACCESS_TOKEN_BLACKLIST.getKey(accessToken);
-        if (GlobalCache.hasKey(blacklistKey)) {
+        if (GlobalCache.key().hasKey(blacklistKey)) {
             log.debug("Access token 已被拉入黑名单，拒绝访问");
             return null;
         }
@@ -263,7 +263,7 @@ public class OAuth2AuthServiceImpl implements OAuth2AuthService {
         if (isRefreshToken) {
             // 删除 refresh_token（包含 IP 绑定信息）
             String refreshTokenKey = GatewayRedisKey.OAUTH2_REFRESH_TOKEN.getKey(token);
-            GlobalCache.removeCache(refreshTokenKey);
+            GlobalCache.key().removeCache(refreshTokenKey);
             log.info("撤销 refresh_token: {}", token);
         } else {
             // access_token 是 JWT，无法直接物理删除，改为加入黑名单，黑名单过期时间与 token 本身一致
@@ -293,11 +293,11 @@ public class OAuth2AuthServiceImpl implements OAuth2AuthService {
             }
 
             String blacklistKey = GatewayRedisKey.OAUTH2_ACCESS_TOKEN_BLACKLIST.getKey(token);
-            GlobalCache.addStringCache(blacklistKey, "1", ttlMillis);
+            GlobalCache.value().set(blacklistKey, "1", ttlMillis);
 
             // 同时删除 access_token 与 IP 的绑定关系
             String bindKey = GatewayRedisKey.OAUTH2_ACCESS_TOKEN_IP_BIND.getKey(token);
-            GlobalCache.removeCache(bindKey);
+            GlobalCache.key().removeCache(bindKey);
 
             log.info("撤销 access_token: 已加入黑名单并移除 IP 绑定，剩余有效期(ms)={}", ttlMillis);
         }
@@ -396,11 +396,11 @@ public class OAuth2AuthServiceImpl implements OAuth2AuthService {
                 : OAuth2Constants.DEFAULT_REFRESH_TOKEN_EXPIRES_IN * 1000L;
 
         // 存储到 Redis Hash
-        GlobalCache.addObjectToHash(refreshTokenKey, tokenData, expiresIn);
+        GlobalCache.struct().set(refreshTokenKey, tokenData, expiresIn);
 
         // 维护客户端 Refresh Token 索引（用于立即作废功能）
         String clientRefreshTokenIndexKey = GatewayRedisKey.OAUTH2_CLIENT_REFRESH_TOKEN_INDEX.getKey(clientId);
-        GlobalCache.addStringCache(clientRefreshTokenIndexKey, refreshToken, expiresIn);
+        GlobalCache.value().set(clientRefreshTokenIndexKey, refreshToken, expiresIn);
     }
 
     /**
@@ -415,7 +415,7 @@ public class OAuth2AuthServiceImpl implements OAuth2AuthService {
      */
     private void revokePreviousTokensForClient(String clientId) {
         String clientRefreshTokenIndexKey = GatewayRedisKey.OAUTH2_CLIENT_REFRESH_TOKEN_INDEX.getKey(clientId);
-        String previousRefreshToken = GlobalCache.getStringCache(clientRefreshTokenIndexKey);
+        String previousRefreshToken = GlobalCache.value().get(clientRefreshTokenIndexKey, String.class);
 
         if (StringUtils.isBlank(previousRefreshToken)) {
             // 没有之前的 refresh_token，无需作废
@@ -426,10 +426,10 @@ public class OAuth2AuthServiceImpl implements OAuth2AuthService {
 
         // 1. 删除旧的 refresh_token 记录
         String refreshTokenKey = GatewayRedisKey.OAUTH2_REFRESH_TOKEN.getKey(previousRefreshToken);
-        GlobalCache.removeCache(refreshTokenKey);
+        GlobalCache.key().removeCache(refreshTokenKey);
 
         // 2. 删除客户端索引本身（防止重复作废）
-        GlobalCache.removeCache(clientRefreshTokenIndexKey);
+        GlobalCache.key().removeCache(clientRefreshTokenIndexKey);
     }
 
     /**
@@ -459,7 +459,7 @@ public class OAuth2AuthServiceImpl implements OAuth2AuthService {
         String counterKey = GatewayRedisKey.OAUTH2_DAILY_TOKEN_ISSUE_COUNT.getKey(clientId + ":" + today);
 
         // 计数 +1，TTL 设置为 24 小时
-        long currentCount = GlobalCache.increment(counterKey, TimeUnit.DAYS.toMillis(1));
+        long currentCount = GlobalCache.value().increment(counterKey, 1L, TimeUnit.DAYS.toMillis(1));
 
         if (currentCount > maxIssuesPerDay) {
             log.warn("客户端当日签发次数已达上限, clientId={}, count={}, limit={}", clientId, currentCount, maxIssuesPerDay);
@@ -689,7 +689,7 @@ public class OAuth2AuthServiceImpl implements OAuth2AuthService {
         data.put(OAuth2Constants.JWT_CLAIM_CLIENT_ID, clientId);
         data.put("ip", ip);
         data.put("createdAt", String.valueOf(System.currentTimeMillis()));
-        GlobalCache.addObjectToHash(key, data, ttlMillis);
+        GlobalCache.struct().set(key, data, ttlMillis);
     }
 
     @SuppressWarnings("unchecked")

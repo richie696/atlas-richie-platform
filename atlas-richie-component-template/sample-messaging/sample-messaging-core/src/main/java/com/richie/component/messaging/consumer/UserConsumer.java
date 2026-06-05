@@ -46,7 +46,7 @@ public class UserConsumer {
                     return false;
                 } else {
                     log.error("错误，消费失败，压入死信队列或其他中间件，进行后续处理");
-                    GlobalCache.addObjectToHash("platform:dlq:%s".formatted(message.getMessageId()), message, TimeUnit.HOURS.toMillis(1));
+                    GlobalCache.struct().set("platform:dlq:%s".formatted(message.getMessageId()), message, TimeUnit.HOURS.toMillis(1));
                     return true;
                 }
             }

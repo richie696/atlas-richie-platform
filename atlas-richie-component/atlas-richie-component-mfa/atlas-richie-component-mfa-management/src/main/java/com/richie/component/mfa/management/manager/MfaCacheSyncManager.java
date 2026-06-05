@@ -51,7 +51,7 @@ public class MfaCacheSyncManager {
         );
 
         long ttl = properties.getManagement().getTtlHours() * 3600 * 1000L; // 转换为毫秒
-        GlobalCache.addObjectToHash(cacheKey, userInfo, ttl);
+        GlobalCache.struct().set(cacheKey, userInfo, ttl);
 
         log.info("MFA信息同步到缓存成功，userId: {}, tenantId: {}",
             userInfo.getUserId(), userInfo.getTenantId());
@@ -67,7 +67,7 @@ public class MfaCacheSyncManager {
      */
     public void removeFromCache(String tenantId, String userId) {
         String cacheKey = MfaKeyUtils.getUserCacheKey(tenantId, userId, tenantSupport.isTenantEnabled());
-        GlobalCache.removeCache(cacheKey);
+        GlobalCache.key().removeCache(cacheKey);
         log.info("MFA信息从缓存删除成功，userId: {}, tenantId: {}", userId, tenantId);
     }
 }

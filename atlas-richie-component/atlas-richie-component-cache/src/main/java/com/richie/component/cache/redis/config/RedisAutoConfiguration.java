@@ -1,9 +1,6 @@
 package com.richie.component.cache.redis.config;
 
 import com.richie.component.cache.redis.config.base.RedisBaseAutoConfiguration;
-import com.richie.component.cache.redis.config.monitor.RedisStreamMonitoringAutoConfiguration;
-import com.richie.component.cache.redis.config.stream.RedisStreamAutoConfiguration;
-import com.richie.component.cache.redis.config.tracing.RedisStreamTracingAutoConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -19,10 +16,7 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @ComponentScan("com.richie.component.cache")
 @Import({
-        RedisBaseAutoConfiguration.class,
-        RedisStreamAutoConfiguration.class,
-        RedisStreamMonitoringAutoConfiguration.class,
-        RedisStreamTracingAutoConfiguration.class
+        RedisBaseAutoConfiguration.class
 })
 public class RedisAutoConfiguration {
 

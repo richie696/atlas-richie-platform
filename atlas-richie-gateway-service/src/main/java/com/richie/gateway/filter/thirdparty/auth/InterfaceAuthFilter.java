@@ -258,7 +258,7 @@ public class InterfaceAuthFilter extends AbstractBaseFilter {
      */
     private boolean verifyAccessTokenIpBinding(String accessToken, String clientIp, String clientId) {
         String key = GatewayRedisKey.OAUTH2_ACCESS_TOKEN_IP_BIND.getKey(accessToken);
-        Map<String, String> bindData = GlobalCache.getHashCache(key, String.class);
+        Map<String, String> bindData = GlobalCache.field().getAll(key, String.class);
         if (bindData == null || bindData.isEmpty()) {
             // 未绑定视为不校验，兼容历史令牌或特殊场景
             return true;

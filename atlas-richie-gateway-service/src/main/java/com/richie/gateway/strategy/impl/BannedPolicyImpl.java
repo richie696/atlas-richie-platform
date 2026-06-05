@@ -35,13 +35,13 @@ public final class BannedPolicyImpl implements SecurityPolicy {
         String ip = NetworkUtils.getIP(request);
         BannedConfig banned = config.getSecurity().getBanned();
         if (banned.getPermanent()) {
-            GlobalCache.addSetItem(banned.getPermanentPath(), ip);
+            GlobalCache.collection().add(banned.getPermanentPath(), ip);
             return NetworkUtils.returnError(response, HttpStatus.BAD_REQUEST, "禁止访问");
         }
         long securityBlockTimeMillis = banned.getSecurityBlockTimeMillis();
         Date blockDate = new Date(System.currentTimeMillis() + securityBlockTimeMillis);
         requestMetric.setBlockTime(blockDate);
-        GlobalCache.addObjectToHash(config.getVisitRecordPath() + ip, requestMetric, securityBlockTimeMillis);
+        GlobalCache.struct().set(config.getVisitRecordPath() + ip, requestMetric, securityBlockTimeMillis);
         return NetworkUtils.returnError(response, HttpStatus.BAD_REQUEST, "禁止访问，您在" + banned.getSecurityBlockTime() + getTimeText(banned.getSecurityBlockTimeUnit()) + "后可以继续访问。");
     }
 

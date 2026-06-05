@@ -188,7 +188,7 @@ public class TrustedDeviceManager {
         String cacheKey = MfaKeyUtils.getTrustedDeviceCacheKey(
             actualTenantId, userId, deviceId, tenantSupport.isTenantEnabled());
 
-        MfaTrustedDevice cached = GlobalCache.getObjectFromHash(cacheKey, MfaTrustedDevice.class);
+        MfaTrustedDevice cached = GlobalCache.struct().get(cacheKey, MfaTrustedDevice.class);
         if (cached != null) {
             // 缓存命中，检查是否有效
             return isTrustValid(cached);
@@ -469,7 +469,7 @@ public class TrustedDeviceManager {
         // 计算TTL（信任过期时间 - 当前时间）
         long ttl = Duration.between(OffsetDateTime.now(ZoneOffset.UTC), device.getTrustedUntil()).toMillis();
         if (ttl > 0) {
-            GlobalCache.addObjectToHash(cacheKey, device, ttl);
+            GlobalCache.struct().set(cacheKey, device, ttl);
             log.debug("可信设备信息同步到缓存成功，tenantId: {}, userId: {}, deviceId: {}",
                 device.getTenantId(), device.getUserId(), device.getDeviceId());
 
@@ -499,7 +499,7 @@ public class TrustedDeviceManager {
     private void removeFromCache(String tenantId, String userId, String deviceId) {
         String cacheKey = MfaKeyUtils.getTrustedDeviceCacheKey(
             tenantId, userId, deviceId, tenantSupport.isTenantEnabled());
-        GlobalCache.removeCache(cacheKey);
+        GlobalCache.key().removeCache(cacheKey);
         log.debug("可信设备信息从缓存删除成功，tenantId: {}, userId: {}, deviceId: {}",
             tenantId, userId, deviceId);
 
@@ -524,7 +524,7 @@ public class TrustedDeviceManager {
         // 计算TTL（信任过期时间 - 当前时间）
         long ttl = Duration.between(OffsetDateTime.now(ZoneOffset.UTC), device.getTrustedUntil()).toMillis();
         if (ttl > 0) {
-            GlobalCache.addSetItem(listKey, device.getDeviceId());
+            GlobalCache.collection().add(listKey, device.getDeviceId());
             log.debug("设备ID已添加到列表，tenantId: {}, userId: {}, deviceId: {}",
                 device.getTenantId(), device.getUserId(), device.getDeviceId());
         }
@@ -542,7 +542,7 @@ public class TrustedDeviceManager {
     private void removeDeviceIdFromList(String tenantId, String userId, String deviceId) {
         String listKey = MfaKeyUtils.getTrustedDeviceListKey(
             tenantId, userId, tenantSupport.isTenantEnabled());
-        GlobalCache.removeSetItem(listKey, deviceId);
+        GlobalCache.collection().remove(listKey, deviceId);
         log.debug("设备ID已从列表移除，tenantId: {}, userId: {}, deviceId: {}",
             tenantId, userId, deviceId);
     }

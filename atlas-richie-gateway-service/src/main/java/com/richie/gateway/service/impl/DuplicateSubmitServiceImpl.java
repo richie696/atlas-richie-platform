@@ -59,7 +59,7 @@ public class DuplicateSubmitServiceImpl implements DuplicateSubmitService {
         String cacheKey = GatewayRedisKey.DUPLICATE_SUBMIT.getKey(requestId);
 
         // 检查缓存中是否已存在该请求
-        return GlobalCache.hasKey(cacheKey);
+        return GlobalCache.key().hasKey(cacheKey);
     }
 
     @Override
@@ -68,7 +68,7 @@ public class DuplicateSubmitServiceImpl implements DuplicateSubmitService {
         String cacheKey = GatewayRedisKey.DUPLICATE_SUBMIT.getKey(requestId);
 
         // 记录请求，设置过期时间
-        GlobalCache.addStringCache(cacheKey, "1", config.getCacheExpire());
+        GlobalCache.value().set(cacheKey, "1", config.getCacheExpire());
         log.debug("记录防重复提交请求: {}", requestId);
     }
 

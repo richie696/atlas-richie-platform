@@ -96,7 +96,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
 
         // 1. 从 GlobalCache 读取用户 MFA 信息
         String cacheKey = MfaKeyUtils.getUserCacheKey(tenantId, userId, tenantSupport.isTenantEnabled());
-        MfaUserInfo userInfo = GlobalCache.getObjectFromHash(cacheKey, MfaUserInfo.class);
+        MfaUserInfo userInfo = GlobalCache.struct().get(cacheKey, MfaUserInfo.class);
 
         if (userInfo == null) {
             // 用户未绑定 MFA，不需要验证
@@ -145,7 +145,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
 
         // 1. 从 GlobalCache 读取用户 MFA 信息
         String cacheKey = MfaKeyUtils.getUserCacheKey(tenantId, userId, tenantSupport.isTenantEnabled());
-        MfaUserInfo userInfo = GlobalCache.getObjectFromHash(cacheKey, MfaUserInfo.class);
+        MfaUserInfo userInfo = GlobalCache.struct().get(cacheKey, MfaUserInfo.class);
 
         if (userInfo == null) {
             // 发布审计事件：用户未绑定
@@ -215,7 +215,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
             if (!valid) {
                 // 6. 记录失败次数
                 String failureKey = MfaKeyUtils.getFailureCountKey(tenantId, userId, tenantSupport.isTenantEnabled());
-                long failureCount = GlobalCache.increment(failureKey, 1, Duration.ofHours(1).toMillis());
+                long failureCount = GlobalCache.value().increment(failureKey, 1, Duration.ofHours(1).toMillis());
                 int maxAttempts = properties.getSecurity().getMaxAttempts();
 
                // 达到最大失败次数，需要锁定账户
@@ -230,7 +230,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
                        tenantSupport.isTenantEnabled() && tenantId != null ? tenantId + ":" : "",
                        userId);
                    long lockDuration = properties.getSecurity().getLockDurationSeconds() * 1000L;
-                   GlobalCache.addStringCache(lockKey, "1", lockDuration);
+                   GlobalCache.value().set(lockKey, "1", lockDuration);
                    log.warn("账户达到最大失败次数，已标记锁定，tenantId: {}, userId: {}, lockDuration: {}秒",
                        tenantId, userId, properties.getSecurity().getLockDurationSeconds());
 
@@ -266,7 +266,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
 
             // 8. 清除失败计数
             String failureKey = MfaKeyUtils.getFailureCountKey(tenantId, userId, tenantSupport.isTenantEnabled());
-            GlobalCache.removeCache(failureKey);
+            GlobalCache.key().removeCache(failureKey);
 
             // 9. 发布审计事件：验证成功
             publishAuditEvent(tenantId, userId, MfaOperationTypeEnum.VERIFY, "TOTP", null, "SUCCESS", null, null, null);
@@ -314,7 +314,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
         String trustedDeviceKey = MfaKeyUtils.getTrustedDeviceCacheKey(tenantId, userId, deviceId, tenantSupport.isTenantEnabled());
 
         // 从缓存读取可信设备对象
-        MfaTrustedDevice device = GlobalCache.getObjectFromHash(trustedDeviceKey, MfaTrustedDevice.class);
+        MfaTrustedDevice device = GlobalCache.struct().get(trustedDeviceKey, MfaTrustedDevice.class);
 
         if (device == null) {
             // 设备不存在或未同步到缓存
@@ -363,14 +363,14 @@ public class MfaValidationServiceImpl implements MfaValidationService {
         // 从 GlobalCache 读取可信设备ID列表
         // 注意：management 模块应该在同步设备时，同时维护一个设备ID列表到缓存
         String deviceListKey = MfaKeyUtils.getTrustedDeviceListKey(tenantId, userId, tenantSupport.isTenantEnabled());
-        Set<String> deviceIds = GlobalCache.getSetCache(deviceListKey, String.class);
+        Set<String> deviceIds = GlobalCache.collection().get(deviceListKey, String.class);
 
         if (deviceIds != null && !deviceIds.isEmpty()) {
             // 过滤掉已过期的设备
             int validCount = 0;
             for (String deviceId : deviceIds) {
                 String deviceKey = MfaKeyUtils.getTrustedDeviceCacheKey(tenantId, userId, deviceId, tenantSupport.isTenantEnabled());
-                MfaTrustedDevice device = GlobalCache.getObjectFromHash(deviceKey, MfaTrustedDevice.class);
+                MfaTrustedDevice device = GlobalCache.struct().get(deviceKey, MfaTrustedDevice.class);
                 if (device != null && device.getTrustedUntil() != null
                     && OffsetDateTime.now(ZoneOffset.UTC).isBefore(device.getTrustedUntil())) {
                     validCount++;
