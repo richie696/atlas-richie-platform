@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Import;
  * Redis 缓存服务自动配置类
  *
  * @author richie696
- * @since 2.0.0
+ * @since 1.0.0
  */
 @Slf4j
 @Configuration
