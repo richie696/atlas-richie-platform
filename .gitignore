@@ -144,6 +144,9 @@ Desktop.ini
 /.apt_generated/
 target
 
+# JaCoCo 汇总报告（mvn verify 生成于仓库根目录 coverage-reports/{artifactId}/）
+/coverage-reports/
+
 ######################
 # Flattened POM
 ######################

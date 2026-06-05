@@ -521,9 +521,9 @@
                                     <include>com/richie/component/**</include>
                                 </includes>
                                 <excludes>
-                                    <exclude>**/*AutoConfiguration</exclude>
-                                    <exclude>**/config/**</exclude>
-                                    <exclude>**/enums/**</exclude>
+                                    <exclude>com.richie.component.**.*AutoConfiguration</exclude>
+                                    <exclude>com.richie.component.**.config.**</exclude>
+                                    <exclude>com.richie.component.**.enums.**</exclude>
                                 </excludes>
                                 <rules>
                                     <rule>
@@ -532,7 +532,7 @@
                                             <limit>
                                                 <counter>LINE</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.50</minimum>
+                                                <minimum>0.85</minimum>
                                             </limit>
                                         </limits>
                                     </rule>
