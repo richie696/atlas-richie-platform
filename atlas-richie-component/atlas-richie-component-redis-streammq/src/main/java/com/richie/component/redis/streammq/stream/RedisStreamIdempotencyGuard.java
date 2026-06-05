@@ -1,7 +1,7 @@
 package com.richie.component.redis.streammq.stream;
 
 import com.richie.component.cache.redis.bean.MultiRedisTemplate;
-import com.richie.component.cache.redis.config.base.AtlasRedisProperties;
+import com.richie.component.redis.streammq.config.stream.RedisStreamIdempotencyProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -35,8 +35,8 @@ public class RedisStreamIdempotencyGuard {
     /** Redis 模板 */
     private final MultiRedisTemplate<Object> redisTemplate;
 
-    /** Redis 配置 */
-    private final AtlasRedisProperties properties;
+    /** Stream 幂等配置 */
+    private final RedisStreamIdempotencyProperties properties;
 
     /** 内存已处理键缓存（key -> 过期时间戳） */
     private final Map<String, Long> inMemorySeen = new ConcurrentHashMap<>();
@@ -81,21 +81,15 @@ public class RedisStreamIdempotencyGuard {
     }
 
     private String buildNamespacedKey(String rawKey) {
-        String prefix = properties.getStreamIdempotency() != null ? properties.getStreamIdempotency().getKeyPrefix() : "idemp:stream:";
+        String prefix = properties.getKeyPrefix() != null ? properties.getKeyPrefix() : "idemp:stream:";
         return prefix + Objects.requireNonNull(rawKey);
     }
 
     private Duration getMemoryTtlOrDefault() {
-        if (properties.getStreamIdempotency() != null && properties.getStreamIdempotency().getMemoryTtl() != null) {
-            return properties.getStreamIdempotency().getMemoryTtl();
-        }
-        return Duration.ofHours(1);
+        return properties.getMemoryTtl() != null ? properties.getMemoryTtl() : Duration.ofHours(1);
     }
 
     private Duration getRedisTtlOrDefault(Duration fallback) {
-        if (properties.getStreamIdempotency() != null && properties.getStreamIdempotency().getRedisTtl() != null) {
-            return properties.getStreamIdempotency().getRedisTtl();
-        }
-        return fallback != null ? fallback : Duration.ofHours(24);
+        return properties.getRedisTtl() != null ? properties.getRedisTtl() : (fallback != null ? fallback : Duration.ofHours(24));
     }
 }

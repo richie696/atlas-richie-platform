@@ -144,11 +144,12 @@ public class CacheSyncListener implements MessageListener {
      * @param key Redis 键
      * @return true 表示是幂等键
      */
+    /**
+     * Stream MQ 幂等键前缀（与 {@code atlas-richie-component-redis-streammq} 默认一致），L2 失效时跳过。
+     */
+    private static final String STREAM_IDEMPOTENCY_KEY_PREFIX = "idemp:stream:";
+
     private boolean isIdempotencyKey(String key) {
-        String prefix = "idemp:stream:";
-        if (properties.getStreamIdempotency() != null && properties.getStreamIdempotency().getKeyPrefix() != null) {
-            prefix = properties.getStreamIdempotency().getKeyPrefix();
-        }
-        return key != null && key.startsWith(prefix);
+        return key != null && key.startsWith(STREAM_IDEMPOTENCY_KEY_PREFIX);
     }
 }

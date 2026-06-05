@@ -17,7 +17,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties({
         RedisStreamProperties.class,
-        RedisStreamProperties.CleanupConfig.class
+        RedisStreamProperties.CleanupConfig.class,
+        RedisStreamIdempotencyProperties.class
 })
 @ConditionalOnProperty(prefix = "platform.cache.redis.stream.consumers", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class RedisStreamAutoConfiguration {

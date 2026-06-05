@@ -10,7 +10,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.data.redis.autoconfigure.DataRedisProperties;
 import org.springframework.context.annotation.Primary;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -99,32 +98,9 @@ public class AtlasRedisProperties extends DataRedisProperties {
     private ProtocolVersion protocolVersion = ProtocolVersion.newestSupported();
 
     /**
-     * Stream 幂等去重配置
-     */
-    private StreamIdempotency streamIdempotency = new StreamIdempotency();
-
-    /**
      * Redis 调用性能守卫（非 O(1) 告警、慢查询、可选阻断高复杂度操作）
      */
     private RedisPerf perf = new RedisPerf();
-
-    /**
-     * Stream 幂等去重配置
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2026-02-07 19:29:00
-     */
-    @Data
-    @ConfigurationProperties(prefix = "spring.data.redis.stream-idempotency")
-    public static class StreamIdempotency {
-        /** Redis 幂等窗口（默认 24h） */
-        private Duration redisTtl = Duration.ofHours(24);
-        /** 内存幂等窗口（默认 1h） */
-        private Duration memoryTtl = Duration.ofHours(1);
-        /** 幂等键前缀（默认 idemp:stream:） */
-        private String keyPrefix = "idemp:stream:";
-    }
 
     /**
      * Redis 性能守卫配置（绑定前缀 {@code spring.data.redis.perf.*}）
@@ -144,7 +120,7 @@ public class AtlasRedisProperties extends DataRedisProperties {
          */
         @MigrationWindow(
                 until = "2026-12-01",
-                removedIn = "2.0.0",
+                removedIn = "1.0.0",
                 owner = "richie696",
                 reason = "性能守卫必须默认开启；存量项目需在截止日期前完成业务代码适配")
         private boolean enabled = false;
@@ -171,7 +147,7 @@ public class AtlasRedisProperties extends DataRedisProperties {
          */
         @MigrationWindow(
                 until = "2026-12-01",
-                removedIn = "2.0.0",
+                removedIn = "1.0.0",
                 owner = "richie696",
                 reason = "LINEAR_N / WORSE 复杂度在 ToC 核心路径必须硬阻断，不应仅 WARN")
         private boolean blockForbiddenTiers = false;
@@ -229,7 +205,7 @@ public class AtlasRedisProperties extends DataRedisProperties {
          */
         @MigrationWindow(
                 until = "2026-12-01",
-                removedIn = "2.0.0",
+                removedIn = "1.0.0",
                 owner = "richie696",
                 reason = "大 value 是 JVM GC 与网络热点的头号元凶，必须在写入边界硬阻断")
         private boolean blockStringPayloadViolations = false;
