@@ -56,7 +56,8 @@ public class BoundedStack<T> {
 
     public boolean grow() {
         assertAlive();
-        Long result = redisTemplate.execute(
+        Long result = BoundedListRedisScripts.evalLong(
+                redisTemplate,
                 BoundedListRedisScripts.GROW_MAX_LEN_SCRIPT,
                 List.of(metaKey),
                 String.valueOf(BoundedListCapacityLimits.BOUNDED_MAX_LEN_CEILING));
@@ -137,7 +138,8 @@ public class BoundedStack<T> {
         if (timeout <= 0) {
             throw new IllegalArgumentException("timeout must be positive, got " + timeout);
         }
-        redisTemplate.execute(
+        BoundedListRedisScripts.evalLong(
+                redisTemplate,
                 BoundedListRedisScripts.PEXPIRE_BOTH_SCRIPT,
                 List.of(key, metaKey),
                 String.valueOf(timeout));

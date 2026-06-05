@@ -1,6 +1,13 @@
 package com.richie.component.cache.operations;
 
+import com.richie.component.cache.redis.bean.MultiRedisTemplate;
+import org.springframework.data.redis.connection.ReturnType;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.script.RedisScript;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * 有界队列 / 栈共用的 Redis Lua 脚本。
@@ -42,5 +49,44 @@ public final class BoundedListRedisScripts {
             Long.class);
 
     private BoundedListRedisScripts() {
+    }
+
+    /**
+     * 执行 Lua 脚本：KEYS 走 key 序列化，ARGV 以 UTF-8 纯字符串传递（避免 JSON 序列化导致 {@code tonumber} 失败）。
+     */
+    public static Long evalLong(MultiRedisTemplate<Object> redisTemplate, RedisScript<Long> script,
+                                List<String> keys, String... rawArgs) {
+        return redisTemplate.execute((RedisCallback<Long>) connection -> {
+            byte[][] keysAndArgs = new byte[keys.size() + rawArgs.length][];
+            for (int i = 0; i < keys.size(); i++) {
+                keysAndArgs[i] = serializeKey(redisTemplate, keys.get(i));
+            }
+            for (int i = 0; i < rawArgs.length; i++) {
+                keysAndArgs[keys.size() + i] = rawArgs[i].getBytes(StandardCharsets.UTF_8);
+            }
+            byte[] scriptBytes = script.getScriptAsString().getBytes(StandardCharsets.UTF_8);
+            return evalScript(connection.scriptingCommands(), scriptBytes, keys.size(), keysAndArgs);
+        });
+    }
+
+    private static Long evalScript(org.springframework.data.redis.connection.RedisScriptingCommands commands,
+                                   byte[] scriptBytes, int numKeys, byte[][] keysAndArgs) {
+        return switch (keysAndArgs.length) {
+            case 0 -> commands.eval(scriptBytes, ReturnType.INTEGER, numKeys);
+            case 1 -> commands.eval(scriptBytes, ReturnType.INTEGER, numKeys, keysAndArgs[0]);
+            case 2 -> commands.eval(scriptBytes, ReturnType.INTEGER, numKeys, keysAndArgs[0], keysAndArgs[1]);
+            case 3 -> commands.eval(scriptBytes, ReturnType.INTEGER, numKeys,
+                    keysAndArgs[0], keysAndArgs[1], keysAndArgs[2]);
+            default -> throw new IllegalArgumentException(
+                    "Unsupported script arity: " + numKeys + " keys and " + (keysAndArgs.length - numKeys) + " args");
+        };
+    }
+
+    private static byte[] serializeKey(MultiRedisTemplate<Object> redisTemplate, String key) {
+        var keySerializer = redisTemplate.getKeySerializer();
+        if (keySerializer instanceof StringRedisSerializer stringRedisSerializer) {
+            return stringRedisSerializer.serialize(key);
+        }
+        return key.getBytes(StandardCharsets.UTF_8);
     }
 }
