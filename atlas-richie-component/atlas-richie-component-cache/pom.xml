@@ -16,11 +16,6 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- Reactive Core for Flux/Sinks -->
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-core</artifactId>
-        </dependency>
         <!-- 分布式锁 -->
         <dependency>
             <groupId>org.redisson</groupId>
@@ -100,17 +95,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-annotation</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-core</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>org.ehcache</groupId>
             <artifactId>ehcache</artifactId>
         </dependency>
@@ -134,98 +118,66 @@
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
-        </dependency>
-
-        <!-- ==================== OpenTelemetry 链路追踪依赖 ==================== -->
-        <!-- 注意：核心依赖（API/SDK）保留，因为 cache 组件内部使用 -->
-        <!-- 仅 Spring Boot starter 设为 optional，避免自动配置和连接 -->
-
-        <!-- OpenTelemetry API -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-api</artifactId>
-        </dependency>
-
-        <!-- OpenTelemetry SDK -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk</artifactId>
-        </dependency>
-
-        <!-- OpenTelemetry 语义约定 -->
-        <dependency>
-            <groupId>io.opentelemetry.semconv</groupId>
-            <artifactId>opentelemetry-semconv</artifactId>
-        </dependency>
-
-        <!-- Zipkin 导出器 -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-zipkin</artifactId>
-        </dependency>
-
-        <!-- OTLP 导出器 -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-otlp</artifactId>
-        </dependency>
-
-        <!-- 日志导出器 -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-logging</artifactId>
-        </dependency>
-
-        <!-- 批处理 Span 处理器 -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk-trace</artifactId>
-        </dependency>
-
-        <!-- 资源检测器 -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
-        </dependency>
-
-        <!-- Spring Boot OpenTelemetry 集成（可选依赖，仅在需要 Redis Stream 链路追踪时引入） -->
-        <dependency>
-            <groupId>io.opentelemetry.instrumentation</groupId>
-            <artifactId>opentelemetry-spring-boot-starter</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- Micrometer OpenTelemetry 集成（可选依赖，仅在需要 OTLP 指标导出时引入） -->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-otlp</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- ==================== 监控和指标依赖 ==================== -->
-
-        <!-- Micrometer Core -->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-core</artifactId>
-        </dependency>
-
-        <!-- Prometheus 指标导出 -->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-        </dependency>
     </dependencies>
-
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
+            <!-- 覆盖率：模块行覆盖率 ≥ 85%（见 TESTING.md 排除项说明） -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <!-- 白名单：仅统计可单测覆盖的实现类与纯逻辑（IT 覆盖的 Manager/有界结构不计入） -->
+                    <includes>
+                        <include>com/richie/component/cache/ops/**</include>
+                        <include>com/richie/component/cache/commons/**</include>
+                        <include>com/richie/component/cache/operations/BoundedList*</include>
+                        <include>com/richie/component/cache/operations/SetCapacity*</include>
+                        <include>com/richie/component/cache/operations/ZSetCapacity*</include>
+                        <include>com/richie/component/cache/redis/perf/**</include>
+                        <include>com/richie/component/cache/redis/migration/**</include>
+                    </includes>
+                    <excludes>
+                        <exclude>com/richie/component/cache/ops/ValueOps</exclude>
+                        <exclude>com/richie/component/cache/ops/StructOps</exclude>
+                        <exclude>com/richie/component/cache/ops/FieldOps</exclude>
+                        <exclude>com/richie/component/cache/ops/CollectionOps</exclude>
+                        <exclude>com/richie/component/cache/ops/RankingOps</exclude>
+                        <exclude>com/richie/component/cache/ops/LockOps</exclude>
+                        <exclude>com/richie/component/cache/ops/BitmapOps</exclude>
+                        <exclude>com/richie/component/cache/ops/GeoOps</exclude>
+                        <exclude>com/richie/component/cache/ops/HyperLogOps</exclude>
+                        <exclude>com/richie/component/cache/ops/NotificationOps</exclude>
+                        <exclude>com/richie/component/cache/ops/EventOps</exclude>
+                        <exclude>com/richie/component/cache/ops/BoundedQueueOps</exclude>
+                        <exclude>com/richie/component/cache/ops/BoundedStackOps</exclude>
+                        <exclude>com/richie/component/cache/ops/KeyOps</exclude>
+                        <exclude>com/richie/component/cache/ops/ScriptOps</exclude>
+                        <exclude>com/richie/component/cache/ops/LimiterOps</exclude>
+                        <exclude>com/richie/component/cache/ops/CacheInfrastructure</exclude>
+                        <exclude>com/richie/component/cache/commons/GeoPointResult</exclude>
+                    </excludes>
+                    <rules>
+                        <rule>
+                            <element>BUNDLE</element>
+                            <limits>
+                                <limit>
+                                    <counter>LINE</counter>
+                                    <value>COVEREDRATIO</value>
+                                    <minimum>0.85</minimum>
+                                </limit>
+                            </limits>
+                        </rule>
+                    </rules>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
