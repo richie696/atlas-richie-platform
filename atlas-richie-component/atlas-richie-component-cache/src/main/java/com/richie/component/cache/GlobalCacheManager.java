@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
  * 缓存管理器
  *
  * @author richie696
- * @version 2.0.0
+ * @version 1.0.0
  * @since 2025-06-26 18:18:32
  */
 @Component
@@ -65,5 +65,8 @@ public class GlobalCacheManager {
 
     /** 获取发布订阅通知操作 */
     private final NotificationOps notification;
+
+    /** Key 空间事件订阅 */
+    private final EventOps event;
 
 }

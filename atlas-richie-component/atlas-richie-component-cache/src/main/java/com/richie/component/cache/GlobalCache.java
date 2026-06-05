@@ -92,12 +92,14 @@ public class GlobalCache {
         return DELEGATE.get().geo();
     }
 
-    /** 有界队列操作器（FIFO，满时拒绝压入） */
+    /**
+     * 有界队列（FIFO，满时淘汰队首；主动拉消费，削峰缓冲，非 Stream MQ）。
+     */
     public static BoundedQueueOps queue() {
         return DELEGATE.get().queue();
     }
 
-    /** 有界栈操作器（LIFO，满时拒绝压入） */
+    /** 有界栈（LIFO，满时拒绝压入；主动拉，非消息队列） */
     public static BoundedStackOps stack() {
         return DELEGATE.get().stack();
     }
@@ -132,6 +134,14 @@ public class GlobalCache {
      */
     public static NotificationOps notification() {
         return DELEGATE.get().notification();
+    }
+
+    /**
+     * Redis Key 空间事件订阅（过期、删除等）。
+     * <p>轻量 Pub/Sub 发布请用 {@link #notification()}；可靠消息队列请用独立模块 {@code atlas-richie-component-redis-streammq} 的 {@code StreamMQ}。</p>
+     */
+    public static EventOps event() {
+        return DELEGATE.get().event();
     }
 
     // ========================================================================
