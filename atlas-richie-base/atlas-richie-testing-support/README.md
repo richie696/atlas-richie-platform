@@ -111,7 +111,7 @@ com/richie/component/{模块}/
                             <limit>
                                 <counter>LINE</counter>
                                 <value>COVEREDRATIO</value>
-                                <minimum>0.80</minimum>
+                                <minimum>0.85</minimum>
                             </limit>
                         </limits>
                     </rule>
@@ -401,6 +401,8 @@ export DOCKER_HOST=unix:///var/run/docker.sock
 
 ## 覆盖率报告
 
+**无论是否编写集成测试，都需要产出覆盖率报告。** 单测由 Surefire + `jacoco:prepare-agent` 写入 `target/jacoco.exec`；有集测时 Failsafe + `prepare-agent-integration` 额外写入 `jacoco-it.exec`，`merge` 后统一出报告。
+
 `mvn verify` 成功后，HTML 报告输出到**仓库根目录**：
 
 ```
@@ -411,8 +413,9 @@ coverage-reports/
     └── jacoco.csv
 ```
 
-- 单测与集测 exec 在模块 `target/` 下合并为 `jacoco-merged.exec`
-- 门禁在组件 `pom.xml` 的 `jacoco:check` 规则中配置（通常行覆盖率 ≥ 80%）
+- 仅单测模块（如 `atlas-richie-component-dao`）：无 `jacoco-it.exec` 时 merge 仍可用，**只跑 `mvn verify` 即可出报告**
+- `mvn test` 只执行用例，**不生成** HTML 报告（报告绑定在 `verify` 阶段）
+- 门禁在组件 `pom.xml` 的 `jacoco:check` 规则中配置（父默认行覆盖率 **≥ 85%**）
 - `/coverage-reports/` 已加入 `.gitignore`
 
 ---
@@ -446,10 +449,10 @@ coverage-reports/
 
 - test 依赖：`atlas-richie-testing-support`、`spring-boot-starter-test`
 - `pluginManagement`：surefire（排除 IT）、failsafe、jacoco 执行链
-- 默认 JaCoCo 门禁：**行覆盖率 ≥ 50%**（`com/richie/component/**`，排除 `*AutoConfiguration` / `config` / `enums`）
+- 默认 JaCoCo 门禁：**行覆盖率 ≥ 85%**（`com/richie/component/**`，排除 `com.richie.component.**.*AutoConfiguration` / `config` / `enums` 包）
 - 覆盖率 HTML：`coverage-reports/{artifactId}/`
 
-高成熟度模块（如 cache）在自身 `pom.xml` **覆盖** JaCoCo 为 80% 与更细白名单。
+高成熟度模块（如 cache）在自身 `pom.xml` **覆盖**更细 `includes` / `excludes` 白名单，阈值与父 POM 一致为 85%。
 
 ### 阶段 1：声明 Maven 插件（子模块 `pom.xml`）
 
@@ -472,6 +475,33 @@ coverage-reports/
     </plugins>
 </build>
 ```
+
+### 阶段 1b：仅单测模块（无集测）
+
+基础设施/工具类组件（拦截器、ID 生成、工具方法等）可**只写单元测试**，仍需声明 `jacoco-maven-plugin`：
+
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+        </plugin>
+        <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+        </plugin>
+        <!-- 无需 maven-failsafe-plugin -->
+    </plugins>
+</build>
+```
+
+```bash
+mvn -pl atlas-richie-component/atlas-richie-component-dao verify
+open coverage-reports/atlas-richie-component-dao/index.html
+```
+
+参考：`atlas-richie-component-dao/TESTING.md`。
 
 ### 阶段 2：选择集测类型
 
@@ -515,7 +545,7 @@ mvn -pl atlas-richie-component/atlas-richie-component-{模块} verify
 # 3. 查看报告
 open coverage-reports/atlas-richie-component-{模块}/index.html
 
-# 4. 逐步提高 JaCoCo minimum（50% → 80%）并补充 *Test 覆盖分支
+# 4. 未达 85% 时补充 *Test 覆盖分支，直至 `jacoco:check` 通过
 ```
 
 ### 阶段 6：CI 固化
