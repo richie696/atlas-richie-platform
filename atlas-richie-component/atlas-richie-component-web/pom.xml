@@ -90,6 +90,28 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <configuration>
+                            <includes>
+                                <include>com/richie/component/web/exception/**</include>
+                                <include>com/richie/component/web/sse/SseManager</include>
+                                <include>com/richie/component/web/i18n/AcceptLanguageHeaderLocaleResolver</include>
+                                <include>com/richie/component/web/utils/WebUtils</include>
+                            </includes>
+                            <excludes>
+                                <exclude>com.richie.component.**.*AutoConfiguration</exclude>
+                                <exclude>com.richie.component.**.config.**</exclude>
+                                <exclude>com.richie.component.**.enums.**</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 

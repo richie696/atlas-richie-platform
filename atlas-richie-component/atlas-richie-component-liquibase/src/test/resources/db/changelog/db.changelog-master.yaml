@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - changeSet:
+      id: smoke
+      author: test
+      changes: []
