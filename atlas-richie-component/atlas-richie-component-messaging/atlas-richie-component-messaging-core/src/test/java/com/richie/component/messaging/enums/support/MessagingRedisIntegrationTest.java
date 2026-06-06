@@ -15,6 +15,6 @@ import java.lang.annotation.Target;
 @Inherited
 @SpringBootTest(classes = MessagingIntegrationTestConfiguration.class)
 @ContextConfiguration(initializers = MessagingRedisIntegrationTestInitializer.class)
-@EnabledIf("com.richie.component.messaging.enums.support.MessagingRedisIntegrationTestSupport#isEnabled")
+@EnabledIf("com.richie.component.messaging.enums.support.MessagingRedisIntegrationTestSupport#integrationTestsEnabled")
 public @interface MessagingRedisIntegrationTest {
 }

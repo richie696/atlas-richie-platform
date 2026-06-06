@@ -46,6 +46,7 @@ public final class MessagingRedisIntegrationTestSupport implements RedisIntegrat
     }
 
     private static void appendComponentProperties(List<String> pairs) {
-        // 本模块集测专属属性（按需补充）
+        pairs.add("spring.cloud.stream.datasource=redis");
+        pairs.add("spring.cloud.compatibility-verifier.enabled=false");
     }
 }
