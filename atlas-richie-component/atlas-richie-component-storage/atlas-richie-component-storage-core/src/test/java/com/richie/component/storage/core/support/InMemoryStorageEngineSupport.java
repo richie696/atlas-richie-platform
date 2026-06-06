@@ -1,0 +1,110 @@
+package com.richie.component.storage.core.support;
+
+import com.richie.component.storage.bean.ObjectConfig;
+import com.richie.component.storage.bean.UploadResponse;
+import com.richie.component.storage.bean.image.ImageOptions;
+import com.richie.component.storage.config.StorageProperties;
+import com.richie.component.storage.converter.StorageTypeConverter;
+import com.richie.component.storage.core.impl.AbstractObjectStorageEngine;
+import com.richie.component.storage.enums.StorageEngineEnum;
+import com.richie.component.storage.enums.StorageTypeEnum;
+import tools.jackson.core.type.TypeReference;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+
+/**
+ * 集测用内存/临时目录存储引擎桩。
+ */
+public final class InMemoryStorageEngineSupport {
+
+    private InMemoryStorageEngineSupport() {
+    }
+
+    public static InMemoryStorageEngine create(Path root) {
+        StorageProperties props = new StorageProperties();
+        ObjectConfig object = new ObjectConfig();
+        object.setBucketName("mem");
+        object.setEndpoint("mem.local");
+        object.setBasePath(root.toString().replace('\\', '/'));
+        props.setObject(object);
+        return new InMemoryStorageEngine(props, root);
+    }
+
+    public static final class InMemoryStorageEngine extends AbstractObjectStorageEngine<Path> {
+        private final Path root;
+
+        InMemoryStorageEngine(StorageProperties properties, Path root) {
+            super(properties, new StorageTypeConverter() {
+                @Override
+                public String convertToEngineType(StorageTypeEnum storageType) {
+                    return "STANDARD";
+                }
+
+                @Override
+                public StorageEngineEnum getSupportedEngine() {
+                    return StorageEngineEnum.AWS_S3;
+                }
+            });
+            this.root = root;
+        }
+
+        @Override
+        public UploadResponse putObject(String key, InputStream inputStream) {
+            try {
+                Path target = root.resolve(key);
+                Files.createDirectories(target.getParent());
+                Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING);
+                return UploadResponse.builder().success(true).key(getRealPath(key)).build();
+            } catch (IOException e) {
+                return UploadResponse.builder().success(false).errorMessage(e.getMessage()).build();
+            }
+        }
+
+        @Override
+        public UploadResponse putObject(String key, File file) {
+            try {
+                return putObject(key, new java.io.FileInputStream(file));
+            } catch (java.io.FileNotFoundException e) {
+                return UploadResponse.builder().success(false).errorMessage(e.getMessage()).build();
+            }
+        }
+
+        @Override
+        public UploadResponse putImage(String key, File file, ImageOptions options) {
+            return putObject(key, file);
+        }
+
+        @Override
+        public UploadResponse putImage(String key, InputStream inputStream, ImageOptions options) {
+            return putObject(key, inputStream);
+        }
+
+        @Override
+        public <T> com.richie.component.storage.bean.DownloadResponse<T> getData(String key,
+                TypeReference<T> typeReference) {
+            return new com.richie.component.storage.bean.DownloadResponse<>();
+        }
+
+        @Override
+        public com.richie.component.storage.bean.DownloadResponse<byte[]> getObject(String key, File targetPath,
+                boolean returnData) {
+            return new com.richie.component.storage.bean.DownloadResponse<>();
+        }
+
+        @Override
+        public com.richie.component.storage.bean.DownloadResponse<byte[]> getResumableObject(String key,
+                String targetPath, boolean returnData) {
+            return new com.richie.component.storage.bean.DownloadResponse<>();
+        }
+
+        @Override
+        public boolean existsObject(String key) {
+            return Files.exists(root.resolve(key));
+        }
+    }
+}

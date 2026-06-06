@@ -1,0 +1,104 @@
+package com.richie.component.storage.local.config;
+
+import com.richie.component.cache.GlobalCache;
+import com.richie.component.cache.enums.KeyTypeEnum;
+import com.richie.component.cache.ops.CacheInfrastructure;
+import com.richie.component.cache.ops.KeyOps;
+import com.richie.component.cache.ops.ValueOps;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
+
+class CacheConfigurationCheckerTest {
+
+    @Test
+    void checkCacheConfiguration_whenTypeCachesDisabled_logsWarnings() {
+        KeyOps keyOps = mock(KeyOps.class, org.mockito.Mockito.withSettings().extraInterfaces(CacheInfrastructure.class));
+        CacheInfrastructure infra = (CacheInfrastructure) keyOps;
+        ValueOps valueOps = mock(ValueOps.class);
+        when(infra.enableL2Caching()).thenReturn(true);
+        when(infra.enableKeyTypeCache(KeyTypeEnum.STRING)).thenReturn(false);
+        when(infra.enableKeyTypeCache(KeyTypeEnum.HASH)).thenReturn(false);
+        when(valueOps.get(anyString(), eq(String.class))).thenReturn("ok");
+        doNothing().when(valueOps).set(anyString(), anyString(), anyLong());
+        doNothing().when(keyOps).removeCache(anyString());
+
+        try (MockedStatic<GlobalCache> cache = mockStatic(GlobalCache.class)) {
+            cache.when(GlobalCache::key).thenReturn(keyOps);
+            cache.when(GlobalCache::value).thenReturn(valueOps);
+            new CacheConfigurationChecker().checkCacheConfiguration();
+        }
+    }
+
+    @Test
+    void checkCacheConfiguration_whenL2Enabled_runsWithoutException() {
+        KeyOps keyOps = mock(KeyOps.class, org.mockito.Mockito.withSettings().extraInterfaces(CacheInfrastructure.class));
+        CacheInfrastructure infra = (CacheInfrastructure) keyOps;
+        ValueOps valueOps = mock(ValueOps.class);
+
+        when(infra.enableL2Caching()).thenReturn(true);
+        when(infra.enableKeyTypeCache(KeyTypeEnum.STRING)).thenReturn(true);
+        when(infra.enableKeyTypeCache(KeyTypeEnum.HASH)).thenReturn(true);
+        when(valueOps.get(anyString(), eq(String.class))).thenReturn("test_value");
+        doNothing().when(valueOps).set(anyString(), anyString(), anyLong());
+        doNothing().when(keyOps).removeCache(anyString());
+
+        try (MockedStatic<GlobalCache> cache = mockStatic(GlobalCache.class)) {
+            cache.when(GlobalCache::key).thenReturn(keyOps);
+            cache.when(GlobalCache::value).thenReturn(valueOps);
+            new CacheConfigurationChecker().checkCacheConfiguration();
+        }
+    }
+
+    @Test
+    void checkCacheConfiguration_whenL2Disabled_logsWarningPath() {
+        KeyOps keyOps = mock(KeyOps.class, org.mockito.Mockito.withSettings().extraInterfaces(CacheInfrastructure.class));
+        CacheInfrastructure infra = (CacheInfrastructure) keyOps;
+        when(infra.enableL2Caching()).thenReturn(false);
+
+        try (MockedStatic<GlobalCache> cache = mockStatic(GlobalCache.class)) {
+            cache.when(GlobalCache::key).thenReturn(keyOps);
+            new CacheConfigurationChecker().checkCacheConfiguration();
+        }
+    }
+
+    @Test
+    void checkCacheConfiguration_whenInfraMissing_skipsGracefully() {
+        KeyOps keyOps = mock(KeyOps.class);
+        try (MockedStatic<GlobalCache> cache = mockStatic(GlobalCache.class)) {
+            cache.when(GlobalCache::key).thenReturn(keyOps);
+            new CacheConfigurationChecker().checkCacheConfiguration();
+        }
+    }
+
+    @Test
+    void logCacheStatus_whenInfraPresent_runsWithoutException() {
+        KeyOps keyOps = mock(KeyOps.class, org.mockito.Mockito.withSettings().extraInterfaces(CacheInfrastructure.class));
+        CacheInfrastructure infra = (CacheInfrastructure) keyOps;
+        when(infra.enableL2Caching()).thenReturn(false);
+        when(infra.enableKeyTypeCache(KeyTypeEnum.STRING)).thenReturn(false);
+        when(infra.enableKeyTypeCache(KeyTypeEnum.HASH)).thenReturn(false);
+        when(infra.getConnectionString()).thenReturn("redis://localhost:6379/15");
+
+        try (MockedStatic<GlobalCache> cache = mockStatic(GlobalCache.class)) {
+            cache.when(GlobalCache::key).thenReturn(keyOps);
+            new CacheConfigurationChecker().logCacheStatus();
+        }
+    }
+
+    @Test
+    void logCacheStatus_whenInfraMissing_logsWarning() {
+        KeyOps keyOps = mock(KeyOps.class);
+        try (MockedStatic<GlobalCache> cache = mockStatic(GlobalCache.class)) {
+            cache.when(GlobalCache::key).thenReturn(keyOps);
+            new CacheConfigurationChecker().logCacheStatus();
+        }
+    }
+}

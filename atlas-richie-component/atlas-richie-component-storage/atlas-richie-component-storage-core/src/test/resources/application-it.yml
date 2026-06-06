@@ -1,0 +1,7 @@
+platform:
+  component:
+    storage:
+      object:
+        bucket-name: it-bucket
+        endpoint: memory.local
+        base-path: it

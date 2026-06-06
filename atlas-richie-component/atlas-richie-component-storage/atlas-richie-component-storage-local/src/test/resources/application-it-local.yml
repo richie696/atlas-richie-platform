@@ -1,0 +1,23 @@
+# storage-local 双中间件集测：MySQL + Liquibase + 本地文件目录（对齐本机 docker-compose）
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:53366/platform?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+    username: richie696
+    password: wjy123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      enable-l2-caching: true
+      l2-caching-data:
+        - STRING
+        - HASH
+
+platform:
+  component:
+    liquibase:
+      enable: true
+      enableScan: false
+      dryRun: false
+    storage:
+      local:
+        path: ./target/storage-local-it
