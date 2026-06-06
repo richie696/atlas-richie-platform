@@ -32,6 +32,12 @@ class SecretKeyManagerTest {
     }
 
     @Test
+    void encryptSecretKey_fallsBackWhenKmsUnavailable() {
+        when(kmsProvider.isAvailable()).thenReturn(false);
+        assertThat(secretKeyManager.encryptSecretKey("plain")).isEqualTo("plain");
+    }
+
+    @Test
     void encryptSecretKey_usesKmsWhenAvailable() {
         when(kmsProvider.isAvailable()).thenReturn(true);
         when(kmsProvider.encrypt("plain")).thenReturn("cipher");

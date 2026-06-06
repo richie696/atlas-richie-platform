@@ -32,4 +32,22 @@ class MfaAuditEventTest {
         assertThat(event.getResult()).isEqualTo("SUCCESS");
         assertThat(event.getEventTimestamp()).isEqualTo(ts);
     }
+
+    @Test
+    void builder_withErrorCodeErrorMessageAndDuration() {
+        MfaAuditEvent event = MfaAuditEvent.builder(this)
+                .tenantId("t1")
+                .userId("u1")
+                .operationType(MfaOperationTypeEnum.VERIFY)
+                .authMethod("TOTP")
+                .result("FAILED")
+                .errorCode("MFA_INVALID")
+                .errorMessage("验证码无效")
+                .durationMs(150L)
+                .build();
+
+        assertThat(event.getErrorCode()).isEqualTo("MFA_INVALID");
+        assertThat(event.getErrorMessage()).isEqualTo("验证码无效");
+        assertThat(event.getDurationMs()).isEqualTo(150L);
+    }
 }

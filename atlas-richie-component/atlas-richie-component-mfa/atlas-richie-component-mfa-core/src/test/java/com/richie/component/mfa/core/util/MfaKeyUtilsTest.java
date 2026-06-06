@@ -47,4 +47,34 @@ class MfaKeyUtilsTest {
         assertThat(MfaKeyUtils.getSecretKeyCacheKey("tenant-a", "u2", true))
                 .isEqualTo("mfa:secret:tenant-a:u2");
     }
+
+    @Test
+    void getFailureCountKey_withTenantEnabled() {
+        assertThat(MfaKeyUtils.getFailureCountKey("t1", "u1", true))
+                .isEqualTo("mfa:failures:t1:u1");
+    }
+
+    @Test
+    void getReplayPreventionKey_withoutTenant() {
+        assertThat(MfaKeyUtils.getReplayPreventionKey("t1", "u1", 170000L, false))
+                .isEqualTo("mfa:used:u1:170000");
+    }
+
+    @Test
+    void getSyncLockKey_withoutTenant() {
+        assertThat(MfaKeyUtils.getSyncLockKey("t1", "u1", false))
+                .isEqualTo("mfa:sync:lock:u1");
+    }
+
+    @Test
+    void getTrustedDeviceCacheKey_withTenantEnabled() {
+        assertThat(MfaKeyUtils.getTrustedDeviceCacheKey("t1", "u1", "device-9", true))
+                .isEqualTo("mfa:trusted-device:t1:u1:device-9");
+    }
+
+    @Test
+    void getTrustedDeviceListKey_withoutTenant() {
+        assertThat(MfaKeyUtils.getTrustedDeviceListKey("t1", "u1", false))
+                .isEqualTo("mfa:trusted-devices:u1");
+    }
 }

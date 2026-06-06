@@ -81,6 +81,35 @@ class TotpValidationEngineTest {
         assertThat(engine.verifyCode(SECRET, code, "u1", null, 1, "UNKNOWN", 30, 6)).isTrue();
     }
 
+    @Test
+    void verifyCode_eightArg_rejectsBlankSecret() {
+        assertThat(engine.verifyCode("", "123456", "u1", null, 1, "SHA1", 30, 6)).isFalse();
+    }
+
+    @Test
+    void normalizeAlgorithm_emptyConfig_fallsBackToSha1() {
+        MfaProperties props = new MfaProperties();
+        props.getTotp().setAlgorithm("");
+        props.getTotp().setTimeWindow(30);
+        props.getTotp().setCodeLength(6);
+        TotpValidationEngine emptyEngine = new TotpValidationEngine(props);
+
+        String code = totpAt(Instant.now().getEpochSecond(), 30, 6);
+        assertThat(emptyEngine.verifyCode(SECRET, code, "u1", null, 1)).isTrue();
+    }
+
+    @Test
+    void normalizeAlgorithm_invalidConfig_fallsBackToSha1() {
+        MfaProperties props = new MfaProperties();
+        props.getTotp().setAlgorithm("MD5");
+        props.getTotp().setTimeWindow(30);
+        props.getTotp().setCodeLength(6);
+        TotpValidationEngine badConfigEngine = new TotpValidationEngine(props);
+
+        String code = totpAt(Instant.now().getEpochSecond(), 30, 6);
+        assertThat(badConfigEngine.verifyCode(SECRET, code, "u1", null, 1)).isTrue();
+    }
+
     private static String totpAt(long epochSeconds, int period, int digits) {
         long counter = epochSeconds / period;
         byte[] key = new Base32().decode(SECRET);

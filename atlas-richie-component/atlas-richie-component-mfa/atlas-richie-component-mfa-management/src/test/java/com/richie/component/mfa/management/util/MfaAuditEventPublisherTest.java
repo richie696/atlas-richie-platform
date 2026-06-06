@@ -120,6 +120,60 @@ class MfaAuditEventPublisherTest {
     }
 
     @Test
+    void publishSuccess_usesWlProxyClientIpHeader() {
+        when(request.getHeader("X-Forwarded-For")).thenReturn("unknown");
+        when(request.getHeader("Proxy-Client-IP")).thenReturn(null);
+        when(request.getHeader("WL-Proxy-Client-IP")).thenReturn("203.0.113.5");
+        ServletRequestAttributes attributes = new ServletRequestAttributes(request);
+
+        try (MockedStatic<RequestContextHolder> context = mockStatic(RequestContextHolder.class)) {
+            context.when(RequestContextHolder::getRequestAttributes).thenReturn(attributes);
+
+            publisher.publishSuccess("t1", "u1", MfaOperationTypeEnum.BIND, "TOTP", null);
+        }
+
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getIpAddress()).isEqualTo("203.0.113.5");
+    }
+
+    @Test
+    void publishSuccess_usesHttpClientIpHeader() {
+        when(request.getHeader("X-Forwarded-For")).thenReturn("unknown");
+        when(request.getHeader("Proxy-Client-IP")).thenReturn(null);
+        when(request.getHeader("WL-Proxy-Client-IP")).thenReturn(null);
+        when(request.getHeader("HTTP_CLIENT_IP")).thenReturn("198.51.100.10");
+        ServletRequestAttributes attributes = new ServletRequestAttributes(request);
+
+        try (MockedStatic<RequestContextHolder> context = mockStatic(RequestContextHolder.class)) {
+            context.when(RequestContextHolder::getRequestAttributes).thenReturn(attributes);
+
+            publisher.publishSuccess("t1", "u1", MfaOperationTypeEnum.BIND, "TOTP", null);
+        }
+
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getIpAddress()).isEqualTo("198.51.100.10");
+    }
+
+    @Test
+    void publishSuccess_usesHttpXForwardedForHeader() {
+        when(request.getHeader("X-Forwarded-For")).thenReturn("unknown");
+        when(request.getHeader("Proxy-Client-IP")).thenReturn(null);
+        when(request.getHeader("WL-Proxy-Client-IP")).thenReturn(null);
+        when(request.getHeader("HTTP_CLIENT_IP")).thenReturn(null);
+        when(request.getHeader("HTTP_X_FORWARDED_FOR")).thenReturn("192.0.2.50");
+        ServletRequestAttributes attributes = new ServletRequestAttributes(request);
+
+        try (MockedStatic<RequestContextHolder> context = mockStatic(RequestContextHolder.class)) {
+            context.when(RequestContextHolder::getRequestAttributes).thenReturn(attributes);
+
+            publisher.publishSuccess("t1", "u1", MfaOperationTypeEnum.BIND, "TOTP", null);
+        }
+
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getIpAddress()).isEqualTo("192.0.2.50");
+    }
+
+    @Test
     void publishEvent_swallowsPublisherExceptions() {
         doThrow(new RuntimeException("bus down")).when(eventPublisher).publishEvent(any());
 
