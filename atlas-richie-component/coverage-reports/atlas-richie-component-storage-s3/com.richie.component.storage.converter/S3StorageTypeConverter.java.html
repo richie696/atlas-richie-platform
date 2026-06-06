@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>S3StorageTypeConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">atlas-richie-component-storage-s3</a> &gt; <a href="index.source.html" class="el_package">com.richie.component.storage.converter</a> &gt; <span class="el_source">S3StorageTypeConverter.java</span></div><h1>S3StorageTypeConverter.java</h1><pre class="source lang-java linenums">package com.richie.component.storage.converter;
+
+import com.richie.component.storage.enums.StorageEngineEnum;
+import com.richie.component.storage.enums.StorageTypeEnum;
+import com.richie.component.storage.exception.StorageTypeUnsupportedException;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import jakarta.annotation.Nonnull;
+import org.springframework.stereotype.Component;
+import software.amazon.awssdk.services.s3.model.StorageClass;
+
+import static com.richie.component.storage.enums.StorageTypeEnum.*;
+
+/**
+ * Amazon S3存储类型转换器
+ *
+ * @author richie696
+ * @version 1.0
+ * @see &lt;a href=&quot;https://aws.amazon.com/cn/s3/storage-classes/?nc=sn&amp;loc=3&quot;&gt;Amazon S3存储桶类型&lt;/a&gt;
+ * @since 2025-06-03 11:32:04
+ */
+@Component
+@ConditionalOnProperty(prefix = &quot;platform.component.storage.object&quot;, name = &quot;engine&quot;, havingValue = &quot;aws_s3&quot;)
+<span class="fc" id="L23">public class S3StorageTypeConverter implements StorageTypeConverter {</span>
+
+    @Override
+    public String convertToEngineType(@Nonnull StorageTypeEnum storageType) {
+<span class="fc bfc" id="L27" title="All 11 branches covered.">        return switch (storageType) {</span>
+<span class="fc" id="L28">            case STANDARD -&gt; StorageClass.STANDARD.toString();</span>
+<span class="fc" id="L29">            case STANDARD_IA -&gt; StorageClass.STANDARD_IA.toString();</span>
+<span class="fc" id="L30">            case ONEZONE_IA -&gt; StorageClass.ONEZONE_IA.toString();</span>
+<span class="fc" id="L31">            case SNOW -&gt; StorageClass.SNOW.toString();</span>
+<span class="fc" id="L32">            case GLACIER -&gt; StorageClass.GLACIER.toString();</span>
+<span class="fc" id="L33">            case GLACIER_IR -&gt; StorageClass.GLACIER_IR.toString();</span>
+<span class="fc" id="L34">            case Outposts -&gt; StorageClass.OUTPOSTS.toString();</span>
+<span class="fc" id="L35">            case REDUCED_REDUNDANCY -&gt; StorageClass.REDUCED_REDUNDANCY.toString();</span>
+<span class="fc" id="L36">            case DEEP_COLD_ARCHIVE -&gt; StorageClass.DEEP_ARCHIVE.toString();</span>
+<span class="fc" id="L37">            case INTELLIGENT_TIERING -&gt; StorageClass.INTELLIGENT_TIERING.toString();</span>
+<span class="fc" id="L38">            default -&gt; throw new StorageTypeUnsupportedException(getSupportedEngine(), storageType,</span>
+<span class="fc" id="L39">                    &quot;仅支持: %s、%s、%s、%s、%s、%s、%s、%s、%s和%s存储类型。&quot;.formatted(STANDARD, STANDARD_IA,</span>
+                            ONEZONE_IA, SNOW, GLACIER, GLACIER_IR, Outposts, REDUCED_REDUNDANCY,
+                            DEEP_COLD_ARCHIVE, INTELLIGENT_TIERING));
+        };
+    }
+
+    @Override
+    public StorageEngineEnum getSupportedEngine() {
+<span class="fc" id="L47">        return StorageEngineEnum.AWS_S3;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

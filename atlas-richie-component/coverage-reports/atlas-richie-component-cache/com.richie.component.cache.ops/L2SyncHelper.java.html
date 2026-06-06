@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>L2SyncHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">atlas-richie-component-cache</a> &gt; <a href="index.source.html" class="el_package">com.richie.component.cache.ops</a> &gt; <span class="el_source">L2SyncHelper.java</span></div><h1>L2SyncHelper.java</h1><pre class="source lang-java linenums">package com.richie.component.cache.ops;
+
+import com.richie.component.cache.enums.KeyTypeEnum;
+import com.richie.component.cache.enums.L2CachingRegion;
+import com.richie.component.cache.local.manage.LocalCache;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+
+/**
+ * 二级缓存（L2）同步辅助类。
+ * &lt;p&gt;集中处理{@link LocalCache}的读写、删除和过期逻辑，避免在各 Ops 实现中重复
+ * {@code if (enableL2Caching() &amp;&amp; enableKeyTypeCache(...))} 判断。&lt;/p&gt;
+ *
+ * @author richie696
+ * @version 1.0.0
+ * @since 2025-06-05
+ */
+@Component
+@RequiredArgsConstructor
+public class L2SyncHelper {
+
+<span class="fc" id="L26">    private static final L2CachingRegion REGION = L2CachingRegion.GLOBAL_CACHE;</span>
+
+    private final CacheInfrastructure infra;
+
+    /**
+     * 是否应对指定数据类型启用 L2 同步。
+     */
+    public boolean isEnabled(KeyTypeEnum keyType) {
+<span class="pc bpc" id="L34" title="1 of 4 branches missed.">        return infra.enableL2Caching() &amp;&amp; infra.enableKeyTypeCache(keyType);</span>
+    }
+
+    /**
+     * 写入本地缓存（不带过期时间）。
+     */
+    public &lt;T&gt; void put(KeyTypeEnum keyType, String key, T value) {
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (isEnabled(keyType)) {</span>
+<span class="fc" id="L42">            LocalCache.put(REGION, key, value);</span>
+        }
+<span class="fc" id="L44">    }</span>
+
+    /**
+     * 写入本地缓存（带过期时间）。
+     */
+    public &lt;T&gt; void put(KeyTypeEnum keyType, String key, T value, long timeoutMillis) {
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        if (isEnabled(keyType)) {</span>
+<span class="fc" id="L51">            LocalCache.put(REGION, key, value);</span>
+<span class="fc" id="L52">            LocalCache.expiry(REGION, key, timeoutMillis, TimeUnit.MILLISECONDS);</span>
+        }
+<span class="fc" id="L54">    }</span>
+
+    /**
+     * 从本地缓存读取；若未命中则调用 redisLoader 并从 Redis 加载后回写。
+     * &lt;p&gt;等价于当前 GlobalCache 中 {@code getWithLocalCache} 的逻辑。&lt;/p&gt;
+     */
+    public &lt;T&gt; T get(KeyTypeEnum keyType, String key, Supplier&lt;T&gt; redisLoader) {
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (isEnabled(keyType)) {</span>
+<span class="fc" id="L62">            T cached = LocalCache.get(REGION, key);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">            if (cached != null) {</span>
+<span class="fc" id="L64">                return cached;</span>
+            }
+        }
+<span class="fc" id="L67">        T result = redisLoader.get();</span>
+<span class="pc bpc" id="L68" title="1 of 4 branches missed.">        if (result != null &amp;&amp; isEnabled(keyType)) {</span>
+<span class="fc" id="L69">            LocalCache.put(REGION, key, result);</span>
+        }
+<span class="fc" id="L71">        return result;</span>
+    }
+
+    /**
+     * 从本地缓存读取（带锁场景）；逻辑与 {@link #get(KeyTypeEnum, String, Supplier)} 一致。
+     */
+    public &lt;T&gt; T getWithLock(KeyTypeEnum keyType, String key, Supplier&lt;T&gt; redisLoader) {
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        if (isEnabled(keyType)) {</span>
+<span class="fc" id="L79">            T cached = LocalCache.get(REGION, key);</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">            if (cached != null) {</span>
+<span class="fc" id="L81">                return cached;</span>
+            }
+        }
+<span class="nc" id="L84">        T result = redisLoader.get();</span>
+<span class="nc bnc" id="L85" title="All 4 branches missed.">        if (result != null &amp;&amp; isEnabled(keyType)) {</span>
+<span class="nc" id="L86">            LocalCache.put(REGION, key, result);</span>
+        }
+<span class="nc" id="L88">        return result;</span>
+    }
+
+    /**
+     * 删除本地缓存。
+     */
+    public void remove(String key) {
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (infra.enableL2Caching()) {</span>
+<span class="fc" id="L96">            LocalCache.remove(REGION, key);</span>
+        }
+<span class="fc" id="L98">    }</span>
+
+    /**
+     * 批量删除本地缓存。
+     */
+    public void removeAll(Iterable&lt;String&gt; keys) {
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        if (infra.enableL2Caching()) {</span>
+<span class="fc" id="L105">            keys.forEach(key -&gt; LocalCache.remove(REGION, key));</span>
+        }
+<span class="fc" id="L107">    }</span>
+
+    /**
+     * 注册 key 类型。
+     */
+    public void registerType(String key, Class&lt;?&gt; clazz) {
+<span class="fc" id="L113">        infra.registerType(key, clazz);</span>
+<span class="fc" id="L114">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

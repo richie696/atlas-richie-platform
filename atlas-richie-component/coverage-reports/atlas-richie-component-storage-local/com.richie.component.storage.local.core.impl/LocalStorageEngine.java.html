@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LocalStorageEngine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">atlas-richie-component-storage-local</a> &gt; <a href="index.source.html" class="el_package">com.richie.component.storage.local.core.impl</a> &gt; <span class="el_source">LocalStorageEngine.java</span></div><h1>LocalStorageEngine.java</h1><pre class="source lang-java linenums">package com.richie.component.storage.local.core.impl;
+
+import com.richie.context.utils.data.JsonUtils;
+import com.richie.context.utils.security.HashUtils;
+import com.richie.component.cache.GlobalCache;
+import com.richie.component.storage.bean.DownloadResponse;
+import com.richie.component.storage.bean.LocalConfig;
+import com.richie.component.storage.bean.UploadResponse;
+import com.richie.component.storage.bean.image.ImageOptions;
+import com.richie.component.storage.config.StorageProperties;
+import com.richie.component.storage.core.impl.AbstractDestroyEngine;
+import com.richie.component.storage.local.repository.entity.FileMetadata;
+import com.richie.component.storage.local.repository.mapper.FileMetadataMapper;
+import java.util.UUID;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import tools.jackson.core.type.TypeReference;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import jakarta.annotation.Nonnull;
+import org.springframework.stereotype.Service;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.Collection;
+import java.util.HexFormat;
+import java.util.Map;
+import java.util.Objects;
+
+/**
+ * 本地文件存储引擎
+ *
+ * &lt;p&gt;提供对象上传/下载/存在性检测等能力，内置：
+ * &lt;ul&gt;
+ *   &lt;li&gt;路径安全校验与原子落盘&lt;/li&gt;
+ *   &lt;li&gt;大小限制与内容指纹（SHA-256）计算&lt;/li&gt;
+ *   &lt;li&gt;同内容指纹去重（已存在且指纹一致时不重复写盘）&lt;/li&gt;
+ *   &lt;li&gt;基于全局缓存的文件存在性/内容/元数据缓存&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * @author richie696
+ * @version 1.0
+ * @since 2025-10-14
+ */
+<span class="fc" id="L51">@Slf4j</span>
+@Service(&quot;localStorageEngine&quot;)
+@RequiredArgsConstructor
+public final class LocalStorageEngine extends AbstractDestroyEngine&lt;Void&gt; {
+
+    private final StorageProperties properties;
+    private final LocalConfig localConfig;
+    private final FileMetadataMapper fileMetadataMapper;
+
+    // 缓存键前缀
+    private static final String FILE_EXISTS_PREFIX = &quot;file:exists:&quot;;
+    private static final String FILE_METADATA_PREFIX = &quot;file:metadata:&quot;;
+    private static final String FILE_CONTENT_PREFIX = &quot;file:content:&quot;;
+
+    // 缓存过期时间（毫秒）
+    private static final long FILE_EXISTS_TTL = 3600000; // 1小时
+    private static final long FILE_METADATA_TTL = 1800000; // 30分钟
+    private static final long FILE_CONTENT_TTL = 600000; // 10分钟
+
+    @Override
+    public UploadResponse putData(@Nonnull String key, @Nonnull Map&lt;?, ?&gt; collection) {
+<span class="fc" id="L72">        var content = JsonUtils.getInstance().serialize(collection, true);</span>
+<span class="fc" id="L73">        Objects.requireNonNull(content);</span>
+<span class="fc" id="L74">        return getUploadResponse(key, content, false);</span>
+    }
+
+    @Override
+    public UploadResponse putData(@Nonnull String key, @Nonnull Collection&lt;?&gt; collection) {
+<span class="fc" id="L79">        var content = JsonUtils.getInstance().serialize(collection, true);</span>
+<span class="fc" id="L80">        Objects.requireNonNull(content);</span>
+<span class="fc" id="L81">        return getUploadResponse(key, content, false);</span>
+    }
+
+    @Override
+    public UploadResponse putData(@Nonnull String key, @Nonnull Object object) {
+<span class="fc" id="L86">        var content = JsonUtils.getInstance().serialize(object, true);</span>
+<span class="fc" id="L87">        Objects.requireNonNull(content);</span>
+<span class="fc" id="L88">        return getUploadResponse(key, content, false);</span>
+    }
+
+    @Override
+    public UploadResponse putObject(@Nonnull String key, @Nonnull File file) {
+<span class="fc" id="L93">        try (var fileInputStream = new FileInputStream(file)) {</span>
+<span class="fc" id="L94">            return getUploadResponse(key, fileInputStream, true);</span>
+<span class="fc" id="L95">        } catch (IOException e) {</span>
+<span class="fc" id="L96">            return UploadResponse.builder()</span>
+<span class="fc" id="L97">                    .success(false)</span>
+<span class="fc" id="L98">                    .errorMessage(e.getMessage())</span>
+<span class="fc" id="L99">                    .build();</span>
+        }
+    }
+
+    @Override
+    public UploadResponse putObject(@Nonnull String key, @Nonnull InputStream inputStream) {
+<span class="fc" id="L105">        return getUploadResponse(key, inputStream, true);</span>
+    }
+
+    @Override
+    public UploadResponse putImage(@Nonnull String key, @Nonnull File file, ImageOptions options) {
+<span class="fc" id="L110">        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);</span>
+    }
+
+    @Override
+    public UploadResponse putImage(@Nonnull String key, @Nonnull InputStream inputStream, ImageOptions options) {
+<span class="fc" id="L115">        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);</span>
+    }
+
+    @Override
+    public &lt;T&gt; DownloadResponse&lt;T&gt; getData(@Nonnull String key, @Nonnull TypeReference&lt;T&gt; typeReference) {
+        // 1. 先查缓存
+<span class="fc" id="L121">        String cacheKey = FILE_CONTENT_PREFIX + key;</span>
+<span class="fc" id="L122">        String cachedContent = GlobalCache.value().get(cacheKey, String.class);</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (cachedContent != null) {</span>
+            try {
+<span class="fc" id="L125">                T data = JsonUtils.getInstance().deserialize(cachedContent, typeReference);</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">                if (data != null) {</span>
+<span class="fc" id="L127">                    var success = new DownloadResponse&lt;T&gt;()</span>
+<span class="fc" id="L128">                            .setData(data);</span>
+<span class="fc" id="L129">                    success.setSuccess(true)</span>
+<span class="fc" id="L130">                            .setKey(key)</span>
+<span class="fc" id="L131">                            .setVersionId(UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;))</span>
+<span class="fc" id="L132">                            .setContentMD5(HashUtils.md5(cachedContent))</span>
+<span class="fc" id="L133">                            .setContentType(&quot;application/json&quot;)</span>
+<span class="fc" id="L134">                            .setContentEncoding(StandardCharsets.UTF_8.name());</span>
+<span class="fc" id="L135">                    return success;</span>
+                }
+<span class="nc" id="L137">            } catch (Exception e) {</span>
+<span class="nc" id="L138">                log.warn(&quot;Failed to deserialize cached content for key: {}&quot;, key, e);</span>
+<span class="fc" id="L139">            }</span>
+<span class="fc" id="L140">            log.warn(&quot;Corrupted cache or deserialization failed for key: {}, falling back to filesystem&quot;, key);</span>
+            // 缓存数据损坏，继续从文件系统读取
+        }
+
+        // 2. 从文件系统读取
+<span class="fc" id="L145">        var absolutePath = getAbsolutePath(key);</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        if (Files.exists(absolutePath, LinkOption.NOFOLLOW_LINKS)) {</span>
+            try {
+<span class="fc" id="L148">                var content = Files.readString(absolutePath, StandardCharsets.UTF_8);</span>
+
+                // 3. 更新缓存（只缓存小文件）
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">                if (content.length() &lt;= 1024 * 1024) { // 1MB以下</span>
+<span class="fc" id="L152">                    GlobalCache.value().set(cacheKey, content, FILE_CONTENT_TTL);</span>
+                }
+
+<span class="fc" id="L155">                var success = new DownloadResponse&lt;T&gt;()</span>
+<span class="fc" id="L156">                        .setData(JsonUtils.getInstance().deserialize(content, typeReference));</span>
+<span class="fc" id="L157">                success.setSuccess(true)</span>
+<span class="fc" id="L158">                        .setKey(key)</span>
+<span class="fc" id="L159">                        .setVersionId(UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;))</span>
+<span class="fc" id="L160">                        .setContentMD5(HashUtils.md5(content))</span>
+<span class="fc" id="L161">                        .setContentType(&quot;application/json&quot;)</span>
+<span class="fc" id="L162">                        .setContentEncoding(StandardCharsets.UTF_8.name());</span>
+<span class="fc" id="L163">                return success;</span>
+<span class="fc" id="L164">            } catch (IOException e) {</span>
+<span class="fc" id="L165">                log.error(&quot;Read file error.&quot;, e);</span>
+<span class="fc" id="L166">                DownloadResponse&lt;T&gt; error = new DownloadResponse&lt;&gt;();</span>
+<span class="fc" id="L167">                error.setSuccess(false).setErrorMessage(e.getMessage());</span>
+<span class="fc" id="L168">                return error;</span>
+            }
+        }
+<span class="fc" id="L171">        DownloadResponse&lt;T&gt; error = new DownloadResponse&lt;&gt;();</span>
+<span class="fc" id="L172">        error.setSuccess(false).setErrorMessage(&quot;File not found.&quot;);</span>
+<span class="fc" id="L173">        return error;</span>
+    }
+
+    @Override
+    public DownloadResponse&lt;byte[]&gt; getObject(@Nonnull String key, @Nonnull File targetPath, boolean returnData) {
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        if (!targetPath.canWrite()) {</span>
+<span class="fc" id="L179">            return new DownloadResponse&lt;byte[]&gt;()</span>
+<span class="fc" id="L180">                    .setSuccess(false)</span>
+<span class="fc" id="L181">                    .setErrorMessage(&quot;The directory does not have permission to write to files.&quot;)</span>
+<span class="fc" id="L182">                    .setRequestId(UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;))</span>
+<span class="fc" id="L183">                    .setKey(key);</span>
+        }
+<span class="fc" id="L185">        var absolutePath = getAbsolutePath(key);</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        if (Files.exists(absolutePath, LinkOption.NOFOLLOW_LINKS)) {</span>
+            try {
+<span class="fc" id="L188">                return new DownloadResponse&lt;byte[]&gt;()</span>
+<span class="fc" id="L189">                        .setSuccess(true)</span>
+<span class="fc" id="L190">                        .setKey(key)</span>
+<span class="fc" id="L191">                        .setRequestId(UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;))</span>
+<span class="fc" id="L192">                        .setVersionId(&quot;1&quot;)</span>
+<span class="fc" id="L193">                        .setContentType(&quot;application/octet-stream&quot;)</span>
+<span class="fc" id="L194">                        .setData(Files.readAllBytes(absolutePath));</span>
+<span class="fc" id="L195">            } catch (IOException e) {</span>
+<span class="fc" id="L196">                return new DownloadResponse&lt;byte[]&gt;().setSuccess(false).setErrorMessage(e.getMessage());</span>
+            }
+        }
+<span class="fc" id="L199">        return new DownloadResponse&lt;byte[]&gt;().setSuccess(false).setErrorMessage(&quot;File not found.&quot;);</span>
+    }
+
+    @Override
+    public DownloadResponse&lt;byte[]&gt; getResumableObject(@Nonnull String key, @Nonnull String targetPath, boolean returnData) {
+<span class="fc" id="L204">        return getObject(key, new File(targetPath), returnData);</span>
+    }
+
+    @Override
+    public boolean existsObject(@Nonnull String key) {
+        // 1. 先查缓存
+<span class="fc" id="L210">        String cacheKey = FILE_EXISTS_PREFIX + key;</span>
+<span class="fc" id="L211">        Boolean exists = GlobalCache.value().get(cacheKey, Boolean.class);</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        if (exists != null) {</span>
+<span class="fc" id="L213">            return exists;</span>
+        }
+
+        // 2. 查文件系统
+<span class="fc" id="L217">        var absolutePath = getAbsolutePath(key);</span>
+<span class="fc" id="L218">        boolean fileExists = Files.exists(absolutePath, LinkOption.NOFOLLOW_LINKS);</span>
+
+        // 3. 更新缓存
+<span class="fc" id="L221">        GlobalCache.value().set(cacheKey, fileExists, FILE_EXISTS_TTL);</span>
+
+<span class="fc" id="L223">        return fileExists;</span>
+    }
+
+    private Path getAbsolutePath(String key) {
+<span class="fc" id="L227">        var path = properties.getLocal().getPath();</span>
+<span class="pc bpc" id="L228" title="2 of 4 branches missed.">        if (StringUtils.isNotBlank(path) &amp;&amp; path.startsWith(&quot;.&quot;)) {</span>
+<span class="nc" id="L229">            path = Objects.requireNonNull(this.getClass().getResource(&quot;/&quot;)).getPath().substring(1) + path.substring(2);</span>
+        }
+<span class="fc" id="L231">        return Paths.get(path + File.separator + key);</span>
+    }
+
+    private UploadResponse getUploadResponse(String key, Object content, boolean isFile) {
+        // 路径规范化与校验，防目录穿越
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        if (!isSafeKey(key)) {</span>
+<span class="fc" id="L237">            return UploadResponse.builder().success(false).errorMessage(&quot;Invalid key: path traversal detected&quot;).build();</span>
+        }
+<span class="fc" id="L239">        var absolutePath = getAbsolutePath(key);</span>
+<span class="fc" id="L240">        String hashValue = null;</span>
+        try {
+<span class="fc" id="L242">            Files.createDirectories(absolutePath.getParent());</span>
+
+<span class="pc bpc" id="L244" title="1 of 4 branches missed.">            if (!isFile &amp;&amp; content instanceof String str) {</span>
+                // 大小限制（字符串）
+<span class="fc" id="L246">                long maxSize = getContentMaxSize();</span>
+<span class="fc bfc" id="L247" title="All 2 branches covered.">                if (str.getBytes(StandardCharsets.UTF_8).length &gt; maxSize) {</span>
+<span class="fc" id="L248">                    return UploadResponse.builder().success(false).errorMessage(&quot;File too large&quot;).build();</span>
+                }
+<span class="fc" id="L250">                hashValue = HashUtils.sha256(str);</span>
+                // 如果目标已存在且指纹相同，则不再落盘，直接返回
+<span class="fc bfc" id="L252" title="All 2 branches covered.">                if (Files.exists(absolutePath, LinkOption.NOFOLLOW_LINKS)) {</span>
+<span class="fc" id="L253">                    String existed = Files.readString(absolutePath, StandardCharsets.UTF_8);</span>
+<span class="fc" id="L254">                    String existedHash = HashUtils.sha256(existed);</span>
+<span class="pc bpc" id="L255" title="1 of 2 branches missed.">                    if (hashValue.equalsIgnoreCase(existedHash)) {</span>
+<span class="fc" id="L256">                        updateFileCaches(key, existed, hashValue);</span>
+<span class="fc" id="L257">                        return UploadResponse.builder()</span>
+<span class="fc" id="L258">                                .success(true)</span>
+<span class="fc" id="L259">                                .key(key)</span>
+<span class="fc" id="L260">                                .versionId(UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;))</span>
+<span class="fc" id="L261">                                .hashValue(hashValue)</span>
+<span class="fc" id="L262">                                .uploadTime(OffsetDateTime.now())</span>
+<span class="fc" id="L263">                                .build();</span>
+                    }
+                }
+<span class="fc" id="L266">                Files.writeString(absolutePath, str, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);</span>
+<span class="fc" id="L267">                updateFileCaches(key, str, hashValue);</span>
+                // 写入/更新元数据
+<span class="fc" id="L269">                upsertMetadata(key, null, &quot;application/json&quot;, Files.size(absolutePath), hashValue, absolutePath.toString());</span>
+<span class="pc bpc" id="L270" title="1 of 2 branches missed.">            } else if (content instanceof InputStream is) {</span>
+                // 流式写入到临时文件并计算SHA-256与大小
+<span class="fc" id="L272">                var tmp = Files.createTempFile(absolutePath.getParent(), &quot;.upload-&quot;, &quot;.tmp&quot;);</span>
+<span class="fc" id="L273">                long maxSize = getContentMaxSize();</span>
+<span class="fc" id="L274">                long written = 0L;</span>
+<span class="fc" id="L275">                MessageDigest md = sha256();</span>
+<span class="fc" id="L276">                try (DigestInputStream dis = new DigestInputStream(is, md); OutputStream os = Files.newOutputStream(tmp, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {</span>
+<span class="fc" id="L277">                    byte[] buf = new byte[8192];</span>
+                    int n;
+<span class="fc bfc" id="L279" title="All 2 branches covered.">                    while ((n = dis.read(buf)) != -1) {</span>
+<span class="fc" id="L280">                        written += n;</span>
+<span class="fc bfc" id="L281" title="All 2 branches covered.">                        if (written &gt; maxSize) {</span>
+<span class="fc" id="L282">                            dis.close();</span>
+<span class="fc" id="L283">                            os.close();</span>
+<span class="fc" id="L284">                            Files.deleteIfExists(tmp);</span>
+<span class="fc" id="L285">                            return UploadResponse.builder().success(false).errorMessage(&quot;File too large&quot;).build();</span>
+                        }
+<span class="fc" id="L287">                        os.write(buf, 0, n);</span>
+                    }
+<span class="fc" id="L289">                    os.flush();</span>
+<span class="pc bpc" id="L290" title="1 of 2 branches missed.">                }</span>
+<span class="fc" id="L291">                hashValue = HexFormat.of().formatHex(md.digest());</span>
+                // 如果目标已存在且指纹相同，则不再落盘
+<span class="fc bfc" id="L293" title="All 2 branches covered.">                if (Files.exists(absolutePath, LinkOption.NOFOLLOW_LINKS)) {</span>
+<span class="fc" id="L294">                    String existedHash = computeSha256(absolutePath);</span>
+<span class="pc bpc" id="L295" title="1 of 2 branches missed.">                    if (hashValue.equalsIgnoreCase(existedHash)) {</span>
+<span class="fc" id="L296">                        Files.deleteIfExists(tmp);</span>
+<span class="fc" id="L297">                        updateFileExistsCache(key, true);</span>
+<span class="fc" id="L298">                        String metadataCacheKey = FILE_METADATA_PREFIX + key;</span>
+<span class="fc" id="L299">                        Map&lt;String, Object&gt; metadata = Map.of(</span>
+                                &quot;key&quot;, key,
+                                &quot;hashValue&quot;, hashValue,
+<span class="fc" id="L302">                                &quot;size&quot;, Files.size(absolutePath),</span>
+<span class="fc" id="L303">                                &quot;uploadTime&quot;, LocalDateTime.now().toString()</span>
+                        );
+<span class="fc" id="L305">                        GlobalCache.struct().set(metadataCacheKey, metadata, FILE_METADATA_TTL);</span>
+<span class="fc" id="L306">                        return UploadResponse.builder()</span>
+<span class="fc" id="L307">                                .success(true)</span>
+<span class="fc" id="L308">                                .key(key)</span>
+<span class="fc" id="L309">                                .versionId(UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;))</span>
+<span class="fc" id="L310">                                .hashValue(hashValue)</span>
+<span class="fc" id="L311">                                .uploadTime(OffsetDateTime.now())</span>
+<span class="fc" id="L312">                                .build();</span>
+                    }
+                }
+                // 原子替换
+                try {
+<span class="fc" id="L317">                    Files.move(tmp, absolutePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);</span>
+<span class="nc" id="L318">                } catch (AtomicMoveNotSupportedException e) {</span>
+<span class="nc" id="L319">                    Files.move(tmp, absolutePath, StandardCopyOption.REPLACE_EXISTING);</span>
+<span class="fc" id="L320">                }</span>
+<span class="fc" id="L321">                updateFileExistsCache(key, true);</span>
+                // 更新元数据缓存（仅大小与hash）
+<span class="fc" id="L323">                String metadataCacheKey = FILE_METADATA_PREFIX + key;</span>
+<span class="fc" id="L324">                Map&lt;String, Object&gt; metadata = Map.of(</span>
+                        &quot;key&quot;, key,
+                        &quot;hashValue&quot;, hashValue,
+<span class="fc" id="L327">                        &quot;size&quot;, Files.size(absolutePath),</span>
+<span class="fc" id="L328">                        &quot;uploadTime&quot;, LocalDateTime.now().toString()</span>
+                );
+<span class="fc" id="L330">                GlobalCache.struct().set(metadataCacheKey, metadata, FILE_METADATA_TTL);</span>
+                // 写入/更新元数据
+<span class="fc" id="L332">                upsertMetadata(key, null, &quot;application/octet-stream&quot;, Files.size(absolutePath), hashValue, absolutePath.toString());</span>
+            }
+<span class="fc" id="L334">            return UploadResponse.builder()</span>
+<span class="fc" id="L335">                    .success(true)</span>
+<span class="fc" id="L336">                    .key(key)</span>
+<span class="fc" id="L337">                    .versionId(UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;))</span>
+<span class="fc" id="L338">                    .hashValue(hashValue)</span>
+<span class="fc" id="L339">                    .uploadTime(OffsetDateTime.now())</span>
+<span class="fc" id="L340">                    .build();</span>
+<span class="fc" id="L341">        } catch (IOException e) {</span>
+<span class="fc" id="L342">            log.error(&quot;Write file error.&quot;, e);</span>
+<span class="fc" id="L343">            return UploadResponse.builder()</span>
+<span class="fc" id="L344">                    .success(false)</span>
+<span class="fc" id="L345">                    .errorMessage(e.getMessage())</span>
+<span class="fc" id="L346">                    .build();</span>
+        }
+    }
+
+    private boolean isSafeKey(String key) {
+        // 禁止绝对路径、盘符、父目录跳转
+<span class="pc bpc" id="L352" title="1 of 8 branches missed.">        return !key.contains(&quot;..&quot;) &amp;&amp; !key.contains(&quot;:&quot;) &amp;&amp; !key.startsWith(&quot;/&quot;) &amp;&amp; !key.startsWith(&quot;\\&quot;);</span>
+    }
+
+    private long getContentMaxSize() {
+        try {
+<span class="pc bpc" id="L357" title="2 of 6 branches missed.">            return localConfig != null &amp;&amp; localConfig.getCache() != null &amp;&amp; localConfig.getCache().getContentMaxSize() != null</span>
+<span class="fc" id="L358">                    ? localConfig.getCache().getContentMaxSize()</span>
+<span class="fc" id="L359">                    : 1_048_576L;</span>
+<span class="nc" id="L360">        } catch (Exception e) {</span>
+<span class="nc" id="L361">            return 1_048_576L;</span>
+        }
+    }
+
+    private MessageDigest sha256() {
+        try {
+<span class="fc" id="L367">            return MessageDigest.getInstance(&quot;SHA-256&quot;);</span>
+<span class="nc" id="L368">        } catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L369">            throw new IllegalStateException(&quot;SHA-256 not available&quot;, e);</span>
+        }
+    }
+
+    private String computeSha256(Path path) throws IOException {
+<span class="fc" id="L374">        MessageDigest md = sha256();</span>
+<span class="fc" id="L375">        try (InputStream in = Files.newInputStream(path);</span>
+<span class="fc" id="L376">             DigestInputStream dis = new DigestInputStream(in, md)) {</span>
+<span class="fc" id="L377">            dis.transferTo(OutputStream.nullOutputStream());</span>
+        }
+<span class="fc" id="L379">        return HexFormat.of().formatHex(md.digest());</span>
+    }
+
+    /**
+     * 将文件元数据写入或更新到数据库
+     * @param key 存储键
+     * @param originalName 原始文件名（可空）
+     * @param contentType 内容类型
+     * @param sizeBytes 大小
+     * @param hashValue 指纹
+     * @param physicalPath 物理路径
+     */
+    private void upsertMetadata(String key, String originalName, String contentType, long sizeBytes, String hashValue, String physicalPath) {
+        try {
+<span class="fc" id="L393">            Long exists = fileMetadataMapper.selectCount(new LambdaQueryWrapper&lt;FileMetadata&gt;().eq(FileMetadata::getKeyPath, key));</span>
+<span class="fc" id="L394">            var now = LocalDateTime.now();</span>
+<span class="fc" id="L395">            var versionId = UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;);</span>
+<span class="pc bpc" id="L396" title="1 of 4 branches missed.">            if (exists != null &amp;&amp; exists &gt; 0L) {</span>
+<span class="fc" id="L397">                FileMetadata update = new FileMetadata();</span>
+<span class="fc" id="L398">                update.setSizeBytes(sizeBytes);</span>
+<span class="fc" id="L399">                update.setHashValue(hashValue);</span>
+<span class="fc" id="L400">                update.setVersionId(versionId);</span>
+<span class="fc" id="L401">                update.setPhysicalPath(physicalPath);</span>
+<span class="fc" id="L402">                update.setUploadTime(now);</span>
+<span class="fc" id="L403">                fileMetadataMapper.update(update, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper&lt;FileMetadata&gt;()</span>
+<span class="fc" id="L404">                        .eq(FileMetadata::getKeyPath, key));</span>
+<span class="fc" id="L405">            } else {</span>
+<span class="fc" id="L406">                FileMetadata entity = new FileMetadata();</span>
+<span class="fc" id="L407">                entity.setKeyPath(key);</span>
+<span class="pc bpc" id="L408" title="1 of 2 branches missed.">                entity.setOriginalName(originalName == null ? &quot;&quot; : originalName);</span>
+<span class="fc" id="L409">                entity.setContentType(contentType);</span>
+<span class="fc" id="L410">                entity.setSizeBytes(sizeBytes);</span>
+<span class="fc" id="L411">                entity.setHashValue(hashValue);</span>
+<span class="fc" id="L412">                entity.setVersionId(versionId);</span>
+<span class="fc" id="L413">                entity.setPhysicalPath(physicalPath);</span>
+<span class="fc" id="L414">                entity.setUploadTime(now);</span>
+<span class="fc" id="L415">                entity.setAccessCount(0L);</span>
+<span class="fc" id="L416">                entity.setStorageState(&quot;ACTIVE&quot;);</span>
+<span class="fc" id="L417">                fileMetadataMapper.insert(entity);</span>
+            }
+<span class="fc" id="L419">        } catch (Exception e) {</span>
+<span class="fc" id="L420">            log.warn(&quot;Upsert metadata failed: key={}, err={}&quot;, key, e.getMessage());</span>
+<span class="fc" id="L421">        }</span>
+<span class="fc" id="L422">    }</span>
+
+    /**
+     * 更新文件相关缓存
+     */
+    private void updateFileCaches(String key, String content, String hashValue) {
+        // 更新文件存在性缓存
+<span class="fc" id="L429">        updateFileExistsCache(key, true);</span>
+
+        // 更新文件内容缓存（只缓存小文件）
+<span class="pc bpc" id="L432" title="1 of 2 branches missed.">        if (content.length() &lt;= 1024 * 1024) { // 1MB以下</span>
+<span class="fc" id="L433">            String contentCacheKey = FILE_CONTENT_PREFIX + key;</span>
+<span class="fc" id="L434">            GlobalCache.value().set(contentCacheKey, content, FILE_CONTENT_TTL);</span>
+        }
+
+        // 更新文件元数据缓存
+<span class="fc" id="L438">        String metadataCacheKey = FILE_METADATA_PREFIX + key;</span>
+<span class="fc" id="L439">        Map&lt;String, Object&gt; metadata = Map.of(</span>
+            &quot;key&quot;, key,
+            &quot;hashValue&quot;, hashValue,
+<span class="fc" id="L442">            &quot;size&quot;, content.length(),</span>
+<span class="fc" id="L443">            &quot;uploadTime&quot;, OffsetDateTime.now().toString(),</span>
+            &quot;contentType&quot;, &quot;application/json&quot;
+        );
+<span class="fc" id="L446">        GlobalCache.struct().set(metadataCacheKey, metadata, FILE_METADATA_TTL);</span>
+<span class="fc" id="L447">    }</span>
+
+    /**
+     * 更新文件存在性缓存
+     */
+    private void updateFileExistsCache(String key, boolean exists) {
+<span class="fc" id="L453">        String existsCacheKey = FILE_EXISTS_PREFIX + key;</span>
+<span class="fc" id="L454">        GlobalCache.value().set(existsCacheKey, exists, FILE_EXISTS_TTL);</span>
+<span class="fc" id="L455">    }</span>
+
+    /**
+     * 清理文件相关缓存
+     */
+    public void clearFileCaches(String key) {
+<span class="fc" id="L461">        String existsCacheKey = FILE_EXISTS_PREFIX + key;</span>
+<span class="fc" id="L462">        String contentCacheKey = FILE_CONTENT_PREFIX + key;</span>
+<span class="fc" id="L463">        String metadataCacheKey = FILE_METADATA_PREFIX + key;</span>
+
+<span class="fc" id="L465">        GlobalCache.key().removeCache(existsCacheKey);</span>
+<span class="fc" id="L466">        GlobalCache.key().removeCache(contentCacheKey);</span>
+<span class="fc" id="L467">        GlobalCache.key().removeCache(metadataCacheKey);</span>
+
+<span class="fc" id="L469">        log.debug(&quot;Cleared caches for file: {}&quot;, key);</span>
+<span class="fc" id="L470">    }</span>
+
+    /**
+     * 批量清理文件缓存
+     */
+    public void clearFileCachesBatch(java.util.Collection&lt;String&gt; keys) {
+<span class="fc" id="L476">        keys.forEach(this::clearFileCaches);</span>
+<span class="fc" id="L477">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

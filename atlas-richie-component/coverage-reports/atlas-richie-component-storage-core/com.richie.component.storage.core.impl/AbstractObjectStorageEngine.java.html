@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractObjectStorageEngine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">atlas-richie-component-storage-core</a> &gt; <a href="index.source.html" class="el_package">com.richie.component.storage.core.impl</a> &gt; <span class="el_source">AbstractObjectStorageEngine.java</span></div><h1>AbstractObjectStorageEngine.java</h1><pre class="source lang-java linenums">package com.richie.component.storage.core.impl;
+
+import com.richie.component.storage.bean.DirectUploadPolicy;
+import com.richie.context.utils.data.JsonUtils;
+import com.richie.component.storage.bean.ObjectConfig;
+import com.richie.component.storage.bean.UploadResponse;
+import com.richie.component.storage.config.StorageProperties;
+import com.richie.component.storage.converter.AclTypeConverter;
+import com.richie.component.storage.converter.StorageTypeConverter;
+import com.richie.component.storage.util.ObjectStorageKeys;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.annotation.Nonnull;
+
+import java.io.ByteArrayInputStream;
+import java.time.OffsetDateTime;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
+
+/**
+ * 对象存储引擎抽象基类，提供配置读取、路径与 ACL 转换及 putData 等通用实现。
+ *
+ * @param &lt;T&gt; 底层客户端类型
+ * @author richie696
+ * @since 2023-09-05
+ */
+@RequiredArgsConstructor
+public abstract class AbstractObjectStorageEngine&lt;T&gt; extends AbstractDestroyEngine&lt;T&gt; {
+
+    /** 存储组件统一配置 */
+    private final StorageProperties properties;
+
+    /** 存储类型与引擎类型的转换器 */
+    private final StorageTypeConverter converter;
+
+    /**
+     * ACL 类型转换器（可选，某些存储引擎可能不支持 ACL）
+     */
+    @Autowired(required = false)
+    private AclTypeConverter&lt;?&gt; aclTypeConverter;
+
+    /**
+     * 获取 KEY 真实地址
+     *
+     * @param key 存储KEY
+     * @return 返回真实KEY
+     */
+    protected String getRealPath(String key) {
+<span class="fc" id="L51">        return ObjectStorageKeys.realPath(objectConfig().getBasePath(), key);</span>
+    }
+
+    /**
+     * 获取存储类型对应的引擎存储类名（如 STANDARD、IA 等）。
+     *
+     * @return 存储类字符串，未配置时为空串
+     */
+    protected String getStorageClass() {
+<span class="fc" id="L60">        return Objects.requireNonNullElse(</span>
+<span class="fc" id="L61">                converter.convertToEngineType(properties.getObject().getStorageType()),</span>
+                &quot;&quot;
+        );
+    }
+
+    /**
+     * 获取 ACL（访问控制列表）配置
+     * &lt;p&gt;
+     * 如果配置了 ACL 且存在对应的转换器，则转换为引擎特定的 ACL 对象
+     *
+     * @param &lt;T&gt; ACL 对象类型
+     * @return ACL 配置对象，如果未配置或转换器不存在则返回 null
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    protected &lt;T&gt; T getAcl() {
+<span class="fc" id="L76">        var aclType = objectConfig().getAcl();</span>
+<span class="fc bfc" id="L77" title="All 4 branches covered.">        if (aclType == null || aclTypeConverter == null) {</span>
+<span class="fc" id="L78">            return null;</span>
+        }
+        try {
+<span class="fc" id="L81">            return (T) aclTypeConverter.convertToEngineAcl(aclType);</span>
+<span class="fc" id="L82">        } catch (Exception e) {</span>
+            // 如果转换失败，返回 null（使用默认 ACL）
+<span class="fc" id="L84">            return null;</span>
+        }
+    }
+
+    /**
+     * 获取对象存储配置
+     *
+     * @return 返回对象存储配置
+     */
+    public ObjectConfig objectConfig() {
+<span class="fc" id="L94">        return properties.getObject();</span>
+    }
+
+    /**
+     * 获取桶名称的方法
+     *
+     * @return 返回桶名称
+     */
+    public String getBucketName() {
+<span class="fc" id="L103">        return objectConfig().getBucketName();</span>
+    }
+
+    /**
+     * 获取目标资源键的方法
+     *
+     * @param key 资源键
+     * @return 返回目标资源键
+     */
+    public String getResourceKey(String key) {
+<span class="fc" id="L113">        return String.format(&quot;%s/%s&quot;, objectConfig().getEndpoint(), key);</span>
+    }
+
+    protected String buildPublicObjectUrl(String realKey) {
+<span class="fc" id="L117">        String endpoint = objectConfig().getEndpoint();</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (StringUtils.isBlank(endpoint)) {</span>
+<span class="fc" id="L119">            return realKey;</span>
+        }
+<span class="fc bfc" id="L121" title="All 4 branches covered.">        String normalizedEndpoint = endpoint.startsWith(&quot;http://&quot;) || endpoint.startsWith(&quot;https://&quot;)</span>
+<span class="fc" id="L122">                ? endpoint</span>
+<span class="fc" id="L123">                : &quot;https://&quot; + endpoint;</span>
+<span class="fc" id="L124">        String stripped = normalizedEndpoint.replaceAll(&quot;/+$&quot;, &quot;&quot;);</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if (stripped.contains(getBucketName() + &quot;.&quot;)) {</span>
+<span class="fc" id="L126">            return stripped + &quot;/&quot; + realKey;</span>
+        }
+<span class="fc" id="L128">        return &quot;https://&quot; + getBucketName() + &quot;.&quot; + endpoint.replaceAll(&quot;^https?://&quot;, &quot;&quot;).replaceAll(&quot;/+$&quot;, &quot;&quot;) + &quot;/&quot; + realKey;</span>
+    }
+
+    protected DirectUploadPolicy buildFallbackDirectUploadPolicy(String key, int expireSeconds) {
+<span class="fc" id="L132">        int safeExpire = Math.max(expireSeconds, 60);</span>
+<span class="fc" id="L133">        String realKey = getRealPath(key);</span>
+<span class="fc" id="L134">        return DirectUploadPolicy.builder()</span>
+<span class="fc" id="L135">                .success(true)</span>
+<span class="fc" id="L136">                .errorMessage(&quot;当前引擎暂未接入官方预签名，返回可用兜底直传链接。&quot;)</span>
+<span class="fc" id="L137">                .method(&quot;PUT&quot;)</span>
+<span class="fc" id="L138">                .uploadUrl(buildPublicObjectUrl(realKey))</span>
+<span class="fc" id="L139">                .headers(Map.of())</span>
+<span class="fc" id="L140">                .formFields(Map.of())</span>
+<span class="fc" id="L141">                .bucketName(getBucketName())</span>
+<span class="fc" id="L142">                .key(realKey)</span>
+<span class="fc" id="L143">                .expireAt(OffsetDateTime.now().plusSeconds(safeExpire))</span>
+<span class="fc" id="L144">                .fallback(true)</span>
+<span class="fc" id="L145">                .build();</span>
+    }
+
+    @Override
+    public DirectUploadPolicy issueDirectUploadPolicy(String key, int expireSeconds) {
+<span class="fc" id="L150">        return buildFallbackDirectUploadPolicy(key, expireSeconds);</span>
+    }
+
+    @Override
+    public UploadResponse putData(@Nonnull String key, @Nonnull Map&lt;?, ?&gt; collection) {
+<span class="fc" id="L155">        var bytes = JsonUtils.getInstance().serializeBytes(collection);</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        if (Objects.isNull(bytes)) {</span>
+<span class="fc" id="L157">            return UploadResponse.builder()</span>
+<span class="fc" id="L158">                    .success(false)</span>
+<span class="fc" id="L159">                    .errorMessage(&quot;Data serialization error and cannot be read correctly.&quot;)</span>
+<span class="fc" id="L160">                    .build();</span>
+        }
+<span class="fc" id="L162">        return putObject(key, new ByteArrayInputStream(bytes));</span>
+    }
+
+    @Override
+    public UploadResponse putData(@Nonnull String key, @Nonnull Collection&lt;?&gt; collection) {
+<span class="fc" id="L167">        var bytes = JsonUtils.getInstance().serializeBytes(collection);</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">        if (Objects.isNull(bytes)) {</span>
+<span class="fc" id="L169">            return UploadResponse.builder()</span>
+<span class="fc" id="L170">                    .success(false)</span>
+<span class="fc" id="L171">                    .errorMessage(&quot;Data serialization error and cannot be read correctly.&quot;)</span>
+<span class="fc" id="L172">                    .build();</span>
+        }
+<span class="fc" id="L174">        return putObject(key, new ByteArrayInputStream(bytes));</span>
+    }
+
+    @Override
+    public UploadResponse putData(@Nonnull String key, @Nonnull Object object) {
+<span class="nc" id="L179">        var bytes = JsonUtils.getInstance().serializeBytes(object);</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        if (Objects.isNull(bytes)) {</span>
+<span class="nc" id="L181">            return UploadResponse.builder()</span>
+<span class="nc" id="L182">                    .success(false)</span>
+<span class="nc" id="L183">                    .errorMessage(&quot;Data serialization error and cannot be read correctly.&quot;)</span>
+<span class="nc" id="L184">                    .build();</span>
+        }
+<span class="nc" id="L186">        return putObject(key, new ByteArrayInputStream(bytes));</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

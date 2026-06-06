@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValueOpsImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">atlas-richie-component-cache</a> &gt; <a href="index.source.html" class="el_package">com.richie.component.cache.ops.impl</a> &gt; <span class="el_source">ValueOpsImpl.java</span></div><h1>ValueOpsImpl.java</h1><pre class="source lang-java linenums">package com.richie.component.cache.ops.impl;
+
+import com.richie.component.cache.enums.KeyTypeEnum;
+import com.richie.component.cache.function.StringFunction;
+import com.richie.component.cache.ops.L2SyncHelper;
+import com.richie.component.cache.ops.ValueOps;
+import tools.jackson.core.type.TypeReference;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+
+@Component
+@RequiredArgsConstructor
+public class ValueOpsImpl implements ValueOps {
+
+<span class="fc" id="L21">    private static final KeyTypeEnum KT = KeyTypeEnum.STRING;</span>
+
+    private final StringFunction fn;
+    private final L2SyncHelper l2;
+
+    // ─────────────────────── 读 ───────────────────────
+
+    @Override
+    public &lt;T&gt; T get(String key, Class&lt;T&gt; clazz) {
+<span class="fc" id="L30">        return l2.get(KT, key, () -&gt; fn.getFromString(key, clazz));</span>
+    }
+
+    @Override
+    public &lt;T&gt; T get(String key, TypeReference&lt;T&gt; reference) {
+<span class="fc" id="L35">        return l2.get(KT, key, () -&gt; fn.getFromString(key, reference));</span>
+    }
+
+    @Override
+    public &lt;T&gt; Map&lt;String, T&gt; getMap(Collection&lt;String&gt; keys, TypeReference&lt;T&gt; reference) {
+<span class="fc" id="L40">        return fn.getValueMap(List.copyOf(keys), reference);</span>
+    }
+
+    @Override
+    public &lt;T&gt; List&lt;T&gt; getList(Collection&lt;String&gt; keys, TypeReference&lt;T&gt; reference) {
+<span class="fc" id="L45">        return fn.getObjects(List.copyOf(keys), reference);</span>
+    }
+
+    // ─────────────────────── 写 —— String ───────────────────────
+
+    @Override
+    public void set(String key, String value) {
+<span class="fc" id="L52">        fn.addValue(key, value);</span>
+<span class="fc" id="L53">        l2.put(KT, key, value);</span>
+<span class="fc" id="L54">    }</span>
+
+    @Override
+    public boolean setIfAbsent(String key, String value) {
+<span class="fc" id="L58">        boolean result = fn.addValueIfAbsent(key, value);</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (result) l2.put(KT, key, value);</span>
+<span class="fc" id="L60">        return result;</span>
+    }
+
+    @Override
+    public void set(String key, String value, long timeoutMillis) {
+<span class="fc" id="L65">        fn.addValue(key, value, timeoutMillis);</span>
+<span class="fc" id="L66">        l2.put(KT, key, value, timeoutMillis);</span>
+<span class="fc" id="L67">    }</span>
+
+    @Override
+    public boolean setIfAbsent(String key, String value, long timeoutMillis) {
+<span class="fc" id="L71">        boolean result = fn.addValueIfAbsent(key, value, timeoutMillis);</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        if (result) l2.put(KT, key, value, timeoutMillis);</span>
+<span class="fc" id="L73">        return result;</span>
+    }
+
+    // ─────────────────────── 写 —— int ───────────────────────
+
+    @Override
+    public void set(String key, int value) {
+<span class="fc" id="L80">        fn.addValue(key, value);</span>
+<span class="fc" id="L81">        l2.put(KT, key, value);</span>
+<span class="fc" id="L82">    }</span>
+
+    @Override
+    public boolean setIfAbsent(String key, int value) {
+<span class="fc" id="L86">        boolean result = fn.addValueIfAbsent(key, value);</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        if (result) l2.put(KT, key, value);</span>
+<span class="fc" id="L88">        return result;</span>
+    }
+
+    @Override
+    public void set(String key, int value, long timeoutMillis) {
+<span class="fc" id="L93">        fn.addValue(key, value, timeoutMillis);</span>
+<span class="fc" id="L94">        l2.put(KT, key, value, timeoutMillis);</span>
+<span class="fc" id="L95">    }</span>
+
+    @Override
+    public boolean setIfAbsent(String key, int value, long timeoutMillis) {
+<span class="nc" id="L99">        boolean result = fn.addValueIfAbsent(key, value, timeoutMillis);</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        if (result) l2.put(KT, key, value, timeoutMillis);</span>
+<span class="nc" id="L101">        return result;</span>
+    }
+
+    // ─────────────────────── 写 —— long ───────────────────────
+
+    @Override
+    public void set(String key, long value) {
+<span class="fc" id="L108">        fn.addValue(key, value);</span>
+<span class="fc" id="L109">        l2.put(KT, key, value);</span>
+<span class="fc" id="L110">    }</span>
+
+    @Override
+    public boolean setIfAbsent(String key, long value) {
+<span class="fc" id="L114">        boolean result = fn.addValueIfAbsent(key, value);</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">        if (result) l2.put(KT, key, value);</span>
+<span class="fc" id="L116">        return result;</span>
+    }
+
+    @Override
+    public void set(String key, long value, long timeoutMillis) {
+<span class="fc" id="L121">        fn.addValue(key, value, timeoutMillis);</span>
+<span class="fc" id="L122">        l2.put(KT, key, value, timeoutMillis);</span>
+<span class="fc" id="L123">    }</span>
+
+    @Override
+    public boolean setIfAbsent(String key, long value, long timeoutMillis) {
+<span class="nc" id="L127">        boolean result = fn.addValueIfAbsent(key, value, timeoutMillis);</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        if (result) l2.put(KT, key, value, timeoutMillis);</span>
+<span class="nc" id="L129">        return result;</span>
+    }
+
+    // ─────────────────────── 写 —— float ───────────────────────
+
+    @Override
+    public void set(String key, float value) {
+<span class="fc" id="L136">        fn.addValue(key, value);</span>
+<span class="fc" id="L137">        l2.put(KT, key, value);</span>
+<span class="fc" id="L138">    }</span>
+
+    @Override
+    public boolean setIfAbsent(String key, float value) {
+<span class="nc" id="L142">        boolean result = fn.addValueIfAbsent(key, value);</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (result) l2.put(KT, key, value);</span>
+<span class="nc" id="L144">        return result;</span>
+    }
+
+    @Override
+    public void set(String key, float value, long timeoutMillis) {
+<span class="fc" id="L149">        fn.addValue(key, value, timeoutMillis);</span>
+<span class="fc" id="L150">        l2.put(KT, key, value, timeoutMillis);</span>
+<span class="fc" id="L151">    }</span>
+
+    @Override
+    public boolean setIfAbsent(String key, float value, long timeoutMillis) {
+<span class="nc" id="L155">        boolean result = fn.addValueIfAbsent(key, value, timeoutMillis);</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        if (result) l2.put(KT, key, value, timeoutMillis);</span>
+<span class="nc" id="L157">        return result;</span>
+    }
+
+    // ─────────────────────── 写 —— double ───────────────────────
+
+    @Override
+    public void set(String key, double value) {
+<span class="fc" id="L164">        fn.addValue(key, value);</span>
+<span class="fc" id="L165">        l2.put(KT, key, value);</span>
+<span class="fc" id="L166">    }</span>
+
+    @Override
+    public boolean setIfAbsent(String key, double value) {
+<span class="nc" id="L170">        boolean result = fn.addValueIfAbsent(key, value);</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (result) l2.put(KT, key, value);</span>
+<span class="nc" id="L172">        return result;</span>
+    }
+
+    @Override
+    public void set(String key, double value, long timeoutMillis) {
+<span class="fc" id="L177">        fn.addValue(key, value, timeoutMillis);</span>
+<span class="fc" id="L178">        l2.put(KT, key, value, timeoutMillis);</span>
+<span class="fc" id="L179">    }</span>
+
+    @Override
+    public boolean setIfAbsent(String key, double value, long timeoutMillis) {
+<span class="nc" id="L183">        boolean result = fn.addValueIfAbsent(key, value, timeoutMillis);</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">        if (result) l2.put(KT, key, value, timeoutMillis);</span>
+<span class="nc" id="L185">        return result;</span>
+    }
+
+    // ─────────────────────── 写 —— boolean ───────────────────────
+
+    @Override
+    public void set(String key, boolean value) {
+<span class="fc" id="L192">        fn.addValue(key, value);</span>
+<span class="fc" id="L193">        l2.put(KT, key, value);</span>
+<span class="fc" id="L194">    }</span>
+
+    @Override
+    public boolean setIfAbsent(String key, boolean value) {
+<span class="nc" id="L198">        boolean result = fn.addValueIfAbsent(key, value);</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">        if (result) l2.put(KT, key, value);</span>
+<span class="nc" id="L200">        return result;</span>
+    }
+
+    @Override
+    public void set(String key, boolean value, long timeoutMillis) {
+<span class="fc" id="L205">        fn.addValue(key, value, timeoutMillis);</span>
+<span class="fc" id="L206">        l2.put(KT, key, value, timeoutMillis);</span>
+<span class="fc" id="L207">    }</span>
+
+    @Override
+    public boolean setIfAbsent(String key, boolean value, long timeoutMillis) {
+<span class="nc" id="L211">        boolean result = fn.addValueIfAbsent(key, value, timeoutMillis);</span>
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (result) l2.put(KT, key, value, timeoutMillis);</span>
+<span class="nc" id="L213">        return result;</span>
+    }
+
+    // ─────────────────────── 原子计数器 ───────────────────────
+
+    @Override
+    public long increment(String key) {
+<span class="fc" id="L220">        long result = fn.increment(key, null);</span>
+<span class="fc" id="L221">        l2.put(KT, key, result);</span>
+<span class="fc" id="L222">        return result;</span>
+    }
+
+    @Override
+    public long increment(String key, long delta) {
+<span class="nc" id="L227">        long result = fn.increment(key, delta, null);</span>
+<span class="nc" id="L228">        l2.put(KT, key, result);</span>
+<span class="nc" id="L229">        return result;</span>
+    }
+
+    @Override
+    public long increment(String key, long delta, long timeoutMillis) {
+<span class="fc" id="L234">        long result = fn.increment(key, delta, timeoutMillis);</span>
+<span class="fc" id="L235">        l2.put(KT, key, result, timeoutMillis);</span>
+<span class="fc" id="L236">        return result;</span>
+    }
+
+    @Override
+    public double increment(String key, double delta, long timeoutMillis) {
+<span class="fc" id="L241">        double result = fn.increment(key, delta, timeoutMillis);</span>
+<span class="fc" id="L242">        l2.put(KT, key, result, timeoutMillis);</span>
+<span class="fc" id="L243">        return result;</span>
+    }
+
+    @Override
+    public long decrement(String key) {
+<span class="fc" id="L248">        long result = fn.decrement(key, null);</span>
+<span class="fc" id="L249">        l2.put(KT, key, result);</span>
+<span class="fc" id="L250">        return result;</span>
+    }
+
+    @Override
+    public long decrement(String key, long delta) {
+<span class="nc" id="L255">        long result = fn.decrement(key, delta, null);</span>
+<span class="nc" id="L256">        l2.put(KT, key, result);</span>
+<span class="nc" id="L257">        return result;</span>
+    }
+
+    @Override
+    public long decrement(String key, long delta, long timeoutMillis) {
+<span class="fc" id="L262">        long result = fn.decrement(key, delta, timeoutMillis);</span>
+<span class="fc" id="L263">        l2.put(KT, key, result, timeoutMillis);</span>
+<span class="fc" id="L264">        return result;</span>
+    }
+
+    // ─────────────────────── 批量 ───────────────────────
+
+    @Override
+    public void batchSet(Map&lt;String, ?&gt; map) {
+<span class="fc" id="L271">        fn.batchAddToString(map);</span>
+<span class="fc" id="L272">        map.forEach((k, v) -&gt; l2.put(KT, k, v));</span>
+<span class="fc" id="L273">    }</span>
+
+    @Override
+    public void batchSet(Map&lt;String, ?&gt; map, long timeoutMillis) {
+<span class="fc" id="L277">        fn.batchAddToString(map, timeoutMillis);</span>
+<span class="fc" id="L278">        map.forEach((k, v) -&gt; l2.put(KT, k, v, timeoutMillis));</span>
+<span class="fc" id="L279">    }</span>
+
+    @Override
+    public void batchSetIfAbsent(Map&lt;String, ?&gt; batch) {
+<span class="fc" id="L283">        fn.batchUpdateIfAbsent(batch, null);</span>
+<span class="fc" id="L284">        batch.forEach((k, v) -&gt; l2.put(KT, k, v));</span>
+<span class="fc" id="L285">    }</span>
+
+    @Override
+    public void batchSetIfAbsent(Map&lt;String, ?&gt; batch, long timeoutMillis) {
+<span class="fc" id="L289">        fn.batchUpdateIfAbsent(batch, timeoutMillis);</span>
+<span class="fc" id="L290">        batch.forEach((k, v) -&gt; l2.put(KT, k, v, timeoutMillis));</span>
+<span class="fc" id="L291">    }</span>
+
+    // ─────────────────────── 防缓存击穿 ───────────────────────
+
+    @Override
+    public String getWithLock(String key, long timeoutMillis, Supplier&lt;String&gt; dbLoader) {
+<span class="fc" id="L297">        return l2.getWithLock(KT, key,</span>
+<span class="fc" id="L298">                () -&gt; fn.getFromStringWithLock(key, dbLoader, timeoutMillis));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

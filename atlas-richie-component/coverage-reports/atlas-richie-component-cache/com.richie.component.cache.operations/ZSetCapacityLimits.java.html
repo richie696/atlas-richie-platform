@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ZSetCapacityLimits.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">atlas-richie-component-cache</a> &gt; <a href="index.source.html" class="el_package">com.richie.component.cache.operations</a> &gt; <span class="el_source">ZSetCapacityLimits.java</span></div><h1>ZSetCapacityLimits.java</h1><pre class="source lang-java linenums">package com.richie.component.cache.operations;
+
+/**
+ * ZSet（有序集合）结构容量治理常量。
+ * &lt;p&gt;
+ * 与 README「大 Key 阈值参考 — ZSet 推荐业务上限 5,000 元素」对齐；
+ * 超过 {@link #ZSET_RECOMMENDED_MAX_ELEMENTS} 时输出 WARN 日志，
+ * 达到 {@link #ZSET_HARD_MAX_ELEMENTS} 时直接拒绝写入。
+ *
+ * @author richie696
+ * @since 2026-06-04
+ */
+public final class ZSetCapacityLimits {
+
+    /**
+     * README 定义的 ZSet 推荐业务上限（元素个数）。
+     */
+    public static final long ZSET_RECOMMENDED_MAX_ELEMENTS = 5_000L;
+
+    /**
+     * ZSet 硬性上限（= 推荐上限 × 2），超过则直接拒绝写入。
+     * &lt;p&gt;预留弹性空间，避免在推荐上限附近因并发添加而频繁拒绝。
+     */
+    public static final long ZSET_HARD_MAX_ELEMENTS = ZSET_RECOMMENDED_MAX_ELEMENTS * 2L;
+
+    private ZSetCapacityLimits() {
+    }
+
+    /**
+     * 当前元素数是否已超过推荐上限（WARN 级别）。
+     */
+    public static boolean exceedsRecommended(long currentSize) {
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        return currentSize &gt;= ZSET_RECOMMENDED_MAX_ELEMENTS;</span>
+    }
+
+    /**
+     * 当前元素数是否已超过硬性上限（拒绝写入）。
+     */
+    public static boolean exceedsHardLimit(long currentSize) {
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        return currentSize &gt;= ZSET_HARD_MAX_ELEMENTS;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

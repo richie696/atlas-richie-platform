@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BoundedListElementConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">atlas-richie-component-cache</a> &gt; <a href="index.source.html" class="el_package">com.richie.component.cache.operations</a> &gt; <span class="el_source">BoundedListElementConverter.java</span></div><h1>BoundedListElementConverter.java</h1><pre class="source lang-java linenums">package com.richie.component.cache.operations;
+
+import com.richie.context.utils.data.JsonUtils;
+import jakarta.annotation.Nullable;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * 有界队列/栈读取时的元素反序列化；失败时记录 WARN 便于排查（批量读取会跳过坏元素）。
+ *
+ * @author richie696
+ * @since 2026-06-04
+ */
+<span class="fc" id="L17">@Slf4j</span>
+final class BoundedListElementConverter {
+
+
+    private BoundedListElementConverter() {
+    }
+
+    /**
+     * 单次读取：Redis 无元素时 {@code raw} 为 null，静默返回 null；有元素但反序列化失败时打 WARN 并返回 null。
+     */
+    @Nullable
+    static &lt;T&gt; T convertOne(@Nullable Object raw, String key, Class&lt;T&gt; clazz, String operation) {
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        if (raw == null) {</span>
+<span class="fc" id="L30">            return null;</span>
+        }
+<span class="fc" id="L32">        ConvertOutcome&lt;T&gt; outcome = tryConvert(raw, clazz);</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        if (outcome.isSuccess()) {</span>
+<span class="fc" id="L34">            return Objects.requireNonNull(outcome.converted(), &quot;converted&quot;);</span>
+        }
+<span class="fc" id="L36">        log.warn(</span>
+                &quot;有界列表读取反序列化失败: key={}, operation={}, type={}, failure={}&quot;,
+<span class="fc" id="L38">                key, operation, clazz.getSimpleName(), Objects.requireNonNull(outcome.failureReason(), &quot;failureReason&quot;));</span>
+<span class="fc" id="L39">        return null;</span>
+    }
+
+    static &lt;T&gt; List&lt;T&gt; convertAll(List&lt;?&gt; raw, String key, Class&lt;T&gt; clazz, String operation) {
+<span class="fc" id="L43">        var result = new ArrayList&lt;T&gt;(raw.size());</span>
+<span class="fc" id="L44">        int dropped = 0;</span>
+<span class="fc" id="L45">        String firstReason = null;</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        for (int i = 0; i &lt; raw.size(); i++) {</span>
+<span class="fc" id="L47">            ConvertOutcome&lt;T&gt; outcome = tryConvert(raw.get(i), clazz);</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">            if (outcome.isSuccess()) {</span>
+<span class="fc" id="L49">                result.add(Objects.requireNonNull(outcome.converted(), &quot;converted&quot;));</span>
+            } else {
+<span class="fc" id="L51">                dropped++;</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">                if (firstReason == null) {</span>
+<span class="fc" id="L53">                    firstReason = &quot;index=%d %s&quot;.formatted(i, Objects.requireNonNull(outcome.failureReason(), &quot;failureReason&quot;));</span>
+                }
+            }
+        }
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (dropped &gt; 0) {</span>
+<span class="fc" id="L58">            log.warn(&quot;有界列表批量读取丢弃 {} 个元素（null 或反序列化失败）: key={}, operation={},&quot; +</span>
+                            &quot; type={}, rawCount={}, returned={}, firstFailure={}&quot;,
+<span class="fc" id="L60">                    dropped, key, operation, clazz.getSimpleName(), raw.size(),</span>
+<span class="fc" id="L61">                    result.size(), firstReason);</span>
+        }
+<span class="fc" id="L63">        return result;</span>
+    }
+
+    private static &lt;T&gt; ConvertOutcome&lt;T&gt; tryConvert(@Nullable Object element, Class&lt;T&gt; clazz) {
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (element == null) {</span>
+<span class="fc" id="L68">            return ConvertOutcome.failure(&quot;element=null&quot;);</span>
+        }
+        try {
+<span class="fc" id="L71">            T converted = JsonUtils.getInstance().convertObject(element, clazz);</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">            if (converted == null) {</span>
+<span class="nc" id="L73">                return ConvertOutcome.failure(&quot;convertResult=null&quot;);</span>
+            }
+<span class="fc" id="L75">            return ConvertOutcome.success(converted);</span>
+<span class="fc" id="L76">        } catch (RuntimeException ex) {</span>
+<span class="fc" id="L77">            String message = ex.getMessage();</span>
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">            return ConvertOutcome.failure(&quot;error=&quot; + (message != null ? message : ex.getClass().getSimpleName()));</span>
+        }
+    }
+
+<span class="fc" id="L82">    private record ConvertOutcome&lt;T&gt;(@Nullable T converted, @Nullable String failureReason) {</span>
+        static &lt;T&gt; ConvertOutcome&lt;T&gt; success(T converted) {
+<span class="fc" id="L84">            return new ConvertOutcome&lt;&gt;(Objects.requireNonNull(converted, &quot;converted&quot;), null);</span>
+        }
+
+        static &lt;T&gt; ConvertOutcome&lt;T&gt; failure(String failureReason) {
+<span class="fc" id="L88">            return new ConvertOutcome&lt;&gt;(null, Objects.requireNonNull(failureReason, &quot;failureReason&quot;));</span>
+        }
+
+        boolean isSuccess() {
+<span class="fc bfc" id="L92" title="All 2 branches covered.">            return failureReason == null;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

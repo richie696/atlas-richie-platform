@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>S3StorageEngine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">atlas-richie-component-storage-s3</a> &gt; <a href="index.source.html" class="el_package">com.richie.component.storage.core.impl</a> &gt; <span class="el_source">S3StorageEngine.java</span></div><h1>S3StorageEngine.java</h1><pre class="source lang-java linenums">package com.richie.component.storage.core.impl;
+
+import com.richie.context.utils.data.JsonUtils;
+import com.richie.component.storage.bean.DownloadResponse;
+import com.richie.component.storage.bean.DirectUploadPolicy;
+import com.richie.component.storage.bean.UploadResponse;
+import com.richie.component.storage.bean.image.ImageOptions;
+import com.richie.component.storage.config.StorageProperties;
+import com.richie.component.storage.converter.StorageTypeConverter;
+import com.richie.component.storage.core.StorageEngine;
+import java.util.UUID;
+import tools.jackson.core.type.TypeReference;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import jakarta.annotation.Nonnull;
+import org.springframework.stereotype.Service;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
+
+import java.io.*;
+import java.time.Duration;
+import java.nio.file.Files;
+import java.time.OffsetDateTime;
+import java.util.Map;
+
+
+/**
+ * 亚马逊S3对象存储引擎
+ *
+ * @author richie696
+ * @version 1.0
+ * @since 2024-01-05 17:42:42
+ */
+<span class="fc" id="L42">@Slf4j</span>
+@Service(&quot;objectStorageEngine&quot;)
+@ConditionalOnProperty(prefix = &quot;platform.component.storage.object&quot;, name = &quot;engine&quot;, havingValue = &quot;aws_s3&quot;)
+public final class S3StorageEngine extends AbstractObjectStorageEngine&lt;S3Client&gt; implements StorageEngine {
+
+    @Autowired
+    private S3Presigner s3Presigner;
+
+    public S3StorageEngine(StorageProperties properties,
+                           StorageTypeConverter converter) {
+<span class="fc" id="L52">        super(properties, converter);</span>
+<span class="fc" id="L53">    }</span>
+
+    @Override
+    public UploadResponse putObject(@Nonnull String key, @Nonnull File file) {
+<span class="fc" id="L57">        key = getRealPath(key);</span>
+<span class="fc" id="L58">        var client = getClient(S3Client.class);</span>
+        try {
+<span class="fc" id="L60">            var putObjectRequestBuilder = PutObjectRequest.builder()</span>
+<span class="fc" id="L61">                    .bucket(getBucketName())</span>
+<span class="fc" id="L62">                    .key(key);</span>
+
+<span class="fc" id="L64">            var storageClass = getStorageClass();</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">            if (StringUtils.isNotEmpty(storageClass)) {</span>
+<span class="fc" id="L66">                putObjectRequestBuilder.storageClass(StorageClass.fromValue(storageClass));</span>
+            }
+
+            // 设置 ACL（访问控制列表）
+<span class="fc" id="L70">            ObjectCannedACL acl = getAcl();</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (acl != null) {</span>
+                try {
+<span class="fc" id="L73">                    putObjectRequestBuilder.acl(acl);</span>
+<span class="nc" id="L74">                } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L75">                    log.warn(&quot;设置 ACL 失败: {}, 将使用默认 ACL (PRIVATE). 错误: {}&quot;, acl, e.getMessage());</span>
+<span class="fc" id="L76">                }</span>
+            }
+
+<span class="fc" id="L79">            var putObjectRequest = putObjectRequestBuilder.build();</span>
+<span class="fc" id="L80">            var putObjectResponse = client.putObject(putObjectRequest, software.amazon.awssdk.core.sync.RequestBody.fromFile(file));</span>
+
+<span class="fc" id="L82">            return UploadResponse.builder()</span>
+<span class="fc" id="L83">                    .success(true)</span>
+<span class="fc" id="L84">                    .bucketName(getBucketName())</span>
+<span class="fc" id="L85">                    .versionId(putObjectResponse.versionId())</span>
+<span class="fc" id="L86">                    .requestId(putObjectResponse.eTag())</span>
+<span class="fc" id="L87">                    .hashValue(putObjectResponse.eTag()) // AWS SDK 2.x不再提供contentMd5</span>
+<span class="fc" id="L88">                    .uploadTime(OffsetDateTime.now())</span>
+<span class="fc" id="L89">                    .url(buildObjectUrl(key))</span>
+<span class="fc" id="L90">                    .build();</span>
+<span class="fc" id="L91">        } catch (AwsServiceException e) {</span>
+<span class="fc" id="L92">            return UploadResponse.builder()</span>
+<span class="fc" id="L93">                    .success(false)</span>
+<span class="fc" id="L94">                    .errorMessage(e.getMessage())</span>
+<span class="fc" id="L95">                    .requestId(e.requestId())</span>
+<span class="fc" id="L96">                    .bucketName(getBucketName())</span>
+<span class="fc" id="L97">                    .key(key)</span>
+<span class="fc" id="L98">                    .build();</span>
+<span class="fc" id="L99">        } catch (SdkException e) {</span>
+<span class="fc" id="L100">            return UploadResponse.builder()</span>
+<span class="fc" id="L101">                    .success(false)</span>
+<span class="fc" id="L102">                    .errorMessage(e.getMessage())</span>
+<span class="fc" id="L103">                    .bucketName(getBucketName())</span>
+<span class="fc" id="L104">                    .key(key)</span>
+<span class="fc" id="L105">                    .build();</span>
+        }
+    }
+
+    @Override
+    public UploadResponse putObject(@Nonnull String key, @Nonnull InputStream inputStream) {
+<span class="fc" id="L111">        key = getRealPath(key);</span>
+<span class="fc" id="L112">        var client = getClient(S3Client.class);</span>
+        try {
+<span class="fc" id="L114">            var putObjectRequestBuilder = PutObjectRequest.builder()</span>
+<span class="fc" id="L115">                    .bucket(getBucketName())</span>
+<span class="fc" id="L116">                    .key(key);</span>
+
+<span class="fc" id="L118">            var storageClass = getStorageClass();</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">            if (StringUtils.isNotEmpty(storageClass)) {</span>
+<span class="fc" id="L120">                putObjectRequestBuilder.storageClass(StorageClass.fromValue(storageClass));</span>
+            }
+
+            // 设置 ACL（访问控制列表）
+<span class="fc" id="L124">            ObjectCannedACL acl = getAcl();</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">            if (acl != null) {</span>
+                try {
+<span class="fc" id="L127">                    putObjectRequestBuilder.acl(acl);</span>
+<span class="nc" id="L128">                } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L129">                    log.warn(&quot;设置 ACL 失败: {}, 将使用默认 ACL (PRIVATE). 错误: {}&quot;, acl, e.getMessage());</span>
+<span class="fc" id="L130">                }</span>
+            }
+
+<span class="fc" id="L133">            var putObjectRequest = putObjectRequestBuilder.build();</span>
+            // 读取 InputStream 到字节数组，因为 AWS SDK 2.x 需要明确的内容长度
+<span class="fc" id="L135">            byte[] bytes = inputStream.readAllBytes();</span>
+<span class="fc" id="L136">            var putObjectResponse = client.putObject(putObjectRequest, RequestBody.fromBytes(bytes));</span>
+
+<span class="fc" id="L138">            return UploadResponse.builder()</span>
+<span class="fc" id="L139">                    .success(true)</span>
+<span class="fc" id="L140">                    .bucketName(getBucketName())</span>
+<span class="fc" id="L141">                    .versionId(putObjectResponse.versionId())</span>
+<span class="fc" id="L142">                    .requestId(putObjectResponse.eTag())</span>
+<span class="fc" id="L143">                    .hashValue(putObjectResponse.eTag()) // AWS SDK 2.x不再提供contentMd5</span>
+<span class="fc" id="L144">                    .uploadTime(OffsetDateTime.now())</span>
+<span class="fc" id="L145">                    .url(buildObjectUrl(key))</span>
+<span class="fc" id="L146">                    .build();</span>
+<span class="fc" id="L147">        } catch (AwsServiceException e) {</span>
+<span class="fc" id="L148">            return UploadResponse.builder()</span>
+<span class="fc" id="L149">                    .success(false)</span>
+<span class="fc" id="L150">                    .errorMessage(e.getMessage())</span>
+<span class="fc" id="L151">                    .requestId(e.requestId())</span>
+<span class="fc" id="L152">                    .bucketName(getBucketName())</span>
+<span class="fc" id="L153">                    .key(key)</span>
+<span class="fc" id="L154">                    .build();</span>
+<span class="fc" id="L155">        } catch (SdkException | IOException e) {</span>
+<span class="fc" id="L156">            return UploadResponse.builder()</span>
+<span class="fc" id="L157">                    .success(false)</span>
+<span class="fc" id="L158">                    .errorMessage(e.getMessage())</span>
+<span class="fc" id="L159">                    .bucketName(getBucketName())</span>
+<span class="fc" id="L160">                    .key(key)</span>
+<span class="fc" id="L161">                    .build();</span>
+        }
+    }
+
+    @Override
+    public UploadResponse putImage(@Nonnull String key, @Nonnull File file, ImageOptions options) {
+<span class="nc" id="L167">        return putObject(key, file);</span>
+    }
+
+    @Override
+    public UploadResponse putImage(@Nonnull String key, @Nonnull InputStream inputStream, ImageOptions options) {
+<span class="nc" id="L172">        return putObject(key, inputStream);</span>
+    }
+
+    @Override
+    public &lt;T&gt; DownloadResponse&lt;T&gt; getData(@Nonnull String key, @Nonnull TypeReference&lt;T&gt; typeReference) {
+<span class="fc" id="L177">        key = getRealPath(key);</span>
+<span class="fc" id="L178">        var client = getClient(S3Client.class);</span>
+        try {
+<span class="fc" id="L180">            var getObjectResponse = client.getObject(GetObjectRequest.builder()</span>
+<span class="fc" id="L181">                    .bucket(getBucketName())</span>
+<span class="fc" id="L182">                    .key(key)</span>
+<span class="fc" id="L183">                    .build());</span>
+
+<span class="fc" id="L185">            var builder = new StringBuilder();</span>
+<span class="fc" id="L186">            try (var reader = new BufferedReader(new InputStreamReader(getObjectResponse))) {</span>
+                String line;
+<span class="fc bfc" id="L188" title="All 2 branches covered.">                while ((line = reader.readLine()) != null) {</span>
+<span class="fc" id="L189">                    builder.append(line);</span>
+                }
+<span class="fc" id="L191">                return new DownloadResponse&lt;T&gt;()</span>
+<span class="fc" id="L192">                        .setSuccess(true)</span>
+<span class="fc" id="L193">                        .setErrorMessage(null)</span>
+<span class="fc" id="L194">                        .setBucketName(getBucketName())</span>
+<span class="fc" id="L195">                        .setRequestId(getObjectResponse.response().eTag())</span>
+<span class="fc" id="L196">                        .setVersionId(getObjectResponse.response().versionId())</span>
+<span class="fc" id="L197">                        .setKey(key)</span>
+<span class="fc" id="L198">                        .setData(JsonUtils.getInstance().deserialize(builder.toString(), typeReference));</span>
+<span class="fc" id="L199">            } catch (IOException e) {</span>
+<span class="fc" id="L200">                return new DownloadResponse&lt;T&gt;()</span>
+<span class="fc" id="L201">                        .setSuccess(false)</span>
+<span class="fc" id="L202">                        .setErrorMessage(e.getMessage())</span>
+<span class="fc" id="L203">                        .setBucketName(getBucketName())</span>
+<span class="fc" id="L204">                        .setKey(key);</span>
+            }
+<span class="fc" id="L206">        } catch (AwsServiceException e) {</span>
+<span class="fc" id="L207">            return DownloadResponse.&lt;T&gt;builder()</span>
+<span class="fc" id="L208">                    .success(false)</span>
+<span class="fc" id="L209">                    .errorMessage(e.getMessage())</span>
+<span class="fc" id="L210">                    .requestId(e.requestId())</span>
+<span class="fc" id="L211">                    .bucketName(getBucketName())</span>
+<span class="fc" id="L212">                    .key(key)</span>
+<span class="fc" id="L213">                    .build();</span>
+<span class="fc" id="L214">        } catch (SdkException e) {</span>
+<span class="fc" id="L215">            return new DownloadResponse&lt;T&gt;()</span>
+<span class="fc" id="L216">                    .setSuccess(false)</span>
+<span class="fc" id="L217">                    .setErrorMessage(e.getMessage())</span>
+<span class="fc" id="L218">                    .setBucketName(getBucketName())</span>
+<span class="fc" id="L219">                    .setKey(key);</span>
+        }
+    }
+
+    @Override
+    public DownloadResponse&lt;byte[]&gt; getObject(@Nonnull String key, @Nonnull File targetPath, boolean returnData) {
+<span class="fc" id="L225">        key = getRealPath(key);</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">        if (!targetPath.canWrite()) {</span>
+<span class="fc" id="L227">            return new DownloadResponse&lt;byte[]&gt;()</span>
+<span class="fc" id="L228">                    .setSuccess(false)</span>
+<span class="fc" id="L229">                    .setErrorMessage(&quot;The directory does not have permission to write to files.&quot;)</span>
+<span class="fc" id="L230">                    .setBucketName(getBucketName())</span>
+<span class="fc" id="L231">                    .setRequestId(UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;))</span>
+<span class="fc" id="L232">                    .setKey(key);</span>
+        }
+<span class="fc" id="L234">        var client = getClient(S3Client.class);</span>
+        try {
+<span class="fc" id="L236">            var getObjectResponse = client.getObject(GetObjectRequest.builder()</span>
+<span class="fc" id="L237">                    .bucket(getBucketName())</span>
+<span class="fc" id="L238">                    .key(key)</span>
+<span class="fc" id="L239">                    .build());</span>
+
+<span class="fc" id="L241">            try (var inputStream = getObjectResponse;</span>
+<span class="fc" id="L242">                 var outputStream = new FileOutputStream(targetPath)) {</span>
+<span class="fc" id="L243">                var buffer = new byte[1024];</span>
+                int len;
+<span class="fc bfc" id="L245" title="All 2 branches covered.">                while ((len = inputStream.read(buffer)) != -1) {</span>
+<span class="fc" id="L246">                    outputStream.write(buffer, 0, len);</span>
+                }
+<span class="fc bfc" id="L248" title="All 2 branches covered.">                if (returnData) {</span>
+                    // 通过 nio 读取 targetFile 文件内容并转换为字节流
+<span class="fc" id="L250">                    return new DownloadResponse&lt;byte[]&gt;()</span>
+<span class="fc" id="L251">                            .setSuccess(true)</span>
+<span class="fc" id="L252">                            .setErrorMessage(null)</span>
+<span class="fc" id="L253">                            .setBucketName(getBucketName())</span>
+<span class="fc" id="L254">                            .setRequestId(getObjectResponse.response().eTag())</span>
+<span class="fc" id="L255">                            .setVersionId(getObjectResponse.response().versionId())</span>
+<span class="fc" id="L256">                            .setKey(key)</span>
+<span class="fc" id="L257">                            .setData(Files.readAllBytes(targetPath.toPath()));</span>
+                }
+<span class="fc" id="L259">                return new DownloadResponse&lt;byte[]&gt;()</span>
+<span class="fc" id="L260">                        .setSuccess(true)</span>
+<span class="fc" id="L261">                        .setBucketName(getBucketName())</span>
+<span class="fc" id="L262">                        .setRequestId(getObjectResponse.response().eTag())</span>
+<span class="fc" id="L263">                        .setVersionId(getObjectResponse.response().versionId())</span>
+<span class="fc" id="L264">                        .setKey(key);</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">            } catch (IOException e) {</span>
+<span class="nc" id="L266">                return new DownloadResponse&lt;byte[]&gt;()</span>
+<span class="nc" id="L267">                        .setSuccess(false)</span>
+<span class="nc" id="L268">                        .setErrorMessage(e.getMessage())</span>
+<span class="nc" id="L269">                        .setBucketName(getBucketName())</span>
+<span class="nc" id="L270">                        .setKey(key);</span>
+            }
+<span class="fc" id="L272">        } catch (AwsServiceException e) {</span>
+<span class="fc" id="L273">            return new DownloadResponse&lt;byte[]&gt;()</span>
+<span class="fc" id="L274">                    .setSuccess(false)</span>
+<span class="fc" id="L275">                    .setErrorMessage(e.getMessage())</span>
+<span class="fc" id="L276">                    .setRequestId(e.requestId())</span>
+<span class="fc" id="L277">                    .setBucketName(getBucketName())</span>
+<span class="fc" id="L278">                    .setKey(key);</span>
+<span class="fc" id="L279">        } catch (SdkException e) {</span>
+<span class="fc" id="L280">            return new DownloadResponse&lt;byte[]&gt;()</span>
+<span class="fc" id="L281">                    .setSuccess(false)</span>
+<span class="fc" id="L282">                    .setErrorMessage(e.getMessage())</span>
+<span class="fc" id="L283">                    .setBucketName(getBucketName())</span>
+<span class="fc" id="L284">                    .setKey(key);</span>
+        }
+    }
+
+    @Override
+    public DownloadResponse&lt;byte[]&gt; getResumableObject(@Nonnull String key, @Nonnull String targetPath, boolean returnData) {
+<span class="fc" id="L290">        key = getRealPath(key);</span>
+<span class="fc" id="L291">        var targetFile = new File(targetPath);</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">        if (!targetFile.canWrite()) {</span>
+<span class="fc" id="L293">            return new DownloadResponse&lt;byte[]&gt;()</span>
+<span class="fc" id="L294">                    .setSuccess(false)</span>
+<span class="fc" id="L295">                    .setErrorMessage(&quot;The directory does not have permission to write to files.&quot;)</span>
+<span class="fc" id="L296">                    .setBucketName(getBucketName())</span>
+<span class="fc" id="L297">                    .setRequestId(UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;))</span>
+<span class="fc" id="L298">                    .setKey(key);</span>
+        }
+<span class="fc" id="L300">        var client = getClient(S3Client.class);</span>
+
+        try {
+            // 使用标准的S3Client下载方法
+<span class="fc" id="L304">            var getObjectResponse = client.getObject(GetObjectRequest.builder()</span>
+<span class="fc" id="L305">                    .bucket(getBucketName())</span>
+<span class="fc" id="L306">                    .key(key)</span>
+<span class="fc" id="L307">                    .build());</span>
+
+<span class="fc" id="L309">            try (var inputStream = getObjectResponse;</span>
+<span class="fc" id="L310">                 var outputStream = new FileOutputStream(targetFile)) {</span>
+<span class="fc" id="L311">                var buffer = new byte[8192];</span>
+                int len;
+<span class="fc bfc" id="L313" title="All 2 branches covered.">                while ((len = inputStream.read(buffer)) != -1) {</span>
+<span class="fc" id="L314">                    outputStream.write(buffer, 0, len);</span>
+                }
+            }
+
+            // 下载完成后，获取下载内容并转为byte数组
+<span class="fc bfc" id="L319" title="All 2 branches covered.">            if (returnData) {</span>
+                // 通过 nio 读取 targetFile 文件内容并转换为字节流
+<span class="fc" id="L321">                return new DownloadResponse&lt;byte[]&gt;()</span>
+<span class="fc" id="L322">                        .setSuccess(true)</span>
+<span class="fc" id="L323">                        .setErrorMessage(null)</span>
+<span class="fc" id="L324">                        .setBucketName(getBucketName())</span>
+<span class="fc" id="L325">                        .setRequestId(getObjectResponse.response().eTag())</span>
+<span class="fc" id="L326">                        .setVersionId(getObjectResponse.response().versionId())</span>
+<span class="fc" id="L327">                        .setKey(key)</span>
+<span class="fc" id="L328">                        .setData(Files.readAllBytes(targetFile.toPath()));</span>
+            }
+<span class="fc" id="L330">            return new DownloadResponse&lt;byte[]&gt;()</span>
+<span class="fc" id="L331">                    .setSuccess(true)</span>
+<span class="fc" id="L332">                    .setBucketName(getBucketName())</span>
+<span class="fc" id="L333">                    .setRequestId(getObjectResponse.response().eTag())</span>
+<span class="fc" id="L334">                    .setVersionId(getObjectResponse.response().versionId())</span>
+<span class="fc" id="L335">                    .setKey(key);</span>
+<span class="fc" id="L336">        } catch (AwsServiceException e) {</span>
+<span class="fc" id="L337">            return new DownloadResponse&lt;byte[]&gt;()</span>
+<span class="fc" id="L338">                    .setSuccess(false)</span>
+<span class="fc" id="L339">                    .setErrorMessage(e.getMessage())</span>
+<span class="fc" id="L340">                    .setRequestId(e.requestId())</span>
+<span class="fc" id="L341">                    .setBucketName(getBucketName())</span>
+<span class="fc" id="L342">                    .setKey(key);</span>
+<span class="nc" id="L343">        } catch (SdkException | IOException e) {</span>
+<span class="nc" id="L344">            return new DownloadResponse&lt;byte[]&gt;()</span>
+<span class="nc" id="L345">                    .setSuccess(false)</span>
+<span class="nc" id="L346">                    .setErrorMessage(e.getMessage())</span>
+<span class="nc" id="L347">                    .setBucketName(getBucketName())</span>
+<span class="nc" id="L348">                    .setKey(key);</span>
+        }
+    }
+
+    @Override
+    public boolean existsObject(@Nonnull String key) {
+<span class="fc" id="L354">        key = getRealPath(key);</span>
+<span class="fc" id="L355">        var client = getClient(S3Client.class);</span>
+        try {
+<span class="fc" id="L357">            client.headObject(HeadObjectRequest.builder()</span>
+<span class="fc" id="L358">                    .bucket(getBucketName())</span>
+<span class="fc" id="L359">                    .key(key)</span>
+<span class="fc" id="L360">                    .build());</span>
+<span class="fc" id="L361">            return true;</span>
+<span class="fc" id="L362">        } catch (NoSuchKeyException e) {</span>
+<span class="fc" id="L363">            return false;</span>
+<span class="fc" id="L364">        } catch (SdkException e) {</span>
+<span class="fc" id="L365">            log.error(&quot;检查对象存在性时发生异常: {}&quot;, e.getMessage());</span>
+<span class="fc" id="L366">            return false;</span>
+        }
+    }
+
+    @Override
+    public DirectUploadPolicy issueDirectUploadPolicy(@Nonnull String key, int expireSeconds) {
+<span class="fc" id="L372">        int safeExpire = Math.max(expireSeconds, 60);</span>
+<span class="fc" id="L373">        String realKey = getRealPath(key);</span>
+        try {
+<span class="fc" id="L375">            PutObjectRequest putObjectRequest = PutObjectRequest.builder()</span>
+<span class="fc" id="L376">                    .bucket(getBucketName())</span>
+<span class="fc" id="L377">                    .key(realKey)</span>
+<span class="fc" id="L378">                    .build();</span>
+<span class="fc" id="L379">            PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()</span>
+<span class="fc" id="L380">                    .putObjectRequest(putObjectRequest)</span>
+<span class="fc" id="L381">                    .signatureDuration(Duration.ofSeconds(safeExpire))</span>
+<span class="fc" id="L382">                    .build();</span>
+<span class="fc" id="L383">            PresignedPutObjectRequest signed = s3Presigner.presignPutObject(presignRequest);</span>
+<span class="fc" id="L384">            return DirectUploadPolicy.builder()</span>
+<span class="fc" id="L385">                    .success(true)</span>
+<span class="fc" id="L386">                    .method(&quot;PUT&quot;)</span>
+<span class="fc" id="L387">                    .uploadUrl(signed.url().toString())</span>
+<span class="fc" id="L388">                    .headers(signed.signedHeaders().entrySet().stream()</span>
+<span class="pc bpc" id="L389" title="1 of 2 branches missed.">                            .filter(entry -&gt; !entry.getValue().isEmpty())</span>
+<span class="fc" id="L390">                            .collect(java.util.stream.Collectors.toMap(</span>
+                                    Map.Entry::getKey,
+<span class="fc" id="L392">                                    entry -&gt; entry.getValue().getFirst())))</span>
+<span class="fc" id="L393">                    .formFields(Map.of())</span>
+<span class="fc" id="L394">                    .bucketName(getBucketName())</span>
+<span class="fc" id="L395">                    .key(realKey)</span>
+<span class="fc" id="L396">                    .expireAt(OffsetDateTime.now().plusSeconds(safeExpire))</span>
+<span class="fc" id="L397">                    .fallback(false)</span>
+<span class="fc" id="L398">                    .build();</span>
+<span class="fc" id="L399">        } catch (Exception e) {</span>
+<span class="fc" id="L400">            log.warn(&quot;S3 预签名签发失败，降级兜底直传链接。key={}, error={}&quot;, realKey, e.getMessage());</span>
+<span class="fc" id="L401">            return buildFallbackDirectUploadPolicy(key, safeExpire);</span>
+        }
+    }
+
+
+    /**
+     * 构建对象访问URL
+     * &lt;p&gt;
+     * AWS S3 标准URL格式：&lt;a href=&quot;https://bucket-name.s3.region.amazonaws.com/key&quot;&gt;...&lt;/a&gt;
+     * 如果 endpoint 包含协议前缀，则移除
+     *
+     * @param key 对象键
+     * @return 对象访问URL
+     */
+    private String buildObjectUrl(String key) {
+<span class="fc" id="L416">        String endpoint = objectConfig().getEndpoint();</span>
+        // 移除协议前缀（如果存在）
+<span class="fc bfc" id="L418" title="All 2 branches covered.">        if (endpoint.startsWith(&quot;http://&quot;)) {</span>
+<span class="fc" id="L419">            endpoint = endpoint.substring(7);</span>
+<span class="pc bpc" id="L420" title="1 of 2 branches missed.">        } else if (endpoint.startsWith(&quot;https://&quot;)) {</span>
+<span class="nc" id="L421">            endpoint = endpoint.substring(8);</span>
+        }
+<span class="fc" id="L423">        return &quot;https://%s.%s/%s&quot;.formatted(getBucketName(), endpoint, key);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

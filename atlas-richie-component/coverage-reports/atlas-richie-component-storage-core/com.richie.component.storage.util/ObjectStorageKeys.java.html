@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObjectStorageKeys.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">atlas-richie-component-storage-core</a> &gt; <a href="index.source.html" class="el_package">com.richie.component.storage.util</a> &gt; <span class="el_source">ObjectStorageKeys.java</span></div><h1>ObjectStorageKeys.java</h1><pre class="source lang-java linenums">package com.richie.component.storage.util;
+
+import com.richie.component.storage.core.impl.AbstractObjectStorageEngine;
+import org.apache.commons.lang3.StringUtils;
+
+/**
+ * 对象存储键拼接（与 {@link AbstractObjectStorageEngine#getRealPath} 保持一致）。
+ */
+public final class ObjectStorageKeys {
+
+    private ObjectStorageKeys() {
+    }
+
+    public static String realPath(String basePath, String key) {
+<span class="fc bfc" id="L15" title="All 2 branches covered.">        return StringUtils.isNotBlank(basePath) ? basePath + &quot;/&quot; + key : key;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

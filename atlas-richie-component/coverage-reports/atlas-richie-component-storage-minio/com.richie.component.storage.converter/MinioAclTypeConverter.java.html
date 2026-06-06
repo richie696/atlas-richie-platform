@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MinioAclTypeConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">atlas-richie-component-storage-minio</a> &gt; <a href="index.source.html" class="el_package">com.richie.component.storage.converter</a> &gt; <span class="el_source">MinioAclTypeConverter.java</span></div><h1>MinioAclTypeConverter.java</h1><pre class="source lang-java linenums">package com.richie.component.storage.converter;
+
+import com.richie.component.storage.enums.AclTypeEnum;
+import com.richie.component.storage.enums.StorageEngineEnum;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import jakarta.annotation.Nonnull;
+import org.springframework.stereotype.Component;
+
+/**
+ * MinIO ACL 类型转换器
+ * &lt;p&gt;
+ * MinIO 兼容 S3 API，使用与 S3 相同的 ACL 值
+ *
+ * @author richie696
+ * @version 1.0
+ * @see &lt;a href=&quot;https://min.io/docs/minio/linux/administration/object-management/object-access-control.html&quot;&gt;MinIO ACL 文档&lt;/a&gt;
+ * @since 2025-01-XX
+ */
+@Component
+@ConditionalOnProperty(prefix = &quot;platform.component.storage.object&quot;, name = &quot;engine&quot;, havingValue = &quot;minio&quot;)
+<span class="fc" id="L21">public class MinioAclTypeConverter implements AclTypeConverter&lt;String&gt; {</span>
+
+    @Override
+    public String convertToEngineAcl(@Nonnull AclTypeEnum aclType) {
+        // MinIO 兼容 S3 API，使用与 S3 相同的 ACL 值
+<span class="fc bfc" id="L26" title="All 7 branches covered.">        return switch (aclType) {</span>
+<span class="fc" id="L27">            case PRIVATE -&gt; &quot;private&quot;;</span>
+<span class="fc" id="L28">            case PUBLIC_READ -&gt; &quot;public-read&quot;;</span>
+<span class="fc" id="L29">            case PUBLIC_READ_WRITE -&gt; &quot;public-read-write&quot;;</span>
+<span class="fc" id="L30">            case AUTHENTICATED_READ -&gt; &quot;authenticated-read&quot;;</span>
+<span class="fc" id="L31">            case BUCKET_OWNER_READ -&gt; &quot;bucket-owner-read&quot;;</span>
+<span class="fc" id="L32">            case BUCKET_OWNER_FULL_CONTROL -&gt; &quot;bucket-owner-full-control&quot;;</span>
+<span class="fc" id="L33">            case LOG_DELIVERY_WRITE -&gt; &quot;log-delivery-write&quot;;</span>
+        };
+    }
+
+    @Override
+    public StorageEngineEnum getSupportedEngine() {
+<span class="fc" id="L39">        return StorageEngineEnum.MINIO;</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

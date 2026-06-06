@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RedisComplexityTier.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">atlas-richie-component-cache</a> &gt; <a href="index.source.html" class="el_package">com.richie.component.cache.redis.perf</a> &gt; <span class="el_source">RedisComplexityTier.java</span></div><h1>RedisComplexityTier.java</h1><pre class="source lang-java linenums">package com.richie.component.cache.redis.perf;
+
+/**
+ * Redis 操作在 ToC 场景下的复杂度分级（用于文档与 {@link RedisPerfGuard}）。
+ * &lt;p&gt;总序：{@code O(1) &gt; O(log n) &gt; O(n) &gt; O(n log n) &gt; O(n²) &gt; O(2ⁿ) &gt; …}
+ *
+ * @author richie696
+ * @version 1.0.0
+ * @since 2026-04-03
+ */
+<span class="fc" id="L11">public enum RedisComplexityTier {</span>
+
+    /**
+     * 常数级：核心链路推荐。
+     */
+<span class="fc" id="L16">    O1,</span>
+
+    /**
+     * 对数级：有序结构（如 ZSet）相关，可控范围内可用。
+     */
+<span class="fc" id="L21">    LOG_N,</span>
+
+    /**
+     * 线性级：与元素数、扫描范围相关；ToC 高并发下默认禁用或仅离线/管理端。
+     */
+<span class="fc" id="L26">    LINEAR_N,</span>
+
+    /**
+     * 更差（{@code O(n log n)}、{@code O(n²)}、指数级等）：严禁在 ToC 核心路径使用。
+     */
+<span class="fc" id="L31">    WORSE,</span>
+
+    /**
+     * 由脚本/自定义逻辑决定（如 Lua），无法在封装层统一归类。
+     */
+<span class="fc" id="L36">    SCRIPT_OR_UNKNOWN</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
