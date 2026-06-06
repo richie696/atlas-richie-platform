@@ -111,7 +111,7 @@ com/richie/component/{模块}/
                             <limit>
                                 <counter>LINE</counter>
                                 <value>COVEREDRATIO</value>
-                                <minimum>0.85</minimum>
+                                <minimum>0.83</minimum>
                             </limit>
                         </limits>
                     </rule>
