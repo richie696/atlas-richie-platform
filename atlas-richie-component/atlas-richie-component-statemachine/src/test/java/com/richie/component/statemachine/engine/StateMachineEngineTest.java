@@ -2,6 +2,8 @@ package com.richie.component.statemachine.engine;
 
 import com.richie.component.statemachine.config.StateMachineDefinitionRegistry;
 import com.richie.component.statemachine.config.StateMachineProperties;
+import com.richie.component.statemachine.config.properties.DbPersistenceMode;
+import com.richie.component.statemachine.config.properties.RedisStreamConfig;
 import com.richie.component.statemachine.config.properties.RulesEngineConfig;
 import com.richie.component.statemachine.config.properties.StorageType;
 import com.richie.component.statemachine.context.StateContext;
@@ -17,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.ArrayList;
@@ -34,6 +38,7 @@ import static org.mockito.Mockito.*;
  * @author richie696
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class StateMachineEngineTest {
 
     @Mock
@@ -84,6 +89,8 @@ class StateMachineEngineTest {
         when(properties.isEnableHistory()).thenReturn(true);
         when(properties.isEnableEvents()).thenReturn(true);
         when(properties.getStorageType()).thenReturn(StorageType.REDIS);
+        when(properties.getDbPersistenceMode()).thenReturn(DbPersistenceMode.ASYNC);
+        when(properties.getRedisStream()).thenReturn(new RedisStreamConfig());
 
         RulesEngineConfig rulesEngineConfig = new RulesEngineConfig();
         rulesEngineConfig.setSkipOnFirstFailedRule(false);

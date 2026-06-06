@@ -80,6 +80,52 @@ class SafeLogSerializerTest {
         assertTrue(DesensitizeUtils.toSafeJson(vo).contains("138****8000"));
     }
 
+    @Test
+    void toSafeStringNullReturnsLiteralNull() {
+        assertEquals("null", objectMaskingService.toSafeString(null));
+    }
+
+    @Test
+    void toSafeJsonHandlesCollectionsAndEscapes() {
+        CollectionVo vo = new CollectionVo();
+        vo.tags = java.util.List.of("a\"b", "plain");
+        vo.counts = new int[]{1, 2};
+        String json = objectMaskingService.toSafeJson(vo);
+        assertTrue(json.contains("\"a\\\"b\""));
+        assertTrue(json.contains("[1,2]"));
+    }
+
+    @Test
+    void toSafeJsonRespectsMaxDepth() {
+        NestedVo root = new NestedVo();
+        NestedVo current = root;
+        for (int i = 0; i < 10; i++) {
+            NestedVo next = new NestedVo();
+            next.label = "level-" + i;
+            current.child = next;
+            current = next;
+        }
+        String json = objectMaskingService.toSafeJson(root);
+        assertTrue(json.contains("[max-depth]"));
+    }
+
+    @Test
+    void quoteEscapesControlCharacters() {
+        assertEquals("\"line\\nbreak\"", SafeLogSerializer.quote("line\nbreak"));
+        assertEquals("\"tab\\there\"", SafeLogSerializer.quote("tab\there"));
+        assertEquals("null", SafeLogSerializer.quote(null));
+    }
+
+    static class CollectionVo {
+        java.util.List<String> tags;
+        int[] counts;
+    }
+
+    static class NestedVo {
+        String label;
+        NestedVo child;
+    }
+
     static class UserLogVo {
         @Sensitive(type = MaskType.PHONE, scenes = MaskScene.LOG)
         String phone;

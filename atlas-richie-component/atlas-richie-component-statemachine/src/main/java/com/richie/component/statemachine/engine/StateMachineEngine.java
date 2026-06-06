@@ -27,10 +27,12 @@ import com.richie.component.statemachine.storage.StateStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeasy.rules.api.Facts;
+import org.jeasy.rules.api.Rule;
 import org.jeasy.rules.api.Rules;
 import org.jeasy.rules.api.RulesEngine;
 import org.jeasy.rules.api.RulesEngineParameters;
 import org.jeasy.rules.core.DefaultRulesEngine;
+import org.jeasy.rules.core.RuleBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.context.ApplicationEventPublisher;
@@ -225,20 +227,13 @@ private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateM
                 properties.getRulesEngine().getExpression()
             );
 
-            List<StateTransitionRule> rules = new ArrayList<>();
-            for (Transition transition : transitions) {
-                rules.add(new StateTransitionRule(transition, context));
-            }
-
+            List<Transition> orderedTransitions = new ArrayList<>(transitions);
             // 按优先级排序（如果启用）
-            if (properties.getRulesEngine().isPriorityBased() && rules.size() > 1) {
-                rules.sort((r1, r2) -> Integer.compare(
-                    r2.transition().getPriority(),
-                    r1.transition().getPriority()
-                ));
+            if (properties.getRulesEngine().isPriorityBased() && orderedTransitions.size() > 1) {
+                orderedTransitions.sort((t1, t2) -> Integer.compare(t2.getPriority(), t1.getPriority()));
                 if (log.isDebugEnabled() && properties.getRulesEngine().isEnableExecutionLog()) {
-                    log.debug("规则已按优先级排序: {}", rules.stream()
-                        .map(r -> "%s:%d".formatted(r.transition().getName(), r.transition().getPriority()))
+                    log.debug("规则已按优先级排序: {}", orderedTransitions.stream()
+                        .map(t -> "%s:%d".formatted(t.getName(), t.getPriority()))
                         .toList());
                 }
             }
@@ -251,7 +246,20 @@ private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateM
                     .priorityThreshold(properties.getRulesEngine().getRulePriorityThreshold());
             RulesEngine rulesEngine = new DefaultRulesEngine(parameters);
             Rules rulesSet = new Rules();
-            rules.forEach(rulesSet::register);
+            for (Transition transition : orderedTransitions) {
+                StateTransitionRule delegate = new StateTransitionRule(transition, context);
+                String ruleName = transition.getName() != null && !transition.getName().isBlank()
+                        ? transition.getName()
+                        : "%s-%s-%s".formatted(transition.getFromState(), transition.getToState(), transition.getEvent());
+                Rule rule = new RuleBuilder()
+                        .name(ruleName)
+                        .description("State transition rule")
+                        .priority(transition.getPriority())
+                        .when(facts -> delegate.when())
+                        .then(facts -> delegate.then())
+                        .build();
+                rulesSet.register(rule);
+            }
             Facts facts = new Facts();
             facts.put("context", context);
 
@@ -260,7 +268,7 @@ private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateM
             long timeoutMs = properties.getRulesEngine().getExecutionTimeoutMs();
             try {
                 if (timeoutMs > 0 && properties.getRulesEngine().isEnableExecutionLog()) {
-                    log.debug("执行规则引擎，超时阈值: {} ms, 规则数: {}", timeoutMs, rules.size());
+                    log.debug("执行规则引擎，超时阈值: {} ms, 规则数: {}", timeoutMs, orderedTransitions.size());
                 }
             rulesEngine.fire(rulesSet, facts);
                 long costMs = System.currentTimeMillis() - startTime;

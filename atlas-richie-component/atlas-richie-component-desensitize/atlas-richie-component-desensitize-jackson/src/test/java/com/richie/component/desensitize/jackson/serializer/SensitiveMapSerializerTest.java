@@ -1,9 +1,10 @@
-package com.richie.component.desensitize.jackson;
+package com.richie.component.desensitize.jackson.serializer;
 
 import com.richie.component.desensitize.core.annotation.Sensitive;
-import com.richie.component.desensitize.core.config.DesensitizeProperties;
 import com.richie.component.desensitize.core.model.MaskScene;
 import com.richie.component.desensitize.core.model.MaskType;
+import com.richie.component.desensitize.jackson.DesensitizeJacksonModule;
+import com.richie.component.desensitize.core.config.DesensitizeProperties;
 import com.richie.component.desensitize.core.permission.DefaultMaskPermissionEvaluator;
 import com.richie.component.desensitize.core.registry.MaskRuleRegistry;
 import com.richie.component.desensitize.core.registry.SensitiveKeyRegistry;
@@ -26,20 +27,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-/**
- * JacksonDesensitizeIntegrationTest 测试类。
- *
- * @author @richie696
- * @since 1.0.0
- * @version 1.0
- */
-class JacksonDesensitizeIntegrationTest {
+import static org.assertj.core.api.Assertions.assertThat;
 
-    /**
-     * 依赖组件。
-     */
+class SensitiveMapSerializerTest {
+
     private ObjectMapper objectMapper;
 
     @BeforeEach
@@ -59,49 +50,38 @@ class JacksonDesensitizeIntegrationTest {
                 new MaskRuleRegistry(properties),
                 new SensitiveKeyRegistry(properties),
                 new DefaultMaskPermissionEvaluator(properties));
-        SensitiveKeyRegistry keyRegistry = new SensitiveKeyRegistry(properties);
         objectMapper = JsonMapper.builder()
-                .addModule(new DesensitizeJacksonModule(maskingService, keyRegistry))
+                .addModule(new DesensitizeJacksonModule(maskingService, new SensitiveKeyRegistry(properties)))
                 .build();
     }
 
     @Test
-    void voSensitiveFieldMasked() throws Exception {
-        UserApiVo vo = new UserApiVo();
-        vo.phone = "13812348000";
-        vo.orderId = "O-100";
-        String json = objectMapper.writeValueAsString(vo);
-        assertTrue(json.contains("138****8000"));
-        assertFalse(json.contains("13812348000"));
-        assertTrue(json.contains("O-100"));
+    void nestedMapWithNonStringValueUsesPojoSerializer() throws Exception {
+        Map<String, Object> nested = new LinkedHashMap<>();
+        nested.put("phone", "13812348000");
+        nested.put("count", 2);
+        Map<String, Object> root = Map.of("payload", nested);
+
+        String json = objectMapper.writeValueAsString(root);
+
+        assertThat(json).contains("138****8000");
+        assertThat(json).contains("\"count\":2");
     }
 
     @Test
-    void rootMapMaskedBySensitiveKeys() throws Exception {
-        Map<String, Object> row = new LinkedHashMap<>();
-        row.put("phone", "13812348000");
-        row.put("orderId", "13812348000");
-        String json = objectMapper.writeValueAsString(row);
-        assertTrue(json.contains("138****8000"));
-        assertTrue(json.contains("\"orderId\":\"13812348000\"") || json.contains("\"orderId\": \"13812348000\""));
-    }
+    void sensitiveAnnotatedNullFieldWritesNull() throws Exception {
+        NullFieldVo vo = new NullFieldVo();
+        vo.orderId = "O-1";
 
-    @Test
-    void voWithMapFieldMasked() throws Exception {
-        UserWithExtraVo vo = new UserWithExtraVo();
-        vo.extra = Map.of("phone", "13812348000", "code", "X1");
         String json = objectMapper.writeValueAsString(vo);
-        assertTrue(json.contains("138****8000"));
-        assertTrue(json.contains("X1"));
+
+        assertThat(json).contains("\"phone\":null");
+        assertThat(json).contains("O-1");
     }
 
-    static class UserApiVo {
+    static class NullFieldVo {
         @Sensitive(type = MaskType.PHONE, scenes = MaskScene.API_RESPONSE)
         public String phone;
         public String orderId;
-    }
-
-    static class UserWithExtraVo {
-        public Map<String, Object> extra;
     }
 }

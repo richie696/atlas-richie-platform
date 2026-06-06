@@ -371,10 +371,13 @@ public class AiModelServiceImpl implements AiModelService {
     }
 
     private AiResponse.Usage extractUsage(ChatResponse chatResponse) {
-        if (chatResponse == null) {
+        if (chatResponse == null || chatResponse.getMetadata() == null) {
             return null;
         }
         var usage = chatResponse.getMetadata().getUsage();
+        if (usage == null) {
+            return null;
+        }
         return new AiResponse.Usage()
                 .setPromptTokens(usage.getPromptTokens())
                 .setCompletionTokens(usage.getCompletionTokens())

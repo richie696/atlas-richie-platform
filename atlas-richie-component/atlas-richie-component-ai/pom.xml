@@ -71,6 +71,54 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>com/richie/component/ai/support/ToolRegistry*</include>
+                        <include>com/richie/component/ai/support/AiModelRouter*</include>
+                        <include>com/richie/component/ai/support/AiModelCircuitBreaker*</include>
+                        <include>com/richie/component/ai/model/AiResponse*</include>
+                        <include>com/richie/component/ai/model/AiRequest*</include>
+                    </includes>
+                    <rules>
+                        <rule>
+                            <element>BUNDLE</element>
+                            <limits>
+                                <limit>
+                                    <counter>LINE</counter>
+                                    <value>COVEREDRATIO</value>
+                                    <minimum>0.85</minimum>
+                                </limit>
+                            </limits>
+                        </rule>
+                    </rules>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <configuration>
+                            <includes>
+                                <include>com/richie/component/ai/support/ToolRegistry*</include>
+                                <include>com/richie/component/ai/support/AiModelRouter*</include>
+                                <include>com/richie/component/ai/support/AiModelCircuitBreaker*</include>
+                                <include>com/richie/component/ai/model/AiResponse*</include>
+                                <include>com/richie/component/ai/model/AiRequest*</include>
+                            </includes>
+                            <excludes>
+                                <exclude>com.richie.component.**.*AutoConfiguration</exclude>
+                                <exclude>com.richie.component.**.config.**</exclude>
+                                <exclude>com.richie.component.**.enums.**</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
             </plugin>
             <plugin>

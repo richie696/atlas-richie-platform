@@ -71,4 +71,36 @@ class MaskingStrategyTest {
         assertNull(strategy.mask(null, MaskRule.of(MaskType.PHONE, '*')));
         assertEquals("", strategy.mask("", MaskRule.of(MaskType.PHONE, '*')));
     }
+
+    @Test
+    void emailWithoutAtMasksAsShortValue() {
+        EmailMaskingStrategy strategy = new EmailMaskingStrategy();
+        assertEquals("***", strategy.mask("bad", MaskRule.of(MaskType.EMAIL, '*')));
+    }
+
+    @Test
+    void emailSingleCharLocalPart() {
+        EmailMaskingStrategy strategy = new EmailMaskingStrategy();
+        assertEquals("a***@example.com", strategy.mask("a@example.com", MaskRule.of(MaskType.EMAIL, '*')));
+    }
+
+    @Test
+    void addressMaskKeepsPrefix() {
+        AddressMaskingStrategy strategy = new AddressMaskingStrategy();
+        String masked = strategy.mask("北京市朝阳区某某路1号", MaskRule.of(MaskType.ADDRESS, '*'));
+        assertTrue(masked.startsWith("北京市"));
+        assertTrue(masked.contains("*"));
+    }
+
+    @Test
+    void bankCardShortValueFullyMasked() {
+        BankCardMaskingStrategy strategy = new BankCardMaskingStrategy();
+        assertEquals("***", strategy.mask("622", MaskRule.of(MaskType.BANK_CARD, '*')));
+    }
+
+    @Test
+    void nameSingleChar() {
+        NameMaskingStrategy strategy = new NameMaskingStrategy();
+        assertEquals("*", strategy.mask("张", MaskRule.of(MaskType.NAME, '*')));
+    }
 }

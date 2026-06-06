@@ -45,6 +45,7 @@ import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -577,9 +578,33 @@ public class RedisBaseAutoConfiguration {
 
     private String resolveSingleAddress(AtlasRedisProperties properties, String redisScheme) {
         if (StringUtils.hasText(properties.getUrl())) {
-            return normalizeRedisAddress(properties.getUrl(), redisScheme);
+            String normalized = normalizeRedisAddress(properties.getUrl(), redisScheme);
+            if (redisAddressHasPort(normalized)) {
+                return normalized;
+            }
         }
-        return normalizeRedisAddress("%s:%d".formatted(properties.getHost(), properties.getPort()), redisScheme);
+        String host = StringUtils.hasText(properties.getHost()) ? properties.getHost() : "localhost";
+        int port = properties.getPort() > 0 ? properties.getPort() : 6379;
+        return normalizeRedisAddress("%s:%d".formatted(host, port), redisScheme);
+    }
+
+    private boolean redisAddressHasPort(String redisAddress) {
+        try {
+            return URI.create(redisAddress).getPort() > 0;
+        } catch (IllegalArgumentException ex) {
+            int schemeEnd = redisAddress.indexOf("://");
+            String hostPort = schemeEnd >= 0 ? redisAddress.substring(schemeEnd + 3) : redisAddress;
+            int colon = hostPort.lastIndexOf(':');
+            if (colon <= 0 || colon >= hostPort.length() - 1) {
+                return false;
+            }
+            for (int i = colon + 1; i < hostPort.length(); i++) {
+                if (!Character.isDigit(hostPort.charAt(i))) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     private String normalizeRedisAddress(String address, String redisScheme) {

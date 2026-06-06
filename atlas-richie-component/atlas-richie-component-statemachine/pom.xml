@@ -88,7 +88,7 @@
         </dependency>
 
         <dependency>
-            <groupId>tools.jackson.dataformat</groupId>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
 
@@ -98,7 +98,81 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>com/richie/component/statemachine/model/**</include>
+                        <include>com/richie/component/statemachine/context/**</include>
+                        <include>com/richie/component/statemachine/engine/StateTransitionResult*</include>
+                        <include>com/richie/component/statemachine/rule/**</include>
+                        <include>com/richie/component/statemachine/registry/**</include>
+                        <include>com/richie/component/statemachine/storage/StateHistory*</include>
+                        <include>com/richie/component/statemachine/storage/StateMachineKeyBuilder*</include>
+                        <include>com/richie/component/statemachine/StateMachineName*</include>
+                        <include>com/richie/component/statemachine/StateMachineEvent*</include>
+                        <include>com/richie/component/statemachine/config/StatePersistenceModeResolver*</include>
+                    </includes>
+                    <rules>
+                        <rule>
+                            <element>BUNDLE</element>
+                            <limits>
+                                <limit>
+                                    <counter>LINE</counter>
+                                    <value>COVEREDRATIO</value>
+                                    <minimum>0.85</minimum>
+                                </limit>
+                            </limits>
+                        </rule>
+                    </rules>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <configuration>
+                            <includes>
+                                <include>com/richie/component/statemachine/model/**</include>
+                                <include>com/richie/component/statemachine/context/**</include>
+                                <include>com/richie/component/statemachine/engine/StateTransitionResult*</include>
+                                <include>com/richie/component/statemachine/rule/**</include>
+                                <include>com/richie/component/statemachine/registry/**</include>
+                                <include>com/richie/component/statemachine/storage/StateHistory*</include>
+                                <include>com/richie/component/statemachine/storage/StateMachineKeyBuilder*</include>
+                                <include>com/richie/component/statemachine/StateMachineName*</include>
+                                <include>com/richie/component/statemachine/StateMachineEvent*</include>
+                                <include>com/richie/component/statemachine/config/StatePersistenceModeResolver*</include>
+                            </includes>
+                            <excludes>
+                                <exclude>com.richie.component.**.*AutoConfiguration</exclude>
+                                <exclude>com.richie.component.**.config.**</exclude>
+                                <exclude>com.richie.component.**.enums.**</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

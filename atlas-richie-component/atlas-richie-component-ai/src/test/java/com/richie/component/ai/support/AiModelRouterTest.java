@@ -46,4 +46,19 @@ class AiModelRouterTest {
 
         assertEquals(List.of("deepseek-chat", "gpt-4o"), chain);
     }
+
+    @Test
+    void resolveModelChain_whenRoutingDisabled_shouldUseDefaultModel() {
+        AiModelProperties properties = new AiModelProperties();
+        properties.getRouting().setEnabled(false);
+
+        AiRequest request = new AiRequest().setScene("code");
+        List<String> chain = router.resolveModelChain(
+                request,
+                "default-model",
+                Map.of("default-model", new Object()),
+                properties);
+
+        assertEquals(List.of("default-model"), chain);
+    }
 }

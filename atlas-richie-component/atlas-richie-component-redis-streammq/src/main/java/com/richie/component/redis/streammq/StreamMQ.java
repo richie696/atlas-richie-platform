@@ -1,7 +1,6 @@
 package com.richie.component.redis.streammq;
 
 import com.richie.component.redis.streammq.function.StreamFunction;
-import com.richie.component.redis.streammq.ops.MessagingOps;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -44,20 +43,6 @@ public class StreamMQ {
     }
 
     // ========================================================================
-    //  发布订阅通知操作
-    // ========================================================================
-
-    /**
-     * 获取发布订阅通知操作接口。
-     * <p>提供基于 Redis Pub/Sub 的轻量级消息发布能力。</p>
-     *
-     * @return MessagingOps 实例
-     */
-    public static MessagingOps messaging() {
-        return DELEGATE.get().messagingOps;
-    }
-
-    // ========================================================================
     //  Spring 注入
     // ========================================================================
 
@@ -82,7 +67,5 @@ public class StreamMQ {
         /** Stream 消息队列操作接口 */
         private final StreamFunction streamFn;
 
-        /** 发布订阅通知操作接口 */
-        private final MessagingOps messagingOps;
     }
 }

@@ -1,5 +1,6 @@
 package com.richie.component.redis.streammq.stream;
 
+import com.richie.component.redis.streammq.bean.DeadLetterMessage;
 import com.richie.context.utils.data.Collections;
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.component.redis.streammq.function.StreamFunction;
@@ -370,7 +371,7 @@ public abstract class AbstractStreamConsumer<T extends BaseStreamMessage> {
         // 如果 targetType 为空且是死信队列配置，则使用 DeadLetterMessage 作为默认类型
         Class<? extends BaseStreamMessage> targetType = config.getTargetType();
         if (targetType == null && isDeadLetterQueueConfig(configName)) {
-            targetType = DeadLetterQueueUtil.DeadLetterMessage.class;
+            targetType = DeadLetterMessage.class;
             log.debug("死信队列配置 {} 使用默认 targetType: DeadLetterMessage", configName);
         }
 

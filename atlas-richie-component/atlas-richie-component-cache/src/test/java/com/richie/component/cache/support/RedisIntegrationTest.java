@@ -2,6 +2,7 @@ package com.richie.component.cache.support;
 
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.lang.annotation.ElementType;
@@ -17,6 +18,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @SpringBootTest(classes = CacheIntegrationTestConfiguration.class)
+@ActiveProfiles("it")
 @ContextConfiguration(initializers = RedisIntegrationTestInitializer.class)
 @EnabledIf("com.richie.component.cache.support.RedisIntegrationTestSupport#isEnabled")
 public @interface RedisIntegrationTest {

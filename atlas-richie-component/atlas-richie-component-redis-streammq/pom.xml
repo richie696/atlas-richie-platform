@@ -116,6 +116,52 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>com/richie/component/redis/streammq/utils/**</include>
+                        <include>com/richie/component/redis/streammq/stream/PublishResult*</include>
+                        <include>com/richie/component/redis/streammq/stream/PublishFailureReason*</include>
+                        <include>com/richie/component/redis/streammq/stream/EventContext*</include>
+                        <include>com/richie/component/redis/streammq/stream/RedisStreamIdempotencyGuard*</include>
+                        <include>com/richie/component/redis/streammq/stream/StreamMessageEvent*</include>
+                        <include>com/richie/component/redis/streammq/ops/impl/**</include>
+                        <include>com/richie/component/redis/streammq/StreamMQ*</include>
+                    </includes>
+                    <rules>
+                        <rule>
+                            <element>BUNDLE</element>
+                            <limits>
+                                <limit>
+                                    <counter>LINE</counter>
+                                    <value>COVEREDRATIO</value>
+                                    <minimum>0.85</minimum>
+                                </limit>
+                            </limits>
+                        </rule>
+                    </rules>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <configuration>
+                            <includes>
+                                <include>com/richie/component/redis/streammq/utils/**</include>
+                                <include>com/richie/component/redis/streammq/stream/PublishResult*</include>
+                                <include>com/richie/component/redis/streammq/stream/PublishFailureReason*</include>
+                                <include>com/richie/component/redis/streammq/stream/EventContext*</include>
+                                <include>com/richie/component/redis/streammq/stream/RedisStreamIdempotencyGuard*</include>
+                                <include>com/richie/component/redis/streammq/stream/StreamMessageEvent*</include>
+                                <include>com/richie/component/redis/streammq/ops/impl/**</include>
+                                <include>com/richie/component/redis/streammq/StreamMQ*</include>
+                            </includes>
+                            <excludes>
+                                <exclude>com.richie.component.**.*AutoConfiguration</exclude>
+                                <exclude>com.richie.component.**.config.**</exclude>
+                                <exclude>com.richie.component.**.enums.**</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -128,6 +174,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <tags>
+                        <tag>
+                            <name>apiNote</name>
+                            <placement>a</placement>
+                            <head>API Note:</head>
+                        </tag>
+                    </tags>
+                </configuration>
             </plugin>
         </plugins>
     </build>

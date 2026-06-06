@@ -1,0 +1,36 @@
+# 集测 Redis / 缓存配置（对齐 sample-cache 的 application-cache.yml）
+# Testcontainers 或 IT_USE_EXTERNAL 会通过 Initializer / @DynamicPropertySource 覆盖连接项
+spring:
+  data:
+    redis:
+      enable-l2-caching: false
+      server-type: standalone
+      client-name: cache-it-redis
+      client-type: lettuce
+      host: localhost
+      port: 16379
+      password: Redis2025!Local
+      database: 15
+      timeout: 2000ms
+      connect-timeout: 5000ms
+      ssl:
+        enabled: false
+      perf:
+        enabled: true
+        block-forbidden-tiers: true
+        block-string-payload-violations: true
+      lettuce:
+        pool:
+          enabled: true
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+          max-wait: 5000ms
+    local:
+      provider: CAFFEINE
+
+platform:
+  cache:
+    cache-provider: REDIS
+    bloom-filter:
+      enable: false

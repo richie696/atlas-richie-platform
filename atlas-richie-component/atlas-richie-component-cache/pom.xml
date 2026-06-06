@@ -178,6 +178,45 @@
                         </rule>
                     </rules>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <configuration>
+                            <includes>
+                                <include>com/richie/component/cache/ops/**</include>
+                                <include>com/richie/component/cache/commons/**</include>
+                                <include>com/richie/component/cache/operations/BoundedList*</include>
+                                <include>com/richie/component/cache/operations/SetCapacity*</include>
+                                <include>com/richie/component/cache/operations/ZSetCapacity*</include>
+                                <include>com/richie/component/cache/redis/perf/**</include>
+                                <include>com/richie/component/cache/redis/migration/**</include>
+                            </includes>
+                            <excludes>
+                                <exclude>com/richie/component/cache/ops/ValueOps</exclude>
+                                <exclude>com/richie/component/cache/ops/StructOps</exclude>
+                                <exclude>com/richie/component/cache/ops/FieldOps</exclude>
+                                <exclude>com/richie/component/cache/ops/CollectionOps</exclude>
+                                <exclude>com/richie/component/cache/ops/RankingOps</exclude>
+                                <exclude>com/richie/component/cache/ops/LockOps</exclude>
+                                <exclude>com/richie/component/cache/ops/BitmapOps</exclude>
+                                <exclude>com/richie/component/cache/ops/GeoOps</exclude>
+                                <exclude>com/richie/component/cache/ops/HyperLogOps</exclude>
+                                <exclude>com/richie/component/cache/ops/NotificationOps</exclude>
+                                <exclude>com/richie/component/cache/ops/EventOps</exclude>
+                                <exclude>com/richie/component/cache/ops/BoundedQueueOps</exclude>
+                                <exclude>com/richie/component/cache/ops/BoundedStackOps</exclude>
+                                <exclude>com/richie/component/cache/ops/KeyOps</exclude>
+                                <exclude>com/richie/component/cache/ops/ScriptOps</exclude>
+                                <exclude>com/richie/component/cache/ops/LimiterOps</exclude>
+                                <exclude>com/richie/component/cache/ops/CacheInfrastructure</exclude>
+                                <exclude>com/richie/component/cache/commons/GeoPointResult</exclude>
+                                <exclude>com.richie.component.**.*AutoConfiguration</exclude>
+                                <exclude>com.richie.component.**.config.**</exclude>
+                                <exclude>com.richie.component.**.enums.**</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

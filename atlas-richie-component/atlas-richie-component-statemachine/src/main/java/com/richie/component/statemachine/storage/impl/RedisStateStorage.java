@@ -1,6 +1,7 @@
 package com.richie.component.statemachine.storage.impl;
 
 import com.richie.component.cache.GlobalCache;
+import com.richie.context.utils.data.JsonUtils;
 import com.richie.component.statemachine.config.StateMachineProperties;
 import com.richie.component.statemachine.context.StateContext;
 import com.richie.component.statemachine.persistence.dao.entity.StateMachineStateCurrent;
@@ -13,12 +14,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.type.TypeReference;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * Redis 状态存储实现
@@ -34,6 +35,9 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class RedisStateStorage implements StateStorage {
+
+    private static final TypeReference<List<StateHistory>> HISTORY_LIST_TYPE = new TypeReference<>() {
+    };
 
     /**
      * 状态机配置属性
@@ -184,20 +188,13 @@ public class RedisStateStorage implements StateStorage {
 
         // 历史记录必须有过期时间，避免Redis数据量过大
         long historyTimeout = getHistoryTimeout();
-
-        // 存储单个历史记录对象到Hash（用于快速查询）
-        String historyKey = keyBuilder.buildHistoryKey(stateMachineName, businessId, history.getCreateTime());
-        GlobalCache.struct().set(historyKey, history, historyTimeout);
-
-        // 将历史记录添加到列表（用于批量查询）
         String listKey = keyBuilder.buildHistoryListKey(stateMachineName, businessId);
-        GlobalCache.collection().add(listKey, history);
 
-        // 设置列表过期时间（如果之前没有设置，则设置为历史记录过期时间）
-        Long expiredTime = GlobalCache.key().getExpire(listKey);
-        if (expiredTime == null || expiredTime <= 0) {
-            GlobalCache.key().setExpiredTime(listKey, historyTimeout);
-        }
+        List<StateHistory> histories = readHistoryList(listKey);
+        history.setCreateTime(null);
+        histories.forEach(item -> item.setCreateTime(null));
+        histories.add(history);
+        GlobalCache.value().set(listKey, JsonUtils.getInstance().serialize(histories), historyTimeout);
 
         log.debug("保存状态历史到Redis（过期时间: {}天）: {} -> {} -> {}",
                 historyTimeout / (24L * 60 * 60 * 1000), fromState, toState, event);
@@ -217,30 +214,28 @@ public class RedisStateStorage implements StateStorage {
     @Override
     public List<StateHistory> getStateHistory(String stateMachineName, Long businessId) {
         String listKey = keyBuilder.buildHistoryListKey(stateMachineName, businessId);
-
-        // 从列表获取历史记录
-        Set<StateHistory> historySet = GlobalCache.collection().get(listKey, StateHistory.class);
-        List<StateHistory> histories = historySet != null ? new ArrayList<>(historySet) : new ArrayList<>();
+        List<StateHistory> histories = new ArrayList<>(readHistoryList(listKey));
 
         if (histories.isEmpty()) {
-            return new ArrayList<>();
+            return histories;
         }
 
-        // 按创建时间降序排序（最新的在前）
-        return histories.stream()
-                .sorted((h1, h2) -> {
-                    if (h1.getCreateTime() == null && h2.getCreateTime() == null) {
-                        return 0;
-                    }
-                    if (h1.getCreateTime() == null) {
-                        return 1;
-                    }
-                    if (h2.getCreateTime() == null) {
-                        return -1;
-                    }
-                    return h2.getCreateTime().compareTo(h1.getCreateTime());
-                })
-                .collect(Collectors.toList());
+        // 追加写入为时间正序，对外返回最新在前
+        Collections.reverse(histories);
+        return histories;
+    }
+
+    private List<StateHistory> readHistoryList(String listKey) {
+        String json = GlobalCache.value().get(listKey, String.class);
+        if (json == null || json.isBlank()) {
+            return new ArrayList<>();
+        }
+        List<StateHistory> histories = JsonUtils.getInstance().deserialize(json, HISTORY_LIST_TYPE);
+        if (histories == null) {
+            return new ArrayList<>();
+        }
+        histories.forEach(item -> item.setCreateTime(null));
+        return histories;
     }
 
     /**
