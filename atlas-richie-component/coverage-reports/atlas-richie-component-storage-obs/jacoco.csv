@@ -1,3 +1,0 @@
-GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
-atlas-richie-component-storage-obs,com.richie.component.storage.converter,ObsStorageTypeConverter,0,61,0,6,0,10,0,8,0,3
-atlas-richie-component-storage-obs,com.richie.component.storage.converter,ObsAclTypeConverter,40,25,1,7,2,10,1,9,0,3
