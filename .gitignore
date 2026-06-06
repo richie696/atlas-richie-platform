@@ -147,6 +147,10 @@ target
 # JaCoCo 汇总报告（mvn verify 生成于仓库根目录 coverage-reports/{artifactId}/，以及子目录的错位输出）
 /coverage-reports/
 **/coverage-reports/
+# JaCoCo 原始 exec 数据（mvn verify/verify 中间产物，模块根目录）
+**/jacoco.exec
+**/jacoco-it.exec
+**/jacoco-merged.exec
 
 ######################
 # Flattened POM
