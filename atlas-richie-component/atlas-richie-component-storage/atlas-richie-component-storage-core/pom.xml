@@ -40,6 +40,45 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>com/richie/component/storage/core/impl/AbstractObjectStorageEngine*</include>
+                        <include>com/richie/component/storage/util/**</include>
+                        <include>com/richie/component/storage/support/**</include>
+                        <include>com/richie/component/storage/exception/**</include>
+                    </includes>
+                    <excludes>
+                        <exclude>com/richie/component/storage/core/impl/AbstractDestroyEngine</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <configuration>
+                            <includes>
+                                <include>com/richie/component/storage/core/impl/AbstractObjectStorageEngine*</include>
+                                <include>com/richie/component/storage/util/**</include>
+                                <include>com/richie/component/storage/support/**</include>
+                                <include>com/richie/component/storage/exception/**</include>
+                            </includes>
+                            <excludes>
+                                <exclude>com/richie/component/storage/core/impl/AbstractDestroyEngine</exclude>
+                            </excludes>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.85</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
