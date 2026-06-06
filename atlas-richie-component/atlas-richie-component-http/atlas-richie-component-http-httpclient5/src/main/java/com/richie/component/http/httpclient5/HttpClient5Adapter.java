@@ -93,12 +93,12 @@ public class HttpClient5Adapter implements HttpClient {
 
     @Override
     public <T> CompletableFuture<T> future(HttpRequest request, Class<T> type) {
-        return CompletableFuture.supplyAsync(() -> execute(request).bodyAs(type));
+        return CompletableFuture.supplyAsync(() -> execute(request, type));
     }
 
     @Override
     public <T> CompletableFuture<T> future(HttpRequest request, TypeReference<T> typeRef) {
-        return CompletableFuture.supplyAsync(() -> execute(request).bodyAs(typeRef));
+        return CompletableFuture.supplyAsync(() -> execute(request, typeRef));
     }
 
     private HttpUriRequestBase buildRequest(HttpRequest request) {
