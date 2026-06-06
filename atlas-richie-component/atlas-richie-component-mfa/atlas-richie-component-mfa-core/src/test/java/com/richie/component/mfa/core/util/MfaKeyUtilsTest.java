@@ -37,7 +37,13 @@ class MfaKeyUtilsTest {
     }
 
     @Test
-    void getSecretKeyCacheKey_supportsTenantPrefix() {
+    void getSyncLockKey_and_getFailureCountKey() {
+        assertThat(MfaKeyUtils.getSyncLockKey("t1", "u1", true))
+                .isEqualTo("mfa:sync:lock:t1:u1");
+        assertThat(MfaKeyUtils.getFailureCountKey(null, "u1", false))
+                .isEqualTo("mfa:failures:u1");
+        assertThat(MfaKeyUtils.getTrustedDeviceListKey("t1", "u1", true))
+                .isEqualTo("mfa:trusted-devices:t1:u1");
         assertThat(MfaKeyUtils.getSecretKeyCacheKey("tenant-a", "u2", true))
                 .isEqualTo("mfa:secret:tenant-a:u2");
     }

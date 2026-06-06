@@ -15,6 +15,6 @@ import java.lang.annotation.Target;
 @Inherited
 @SpringBootTest(classes = MfaIntegrationTestConfiguration.class)
 @ContextConfiguration(initializers = MfaRedisIntegrationTestInitializer.class)
-@EnabledIf("com.richie.component.mfa.management.dto.support.MfaRedisIntegrationTestSupport#isEnabled")
+@EnabledIf("com.richie.component.mfa.management.dto.support.MfaRedisIntegrationTestSupport#integrationTestsEnabled")
 public @interface MfaRedisIntegrationTest {
 }

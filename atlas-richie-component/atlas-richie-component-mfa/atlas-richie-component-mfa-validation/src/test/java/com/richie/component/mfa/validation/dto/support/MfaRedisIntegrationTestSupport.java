@@ -46,6 +46,9 @@ public final class MfaRedisIntegrationTestSupport implements RedisIntegrationTes
     }
 
     private static void appendComponentProperties(List<String> pairs) {
-        // 本模块集测专属属性（按需补充）
+        pairs.add("spring.cloud.vault.enabled=false");
+        pairs.add("spring.cloud.compatibility-verifier.enabled=false");
+        pairs.add("platform.component.mfa.enabled=true");
+        pairs.add("platform.component.mfa.security.key-management.provider=local");
     }
 }
