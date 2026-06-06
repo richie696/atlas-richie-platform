@@ -355,12 +355,6 @@
                 <artifactId>atlas-richie-component-statemachine</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
-            <!-- 搜索引擎组件 -->
-            <dependency>
-                <groupId>com.richie.component</groupId>
-                <artifactId>atlas-richie-component-search</artifactId>
-                <version>${middle.platform.version}</version>
-            </dependency>
 
             <!-- 数据库驱动 -->
             <dependency>

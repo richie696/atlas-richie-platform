@@ -66,8 +66,6 @@
         <module>atlas-richie-component-vector</module>
         <!-- 状态机组件 -->
         <module>atlas-richie-component-statemachine</module>
-        <!-- Elasticsearch 组件 -->
-        <module>atlas-richie-component-search</module>
         <!-- Redis Stream 消息队列组件 -->
         <module>atlas-richie-component-redis-streammq</module>
     </modules>

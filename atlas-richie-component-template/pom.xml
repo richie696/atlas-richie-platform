@@ -26,7 +26,6 @@
         <module>sample-mqtt-client</module>
         <module>sample-mqtt-server</module>
         <module>sample-storage</module>
-        <module>sample-search</module>
         <module>sample-threadpool</module>
         <module>sample-ai</module>
         <module>sample-mongodb</module>

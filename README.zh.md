@@ -147,7 +147,6 @@ atlas-richie-platform/
 - `sample-ai` - AI 组件示例
 - `sample-http` - HTTP 客户端示例
 - `sample-threadpool` - 线程池示例
-- `sample-search` - 搜索组件示例
 - `sample-mongodb` - MongoDB 示例
 
 **文档**：[atlas-richie-component-template/README.md](atlas-richie-component-template/README.md)

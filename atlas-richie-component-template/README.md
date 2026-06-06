@@ -204,26 +204,6 @@ cd sample-storage/sample-storage-oss
 mvn spring-boot:run
 ```
 
-### 搜索示例
-
-#### sample-search
-**搜索组件示例**，演示 Elasticsearch 的使用。
-
-- **子模块**：
-  - `sample-search-elasticsearch` - Elasticsearch 示例
-
-- **功能演示**：
-  - 索引创建和管理
-  - 文档索引和搜索
-  - 全文搜索
-  - 聚合查询
-
-- **运行方式**：
-```bash
-cd sample-search/sample-search-elasticsearch
-mvn spring-boot:run
-```
-
 ### 向量数据库示例
 
 #### sample-vector

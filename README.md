@@ -147,7 +147,7 @@ atlas-richie-platform/
 
 - `sample-cache`, `sample-messaging`, `sample-storage`, `sample-vector`
 - `sample-mqtt-client` / `sample-mqtt-server`, `sample-ai`, `sample-http`
-- `sample-threadpool`, `sample-search`, `sample-mongodb`, …
+- `sample-threadpool`, `sample-mongodb`, …
 
 **Docs:** [atlas-richie-component-template/README.md](atlas-richie-component-template/README.md)
 
