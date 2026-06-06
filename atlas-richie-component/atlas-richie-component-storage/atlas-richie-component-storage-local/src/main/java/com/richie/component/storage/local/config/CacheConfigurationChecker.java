@@ -2,6 +2,8 @@ package com.richie.component.storage.local.config;
 
 import com.richie.component.cache.GlobalCache;
 import com.richie.component.cache.enums.KeyTypeEnum;
+import com.richie.component.cache.ops.CacheInfrastructure;
+import com.richie.component.cache.ops.KeyOps;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -23,16 +25,21 @@ public class CacheConfigurationChecker {
     public void checkCacheConfiguration() {
         log.info("=== 文件存储组件缓存配置检查 ===");
 
+        CacheInfrastructure infra = resolveCacheInfrastructure();
+        if (infra == null) {
+            log.warn("⚠️  无法读取缓存基础设施配置，跳过 L2 检查");
+            log.info("=== 缓存配置检查完成 ===");
+            return;
+        }
+
         // 检查二级缓存是否启用
-        boolean l2CachingEnabled = GlobalCache.key().enableL2Caching();
+        boolean l2CachingEnabled = infra.enableL2Caching();
         if (l2CachingEnabled) {
             log.info("✅ Redis 二级缓存已启用");
 
             // 检查缓存类型配置
-            boolean stringCacheEnabled = GlobalCache.key().enableKeyTypeCache(
-                KeyTypeEnum.STRING);
-            boolean hashCacheEnabled = GlobalCache.key().enableKeyTypeCache(
-                KeyTypeEnum.HASH);
+            boolean stringCacheEnabled = infra.enableKeyTypeCache(KeyTypeEnum.STRING);
+            boolean hashCacheEnabled = infra.enableKeyTypeCache(KeyTypeEnum.HASH);
 
             if (stringCacheEnabled) {
                 log.info("✅ STRING 类型缓存已启用（文件存在性、文件内容缓存）");
@@ -92,17 +99,24 @@ public class CacheConfigurationChecker {
      */
     public void logCacheStatus() {
         log.info("=== 当前缓存状态 ===");
-        log.info("二级缓存启用状态: {}", GlobalCache.key().enableL2Caching());
-        log.info("STRING 缓存启用状态: {}",
-            GlobalCache.key().enableKeyTypeCache(KeyTypeEnum.STRING));
-        log.info("HASH 缓存启用状态: {}",
-            GlobalCache.key().enableKeyTypeCache(KeyTypeEnum.HASH));
+        CacheInfrastructure infra = resolveCacheInfrastructure();
+        if (infra == null) {
+            log.warn("无法获取缓存基础设施信息");
+            return;
+        }
+        log.info("二级缓存启用状态: {}", infra.enableL2Caching());
+        log.info("STRING 缓存启用状态: {}", infra.enableKeyTypeCache(KeyTypeEnum.STRING));
+        log.info("HASH 缓存启用状态: {}", infra.enableKeyTypeCache(KeyTypeEnum.HASH));
 
         try {
-            String connectionInfo = GlobalCache.key().getConnectionString();
-            log.info("Redis 连接信息: {}", connectionInfo);
+            log.info("Redis 连接信息: {}", infra.getConnectionString());
         } catch (Exception e) {
             log.warn("无法获取 Redis 连接信息: {}", e.getMessage());
         }
+    }
+
+    private static CacheInfrastructure resolveCacheInfrastructure() {
+        KeyOps keyOps = GlobalCache.key();
+        return keyOps instanceof CacheInfrastructure ci ? ci : null;
     }
 }

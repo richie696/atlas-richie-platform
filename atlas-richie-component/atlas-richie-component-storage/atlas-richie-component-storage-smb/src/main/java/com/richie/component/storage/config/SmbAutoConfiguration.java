@@ -4,6 +4,8 @@ import org.codelibs.jcifs.smb.CIFSContext;
 import org.codelibs.jcifs.smb.CIFSException;
 import org.codelibs.jcifs.smb.config.PropertyConfiguration;
 import org.codelibs.jcifs.smb.context.BaseContext;
+import org.codelibs.jcifs.smb.context.SingletonContext;
+import org.codelibs.jcifs.smb.impl.NtlmPasswordAuthenticator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -35,15 +37,15 @@ public class SmbAutoConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.storage.smb3", name = "enable", havingValue = "true")
     public CIFSContext cifsContext(StorageProperties properties) throws CIFSException {
+        var smb3 = properties.getSmb3();
         var ps = new Properties();
-        ps.setProperty("jcifs.smb.client.domain", properties.getSmb3().getDomain());
-        ps.setProperty("jcifs.smb.client.username", properties.getSmb3().getUsername());
-        ps.setProperty("jcifs.smb.client.password", properties.getSmb3().getPassword());
-        ps.setProperty("jcifs.smb.client.dfs.disabled", Boolean.toString(properties.getSmb3().isDfs()));
-        ps.setProperty("jcifs.smb.client.dfs.ttl", properties.getSmb3().getDfsTtl().toString());
-        ps.setProperty("jcifs.smb.client.dfs.strictView", Boolean.toString(properties.getSmb3().isStrictView()));
-        ps.setProperty("jcifs.smb.client.dfs.convertToFQDN", Boolean.toString(properties.getSmb3().isConvertToFQDN()));
-        return new BaseContext(new PropertyConfiguration(ps));
+        ps.setProperty("jcifs.smb.client.dfs.disabled", Boolean.toString(smb3.isDfs()));
+        ps.setProperty("jcifs.smb.client.dfs.ttl", smb3.getDfsTtl().toString());
+        ps.setProperty("jcifs.smb.client.dfs.strictView", Boolean.toString(smb3.isStrictView()));
+        ps.setProperty("jcifs.smb.client.dfs.convertToFQDN", Boolean.toString(smb3.isConvertToFQDN()));
+        var baseContext = new BaseContext(new PropertyConfiguration(ps));
+        var auth = new NtlmPasswordAuthenticator("WORKGROUP", smb3.getUsername(), smb3.getPassword());
+        return baseContext.withCredentials(auth);
     }
 
 }

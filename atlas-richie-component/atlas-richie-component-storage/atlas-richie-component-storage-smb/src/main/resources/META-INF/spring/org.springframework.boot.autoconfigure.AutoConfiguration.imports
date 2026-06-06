@@ -1,1 +1,1 @@
-config.com.richie.component.storage.AzureBlobAutoConfiguration
+com.richie.component.storage.config.SmbAutoConfiguration

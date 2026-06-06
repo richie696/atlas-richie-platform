@@ -122,19 +122,23 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
         String cachedContent = GlobalCache.value().get(cacheKey, String.class);
         if (cachedContent != null) {
             try {
-                var success = new DownloadResponse<T>()
-                        .setData(JsonUtils.getInstance().deserialize(cachedContent, typeReference));
-                success.setSuccess(true)
-                        .setKey(key)
-                        .setVersionId(UUID.randomUUID().toString().replace("-", ""))
-                        .setContentMD5(HashUtils.md5(cachedContent))
-                        .setContentType("application/json")
-                        .setContentEncoding(StandardCharsets.UTF_8.name());
-                return success;
+                T data = JsonUtils.getInstance().deserialize(cachedContent, typeReference);
+                if (data != null) {
+                    var success = new DownloadResponse<T>()
+                            .setData(data);
+                    success.setSuccess(true)
+                            .setKey(key)
+                            .setVersionId(UUID.randomUUID().toString().replace("-", ""))
+                            .setContentMD5(HashUtils.md5(cachedContent))
+                            .setContentType("application/json")
+                            .setContentEncoding(StandardCharsets.UTF_8.name());
+                    return success;
+                }
             } catch (Exception e) {
                 log.warn("Failed to deserialize cached content for key: {}", key, e);
-                // 缓存数据损坏，继续从文件系统读取
             }
+            log.warn("Corrupted cache or deserialization failed for key: {}, falling back to filesystem", key);
+            // 缓存数据损坏，继续从文件系统读取
         }
 
         // 2. 从文件系统读取
@@ -304,7 +308,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
                                 .key(key)
                                 .versionId(UUID.randomUUID().toString().replace("-", ""))
                                 .hashValue(hashValue)
-                                .uploadTime(OffsetDateTime.from(LocalDateTime.now()))
+                                .uploadTime(OffsetDateTime.now())
                                 .build();
                     }
                 }
@@ -332,7 +336,7 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
                     .key(key)
                     .versionId(UUID.randomUUID().toString().replace("-", ""))
                     .hashValue(hashValue)
-                    .uploadTime(OffsetDateTime.from(LocalDateTime.now()))
+                    .uploadTime(OffsetDateTime.now())
                     .build();
         } catch (IOException e) {
             log.error("Write file error.", e);

@@ -67,8 +67,7 @@ public final class MinioStorageEngine extends AbstractObjectStorageEngine<MinioA
                     .uploadTime(OffsetDateTime.now())
                     .url("https://" + getBucketName() + "." + objectConfig().getEndpoint() + "/" + key)
                     .build();
-        } catch (IOException | InsufficientDataException | NoSuchAlgorithmException | InvalidKeyException |
-                 XmlParserException | InternalException | ExecutionException | InterruptedException e) {
+        } catch (Exception e) {
             return UploadResponse.builder()
                     .success(false)
                     .errorMessage(e.getMessage())
@@ -108,8 +107,7 @@ public final class MinioStorageEngine extends AbstractObjectStorageEngine<MinioA
                     .uploadTime(OffsetDateTime.now())
                     .url("https://" + getBucketName() + "." + objectConfig().getEndpoint() + "/" + key)
                     .build();
-        } catch (IOException | InsufficientDataException | NoSuchAlgorithmException | InvalidKeyException |
-                 XmlParserException | InternalException | ExecutionException | InterruptedException e) {
+        } catch (Exception e) {
             return UploadResponse.builder()
                     .success(false)
                     .errorMessage(e.getMessage())

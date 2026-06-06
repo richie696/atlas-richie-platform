@@ -59,7 +59,7 @@ public final class SmbStorageEngine implements StorageEngine {
             return ok(key);
         } catch (Exception e) {
             log.error("Failed to upload file to SMB: key={}", key, e);
-            return fail(e);
+            return fail(key, e);
         }
     }
 
@@ -71,7 +71,7 @@ public final class SmbStorageEngine implements StorageEngine {
             return ok(key);
         } catch (Exception e) {
             log.error("Failed to upload stream to SMB: key={}", key, e);
-            return fail(e);
+            return fail(key, e);
         }
     }
 
@@ -160,7 +160,9 @@ public final class SmbStorageEngine implements StorageEngine {
         var base = cfg.getBasePath();
         if (!base.startsWith("/")) base = "/" + base;
         if (!base.endsWith("/")) base = base + "/";
-        return "smb://" + cfg.getDomain() + base + key;
+        var host = cfg.getDomain();
+        if (host == null || host.isBlank()) host = "localhost";
+        return "smb://" + host + base + key;
     }
 
     private UploadResponse upload(String key, byte[] serialized) {
@@ -200,9 +202,9 @@ public final class SmbStorageEngine implements StorageEngine {
                 .build();
     }
 
-    private static UploadResponse fail(Exception e) {
+    private static UploadResponse fail(String key, Exception e) {
         return UploadResponse.builder()
-                .success(false).errorMessage(e.getMessage())
+                .success(false).errorMessage(e.getMessage()).key(key)
                 .build();
     }
 

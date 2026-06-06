@@ -1,11 +1,13 @@
 package com.richie.component.storage.local.config;
 
+import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.richie.component.liquibase.migration.ChangeLogRegistry;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 
 /**
  * 本地存储自动装配
@@ -19,6 +21,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
  */
 @Slf4j
 @AutoConfiguration
+@AutoConfigureAfter(MybatisPlusAutoConfiguration.class)
 @RequiredArgsConstructor
 @MapperScan("com.richie.component.storage.local.repository.mapper")
 public class LocalStorageAutoConfiguration {
