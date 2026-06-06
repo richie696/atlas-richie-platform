@@ -17,6 +17,14 @@
 
     <properties>
         <solr-solrj.version>9.9.0</solr-solrj.version>
+        <!--
+            锁定 elasticsearch-java 到 9.2.x：spring-data-elasticsearch 6.0.5 字节码调用
+            IndexRequest$Builder.routing(String) 单参数版本，该方法在 9.3+ 被改为
+            routing(String, String...) varargs 形式。Spring Boot 4.0.6 BOM 默认拉取
+            elasticsearch-java 9.4.1，导致 NoSuchMethodError。
+            9.2.x 仍能与 Testcontainers 的 ES 9.4.1 服务器进行基础 CRUD / 搜索交互。
+        -->
+        <elasticsearch-java.version>9.2.2</elasticsearch-java.version>
     </properties>
 
     <dependencies>
@@ -24,6 +32,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
             <!-- 移除 optional 标签以确保依赖被引入 -->
+        </dependency>
+        <!--
+            显式覆盖 spring-boot 4.0.6 BOM 引入的 elasticsearch-java 9.4.1，
+            锁定为 9.2.x 以兼容 spring-data-elasticsearch 6.0.5。
+        -->
+        <dependency>
+            <groupId>co.elastic.clients</groupId>
+            <artifactId>elasticsearch-java</artifactId>
+            <version>${elasticsearch-java.version}</version>
         </dependency>
         <dependency>
             <groupId>io.projectreactor</groupId>
@@ -53,6 +70,9 @@
                 <configuration>
                     <includes>
                         <include>com/richie/component/search/util/ConditionUtils*</include>
+                        <include>com/richie/component/search/util/NativeQueryParser*</include>
+                        <include>com/richie/component/search/util/LambdaUtils*</include>
+                        <include>com/richie/component/search/service/impl/ElasticSearchServiceImpl*</include>
                     </includes>
                     <rules>
                         <rule>
@@ -73,6 +93,9 @@
                         <configuration>
                             <includes>
                                 <include>com/richie/component/search/util/ConditionUtils*</include>
+                                <include>com/richie/component/search/util/NativeQueryParser*</include>
+                                <include>com/richie/component/search/util/LambdaUtils*</include>
+                                <include>com/richie/component/search/service/impl/ElasticSearchServiceImpl*</include>
                             </includes>
                             <rules>
                                 <rule>
