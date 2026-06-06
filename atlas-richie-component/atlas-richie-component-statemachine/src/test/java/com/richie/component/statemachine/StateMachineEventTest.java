@@ -56,5 +56,39 @@ class StateMachineEventTest {
 
         assertEquals(event1.hashCode(), event2.hashCode());
     }
+
+    @Test
+    void testEnumEvent_getEvent() {
+        StateMachineEvent.EnumEvent event = new StateMachineEvent.EnumEvent(TestEvent.CONFIRM);
+        assertEquals(TestEvent.CONFIRM, event.getEvent());
+    }
+
+    @Test
+    void testEnumEvent_toString() {
+        StateMachineEvent.EnumEvent event = new StateMachineEvent.EnumEvent(TestEvent.CONFIRM);
+        assertEquals("EnumEvent{event=CONFIRM}", event.toString());
+    }
+
+    @Test
+    void testEnumEvent_equals_DifferentEvent() {
+        StateMachineEvent.EnumEvent event1 = new StateMachineEvent.EnumEvent(TestEvent.CONFIRM);
+        StateMachineEvent.EnumEvent event2 = new StateMachineEvent.EnumEvent(TestEvent.CANCEL);
+
+        assertNotEquals(event1, event2);
+    }
+
+    @Test
+    void testEnumEvent_equals_NullAndDifferentClass() {
+        StateMachineEvent.EnumEvent event = new StateMachineEvent.EnumEvent(TestEvent.CONFIRM);
+
+        assertNotEquals(event, null);
+        assertNotEquals(event, "CONFIRM");
+    }
+
+    @Test
+    void testStringEvent_toString() {
+        StateMachineEvent.StringEvent event = new StateMachineEvent.StringEvent("CONFIRM");
+        assertEquals("StringEvent{eventName='CONFIRM'}", event.toString());
+    }
 }
 

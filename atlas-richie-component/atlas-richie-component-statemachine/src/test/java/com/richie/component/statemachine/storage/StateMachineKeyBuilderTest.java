@@ -5,6 +5,9 @@ import com.richie.component.statemachine.config.properties.RedisStreamConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class StateMachineKeyBuilderTest {
@@ -47,5 +50,58 @@ class StateMachineKeyBuilderTest {
 
         assertThat(customBuilder.getKeyPrefix()).isEqualTo("custom:prefix");
         assertThat(customBuilder.buildDbSyncStreamKey()).isEqualTo("custom:prefix:db:sync");
+    }
+
+    @Test
+    void getKeyPrefix_shouldReturnDefaultWhenNull() {
+        StateMachineProperties properties = new StateMachineProperties();
+        RedisStreamConfig redisStream = new RedisStreamConfig();
+        redisStream.setKeyPrefix(null);
+        properties.setRedisStream(redisStream);
+        StateMachineKeyBuilder customBuilder = new StateMachineKeyBuilder(properties);
+
+        assertThat(customBuilder.getKeyPrefix()).isEqualTo("platform:statemachine");
+    }
+
+    @Test
+    void buildHistoryKey_shouldUseCreateTimeEpoch() {
+        LocalDateTime createTime = LocalDateTime.ofEpochSecond(1700000000L, 0, ZoneOffset.UTC);
+        assertThat(keyBuilder.buildHistoryKey("order", 42L, createTime))
+                .isEqualTo("platform:statemachine:history:order:42:1700000000");
+    }
+
+    @Test
+    void buildHistoryKey_shouldFallbackToCurrentTimeMillisWhenCreateTimeIsNull() {
+        long before = System.currentTimeMillis();
+        String key = keyBuilder.buildHistoryKey("order", 42L, null);
+        long after = System.currentTimeMillis();
+
+        assertThat(key).startsWith("platform:statemachine:history:order:42:");
+        long timestamp = Long.parseLong(key.substring("platform:statemachine:history:order:42:".length()));
+        assertThat(timestamp).isBetween(before, after);
+    }
+
+    @Test
+    void buildDbSyncQueueKey_shouldFollowConvention() {
+        assertThat(keyBuilder.buildDbSyncQueueKey())
+                .isEqualTo("platform:statemachine:db:sync:queue");
+    }
+
+    @Test
+    void buildDbSyncSetKey_shouldFollowConvention() {
+        assertThat(keyBuilder.buildDbSyncSetKey())
+                .isEqualTo("platform:statemachine:db:sync:set");
+    }
+
+    @Test
+    void buildDbSyncLockKey_shouldFollowConvention() {
+        assertThat(keyBuilder.buildDbSyncLockKey())
+                .isEqualTo("platform:statemachine:db:sync:lock");
+    }
+
+    @Test
+    void buildSeqKey_shouldFollowConvention() {
+        assertThat(keyBuilder.buildSeqKey("order", 42L))
+                .isEqualTo("platform:statemachine:seq:order:42");
     }
 }

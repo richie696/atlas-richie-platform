@@ -206,5 +206,49 @@ class StateTransitionRuleTest {
         rule = new StateTransitionRule(transition, nonContext);
         assertFalse(rule.when());
     }
+
+    @Test
+    void testEvaluateCondition_BlankCondition() {
+        ExpressionConfigHolder.setConfig(null);
+
+        transition.setCondition(null);
+        rule = new StateTransitionRule(transition, context);
+        assertTrue(rule.when());
+
+        transition.setCondition("");
+        rule = new StateTransitionRule(transition, context);
+        assertTrue(rule.when());
+
+        transition.setCondition("   ");
+        rule = new StateTransitionRule(transition, context);
+        assertTrue(rule.when());
+    }
+
+    @Test
+    void testExecuteAction_UnsafeExpression() {
+        RulesEngineConfig.ExpressionConfig config = new RulesEngineConfig.ExpressionConfig();
+        config.setEnableSecurityCheck(true);
+        ExpressionConfigHolder.setConfig(config);
+
+        transition.setAction("Runtime.getRuntime().exec('rm -rf /')");
+        rule = new StateTransitionRule(transition, context);
+        rule.then();
+
+        assertEquals("CONFIRMED", context.getCurrentState());
+        assertNull(context.getAttribute("executed"));
+    }
+
+    @Test
+    void testExecuteAction_InvalidExpression() {
+        RulesEngineConfig.ExpressionConfig config = new RulesEngineConfig.ExpressionConfig();
+        config.setEnableSecurityCheck(false);
+        ExpressionConfigHolder.setConfig(config);
+
+        transition.setAction("this is :: not :: a valid mvel expression !!!");
+        rule = new StateTransitionRule(transition, context);
+        rule.then();
+
+        assertEquals("CONFIRMED", context.getCurrentState());
+    }
 }
 
