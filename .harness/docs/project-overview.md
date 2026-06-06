@@ -11,7 +11,7 @@
 | 项目 | 值 | 备注 |
 |---|---|---|
 | JDK | 25 | surefire/failsafe argLine 中启用 preview features |
-| Spring Boot | `4.1.0-RC1` | README 写的是 `4.0.5`——错了。永远引用 pom。 |
+| Spring Boot | `4.0.6` | README 写的是 `4.0.5`——错了。永远引用 pom。 |
 | Spring Cloud | `2025.1.1` | |
 | Spring Cloud Alibaba | `2025.1.0.0` | |
 | Spring Cloud Azure | `7.0.0` | |
@@ -80,7 +80,7 @@ atlas-richie-platform/                          (parent pom, packaging=pom)
 
 - Maven 多模块，parent BOM 控制所有版本
 - `${revision}` 占位符 + `flatten-maven-plugin`（OSS flatten 模式）
-- Spring Boot 4.1.0-RC1，JDK 25 加 `--enable-preview`
+- Spring Boot 4.0.6，JDK 25 加 `--enable-preview`
 - `*IT.java` / `*ITCase.java` / `*IntegrationTest.java` → failsafe
 - `*Test.java`（其他）→ surefire
 - License: Apache 2.0，header 由 `license-maven-plugin` 管理

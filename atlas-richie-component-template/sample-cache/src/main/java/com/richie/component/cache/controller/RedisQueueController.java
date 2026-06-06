@@ -1,7 +1,7 @@
 package com.richie.component.cache.controller;
 
+import com.richie.component.cache.GlobalCache;
 import com.richie.contract.model.ApiResult;
-import com.richie.component.redis.streammq.StreamMQ;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +16,7 @@ public class RedisQueueController {
 
     @PostMapping("/send")
     public ApiResult<?> send(@RequestBody MessageData data) {
-        Long count = StreamMQ.messaging().publish(data.topic, data.message);
+        Long count = GlobalCache.notification().publish(data.topic, data.message);
         return ApiResult.success(count);
     }
 }

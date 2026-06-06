@@ -20,6 +20,10 @@
         </dependency>
         <dependency>
             <groupId>com.richie.component</groupId>
+            <artifactId>atlas-richie-component-redis-streammq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.richie.component</groupId>
             <artifactId>atlas-richie-component-web</artifactId>
         </dependency>
     </dependencies>

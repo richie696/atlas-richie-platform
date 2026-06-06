@@ -21,4 +21,21 @@ public final class TestEnv {
         }
         return null;
     }
+
+    /** 按 env 变量名、系统属性名顺序解析第一个非空值，最后回退 defaults。 */
+    public static String firstResolved(String[] envKeys, String[] propertyKeys, String... defaults) {
+        for (String envKey : envKeys) {
+            String value = System.getenv(envKey);
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        for (String propertyKey : propertyKeys) {
+            String value = System.getProperty(propertyKey);
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return firstNonBlank(defaults);
+    }
 }

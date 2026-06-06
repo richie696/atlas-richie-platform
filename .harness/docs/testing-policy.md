@@ -16,7 +16,7 @@
 
 ## 框架默认
 
-- **JUnit 5**（Spring Boot 4.1.0-RC1 默认）
+- **JUnit 5**（Spring Boot 4.0.6 默认）
 - 模块已用 AssertJ 就用 AssertJ；否则用普通 JUnit `Assertions` 即可
 - **Mockito** 做 Mock（Spring Boot starter 自带）
 - **Spring Test** 做 `@SpringBootTest` / `@SpringJUnitConfig`

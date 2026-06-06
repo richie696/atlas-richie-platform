@@ -31,6 +31,12 @@ public final class GenericRedisIntegrationTestSupport implements RedisIntegratio
                 externalDefaultDatabase,
                 unavailableMessage,
                 envPrefixes);
+        return wrap(delegate, extraContributor);
+    }
+
+    public static GenericRedisIntegrationTestSupport wrap(
+            RedisContainerSupport delegate,
+            PropertyContributor extraContributor) {
         return new GenericRedisIntegrationTestSupport(delegate, extraContributor);
     }
 

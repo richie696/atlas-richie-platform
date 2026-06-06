@@ -19,7 +19,7 @@ spring:
             # Redis客户端类型
             client-type: lettuce
             # Redis 主机地址
-            host: 10.100.0.90
+            host: localhost
             # Redis 主机端口
             port: 16379
             # Redis 主机密码
@@ -54,15 +54,6 @@ spring:
                 cluster:
                     # 集群状态刷新配置
                     refresh:
-                        # 该配置位于Spring Boot Redis Lettuce客户端的集群刷新配置中，它控制是否启用自适应集群拓扑刷新。
-                        #
-                        # 当这个选项设置为true时，Lettuce客户端将启用自适应拓扑刷新功能，这意味着它会使用所有可用的刷新
-                        # 触发器来自动更新Redis集群的拓扑结构。在实际应用中，这使得客户端能够在以下情况下自动刷新集群拓扑信息：
-                        #   * 当收到Redis集群节点变更的通知时
-                        #   * 当出现集群重定向错误（MOVED/ASK重定向）时
-                        #   * 当定期刷新时间到达时（由period参数控制）
-                        #   * 这个功能对于维护与Redis集群的可靠连接非常重要，特别是在集群节点发生变化时（如添加新节点、节点故障转移等场景），能够确保客户端及时获取最新的集群拓扑结构。
-                        adaptive: true
                         # 主动刷新的间隔时间
                         period: 30s
                         # 在 Spring Boot Redis Lettuce 客户端配置中，dynamic-refresh-sources 参数控制集群拓扑刷新的节点来源。

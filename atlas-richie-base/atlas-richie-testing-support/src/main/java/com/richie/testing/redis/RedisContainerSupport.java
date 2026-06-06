@@ -80,18 +80,20 @@ public final class RedisContainerSupport {
                             + "Install Docker Desktop / enable CI dind.");
         }
 
-        if (dockerAvailable) {
-            return startTestcontainers(image, externalDefaultDatabase, unavailableMessage, envPrefixes);
-        }
-
-        if (IntegrationTestPolicy.useExternal(envPrefixes)) {
+        if (preferExternal(envPrefixes)) {
             RedisContainerSupport external = resolveExternal(envPrefixes, externalDefaultDatabase, unavailableMessage);
             if (external != null) {
                 return external;
             }
-            throw new IllegalStateException(
-                    "IT_USE_EXTERNAL=true but no Redis connection configured. "
-                            + "Set REDIS_IT_HOST/PORT/PASSWORD or legacy CACHE_IT_REDIS_* variables.");
+            if (IntegrationTestPolicy.useExternal(envPrefixes) || hasExplicitConfig(envPrefixes)) {
+                throw new IllegalStateException(
+                        "IT_USE_EXTERNAL=true but no Redis connection configured. "
+                                + "Set REDIS_IT_HOST/PORT/PASSWORD or legacy CACHE_IT_REDIS_* variables.");
+            }
+        }
+
+        if (dockerAvailable) {
+            return startTestcontainers(image, externalDefaultDatabase, unavailableMessage, envPrefixes);
         }
 
         return new RedisContainerSupport(
@@ -102,6 +104,29 @@ public final class RedisContainerSupport {
                 ContainerMode.UNAVAILABLE,
                 unavailableMessage,
                 null, null, 0, null, 0, null);
+    }
+
+    /** 连接本机已有 Redis（如 docker-compose 映射端口）。 */
+    public static RedisContainerSupport externalConnection(
+            String host,
+            int port,
+            String password,
+            int database,
+            String unavailableMessage,
+            String... envPrefixes) {
+        return new RedisContainerSupport(
+                envPrefixes,
+                imagePlaceholder(),
+                database,
+                unavailableMessage,
+                ContainerMode.EXTERNAL,
+                null,
+                null,
+                host,
+                port,
+                password,
+                database,
+                null);
     }
 
     public boolean isAvailable() {
@@ -135,6 +160,7 @@ public final class RedisContainerSupport {
         } else if (host != null) {
             pairs.add("spring.data.redis.host=" + host);
             pairs.add("spring.data.redis.port=" + port);
+            pairs.add("spring.data.redis.url=redis://" + host + ":" + port);
             if (password != null && !password.isBlank()) {
                 pairs.add("spring.data.redis.password=" + password);
             }
@@ -238,7 +264,14 @@ public final class RedisContainerSupport {
                 "REDIS_DATABASE",
                 "redis.database",
                 String.valueOf(externalDefaultDatabase));
-        return Integer.parseInt(Objects.requireNonNull(raw));
+        if (raw == null) {
+            return externalDefaultDatabase;
+        }
+        try {
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException ignored) {
+            return externalDefaultDatabase;
+        }
     }
 
     private static String firstEnv(String[] envPrefixes, String suffix, String propertySuffix, String... defaults) {
@@ -250,13 +283,10 @@ public final class RedisContainerSupport {
         }
         envKeys.add("REDIS_IT_" + suffix);
         propertyKeys.add("redis.it." + propertySuffix);
-        String[] envCandidates = envKeys.toArray(String[]::new);
-        String[] propertyCandidates = propertyKeys.toArray(String[]::new);
-        String[] all = new String[envCandidates.length + propertyCandidates.length + defaults.length];
-        System.arraycopy(envCandidates, 0, all, 0, envCandidates.length);
-        System.arraycopy(propertyCandidates, 0, all, envCandidates.length, propertyCandidates.length);
-        System.arraycopy(defaults, 0, all, envCandidates.length + propertyCandidates.length, defaults.length);
-        return TestEnv.firstNonBlank(all);
+        return TestEnv.firstResolved(
+                envKeys.toArray(String[]::new),
+                propertyKeys.toArray(String[]::new),
+                defaults);
     }
 
     private static String firstEnv(String[] envPrefixes, String suffix, String propertySuffix) {
@@ -269,5 +299,15 @@ public final class RedisContainerSupport {
 
     private static DockerImageName imagePlaceholder() {
         return DockerImageName.parse("redis:7-alpine");
+    }
+
+    private static boolean preferExternal(String[] envPrefixes) {
+        return IntegrationTestPolicy.useExternal(envPrefixes)
+                || hasExplicitConfig(envPrefixes);
+    }
+
+    private static boolean hasExplicitConfig(String[] envPrefixes) {
+        return firstEnv(envPrefixes, "REDIS_URL", "redis.url") != null
+                || firstEnv(envPrefixes, "REDIS_HOST", "redis.host") != null;
     }
 }

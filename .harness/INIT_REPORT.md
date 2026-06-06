@@ -63,7 +63,7 @@
 
 ### 1. `pom.xml` 是版本数据的唯一真相
 
-任务描述和 README 都写的是 `Spring Boot 4.0.6`（README.zh.md 里甚至是 `4.0.5`）。实际的 `pom.xml` 写的是 `4.1.0-RC1`。这与用户的规则一致：**始终以构建清单为准，而非文档**。`project-overview.md`、`code-reviewer` 规则 9、`platform-developer` 的 prompt 都强化了这一点。
+任务描述和 README 都写的是 `Spring Boot 4.0.6`（README.zh.md 里甚至是 `4.0.5`）。实际的 `pom.xml` 写的是 `4.0.6`。这与用户的规则一致：**始终以构建清单为准，而非文档**。`project-overview.md`、`code-reviewer` 规则 9、`platform-developer` 的 prompt 都强化了这一点。
 
 ### 2. `MigrationWindow` 被编纂为规则，而非行为
 
@@ -83,7 +83,7 @@
 
 ## 对项目的观察
 
-- **技术栈非常前沿**：JDK 25 + Spring Boot 4.1.0-RC1 + Spring AI 2.0.0-M8。用户明确运行 SNAPSHOT 约 8 个月后才升到 RELEASE。这影响版本依赖更新的风险承受度。
+- **技术栈非常前沿**：JDK 25 + Spring Boot 4.0.6 + Spring AI 2.0.0-M8。用户明确运行 SNAPSHOT 约 8 个月后才升到 RELEASE。这影响版本依赖更新的风险承受度。
 - **CI 测试门禁缺失**：`.github/workflows/ci.yml` 运行 `mvn verify -DskipTests`。jacoco 50% 最低覆盖率已定义但未绑定到 `verify`，实际上不生效。补上这个缺口对 `component-tester` 是一个真实的机会。
 - **dependabot 活跃度高**：约每周一个 PR 做依赖更新。`release-workflow.md` 文档覆盖了更新协议。
 - **两个活跃分支**：`master`（SNAPSHOT 主线，快速迭代）和 `feature/migration-window-guard`（进行中的 worktree，本次 bootstrap 未触碰）。
