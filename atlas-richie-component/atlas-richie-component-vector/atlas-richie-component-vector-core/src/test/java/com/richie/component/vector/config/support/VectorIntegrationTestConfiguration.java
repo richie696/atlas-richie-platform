@@ -1,13 +1,10 @@
 package com.richie.component.vector.config.support;
 
+import com.richie.component.vector.config.VectorProperties;
 import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootConfiguration
-@EnableAutoConfiguration
-@Import({
-        com.richie.component.vector.config.VectorAutoConfiguration.class,
-})
+@EnableConfigurationProperties(VectorProperties.class)
 public class VectorIntegrationTestConfiguration {
 }

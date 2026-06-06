@@ -5,7 +5,8 @@ public final class VectorIntegrationTestSupport {
     private VectorIntegrationTestSupport() {
     }
 
-    public static boolean isEnabled() {
+    /** JUnit {@code @EnabledIf} 入口（配置绑定 IT 无需 Docker）。 */
+    public static boolean integrationTestsEnabled() {
         return true;
     }
 }

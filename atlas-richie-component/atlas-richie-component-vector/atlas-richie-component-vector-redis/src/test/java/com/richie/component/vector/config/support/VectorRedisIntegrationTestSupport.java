@@ -10,7 +10,7 @@ import java.util.List;
 public final class VectorRedisIntegrationTestSupport implements RedisIntegrationTestAccess {
 
     private static final GenericRedisIntegrationTestSupport DELEGATE = GenericRedisIntegrationTestSupport.create(
-            DockerImageName.parse("redis:7-alpine"),
+            DockerImageName.parse("redis/redis-stack-server:7.4.0-v1"),
             15,
             "Redis 集成测试需要 Docker。参见 atlas-richie-testing-support/README.md",
             VectorRedisIntegrationTestSupport::appendComponentProperties,

@@ -15,6 +15,6 @@ import java.lang.annotation.Target;
 @Inherited
 @SpringBootTest(classes = VectorIntegrationTestConfiguration.class)
 @ContextConfiguration(initializers = VectorRedisIntegrationTestInitializer.class)
-@EnabledIf("com.richie.component.vector.config.support.VectorRedisIntegrationTestSupport#isEnabled")
+@EnabledIf("com.richie.component.vector.config.support.VectorRedisIntegrationTestSupport#integrationTestsEnabled")
 public @interface VectorRedisIntegrationTest {
 }

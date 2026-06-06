@@ -1,0 +1,9 @@
+platform:
+  component:
+    vector:
+      provider: redis
+      default-index: it-documents
+      indexes:
+        it-documents:
+          name: it-documents
+          dimension: 3

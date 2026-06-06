@@ -16,6 +16,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 @ExtendWith(MockitoExtension.class)
 class VectorMultiProviderGuardTest {
@@ -30,10 +31,9 @@ class VectorMultiProviderGuardTest {
 
         when(applicationContext.getBeansOfType(VectorService.class)).thenReturn(beans);
 
-        VectorMultiProviderGuard guard = new VectorMultiProviderGuard();
-        guard.guard();
+        VectorMultiProviderGuard guard = newGuard();
 
-        assertDoesNotThrow(() -> guard.guard());
+        assertDoesNotThrow(guard::guard);
     }
 
     @Test
@@ -44,12 +44,12 @@ class VectorMultiProviderGuardTest {
 
         when(applicationContext.getBeansOfType(VectorService.class)).thenReturn(beans);
 
-        VectorMultiProviderGuard guard = new VectorMultiProviderGuard();
+        VectorMultiProviderGuard guard = newGuard();
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, guard::guard);
         assertTrue(exception.getMessage().contains("检测到多个 VectorService 实现被同时引入"));
-        assertTrue(exception.getMessage().contains("RedisVectorServiceImpl"));
-        assertTrue(exception.getMessage().contains("MilvusVectorServiceImpl"));
+        assertTrue(exception.getMessage().contains("redisVectorService"));
+        assertTrue(exception.getMessage().contains("milvusVectorService"));
     }
 
     @Test
@@ -61,12 +61,18 @@ class VectorMultiProviderGuardTest {
 
         when(applicationContext.getBeansOfType(VectorService.class)).thenReturn(beans);
 
-        VectorMultiProviderGuard guard = new VectorMultiProviderGuard();
+        VectorMultiProviderGuard guard = newGuard();
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, guard::guard);
-        assertTrue(exception.getMessage().contains("RedisVectorServiceImpl"));
-        assertTrue(exception.getMessage().contains("MilvusVectorServiceImpl"));
-        assertTrue(exception.getMessage().contains("Neo4jVectorServiceImpl"));
+        assertTrue(exception.getMessage().contains("redisVectorService"));
+        assertTrue(exception.getMessage().contains("milvusVectorService"));
+        assertTrue(exception.getMessage().contains("neo4jVectorService"));
+    }
+
+    private VectorMultiProviderGuard newGuard() {
+        VectorMultiProviderGuard guard = new VectorMultiProviderGuard();
+        setField(guard, "applicationContext", applicationContext);
+        return guard;
     }
 
     private static class TestVectorServiceImpl implements VectorService {

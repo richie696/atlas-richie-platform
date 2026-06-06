@@ -13,6 +13,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @SpringBootTest(classes = VectorIntegrationTestConfiguration.class)
-@EnabledIf("com.richie.component.vector.config.support.VectorIntegrationTestSupport#isEnabled")
+@EnabledIf("com.richie.component.vector.config.support.VectorIntegrationTestSupport#integrationTestsEnabled")
 public @interface VectorIntegrationTest {
 }

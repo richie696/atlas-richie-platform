@@ -7,6 +7,7 @@ import com.richie.component.vector.model.VectorSearchResult;
 import com.richie.component.vector.service.VectorService;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.qdrant.client.QdrantClient;
+import io.qdrant.client.grpc.Common;
 import io.qdrant.client.grpc.Points;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -193,7 +194,7 @@ public class QdRantVectorServiceImpl extends VectorServiceImpl implements Vector
                     .setCollectionName(indexName)
                     .setLimit(limit)
                     // 首次查询offset为null，后续使用lastId作为游标
-                    .setOffset(lastId != null ? Points.PointId.newBuilder().setNum(lastId).build() : null)
+                    .setOffset(lastId != null ? Common.PointId.newBuilder().setNum(lastId).build() : null)
                     .setWithVectors(withVectorsSelector)
                     .build();
 
