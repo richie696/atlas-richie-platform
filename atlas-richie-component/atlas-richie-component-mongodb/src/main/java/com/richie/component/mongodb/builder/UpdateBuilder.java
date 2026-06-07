@@ -2,6 +2,10 @@ package com.richie.component.mongodb.builder;
 
 import com.richie.component.mongodb.core.AuditContext;
 import com.richie.component.mongodb.core.EntityIntrospector;
+import com.richie.component.mongodb.observability.MongodbMetricsRecorder;
+import com.richie.component.mongodb.observability.MongodbSlowQueryLogger;
+import com.richie.component.mongodb.observability.MongodbTracing;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -14,6 +18,9 @@ public class UpdateBuilder<T> {
     private final Class<T> entityClass;
     private final MongoTemplate mongoTemplate;
     private final EntityIntrospector entityIntrospector;
+    private final MongodbTracing tracing;
+    private final MongodbMetricsRecorder metricsRecorder;
+    private final MongodbSlowQueryLogger slowQueryLogger;
     private final Query query = new Query();
     private Criteria criteria;
     private boolean criteriaStarted;
@@ -22,14 +29,28 @@ public class UpdateBuilder<T> {
     private final AuditContext auditContext;
 
     public UpdateBuilder(Class<T> entityClass, MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector) {
-        this(entityClass, mongoTemplate, entityIntrospector, new AuditContext());
+        this(entityClass, mongoTemplate, entityIntrospector, new AuditContext(), null, null, null);
     }
 
     public UpdateBuilder(Class<T> entityClass, MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector, AuditContext auditContext) {
+        this(entityClass, mongoTemplate, entityIntrospector, auditContext, null, null, null);
+    }
+
+    public UpdateBuilder(Class<T> entityClass, MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector,
+                         MongodbTracing tracing, MongodbMetricsRecorder metricsRecorder, MongodbSlowQueryLogger slowQueryLogger) {
+        this(entityClass, mongoTemplate, entityIntrospector, new AuditContext(), tracing, metricsRecorder, slowQueryLogger);
+    }
+
+    public UpdateBuilder(Class<T> entityClass, MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector,
+                         AuditContext auditContext, MongodbTracing tracing, MongodbMetricsRecorder metricsRecorder,
+                         MongodbSlowQueryLogger slowQueryLogger) {
         this.entityClass = entityClass;
         this.mongoTemplate = mongoTemplate;
         this.entityIntrospector = entityIntrospector;
         this.auditContext = auditContext;
+        this.tracing = tracing;
+        this.metricsRecorder = metricsRecorder;
+        this.slowQueryLogger = slowQueryLogger;
     }
 
     private String toFieldName(LambdaField<T, ?> field) {
@@ -143,7 +164,27 @@ public class UpdateBuilder<T> {
         used = true;
         if (criteria != null) query.addCriteria(criteria);
         appendAuditFields();
-        return mongoTemplate.updateMulti(query, update, entityClass).getModifiedCount();
+        String collection = entityIntrospector.getCollectionName(entityClass);
+        String statement = query.toString();
+        Timer.Sample sample = metricsRecorder != null ? metricsRecorder.start("update", collection) : null;
+        long start = System.currentTimeMillis();
+        MongodbTracing.TracingScope scope = tracing != null ? MongodbTracing.createSpan("update", collection, statement) : null;
+        try {
+            long result = mongoTemplate.updateMulti(query, update, entityClass).getModifiedCount();
+            if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
+            if (sample != null) metricsRecorder.stop(sample, "update", collection, true);
+            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "update", System.currentTimeMillis() - start);
+            return result;
+        } catch (Throwable t) {
+            if (sample != null) metricsRecorder.stop(sample, "update", collection, false);
+            if (sample != null) metricsRecorder.recordError(t);
+            if (scope != null) {
+                MongodbTracing.recordError(scope.getSpan(), t);
+            }
+            throw t;
+        } finally {
+            if (scope != null) scope.close();
+        }
     }
 
     public T executeAndReturn() {
@@ -151,7 +192,27 @@ public class UpdateBuilder<T> {
         used = true;
         if (criteria != null) query.addCriteria(criteria);
         appendAuditFields();
-        return mongoTemplate.findAndModify(query, update, FindAndModifyOptions.options().returnNew(true), entityClass);
+        String collection = entityIntrospector.getCollectionName(entityClass);
+        String statement = query.toString();
+        Timer.Sample sample = metricsRecorder != null ? metricsRecorder.start("update", collection) : null;
+        long start = System.currentTimeMillis();
+        MongodbTracing.TracingScope scope = tracing != null ? MongodbTracing.createSpan("update", collection, statement) : null;
+        try {
+            T result = mongoTemplate.findAndModify(query, update, FindAndModifyOptions.options().returnNew(true), entityClass);
+            if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
+            if (sample != null) metricsRecorder.stop(sample, "update", collection, true);
+            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "update", System.currentTimeMillis() - start);
+            return result;
+        } catch (Throwable t) {
+            if (sample != null) metricsRecorder.stop(sample, "update", collection, false);
+            if (sample != null) metricsRecorder.recordError(t);
+            if (scope != null) {
+                MongodbTracing.recordError(scope.getSpan(), t);
+            }
+            throw t;
+        } finally {
+            if (scope != null) scope.close();
+        }
     }
 
     private void appendAuditFields() {

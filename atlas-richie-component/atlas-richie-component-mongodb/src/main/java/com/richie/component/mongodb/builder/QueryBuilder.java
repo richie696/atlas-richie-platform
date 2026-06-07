@@ -2,6 +2,10 @@ package com.richie.component.mongodb.builder;
 
 import com.richie.component.mongodb.core.EntityIntrospector;
 import com.richie.component.mongodb.core.TenantContext;
+import com.richie.component.mongodb.observability.MongodbMetricsRecorder;
+import com.richie.component.mongodb.observability.MongodbSlowQueryLogger;
+import com.richie.component.mongodb.observability.MongodbTracing;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -17,6 +21,9 @@ public class QueryBuilder<T> {
     private final Class<T> entityClass;
     private final MongoTemplate mongoTemplate;
     private final EntityIntrospector entityIntrospector;
+    private final MongodbTracing tracing;
+    private final MongodbMetricsRecorder metricsRecorder;
+    private final MongodbSlowQueryLogger slowQueryLogger;
     private final Query query = new Query();
     private Criteria criteria;
     private boolean criteriaStarted = false;
@@ -29,9 +36,17 @@ public class QueryBuilder<T> {
     private boolean ignoreSoftDelete = false;
 
     public QueryBuilder(Class<T> entityClass, MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector) {
+        this(entityClass, mongoTemplate, entityIntrospector, null, null, null);
+    }
+
+    public QueryBuilder(Class<T> entityClass, MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector,
+                        MongodbTracing tracing, MongodbMetricsRecorder metricsRecorder, MongodbSlowQueryLogger slowQueryLogger) {
         this.entityClass = entityClass;
         this.mongoTemplate = mongoTemplate;
         this.entityIntrospector = entityIntrospector;
+        this.tracing = tracing;
+        this.metricsRecorder = metricsRecorder;
+        this.slowQueryLogger = slowQueryLogger;
     }
 
     private String toFieldName(LambdaField<T, ?> field) {
@@ -254,14 +269,53 @@ public class QueryBuilder<T> {
 
     public List<T> list() {
         build();
-        return mongoTemplate.find(query, entityClass);
+        String collection = entityIntrospector.getCollectionName(entityClass);
+        String statement = query.toString();
+        Timer.Sample sample = metricsRecorder != null ? metricsRecorder.start("find", collection) : null;
+        long start = System.currentTimeMillis();
+        MongodbTracing.TracingScope scope = tracing != null ? MongodbTracing.createSpan("find", collection, statement) : null;
+        try {
+            List<T> result = mongoTemplate.find(query, entityClass);
+            if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
+            if (sample != null) metricsRecorder.stop(sample, "find", collection, true);
+            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "find", System.currentTimeMillis() - start);
+            return result;
+        } catch (Throwable t) {
+            if (sample != null) metricsRecorder.stop(sample, "find", collection, false);
+            if (sample != null) metricsRecorder.recordError(t);
+            if (scope != null) {
+                MongodbTracing.recordError(scope.getSpan(), t);
+            }
+            throw t;
+        } finally {
+            if (scope != null) scope.close();
+        }
     }
 
     public T one() {
         build();
         query.limit(1);
-        List<T> result = mongoTemplate.find(query, entityClass);
-        return result.isEmpty() ? null : result.get(0);
+        String collection = entityIntrospector.getCollectionName(entityClass);
+        String statement = query.toString();
+        Timer.Sample sample = metricsRecorder != null ? metricsRecorder.start("find", collection) : null;
+        long start = System.currentTimeMillis();
+        MongodbTracing.TracingScope scope = tracing != null ? MongodbTracing.createSpan("find", collection, statement) : null;
+        try {
+            List<T> result = mongoTemplate.find(query, entityClass);
+            if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
+            if (sample != null) metricsRecorder.stop(sample, "find", collection, true);
+            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "find", System.currentTimeMillis() - start);
+            return result.isEmpty() ? null : result.get(0);
+        } catch (Throwable t) {
+            if (sample != null) metricsRecorder.stop(sample, "find", collection, false);
+            if (sample != null) metricsRecorder.recordError(t);
+            if (scope != null) {
+                MongodbTracing.recordError(scope.getSpan(), t);
+            }
+            throw t;
+        } finally {
+            if (scope != null) scope.close();
+        }
     }
 
     public Optional<T> oneOpt() {
@@ -276,20 +330,59 @@ public class QueryBuilder<T> {
 
     public long count() {
         build();
-        return mongoTemplate.count(query, entityClass);
+        String collection = entityIntrospector.getCollectionName(entityClass);
+        String statement = query.toString();
+        Timer.Sample sample = metricsRecorder != null ? metricsRecorder.start("count", collection) : null;
+        long start = System.currentTimeMillis();
+        MongodbTracing.TracingScope scope = tracing != null ? MongodbTracing.createSpan("count", collection, statement) : null;
+        try {
+            long result = mongoTemplate.count(query, entityClass);
+            if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
+            if (sample != null) metricsRecorder.stop(sample, "count", collection, true);
+            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "count", System.currentTimeMillis() - start);
+            return result;
+        } catch (Throwable t) {
+            if (sample != null) metricsRecorder.stop(sample, "count", collection, false);
+            if (sample != null) metricsRecorder.recordError(t);
+            if (scope != null) {
+                MongodbTracing.recordError(scope.getSpan(), t);
+            }
+            throw t;
+        } finally {
+            if (scope != null) scope.close();
+        }
     }
 
     public PageResult<T> pageResult() {
         build();
-        Query countQuery = new Query();
-        if (criteria != null) {
-            countQuery.addCriteria(criteria);
+        String collection = entityIntrospector.getCollectionName(entityClass);
+        String statement = query.toString();
+        Timer.Sample sample = metricsRecorder != null ? metricsRecorder.start("find", collection) : null;
+        long start = System.currentTimeMillis();
+        MongodbTracing.TracingScope scope = tracing != null ? MongodbTracing.createSpan("find", collection, statement) : null;
+        try {
+            Query countQuery = new Query();
+            if (criteria != null) {
+                countQuery.addCriteria(criteria);
+            }
+            long total = mongoTemplate.count(countQuery, entityClass);
+            List<T> content = mongoTemplate.find(query, entityClass);
+            if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
+            if (sample != null) metricsRecorder.stop(sample, "find", collection, true);
+            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "find", System.currentTimeMillis() - start);
+            int pageNum = pageRequest != null ? pageRequest.getPageNumber() + 1 : 1;
+            int pageSize = pageRequest != null ? pageRequest.getPageSize() : (int) Math.min(total, 100);
+            return new PageResult<>(content, total, pageNum, pageSize);
+        } catch (Throwable t) {
+            if (sample != null) metricsRecorder.stop(sample, "find", collection, false);
+            if (sample != null) metricsRecorder.recordError(t);
+            if (scope != null) {
+                MongodbTracing.recordError(scope.getSpan(), t);
+            }
+            throw t;
+        } finally {
+            if (scope != null) scope.close();
         }
-        long total = mongoTemplate.count(countQuery, entityClass);
-        List<T> content = mongoTemplate.find(query, entityClass);
-        int pageNum = pageRequest != null ? pageRequest.getPageNumber() + 1 : 1;
-        int pageSize = pageRequest != null ? pageRequest.getPageSize() : (int) Math.min(total, 100);
-        return new PageResult<>(content, total, pageNum, pageSize);
     }
 
     private void build() {

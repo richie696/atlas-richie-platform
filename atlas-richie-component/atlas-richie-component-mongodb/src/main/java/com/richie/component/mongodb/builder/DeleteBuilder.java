@@ -2,6 +2,10 @@ package com.richie.component.mongodb.builder;
 
 import com.richie.component.mongodb.core.EntityIntrospector;
 import com.richie.component.mongodb.core.TenantContext;
+import com.richie.component.mongodb.observability.MongodbMetricsRecorder;
+import com.richie.component.mongodb.observability.MongodbSlowQueryLogger;
+import com.richie.component.mongodb.observability.MongodbTracing;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -12,6 +16,9 @@ public class DeleteBuilder<T> {
     private final Class<T> entityClass;
     private final MongoTemplate mongoTemplate;
     private final EntityIntrospector entityIntrospector;
+    private final MongodbTracing tracing;
+    private final MongodbMetricsRecorder metricsRecorder;
+    private final MongodbSlowQueryLogger slowQueryLogger;
     private final Query query = new Query();
     private Criteria criteria;
     private boolean criteriaStarted;
@@ -19,9 +26,17 @@ public class DeleteBuilder<T> {
     private boolean force = false;
 
     public DeleteBuilder(Class<T> entityClass, MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector) {
+        this(entityClass, mongoTemplate, entityIntrospector, null, null, null);
+    }
+
+    public DeleteBuilder(Class<T> entityClass, MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector,
+                        MongodbTracing tracing, MongodbMetricsRecorder metricsRecorder, MongodbSlowQueryLogger slowQueryLogger) {
         this.entityClass = entityClass;
         this.mongoTemplate = mongoTemplate;
         this.entityIntrospector = entityIntrospector;
+        this.tracing = tracing;
+        this.metricsRecorder = metricsRecorder;
+        this.slowQueryLogger = slowQueryLogger;
     }
 
     private String toFieldName(LambdaField<T, ?> field) {
@@ -105,11 +120,33 @@ public class DeleteBuilder<T> {
         used = true;
         if (criteria != null) query.addCriteria(criteria);
         String softDeleteField = entityIntrospector.getSoftDeleteField(entityClass);
-        if (!force && softDeleteField != null) {
-            query.addCriteria(Criteria.where(softDeleteField).is(false));
-            Update update = Update.update(softDeleteField, true);
-            return mongoTemplate.updateMulti(query, update, entityClass).getModifiedCount();
+        String collection = entityIntrospector.getCollectionName(entityClass);
+        String statement = query.toString();
+        Timer.Sample sample = metricsRecorder != null ? metricsRecorder.start("delete", collection) : null;
+        long start = System.currentTimeMillis();
+        MongodbTracing.TracingScope scope = tracing != null ? MongodbTracing.createSpan("delete", collection, statement) : null;
+        try {
+            long result;
+            if (!force && softDeleteField != null) {
+                query.addCriteria(Criteria.where(softDeleteField).is(false));
+                Update update = Update.update(softDeleteField, true);
+                result = mongoTemplate.updateMulti(query, update, entityClass).getModifiedCount();
+            } else {
+                result = mongoTemplate.remove(query, entityClass).getDeletedCount();
+            }
+            if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
+            if (sample != null) metricsRecorder.stop(sample, "delete", collection, true);
+            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "delete", System.currentTimeMillis() - start);
+            return result;
+        } catch (Throwable t) {
+            if (sample != null) metricsRecorder.stop(sample, "delete", collection, false);
+            if (sample != null) metricsRecorder.recordError(t);
+            if (scope != null) {
+                MongodbTracing.recordError(scope.getSpan(), t);
+            }
+            throw t;
+        } finally {
+            if (scope != null) scope.close();
         }
-        return mongoTemplate.remove(query, entityClass).getDeletedCount();
     }
 }

@@ -38,7 +38,7 @@ class MongodbTest {
     void setUp() {
         AuditFieldHandler auditFieldHandler = new AuditFieldHandler();
         TenantHandler tenantHandler = new TenantHandler();
-        mongodb = new Mongodb(mongoTemplate, entityIntrospector, auditFieldHandler, tenantHandler);
+        mongodb = new Mongodb(mongoTemplate, entityIntrospector, auditFieldHandler, tenantHandler, null, null, null);
     }
 
     @Test
