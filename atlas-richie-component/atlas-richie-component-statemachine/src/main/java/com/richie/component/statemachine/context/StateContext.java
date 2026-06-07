@@ -11,8 +11,8 @@ import java.util.Map;
  * 状态上下文
  * <p>
  * 状态转换过程中的上下文对象，包含当前状态、前一状态、触发事件、转换规则等信息。
- * 可以在 MVEL 表达式中通过 context 变量访问这些信息。
- * 
+ * 可以在 SpEL 表达式中通过 context 变量访问这些信息。
+ *
  *
  * @author richie696
  * @since 1.0.0
@@ -53,8 +53,8 @@ public class StateContext {
     /**
      * 扩展属性
      * <p>
-     * 用于存储状态转换过程中的自定义属性，可以在 MVEL 表达式中通过 context.getAttribute() 访问。
-     * 
+     * 用于存储状态转换过程中的自定义属性，可以在 SpEL 表达式中通过 context.attributes['key'] 访问。
+     *
      */
     private Map<String, Object> attributes = new HashMap<>();
 
@@ -90,8 +90,8 @@ public class StateContext {
     /**
      * 设置属性
      * <p>
-     * 设置上下文属性，这些属性可以在 MVEL 表达式中通过 context.getAttribute() 访问。
-     * 
+     * 设置上下文属性，这些属性可以在 SpEL 表达式中通过 context.attributes['key'] 访问。
+     *
      *
      * @param key   属性键
      * @param value 属性值

@@ -72,11 +72,11 @@ public class RulesEngineConfig {
     /**
      * 表达式执行配置
      * <p>
-     * 配置 MVEL 表达式的执行行为，包括安全检查、慢查询监控、详细日志等。
-     * 
+     * 配置 Spring SpEL 表达式的执行行为，包括安全检查、慢查询监控、详细日志等。
+     *
      * <p>
      * 注意：此类使用 Lombok {@code @Data} 注解，构造函数由 Lombok 自动生成。
-     * 
+     *
      */
     @Data
     public static class ExpressionConfig {

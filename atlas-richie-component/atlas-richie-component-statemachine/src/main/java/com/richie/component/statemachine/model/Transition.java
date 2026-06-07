@@ -8,8 +8,8 @@ import java.util.Map;
  * 状态转换定义
  * <p>
  * 定义从一个状态到另一个状态的转换规则，包括触发事件、转换条件、转换动作等。
- * 支持 MVEL 表达式进行条件判断和动作执行。
- * 
+ * 支持 Spring SpEL 表达式进行条件判断和动作执行。
+ *
  *
  * @author richie696
  * @since 1.0.0
@@ -44,20 +44,20 @@ public class Transition {
     private String event;
 
     /**
-     * 转换条件（MVEL表达式）
+     * 转换条件（SpEL表达式）
      * <p>
      * 可选，如果设置了条件，只有当条件表达式返回 true 时才会执行转换。
-     * 在表达式中可以使用 context.getAttribute() 访问上下文属性。
-     * 
+     * 在表达式中可以使用 context.attributes['key'] 访问上下文属性。
+     *
      */
     private String condition;
 
     /**
-     * 转换动作（MVEL表达式）
+     * 转换动作（SpEL表达式）
      * <p>
-     * 可选，转换执行时会被评估的表达式，可以用于设置上下文属性等操作。
-     * 在表达式中可以使用 context.setAttribute() 设置上下文属性。
-     * 
+     * 可选，转换执行时会被评估的表达式，可以用于计算值等操作。
+     * SpEL read-only 上下文阻止方法调用，请使用 context.attributes['key'] = value 形式（属性赋值）。
+     *
      */
     private String action;
 

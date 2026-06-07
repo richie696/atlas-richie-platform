@@ -7,7 +7,11 @@ import org.jeasy.rules.annotation.Action;
 import org.jeasy.rules.annotation.Condition;
 import org.jeasy.rules.annotation.Priority;
 import org.jeasy.rules.annotation.Rule;
-import org.mvel2.MVEL;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
 
 import java.util.Set;
 
@@ -15,8 +19,11 @@ import java.util.Set;
  * 状态转换规则
  * <p>
  * Easy Rules 规则实现，用于执行状态转换的条件判断和动作执行。
- * 支持 MVEL 表达式进行条件评估和动作执行，包含表达式安全检查和性能监控。
- *
+ * 支持 Spring SpEL 表达式进行条件评估和动作执行，包含表达式安全检查和性能监控。
+ * <p>
+ * 安全说明：使用 SpEL 沙箱模式（SimpleEvaluationContext.forReadOnlyDataBinding）禁用方法调用、
+ * 构造调用、类型引用（T(...)）和 Bean 引用；配合 {@link #isSafeExpression(String)} 黑名单检查
+ * 实现深度防御，阻止危险方法调用（如 Runtime.exec、System.exit 等）。
  *
  * @param transition 转换定义对象，包含转换的源状态、目标状态、事件、条件、动作等信息
  * @param context    状态上下文对象，包含当前状态、事件、属性等信息
@@ -26,6 +33,11 @@ import java.util.Set;
 @Rule(name = "StateTransitionRule", description = "状态转换规则")
 @Slf4j
 public record StateTransitionRule(Transition transition, Object context) {
+
+    /**
+     * SpEL 表达式解析器（线程安全，可复用）
+     */
+    private static final ExpressionParser SPEL_PARSER = new SpelExpressionParser();
 
     /**
      * 条件判断方法
@@ -97,10 +109,11 @@ public record StateTransitionRule(Transition transition, Object context) {
     /**
      * 评估条件表达式
      * <p>
-     * 使用 MVEL 引擎评估条件表达式，支持表达式安全检查和执行时间监控。
+     * 使用 Spring SpEL 引擎评估条件表达式，支持表达式安全检查和执行时间监控。
+     * 使用 SpEL 沙箱模式（SimpleEvaluationContext.forReadOnlyDataBinding）禁用方法调用、构造调用、
+     * 类型引用（T(...)）和 Bean 引用，配合 isSafeExpression 黑名单检查实现深度防御。
      *
-     *
-     * @param condition 条件表达式（MVEL）
+     * @param condition 条件表达式（SpEL）
      * @param context    状态上下文对象
      * @return true 表示条件满足，false 表示条件不满足或执行失败
      */
@@ -115,7 +128,24 @@ public record StateTransitionRule(Transition transition, Object context) {
         long start = System.nanoTime();
         try {
             java.util.Map<String, Object> vars = buildVariables(context);
-            Object result = MVEL.eval(condition, vars);
+            // SimpleEvaluationContext 是 Spring 官方沙箱模式,禁用方法调用/构造调用/类型引用/Bean 引用
+            SimpleEvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding().build();
+            evalContext.setVariable("context", vars.get("context"));
+            evalContext.setVariable("currentState", vars.get("currentState"));
+            evalContext.setVariable("previousState", vars.get("previousState"));
+            evalContext.setVariable("event", vars.get("event"));
+            evalContext.setVariable("transition", vars.get("transition"));
+            evalContext.setVariable("context_attributes", vars.get("attributes"));
+            // 将 attributes 展开为独立变量，使 #amount 直接可用
+            if (vars.get("attributes") instanceof java.util.Map) {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> attrs = (java.util.Map<String, Object>) vars.get("attributes");
+                if (attrs != null) {
+                    attrs.forEach(evalContext::setVariable);
+                }
+            }
+            Expression expr = SPEL_PARSER.parseExpression(condition);
+            Object result = expr.getValue(evalContext, Object.class);
             return result instanceof Boolean ? (Boolean) result : result != null;
         } catch (Exception e) {
             log.warn("条件表达式执行失败: {} - {}", abbreviate(condition), e.getMessage());
@@ -134,10 +164,11 @@ public record StateTransitionRule(Transition transition, Object context) {
     /**
      * 执行动作表达式
      * <p>
-     * 使用 MVEL 引擎执行动作表达式，支持表达式安全检查和执行时间监控。
+     * 使用 Spring SpEL 引擎执行动作表达式，支持表达式安全检查和执行时间监控。
+     * 使用 SpEL 沙箱模式（SimpleEvaluationContext.forReadOnlyDataBinding）禁用方法调用、构造调用、
+     * 类型引用（T(...)）和 Bean 引用，配合 isSafeExpression 黑名单检查实现深度防御。
      *
-     *
-     * @param action  动作表达式（MVEL）
+     * @param action  动作表达式（SpEL）
      * @param context 状态上下文对象
      */
     private void executeAction(String action, Object context) {
@@ -151,7 +182,23 @@ public record StateTransitionRule(Transition transition, Object context) {
         long start = System.nanoTime();
         try {
             java.util.Map<String, Object> vars = buildVariables(context);
-            MVEL.eval(action, vars);
+            // SimpleEvaluationContext 是 Spring 官方沙箱模式,禁用方法调用/构造调用/类型引用/Bean 引用
+            SimpleEvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding().build();
+            evalContext.setVariable("context", vars.get("context"));
+            evalContext.setVariable("currentState", vars.get("currentState"));
+            evalContext.setVariable("previousState", vars.get("previousState"));
+            evalContext.setVariable("event", vars.get("event"));
+            evalContext.setVariable("transition", vars.get("transition"));
+            evalContext.setVariable("context_attributes", vars.get("attributes"));
+            if (vars.get("attributes") instanceof java.util.Map) {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> attrs = (java.util.Map<String, Object>) vars.get("attributes");
+                if (attrs != null) {
+                    attrs.forEach(evalContext::setVariable);
+                }
+            }
+            Expression expr = SPEL_PARSER.parseExpression(action);
+            expr.getValue(evalContext);
         } catch (Exception e) {
             log.warn("动作表达式执行失败: {} - {}", abbreviate(action), e.getMessage());
         } finally {
@@ -166,11 +213,10 @@ public record StateTransitionRule(Transition transition, Object context) {
     }
 
     /**
-     * 构建 MVEL 表达式变量
+     * 构建 SpEL 表达式变量
      * <p>
-     * 将状态上下文和转换对象转换为 MVEL 表达式可用的变量映射。
+     * 将状态上下文和转换对象转换为 SpEL 表达式可用的变量映射。
      * 表达式可以通过变量名直接访问上下文属性和转换信息。
-     *
      *
      * @param ctx 状态上下文对象
      * @return 变量映射表，包含 context、currentState、previousState、event、attributes、transition 等
@@ -182,11 +228,9 @@ public record StateTransitionRule(Transition transition, Object context) {
             vars.put("currentState", sc.getCurrentState());
             vars.put("previousState", sc.getPreviousState());
             vars.put("event", sc.getEvent());
-            if (sc.getAttributes() != null) {
-                vars.putAll(sc.getAttributes());
-            }
+            vars.put("attributes", sc.getAttributes());
+            vars.putAll(sc.getAttributes());
         }
-        // Transition 可作为变量用于表达式引用
         vars.put("transition", transition);
         return vars;
     }
@@ -195,7 +239,7 @@ public record StateTransitionRule(Transition transition, Object context) {
      * 检查表达式是否安全
      * <p>
      * 检查表达式是否包含黑名单中的危险方法或类，防止执行不安全的代码。
-     *
+     * 黑名单是主要的安全隔离手段，阻止明显的危险模式（如 Runtime.exec、System.exit 等）。
      *
      * @param expr 表达式字符串
      * @return true 表示表达式安全，false 表示表达式不安全

@@ -74,8 +74,6 @@
         <alipay-sdk-java.version>4.40.795.ALL</alipay-sdk-java.version>
         <pdfbox.version>3.0.7</pdfbox.version>
         <thumbnailator.version>0.4.21</thumbnailator.version>
-        <easy-rules.version>4.1.0</easy-rules.version>
-        <mvel.version>2.5.2.Final</mvel.version>
 
         <!-- service dependencies -->
         <feign.version>13.11</feign.version>

@@ -126,12 +126,12 @@ public class StateMachineDefinition {
         private String event;
 
         /**
-         * 转换条件（MVEL表达式），可选，只有当条件为 true 时才执行转换
+         * 转换条件（SpEL表达式），可选，只有当条件为 true 时才执行转换
          */
         private String condition;
 
         /**
-         * 转换动作（MVEL表达式），可选，转换执行时会被评估
+         * 转换动作（SpEL表达式），可选，转换执行时会被评估
          */
         private String action;
 

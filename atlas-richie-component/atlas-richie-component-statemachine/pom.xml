@@ -36,21 +36,13 @@
         <dependency>
             <groupId>org.jeasy</groupId>
             <artifactId>easy-rules-core</artifactId>
-            <version>${easy-rules.version}</version>
+            <version>4.1.0</version>
         </dependency>
 
-        <!-- Easy Rules MVEL 支持 -->
+        <!-- Spring SpEL 表达式引擎（用于 StateTransitionRule 条件/动作评估） -->
         <dependency>
-            <groupId>org.jeasy</groupId>
-            <artifactId>easy-rules-mvel</artifactId>
-            <version>${easy-rules.version}</version>
-        </dependency>
-
-        <!-- MVEL 表达式引擎（明确声明以确保运行时可用） -->
-        <dependency>
-            <groupId>org.mvel</groupId>
-            <artifactId>mvel2</artifactId>
-            <version>${mvel.version}</version>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-expression</artifactId>
         </dependency>
 
         <!-- Lombok -->
