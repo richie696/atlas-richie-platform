@@ -46,6 +46,10 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
+                        <include>com/richie/component/mongodb/Mongodb.java</include>
+                        <include>com/richie/component/mongodb/builder/**</include>
+                        <include>com/richie/component/mongodb/core/**</include>
+                        <include>com/richie/component/mongodb/exception/**</include>
                         <include>com/richie/component/mongodb/service/impl/**</include>
                         <include>com/richie/component/mongodb/listener/**</include>
                     </includes>
@@ -67,6 +71,10 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
+                                <include>com/richie/component/mongodb/Mongodb.java</include>
+                                <include>com/richie/component/mongodb/builder/**</include>
+                                <include>com/richie/component/mongodb/core/**</include>
+                                <include>com/richie/component/mongodb/exception/**</include>
                                 <include>com/richie/component/mongodb/service/impl/**</include>
                                 <include>com/richie/component/mongodb/listener/**</include>
                             </includes>
@@ -74,12 +82,12 @@
                                 <rule>
                                     <element>BUNDLE</element>
                                     <limits>
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.83</minimum>
-                                        </limit>
-                                    </limits>
+                                <limit>
+                                    <counter>LINE</counter>
+                                    <value>COVEREDRATIO</value>
+                                    <minimum>0.83</minimum>
+                                </limit>
+                            </limits>
                                 </rule>
                             </rules>
                         </configuration>
