@@ -1,1 +1,2 @@
 com.richie.component.mongodb.config.MongodbAutoConfiguration
+com.richie.component.mongodb.circuitbreaker.MongodbSentinelAutoConfiguration
