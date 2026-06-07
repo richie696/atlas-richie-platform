@@ -1,9 +1,11 @@
 package com.richie.component.mongodb.builder;
 
 import com.richie.component.mongodb.core.EntityIntrospector;
+import com.richie.component.mongodb.core.TenantContext;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import java.util.Collection;
 
 public class DeleteBuilder<T> {
@@ -14,6 +16,7 @@ public class DeleteBuilder<T> {
     private Criteria criteria;
     private boolean criteriaStarted;
     private boolean used;
+    private boolean force = false;
 
     public DeleteBuilder(Class<T> entityClass, MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector) {
         this.entityClass = entityClass;
@@ -92,10 +95,21 @@ public class DeleteBuilder<T> {
         return this;
     }
 
+    public DeleteBuilder<T> force() {
+        this.force = true;
+        return this;
+    }
+
     public long execute() {
         if (used) throw new IllegalStateException("DeleteBuilder can only be executed once");
         used = true;
         if (criteria != null) query.addCriteria(criteria);
+        String softDeleteField = entityIntrospector.getSoftDeleteField(entityClass);
+        if (!force && softDeleteField != null) {
+            query.addCriteria(Criteria.where(softDeleteField).is(false));
+            Update update = Update.update(softDeleteField, true);
+            return mongoTemplate.updateMulti(query, update, entityClass).getModifiedCount();
+        }
         return mongoTemplate.remove(query, entityClass).getDeletedCount();
     }
 }

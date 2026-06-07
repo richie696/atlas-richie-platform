@@ -3,7 +3,9 @@ package com.richie.component.mongodb;
 import com.richie.component.mongodb.builder.DeleteBuilder;
 import com.richie.component.mongodb.builder.QueryBuilder;
 import com.richie.component.mongodb.builder.UpdateBuilder;
+import com.richie.component.mongodb.core.AuditFieldHandler;
 import com.richie.component.mongodb.core.EntityIntrospector;
+import com.richie.component.mongodb.core.TenantHandler;
 import com.richie.component.mongodb.exception.DuplicateKeyException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -17,10 +19,15 @@ import java.util.Optional;
 public class Mongodb {
     private final MongoTemplate mongoTemplate;
     private final EntityIntrospector entityIntrospector;
+    private final AuditFieldHandler auditFieldHandler;
+    private final TenantHandler tenantHandler;
 
-    public Mongodb(MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector) {
+    public Mongodb(MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector,
+                   AuditFieldHandler auditFieldHandler, TenantHandler tenantHandler) {
         this.mongoTemplate = mongoTemplate;
         this.entityIntrospector = entityIntrospector;
+        this.auditFieldHandler = auditFieldHandler;
+        this.tenantHandler = tenantHandler;
     }
 
     public <T> QueryBuilder<T> query(Class<T> entityClass) {
@@ -36,10 +43,14 @@ public class Mongodb {
     }
 
     public <T> T save(T entity) {
+        tenantHandler.fillOnInsert(entity);
+        auditFieldHandler.fillOnInsert(entity);
         return mongoTemplate.save(entity);
     }
 
     public <T> T insert(T entity) {
+        tenantHandler.fillOnInsert(entity);
+        auditFieldHandler.fillOnInsert(entity);
         try {
             return mongoTemplate.insert(entity);
         } catch (org.springframework.dao.DuplicateKeyException e) {

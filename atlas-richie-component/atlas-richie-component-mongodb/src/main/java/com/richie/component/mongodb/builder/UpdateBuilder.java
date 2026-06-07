@@ -1,11 +1,13 @@
 package com.richie.component.mongodb.builder;
 
+import com.richie.component.mongodb.core.AuditContext;
 import com.richie.component.mongodb.core.EntityIntrospector;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import java.time.Instant;
 import java.util.Collection;
 
 public class UpdateBuilder<T> {
@@ -17,11 +19,17 @@ public class UpdateBuilder<T> {
     private boolean criteriaStarted;
     private final Update update = new Update();
     private boolean used;
+    private final AuditContext auditContext;
 
     public UpdateBuilder(Class<T> entityClass, MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector) {
+        this(entityClass, mongoTemplate, entityIntrospector, new AuditContext());
+    }
+
+    public UpdateBuilder(Class<T> entityClass, MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector, AuditContext auditContext) {
         this.entityClass = entityClass;
         this.mongoTemplate = mongoTemplate;
         this.entityIntrospector = entityIntrospector;
+        this.auditContext = auditContext;
     }
 
     private String toFieldName(LambdaField<T, ?> field) {
@@ -134,6 +142,7 @@ public class UpdateBuilder<T> {
         if (used) throw new IllegalStateException("UpdateBuilder can only be executed once");
         used = true;
         if (criteria != null) query.addCriteria(criteria);
+        appendAuditFields();
         return mongoTemplate.updateMulti(query, update, entityClass).getModifiedCount();
     }
 
@@ -141,6 +150,14 @@ public class UpdateBuilder<T> {
         if (used) throw new IllegalStateException("UpdateBuilder can only be executed once");
         used = true;
         if (criteria != null) query.addCriteria(criteria);
+        appendAuditFields();
         return mongoTemplate.findAndModify(query, update, FindAndModifyOptions.options().returnNew(true), entityClass);
+    }
+
+    private void appendAuditFields() {
+        if (entityIntrospector.hasAuditFields(entityClass)) {
+            update.set("updatedAt", Instant.now());
+            update.set("updatedBy", auditContext.currentUser());
+        }
     }
 }

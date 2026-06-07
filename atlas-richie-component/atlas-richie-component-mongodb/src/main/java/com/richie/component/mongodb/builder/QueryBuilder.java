@@ -1,6 +1,7 @@
 package com.richie.component.mongodb.builder;
 
 import com.richie.component.mongodb.core.EntityIntrospector;
+import com.richie.component.mongodb.core.TenantContext;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -24,6 +25,8 @@ public class QueryBuilder<T> {
     private long skip;
     private int limit;
     private boolean used;
+    private boolean bypassTenant = false;
+    private boolean ignoreSoftDelete = false;
 
     public QueryBuilder(Class<T> entityClass, MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector) {
         this.entityClass = entityClass;
@@ -239,6 +242,16 @@ public class QueryBuilder<T> {
         return this;
     }
 
+    public QueryBuilder<T> bypassTenant() {
+        this.bypassTenant = true;
+        return this;
+    }
+
+    public QueryBuilder<T> ignoreSoftDelete() {
+        this.ignoreSoftDelete = true;
+        return this;
+    }
+
     public List<T> list() {
         build();
         return mongoTemplate.find(query, entityClass);
@@ -291,5 +304,21 @@ public class QueryBuilder<T> {
         if (pageRequest != null) query.with(pageRequest);
         if (skip > 0) query.skip(skip);
         if (limit > 0) query.limit(limit);
+        applyAnnotationFilters();
+    }
+
+    private void applyAnnotationFilters() {
+        if (!ignoreSoftDelete) {
+            String softDeleteField = entityIntrospector.getSoftDeleteField(entityClass);
+            if (softDeleteField != null) {
+                query.addCriteria(Criteria.where(softDeleteField).is(false));
+            }
+        }
+        if (!bypassTenant) {
+            String tenantField = entityIntrospector.getTenantField(entityClass);
+            if (tenantField != null && TenantContext.get() != null) {
+                query.addCriteria(Criteria.where(tenantField).is(TenantContext.get()));
+            }
+        }
     }
 }
