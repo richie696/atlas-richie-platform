@@ -1,6 +1,6 @@
 # Richie状态机组件
 
-基于 Easy Rules 4.1.0 构建的轻量级状态机组件，提供统一的状态管理API。支持配置化状态机定义、MVEL 表达式条件判断和动作执行、Redis 持久化存储、Redis Stream 异步数据库同步等特性。
+基于 Easy Rules 4.1.0 构建的轻量级状态机组件，提供统一的状态管理API。支持配置化状态机定义、SpEL 表达式条件判断和动作执行、Redis 持久化存储、Redis Stream 异步数据库同步等特性。
 
 ## 📋 目录
 
@@ -20,7 +20,7 @@
 ### 核心能力
 
 - ✅ **基于 Easy Rules 规则引擎**：强大的规则引擎支持，灵活的状态转换规则定义
-- ✅ **MVEL 表达式支持**：支持条件判断和动作执行的 MVEL 表达式，提供表达式安全检查和慢查询监控
+- ✅ **SpEL 表达式支持**：支持条件判断和动作执行的 SpEL 表达式，提供表达式安全检查和慢查询监控
 - ✅ **静态门面 API**：`StateMachine` 静态类提供便捷的调用方式，无需依赖注入
 - ✅ **ID 模式设计**：解耦业务对象，仅需传入业务ID，降低耦合度
 - ✅ **类型安全**：支持枚举类型的状态机名称和事件，提供编译期约束
@@ -373,7 +373,7 @@ StateMachine.fire(OrderSm.logistics, LogisticsEvent.SHIP, orderId);
 │                   状态机引擎层                                 │
 │         StateMachineEngine + Easy Rules                       │
 │         - 状态转换规则匹配                                     │
-│         - MVEL 表达式评估（条件/动作）                        │
+│         - SpEL 表达式评估（条件/动作）                        │
 │         - 规则优先级处理                                       │
 └──────────────────────┬──────────────────────────────────────┘
                        │
@@ -544,29 +544,29 @@ transitions:
     fromState: PENDING
     toState: CONFIRMED
     event: CONFIRM
-    condition: "context.getAttribute('amount', 0) > 0"  # MVEL 表达式
-    action: "context.setAttribute('confirmedTime', java.time.LocalDateTime.now())"
+    condition: "context.attributes['amount'] != null and context.attributes['amount'] > 0"  # SpEL 表达式
+    action: "context.attributes['confirmedTime'] = '2025-01-01T00:00:00'"
     
   - name: start_prepare
     description: 开始制作
     fromState: CONFIRMED
     toState: PREPARING
     event: START_PREPARE
-    action: "context.setAttribute('prepareTime', java.time.LocalDateTime.now())"
+    action: "context.attributes['prepareTime'] = '2025-01-01T00:00:00'"
     
   - name: complete
     description: 完成订单
     fromState: PREPARING
     toState: COMPLETED
     event: COMPLETE
-    action: "context.setAttribute('completedTime', java.time.LocalDateTime.now())"
+    action: "context.attributes['completedTime'] = '2025-01-01T00:00:00'"
     
   - name: cancel
     description: 取消订单
     fromState: PENDING
     toState: CANCELLED
     event: CANCEL
-    action: "context.setAttribute('cancelReason', context.getAttribute('reason'))"
+    action: "context.attributes['cancelReason'] = #event"
 ```
 
 ### 4. 定义枚举类型（推荐）
@@ -762,6 +762,91 @@ public class OrderService {
 
 ---
 
+## 🛡️ 安全模型
+
+状态机使用 **Spring SpEL (Spring Expression Language)** 作为表达式引擎，并采用 **沙箱模式** 提供强大的安全保障。
+
+### SpEL 沙箱机制
+
+状态机使用 `SpelExpressionParser` + `SimpleEvaluationContext.forReadOnlyDataBinding().build()` 创建沙箱环境：
+
+```java
+SpelExpressionParser parser = new SpelExpressionParser();
+SimpleEvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding().build();
+```
+
+**沙箱提供的安全保证**：
+- ❌ **禁止方法调用**：如 `context.toString()`、`System.getProperty()` 等
+- ❌ **禁止类型引用**：如 `T(java.lang.Runtime)`、`T(String)` 等
+- ❌ **禁止构造调用**：如 `new HashMap()`、`new File(...)` 等
+- ❌ **禁止 Bean 引用**：如 `@beanName` 等
+- ✅ **允许属性访问**：如 `#currentState`、`#event`、`context.attributes['key']` 等
+
+### 深度防御：黑名单机制
+
+除沙箱外，还保留了**黑名单机制**作为深度防御：
+
+```yaml
+platform:
+  component:
+    statemachine:
+      expression:
+        enable-security-check: true
+        security-blacklist:  # 自定义黑名单
+          - java.lang.Runtime
+          - java.lang.ProcessBuilder
+          - javax.script.ScriptEngine
+```
+
+### 被阻止的攻击向量示例
+
+| 攻击类型 | MVEL 写法（危险） | SpEL 沙箱行为 |
+|---------|------------------|--------------|
+| 方法调用 | `context.toString()` | ❌ SpEL 拒绝 |
+| 类型引用 | `T(java.lang.Runtime)` | ❌ SpEL 拒绝 |
+| 构造调用 | `new java.util.HashMap()` | ❌ SpEL 拒绝 |
+| 正常属性 | `#currentState == 'PENDING'` | ✅ 正常工作 |
+
+### 为什么选择 SpEL 而非 MVEL
+
+| 维度 | MVEL | SpEL |
+|------|------|------|
+| **维护状态** | 已停止维护（最后更新 2017） | Spring 活跃维护 |
+| **安全机制** | 仅黑名单（可绕过） | 原生沙箱（引擎级） |
+| **RCE 漏洞** | Dependabot #396，无修复 | 无已知 RCE |
+| **类型安全** | 弱类型 | 强类型 |
+| **Spring 集成** | 无 | 原生集成 |
+
+### 可用变量
+
+SpEL 表达式中可使用以下变量：
+
+| 变量名 | 说明 | 示例 |
+|-------|------|------|
+| `#context` | 完整上下文对象 | `#context.attributes['amount']` |
+| `#currentState` | 当前状态字符串 | `#currentState == 'PENDING'` |
+| `#previousState` | 前一状态字符串 | `#previousState == 'CONFIRMED'` |
+| `#event` | 当前事件名 | `#event == 'CONFIRM'` |
+| `#transition` | 转换信息对象 | `#transition.name` |
+| `attributes` | 注入的键值对 | `attributes['operator']` |
+
+### SpEL 语法速查
+
+```yaml
+# 条件表达式示例
+condition: "context.attributes['amount'] != null and context.attributes['amount'] > 0"
+condition: "#currentState == 'PENDING' and #event == 'CONFIRM'"
+condition: "attributes['operatorRole'] == 'ADMIN'"
+
+# 动作表达式示例
+action: "context.attributes['confirmedTime'] = '2025-01-01T00:00:00'"
+action: "context.attributes['operator'] = #event"
+```
+
+📖 **详细说明请参考**：[使用教程 - 表达式与安全](docs/使用教程.md#表达式与安全)
+
+---
+
 ## 🎯 最佳实践
 
 ### 1. 状态定义
@@ -773,13 +858,13 @@ public class OrderService {
 ### 2. 转换规则
 
 - ✅ **明确的事件定义**：为每个状态转换定义明确的事件
-- ✅ **条件判断**：使用 MVEL 表达式进行条件判断，避免非法状态转换
+- ✅ **条件判断**：使用 SpEL 表达式进行条件判断，避免非法状态转换
 - ✅ **动作执行**：在转换时执行必要的业务逻辑（如记录时间、更新属性等）
 - ✅ **规则优先级**：合理使用规则优先级，控制规则执行顺序
 
 ### 3. 表达式使用
 
-- ✅ **使用 context 对象**：在 MVEL 表达式中使用 `context.getAttribute()` 和 `context.setAttribute()` 访问上下文
+- ✅ **使用 context 对象**：在 SpEL 表达式中使用 `context.attributes['key']` 访问上下文
 - ✅ **避免危险方法**：不要使用表达式黑名单中的方法（如 `System.exit`、`Runtime.exec` 等）
 - ✅ **性能优化**：避免在表达式中执行耗时操作，超过 `slow-threshold-ms` 会记录警告
 
@@ -883,19 +968,19 @@ public class OrderService {
 
 📖 **详细说明请参考**：[多状态机使用指南](docs/多状态机使用指南.md)
 
-### Q6: MVEL 表达式中如何使用上下文数据？
+### Q6: SpEL 表达式中如何使用上下文数据？
 
 **A:**
 
-- 使用 `context.getAttribute(key)` 获取上下文属性
-- 使用 `context.setAttribute(key, value)` 设置上下文属性
+- 使用 `context.attributes['key']` 获取上下文属性
+- 使用 `context.attributes['key'] = value` 设置上下文属性
 - 示例：
   ```yaml
-  condition: "context.getAttribute('amount', 0) > 100"
-  action: "context.setAttribute('confirmedTime', java.time.LocalDateTime.now())"
+  condition: "context.attributes['amount'] != null and context.attributes['amount'] > 100"
+  action: "context.attributes['confirmedTime'] = '2025-01-01T00:00:00'"
   ```
 
-📖 **详细说明请参考**：[使用教程 - MVEL 表达式使用](docs/使用教程.md#mvel-表达式使用)
+📖 **详细说明请参考**：[使用教程 - SpEL 表达式使用](docs/使用教程.md#spel-表达式使用)
 
 ---
 
