@@ -90,6 +90,8 @@
         <maven-failsafe-plugin.version>3.5.6</maven-failsafe-plugin.version>
         <!-- 代码覆盖率插件 -->
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
+        <!-- JaCoCo 覆盖率最低阈值（仅在此处集中配置,所有子模块通过 ${jacoco.coverage.minimum} 引用） -->
+        <jacoco.coverage.minimum>0.83</jacoco.coverage.minimum>
         <!-- Antrun 插件（用于在 validate 阶段解析 git 根作为覆盖率报告输出目录） -->
         <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
         <!-- 部署插件 -->
@@ -386,7 +388,7 @@
                                             <limit>
                                                 <counter>LINE</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.83</minimum>
+                                                <minimum>${jacoco.coverage.minimum}</minimum>
                                             </limit>
                                         </limits>
                                     </rule>
