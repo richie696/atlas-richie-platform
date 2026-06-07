@@ -219,7 +219,7 @@ public class ElasticsearchVectorServiceImpl extends VectorServiceImpl implements
         }
     }
 
-    private ElasticsearchClient getElasticsearchClient() {
+    protected ElasticsearchClient getElasticsearchClient() {
         if (vectorStore instanceof ElasticsearchVectorStore esStore) {
             return (ElasticsearchClient) esStore.getNativeClient().orElseThrow();
         }
