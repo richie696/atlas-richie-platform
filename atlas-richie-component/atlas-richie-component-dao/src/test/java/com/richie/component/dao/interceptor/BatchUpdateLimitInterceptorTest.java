@@ -156,6 +156,79 @@ class BatchUpdateLimitInterceptorTest {
                 .doesNotThrowAnyException();
     }
 
+    @Test
+    void beforeUpdate_detectsIdCollectionParameterForInClause() {
+        BatchUpdateLimitInterceptor interceptor = interceptorWithLimit(2);
+        MappedStatement ms = mappedUpdateStatementWithSql("UPDATE t SET x = 1 WHERE id IN (#{idCollection})");
+        Map<String, Object> parameter = Map.of("idCollection", List.of(1, 2, 3));
+
+        assertThatThrownBy(() -> interceptor.beforeUpdate(null, ms, parameter))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void beforeUpdate_singleElementCollectionFallsThroughToExtractInClause() {
+        BatchUpdateLimitInterceptor interceptor = interceptorWithLimit(2);
+        MappedStatement ms = mappedUpdateStatementWithSql("UPDATE t SET x = 1 WHERE id IN (#{idCollection})");
+        Map<String, Object> parameter = Map.of("idCollection", List.of(1));
+
+        assertThatCode(() -> interceptor.beforeUpdate(null, ms, parameter))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void beforeUpdate_collectionKeyTakesPrecedenceOverListKey() {
+        BatchUpdateLimitInterceptor interceptor = interceptorWithLimit(2);
+        MappedStatement ms = mappedUpdateStatement();
+        Map<String, Object> parameter = new HashMap<>();
+        parameter.put("collection", List.of("a", "b", "c", "d", "e"));
+        parameter.put("list", List.of("x"));
+
+        assertThatThrownBy(() -> interceptor.beforeUpdate(null, ms, parameter))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void beforeUpdate_skipsInClauseCheckWhenSqlHasNoIn() {
+        BatchUpdateLimitInterceptor interceptor = interceptorWithLimit(1);
+        MappedStatement ms = mappedUpdateStatementWithSql("UPDATE t_user SET status = 1 WHERE id = ?");
+
+        assertThatCode(() -> interceptor.beforeUpdate(null, ms, Map.of("id", 1)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void beforeUpdate_ignoresBoundSqlException() {
+        BatchUpdateLimitInterceptor interceptor = interceptorWithLimit(1);
+        MappedStatement ms = mock(MappedStatement.class);
+        when(ms.getSqlCommandType()).thenReturn(SqlCommandType.UPDATE);
+        when(ms.getId()).thenReturn("com.example.UserMapper.update");
+        when(ms.getBoundSql(any())).thenThrow(new RuntimeException("bound sql error"));
+
+        assertThatCode(() -> interceptor.beforeUpdate(null, ms, "someParam"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void beforeUpdate_handlesInCountGreaterThanZero() {
+        BatchUpdateLimitInterceptor interceptor = interceptorWithLimit(1);
+        MappedStatement ms = mappedUpdateStatementWithSql("UPDATE t SET x = 1 WHERE id IN (?)");
+        Map<String, Object> parameter = Map.of("idList", List.of(1, 2, 3));
+
+        assertThatThrownBy(() -> interceptor.beforeUpdate(null, ms, parameter))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void beforeUpdate_extractsInCountFromIdList() {
+        BatchUpdateLimitInterceptor interceptor = interceptorWithLimit(2);
+        MappedStatement ms = mappedUpdateStatementWithSql("UPDATE t SET x = 1 WHERE id IN (?)");
+        Map<String, Object> parameter = Map.of("idList", List.of(1, 2));
+
+        assertThatCode(() -> interceptor.beforeUpdate(null, ms, parameter))
+                .doesNotThrowAnyException();
+    }
+
     private static BatchUpdateLimitInterceptor interceptorWithLimit(int limit) {
         DaoProperties properties = new DaoProperties();
         properties.setBatchUpdateLimit(limit);

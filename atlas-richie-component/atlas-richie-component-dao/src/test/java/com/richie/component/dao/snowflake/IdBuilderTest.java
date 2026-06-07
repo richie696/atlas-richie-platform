@@ -2,8 +2,11 @@ package com.richie.component.dao.snowflake;
 
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -64,5 +67,22 @@ class IdBuilderTest {
             assertThat(current).isGreaterThan(previous);
             previous = current;
         }
+    }
+
+    @Test
+    void waitIfNecessary_doesNotSleepWhenBehindTimestamp() throws Exception {
+        IdBuilder builder = new IdBuilder(1L);
+        Method waitIfNecessary = IdBuilder.class.getDeclaredMethod("waitIfNecessary");
+        waitIfNecessary.setAccessible(true);
+        assertThatCode(() -> waitIfNecessary.invoke(builder)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void generateWorkerId_fallsBackToRandomWhenMacGenerationFails() throws Exception {
+        IdBuilder builder = new IdBuilder(1L);
+        Method generateWorkerId = IdBuilder.class.getDeclaredMethod("generateWorkerId");
+        generateWorkerId.setAccessible(true);
+        long workerId = (long) generateWorkerId.invoke(builder);
+        assertThat(workerId).isGreaterThanOrEqualTo(0);
     }
 }

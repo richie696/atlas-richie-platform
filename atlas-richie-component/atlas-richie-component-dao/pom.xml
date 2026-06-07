@@ -81,8 +81,8 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <excludes>
-                        <exclude>com.richie.component.**.*AutoConfiguration</exclude>
-                        <exclude>com.richie.component.**.config.**</exclude>
+                        <exclude>**/*AutoConfiguration.class</exclude>
+                        <exclude>**/config/*.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>

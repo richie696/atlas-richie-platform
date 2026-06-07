@@ -85,6 +85,19 @@ class PaginationInterceptorTest {
         assertThat(order.getColumn()).isEqualTo("unknown_field");
     }
 
+    @Test
+    void beforeQuery_usesResultMappingsWhenPresent() throws Exception {
+        PaginationInterceptor interceptor = new PaginationInterceptor(DbType.MYSQL);
+        OrderItem order = OrderItem.asc("createTime");
+
+        ResultMapping resultMapping = mock(ResultMapping.class);
+        when(resultMapping.getProperty()).thenReturn("createTime");
+        when(resultMapping.getColumn()).thenReturn("t_create_time");
+
+        invokeConvertOrderItem(interceptor, List.of(order), List.of(resultMapping));
+        assertThat(order.getColumn()).isEqualTo("t_create_time");
+    }
+
     private static String invokeGetColumn(PaginationInterceptor interceptor, String property) throws Exception {
         Method method = PaginationInterceptor.class.getDeclaredMethod("getColumn", String.class);
         method.setAccessible(true);
