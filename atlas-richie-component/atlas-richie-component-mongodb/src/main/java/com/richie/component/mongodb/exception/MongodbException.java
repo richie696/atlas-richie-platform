@@ -1,7 +1,7 @@
 package com.richie.component.mongodb.exception;
 
 /**
- * Base runtime exception for MongoDB operations.
+ * MongoDB 操作的基础运行时异常。
  *
  * @author richie696
  * @since 1.x

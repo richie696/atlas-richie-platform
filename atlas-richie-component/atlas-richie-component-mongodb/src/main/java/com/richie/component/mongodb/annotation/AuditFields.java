@@ -6,17 +6,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks an entity to automatically populate audit fields on insert and update operations.
+ * 标记实体在插入和更新操作时自动填充审计字段。
  * <p>
- * When a class is annotated with {@code @AuditFields}, the following fields are automatically managed:
+ * 当一个类被 {@code @AuditFields} 注解时，以下字段会被自动管理：
  * <ul>
- *   <li>{@code createdAt} - set to current timestamp on insert</li>
- *   <li>{@code createdBy} - set to current user on insert</li>
- *   <li>{@code updatedAt} - set to current timestamp on insert and update</li>
- *   <li>{@code updatedBy} - set to current user on insert and update</li>
+ *   <li>{@code createdAt} - 插入时设置为当前时间戳</li>
+ *   <li>{@code createdBy} - 插入时设置为当前用户</li>
+ *   <li>{@code updatedAt} - 插入和更新时设置为当前时间戳</li>
+ *   <li>{@code updatedBy} - 插入和更新时设置为当前用户</li>
  * </ul>
  * <p>
- * Example:
+ * 示例：
  * <pre>
  * &#64;AuditFields
  * public class User {

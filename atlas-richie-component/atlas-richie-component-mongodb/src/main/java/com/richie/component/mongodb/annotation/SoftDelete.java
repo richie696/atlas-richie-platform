@@ -6,13 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks an entity for soft delete behavior.
+ * 标记实体为软删除行为。
  * <p>
- * When a class is annotated with {@code @SoftDelete}, delete operations will set the specified
- * field to {@code true} instead of physically removing the document. Query operations will
- * automatically filter out soft-deleted documents unless explicitly bypassed.
+ * 当一个类被 {@code @SoftDelete} 注解时，删除操作会将指定字段设置为 {@code true}，
+ * 而非物理移除文档。查询操作会自动过滤已软删除的文档，除非明确绕过。
  * <p>
- * Example:
+ * 示例：
  * <pre>
  * &#64;SoftDelete("deleted")
  * public class User {
@@ -27,9 +26,9 @@ import java.lang.annotation.Target;
 public @interface SoftDelete {
 
     /**
-     * The field name used to track soft delete status.
+     * 用于跟踪软删除状态的字段名。
      *
-     * @return the field name, defaults to "deleted"
+     * @return 字段名，默认为 "deleted"
      */
     String value() default "deleted";
 }

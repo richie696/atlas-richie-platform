@@ -3,7 +3,7 @@ package com.richie.component.mongodb.circuitbreaker;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Configuration properties for MongoDB circuit breaker.
+ * MongoDB 断路器的配置属性。
  *
  * @author richie696
  * @version 1.0

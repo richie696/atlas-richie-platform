@@ -7,7 +7,7 @@ import java.lang.reflect.Field;
 import java.time.Instant;
 
 /**
- * Handler for audit field population on insert and update operations.
+ * 插入和更新操作时审计字段填充的处理器。
  *
  * @author Richie
  */

@@ -1,7 +1,7 @@
 package com.richie.component.mongodb.exception;
 
 /**
- * Exception thrown when a MongoDB transaction error occurs.
+ * MongoDB 事务错误时抛出的异常。
  *
  * @author richie696
  * @since 1.x

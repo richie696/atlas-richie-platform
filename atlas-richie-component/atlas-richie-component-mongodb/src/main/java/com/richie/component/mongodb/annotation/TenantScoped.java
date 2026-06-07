@@ -6,13 +6,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks an entity as tenant-scoped, automatically filtering queries by tenant ID.
+ * 标记实体为租户作用域，自动根据租户 ID 过滤查询。
  * <p>
- * When a class is annotated with {@code @TenantScoped}, all query operations will
- * automatically include a tenant ID filter based on the current {@link com.richie.component.mongodb.core.TenantContext}.
- * This ensures data isolation between tenants.
+ * 当一个类被 {@code @TenantScoped} 注解时，所有查询操作会自动包含基于当前
+ * {@link com.richie.component.mongodb.core.TenantContext} 的租户 ID 过滤条件。
+ * 这确保了租户之间的数据隔离。
  * <p>
- * Example:
+ * 示例：
  * <pre>
  * &#64;TenantScoped("tenantId")
  * public class User {
@@ -27,9 +27,9 @@ import java.lang.annotation.Target;
 public @interface TenantScoped {
 
     /**
-     * The field name used to store the tenant identifier.
+     * 用于存储租户标识符的字段名。
      *
-     * @return the field name, defaults to "tenantId"
+     * @return 字段名，默认为 "tenantId"
      */
     String value() default "tenantId";
 }

@@ -6,13 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a field to expire (TTL index) after the specified number of seconds.
+ * 标记字段在指定秒数后过期（TTL 索引）。
  * <p>
- * When a field is annotated with {@code @ExpireAfter}, MongoDB will automatically
- * remove documents when the field's value exceeds the specified TTL.
- * The field should be of type {@link java.time.Instant} or {@link java.util.Date}.
+ * 当字段被 {@code @ExpireAfter} 注解时，MongoDB 会自动在字段值超过指定 TTL 时删除文档。
+ * 字段类型应为 {@link java.time.Instant} 或 {@link java.util.Date}。
  * <p>
- * Example:
+ * 示例：
  * <pre>
  * public class User {
  *     &#64;ExpireAfter(seconds = 3600)
@@ -27,9 +26,9 @@ import java.lang.annotation.Target;
 public @interface ExpireAfter {
 
     /**
-     * The number of seconds after which the document should expire.
+     * 文档过期前的秒数。
      *
-     * @return the TTL in seconds
+     * @return TTL 秒数
      */
     long seconds();
 }

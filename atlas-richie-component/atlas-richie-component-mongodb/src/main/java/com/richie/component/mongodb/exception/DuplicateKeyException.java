@@ -1,7 +1,7 @@
 package com.richie.component.mongodb.exception;
 
 /**
- * Exception thrown when a duplicate key violation occurs during insert.
+ * 插入时发生重复键冲突时抛出的异常。
  *
  * @author richie696
  * @since 1.x
@@ -17,10 +17,10 @@ public class DuplicateKeyException extends MongodbException {
     }
 
     /**
-     * Wrap a MongoDB DuplicateKeyException into this type.
+     * 将 MongoDB DuplicateKeyException 包装为当前类型。
      *
-     * @param e the original MongoDB exception
-     * @return a new DuplicateKeyException wrapping the original
+     * @param e 原始 MongoDB 异常
+     * @return 包装了原始异常的新 DuplicateKeyException
      */
     public static DuplicateKeyException wrap(com.mongodb.DuplicateKeyException e) {
         return new DuplicateKeyException("Duplicate key: " + e.getMessage(), e);

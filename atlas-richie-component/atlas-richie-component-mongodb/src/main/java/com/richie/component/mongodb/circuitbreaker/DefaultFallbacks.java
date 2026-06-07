@@ -11,15 +11,14 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Default fallback methods for MongoDB circuit breaker.
+ * MongoDB 断路器的默认降级方法。
  * <p>
- * When Sentinel triggers a degrade (slow request ratio exceeded),
- * these methods return safe empty results instead of propagating the exception.
+ * 当 Sentinel 触发降级（慢请求比例超标）时，
+ * 这些方法返回安全的空结果，而不是传播异常。
  * <p>
- * Design decision: For builder-returning methods (query/update/delete),
- * we return a special "degraded" builder that returns safe empty results
- * on terminal operations. This allows the fluent API to remain chainable
- * even when degraded.
+ * 设计决策：对于返回构建器的方法（query/update/delete），
+ * 我们返回一个特殊的"降级"构建器，在终止操作时返回安全的空结果。
+ * 这使得流式 API 在降级时仍能保持链式调用。
  *
  * @author richie696
  * @version 1.0
@@ -31,21 +30,21 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Fallback for query operations - returns empty list.
+     * 查询操作的降级方法 - 返回空列表。
      *
-     * @param entityClass the entity class (ignored in fallback)
-     * @param <T>        the entity type
-     * @return empty list
+     * @param entityClass 实体类（降级时忽略）
+     * @param <T>        实体类型
+     * @return 空列表
      */
     public static <T> List<T> query(Class<T> entityClass) {
         return Collections.emptyList();
     }
 
     /**
-     * Fallback for count operations - returns zero.
+     * 计数操作的降级方法 - 返回零。
      *
-     * @param entityClass the entity class (ignored in fallback)
-     * @param <T>        the entity type
+     * @param entityClass 实体类（降级时忽略）
+     * @param <T>        实体类型
      * @return 0L
      */
     public static <T> Long count(Class<T> entityClass) {
@@ -53,10 +52,10 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Fallback for one() operations - returns null.
+     * one() 操作的降级方法 - 返回 null。
      *
-     * @param entityClass the entity class (ignored in fallback)
-     * @param <T>        the entity type
+     * @param entityClass 实体类（降级时忽略）
+     * @param <T>        实体类型
      * @return null
      */
     public static <T> T one(Class<T> entityClass) {
@@ -64,10 +63,10 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Fallback for oneOpt() operations - returns empty Optional.
+     * oneOpt() 操作的降级方法 - 返回空 Optional。
      *
-     * @param entityClass the entity class (ignored in fallback)
-     * @param <T>        the entity type
+     * @param entityClass 实体类（降级时忽略）
+     * @param <T>        实体类型
      * @return Optional.empty()
      */
     public static <T> Optional<T> oneOpt(Class<T> entityClass) {
@@ -75,18 +74,18 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Fallback for pageResult() operations - returns empty PageResult.
+     * pageResult() 操作的降级方法 - 返回空 PageResult。
      *
-     * @param entityClass the entity class (ignored in fallback)
-     * @param <T>        the entity type
-     * @return empty PageResult
+     * @param entityClass 实体类（降级时忽略）
+     * @param <T>        实体类型
+     * @return 空 PageResult
      */
     public static <T> PageResult<T> pageResult(Class<T> entityClass) {
         return new PageResult<>(Collections.emptyList(), 0, 1, 0);
     }
 
     /**
-     * Fallback for update.execute() operations - returns 0L (no documents modified).
+     * update.execute() 操作的降级方法 - 返回 0L（无文档被修改）。
      *
      * @return 0L
      */
@@ -95,9 +94,9 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Fallback for update.executeAndReturn() operations - returns null.
+     * update.executeAndReturn() 操作的降级方法 - 返回 null。
      *
-     * @param <T> the entity type
+     * @param <T> 实体类型
      * @return null
      */
     public static <T> T updateExecuteAndReturn() {
@@ -105,7 +104,7 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Fallback for delete.execute() operations - returns 0L (no documents deleted).
+     * delete.execute() 操作的降级方法 - 返回 0L（无文档被删除）。
      *
      * @return 0L
      */
@@ -114,9 +113,9 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Fallback for save operations - returns null.
+     * save 操作的降级方法 - 返回 null。
      *
-     * @param <T> the entity type
+     * @param <T> 实体类型
      * @return null
      */
     public static <T> T save() {
@@ -124,9 +123,9 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Fallback for insert operations - returns null.
+     * insert 操作的降级方法 - 返回 null。
      *
-     * @param <T> the entity type
+     * @param <T> 实体类型
      * @return null
      */
     public static <T> T insert() {
@@ -134,19 +133,19 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Fallback for insertAll operations - returns empty list.
+     * insertAll 操作的降级方法 - 返回空列表。
      *
-     * @param <T> the entity type
-     * @return empty list
+     * @param <T> 实体类型
+     * @return 空列表
      */
     public static <T> List<T> insertAll() {
         return Collections.emptyList();
     }
 
     /**
-     * Fallback for findById operations - returns empty Optional.
+     * findById 操作的降级方法 - 返回空 Optional。
      *
-     * @param <T> the entity type
+     * @param <T> 实体类型
      * @return Optional.empty()
      */
     public static <T> Optional<T> findById() {
@@ -154,7 +153,7 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Fallback for existsById operations - returns false.
+     * existsById 操作的降级方法 - 返回 false。
      *
      * @return false
      */
@@ -163,7 +162,7 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Fallback for deleteById operations - returns false (not an error, just no-op).
+     * deleteById 操作的降级方法 - 返回 false（不是错误，只是无操作）。
      *
      * @return false
      */
@@ -172,7 +171,7 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Fallback for dropCollection operations - returns false (not an error, just no-op).
+     * dropCollection 操作的降级方法 - 返回 false（不是错误，只是无操作）。
      *
      * @return false
      */
@@ -181,45 +180,45 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Returns a degraded QueryBuilder that returns empty list on terminal operations.
+     * 返回一个在终止操作时返回空列表的降级 QueryBuilder。
      * <p>
-     * This allows the fluent API to remain chainable when degraded:
+     * 这使得流式 API 在降级时仍能保持链式调用：
      * <pre>
-     * mongodb.query(Entity.class).eq(...).list()  // returns empty list when degraded
+     * mongodb.query(Entity.class).eq(...).list()  // 降级时返回空列表
      * </pre>
      *
-     * @param entityClass the entity class (ignored in fallback)
-     * @param <T>        the entity type
-     * @return a QueryBuilder that returns empty results
+     * @param entityClass 实体类（降级时忽略）
+     * @param <T>        实体类型
+     * @return 返回空结果的 QueryBuilder
      */
     public static <T> QueryBuilder<T> queryBuilder(Class<T> entityClass) {
         return new DegradedQueryBuilder<>();
     }
 
     /**
-     * Returns a degraded UpdateBuilder that returns 0 on execute.
+     * 返回一个在执行时返回 0 的降级 UpdateBuilder。
      *
-     * @param entityClass the entity class (ignored in fallback)
-     * @param <T>        the entity type
-     * @return an UpdateBuilder that returns 0
+     * @param entityClass 实体类（降级时忽略）
+     * @param <T>        实体类型
+     * @return 返回 0 的 UpdateBuilder
      */
     public static <T> UpdateBuilder<T> updateBuilder(Class<T> entityClass) {
         return new DegradedUpdateBuilder<>();
     }
 
     /**
-     * Returns a degraded DeleteBuilder that returns 0 on execute.
+     * 返回一个在执行时返回 0 的降级 DeleteBuilder。
      *
-     * @param entityClass the entity class (ignored in fallback)
-     * @param <T>        the entity type
-     * @return a DeleteBuilder that returns 0
+     * @param entityClass 实体类（降级时忽略）
+     * @param <T>        实体类型
+     * @return 返回 0 的 DeleteBuilder
      */
     public static <T> DeleteBuilder<T> deleteBuilder(Class<T> entityClass) {
         return new DegradedDeleteBuilder<>();
     }
 
     /**
-     * Degraded QueryBuilder that returns empty list on terminal operations.
+     * 在终止操作时返回空列表的降级 QueryBuilder。
      */
     private static class DegradedQueryBuilder<T> extends QueryBuilder<T> {
         DegradedQueryBuilder() {
@@ -258,7 +257,7 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Degraded UpdateBuilder that returns 0 on execute.
+     * 在执行时返回 0 的降级 UpdateBuilder。
      */
     private static class DegradedUpdateBuilder<T> extends UpdateBuilder<T> {
         DegradedUpdateBuilder() {
@@ -277,7 +276,7 @@ public final class DefaultFallbacks {
     }
 
     /**
-     * Degraded DeleteBuilder that returns 0 on execute.
+     * 在执行时返回 0 的降级 DeleteBuilder。
      */
     private static class DegradedDeleteBuilder<T> extends DeleteBuilder<T> {
         DegradedDeleteBuilder() {

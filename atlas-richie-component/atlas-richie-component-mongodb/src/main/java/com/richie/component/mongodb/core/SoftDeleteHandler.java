@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Handler for soft delete operations and query filtering.
+ * 软删除操作和查询过滤的处理器。
  *
  * @author Richie
  */

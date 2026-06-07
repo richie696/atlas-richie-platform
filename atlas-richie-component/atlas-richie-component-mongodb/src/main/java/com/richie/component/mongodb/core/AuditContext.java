@@ -1,11 +1,10 @@
 package com.richie.component.mongodb.core;
 
 /**
- * Provides access to the current audit context (user information).
+ * 提供当前审计上下文（用户信息）的访问。
  * <p>
- * This component retrieves the current user's name from the Spring Security
- * context for populating audit fields. If no authentication is present or
- * Spring Security is not on the classpath, returns "system" as the default.
+ * 此组件从 Spring Security 上下文获取当前用户名，用于填充审计字段。
+ * 如果不存在认证信息或 Spring Security 不在 classpath 中，则默认返回 "system"。
  *
  * @author Richie
  */
