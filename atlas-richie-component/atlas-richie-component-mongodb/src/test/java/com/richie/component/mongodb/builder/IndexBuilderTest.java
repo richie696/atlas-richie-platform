@@ -1,17 +1,22 @@
 package com.richie.component.mongodb.builder;
 
 import com.richie.component.mongodb.core.EntityIntrospector;
+import lombok.Data;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.IndexDefinition;
+import org.springframework.data.mongodb.core.index.Indexed;
+
+import java.util.Collections;
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class IndexBuilderTest {
@@ -33,27 +38,25 @@ class IndexBuilderTest {
     }
 
     @Test
-    void ensureIndexes_shouldCallEnsureIndex() {
+    void ensureIndexes_shouldCallCreateIndex() throws NoSuchFieldException {
         when(mongoTemplate.indexOps(User.class)).thenReturn(indexOperations);
+        when(entityIntrospector.getIndexedFields(User.class))
+                .thenReturn(List.of(User.class.getDeclaredField("username"), User.class.getDeclaredField("email")));
+        when(entityIntrospector.getExpireAfterFields(User.class)).thenReturn(Collections.emptyList());
         indexBuilder.ensureIndexes(User.class);
-        verify(indexOperations, times(2)).ensureIndex(any(IndexDefinition.class));
+        verify(indexOperations, times(2)).createIndex(any(IndexDefinition.class));
     }
 
+    @Data
     static class User {
-        @org.springframework.data.annotation.Id
+        @Id
         private String id;
 
-        @org.springframework.data.mongodb.core.index.Indexed(unique = true)
+        @Indexed(unique = true)
         private String username;
 
-        @org.springframework.data.mongodb.core.index.Indexed
+        @Indexed
         private String email;
 
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public String getUsername() { return username; }
-        public void setUsername(String username) { this.username = username; }
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
     }
 }

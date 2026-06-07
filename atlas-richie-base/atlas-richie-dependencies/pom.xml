@@ -32,6 +32,7 @@
         <redisson.version>4.4.0</redisson.version>
         <httpclient5.version>5.6.1</httpclient5.version>
         <cglib.version>3.3.0</cglib.version>
+        <javassist.version>3.31.0-GA</javassist.version>
 
         <!-- 对象存储 SDK 相关版本 -->
         <jettison.version>1.5.5</jettison.version>

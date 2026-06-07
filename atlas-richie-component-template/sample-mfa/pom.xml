@@ -107,6 +107,8 @@
                         <arg>-parameters</arg>
                         <arg>--enable-preview</arg>
                         <arg>-Xlint:all</arg>
+                        <!-- 压制"依赖jar中的类使用了preview feature"的警告，因为无法修改第三方jar的编译参数 -->
+                        <arg>-Xlint:-preview</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
                         <path>

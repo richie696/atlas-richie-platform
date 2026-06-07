@@ -9,8 +9,11 @@ import org.springframework.data.mongodb.core.index.IndexDefinition;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.index.IndexDirection;
 import org.springframework.stereotype.Component;
+
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class IndexBuilder {
@@ -31,31 +34,33 @@ public class IndexBuilder {
     private void ensureIndexesForClass(Class<?> clazz) {
         var ops = mongoTemplate.indexOps(clazz);
         List<IndexDefinition> indexesToCreate = new ArrayList<>();
-        for (java.lang.reflect.Field field : clazz.getDeclaredFields()) {
-            if (field.isAnnotationPresent(Indexed.class)) {
-                Indexed indexed = field.getAnnotation(Indexed.class);
-                Index index = new Index();
-                if (indexed.unique()) {
-                    index.unique();
-                }
-                if (!indexed.name().isEmpty()) {
-                    index.named(indexed.name());
-                }
-                Sort.Direction dir = indexed.direction() == IndexDirection.ASCENDING
-                        ? Sort.Direction.ASC
-                        : Sort.Direction.DESC;
-                index.on(field.getName(), dir);
-                indexesToCreate.add(index);
+
+        // Use EntityIntrospector (cached) instead of manual reflection
+        for (Field field : entityIntrospector.getIndexedFields(clazz)) {
+            Indexed indexed = field.getAnnotation(Indexed.class);
+            Index index = new Index();
+            if (indexed.unique()) {
+                index.unique();
             }
-            if (field.isAnnotationPresent(ExpireAfter.class)) {
-                ExpireAfter expireAfter = field.getAnnotation(ExpireAfter.class);
-                Index index = new Index().on(field.getName(), Sort.Direction.ASC)
-                        .expire(expireAfter.seconds(), java.util.concurrent.TimeUnit.SECONDS);
-                indexesToCreate.add(index);
+            if (!indexed.name().isEmpty()) {
+                index.named(indexed.name());
             }
+            Sort.Direction dir = indexed.direction() == IndexDirection.ASCENDING
+                    ? Sort.Direction.ASC
+                    : Sort.Direction.DESC;
+            index.on(field.getName(), dir);
+            indexesToCreate.add(index);
         }
+
+        for (Field field : entityIntrospector.getExpireAfterFields(clazz)) {
+            ExpireAfter expireAfter = field.getAnnotation(ExpireAfter.class);
+            Index index = new Index().on(field.getName(), Sort.Direction.ASC)
+                    .expire(expireAfter.seconds(), TimeUnit.SECONDS);
+            indexesToCreate.add(index);
+        }
+
         for (IndexDefinition indexDef : indexesToCreate) {
-            ops.ensureIndex(indexDef);
+            ops.createIndex(indexDef);
         }
     }
 }

@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  * <ul>
  *   <li>以数据库 statemachine_state_current 作为“索引”，按批次查询候选记录</li>
  *   <li>仅清理处于 FINAL/ERROR 状态、且 updated_at 早于配置阈值的记录</li>
- *   <li>通过 {@link StateMachineKeyBuilder} 计算 Redis Key，调用 {@link GlobalCache#removeCache(String)} 删除</li>
+ *   <li>通过 {@link StateMachineKeyBuilder} 计算 Redis Key，调用 {@link GlobalCache#key()} 返回的 {@link com.richie.component.cache.ops.KeyOps#removeCache(String)}  删除</li>
  *   <li>不改变数据库中的记录，数据库仍作为审计/归档数据源</li>
  * </ul>
  *
