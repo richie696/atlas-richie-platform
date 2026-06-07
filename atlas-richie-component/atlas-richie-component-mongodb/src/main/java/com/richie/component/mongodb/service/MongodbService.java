@@ -35,7 +35,10 @@ import java.util.function.Supplier;
  * @author richie696
  * @version 1.0.0
  * @since 2025/07/04
+ * @deprecated Prefer using {@link com.richie.component.mongodb.Mongodb} which provides a fluent API.
+ *             This interface will be removed in 2.0.
  */
+@Deprecated(since = "1.x", forRemoval = true)
 public interface MongodbService {
     /**
      * 插入单条文档
