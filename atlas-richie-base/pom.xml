@@ -16,6 +16,9 @@
     <properties>
         <!-- 中台组件版本 -->
         <middle.platform.version>${revision}</middle.platform.version>
+
+        <!-- 覆盖 Spring Boot BOM 默认的 Tomcat 11.0.21 至 11.0.22，修复 7 个 CVE -->
+        <tomcat.version>11.0.22</tomcat.version>
     </properties>
 
     <modules>
