@@ -21,4 +21,9 @@ class AuditContextTest {
     void currentUser_returnsSystemForAnyException() {
         assertThat(auditContext.currentUser()).isEqualTo("system");
     }
+
+    @Test
+    void currentUser_returnsSystemWhenClassNotFound() {
+        assertThat(auditContext.currentUser()).isEqualTo("system");
+    }
 }

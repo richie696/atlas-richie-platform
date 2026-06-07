@@ -379,6 +379,76 @@ class UpdateBuilderTest {
             .hasMessageContaining("can only be executed once");
     }
 
+    @Test
+    void nin_withNullCollection_shouldSkip() {
+        when(updateResult.getModifiedCount()).thenReturn(0L);
+        when(mongoTemplate.updateMulti(any(Query.class), any(Update.class), eq(TestDoc.class)))
+            .thenReturn(updateResult);
+
+        long count = new UpdateBuilder<>(TestDoc.class, mongoTemplate, introspector)
+            .nin(TestDoc::getStatus, null)
+            .set(TestDoc::getName, "test")
+            .execute();
+
+        assertThat(count).isEqualTo(0L);
+    }
+
+    @Test
+    void nin_withEmptyCollection_shouldSkip() {
+        when(updateResult.getModifiedCount()).thenReturn(0L);
+        when(mongoTemplate.updateMulti(any(Query.class), any(Update.class), eq(TestDoc.class)))
+            .thenReturn(updateResult);
+
+        long count = new UpdateBuilder<>(TestDoc.class, mongoTemplate, introspector)
+            .nin(TestDoc::getStatus, java.util.Collections.emptyList())
+            .set(TestDoc::getName, "test")
+            .execute();
+
+        assertThat(count).isEqualTo(0L);
+    }
+
+    @Test
+    void ge_withNullValue_shouldSkip() {
+        when(updateResult.getModifiedCount()).thenReturn(0L);
+        when(mongoTemplate.updateMulti(any(Query.class), any(Update.class), eq(TestDoc.class)))
+            .thenReturn(updateResult);
+
+        long count = new UpdateBuilder<>(TestDoc.class, mongoTemplate, introspector)
+            .ge(TestDoc::getAge, null)
+            .set(TestDoc::getName, "test")
+            .execute();
+
+        assertThat(count).isEqualTo(0L);
+    }
+
+    @Test
+    void lt_withNullValue_shouldSkip() {
+        when(updateResult.getModifiedCount()).thenReturn(0L);
+        when(mongoTemplate.updateMulti(any(Query.class), any(Update.class), eq(TestDoc.class)))
+            .thenReturn(updateResult);
+
+        long count = new UpdateBuilder<>(TestDoc.class, mongoTemplate, introspector)
+            .lt(TestDoc::getAge, null)
+            .set(TestDoc::getName, "test")
+            .execute();
+
+        assertThat(count).isEqualTo(0L);
+    }
+
+    @Test
+    void le_withNullValue_shouldSkip() {
+        when(updateResult.getModifiedCount()).thenReturn(0L);
+        when(mongoTemplate.updateMulti(any(Query.class), any(Update.class), eq(TestDoc.class)))
+            .thenReturn(updateResult);
+
+        long count = new UpdateBuilder<>(TestDoc.class, mongoTemplate, introspector)
+            .le(TestDoc::getAge, null)
+            .set(TestDoc::getName, "test")
+            .execute();
+
+        assertThat(count).isEqualTo(0L);
+    }
+
     static class TestDoc {
         private String id;
         private String name;

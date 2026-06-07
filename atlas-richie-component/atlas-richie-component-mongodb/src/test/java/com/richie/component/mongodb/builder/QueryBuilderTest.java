@@ -1,6 +1,7 @@
 package com.richie.component.mongodb.builder;
 
 import com.richie.component.mongodb.core.EntityIntrospector;
+import com.richie.component.mongodb.core.TenantContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -352,6 +353,119 @@ class QueryBuilderTest {
         when(mongoTemplate.count(any(Query.class), eq(TestEntity.class))).thenReturn(0L);
         long count = builder.count();
         assertThat(count).isEqualTo(0L);
+    }
+
+    @Test
+    void eq_withNullValue_shouldSkip() {
+        builder.eq(TestEntity::getName, null);
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+    }
+
+    @Test
+    void gt_withNullValue_shouldSkip() {
+        builder.gt(TestEntity::getAge, null);
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+    }
+
+    @Test
+    void ge_withNullValue_shouldSkip() {
+        builder.ge(TestEntity::getAge, null);
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+    }
+
+    @Test
+    void lt_withNullValue_shouldSkip() {
+        builder.lt(TestEntity::getAge, null);
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+    }
+
+    @Test
+    void le_withNullValue_shouldSkip() {
+        builder.le(TestEntity::getAge, null);
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+    }
+
+    @Test
+    void ne_withNullValue_shouldSkip() {
+        builder.ne(TestEntity::getName, null);
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+    }
+
+    @Test
+    void in_withNullCollection_shouldSkip() {
+        builder.in(TestEntity::getStatus, null);
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+    }
+
+    @Test
+    void in_withEmptyCollection_shouldSkip() {
+        builder.in(TestEntity::getStatus, List.of());
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+    }
+
+    @Test
+    void nin_withNullCollection_shouldSkip() {
+        builder.nin(TestEntity::getStatus, null);
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+    }
+
+    @Test
+    void nin_withEmptyCollection_shouldSkip() {
+        builder.nin(TestEntity::getStatus, List.of());
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+    }
+
+    @Test
+    void bypassTenant_shouldSetFlag() {
+        builder.bypassTenant();
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+    }
+
+    @Test
+    void ignoreSoftDelete_shouldSetFlag() {
+        builder.ignoreSoftDelete();
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+    }
+
+    @Test
+    void applyAnnotationFilters_withSoftDeleteField_shouldAddCriteria() {
+        when(entityIntrospector.getSoftDeleteField(TestEntity.class)).thenReturn("deleted");
+        when(entityIntrospector.getTenantField(TestEntity.class)).thenReturn(null);
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+    }
+
+    @Test
+    void applyAnnotationFilters_withTenantFieldAndContext_shouldAddCriteria() {
+        when(entityIntrospector.getSoftDeleteField(TestEntity.class)).thenReturn(null);
+        when(entityIntrospector.getTenantField(TestEntity.class)).thenReturn("tenantId");
+        TenantContext.set("test-tenant");
+        try {
+            builder.list();
+            verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    @Test
+    void applyAnnotationFilters_withTenantFieldAndNoContext_shouldNotAddTenantCriteria() {
+        when(entityIntrospector.getSoftDeleteField(TestEntity.class)).thenReturn(null);
+        when(entityIntrospector.getTenantField(TestEntity.class)).thenReturn("tenantId");
+        builder.list();
+        verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
     }
 
     static class TestEntity {

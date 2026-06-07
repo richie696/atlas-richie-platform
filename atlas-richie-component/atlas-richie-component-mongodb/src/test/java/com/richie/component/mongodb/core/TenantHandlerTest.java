@@ -5,7 +5,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.mongodb.core.query.Query;
+import java.lang.reflect.Field;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TenantHandlerTest {
 
@@ -59,12 +62,57 @@ class TenantHandlerTest {
         assertThat(handler.getTenantField(PlainEntity.class)).isNull();
     }
 
-    @TenantScoped
+    @Test
+    void fillOnInsert_whenTenantScopedAndContextSet() {
+        TenantContext.set("tenant-abc");
+        TenantScopedEntity entity = new TenantScopedEntity();
+        handler.fillOnInsert(entity);
+        assertThat(entity.getTenantId()).isEqualTo("tenant-abc");
+    }
+
+    @Test
+    void fillOnInsert_whenTenantScopedAndContextNotSet() {
+        TenantScopedEntity entity = new TenantScopedEntity();
+        handler.fillOnInsert(entity);
+        assertThat(entity.getTenantId()).isNull();
+    }
+
+    @Test
+    void fillOnInsert_whenNotTenantScoped_shouldNotThrow() {
+        PlainEntity entity = new PlainEntity();
+        handler.fillOnInsert(entity);
+        assertThat(entity.getName()).isNull();
+    }
+
+    @Test
+    void getTenantField_whenCached_shouldReturnFromCache() {
+        String first = handler.getTenantField(TenantScopedEntity.class);
+        String second = handler.getTenantField(TenantScopedEntity.class);
+        assertThat(first).isEqualTo(second);
+    }
+
+    @Test
+    void getTenantField_whenInSuperclass_shouldFindInSuperclass() {
+        String fieldName = handler.getTenantField(ChildTenantScopedEntity.class);
+        assertThat(fieldName).isEqualTo("tenantId");
+    }
+
+    @TenantScoped("tenantId")
     private static class TenantScopedEntity {
         private String tenantId;
+
+        public String getTenantId() { return tenantId; }
+        public void setTenantId(String tenantId) { this.tenantId = tenantId; }
     }
 
     private static class PlainEntity {
         private String name;
+
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+    }
+
+    @TenantScoped("tenantId")
+    private static class ChildTenantScopedEntity extends TenantScopedEntity {
     }
 }
