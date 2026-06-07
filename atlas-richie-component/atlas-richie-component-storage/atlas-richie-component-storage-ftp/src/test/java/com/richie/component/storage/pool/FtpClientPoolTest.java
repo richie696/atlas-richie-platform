@@ -4,6 +4,7 @@ import com.richie.component.storage.bean.FtpConfig;
 import org.apache.commons.net.ftp.FTPClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -13,6 +14,11 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Disabled("""
+        需要本地 FTP 服务器(127.0.0.1:21, 凭据 ftpuser/ftppass)，
+        但测试中无 @BeforeAll 启动服务器。本地构建/CI 环境无 FTP 服务。
+        后续可改用 MockFtpServer 或 Testcontainers 重新实现。
+        """)
 class FtpClientPoolTest {
 
     private static final String FTP_HOST = "127.0.0.1";
