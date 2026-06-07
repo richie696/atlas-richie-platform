@@ -190,11 +190,13 @@ public class QdRantVectorServiceImpl extends VectorServiceImpl implements Vector
 
             // 构建scroll points请求，设置分页参数
             // offset使用上一个文档的ID实现游标分页，避免offset大时的性能问题
-            var scoredPoints = Points.ScrollPoints.newBuilder()
+            var scoredPointsBuilder = Points.ScrollPoints.newBuilder()
                     .setCollectionName(indexName)
-                    .setLimit(limit)
-                    // 首次查询offset为null，后续使用lastId作为游标
-                    .setOffset(lastId != null ? Common.PointId.newBuilder().setNum(lastId).build() : null)
+                    .setLimit(limit);
+            if (lastId != null) {
+                scoredPointsBuilder.setOffset(Common.PointId.newBuilder().setNum(lastId).build());
+            }
+            Points.ScrollPoints scoredPoints = scoredPointsBuilder
                     .setWithVectors(withVectorsSelector)
                     .build();
 
