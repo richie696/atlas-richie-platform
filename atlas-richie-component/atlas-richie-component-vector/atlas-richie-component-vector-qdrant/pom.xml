@@ -50,6 +50,7 @@
                 <configuration>
                     <includes>
                         <include>com/richie/component/vector/config/*</include>
+                        <include>com/richie/component/vector/service/impl/*</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -58,6 +59,7 @@
                         <configuration>
                             <includes>
                                 <include>com/richie/component/vector/config/*</include>
+                                <include>com/richie/component/vector/service/impl/*</include>
                             </includes>
                             <rules>
                                 <rule>
