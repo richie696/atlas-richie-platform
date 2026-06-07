@@ -1,7 +1,6 @@
 package com.richie.component.redis.streammq;
 
 import com.richie.component.redis.streammq.function.StreamFunction;
-import com.richie.component.redis.streammq.ops.MessagingOps;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,25 +24,22 @@ class StreamMQTest {
     @Test
     void streamAndMessaging_shouldExposeInjectedDelegates() throws Exception {
         StreamFunction streamFn = mock(StreamFunction.class);
-        MessagingOps messagingOps = mock(MessagingOps.class);
-        StreamMQ.StreamMQDelegate delegate = new StreamMQ.StreamMQDelegate(streamFn, messagingOps);
+        StreamMQ.StreamMQDelegate delegate = new StreamMQ.StreamMQDelegate(streamFn);
 
         StreamMQ facade = newInstance();
         facade.setDelegate(delegate);
 
         assertThat(StreamMQ.stream()).isSameAs(streamFn);
-        assertThat(StreamMQ.messaging()).isSameAs(messagingOps);
     }
 
     @Test
     void setDelegate_shouldOnlyInitializeOnce() throws Exception {
         StreamFunction firstStream = mock(StreamFunction.class);
         StreamFunction secondStream = mock(StreamFunction.class);
-        MessagingOps messagingOps = mock(MessagingOps.class);
 
         StreamMQ facade = newInstance();
-        facade.setDelegate(new StreamMQ.StreamMQDelegate(firstStream, messagingOps));
-        facade.setDelegate(new StreamMQ.StreamMQDelegate(secondStream, messagingOps));
+        facade.setDelegate(new StreamMQ.StreamMQDelegate(firstStream));
+        facade.setDelegate(new StreamMQ.StreamMQDelegate(secondStream));
 
         assertThat(StreamMQ.stream()).isSameAs(firstStream);
     }

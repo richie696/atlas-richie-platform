@@ -65,12 +65,6 @@
 
         <dependency>
             <groupId>com.richie.component</groupId>
-            <artifactId>atlas-richie-component-redis-streammq</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>com.richie.component</groupId>
             <artifactId>atlas-richie-component-liquibase</artifactId>
         </dependency>
 

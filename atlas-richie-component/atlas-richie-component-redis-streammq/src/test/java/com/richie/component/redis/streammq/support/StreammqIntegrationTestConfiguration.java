@@ -9,7 +9,6 @@ import com.richie.component.redis.streammq.config.stream.RedisStreamIdempotencyP
 import com.richie.component.redis.streammq.config.stream.RedisStreamProperties;
 import com.richie.component.redis.streammq.config.tracing.RedisStreamTracingAutoConfiguration;
 import com.richie.component.redis.streammq.manage.RedisStreamManager;
-import com.richie.component.redis.streammq.ops.impl.MessagingOpsImpl;
 import com.richie.component.redis.streammq.stream.RedisStreamReactor;
 import com.richie.component.redis.streammq.tracing.RedisStreamTracingUtils;
 import com.richie.component.redis.streammq.utils.DeadLetterQueueUtil;
@@ -37,8 +36,6 @@ import org.springframework.context.annotation.Import;
         RedisStreamReactor.class,
         DeadLetterQueueUtil.class,
         RedisStreamTracingUtils.class,
-        MessagingOpsImpl.class,
-        RedisNotificationManager.class
 })
 @ComponentScan(
         basePackages = "com.richie.component.cache",
