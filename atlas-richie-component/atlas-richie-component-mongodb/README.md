@@ -669,13 +669,127 @@ public class CustomServerListener implements ServerListener {
     // 自定义实现
 }
 
-@Component  
+@Component
 public class CustomServerMonitorListener implements ServerMonitorListener {
     // 自定义实现
 }
 ```
 
-## 注意事项
+## 熔断降级（Circuit Breaker）
+
+组件集成了 Alibaba Sentinel 实现业务级熔断降级，当 MongoDB 操作响应时间超过阈值时自动降级，避免慢查询拖垮整个系统。
+
+### 工作原理
+
+- **熔断策略**: 慢请求比例（SLOW_REQUEST_RATIO）
+- **资源粒度**: 按操作类型划分，共 9 个资源：
+  - `mongodb.query` - 查询操作
+  - `mongodb.update` - 更新操作
+  - `mongodb.delete` - 删除操作
+  - `mongodb.insert` - 插入单条
+  - `mongodb.save` - 保存（插入或更新）
+  - `mongodb.findById` - 根据ID查询
+  - `mongodb.existsById` - 根据ID判断存在
+  - `mongodb.deleteById` - 根据ID删除
+  - `mongodb.dropCollection` - 删除集合
+
+### 默认阈值
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `maxRt` | 100ms | 慢请求判定阈值（毫秒） |
+| `slowRatioThreshold` | 0.5 | 慢请求比例阈值（50%） |
+| `timeWindow` | 10s | 熔断持续时间 |
+| `minRequestAmount` | 10 | 触发熔断的最小请求数 |
+| `statIntervalMs` | 1000ms | 统计时间窗口 |
+
+### 降级行为
+
+当 Sentinel 触发熔断降级时：
+- 操作返回安全的空结果（空列表、null、0 等）
+- OTel Span 标记为 `ERROR` 状态
+- 不抛出异常，业务代码无需 try-catch
+
+### 配置示例
+
+```yaml
+platform:
+  component:
+    mongodb:
+      circuit-breaker:
+        enabled: true
+        nacos-data-id: mongodb-sentinel-degrade-rules
+        nacos-group: DEFAULT_GROUP
+        max-rt: 100
+        slow-ratio-threshold: 0.5
+        time-window: 10
+        min-request-amount: 10
+        stat-interval-ms: 1000
+```
+
+### Nacos 规则配置
+
+在 Nacos 控制台创建配置：
+- **Data ID**: `mongodb-sentinel-degrade-rules`
+- **Group**: `DEFAULT_GROUP`
+- **配置格式**: JSON
+
+完整配置示例（`src/main/resources/mongodb-sentinel-degrade-rules.json`）:
+
+```json
+[
+  {
+    "resource": "mongodb.query",
+    "grade": 3,
+    "count": 100,
+    "slowRatioThreshold": 0.5,
+    "minRequestAmount": 10,
+    "statIntervalMs": 1000,
+    "timeWindow": 10
+  }
+]
+```
+
+配置说明：
+- `grade: 3` - 慢请求比例模式
+- `count` - 慢请求RT阈值（毫秒）
+- `slowRatioThreshold` - 慢请求比例（0.5 = 50%）
+- `timeWindow` - 熔断时间窗口（秒）
+
+### 自定义降级处理
+
+如需自定义降级逻辑，可使用 `@SentinelResource` 注解：
+
+```java
+@Service
+public class UserService {
+    @Autowired
+    private Mongodb mongodb;
+
+    @SentinelResource(value = "mongodb.query",
+                      blockHandler = "queryBlockHandler",
+                      fallback = "queryFallback")
+    public List<User> findUsers() {
+        return mongodb.query(User.class).eq("status", 1).list();
+    }
+
+    public List<User> queryBlockHandler(BlockException ex) {
+        return Collections.emptyList();
+    }
+
+    public List<User> queryFallback(Throwable t) {
+        log.error("查询用户失败", t);
+        return Collections.emptyList();
+    }
+}
+```
+
+### 注意事项
+
+1. 熔断降级仅针对业务级慢查询，不解决网络层问题
+2. `dropCollection` 操作 `minRequestAmount=1`，因为是危险操作应尽快熔断
+3. 降级后返回的空结果可能导致业务逻辑问题，请确保业务代码能正确处理空结果
+4. 规则支持热更新，修改 Nacos 配置后自动生效
 
 1. **索引优化**: 为查询条件字段设置合适的索引以提升性能
 2. **连接池配置**: 根据应用负载调整连接池参数
