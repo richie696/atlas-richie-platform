@@ -14,14 +14,14 @@ import org.springframework.stereotype.Service;
  * 使用 Redis SET NX 原子操作实现幂等去重，无需分布式锁。
  * <p>
  * 工作原理：
- * 1. 使用 {@link GlobalCache#addStringCacheIfAbsent} 方法（基于 Redis SET NX）
+ * 1. 使用 {@link com.richie.component.cache.ops.ValueOps#setIfAbsent(String, String, long) GlobalCache.value().setIfAbsent} 方法（基于 Redis SET NX）
  * 2. SET NX 是原子操作，确保并发场景下只有一个实例能成功写入
  * 3. 如果返回 false，说明消息已存在（重复），应该跳过处理
  * 4. 如果返回 true，说明消息不存在（首次），可以继续处理
  * <p>
  * 并发场景处理：
  * - 两个消费者实例同时收到同一条消息
- * - 两个实例都调用 `addStringCacheIfAbsent`（原子操作）
+ * - 两个实例都调用 `setIfAbsent`（原子操作）
  * - 只有一个实例能成功写入（返回 true），另一个返回 false
  * - 返回 false 的实例会抛出异常，消息被标记为重复，跳过处理
  * <p>
@@ -62,14 +62,14 @@ public class RedisDatasourceHandlerImpl implements DatasourceHandler {
      * 使用 Redis SET NX 原子操作，确保并发场景下只有一个实例能成功写入。
      * <p>
      * 实现原理：
-     * - 使用 {@link GlobalCache#addStringCacheIfAbsent} 方法
+     * - 使用 {@link com.richie.component.cache.ops.ValueOps#setIfAbsent(String, String, long) GlobalCache.value().setIfAbsent} 方法
      * - 底层调用 Redis 的 `SET key value NX EX timeout` 命令
      * - SET NX 是原子操作，在 Redis 服务器端执行，保证原子性
      * <p>
      * 并发场景示例：
      * 1. 消费者实例A和B同时收到同一条消息（messageId: msg-123）
-     * 2. 实例A调用 `addStringCacheIfAbsent("key", "1", 120000)` → 返回 true（成功写入）
-     * 3. 实例B调用 `addStringCacheIfAbsent("key", "1", 120000)` → 返回 false（key已存在）
+     * 2. 实例A调用 `setIfAbsent("key", "1", 120000)` → 返回 true（成功写入）
+     * 3. 实例B调用 `setIfAbsent("key", "1", 120000)` → 返回 false（key已存在）
      * 4. 实例A继续处理消息（返回 true）
      * 5. 实例B跳过处理（返回 false）
      * <p>
