@@ -1,0 +1,83 @@
+[
+  {
+    "resource": "mongodb.query",
+    "grade": 3,
+    "count": 100,
+    "slowRatioThreshold": 0.5,
+    "minRequestAmount": 10,
+    "statIntervalMs": 1000,
+    "timeWindow": 10
+  },
+  {
+    "resource": "mongodb.update",
+    "grade": 3,
+    "count": 100,
+    "slowRatioThreshold": 0.5,
+    "minRequestAmount": 10,
+    "statIntervalMs": 1000,
+    "timeWindow": 10
+  },
+  {
+    "resource": "mongodb.delete",
+    "grade": 3,
+    "count": 100,
+    "slowRatioThreshold": 0.5,
+    "minRequestAmount": 10,
+    "statIntervalMs": 1000,
+    "timeWindow": 10
+  },
+  {
+    "resource": "mongodb.insert",
+    "grade": 3,
+    "count": 100,
+    "slowRatioThreshold": 0.5,
+    "minRequestAmount": 10,
+    "statIntervalMs": 1000,
+    "timeWindow": 10
+  },
+  {
+    "resource": "mongodb.save",
+    "grade": 3,
+    "count": 100,
+    "slowRatioThreshold": 0.5,
+    "minRequestAmount": 10,
+    "statIntervalMs": 1000,
+    "timeWindow": 10
+  },
+  {
+    "resource": "mongodb.findById",
+    "grade": 3,
+    "count": 100,
+    "slowRatioThreshold": 0.5,
+    "minRequestAmount": 10,
+    "statIntervalMs": 1000,
+    "timeWindow": 10
+  },
+  {
+    "resource": "mongodb.existsById",
+    "grade": 3,
+    "count": 100,
+    "slowRatioThreshold": 0.5,
+    "minRequestAmount": 10,
+    "statIntervalMs": 1000,
+    "timeWindow": 10
+  },
+  {
+    "resource": "mongodb.deleteById",
+    "grade": 3,
+    "count": 100,
+    "slowRatioThreshold": 0.5,
+    "minRequestAmount": 10,
+    "statIntervalMs": 1000,
+    "timeWindow": 10
+  },
+  {
+    "resource": "mongodb.dropCollection",
+    "grade": 3,
+    "count": 100,
+    "slowRatioThreshold": 0.5,
+    "minRequestAmount": 1,
+    "statIntervalMs": 1000,
+    "timeWindow": 10
+  }
+]
