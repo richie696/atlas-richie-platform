@@ -1,5 +1,7 @@
-# 集测 Redis / 缓存配置（对齐 sample-cache 的 application-cache.yml）
-# Testcontainers 或 IT_USE_EXTERNAL 会通过 Initializer / @DynamicPropertySource 覆盖连接项
+# 集测缓存配置
+# Redis 连接信息（host/port/password/database）由 RedisIntegrationTestInitializer 通过 addFirst 注入
+# Testcontainers 启动无密码的 redis:7-alpine；IT_USE_EXTERNAL=true 时读取 {CACHE}_IT_REDIS_* 环境变量
+# 本文件只保留 Testcontainer 无法提供的组件专属属性
 spring:
   data:
     redis:
@@ -7,10 +9,6 @@ spring:
       server-type: standalone
       client-name: cache-it-redis
       client-type: lettuce
-      host: localhost
-      port: 16379
-      password: Redis2025!Local
-      database: 15
       timeout: 2000ms
       connect-timeout: 5000ms
       ssl:
