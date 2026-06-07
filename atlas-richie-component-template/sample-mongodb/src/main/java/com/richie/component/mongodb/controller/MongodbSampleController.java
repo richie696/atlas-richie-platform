@@ -1,9 +1,10 @@
 package com.richie.component.mongodb.controller;
 
-import com.richie.component.mongodb.service.MongodbService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -20,7 +21,7 @@ import java.util.Map;
 @RequestMapping("/mongodb")
 public class MongodbSampleController {
 
-    private final MongodbService mongodbService;
+    private final MongoTemplate mongoTemplate;
 
     @PostMapping(path = "/{collection}/doc", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Object> insert(@PathVariable("collection") String collection,
@@ -31,14 +32,14 @@ public class MongodbSampleController {
         if (doc.getCreatedAt() == null) {
             doc.setCreatedAt(Instant.now());
         }
-        var saved = mongodbService.insert(collection, doc);
+        var saved = mongoTemplate.insert(doc, collection);
         return Map.of("insertedId", saved.getId());
     }
 
     @GetMapping(path = "/{collection}/doc/{id}")
     public SimpleDoc findById(@PathVariable("collection") String collection,
                               @PathVariable("id") String id) {
-        return mongodbService.findById(collection, id, SimpleDoc.class);
+        return mongoTemplate.findById(id, SimpleDoc.class, collection);
     }
 
     @GetMapping(path = "/{collection}/docs")
@@ -48,7 +49,7 @@ public class MongodbSampleController {
         if (StringUtils.hasText(titleLike)) {
             query.addCriteria(Criteria.where("title").regex(titleLike));
         }
-        return mongodbService.find(query, collection, SimpleDoc.class);
+        return mongoTemplate.find(query, SimpleDoc.class, collection);
     }
 
     @PatchMapping(path = "/{collection}/doc/{id}")
@@ -57,14 +58,17 @@ public class MongodbSampleController {
                                  @RequestParam("title") String newTitle) {
         Query query = new Query(Criteria.where("_id").is(id));
         Update update = new Update().set("title", newTitle);
-        return mongodbService.updateOne(query, update, collection, SimpleDoc.class);
+        return mongoTemplate.findAndModify(
+                query, update,
+                FindAndModifyOptions.options().returnNew(true),
+                SimpleDoc.class, collection);
     }
 
     @DeleteMapping(path = "/{collection}/doc/{id}")
     public Map<String, Object> deleteById(@PathVariable("collection") String collection,
                                           @PathVariable("id") String id) {
         Query query = new Query(Criteria.where("_id").is(id));
-        long deleted = mongodbService.delete(query, collection, SimpleDoc.class);
+        long deleted = mongoTemplate.remove(query, SimpleDoc.class, collection).getDeletedCount();
         return Map.of("deleted", deleted);
     }
 
@@ -76,5 +80,3 @@ public class MongodbSampleController {
         private Instant createdAt;
     }
 }
-
-
