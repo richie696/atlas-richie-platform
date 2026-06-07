@@ -3,7 +3,9 @@ package com.richie.component.mongodb;
 import com.richie.component.mongodb.builder.DeleteBuilder;
 import com.richie.component.mongodb.builder.QueryBuilder;
 import com.richie.component.mongodb.builder.UpdateBuilder;
+import com.richie.component.mongodb.core.AuditFieldHandler;
 import com.richie.component.mongodb.core.EntityIntrospector;
+import com.richie.component.mongodb.core.TenantHandler;
 import com.richie.component.mongodb.exception.DuplicateKeyException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +36,9 @@ class MongodbTest {
 
     @BeforeEach
     void setUp() {
-        mongodb = new Mongodb(mongoTemplate, entityIntrospector);
+        AuditFieldHandler auditFieldHandler = new AuditFieldHandler();
+        TenantHandler tenantHandler = new TenantHandler();
+        mongodb = new Mongodb(mongoTemplate, entityIntrospector, auditFieldHandler, tenantHandler);
     }
 
     @Test
