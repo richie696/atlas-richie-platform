@@ -364,7 +364,7 @@ class HttpClient {
 确保Spring Cloud Gateway配置正确：
 
 ```yaml
-rydeen:
+atlas-richie:
   gateway:
     ecc-crypto:
       enabled: true
@@ -378,7 +378,6 @@ rydeen:
 
 - [Web版本客户端](../web/README.md)
 - [Node.js版本客户端](../nodejs/README.md)
-- [后端加密实现](../../../src/main/java/cn/com/rydeen/gateway/filter/EccCryptoFilter.java)
 
 ## 🐛 常见问题
 

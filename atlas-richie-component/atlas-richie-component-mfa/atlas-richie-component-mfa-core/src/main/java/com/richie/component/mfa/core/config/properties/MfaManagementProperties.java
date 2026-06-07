@@ -15,9 +15,9 @@ public class MfaManagementProperties {
      * <p>
      * 用于在二维码和 Authenticator 应用中显示发行方名称
      * <p>
-     * 默认值："Rydeen Inc."
+     * 默认值："Atlas Richie Inc."
      */
-    private String issuer = "Rydeen Inc.";
+    private String issuer = "Atlas Richie Inc.";
 
     /**
      * 是否启用Controller（默认启用）

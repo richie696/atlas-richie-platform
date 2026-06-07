@@ -1,5 +1,5 @@
 {
-  "name": "@rydeen/miniprogram-http-client",
+  "name": "@atlas-richie/miniprogram-http-client",
   "version": "1.0.0",
   "description": "统一HTTP客户端库 - 微信小程序版本，支持ECC+AES-GCM加密和防重复提交功能",
   "main": "framework/http-client.ts",

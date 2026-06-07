@@ -40,7 +40,7 @@ import java.util.*;
   *   <li>向量相似度搜索，返回匹配的文档及相似度分数</li>
   * </ul>
  *
- * @author Rydeen Platform Team
+ * @author richie696
  * @version 1.0.0
  * @since 1.0.0
  */

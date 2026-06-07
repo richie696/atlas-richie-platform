@@ -666,7 +666,7 @@ OAuth2.0 Client Credentials 模式签发的 `access_token` 采用 **JWT (JSON We
   "jti": "550e8400-e29b-41d4-a716-446655440000",  // JWT ID（用于防重放）
   "iss": "Richie Gateway",                // 签发者（Issuer）
   "sub": "client_credentials",            // 主题（Subject），标识 OAuth2.0 模式
-  "aud": "api.rydeen.com"                 // 受众（Audience），API 服务地址
+  "aud": "api.abc.com"                 // 受众（Audience），API 服务地址
 }
 ```
 
@@ -729,7 +729,7 @@ public static String generateThirdPartyAccessToken(
             .withJWTId(UUID.randomUUID().toString())
             .withIssuer("Richie Gateway")
             .withSubject("client_credentials")
-            .withAudience("api.rydeen.com");
+            .withAudience("api.abc.com");
     
     return builder.sign(algorithm);
 }
@@ -860,7 +860,7 @@ public TokenResponse refreshToken(String refreshToken) {
 {
   "error": "invalid_client",
   "error_description": "客户端认证失败",
-  "error_uri": "https://docs.rydeen.com/oauth2/errors#invalid_client"
+  "error_uri": "https://docs.richie696.cn/oauth2/errors#invalid_client"
 }
 ```
 

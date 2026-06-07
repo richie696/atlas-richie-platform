@@ -23,7 +23,7 @@ public interface DatasourceHandler {
      * <p>
      * 用于在Redis或内存中存储消息去重标识的前缀。
      */
-    String KEY = "rydeen:platform:duplicate:mqtt:";
+    String KEY = "atlas:richie:platform:duplicate:mqtt:";
 
     /**
      * 检查当前消息是否是重复消息的方法

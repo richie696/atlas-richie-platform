@@ -3,7 +3,7 @@ name = "richie-http-client"
 version = "1.0.0"
 edition = "2021"
 authors = ["richie696"]
-description = "润典网关Rust客户端库 - 支持ECC+AES-GCM加密和防重复提交"
+description = "应用网关Rust客户端库 - 支持ECC+AES-GCM加密和防重复提交"
 license = "MIT"
 
 [dependencies]

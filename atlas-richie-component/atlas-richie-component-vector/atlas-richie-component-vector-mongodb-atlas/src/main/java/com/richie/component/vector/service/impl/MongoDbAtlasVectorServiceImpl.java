@@ -33,7 +33,7 @@ import java.util.List;
  * <p>该实现通过 Spring Boot 自动配置激活,当配置文件中
  * {@code platform.component.vector.provider=mongodb} 时生效.
  *
- * @author Rydeen Platform Team
+ * @author richie696
  * @version 1.0.0
  * @since 1.0.0
  */

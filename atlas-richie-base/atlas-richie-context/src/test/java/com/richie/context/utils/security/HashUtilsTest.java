@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class HashUtilsTest {
 
-    private static final String INPUT = "rydeen-platform";
+    private static final String INPUT = "atlas-richie-platform";
     private static final byte[] INPUT_BYTES = INPUT.getBytes(StandardCharsets.UTF_8);
 
     @Test

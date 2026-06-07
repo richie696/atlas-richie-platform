@@ -1,7 +1,7 @@
 {
   "name": "@atlas/http-client-nodejs",
   "version": "1.0.0",
-  "description": "润典网关Node.js客户端库 - 支持ECC+AES-GCM加密和防重复提交",
+  "description": "应用网关Node.js客户端库 - 支持ECC+AES-GCM加密和防重复提交",
   "main": "framework/http-client.ts",
   "types": "framework/http-client.ts",
   "scripts": {

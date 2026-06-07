@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * <p><b>注意：</b>Qdrant作为托管型向量数据库，不支持传统意义上的索引管理操作
  * （创建/删除索引），因此相关方法会抛出UnsupportedOperationException。</p>
  *
- * @author Rydeen Platform Team
+ * @author richie696
  * @version 1.0.0-SNAPSHOT
  * @since 1.0.0
  */

@@ -750,7 +750,7 @@ const result = await client.request(AppUrl.USER_LOGIN, {
 
 检查：
 1. 网关地址是否正确
-2. 网关的ECC加密功能是否启用（`rydeen.gateway.ecc-crypto.enabled=true`）
+2. 网关的ECC加密功能是否启用（`atlas-richie.gateway.ecc-crypto.enabled=true`）
 3. 网络连接是否正常
 4. 浏览器控制台的详细错误信息
 
@@ -808,7 +808,7 @@ duplicateSubmitTimeWindow: 10000
 确保Spring Cloud Gateway配置正确：
 
 ```yaml
-rydeen:
+atlas-richie:
   gateway:
     ecc-crypto:
       enabled: true

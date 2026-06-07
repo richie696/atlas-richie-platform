@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @OpenAPIDefinition(
         info = @Info(
-                title = "润典通用网关接口",
+                title = "通用网关接口",
                 version = "3.0",
                 description = "更多请咨询服务开发者richie696。",
                 contact = @Contact(

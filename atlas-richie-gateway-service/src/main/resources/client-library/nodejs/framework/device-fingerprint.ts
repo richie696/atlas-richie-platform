@@ -60,7 +60,7 @@ export interface HardwareFingerprint {
 interface FingerprintStorageConfig {
     /** 存储文件路径（默认：应用数据目录） */
     storagePath?: string;
-    /** 存储文件名（默认：.rydeen_device_fingerprint） */
+    /** 存储文件名（默认：.atlas_richie_device_fingerprint） */
     storageFileName?: string;
     /** 加密密钥（用于加密存储，如果提供） */
     encryptionKey?: string;
@@ -70,7 +70,7 @@ interface FingerprintStorageConfig {
  * 默认存储配置
  */
 const DEFAULT_CONFIG: Required<FingerprintStorageConfig> = {
-    storagePath: path.join(os.homedir(), '.rydeen'),
+    storagePath: path.join(os.homedir(), '.atlas_richie'),
     storageFileName: '.device_fingerprint',
     encryptionKey: '' // 默认不加密，生产环境建议提供
 };

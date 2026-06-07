@@ -41,7 +41,7 @@ Android 原生应用具有强大的系统访问能力，可以获取完整的设
 ### 3.1 基础使用
 
 ```kotlin
-import com.rydeen.httpclient.DeviceFingerprint
+import com.richie.httpclient.DeviceFingerprint
 
 // 1. 获取或创建设备指纹（首次启动时会生成并保存）
 val fingerprint = DeviceFingerprint.getOrCreateDeviceFingerprint(context)
@@ -56,7 +56,7 @@ println("设备名称: $deviceName") // "Xiaomi Mi 14 on Android 13"
 ### 3.2 登录时使用
 
 ```kotlin
-import com.rydeen.httpclient.DeviceFingerprint
+import com.richie.httpclient.DeviceFingerprint
 
 fun login(username: String, password: String, mfaCode: String?) {
     // 1. 获取存储的设备指纹（用于稳定性）
@@ -96,7 +96,7 @@ fun login(username: String, password: String, mfaCode: String?) {
 ### 3.3 集成到 HTTP 客户端
 
 ```kotlin
-import com.rydeen.httpclient.DeviceFingerprint
+import com.richie.httpclient.DeviceFingerprint
 
 class SecureHttpClient(private val context: Context) {
     private val okHttpClient = OkHttpClient.Builder()

@@ -20,7 +20,7 @@
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-tracing</artifactId>
-    <version>${rydeen.version}</version>
+    <version>${atlas.richie.version}</version>
 </dependency>
 ```
 

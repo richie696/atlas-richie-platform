@@ -9,12 +9,12 @@ package com.richie.component.mqtt.exceptions;
  * @version 1.0
  * @since 2022-09-12 13:41:26
  */
-public class RydeenConsumerException extends Exception {
+public class MqttConsumerException extends Exception {
 
     /**
      * 构造一个空的消费者异常
      */
-    public RydeenConsumerException() {
+    public MqttConsumerException() {
     }
 
     /**
@@ -22,7 +22,7 @@ public class RydeenConsumerException extends Exception {
      *
      * @param message 错误消息
      */
-    public RydeenConsumerException(String message) {
+    public MqttConsumerException(String message) {
         super(message);
     }
 
@@ -32,7 +32,7 @@ public class RydeenConsumerException extends Exception {
      * @param message 错误消息
      * @param cause   异常原因
      */
-    public RydeenConsumerException(String message, Throwable cause) {
+    public MqttConsumerException(String message, Throwable cause) {
         super(message, cause);
     }
 
@@ -41,7 +41,7 @@ public class RydeenConsumerException extends Exception {
      *
      * @param cause 异常原因
      */
-    public RydeenConsumerException(Throwable cause) {
+    public MqttConsumerException(Throwable cause) {
         super(cause);
     }
 
@@ -53,7 +53,7 @@ public class RydeenConsumerException extends Exception {
      * @param enableSuppression  是否启用抑制
      * @param writableStackTrace 是否可写堆栈跟踪
      */
-    public RydeenConsumerException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    public MqttConsumerException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 }

@@ -49,8 +49,6 @@ import java.util.concurrent.ConcurrentMap;
  * 前实例收到的ClientID，然后由该服务的全部实例来消费该消息，由当前ClientID所在的服务实例去发送
  * 消息，其它不存在该的服务实例则直接不处理该消息即可，这样就可以实现多实例部署的情况下的SSE推送。
  *
- * <p><a href="https://codeup.aliyun.com/rydeen/platform/framework-backend-template/richie-component-frontend.git">⬇️前端对接代码下载</a>
- *
  * @author richie696
  * @version 1.0
  * @since 2024-08-12 16:05:23

@@ -8,7 +8,7 @@ import com.richie.component.mqtt.config.MqttClientProperties;
 import com.richie.component.mqtt.enums.ClientTypeEnum;
 import com.richie.component.mqtt.enums.NetworkTypeEnum;
 import com.richie.component.mqtt.enums.QosEnum;
-import com.richie.component.mqtt.exceptions.RydeenMqttClientException;
+import com.richie.component.mqtt.exceptions.MqttClientException;
 import com.richie.component.mqtt.filter.handler.MessageHandler;
 import com.richie.component.mqtt.generator.IMqttClientDeviceIdGenerator;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
@@ -170,14 +170,14 @@ public class HiveMqMqttClient extends AbstractMqttClientApi implements MqttClien
      * <ul>
      *   <li>如果MQTT服务被禁用，构造函数会提前返回</li>
      *   <li>只有服务端或要求立即初始化的客户端才会立即初始化MQTT服务</li>
-     *   <li>异常情况下会抛出RydeenMqttClientException</li>
+     *   <li>异常情况下会抛出MqttClientException</li>
      * </ul>
      *
      * @param properties            MQTT客户端配置
      * @param deviceIdGenerator     设备ID生成器
      * @param messageHandler        消息处理器
      * @param networkQualityManager 网络质量管理器
-     * @throws RydeenMqttClientException 当配置信息缺失时
+     * @throws MqttClientException 当配置信息缺失时
      */
     public HiveMqMqttClient(MqttClientProperties properties, IMqttClientDeviceIdGenerator deviceIdGenerator,
                             @Qualifier("hiveMqMessageHandler") MessageHandler<Mqtt5Publish> messageHandler, NetworkQualityManager networkQualityManager) {
@@ -195,7 +195,7 @@ public class HiveMqMqttClient extends AbstractMqttClientApi implements MqttClien
 
         // 验证服务器配置信息
         if (Objects.isNull(properties.getServer())) {
-            throw new RydeenMqttClientException("MQTT 客户端初始化异常，缺少必要的配置信息。");
+            throw new MqttClientException("MQTT 客户端初始化异常，缺少必要的配置信息。");
         }
 
         // 初始化广播服务
@@ -619,18 +619,18 @@ public class HiveMqMqttClient extends AbstractMqttClientApi implements MqttClien
      * <p>
      * <strong>注意事项：</strong>
      * <ul>
-     *   <li>如果服务器信息无效，会抛出RydeenMqttClientException</li>
+     *   <li>如果服务器信息无效，会抛出MqttClientException</li>
      *   <li>只有启用MQTT服务时才会启动服务</li>
      *   <li>支持公网和VPC两种网络环境</li>
      * </ul>
      *
      * @param serverInfo MQTT服务器信息
-     * @throws RydeenMqttClientException 当服务器信息无效时
+     * @throws MqttClientException 当服务器信息无效时
      */
     @Override
     public void initialClient(@Nonnull MqttServerInfo serverInfo) {
         if (serverInfo.isInvalid()) {
-            throw new RydeenMqttClientException("服务器地址信息不能全部为空");
+            throw new MqttClientException("服务器地址信息不能全部为空");
         }
 
         if (serverInfo.isValidOfPublic()) {

@@ -7,12 +7,12 @@
  * @since 2025-11-01
  */
 
-package com.rydeen.example
+package com.richie.example
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.rydeen.httpclient.*
+import com.richie.httpclient.*
 import kotlinx.coroutines.launch
 
 // 注意：导入业务代码定义的Url枚举（示例中使用example目录下的Url）

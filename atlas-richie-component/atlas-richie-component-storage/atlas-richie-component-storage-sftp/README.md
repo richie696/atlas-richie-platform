@@ -18,7 +18,7 @@
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-storage-sftp</artifactId>
-    <version>${rydeen.version}</version>
+    <version>${atlas.richie.version}</version>
 </dependency>
 ```
 

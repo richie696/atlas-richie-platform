@@ -30,7 +30,7 @@ spring:
           store-by-value: false
 
 # 文件存储组件配置
-rydeen:
+atlas-richie:
   storage:
     local:
       path: ./storage/files

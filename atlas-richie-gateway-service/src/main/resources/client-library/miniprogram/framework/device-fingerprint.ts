@@ -54,12 +54,12 @@ export interface HardwareFingerprint {
 /**
  * 设备指纹存储键名
  */
-const DEVICE_FINGERPRINT_STORAGE_KEY = 'rydeen_device_fingerprint';
+const DEVICE_FINGERPRINT_STORAGE_KEY = 'atlas_richie_device_fingerprint';
 
 /**
  * 设备ID存储键名（用于兼容性）
  */
-const DEVICE_ID_STORAGE_KEY = 'rydeen_device_id';
+const DEVICE_ID_STORAGE_KEY = 'atlas_richie_device_id';
 
 /**
  * 获取或创建设备指纹

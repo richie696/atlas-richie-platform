@@ -173,7 +173,7 @@ class SecureHttpClient extends HttpClient {
 
 ```typescript
 const fingerprint = await getOrCreateDeviceFingerprint({
-    storagePath: '/var/lib/rydeen',  // 使用系统目录
+    storagePath: '/var/lib/atlas/richie',  // 使用系统目录
     storageFileName: '.device_fingerprint',
     encryptionKey: process.env.DEVICE_FINGERPRINT_KEY  // 从环境变量读取
 });
@@ -195,11 +195,11 @@ fs.writeFileSync(filePath, content, { mode: 0o600 });
 
 ### 4.3 存储位置
 
-默认存储位置：`~/.rydeen/.device_fingerprint`
+默认存储位置：`~/.atlas_richie/.device_fingerprint`
 
 **推荐配置**：
 - **开发环境**：使用默认位置（用户目录）
-- **生产环境**：使用系统目录（如 `/var/lib/rydeen/.device_fingerprint`）
+- **生产环境**：使用系统目录（如 `/var/lib/atlas_richie/.device_fingerprint`）
 
 ## 五、硬件指纹特征说明
 
@@ -288,7 +288,7 @@ npm install node-machine-id
 const encryptionKey = process.env.DEVICE_FINGERPRINT_KEY || '';
 
 // 2. 使用系统目录存储
-const storagePath = process.env.DEVICE_FINGERPRINT_PATH || '/var/lib/rydeen';
+const storagePath = process.env.DEVICE_FINGERPRINT_PATH || '/var/lib/atlas_richie';
 
 // 3. 初始化设备指纹
 const fingerprint = await getOrCreateDeviceFingerprint({

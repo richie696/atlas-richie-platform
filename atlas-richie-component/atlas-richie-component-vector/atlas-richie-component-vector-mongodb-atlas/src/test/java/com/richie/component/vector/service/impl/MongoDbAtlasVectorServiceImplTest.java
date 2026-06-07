@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
  * document operations, and vector search functionality using Mockito mocks
  * for MongoTemplate, VectorStore, and EmbeddingModel.</p>
  *
- * @author Rydeen Platform Team
+ * @author richie696
  */
 @ExtendWith(MockitoExtension.class)
 class MongoDbAtlasVectorServiceImplTest {

@@ -7,10 +7,10 @@
  * @since 2025-11-01
  */
 
-package com.rydeen.example
+package com.richie.example
 
-import com.rydeen.httpclient.Method
-import com.rydeen.httpclient.UrlInterface
+import com.richie.httpclient.Method
+import com.richie.httpclient.UrlInterface
 
 /**
  * 业务代码定义的URL枚举

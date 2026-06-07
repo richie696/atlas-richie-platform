@@ -7,7 +7,7 @@ import com.richie.component.mqtt.config.MqttClientProperties;
 import com.richie.component.mqtt.config.ServerInfo;
 import com.richie.component.mqtt.enums.MqttProtocolEnum;
 import com.richie.component.mqtt.enums.NetworkTypeEnum;
-import com.richie.component.mqtt.exceptions.RydeenMqttClientException;
+import com.richie.component.mqtt.exceptions.MqttClientException;
 import com.richie.component.mqtt.utils.MqttSslUtils;
 import com.hivemq.client.mqtt.MqttClient;
 import com.hivemq.client.mqtt.MqttClientState;
@@ -504,7 +504,7 @@ public class ConnectionManager {
                             protocol, clientId, (trustManagerFactory != null && keyManagerFactory != null));
                 } catch (Exception e) {
                     log.error("配置 SSL/TLS 失败: {}, 客户端ID: {}", e.getMessage(), clientId, e);
-                    throw new RydeenMqttClientException("SSL/TLS 配置失败: " + e.getMessage(), e);
+                    throw new MqttClientException("SSL/TLS 配置失败: " + e.getMessage(), e);
                 }
             }
 
@@ -1391,7 +1391,7 @@ public class ConnectionManager {
      * <p>
      * <strong>异常处理：</strong>
      * <ul>
-     *   <li>配置缺失时抛出RydeenMqttClientException</li>
+     *   <li>配置缺失时抛出MqttClientException</li>
      *   <li>密码为空时抛出IllegalArgumentException</li>
      * </ul>
      * <p>
@@ -1404,7 +1404,7 @@ public class ConnectionManager {
      */
     private void validateServerConfig() {
         if (properties.getServer() == null) {
-            throw new RydeenMqttClientException("MQTT 客户端初始化异常，缺少必要的配置信息。");
+            throw new MqttClientException("MQTT 客户端初始化异常，缺少必要的配置信息。");
         }
 
         if (StringUtils.isBlank(properties.getServer().getPassword())) {

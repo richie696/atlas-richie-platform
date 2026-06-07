@@ -908,7 +908,7 @@ private String buildWillMessage() {
 <dependency>
     <groupId>com.richie</groupId>
     <artifactId>atlas-richie-component-mqtt</artifactId>
-    <version>${rydeen.version}</version>
+    <version>${atlas.richie.version}</version>
 </dependency>
 ```
 
@@ -921,7 +921,7 @@ platform:
       enable: true
       mqtt-version: mqtt_5_0  # 使用MQTT 5.0协议
       client-type: CLIENT
-      parent-topic: /rydeen
+      parent-topic: /atlas_richie
       group-id: your-group-id
       heartbeat-interval: 30  # 心跳间隔30秒
       server:
@@ -3140,7 +3140,7 @@ platform:
       enable: true                    # 是否启用MQTT组件
       mqtt-version: mqtt_5_0         # MQTT协议版本
       client-type: CLIENT            # 客户端类型
-      parent-topic: /rydeen          # 根主题
+      parent-topic: /atlas_richie    # 根主题
       group-id: your-group-id        # 分组ID
       heartbeat-interval: 30         # 心跳间隔(秒)
       

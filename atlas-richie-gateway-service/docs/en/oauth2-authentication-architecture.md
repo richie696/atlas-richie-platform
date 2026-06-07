@@ -666,7 +666,7 @@ The `access_token` issued by the OAuth2.0 Client Credentials flow uses **JWT (JS
   "jti": "550e8400-e29b-41d4-a716-446655440000",  // JWT ID (for replay prevention)
   "iss": "Richie Gateway",                // Issuer
   "sub": "client_credentials",            // Subject, identifies OAuth2.0 flow
-  "aud": "api.rydeen.com"                 // Audience, API service address
+  "aud": "api.abc.com"                 // Audience, API service address
 }
 ```
 
@@ -729,7 +729,7 @@ public static String generateThirdPartyAccessToken(
             .withJWTId(UUID.randomUUID().toString())
             .withIssuer("Richie Gateway")
             .withSubject("client_credentials")
-            .withAudience("api.rydeen.com");
+            .withAudience("api.abc.com");
     
     return builder.sign(algorithm);
 }
@@ -860,7 +860,7 @@ public TokenResponse refreshToken(String refreshToken) {
 {
   "error": "invalid_client",
   "error_description": "Client authentication failed",
-  "error_uri": "https://docs.rydeen.com/oauth2/errors#invalid_client"
+  "error_uri": "https://docs.richie696.cn/oauth2/errors#invalid_client"
 }
 ```
 

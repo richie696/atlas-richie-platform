@@ -66,7 +66,7 @@ public class QrCodeManager {
      * @param tenantId 租户ID（可选，如果未启用租户则为 null）
      * @param userId   用户ID（必填，业务系统User表的主键ID）
      * @param secret   密钥（明文，Base32编码）
-     * @param issuer   发行方名称（必填，例如 "Rydeen Platform"），实际在 URL 中会追加用户登录名，格式：{@code {issuer} {username}}
+     * @param issuer   发行方名称（必填，例如 "Atlas Richie Platform"），实际在 URL 中会追加用户登录名，格式：{@code {issuer} {username}}
      * @param algorithm HMAC算法（SHA1、SHA256、SHA512，如果为null或空则从配置中读取默认算法）
      * @param digits   验证码位数（6 或 8，默认：6）
      * @param period   时间窗口（秒，默认：30）

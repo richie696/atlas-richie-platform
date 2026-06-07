@@ -9,7 +9,7 @@ package com.richie.component.mqtt.exceptions;
  * @version 1.0
  * @since 2022-09-12 13:41:26
  */
-public class MqttClientException extends Exception {
+public class MqttClientException extends RuntimeException {
 
     /**
      * 构造一个空的MQTT客户端异常
