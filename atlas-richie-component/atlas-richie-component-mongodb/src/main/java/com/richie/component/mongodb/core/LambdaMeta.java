@@ -1,7 +1,6 @@
 package com.richie.component.mongodb.core;
 
 import com.richie.component.mongodb.exception.MongodbException;
-import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.util.function.Function;

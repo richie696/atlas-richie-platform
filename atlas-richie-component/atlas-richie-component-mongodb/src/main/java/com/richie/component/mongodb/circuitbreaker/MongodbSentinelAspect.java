@@ -1,15 +1,8 @@
 package com.richie.component.mongodb.circuitbreaker;
 
-import com.richie.component.mongodb.Mongodb;
-import com.richie.component.mongodb.builder.DeleteBuilder;
-import com.richie.component.mongodb.builder.PageResult;
-import com.richie.component.mongodb.builder.QueryBuilder;
-import com.richie.component.mongodb.builder.UpdateBuilder;
-import com.richie.component.mongodb.observability.MongodbTracing;
 import com.alibaba.csp.sentinel.EntryType;
 import com.alibaba.csp.sentinel.SphU;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
-import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -18,8 +11,6 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.Optional;
 
 @Aspect
 @Component
@@ -61,60 +52,42 @@ public class MongodbSentinelAspect {
         Object[] args = pjp.getArgs();
         Class<?> firstArgClass = args.length > 0 && args[0] != null ? args[0].getClass() : null;
 
-        switch (methodName) {
-            case "query":
+        return switch (methodName) {
+            case "query" -> {
                 if (firstArgClass != null) {
-                    return DefaultFallbacks.queryBuilder((Class<?>) firstArgClass);
+                    yield DefaultFallbacks.queryBuilder((Class<?>) firstArgClass);
                 }
-                return DefaultFallbacks.query(null);
-            case "update":
+                yield DefaultFallbacks.query(null);
+            }
+            case "update" -> {
                 if (firstArgClass != null) {
-                    return DefaultFallbacks.updateBuilder((Class<?>) firstArgClass);
+                    yield DefaultFallbacks.updateBuilder((Class<?>) firstArgClass);
                 }
-                return DefaultFallbacks.updateExecute();
-            case "delete":
+                yield DefaultFallbacks.updateExecute();
+            }
+            case "delete" -> {
                 if (firstArgClass != null) {
-                    return DefaultFallbacks.deleteBuilder((Class<?>) firstArgClass);
+                    yield DefaultFallbacks.deleteBuilder((Class<?>) firstArgClass);
                 }
-                return DefaultFallbacks.deleteExecute();
-            case "save":
-                return DefaultFallbacks.save();
-            case "insert":
-                return DefaultFallbacks.insert();
-            case "insertAll":
-                return DefaultFallbacks.insertAll();
-            case "findById":
-                return DefaultFallbacks.findById();
-            case "findByIdOrThrow":
-                return DefaultFallbacks.findById();
-            case "existsById":
-                return DefaultFallbacks.existsById();
-            case "deleteById":
-                return DefaultFallbacks.deleteById();
-            case "dropCollection":
-                return DefaultFallbacks.dropCollection();
-            default:
-                return null;
-        }
+                yield DefaultFallbacks.deleteExecute();
+            }
+            case "save" -> DefaultFallbacks.save();
+            case "insert" -> DefaultFallbacks.insert();
+            case "insertAll" -> DefaultFallbacks.insertAll();
+            case "findById", "findByIdOrThrow" -> DefaultFallbacks.findById();
+            case "existsById" -> DefaultFallbacks.existsById();
+            case "deleteById" -> DefaultFallbacks.deleteById();
+            case "dropCollection" -> DefaultFallbacks.dropCollection();
+            default -> null;
+        };
     }
 
     private String mapToResourceName(String methodName) {
-        switch (methodName) {
-            case "query":
-            case "update":
-            case "delete":
-                return "mongodb." + methodName;
-            case "save":
-            case "insert":
-            case "insertAll":
-            case "findById":
-            case "findByIdOrThrow":
-            case "existsById":
-            case "deleteById":
-            case "dropCollection":
-                return "mongodb." + methodName;
-            default:
-                return "mongodb." + methodName;
-        }
+        return switch (methodName) {
+            case "query", "update", "delete" -> "mongodb." + methodName;
+            case "save", "insert", "insertAll", "findById", "findByIdOrThrow", "existsById", "deleteById",
+                 "dropCollection" -> "mongodb." + methodName;
+            default -> "mongodb." + methodName;
+        };
     }
 }
