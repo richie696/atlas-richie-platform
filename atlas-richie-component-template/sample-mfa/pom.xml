@@ -109,6 +109,9 @@
                         <arg>-Xlint:all</arg>
                         <!-- 压制"依赖jar中的类使用了preview feature"的警告，因为无法修改第三方jar的编译参数 -->
                         <arg>-Xlint:-preview</arg>
+                        <!-- 压制"没有处理程序要使用以下任何批注"警告：
+                             这些注解（Spring/MyBatis/MyBatis-Plus/JSR-305）都是运行时处理的，不是编译时处理器处理的 -->
+                        <arg>-Xlint:-processing</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
                         <path>

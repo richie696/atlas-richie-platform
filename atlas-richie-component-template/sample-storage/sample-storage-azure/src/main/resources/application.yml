@@ -4,6 +4,8 @@ server:
 spring:
     application:
         name: sample-storage-azure
+    main:
+        allow-bean-definition-overriding: true
     servlet:
         multipart:
             max-file-size: 100MB

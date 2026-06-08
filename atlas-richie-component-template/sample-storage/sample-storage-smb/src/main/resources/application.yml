@@ -4,6 +4,9 @@ server:
 spring:
     application:
         name: sample-storage-smb
+    main:
+        allow-bean-definition-overriding: true
+        allow-circular-references: false
     servlet:
         multipart:
             max-file-size: 100MB

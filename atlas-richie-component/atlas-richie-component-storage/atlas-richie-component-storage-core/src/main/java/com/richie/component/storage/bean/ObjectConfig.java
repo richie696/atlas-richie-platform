@@ -5,7 +5,6 @@ import com.richie.component.storage.enums.StorageEngineEnum;
 import com.richie.component.storage.enums.StorageTypeEnum;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -17,7 +16,6 @@ import org.springframework.context.annotation.Configuration;
  */
 @Data
 @Configuration
-@RefreshScope
 @ConfigurationProperties(prefix = "platform.component.storage.object")
 public class ObjectConfig {
 

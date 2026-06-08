@@ -4,7 +4,6 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
 import java.nio.charset.Charset;
@@ -16,7 +15,6 @@ import java.time.Duration;
  */
 @Data
 @Configuration
-@RefreshScope
 @ConfigurationProperties(prefix = "platform.component.storage.ftp")
 public class FtpConfig {
 
