@@ -19,7 +19,7 @@
     <modules>
         <module>atlas-richie-base</module>
         <module>atlas-richie-component</module>
-<!--        <module>atlas-richie-component-template</module>-->
+        <module>atlas-richie-component-template</module>
         <module>atlas-richie-gateway-service</module>
     </modules>
 
