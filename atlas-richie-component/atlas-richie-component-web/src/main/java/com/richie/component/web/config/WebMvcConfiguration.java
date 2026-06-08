@@ -143,10 +143,16 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
      * 如果没有找到店铺的时区，它会尝试使用请求头中的Accept-Timezone的时区。
      * 如果还是没有找到，它会使用系统默认的时区。
      * 最后，这个方法返回配置好的CookieLocaleResolver对象。
+     * <p>
+     * Bean 名称固定为 {@code localeResolver}，与 Spring Boot 的
+     * {@code WebMvcAutoConfiguration$EnableWebMvcConfiguration.localeResolver} 同名。
+     * 运行时通过 {@code spring.main.allow-bean-definition-overriding=true} 覆盖默认实现；
+     * Spring Boot 4 的 AOT 处理阶段不接受同名 Bean 重复注册，需确保本 {@code @Configuration}
+     * 类的解析早于 WebMvcAutoConfiguration，使 {@code @ConditionalOnMissingBean} 生效。
      *
      * @return 配置好的LocaleContextResolver对象
      */
-    @Bean
+    @Bean(name = "localeResolver")
     @ConditionalOnClass(HttpServletRequest.class)
     public LocaleContextResolver localeResolver() {
         CookieLocaleResolver resolver = new CookieLocaleResolver();

@@ -2,7 +2,6 @@ package com.richie.gateway.service.impl;
 
 import com.richie.component.cache.GlobalCache;
 import com.richie.component.cache.GlobalCacheManager;
-import com.richie.component.cache.redis.manage.CacheLock;
 import com.richie.context.utils.spring.JwtUtils;
 import com.richie.contract.exception.BusinessException;
 import com.richie.gateway.config.GatewayConfig;
@@ -10,23 +9,15 @@ import com.richie.gateway.config.IOAuthFilterConfig;
 import com.richie.gateway.service.OAuth2ClientService;
 import com.richie.gateway.vo.OAuth2TokenResponseVO;
 import com.richie.gateway.vo.ThirdPartyClientConfigVO;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
-import java.security.SecureRandom;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;

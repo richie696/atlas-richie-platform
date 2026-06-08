@@ -3,7 +3,6 @@ package com.richie.contract.gateway.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.ArrayList;
@@ -19,8 +18,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Data
 @Configuration
-@RefreshScope
-@ConfigurationProperties(prefix = "platform.gateway.token")
+@ConfigurationProperties(prefix = "platform.gateway.contract.token")
 public class TokenFilterConfig {
 
     /** 默认构造函数，供配置绑定使用。 */

@@ -2,7 +2,6 @@ package com.richie.contract.gateway.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -14,8 +13,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Data
 @Configuration
-@RefreshScope
-@ConfigurationProperties(prefix = "platform.gateway.tenant")
+@ConfigurationProperties(prefix = "platform.gateway.contract.tenant")
 public class TenantFilterConfig {
 
     /** 默认构造函数，供配置绑定使用。 */

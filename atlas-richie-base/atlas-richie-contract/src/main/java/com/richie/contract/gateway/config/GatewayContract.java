@@ -3,7 +3,6 @@ package com.richie.contract.gateway.config;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.Serializable;
@@ -19,19 +18,24 @@ import java.io.Serializable;
  * gateway 内部专属的配置（ECC 加密、SSO、硬件指纹、异常检测、熔断策略等）不在本契约范围内，
  * 对应配置类位于 {@code richie-gateway-service} 工程内部，不对外暴露。
  * <p>
- * 绑定前缀与 {@code GatewayConfig} 相同（{@code platform.gateway}），Spring Boot 支持同一
- * 前缀被多个 {@link ConfigurationProperties} 绑定，各自只取自己声明的字段，因此已上线
- * 业务服务的 application.yml 和 Nacos 配置无需任何调整。
+ * 绑定前缀：{@code platform.gateway.contract}。该前缀与 {@code GatewayConfig} 的
+ * {@code platform.gateway} 前缀在 YAML 树中互不重叠（{@code contract.*} 是
+ * {@code platform.gateway.*} 下的子树），Spring Boot 支持同一根前缀被多个
+ * {@link ConfigurationProperties} 绑定，各自只取自己声明的字段，因此
+ * {@code GatewayConfig} 与 {@code GatewayContract} 共存互不干扰。
+ * <p>
+ * <b>配置迁移说明</b>：原 yml 中位于 {@code platform.gateway.token / tenant / deploy /
+ * audit-enabled} 下的配置项需迁移至 {@code platform.gateway.contract.token / tenant /
+ * deploy / audit-enabled}，否则对应字段将无法被本契约读取。
  *
  * @author richie696
- * @version 1.0
+ * @version 1.1
  * @since 1.0.0
  */
 @Data
 @Configuration
-@RefreshScope
 @NoArgsConstructor
-@ConfigurationProperties(prefix = "platform.gateway")
+@ConfigurationProperties(prefix = "platform.gateway.contract")
 public class GatewayContract implements Serializable {
 
     /**

@@ -2,7 +2,6 @@ package com.richie.contract.gateway.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
@@ -20,8 +19,7 @@ import java.util.Set;
  */
 @Data
 @Configuration
-@RefreshScope
-@ConfigurationProperties(prefix = "platform.gateway.deploy")
+@ConfigurationProperties(prefix = "platform.gateway.contract.deploy")
 public class DeployConfig {
 
     /**
@@ -72,24 +70,6 @@ public class DeployConfig {
         }
         // 检查服务是否在列表中
         return serviceList.contains(serviceId);
-    }
-
-    /**
-     * 获取字段配置
-     *
-     * @return 字段配置
-     */
-    public CanaryFieldConfig getFieldConfig() {
-        return fieldConfig;
-    }
-
-    /**
-     * 设置字段配置
-     *
-     * @param fieldConfig 字段配置
-     */
-    public void setFieldConfig(CanaryFieldConfig fieldConfig) {
-        this.fieldConfig = fieldConfig;
     }
 
     /**
