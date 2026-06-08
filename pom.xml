@@ -126,9 +126,30 @@
     <!-- Maven 仓库配置 -->
     <repositories>
         <!-- Richie技术中台 快照分支 -->
+<!--        <repository>-->
+<!--            <id>repo-richie-snapshot</id>-->
+<!--            <url>https://packages.aliyun.com/6177fef9474364dd1dfbe5ce/maven/repo-richie-snapshot</url>-->
+<!--            <releases>-->
+<!--                <enabled>false</enabled>-->
+<!--            </releases>-->
+<!--            <snapshots>-->
+<!--                <enabled>true</enabled>-->
+<!--            </snapshots>-->
+<!--        </repository>-->
+<!--        &lt;!&ndash; Richie技术中台 正式分支 &ndash;&gt;-->
+<!--        <repository>-->
+<!--            <id>repo-richie-release</id>-->
+<!--            <url>https://packages.aliyun.com/6177fef9474364dd1dfbe5ce/maven/repo-richie-release</url>-->
+<!--            <releases>-->
+<!--                <enabled>true</enabled>-->
+<!--            </releases>-->
+<!--            <snapshots>-->
+<!--                <enabled>false</enabled>-->
+<!--            </snapshots>-->
+<!--        </repository>-->
         <repository>
-            <id>2149740-snapshot-ZYP0VW</id>
-            <url>https://packages.aliyun.com/6177fef9474364dd1dfbe5ce/maven/2149740-snapshot-zyp0vw</url>
+            <id>richie696-repo-richie-snapshot</id>
+            <url>https://maven.cnb.cool/richie696/repo-richie-snapshot/-/packages/</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
@@ -136,10 +157,9 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
-        <!-- Richie技术中台 正式分支 -->
         <repository>
-            <id>2149740-release-cGAgN8</id>
-            <url>https://packages.aliyun.com/6177fef9474364dd1dfbe5ce/maven/2149740-release-cgagn8</url>
+            <id>richie696-repo-richie-release</id>
+            <url>https://maven.cnb.cool/richie696/repo-richie-release/-/packages/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -153,15 +173,15 @@
     <distributionManagement>
         <!-- 快照版本发布地址 -->
         <snapshotRepository>
-            <id>2149740-snapshot-ZYP0VW</id>
-            <name>platform-snapshot</name>
-            <url>https://packages.aliyun.com/6177fef9474364dd1dfbe5ce/maven/2149740-snapshot-zyp0vw</url>
+            <id>richie696-repo-richie-snapshot</id>
+            <name>richie696-repo-richie-snapshot</name>
+            <url>https://maven.cnb.cool/richie696/repo-richie-snapshot/-/packages/</url>
         </snapshotRepository>
         <!-- 正式版本发布地址 -->
         <repository>
-            <id>2149740-release-cGAgN8</id>
-            <name>platform-release</name>
-            <url>https://packages.aliyun.com/6177fef9474364dd1dfbe5ce/maven/2149740-release-cgagn8</url>
+            <id>richie696-repo-richie-release</id>
+            <name>richie696-repo-richie-release</name>
+            <url>https://maven.cnb.cool/richie696/repo-richie-release/-/packages/</url>
         </repository>
     </distributionManagement>
 
