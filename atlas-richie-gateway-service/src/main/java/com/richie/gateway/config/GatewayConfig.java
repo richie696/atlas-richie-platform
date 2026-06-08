@@ -29,9 +29,11 @@ import java.io.Serializable;
  * {@link #getDeploy()} / {@link #isAuditEnabled()} 代理到契约聚合类，确保 gateway
  * 内部代码（约 30+ 处）的方法调用签名不变，迁移零改动。
  * <p>
- * 绑定前缀 {@code platform.gateway} 与 {@link GatewayContract} 保持一致。Spring Boot
- * 允许同一前缀被多个 {@link ConfigurationProperties} 绑定，各自只取自己声明的字段，因此
- * application.yml / Nacos 配置结构无需调整。
+ * 绑定前缀 {@code platform.gateway} 涵盖 gateway 内部专属字段；跨服务共享字段已抽离到
+ * {@link GatewayContract}（绑定前缀 {@code platform.gateway.contract}），YAML 树中
+ * {@code contract.*} 是 {@code platform.gateway.*} 的子树，两者互不重叠，因此同一根前缀
+ * 被两个 {@link ConfigurationProperties} 绑定互不干扰。application.yml / Nacos 中
+ * 跨服务共享字段需放置在 {@code platform.gateway.contract.*} 下。
  *
  * @author richie696
  * @version 2.0

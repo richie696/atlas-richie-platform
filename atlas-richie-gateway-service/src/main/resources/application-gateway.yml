@@ -1,275 +1,276 @@
 spring:
-    cloud:
-        # Sentinel限流熔断配置
-        sentinel:
-            # Sentinel控制台配置
-            transport:
-                # Sentinel控制台地址
-                dashboard: 10.100.0.90:8899
-                # 心跳发送间隔，单位：毫秒
-                heartbeat-interval-ms: 20000
-                port: 8719
-                # Sentinel Nacos数据源配置，Nacos中的规则会⾃动同步到sentinel控制台的流控规则中
-            datasource:
-                # 流控规则数据源配置
-                # 作用：限制资源的访问频率，防止系统被突发流量压垮
-                # 应用场景：API接口限流、用户访问频率控制、防止恶意刷接口
-                # 控制方式：可按QPS、并发线程数进行限制，支持快速失败、预热、排队等流控效果
-                flow:
-                    nacos:
-                        server-addr: 10.100.0.112:8848
-                        namespace: development
-                        data-id: gateway-flow-rules.json
-                        groupId: gateway
-                        data-type: json
-                        rule-type: flow       # 使用Gateway流控规则类型
+  cloud:
+    # Sentinel限流熔断配置
+    sentinel:
+      # Sentinel控制台配置
+      transport:
+        # Sentinel控制台地址
+        dashboard: 10.100.0.90:8899
+        # 心跳发送间隔，单位：毫秒
+        heartbeat-interval-ms: 20000
+        port: 8719
+        # Sentinel Nacos数据源配置，Nacos中的规则会⾃动同步到sentinel控制台的流控规则中
+      datasource:
+        # 流控规则数据源配置
+        # 作用：限制资源的访问频率，防止系统被突发流量压垮
+        # 应用场景：API接口限流、用户访问频率控制、防止恶意刷接口
+        # 控制方式：可按QPS、并发线程数进行限制，支持快速失败、预热、排队等流控效果
+        flow:
+          nacos:
+            server-addr: 10.100.0.112:8848
+            namespace: development
+            data-id: gateway-flow-rules.json
+            groupId: gateway
+            data-type: json
+            rule-type: flow       # 使用Gateway流控规则类型
 
-                # 降级规则数据源配置（熔断规则）
-                # 作用：当服务调用出现异常或响应时间过长时自动熔断，避免级联故障
-                # 应用场景：下游服务不可用时的服务保护、慢调用比例过高时的熔断保护
-                # 触发条件：异常比例、异常数量、慢调用比例超过阈值时触发熔断
-                # 恢复机制：熔断时间窗口过后会进入半开状态，逐步恢复调用
-                degrade:
-                    nacos:
-                        server-addr: 10.100.0.112:8848
-                        namespace: development
-                        data-id: gateway-degrade-rules.json
-                        groupId: gateway
-                        data-type: json
-                        rule-type: degrade    # 类型定义参考{com.alibaba.cloud.sentinel.datasource.RuleType}枚举类
+        # 降级规则数据源配置（熔断规则）
+        # 作用：当服务调用出现异常或响应时间过长时自动熔断，避免级联故障
+        # 应用场景：下游服务不可用时的服务保护、慢调用比例过高时的熔断保护
+        # 触发条件：异常比例、异常数量、慢调用比例超过阈值时触发熔断
+        # 恢复机制：熔断时间窗口过后会进入半开状态，逐步恢复调用
+        degrade:
+          nacos:
+            server-addr: 10.100.0.112:8848
+            namespace: development
+            data-id: gateway-degrade-rules.json
+            groupId: gateway
+            data-type: json
+            rule-type: degrade    # 类型定义参考{com.alibaba.cloud.sentinel.datasource.RuleType}枚举类
 
-                # 热点参数规则数据源配置
-                # 作用：针对请求中的特定参数进行更细粒度的流量控制
-                # 应用场景：
-                #   1. 对VIP用户和普通用户设置不同的访问频率限制
-                #   2. 针对不同商品ID、用户ID设置个性化限流策略
-                #   3. 防止某个热点商品或用户占用过多系统资源
-                # 特色功能：支持参数例外项，可为特定参数值设置不同的限流阈值
-                param-flow:
-                    nacos:
-                        server-addr: 10.100.0.112:8848
-                        namespace: development
-                        data-id: gateway-param-flow-rules.json
-                        groupId: gateway
-                        data-type: json
-                        rule-type: param-flow
+        # 热点参数规则数据源配置
+        # 作用：针对请求中的特定参数进行更细粒度的流量控制
+        # 应用场景：
+        #   1. 对VIP用户和普通用户设置不同的访问频率限制
+        #   2. 针对不同商品ID、用户ID设置个性化限流策略
+        #   3. 防止某个热点商品或用户占用过多系统资源
+        # 特色功能：支持参数例外项，可为特定参数值设置不同的限流阈值
+        param-flow:
+          nacos:
+            server-addr: 10.100.0.112:8848
+            namespace: development
+            data-id: gateway-param-flow-rules.json
+            groupId: gateway
+            data-type: json
+            rule-type: param-flow
 
-                # 系统自适应规则数据源配置
-                # 作用：从整体维度保护系统，根据系统的负载情况自动调节入口流量
-                # 监控维度：
-                #   1. 系统负载 (Load)：基于当前系统的CPU负载进行流控
-                #   2. CPU使用率：当CPU使用率超过阈值时限制流量
-                #   3. 平均响应时间：当系统响应时间过长时进行保护
-                #   4. 入口QPS：限制系统整体的QPS上限
-                #   5. 并发线程数：限制系统的并发处理能力
-                # 应用场景：系统过载保护、资源不足时的流量控制、确保系统稳定性
-                system:
-                    nacos:
-                        server-addr: 10.100.0.112:8848
-                        namespace: development
-                        data-id: gateway-system-rules.json
-                        groupId: gateway
-                        data-type: json
-                        rule-type: system
+        # 系统自适应规则数据源配置
+        # 作用：从整体维度保护系统，根据系统的负载情况自动调节入口流量
+        # 监控维度：
+        #   1. 系统负载 (Load)：基于当前系统的CPU负载进行流控
+        #   2. CPU使用率：当CPU使用率超过阈值时限制流量
+        #   3. 平均响应时间：当系统响应时间过长时进行保护
+        #   4. 入口QPS：限制系统整体的QPS上限
+        #   5. 并发线程数：限制系统的并发处理能力
+        # 应用场景：系统过载保护、资源不足时的流量控制、确保系统稳定性
+        system:
+          nacos:
+            server-addr: 10.100.0.112:8848
+            namespace: development
+            data-id: gateway-system-rules.json
+            groupId: gateway
+            data-type: json
+            rule-type: system
 
-                # 授权规则数据源配置（黑白名单控制）
-                # 作用：基于调用来源对资源访问进行权限控制
-                # 控制模式：
-                #   1. 白名单模式：只允许指定来源的调用通过
-                #   2. 黑名单模式：拒绝指定来源的调用，其他来源正常通过
-                # 应用场景：
-                #   1. 服务间调用的安全控制
-                #   2. 防止恶意应用或IP的访问
-                #   3. 为敏感接口设置访问权限控制
-                #   4. 合作伙伴API的访问控制
-                # 来源识别：通过请求Header中的来源标识进行判断
-                authority:
-                    nacos:
-                        server-addr: 10.100.0.112:8848
-                        namespace: development
-                        data-id: gateway-authority-rules.json
-                        groupId: gateway
-                        data-type: json
-                        rule-type: authority
-        # 网关配置
-        gateway:
-            server:
-                webflux:
-                    globalcors:
-                        add-to-simple-url-handler-mapping: true
-                        cors-configurations:
-                            '[/**]':
-                                allowed-headers: "*"
-                                allowed-origin-patterns: "*"
-                                allow-credentials: true
-                                allowed-methods: "*"
-                                exposed-headers: "*"
-                    # 超时配置
-                    httpclient:
-                        # 连接超时时间（默认：30，单位：秒）
-                        connect-timeout: 30
-                        # 响应超时时间（默认：无限制，单位：秒）
-                        response-timeout: 10s
-                        # 连接池配置
-                        pool:
-                            # 最大连接数
-                            max-connections: 200
-                            # 最大空闲时间
-                            max-idle-time: 15s
-                            # 获取连接超时(毫秒)
-                            acquire-timeout: 45000
-                            # 连接类型
-                            type: elastic
+        # 授权规则数据源配置（黑白名单控制）
+        # 作用：基于调用来源对资源访问进行权限控制
+        # 控制模式：
+        #   1. 白名单模式：只允许指定来源的调用通过
+        #   2. 黑名单模式：拒绝指定来源的调用，其他来源正常通过
+        # 应用场景：
+        #   1. 服务间调用的安全控制
+        #   2. 防止恶意应用或IP的访问
+        #   3. 为敏感接口设置访问权限控制
+        #   4. 合作伙伴API的访问控制
+        # 来源识别：通过请求Header中的来源标识进行判断
+        authority:
+          nacos:
+            server-addr: 10.100.0.112:8848
+            namespace: development
+            data-id: gateway-authority-rules.json
+            groupId: gateway
+            data-type: json
+            rule-type: authority
+    # 网关配置
+    gateway:
+      server:
+        webflux:
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowed-headers: "*"
+                allowed-origin-patterns: "*"
+                allow-credentials: true
+                allowed-methods: "*"
+                exposed-headers: "*"
+          # 超时配置
+          httpclient:
+            # 连接超时时间（默认：30，单位：秒）
+            connect-timeout: 30
+            # 响应超时时间（默认：无限制，单位：秒）
+            response-timeout: 10s
+            # 连接池配置
+            pool:
+              # 最大连接数
+              max-connections: 200
+              # 最大空闲时间
+              max-idle-time: 15s
+              # 获取连接超时(毫秒)
+              acquire-timeout: 45000
+              # 连接类型
+              type: elastic
 
-                    # 路由配置（去除CircuitBreaker相关配置）
-                    routes:
-                        -   id: sample-mfa
-                            uri: lb://sample-mfa
-                            predicates:
-                                - Path=/api/user/**
-                            filters:
-                                - StripPrefix=1
-                        # MFA 管理接口（可信设备、绑定、状态等）原样转发，后端 Controller 为 /api/mfa
-                        -   id: sample-mfa-mfa
-                            uri: lb://sample-mfa
-                            predicates:
-                                - Path=/api/mfa/**
+          # 路由配置（去除CircuitBreaker相关配置）
+          routes:
+            - id: sample-mfa
+              uri: lb://sample-mfa
+              predicates:
+                - Path=/api/user/**
+              filters:
+                - StripPrefix=1
+            # MFA 管理接口（可信设备、绑定、状态等）原样转发，后端 Controller 为 /api/mfa
+            - id: sample-mfa-mfa
+              uri: lb://sample-mfa
+              predicates:
+                - Path=/api/mfa/**
 
 
 # 平台配置
 platform:
-    # 网关配置
-    gateway:
-        # 访问记录保存路径配置
-        visit-record-path: "platform:gateway:visit:"
-        # ECC加密配置示例
-        ecc-crypto:
-            # 是否启用ECC加密
-            enabled: false
+  # 网关配置
+  gateway:
+    # 访问记录保存路径配置
+    visit-record-path: "platform:gateway:visit:"
+    # 跨服务共享契约（atlas-richie-contract 的 GatewayContract）
+    contract:
+      # 令牌配置
+      token:
+        # 过期时间（单位：小时）
+        token-valid-duration: 1
+        # 令牌续签时长 [在到期前下述分钟内请求系统时会触发续签操作]（单位：分钟）
+        expiration-renewal-time: 10
+        # JWT 交互令牌，这里生成：https://www.w3cschool.cn/tools/index?name=random
+        secret: GTvNm6KZaENr1SZ6Ib
+        # 黑名单令牌缓存路径
+        blacklist-path: "platform:gateway:token:"
+        # 登录页面路径（执行令牌签发的页面）
+        login-uri-list:
+          - /gateway/login
+        # 启用MFA的登录页URI列表（只有在此列表中的登录页才会进行MFA验证检查）
+        # 如果为空，则所有登录页都不启用MFA（即使MFA组件已启用）
+        # 支持精确匹配和正则匹配，例如：
+        #   - /gateway/login          # 精确匹配
+        #   - /api/auth/.*            # 正则匹配所有以 /api/auth/ 开头的路径
+        mfa-enabled-login-uri-list:
+          - /gateway/login
+        # 忽略页面路径（正则匹配）
+        ignore-uri-list:
+          - (\/gateway).+
+    # ECC加密配置示例
+    ecc-crypto:
+      # 是否启用ECC加密
+      enabled: false
 
-            # 网关密钥对（可选，如果不配置将自动生成）
-            # gateway-private-key: "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg..."
-            # gateway-public-key: "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE..."
+      # 网关密钥对（可选，如果不配置将自动生成）
+      # gateway-private-key: "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg..."
+      # gateway-public-key: "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE..."
 
-            # 需要加密的路径模式
-            encrypt-paths:
-                - "/**"
+      # 需要加密的路径模式
+      encrypt-paths:
+        - "/**"
 
-            # 不需要加密的路径模式
-            exclude-paths:
-                - "/api/health/**"
-                - "/api/public/**"
-                - "/api/crypto/exchange"
-                - "/actuator/**"
+      # 不需要加密的路径模式
+      exclude-paths:
+        - "/api/health/**"
+        - "/api/public/**"
+        - "/api/crypto/exchange"
+        - "/actuator/**"
 
-            # 客户端公钥缓存过期时间（秒）
-            client-key-cache-expire: 3600
-            # 网关密钥对过期时间（小时）
-            gateway-key-expire: 6
-            # 网关私钥（通常不推荐配置，配置以后密钥将不会过期，当不填写的时候网关会在令牌过期或不存在的时候自动生成，内存级动态密钥对安全性更高）
-            gateway-private-key: xxx
-            # 网关公钥（通常不推荐配置，配置以后密钥将不会过期，当不填写的时候网关会在令牌过期或不存在的时候自动生成，内存级动态密钥对安全性更高）
-            gateway-public-key: xxx
+      # 客户端公钥缓存过期时间（秒）
+      client-key-cache-expire: 3600
+      # 网关密钥对过期时间（小时）
+      gateway-key-expire: 6
+      # 网关私钥（通常不推荐配置，配置以后密钥将不会过期，当不填写的时候网关会在令牌过期或不存在的时候自动生成，内存级动态密钥对安全性更高）
+      gateway-private-key: xxx
+      # 网关公钥（通常不推荐配置，配置以后密钥将不会过期，当不填写的时候网关会在令牌过期或不存在的时候自动生成，内存级动态密钥对安全性更高）
+      gateway-public-key: xxx
 
-        # 令牌配置
-        token:
-            # 过期时间（单位：小时）
-            token-valid-duration: 1
-            # 令牌续签时长 [在到期前下述分钟内请求系统时会触发续签操作]（单位：分钟）
-            expiration-renewal-time: 10
-            # JWT 交互令牌，这里生成：https://www.w3cschool.cn/tools/index?name=random
-            secret: GTvNm6KZaENr1SZ6Ib
-            # 黑名单令牌缓存路径
-            blacklist-path: "platform:gateway:token:"
-            # 登录页面路径（执行令牌签发的页面）
-            login-uri-list:
-                - /gateway/login
-            # 启用MFA的登录页URI列表（只有在此列表中的登录页才会进行MFA验证检查）
-            # 如果为空，则所有登录页都不启用MFA（即使MFA组件已启用）
-            # 支持精确匹配和正则匹配，例如：
-            #   - /gateway/login          # 精确匹配
-            #   - /api/auth/.*            # 正则匹配所有以 /api/auth/ 开头的路径
-            mfa-enabled-login-uri-list:
-                - /gateway/login
-            # 忽略页面路径（正则匹配）
-            ignore-uri-list:
-                - (\/gateway).+
-        # 是否启用API接口安全过滤器
-        security:
-            # 启用开关
-            enable: false
-            # 过滤规则（默认：封禁IP，可选值：banned_ip、custom_http_status、redirect）
-            rule: banned_ip
-            # 检测时间间隔值（默认：1）
-            security-time-interval-value: 1
-            # 检测时间间隔单位（默认：分钟）
-            security-time-interval-unit: seconds
-            # 安全阈值（默认：120次）
-            security-threshold: 60
-            # 封禁配置
-            banned:
-                # 永久封禁（默认：false）
-                permanent: true
-                # 永久封禁缓存路径
-                permanent-path: "platform:gateway:security:permanent"
-                # 非永久封禁时的封禁时间值（默认：1）
-                security-block-time: 1
-                # 非永久封禁时的封禁时间单位（默认：1）
-                security-block-time-unit: seconds
-            # 自定义返回错误信息
-            custom-return:
-                status: bad_gateway
-                error-message: "请求过于频繁，请稍后再试"
-            redirect:
-                security-redirect-uri: "/subway/loginPage?redirect=dashboard"
-        sso:
-            enable: true
-            sso-login-url: "http://localhost:8080/sso/login"
-            online-token-path: "platform:gateway:online-token:"
-            portal:
-                check-token-url: "http://localhost:8080"
-                enable: true
-    component:
-        i18n:
-            default-locale: zh_CN
-        # MFA验证组件配置
-        mfa:
-            validation:
-                # 是否启用MFA验证
-                enabled: true
-                # TOTP配置
-                totp:
-                    # 时间窗口（秒）
-                    time-window: 30
-                    # 窗口大小（容错窗口，±1表示允许前后1个时间窗口）
-                    window-size: 1
-                    # 验证码长度
-                    code-length: 6
-                # 安全策略配置
-                security:
-                    # 防重放攻击TTL倍数（TTL = 时间窗口 * replayPreventionTtlMultiplier）
-                    replay-prevention-ttl-multiplier: 3
-                    # 最大尝试次数
-                    max-attempts: 5
-                    # 账户锁定时长（秒）
-                    lock-duration-seconds: 300
-                # 可信设备配置
-                trusted-device:
-                    # 是否启用/支持可信设备功能
-                    enabled: true
-                    # 最大允许的可信设备数量
-                    max-devices: 10
-                    # 默认信任天数（用于前端提示）
-                    default-trust-days: 30
+    # 是否启用API接口安全过滤器
+    security:
+      # 启用开关
+      enable: false
+      # 过滤规则（默认：封禁IP，可选值：banned_ip、custom_http_status、redirect）
+      rule: banned_ip
+      # 检测时间间隔值（默认：1）
+      security-time-interval-value: 1
+      # 检测时间间隔单位（默认：分钟）
+      security-time-interval-unit: seconds
+      # 安全阈值（默认：120次）
+      security-threshold: 60
+      # 封禁配置
+      banned:
+        # 永久封禁（默认：false）
+        permanent: true
+        # 永久封禁缓存路径
+        permanent-path: "platform:gateway:security:permanent"
+        # 非永久封禁时的封禁时间值（默认：1）
+        security-block-time: 1
+        # 非永久封禁时的封禁时间单位（默认：1）
+        security-block-time-unit: seconds
+      # 自定义返回错误信息
+      custom-return:
+        status: bad_gateway
+        error-message: "请求过于频繁，请稍后再试"
+      redirect:
+        security-redirect-uri: "/subway/loginPage?redirect=dashboard"
+    sso:
+      enable: true
+      sso-login-url: "http://localhost:8080/sso/login"
+      online-token-path: "platform:gateway:online-token:"
+      portal:
+        check-token-url: "http://localhost:8080"
+        enable: true
+  component:
+    i18n:
+      default-locale: zh_CN
+    # MFA验证组件配置
+    mfa:
+      # 是否启用MFA验证
+      enabled: true
+      # TOTP配置
+      totp:
+        # 时间窗口（秒）
+        time-window: 30
+        # 窗口大小（容错窗口，±1表示允许前后1个时间窗口）
+        window-size: 1
+        # 验证码长度
+        code-length: 6
+      # 安全策略配置
+      security:
+        # 防重放攻击TTL倍数（TTL = 时间窗口 * replayPreventionTtlMultiplier）
+        replay-prevention-ttl-multiplier: 3
+        # 最大尝试次数
+        max-attempts: 5
+        # 账户锁定时长（秒）
+        lock-duration-seconds: 300
+        # 可信设备配置
+        trusted-device:
+          # 是否启用/支持可信设备功能
+          enabled: true
+          # 最大允许的可信设备数量
+          max-devices: 10
+          # 默认信任天数（用于前端提示）
+          default-trust-days: 30
 
 # 日志配置
 logging:
-    level:
-      org.springframework.cloud.gateway: DEBUG
-        com.richie.gateway.filter.EccCryptoFilter: DEBUG
-        com.richie.gateway.service.com.richie.gateway.service.EccCryptoServiceImpl: DEBUG
-      com.richie.gateway.utils.com.richie.gateway.utils.EccCryptoUtils: DEBUG
-        # 添加Sentinel相关日志，帮助诊断规则加载问题
-        com.alibaba.cloud.sentinel: DEBUG
-        com.alibaba.csp.sentinel: DEBUG
-        com.alibaba.csp.sentinel.adapter.gateway: DEBUG
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.richie.gateway.filter.EccCryptoFilter: DEBUG
+    com.richie.gateway.service.com.richie.gateway.service.EccCryptoServiceImpl: DEBUG
+    com.richie.gateway.utils.com.richie.gateway.utils.EccCryptoUtils: DEBUG
+    # 添加Sentinel相关日志，帮助诊断规则加载问题
+    com.alibaba.cloud.sentinel: DEBUG
+    com.alibaba.csp.sentinel: DEBUG
+    com.alibaba.csp.sentinel.adapter.gateway: DEBUG
