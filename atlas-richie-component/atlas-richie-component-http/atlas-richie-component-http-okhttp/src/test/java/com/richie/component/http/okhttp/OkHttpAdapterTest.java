@@ -1,5 +1,6 @@
 package com.richie.component.http.okhttp;
 
+import com.richie.component.http.core.AsyncCallback;
 import com.richie.component.http.core.HttpResponse;
 import com.richie.component.http.okhttp.support.LocalHttpServer;
 import okhttp3.OkHttpClient;
@@ -163,7 +164,7 @@ class OkHttpAdapterTest {
     void asyncNotifiesNetworkFailure() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         java.io.IOException[] error = new java.io.IOException[1];
-        client.get("http://127.0.0.1:1/unreachable").async(new com.richie.component.http.core.AsyncCallback<EchoDto>() {
+        client.get("http://127.0.0.1:1/unreachable").async(new AsyncCallback<>() {
             @Override
             public void onResponse(HttpResponse response, EchoDto data) {
             }

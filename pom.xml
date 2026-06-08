@@ -125,28 +125,6 @@
 
     <!-- Maven 仓库配置 -->
     <repositories>
-        <!-- Richie技术中台 快照分支 -->
-<!--        <repository>-->
-<!--            <id>repo-richie-snapshot</id>-->
-<!--            <url>https://packages.aliyun.com/6177fef9474364dd1dfbe5ce/maven/repo-richie-snapshot</url>-->
-<!--            <releases>-->
-<!--                <enabled>false</enabled>-->
-<!--            </releases>-->
-<!--            <snapshots>-->
-<!--                <enabled>true</enabled>-->
-<!--            </snapshots>-->
-<!--        </repository>-->
-<!--        &lt;!&ndash; Richie技术中台 正式分支 &ndash;&gt;-->
-<!--        <repository>-->
-<!--            <id>repo-richie-release</id>-->
-<!--            <url>https://packages.aliyun.com/6177fef9474364dd1dfbe5ce/maven/repo-richie-release</url>-->
-<!--            <releases>-->
-<!--                <enabled>true</enabled>-->
-<!--            </releases>-->
-<!--            <snapshots>-->
-<!--                <enabled>false</enabled>-->
-<!--            </snapshots>-->
-<!--        </repository>-->
         <repository>
             <id>richie696-repo-richie-snapshot</id>
             <url>https://maven.cnb.cool/richie696/repo-richie-snapshot/-/packages/</url>
