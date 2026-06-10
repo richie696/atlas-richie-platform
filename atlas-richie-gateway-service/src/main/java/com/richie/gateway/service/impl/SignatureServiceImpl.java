@@ -75,7 +75,7 @@ public class SignatureServiceImpl implements SignatureService {
                 }
             }
             userId = StringUtils.firstNonBlank(JwtUtils.getArgument(accessToken, "userId"), JwtUtils.getUsername(accessToken));
-            tenantId = JwtUtils.getTenantCode(accessToken);
+            tenantId = JwtUtils.getArgument(accessToken, "tenantId");
         }
 
         // 2. MFA 令牌加入黑名单，并补充用户缓存 key（若尚未从普通 token 解析到）

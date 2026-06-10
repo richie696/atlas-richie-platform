@@ -67,6 +67,12 @@
             <artifactId>atlas-richie-component-i18n</artifactId>
         </dependency>
 
+        <!-- 多租户数据访问增强组件 -->
+        <dependency>
+            <groupId>com.richie.component</groupId>
+            <artifactId>atlas-richie-component-tenant</artifactId>
+        </dependency>
+
         <!-- MFA验证组件（用于网关拦截MFA请求） -->
         <dependency>
             <groupId>com.richie.component</groupId>

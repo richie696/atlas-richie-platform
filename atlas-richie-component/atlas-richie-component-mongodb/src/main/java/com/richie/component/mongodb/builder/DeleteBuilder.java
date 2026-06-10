@@ -1,7 +1,6 @@
 package com.richie.component.mongodb.builder;
 
 import com.richie.component.mongodb.core.EntityIntrospector;
-import com.richie.component.mongodb.core.TenantContext;
 import com.richie.component.mongodb.observability.MongodbMetricsRecorder;
 import com.richie.component.mongodb.observability.MongodbSlowQueryLogger;
 import com.richie.component.mongodb.observability.MongodbTracing;

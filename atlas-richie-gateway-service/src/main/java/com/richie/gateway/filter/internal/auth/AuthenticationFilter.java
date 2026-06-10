@@ -177,12 +177,12 @@ public class AuthenticationFilter extends AbstractBaseFilter {
      * @return 返回token缓存陆军
      */
     private String getLastOnlineTokenPath(String token) {
-        String tenantCode = JwtUtils.getTenantCode(token);
+        String tenantId = JwtUtils.getArgument(token, "tenantId");
         String username = JwtUtils.getUsername(token);
         boolean isMobileToken = Boolean.parseBoolean(JwtUtils.getArgument(token, GlobalConstants.IS_MOBILE_TOKEN));
         String key = "";
-        if (null != tenantCode) {
-            key = tenantCode + "-";
+        if (null != tenantId) {
+            key = tenantId + "-";
         }
         key += username;
         if (isMobileToken) {

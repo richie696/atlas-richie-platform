@@ -145,7 +145,8 @@ public abstract class AbstractBaseConsumer {
         lineHandler.accept(X_RD_REQUEST_TIMEZONE);
         lineHandler.accept(X_RD_REQUEST_LANGUAGE);
         lineHandler.accept(X_RD_REQUEST_SHOP_CODE);
-        lineHandler.accept(X_TENANT_CODE_TOKEN);
+        lineHandler.accept(X_TENANT_ID);
+        lineHandler.accept(X_ACCESS_TOKEN);
         // 灰度标识传递：从消息头恢复 X-Canary-Id 到请求上下文
         lineHandler.accept(X_CANARY_ID);
         lineHandler.accept(X_CANARY_CATEGORY);

@@ -73,7 +73,7 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
                     GlobalConstants.X_RD_REQUEST_FLAG,
                     GlobalConstants.X_RD_REQUEST_SSO,
                     GlobalConstants.X_ACCESS_TOKEN,
-                    GlobalConstants.X_TENANT_CODE_TOKEN,
+                    GlobalConstants.X_TENANT_ID,
                     GlobalConstants.X_TIME_FORMAT_PATTERN,
                     GlobalConstants.X_REQUEST_ORIGIN_URI,
                     GlobalConstants.X_CANARY_VERSION,
@@ -191,21 +191,21 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
 
         //配置时区函数
         resolver.setDefaultTimeZoneFunction((request) -> {
-            //如果有租户，则添加租户tenantCode的拼接
-            String tenantCode;
+            //如果有租户，则添加租户ID的拼接
+            String tenantId;
             String token = request.getHeader(JwtUtils.X_ACCESS_TOKEN);
             if (StringUtils.isBlank(token)) {
-                tenantCode = request.getHeader(GlobalConstants.X_TENANT_CODE_TOKEN);
+                tenantId = request.getHeader(GlobalConstants.X_TENANT_ID);
             } else {
-                tenantCode = JwtUtils.getTenantCode(token);
+                tenantId = JwtUtils.getArgument(token, "tenantId");
             }
 
             String key;
             String shopCode = request.getHeader(GlobalConstants.X_RD_REQUEST_SHOP_CODE);
-            if (StringUtils.isBlank(tenantCode)) {
+            if (StringUtils.isBlank(tenantId)) {
                 key = shopCode;
             } else {
-                key = String.join(ShopTimezoneProvider.SPLIT_TOKEN, tenantCode, shopCode);
+                key = String.join(ShopTimezoneProvider.SPLIT_TOKEN, tenantId, shopCode);
             }
 
             //1. 先查找店铺的时区

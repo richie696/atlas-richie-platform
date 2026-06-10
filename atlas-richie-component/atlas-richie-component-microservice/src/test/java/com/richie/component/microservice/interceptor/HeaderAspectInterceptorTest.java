@@ -25,13 +25,13 @@ class HeaderAspectInterceptorTest {
     @Test
     void postHandle_writesHeadersFromContext() {
         HeaderContextHolder.setHeader(GlobalConstants.X_RD_REQUEST_LANGUAGE, "en-US");
-        HeaderContextHolder.setHeader(GlobalConstants.X_TENANT_CODE_TOKEN, "tenant-1");
+        HeaderContextHolder.setHeader(GlobalConstants.X_TENANT_ID, "42");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         interceptor.postHandle(response);
 
         assertThat(response.getHeader(GlobalConstants.X_RD_REQUEST_LANGUAGE)).isEqualTo("en-US");
-        assertThat(response.getHeader(GlobalConstants.X_TENANT_CODE_TOKEN)).isEqualTo("tenant-1");
+        assertThat(response.getHeader(GlobalConstants.X_TENANT_ID)).isEqualTo("42");
         assertThat(HeaderContextHolder.getHeader(GlobalConstants.X_RD_REQUEST_LANGUAGE)).isNull();
     }
 

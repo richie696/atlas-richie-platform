@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  * 标记实体为租户作用域，自动根据租户 ID 过滤查询。
  * <p>
  * 当一个类被 {@code @TenantScoped} 注解时，所有查询操作会自动包含基于当前
- * {@link com.richie.component.mongodb.core.TenantContext} 的租户 ID 过滤条件。
+ * {@link com.richie.component.tenant.context.TenantContextHolder} 的租户 ID 过滤条件。
  * 这确保了租户之间的数据隔离。
  * <p>
  * 示例：

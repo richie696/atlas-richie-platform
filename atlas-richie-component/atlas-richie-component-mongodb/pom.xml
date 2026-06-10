@@ -22,6 +22,10 @@
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.richie.component</groupId>
+            <artifactId>atlas-richie-component-tenant</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>bson</artifactId>
         </dependency>

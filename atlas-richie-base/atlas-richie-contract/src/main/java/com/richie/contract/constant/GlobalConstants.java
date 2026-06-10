@@ -40,9 +40,9 @@ public interface GlobalConstants {
     String X_MFA_TOKEN = "x-rd-request-mfa-token";
 
     /**
-     * 租户header
+     * 租户 ID header
      */
-    String X_TENANT_CODE_TOKEN = "x-rd-request-tenantcode";
+    String X_TENANT_ID = "x-rd-request-tenantid";
 
     /**
      * 店铺header

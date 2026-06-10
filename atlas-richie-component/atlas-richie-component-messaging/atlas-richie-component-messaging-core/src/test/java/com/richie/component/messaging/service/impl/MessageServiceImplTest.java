@@ -73,7 +73,7 @@ class MessageServiceImplTest {
 
     @Test
     void sendDelayMessage_includesHeadersAndDelayFlag() {
-        HeaderContextHolder.setHeader(GlobalConstants.X_TENANT_CODE_TOKEN, "tenant-a");
+        HeaderContextHolder.setHeader(GlobalConstants.X_TENANT_ID, "tenant-a");
         HeaderContextHolder.setHeader(GlobalConstants.X_CANARY_ID, "shop-1");
         when(streamBridge.send(eq("orders"), eq("kafka"), any(Message.class), eq(MimeTypeUtils.APPLICATION_JSON)))
                 .thenReturn(true);
@@ -84,7 +84,7 @@ class MessageServiceImplTest {
         assertThat(result).isTrue();
         verify(streamBridge).send(eq("orders"), eq("kafka"), messageCaptor.capture(), eq(MimeTypeUtils.APPLICATION_JSON));
         Message<MessageEvent> message = messageCaptor.getValue();
-        assertThat(message.getHeaders().get(GlobalConstants.X_TENANT_CODE_TOKEN)).isEqualTo("tenant-a");
+        assertThat(message.getHeaders().get(GlobalConstants.X_TENANT_ID)).isEqualTo("tenant-a");
         assertThat(message.getHeaders().get(GlobalConstants.X_CANARY_ID)).isEqualTo("shop-1");
         assertThat(message.getHeaders().get("x-delay")).isEqualTo(500L);
         assertThat(message.getPayload().isDelay()).isTrue();

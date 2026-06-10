@@ -1,7 +1,7 @@
 package com.richie.context.common.api;
 
-import com.richie.contract.model.LoginUserPrincipal;
 import com.richie.contract.exception.BusinessException;
+import com.richie.contract.model.LoginUserPrincipal;
 import com.alibaba.ttl.TransmittableThreadLocal;
 
 /**
@@ -86,27 +86,4 @@ public class LoginUserContextHolder {
         return TOKEN_CONTEXT.get();
     }
 
-    /**
-     * 获取当前用户的租户ID
-     *
-     * @return 租户ID（Long类型）
-     * @throws BusinessException 如果用户信息不为空但租户ID为空
-     */
-    public static String getTenantCode() {
-        LoginUserPrincipal userInfo = getUserInfo(); // 这里已经会抛异常如果用户信息为空
-        String tenantCode = userInfo.getTenantCode();
-        if (tenantCode == null || tenantCode.isEmpty()) {
-            throw new BusinessException("当前用户未绑定租户");
-        }
-        return tenantCode;
-    }
-    /**
-     * 获取当前用户的租户ID
-     *
-     * @return 租户ID（Long类型）
-     * @throws BusinessException 如果用户信息不为空但租户ID为空
-     */
-    public static Long getTenantId() {
-        return Long.parseLong(getTenantCode());
-    }
 }

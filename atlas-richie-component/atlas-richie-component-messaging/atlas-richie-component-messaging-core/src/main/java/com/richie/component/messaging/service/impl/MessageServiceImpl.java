@@ -142,9 +142,13 @@ public class MessageServiceImpl implements MessageService {
         if (StringUtils.isNotBlank(shopCode)) {
             builder.setHeader(GlobalConstants.X_RD_REQUEST_SHOP_CODE, shopCode);
         }
-        var tenantCode = HeaderContextHolder.getHeader(GlobalConstants.X_TENANT_CODE_TOKEN);
-        if (StringUtils.isNotBlank(tenantCode)) {
-            builder.setHeader(GlobalConstants.X_TENANT_CODE_TOKEN, tenantCode);
+        var tenantId = HeaderContextHolder.getHeader(GlobalConstants.X_TENANT_ID);
+        if (StringUtils.isNotBlank(tenantId)) {
+            builder.setHeader(GlobalConstants.X_TENANT_ID, tenantId);
+        }
+        var accessToken = HeaderContextHolder.getHeader(GlobalConstants.X_ACCESS_TOKEN);
+        if (StringUtils.isNotBlank(accessToken)) {
+            builder.setHeader(GlobalConstants.X_ACCESS_TOKEN, accessToken);
         }
         // 灰度标识传递：从请求上下文获取 X-Canary-Id，设置到消息头
         // 灰度发布统一使用 ID 模式，只需传递 X-Canary-Id

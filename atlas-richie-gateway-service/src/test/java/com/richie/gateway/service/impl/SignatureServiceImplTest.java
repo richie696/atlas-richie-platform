@@ -163,7 +163,7 @@ class SignatureServiceImplTest {
             jwtUtilsMockedStatic.when(() -> JwtUtils.getExpiredTime(TOKEN)).thenReturn(future);
             jwtUtilsMockedStatic.when(() -> JwtUtils.getArgument(TOKEN, "userId")).thenReturn("u-001");
             jwtUtilsMockedStatic.when(() -> JwtUtils.getUsername(TOKEN)).thenReturn("testuser");
-            jwtUtilsMockedStatic.when(() -> JwtUtils.getTenantCode(TOKEN)).thenReturn("tenant-1");
+            jwtUtilsMockedStatic.when(() -> JwtUtils.getArgument(TOKEN, "tenantId")).thenReturn("tenant-1");
 
             ApiResult<Void> result = service.logout(TOKEN, null);
 
@@ -201,7 +201,7 @@ class SignatureServiceImplTest {
             jwtUtilsMockedStatic.when(() -> JwtUtils.getExpiredTime(TOKEN)).thenReturn(future);
             jwtUtilsMockedStatic.when(() -> JwtUtils.getArgument(TOKEN, "userId")).thenReturn(null);
             jwtUtilsMockedStatic.when(() -> JwtUtils.getUsername(TOKEN)).thenReturn(null);
-            jwtUtilsMockedStatic.when(() -> JwtUtils.getTenantCode(TOKEN)).thenReturn(null);
+            jwtUtilsMockedStatic.when(() -> JwtUtils.getArgument(TOKEN, "tenantId")).thenReturn(null);
             when(mfaTokenUtils.isValidMfaToken(mfaToken)).thenReturn(false);
 
             ApiResult<Void> result = service.logout(TOKEN, mfaToken);

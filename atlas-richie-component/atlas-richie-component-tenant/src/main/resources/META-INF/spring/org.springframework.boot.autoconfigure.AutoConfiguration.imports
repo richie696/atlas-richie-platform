@@ -1,1 +1,2 @@
-com.richie.component.dao.tenant.config.TenantAutoConfiguration
+com.richie.component.tenant.config.TenantAutoConfiguration
+com.richie.component.tenant.config.TenantFeatureConfiguration

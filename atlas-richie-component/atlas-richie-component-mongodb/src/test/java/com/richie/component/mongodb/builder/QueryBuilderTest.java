@@ -1,7 +1,8 @@
 package com.richie.component.mongodb.builder;
 
 import com.richie.component.mongodb.core.EntityIntrospector;
-import com.richie.component.mongodb.core.TenantContext;
+import com.richie.component.tenant.context.TenantContextHolder;
+import com.richie.contract.model.TenantPrincipal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -451,12 +452,12 @@ class QueryBuilderTest {
     void applyAnnotationFilters_withTenantFieldAndContext_shouldAddCriteria() {
         when(entityIntrospector.getSoftDeleteField(TestEntity.class)).thenReturn(null);
         when(entityIntrospector.getTenantField(TestEntity.class)).thenReturn("tenantId");
-        TenantContext.set("test-tenant");
+        TenantContextHolder.set(new TenantPrincipal().setTenantId(1L));
         try {
             builder.list();
             verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
         } finally {
-            TenantContext.clear();
+            TenantContextHolder.clear();
         }
     }
 

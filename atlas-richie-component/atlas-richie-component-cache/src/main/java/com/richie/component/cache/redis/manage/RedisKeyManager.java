@@ -47,7 +47,7 @@ public class RedisKeyManager implements KeyOps, CacheInfrastructure {
     /** 连接信息字符串（懒加载） */
     private String connectionString;
 
-    /** key 到值类型的注册表，用于反序列化 */
+    /** key 到值类型的注册表（使用前缀存储，避免按完整 key 膨胀） */
     private static final Map<String, Class<?>> TYPE_REGISTRY = new ConcurrentHashMap<>();
 
     /**
@@ -101,15 +101,57 @@ public class RedisKeyManager implements KeyOps, CacheInfrastructure {
 
     @Override
     public Class<?> getValueType(String key) {
-        return TYPE_REGISTRY.get(key);
+        var exact = TYPE_REGISTRY.get(key);
+        if (exact != null) {
+            return exact;
+        }
+        var prefix = extractPrefix(key);
+        if (!prefix.equals(key)) {
+            return TYPE_REGISTRY.get(prefix);
+        }
+        return null;
     }
 
     @Override
     public void registerType(String key, Class<?> clazz) {
-        if (TYPE_REGISTRY.containsKey(key)) {
+        if (!enableL2Caching()) {
             return;
         }
-        TYPE_REGISTRY.put(key, clazz);
+        var prefix = extractPrefix(key);
+        if (prefix.equals(key)) {
+            if (TYPE_REGISTRY.containsKey(key)) {
+                return;
+            }
+            TYPE_REGISTRY.put(key, clazz);
+        } else {
+            TYPE_REGISTRY.putIfAbsent(prefix, clazz);
+        }
+    }
+
+    /**
+     * 从 key 中提取可复用的前缀。
+     * 只有末尾段是纯数字或十六进制 hash(≥8位) 时才剥离 ID 部分，其余保留完整 key。
+     */
+    static String extractPrefix(String key) {
+        var lastColon = key.lastIndexOf(':');
+        if (lastColon < 0) {
+            return key;
+        }
+        var suffix = key.substring(lastColon + 1);
+        if (isIdSuffix(suffix)) {
+            return key.substring(0, lastColon + 1);
+        }
+        return key;
+    }
+
+    private static boolean isIdSuffix(String suffix) {
+        if (suffix.isEmpty()) {
+            return false;
+        }
+        if (suffix.chars().allMatch(Character::isDigit)) {
+            return true;
+        }
+        return suffix.length() >= 8 && suffix.chars().allMatch(c -> (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
     }
 
     /**

@@ -15,12 +15,27 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- 核心 DAO 组件 -->
+        <!-- 跨服务共享契约（GlobalConstants header 常量等） -->
         <dependency>
-            <groupId>com.richie.component</groupId>
-            <artifactId>atlas-richie-component-dao</artifactId>
+            <groupId>com.richie.base</groupId>
+            <artifactId>atlas-richie-contract</artifactId>
         </dependency>
 
+        <!-- 线程级上下文传递（TransmittableThreadLocal） -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>transmittable-thread-local</artifactId>
+        </dependency>
+
+        <!-- Spring Web MVC 拦截器（TenantContextInitializer） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- MyBatis-Plus 集成在 atlas-richie-component-dao 中实现，
+             通过 Optional 依赖模式避免循环依赖 -->
     </dependencies>
 
 </project>

@@ -108,9 +108,9 @@ public class HeaderAspectInterceptor implements IgnoreHeaderContent {
         if (StringUtils.isNotBlank(shopCode)) {
             response.setHeader(GlobalConstants.X_RD_REQUEST_SHOP_CODE, shopCode);
         }
-        var tenantCode = HeaderContextHolder.getHeader(GlobalConstants.X_TENANT_CODE_TOKEN);
-        if (StringUtils.isNotBlank(tenantCode)) {
-            response.setHeader(GlobalConstants.X_TENANT_CODE_TOKEN, tenantCode);
+        var tenantId = HeaderContextHolder.getHeader(GlobalConstants.X_TENANT_ID);
+        if (StringUtils.isNotBlank(tenantId)) {
+            response.setHeader(GlobalConstants.X_TENANT_ID, tenantId);
         }
         var extra = HeaderContextHolder.getHeader(GlobalConstants.X_RD_REQUEST_EXTRA);
         if (StringUtils.isNotBlank(extra)) {

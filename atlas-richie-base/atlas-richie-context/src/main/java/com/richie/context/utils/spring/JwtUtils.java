@@ -1,6 +1,8 @@
 package com.richie.context.utils.spring;
 
 import com.richie.contract.model.LoginUserPrincipal;
+import com.richie.contract.model.TenantFeature;
+import com.richie.contract.model.TenantPrincipal;
 import com.richie.contract.constant.GlobalConstants;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.RegisteredClaims;
@@ -12,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -42,7 +45,6 @@ public final class JwtUtils {
 
     /**
      * 验证JWT令牌是否有效的方法
-     * 该方法从token中解析出商户ID和用户名再加上密钥进行校验
      *
      * @param token  密钥
      * @param secret 令牌的密钥
@@ -50,14 +52,10 @@ public final class JwtUtils {
      */
     public static boolean verify(@Nonnull String token, @Nonnull String secret) {
         var username = getUsername(token);
-        var tenantCode = getTenantCode(token);
-        if (tenantCode == null) {
-            tenantCode = "";
-        }
         if (username == null) {
             return false;
         }
-        return verify(token, tenantCode, username, secret);
+        return verify(token, username, secret);
     }
 
     /**
@@ -69,42 +67,25 @@ public final class JwtUtils {
      * @return 返回校验结果（true：验证通过，false：验证不通过）
      */
     public static boolean verify(@Nonnull String token, @Nonnull String username, @Nonnull String secret) {
-        return verify(token, "", username, secret);
+        return verify(token, username, Map.of(), secret);
     }
 
     /**
      * 验证JWT令牌是否有效的方法
      *
-     * @param token      密钥
-     * @param tenantCode 租户ID
-     * @param username   用户名
-     * @param secret     令牌的密钥
+     * @param token    密钥
+     * @param username 用户名
+     * @param params   自定义扩展参数
+     * @param secret   令牌的密钥
      * @return 返回校验结果（true：验证通过，false：验证不通过）
      */
-    public static boolean verify(@Nonnull String token, @Nonnull String tenantCode, @Nonnull String username, @Nonnull String secret) {
-        return verify(token, tenantCode, username, Map.of(), secret);
-    }
-
-    /**
-     * 验证JWT令牌是否有效的方法
-     *
-     * @param token      密钥
-     * @param tenantCode 租户ID
-     * @param username   用户名
-     * @param params     自定义扩展参数
-     * @param secret     令牌的密钥
-     * @return 返回校验结果（true：验证通过，false：验证不通过）
-     */
-    public static boolean verify(@Nonnull String token, @Nonnull String tenantCode, @Nonnull String username, Map<String, String> params,
+    public static boolean verify(@Nonnull String token, @Nonnull String username, Map<String, String> params,
                                  @Nonnull String secret) {
         try {
             // 根据密码生成JWT效验器
             var algorithm = Algorithm.HMAC256(secret);
             var verifier = JWT.require(algorithm)
                     .withClaim("username", username);
-            if (StringUtils.isNotBlank(tenantCode)) {
-                verifier.withClaim("tenantCode", tenantCode);
-            }
             if (Objects.nonNull(params)) {
                 for (var entry : params.entrySet()) {
                     verifier.withClaim(entry.getKey(), entry.getValue());
@@ -168,23 +149,6 @@ public final class JwtUtils {
     }
 
     /**
-     * 获得token中租户ID的方法
-     * <p style="color: red">（注：如果令牌无效则返回null）
-     *
-     * @param token JWT令牌
-     * @return 返回租户ID（如果获取不到则返回空）
-     */
-    @Nullable
-    public static String getTenantCode(@Nonnull String token) {
-        try {
-            var jwt = JWT.decode(token);
-            return jwt.getClaim("tenantCode").asString();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    /**
      * 获取用户信息缓存Key的方法
      *
      * @param token JWT令牌
@@ -202,24 +166,6 @@ public final class JwtUtils {
     }
 
     /**
-     * 获得token中租户账号到期时间的方法
-     * <p style="color: red">（注：如果令牌无效或当前未启用租户功能则返回null）
-     *
-     * @param token JWT令牌
-     * @return 返回租户ID（如果获取不到则返回空）
-     */
-    @Nullable
-    public static OffsetDateTime getTenantExpiredTime(@Nonnull String token) {
-        try {
-            var jwt = JWT.decode(token);
-            var time = jwt.getClaim("tenantExpiredTime").asDate();
-            return time.toInstant().atOffset(ZoneOffset.UTC);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    /**
      * 生成JWT令牌的方法
      *
      * @param username 用户名
@@ -228,21 +174,7 @@ public final class JwtUtils {
      * @return 返回创建的新令牌
      */
     public static String generateJwtToken(@Nonnull String username, @Nonnull String secret, long expiredTime) {
-        return generateJwtToken(null, null, username, Map.of(), secret, expiredTime);
-    }
-
-    /**
-     * 生成JWT令牌的方法
-     *
-     * @param tenantCode 租户ID
-     * @param tenantExpiredTime 租户账号到期时间
-     * @param username   用户名
-     * @param secret     令牌的密钥
-     * @param expiredTime 令牌过期时间
-     * @return 返回创建的新令牌
-     */
-    public static String generateJwtToken(@Nonnull String tenantCode, @Nonnull OffsetDateTime tenantExpiredTime, @Nonnull String username, @Nonnull String secret, long expiredTime) {
-        return generateJwtToken(tenantCode, tenantExpiredTime, username, Map.of(), secret, expiredTime);
+        return generateJwtToken(username, Map.of(), secret, expiredTime);
     }
 
     /**
@@ -254,19 +186,41 @@ public final class JwtUtils {
      * @return 返回创建的新令牌
      */
     public static String generateJwtToken(@Nonnull LoginUserPrincipal userVO, @Nonnull String secret, long expiredTime) {
-        return generateJwtToken(userVO.getTenantCode(), userVO.getTenantExpiredTime(), userVO.getUsername(), userVO.getSignParams(), secret, expiredTime);
+        Map<String, String> params = new HashMap<>(userVO.getSignParams());
+        params.put("tenantEnabled", String.valueOf(userVO.isTenantEnabled() || TenantFeature.isEnabled()));
+        return generateJwtToken(userVO.getUsername(), params, secret, expiredTime);
+    }
+
+    /**
+     * 生成携带租户信息的JWT令牌的方法
+     * <p>自动将 {@link TenantPrincipal} 中的 tenantId、tenantName、expiredTime
+     * 填入JWT claims，使用者无需手动拼装参数Map。</p>
+     *
+     * @param username    用户名（JWT subject）
+     * @param tenant      租户信息
+     * @param secret      令牌的密钥
+     * @param expiredTime 令牌过期时间
+     * @return 返回创建的新令牌
+     */
+    public static String generateJwtToken(@Nonnull String username, @Nonnull TenantPrincipal tenant,
+                                          @Nonnull String secret, long expiredTime) {
+        Map<String, String> params = new HashMap<>();
+        if (tenant.getTenantId() != null) {
+            params.put("tenantId", String.valueOf(tenant.getTenantId()));
+        }
+        if (tenant.getTenantName() != null) {
+            params.put("tenantName", tenant.getTenantName());
+        }
+        if (tenant.getExpiredTime() != null) {
+            params.put("tenantExpiredTime", String.valueOf(tenant.getExpiredTime().toEpochSecond()));
+        }
+        return generateJwtToken(username, params, secret, expiredTime);
     }
 
     /**
      * 生成JWT令牌的方法
-     *
-     * @param tenantCode 租户ID
-     * @param username   用户名
-     * @param params     自定义扩展参数
-     * @param secret     令牌的密钥
-     * @return 返回创建的新令牌
      */
-    private static String generateJwtToken(String tenantCode, OffsetDateTime tenantExpiredTime, String username, Map<String, String> params, String secret, long expiredTime) {
+    private static String generateJwtToken(String username, Map<String, String> params, String secret, long expiredTime) {
         var algorithm = Algorithm.HMAC256(secret);
         var builder = JWT.create()
                 .withClaim("username", username)
@@ -276,11 +230,6 @@ public final class JwtUtils {
                 .withIssuer("Richie Inc.")
                 .withSubject("Interactive token")
                 .withAudience(username);
-        if (StringUtils.isNotBlank(tenantCode) && tenantExpiredTime != null) {
-            builder
-                    .withClaim("tenantCode", tenantCode)
-                    .withClaim("tenantExpiredTime", Date.from(tenantExpiredTime.toInstant()));
-        }
         for (var entry : params.entrySet()) {
             builder.withClaim(entry.getKey(), entry.getValue());
         }
@@ -322,6 +271,40 @@ public final class JwtUtils {
     }
 
     /**
+     * 从JWT令牌中提取租户信息的方法
+     * <p>从token中解析 tenantId、tenantName、tenantExpiredTime 三个claim，
+     * 组装成 {@link TenantPrincipal} 对象返回。</p>
+     * <p style="color: red">（注：如果令牌无效或不包含租户信息则返回null）</p>
+     *
+     * @param token JWT令牌
+     * @return 返回租户主体信息（如果获取不到则返回空）
+     */
+    @Nullable
+    public static TenantPrincipal getTenantPrincipal(@Nonnull String token) {
+        try {
+            var jwt = JWT.decode(token);
+            String tid = jwt.getClaim("tenantId").asString();
+            if (tid == null) {
+                return null;
+            }
+            TenantPrincipal tenant = new TenantPrincipal()
+                    .setTenantId(Long.parseLong(tid));
+            String tname = jwt.getClaim("tenantName").asString();
+            if (tname != null) {
+                tenant.setTenantName(tname);
+            }
+            String expired = jwt.getClaim("tenantExpiredTime").asString();
+            if (expired != null) {
+                long epochSecond = Long.parseLong(expired);
+                tenant.setExpiredTime(OffsetDateTime.ofInstant(Instant.ofEpochSecond(epochSecond), ZoneOffset.UTC));
+            }
+            return tenant;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
      * 根据request中的token获取用户账号
      *
      * @param request 请求对象
@@ -335,22 +318,6 @@ public final class JwtUtils {
             throw new RuntimeException("未获取到用户名");
         }
         return username;
-    }
-
-    /**
-     * 根据request中的token获取用户账号
-     *
-     * @param request 请求对象
-     * @return 返回用户名
-     * @throws RuntimeException 当获取不到用户名时抛出该异常
-     */
-    public static String getTenantCodeByToken(HttpServletRequest request) throws RuntimeException {
-        var accessToken = request.getHeader(X_ACCESS_TOKEN);
-        var tenantCode = getTenantCode(accessToken);
-        if (ObjectUtils.isEmpty(tenantCode)) {
-            throw new RuntimeException("未获取到租户ID");
-        }
-        return tenantCode;
     }
 
 }

@@ -141,7 +141,7 @@ public class IssueTokensFilter extends AbstractBaseFilter {
                                     // 业务侧未返回 token，且当前登录页启用 MFA：根据 data.mfaBound 决定是否返回 MFA_REQUIRED
                                     if (isMfaBoundInData(responseData)) {
                                         String userId = getUserId(userVO);
-                                        String tenantId = userVO.getTenantCode();
+                                        String tenantId = userVO.getSignParams() != null ? userVO.getSignParams().get("tenantId") : null;
 
                                         MfaValidationResult mfaResult = mfaValidationService.checkMfaStatus(userId, tenantId, extractDeviceId(exchange));
                                         if (mfaResult.isMfaRequired()) {
@@ -218,9 +218,10 @@ public class IssueTokensFilter extends AbstractBaseFilter {
      */
     private void setLastOnlineToken(LoginUserPrincipal userVO, String signature) {
         //获取redis中的token
+        String tenantId = userVO.getSignParams() != null ? userVO.getSignParams().get("tenantId") : null;
         String key = "";
-        if (null != userVO.getTenantCode()) {
-            key = "%s-".formatted(userVO.getTenantCode());
+        if (null != tenantId) {
+            key = "%s-".formatted(tenantId);
         }
         key += userVO.getUsername();
         boolean isMobileToken = Boolean.parseBoolean(JwtUtils.getArgument(signature, GlobalConstants.IS_MOBILE_TOKEN));

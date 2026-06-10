@@ -290,7 +290,7 @@ public class AccessLogAspect {
         // 如果令牌存在，直接使用令牌信息
         if (Objects.nonNull(token)) {
             logInfo.setOperator(JwtUtils.getUsername(token))
-                    .setTenantId(JwtUtils.getTenantCode(token));
+                    .setTenantId(JwtUtils.getArgument(token, "tenantId"));
             return;
         }
 
@@ -319,14 +319,15 @@ public class AccessLogAspect {
             var loginToken = jsonNode.asString("token");
             if (StringUtils.isNotBlank(loginToken)) {
                 logInfo.setOperator(JwtUtils.getUsername(loginToken))
-                        .setTenantId(JwtUtils.getTenantCode(loginToken));
+                        .setTenantId(JwtUtils.getArgument(loginToken, "tenantId"));
                 return;
             }
         }
 
         if (result instanceof LoginUserPrincipal user) {
+            String tenantId = user.getSignParams() != null ? user.getSignParams().get("tenantId") : null;
             logInfo.setOperator(user.getUsername())
-                    .setTenantId(user.getTenantCode());
+                    .setTenantId(tenantId);
             return;
         }
 

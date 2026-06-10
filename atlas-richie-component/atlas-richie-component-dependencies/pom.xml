@@ -355,6 +355,18 @@
                 <artifactId>atlas-richie-component-statemachine</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
+            <!-- gRPC 组件 -->
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-grpc</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <!-- Sentinel 核心（gRPC 组件可选依赖，统一版本管理） -->
+            <dependency>
+                <groupId>com.alibaba.csp</groupId>
+                <artifactId>sentinel-core</artifactId>
+                <version>${sentinel.version}</version>
+            </dependency>
 
             <!-- 数据库驱动 -->
             <dependency>

@@ -1,5 +1,6 @@
 package com.richie.gateway.filter.internal.business;
 
+import com.richie.contract.constant.GlobalConstants;
 import com.richie.contract.model.ApiResult;
 import com.richie.gateway.config.GatewayConfig;
 import com.richie.context.utils.spring.JwtUtils;
@@ -12,12 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-
-import java.time.OffsetDateTime;
 
 /**
  * 租户信息验证过滤器
@@ -60,19 +60,30 @@ public class TenantFilter extends AbstractBaseFilter {
         if (StringUtils.isBlank(token) || "null".equalsIgnoreCase(token) || "undefined".equalsIgnoreCase(token)) {
             return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_2"));
         }
-        String tenantCode = JwtUtils.getTenantCode(token);
-        if (StringUtils.isBlank(tenantCode)) {
+        // 检查JWT中的 tenantEnabled 标志：仅当为 true 时才执行租户校验
+        String enabledStr = JwtUtils.getArgument(token, "tenantEnabled");
+        if (!"true".equals(enabledStr)) {
+            return chain.filter(exchange);
+        }
+        String tenantIdStr = JwtUtils.getArgument(token, "tenantId");
+        if (StringUtils.isBlank(tenantIdStr)) {
             return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_6"));
         }
-        OffsetDateTime tenantExpiredTime = JwtUtils.getTenantExpiredTime(token);
-        if (tenantExpiredTime == null) {
+        String tenantExpiredStr = JwtUtils.getArgument(token, "tenantExpiredTime");
+        if (StringUtils.isBlank(tenantExpiredStr)) {
             return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_2"));
         }
-        boolean isExpired = OffsetDateTime.now(tenantExpiredTime.getOffset()).isAfter(tenantExpiredTime);
+        boolean isExpired;
+        try {
+            isExpired = System.currentTimeMillis() > Long.parseLong(tenantExpiredStr);
+        } catch (NumberFormatException e) {
+            log.warn("无效的租户过期时间: token={}, tenantExpiredStr={}", token, tenantExpiredStr);
+            return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_2"));
+        }
         // 租户已过期
         if (isExpired) {
             // 发送 feign 接口通知 portal 服务作废当前账号相关的数据
-            ApiResult<Void> result = signatureService.notifyTenantExpired(tenantCode);
+            ApiResult<Void> result = signatureService.notifyTenantExpired(tenantIdStr);
             if (!result.isSuccess()) {
                 log.error(result.getMsg());
                 return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_4"));
@@ -81,8 +92,13 @@ public class TenantFilter extends AbstractBaseFilter {
             signatureService.invalidToken(token);
             return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_4"));
         }
+
+        // 将租户ID写入请求头，传递给下游微服务
+        ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+                .headers(headers -> headers.set(GlobalConstants.X_TENANT_ID, tenantIdStr))
+                .build();
         // 租户未过期放通请求
-        return chain.filter(exchange);
+        return chain.filter(exchange.mutate().request(mutatedRequest).build());
     }
 
     protected boolean enableVerifyFilter(ServerWebExchange exchange) {
