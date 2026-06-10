@@ -29,7 +29,7 @@ public enum TenantErrorCode {
     TENANT_AUTH_INVALID_FORMAT(403, "Invalid tenant code format: {0}"),
 
     /**
-     * 租户账户已过期 — tenantExpiredTime < 当前时间
+     * 租户账户已过期 — tenantExpiredTime &lt; 当前时间
      */
     TENANT_AUTH_EXPIRED(403, "Tenant account expired: {0}"),
 

@@ -31,7 +31,7 @@ public class LoginUserPrincipal implements Serializable {
     /**
      * 租户功能是否启用（默认false）
      * <p>当 {@code atlas-richie-component-tenant} 在 classpath 上时，
-     * {@link JwtUtils} 在生成令牌时自动将此字段与 {@link TenantFeature#isEnabled()} 合并后写入 JWT claims。
+     * JwtUtils 在生成令牌时自动将此字段与 {@link TenantFeature#isEnabled()} 合并后写入 JWT claims。
      * 调用方也可在构建子类后显式设置此字段来覆盖默认行为。</p>
      */
     private boolean tenantEnabled = false;
