@@ -581,7 +581,7 @@ python3 atlas-richie-component/scripts/scaffold-component-tests.py
 行为说明：
 
 - **跳过** `atlas-richie-component-cache`（蓝本手工维护）
-- **跳过** `atlas-richie-component-dao-tenant`（仅占位壳，无实现代码，待设计落地后再接入）
+- **跳过** `atlas-richie-component-tenant`（仅占位壳，无实现代码，待设计落地后再接入）
 - **不覆盖** 已存在的 `support/`、`*IT.java`
 - 自动识别 `pom.xml` 是否依赖 Redis，生成对应 Redis / Spring 集测骨架
 - 对尚无单测的模块生成 `{Type}ModuleSmokeTest`

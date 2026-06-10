@@ -27,7 +27,7 @@
 ### Component Overview (Initial Release)
 
 - Cache & distributed capabilities: `atlas-richie-component-cache`
-- Data access & multi-tenant extensions: `atlas-richie-component-dao` / `atlas-richie-component-dao-tenant`
+- Data access & multi-tenant extensions: `atlas-richie-component-dao` / `atlas-richie-component-tenant`
 - Unified HTTP client abstraction: `atlas-richie-component-http`
 - Data desensitization (API / logging / audit): `atlas-richie-component-desensitize`
 - Storage, vector search, search, messaging, multi-protocol communication, and more

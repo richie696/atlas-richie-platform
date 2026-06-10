@@ -9,8 +9,8 @@
         <relativePath>../atlas-richie-component-dependencies/pom.xml</relativePath>
     </parent>
 
-    <artifactId>atlas-richie-component-dao-tenant</artifactId>
-    <name>atlas-richie-component-dao-tenant</name>
+    <artifactId>atlas-richie-component-tenant</artifactId>
+    <name>atlas-richie-component-tenant</name>
     <description>Richie 多租户数据访问增强组件（可选）</description>
     <packaging>jar</packaging>
 

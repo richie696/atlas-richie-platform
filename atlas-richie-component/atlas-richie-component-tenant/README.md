@@ -25,7 +25,7 @@
 ```xml
 <dependency>
     <groupId>com.richie.component</groupId>
-    <artifactId>atlas-richie-component-dao-tenant</artifactId>
+    <artifactId>atlas-richie-component-tenant</artifactId>
 </dependency>
 ```
 
@@ -65,5 +65,5 @@ public class User extends TenantIdDomain {
 ## 构建
 
 ```bash
-mvn clean install -pl atlas-richie-component/atlas-richie-component-dao-tenant -am -DskipTests
+mvn clean install -pl atlas-richie-component/atlas-richie-component-tenant -am -DskipTests
 ```

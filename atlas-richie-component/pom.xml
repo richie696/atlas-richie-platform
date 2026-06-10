@@ -29,7 +29,7 @@
         <!-- 通用数据库访问层服务组件 -->
         <module>atlas-richie-component-dao</module>
         <!-- 多租户数据访问增强组件（可选） -->
-        <module>atlas-richie-component-dao-tenant</module>
+        <module>atlas-richie-component-tenant</module>
         <!-- 组件依赖关系管理 -->
         <module>atlas-richie-component-dependencies</module>
         <!-- HTTP/HTTPS 客户端组件 -->

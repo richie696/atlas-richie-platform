@@ -312,7 +312,7 @@
 | 组件 | 作用 | 使用场景 |
 |---|---|---|
 | `atlas-richie-component-dao` | MyBatis Plus 封装，分页、审计字段、多数据源路由 | 数据库访问 |
-| `atlas-richie-component-dao-tenant` | 多租户 DAO 扩展 | 多租户场景 |
+| `atlas-richie-component-tenant` | 多租户 DAO 扩展 | 多租户场景 |
 | `atlas-richie-component-logging` | 统一日志格式、脱敏、traceId 透传 | 所有日志 |
 | `atlas-richie-component-tracing` | OpenTelemetry 接入 | 链路追踪 |
 | `atlas-richie-component-skywalking` | SkyWalking APM 接入 | 应用监控 |

@@ -39,7 +39,7 @@
             <!-- 多租户数据访问增强组件（可选） -->
             <dependency>
                 <groupId>com.richie.component</groupId>
-                <artifactId>atlas-richie-component-dao-tenant</artifactId>
+                <artifactId>atlas-richie-component-tenant</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- 消息队列文档组件（支持Kafka、RabbitMQ、RocketMQ） -->

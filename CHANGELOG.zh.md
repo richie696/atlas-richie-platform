@@ -27,7 +27,7 @@
 ### 组件能力概览（首发）
 
 - 缓存与分布式能力：`atlas-richie-component-cache`
-- 数据访问与多租户扩展：`atlas-richie-component-dao` / `atlas-richie-component-dao-tenant`
+- 数据访问与多租户扩展：`atlas-richie-component-dao` / `atlas-richie-component-tenant`
 - HTTP 客户端统一抽象：`atlas-richie-component-http`
 - 数据脱敏（API/日志/审计场景）：`atlas-richie-component-desensitize`
 - 存储、向量检索、搜索、消息、多协议通信等通用组件能力
