@@ -2,9 +2,8 @@ package com.richie.component.messaging.filter.handler.impl;
 
 import com.richie.component.messaging.enums.DatasourceTypeEnum;
 import com.richie.component.messaging.event.MessageEvent;
-import com.richie.component.messaging.filter.datasource.DatasourceHandler;
 import com.richie.component.messaging.filter.datasource.impl.MemoryDatasourceHandlerImpl;
-import com.richie.component.messaging.pulsar.config.MessagingProperties;
+import com.richie.component.messaging.config.MessagingProperties;
 import com.richie.context.common.api.SpringContextHolder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

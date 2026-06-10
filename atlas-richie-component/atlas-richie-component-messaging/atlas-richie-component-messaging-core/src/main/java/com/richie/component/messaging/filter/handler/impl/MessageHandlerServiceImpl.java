@@ -1,7 +1,7 @@
 package com.richie.component.messaging.filter.handler.impl;
 
 import com.richie.context.common.api.SpringContextHolder;
-import com.richie.component.messaging.pulsar.config.MessagingProperties;
+import com.richie.component.messaging.config.MessagingProperties;
 import com.richie.component.messaging.event.MessageEvent;
 import com.richie.component.messaging.filter.datasource.DatasourceHandler;
 import com.richie.component.messaging.filter.handler.MessageHandlerService;

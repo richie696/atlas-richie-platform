@@ -1,6 +1,6 @@
 package com.richie.component.messaging.consumer;
 
-import com.richie.component.messaging.pulsar.config.MessagingProperties;
+import com.richie.component.messaging.config.MessagingProperties;
 import com.richie.component.messaging.event.MessageEvent;
 import com.richie.component.messaging.filter.CanaryMessageFilter;
 import com.richie.component.messaging.filter.handler.MessageHandlerService;

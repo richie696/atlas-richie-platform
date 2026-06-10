@@ -24,33 +24,101 @@ public class GrpcProperties {
 
     @Data
     public static class Server {
-        private boolean metricsEnabled = true;
+        /**
+         * 是否启用服务端头信息透传拦截器
+         */
+        private boolean headerEnabled = true;
+        /**
+         * 是否启用服务端日志拦截器
+         */
         private boolean loggingEnabled = true;
+        /**
+         * 是否启用服务端异常映射拦截器
+         */
         private boolean exceptionMappingEnabled = true;
+        /**
+         * 是否启用服务端鉴权拦截器
+         */
         private boolean authEnabled = false;
+        /**
+         * JWT 鉴权密钥
+         */
         private String authSecret;
-        private Duration gracefulShutdownTimeout = Duration.ofSeconds(30);
-
+        /**
+         * 是否启用服务端 Sentinel 限流拦截器
+         */
+        private boolean sentinelEnabled = true;
+        /**
+         * 是否启用服务端链路追踪拦截器
+         */
         private boolean tracingEnabled = true;
+        /**
+         * 是否启用服务端指标采集拦截器
+         */
+        private boolean metricsEnabled = true;
+        /**
+         * 优雅停机超时时间
+         */
+        private Duration gracefulShutdownTimeout = Duration.ofSeconds(30);
+        /**
+         * 客户端 KeepAlive 时间
+         */
         private Duration keepAliveTime = Duration.ofSeconds(30);
+        /**
+         * 客户端 KeepAlive 超时时间
+         */
         private Duration keepAliveTimeout = Duration.ofSeconds(10);
+        /**
+         * 是否允许没有调用时保持连接
+         */
         private boolean permitKeepAliveWithoutCalls = true;
     }
 
     @Data
     public static class Client {
-        private boolean metricsEnabled = true;
+        /**
+         * 是否启用客户端头信息透传拦截器
+         */
+        private boolean headerEnabled = true;
+        /**
+         * 是否启用客户端日志拦截器
+         */
         private boolean loggingEnabled = true;
+        /**
+         * 是否启用客户端链路追踪拦截器
+         */
         private boolean tracingEnabled = true;
-
+        /**
+         * 是否启用客户端指标采集拦截器
+         */
+        private boolean metricsEnabled = true;
+        /**
+         * 是否启用客户端 Sentinel 限流拦截器
+         */
+        private boolean sentinelEnabled = true;
+        /**
+         * 客户端 KeepAlive 时间
+         */
         private Duration keepAliveTime = Duration.ofSeconds(30);
+        /**
+         * 客户端 KeepAlive 超时时间
+         */
         private Duration keepAliveTimeout = Duration.ofSeconds(10);
+        /**
+         * 是否允许没有调用时保持连接
+         */
         private boolean keepAliveWithoutCalls = true;
     }
 
     @Data
     public static class HeaderPropagation {
+        /**
+         * 是否启用头信息透传
+         */
         private boolean enabled = true;
+        /**
+         * 需要透传的头信息白名单
+         */
         private Set<String> headers = new HashSet<>(Set.of(
                 "x-rd-request-apitoken",
                 "x-tenant-id"

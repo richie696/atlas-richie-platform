@@ -1,4 +1,4 @@
-package com.richie.component.messaging.pulsar.config;
+package com.richie.component.messaging.config;
 
 import com.richie.contract.gateway.config.DeployConfig;
 import com.richie.component.messaging.filter.CanaryMessageFilter;

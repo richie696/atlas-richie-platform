@@ -2,7 +2,7 @@ package com.richie.component.messaging.filter;
 
 import com.richie.contract.constant.GlobalConstants;
 import com.richie.contract.gateway.config.DeployConfig;
-import com.richie.component.messaging.pulsar.config.CanaryInstanceManager;
+import com.richie.component.messaging.config.CanaryInstanceManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

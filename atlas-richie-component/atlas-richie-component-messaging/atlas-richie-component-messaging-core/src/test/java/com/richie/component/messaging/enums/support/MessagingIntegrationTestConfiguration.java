@@ -5,7 +5,7 @@ import com.richie.component.cache.redis.config.base.RedisBaseAutoConfiguration;
 import com.richie.component.messaging.filter.datasource.impl.MemoryDatasourceHandlerImpl;
 import com.richie.component.messaging.filter.datasource.impl.RedisDatasourceHandlerImpl;
 import com.richie.component.messaging.filter.handler.impl.MessageHandlerServiceImpl;
-import com.richie.component.messaging.pulsar.config.MessagingProperties;
+import com.richie.component.messaging.config.MessagingProperties;
 import com.richie.context.common.api.SpringContextHolder;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

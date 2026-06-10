@@ -1,4 +1,4 @@
-package com.richie.component.messaging.pulsar.config;
+package com.richie.component.messaging.config;
 
 import com.richie.component.messaging.enums.DatasourceTypeEnum;
 import lombok.Data;

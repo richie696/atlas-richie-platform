@@ -3,4 +3,4 @@ com.richie.component.messaging.service.impl.MessageServiceImpl
 com.richie.component.messaging.filter.handler.impl.MessageHandlerServiceImpl
 com.richie.component.messaging.filter.datasource.impl.MemoryDatasourceHandlerImpl
 com.richie.component.messaging.filter.datasource.impl.RedisDatasourceHandlerImpl
-com.richie.component.messaging.pulsar.config.MessagingConfiguration
+com.richie.component.messaging.config.MessagingConfiguration

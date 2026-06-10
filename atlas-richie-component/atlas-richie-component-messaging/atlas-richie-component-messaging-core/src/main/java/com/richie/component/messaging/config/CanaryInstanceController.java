@@ -1,4 +1,4 @@
-package com.richie.component.messaging.pulsar.config;
+package com.richie.component.messaging.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

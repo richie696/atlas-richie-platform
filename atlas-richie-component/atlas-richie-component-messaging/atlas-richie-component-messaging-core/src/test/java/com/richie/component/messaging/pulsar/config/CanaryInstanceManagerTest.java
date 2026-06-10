@@ -1,5 +1,6 @@
 package com.richie.component.messaging.pulsar.config;
 
+import com.richie.component.messaging.config.CanaryInstanceManager;
 import com.richie.contract.gateway.config.DeployConfig;
 import com.richie.component.messaging.filter.CanaryMessageFilter;
 import org.junit.jupiter.api.Test;

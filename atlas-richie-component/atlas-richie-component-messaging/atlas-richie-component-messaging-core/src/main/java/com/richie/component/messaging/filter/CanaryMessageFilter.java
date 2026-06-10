@@ -2,7 +2,7 @@ package com.richie.component.messaging.filter;
 
 import com.richie.contract.gateway.config.DeployConfig;
 import com.richie.contract.constant.GlobalConstants;
-import com.richie.component.messaging.pulsar.config.CanaryInstanceManager;
+import com.richie.component.messaging.config.CanaryInstanceManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.client.ServiceInstance;
