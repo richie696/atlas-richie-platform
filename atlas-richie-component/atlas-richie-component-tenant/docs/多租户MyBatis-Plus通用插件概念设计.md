@@ -92,24 +92,42 @@
 
 该兼容性约束会被纳入**配置校验器**（见 5.1），在启动阶段即中断不合法配置，避免运行时风险。
 
+### 2.2 自动建表兼容性
+
+`table-auto-create` 仅对隔离模式为 `table` 的租户生效，通过 `CREATE TABLE IF NOT EXISTS ... LIKE` 按 `table-templates` 列表遍历复制表结构（含列、索引、约束），不复制数据。
+
+**database 模式不提供自动建库能力**——`CREATE DATABASE` 需要 DBA 级权限，不应暴露给应用连接池。database 模式下，数据库实例由运维独立创建后，通过管理 API 注册数据源连接信息完成租户上线。
+
 ## 3. 数据模型
 
-本方案**不依赖任何持久化数据表**，所有核心配置与运行时对象均源自 YAML 文件，运行时数据模型如下：
+本方案采用 **YAML 为种子配置 + DB 为运行时权威源** 的双层模型：
+
+| 层级 | 用途 | 生命周期 |
+|------|------|---------|
+| YAML `datasource.tenants` | 首次启动的**种子数据**，初始化 `sys_tenant` 表 | 一次性消费，后续重启忽略 |
+| `sys_tenant` 表 | 租户运行时元数据的**权威源** | 管理 API 增删改，立即生效 |
+
+> 详见 [租户生命周期详细设计](租户生命周期详细设计.md) §1 权威性规则。
 
 ### 3.1 配置模型（YAML）
+
+不同隔离模式的配置复杂度差异显著。以下为各模式的最小工作配置，实际可组合叠加。
+
+#### 通用基础配置
+
+所有模式共享的配置项：
+
 ```yaml
 multi-tenancy:
   enabled: true
-  mode: column                    # column / table / schema / database / hybrid
-  force-thread-local: false   # 默认 false，即自动选择
+  mode: column                      # column / table / schema / database / hybrid
+  force-thread-local: false
   tenant-id-header: X-Tenant-ID
   enforce-auth-tenant: true
   allowed-tenant-pattern: "^[a-zA-Z0-9_\\-]{1,64}$"
   tenant-id-column: tenant_id
   ignore-tables:
     - sys_config
-  table-name-suffix: _${tenant}
-  schema-prefix: tenant_
   datasource:
     shared:
       url: jdbc:postgresql://localhost:5432/shared_db
@@ -117,12 +135,105 @@ multi-tenancy:
       password: password
       hikari:
         maximum-pool-size: 20
-    tenants:
+    tenants:                        # 种子数据，仅首次启动生效
       tenantA:
         url: jdbc:postgresql://localhost:5432/tenant_a
-      tenantB:
-        url: jdbc:postgresql://localhost:5432/tenant_b
 ```
+
+> **`tenant-id-header` 用途**：跨服务调用时通过 HTTP Header / gRPC Metadata 传递租户 ID 的统一 key，默认 `X-Tenant-ID`。
+> 
+> - **入口**：`TenantIdentityFilter` 用此 header 与 JWT `tenantCode` 交叉校验（不可单独信任 header）。
+> - **出站**：所有出站 HTTP/Feign/gRPC 客户端自动注入此 header，值为当前 `TenantContext` 中的租户 ID。
+> - **可配置**：允许改名以适配不同的网关/服务网格约定。
+> 
+> 详见 [上下文模块详细设计](上下文模块详细设计.md) §4 身份解析与 §7 跨服务传递。
+
+#### Column 模式（最简）
+
+仅需通用配置，无额外字段。
+
+```yaml
+multi-tenancy:
+  mode: column
+  # ── 其余使用通用配置即可 ──
+```
+
+#### Table 模式
+
+```yaml
+multi-tenancy:
+  mode: table
+  table-name-suffix: _${tenant}
+  table-auto-create: true           # 注册租户时自动 CREATE TABLE ... LIKE
+  table-templates:                  # 需要按 suffix 复制的表模板列表
+    - t_order
+    - t_user
+    - t_product
+  # ── 其余使用通用配置 ──
+```
+
+#### Schema 模式
+
+```yaml
+multi-tenancy:
+  mode: schema
+  schema-prefix: tenant_
+  # ── 其余使用通用配置 ──
+```
+
+> MySQL 不支持 schema 模式，配置校验器会在启动时拒绝。
+
+#### Database 模式
+
+```yaml
+multi-tenancy:
+  mode: database
+  datasource:
+    tenants:                        # 种子数据
+      tenantA:
+        url: jdbc:postgresql://localhost:5432/tenant_a
+        username: app
+        password: password
+  # ── 其余使用通用配置 ──
+```
+
+> database 模式**不支持应用侧自动建库**——`CREATE DATABASE` 需 DBA 权限。数据库实例由运维创建后，通过管理 API 注册连接信息完成租户上线。连接信息由 API 调用方显式传入，不通过 YAML 模板自动生成。
+
+#### Hybrid 模式（组合）
+
+```yaml
+multi-tenancy:
+  mode: hybrid
+  table-name-suffix: _${tenant}     # table 租户使用
+  table-auto-create: true
+  table-templates: [t_order, t_user]
+  schema-prefix: tenant_            # schema 租户使用
+  datasource:
+    tenants:                        # 种子数据，含租户级 mode
+      tenant_a:
+        mode: COLUMN                # 默认 COLUMN，可省略
+      tenant_b:
+        mode: TABLE
+        table-suffix: _b_custom     # 可选覆盖全局 table-name-suffix
+      tenant_c:
+        mode: DATABASE
+        url: jdbc:postgresql://pg2:5432/tenant_c  # database 租户可覆盖连接信息
+  # ── 其余使用通用配置 ──
+```
+
+> **hybrid 模式的租户级 mode**：YAML `mode: hybrid` 仅为全局声明。每个租户的隔离模式由 YAML `tenants.<id>.mode` 指定（种子数据，首次启动写入 `sys_tenant.isolation_mode`）；若未配置则默认 `COLUMN`。后续运行期以 `sys_tenant.isolation_mode` 为权威源。
+>
+> ```sql
+> -- hybrid 模式下 sys_tenant 示例：三个租户使用不同策略
+> SELECT tenant_id, tenant_name, isolation_mode FROM sys_tenant;
+> -- tenant_a | Tenant A Corp | COLUMN     → WHERE tenant_id = 'tenant_a'
+> -- tenant_b | Tenant B Ltd  | TABLE      → t_order_tenant_b + 自动建表
+> -- tenant_c | Tenant C Bank | DATABASE   → jdbc:.../tenant_tenant_c 独立库
+> ```
+>
+> 详见 [租户生命周期详细设计](租户生命周期详细设计.md) §2 `sys_tenant` 元数据表。
+
+> `tenants` 为种子数据，仅在首次启动且 `sys_tenant` 表为空时写入；后续重启以 DB 为权威源，忽略 YAML `tenants`。
 
 ### 3.2 运行时对象模型
 
@@ -246,17 +357,31 @@ flowchart LR
   - `String getTenantId()`
   - `void clear()`
 
-- **ScopedValueHolder 实现**：基于 JDK 20+ 的 `ScopedValue`，自动继承到虚拟线程，作用域结束自动清理，代码简洁无泄漏风险。
-- **ThreadLocalHolder 实现**：基于 `InheritableThreadLocal`，通过 try-finally 保证清理，并支持嵌套绑定（内部覆盖后恢复外层值），兼容旧 JDK 与非虚拟线程环境。
+- **ScopedValueHolder 实现**：基于 JDK 20+ 的 `ScopedValue`，在 `StructuredTaskScope` 内虚拟线程间自动继承，作用域结束自动清理；**不跨线程池传递**（JDK 刻意设计），需通过 `TaskDecorator` 显式捕获-恢复。
+- **ThreadLocalHolder 实现**：基于 `TransmittableThreadLocal`（TTL），可通过 `TtlExecutors` 包装实现线程池自动传递，兼容旧 JDK 与非虚拟线程环境。同样支持嵌套绑定（内部覆盖后恢复外层值）。
 - **自动选择机制**：在自动配置阶段检测 `ScopedValue` 是否可用，并允许通过 `multi-tenancy.force-thread-local=true` 强制降级；运行时 JVM 全局只存在一个 `TenantContextHolder` 实例，保证同一上下文不会混用两种机制。
 - **TenantContext 门面**：所有对外 API 委托给当前 `TenantContextHolder` 实例，提供静态方法 `runWithTenant`、`getTenantId` 和 `clear`。
-- **上下文传播器（SPI）**：`TenantContextPropagator`，用于跨线程池/消息队列/RPC 时挂载与恢复租户上下文，默认 NoOp；对于 `ThreadLocal` 模式，传播器需显式处理线程池的上下文传递。
+- **上下文传播器（SPI）**：`TenantContextPropagator`，用于跨线程池/消息队列/RPC 时挂载与恢复租户上下文。ScopedValue 模式默认需要显式捕获-恢复；ThreadLocal + TTL 模式可自动传递。
 - **入口绑定器**：提供标准的 Servlet Filter、Reactor Context 支持，实现认证租户提取与绑定。
 
+**跨服务租户传递**：当请求跨越微服务边界时，租户 ID 通过统一的 `X-Tenant-ID`（由 `tenant-id-header` 配置，默认 `X-Tenant-ID`）注入出站协议头，下游服务的 `TenantIdentityFilter` 收到后与 JWT `tenantCode` 交叉校验：
+
+| 协议 | 出站注入方式 | 入站提取方式 |
+|------|------------|------------|
+| **HTTP**（RestTemplate / WebClient） | `ClientHttpRequestInterceptor` 从 `TenantContext` 读取，通过 `properties.getTenantIdHeader()` 注入 header | `TenantIdentityFilter` 从 `HttpServletRequest` 读取 |
+| **OpenFeign** | `TenantFeignInterceptor` 实现 `RequestInterceptor`，通过 `properties.getTenantIdHeader()` 注入 header | 同上（Feign 调用走 HTTP，下游同样经过 Filter 链） |
+| **gRPC** | `ClientInterceptor` 通过 `Metadata.Key.of(properties.getTenantIdHeader(), ...)` 注入 gRPC Metadata | `ServerInterceptor` 从 Metadata 提取并写入 `HttpServletRequest` wrapper，使 `TenantIdentityFilter` 无感处理 |
+
+> 安全原则不变：header/metadata 中的 `X-Tenant-ID` **仅供交叉校验**，不可作为租户身份的唯一来源。JWT `tenantCode` 始终是权威源。详见 [上下文模块详细设计](上下文模块详细设计.md) §7。
+
+**定时任务与后台线程**：定时任务无 HTTP 请求上下文（无 JWT、无 `TenantIdentityFilter`），必须显式调用 `TenantContext.runWithTenant(tenantId, () -> { ... })` 绑定租户。详见 [README 定时任务模板](多租户设计阅读导览.md#定时任务模板)。
+
+**模式迁移与数据迁移**：当租户需要变更隔离模式时，`TenantModeGuard` 仅允许低等级→高等级（COLUMN→TABLE→SCHEMA→DATABASE）迁移。数据迁移由 `TenantDataMigrator` SPI 执行，覆盖 6 条迁移路径，含 SQL 模板、校验机制、回滚策略和人工 SOP。详见 [模式切换数据迁移方案](模式切换数据迁移方案.md)。
+
 ### 5.3 元数据模块
-- **TenantInfoProvider 接口**：输入租户 ID，输出 `TenantInfo`。
-- **ConfigurationBasedTenantInfoProvider（默认）**：基于 `MultiTenancyProperties` 静态映射返回。混合模式下读取每个租户的具体模式。
-- **扩展实现预留**：从数据库、Redis、配置中心动态获取。
+- **TenantInfoProvider 接口**：`getTenantInfo(String tenantId)` → `TenantInfo`（DB 中无记录返回 `null`）；`exists(String tenantId)` → `boolean`（O(1) 缓存查询，供 Filter 存在性校验）。
+- **DatabaseBasedTenantInfoProvider（默认）**：从 `sys_tenant` 表读取，本地缓存 + Nacos 事件刷新。DB 中未记录的租户返回 `null`（调用方应拒绝请求，引导通过管理 API 注册）。
+- **Extension 预留**：可扩展为从 Redis、配置中心等多源聚合。
 
 ### 5.4 策略执行模块
 - **TenancyStrategy 接口**：定义 `supports(IsolationMode)` 和 `beforeSqlExecute(invocation, tenantInfo)`。
