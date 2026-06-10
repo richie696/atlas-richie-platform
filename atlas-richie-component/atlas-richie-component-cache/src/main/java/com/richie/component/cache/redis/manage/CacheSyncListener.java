@@ -1,7 +1,6 @@
 package com.richie.component.cache.redis.manage;
 
 import com.richie.component.cache.enums.L2CachingRegion;
-import com.richie.component.cache.function.HashFunction;
 import com.richie.component.cache.function.SetFunction;
 import com.richie.component.cache.function.StringFunction;
 import com.richie.component.cache.ops.CacheInfrastructure;
@@ -46,9 +45,6 @@ public class CacheSyncListener implements MessageListener {
     /** Key 元操作（获取 Redis key 类型等） */
     private final KeyOps keyOps;
 
-    /** Hash 类型操作，用于刷新 Hash 缓存 */
-    private final HashFunction hashFunction;
-
     /** Set 类型操作，用于刷新 Set 缓存 */
     private final SetFunction setFunction;
 
@@ -86,42 +82,48 @@ public class CacheSyncListener implements MessageListener {
                 LocalCache.remove(L2CachingRegion.GLOBAL_CACHE, key);
                 log.info("Cache sync: removed key {} from local cache due to Redis deletion", key);
             } else if (channel.endsWith(":set")
+                    || channel.endsWith(":hset")
                     || isExpiredEvent(channel)) {
-                // set/expire事件，刷新本地缓存
+                // set/hset/expire事件，刷新或失效本地缓存
                 var keyType = keyOps.getKeyType(key);
                 if (keyType == null) {
                     log.warn("Cache sync: key {} not found in Redis, skipping sync", key);
                     return;
                 }
-                var valueType = infra.getValueType(key);
-                // 根据key类型和value类型从Redis加载最新数据
-                var value = switch (keyType) {
-                    case STRING -> switch (valueType.getSimpleName()) {
-                        case "Integer" -> stringFunction.getFromString(key, Integer.class);
-                        case "Long" -> stringFunction.getFromString(key, Long.class);
-                        case "Float" -> stringFunction.getFromString(key, Float.class);
-                        case "Double" -> stringFunction.getFromString(key, Double.class);
-                        case "Boolean" -> stringFunction.getFromString(key, Boolean.class);
-                        case "String" -> stringFunction.getFromString(key, String.class);
-                        default -> null;
-                    };
-                    case HASH -> hashFunction.getObjectFromHash(key, valueType);
-                    case SET -> setFunction.getFromSet(key, valueType);
-                    case LIST -> {
-                        log.warn("Cache sync: LIST type key {} is not supported for local cache sync", key);
-                        yield null;
+                switch (keyType) {
+                    case STRING -> {
+                        var valueType = infra.getValueType(key);
+                        if (valueType != null) {
+                            var value = stringFunction.getFromString(key, valueType);
+                            if (value != null) {
+                                LocalCache.put(L2CachingRegion.GLOBAL_CACHE, key, value);
+                                log.info("Cache sync: refreshed key {} in local cache", key);
+                            }
+                        } else {
+                            LocalCache.remove(L2CachingRegion.GLOBAL_CACHE, key);
+                            log.warn("Cache sync: key {} has no registered value type, removed stale entry", key);
+                        }
                     }
-                };
-                if (value != null) {
-                    // 更新本地缓存
-                    LocalCache.put(L2CachingRegion.GLOBAL_CACHE, key, value);
-                    log.info("Cache sync: refreshed key {} in local cache with new value from Redis", key);
+                    case HASH -> {
+                        // :hset 可能是部分字段更新，无法安全地全量刷新，直接删 L1
+                        LocalCache.remove(L2CachingRegion.GLOBAL_CACHE, key);
+                        log.info("Cache sync: removed key {} from local cache due to HSET event", key);
+                    }
+                    case SET -> {
+                        var valueType = infra.getValueType(key);
+                        if (valueType != null) {
+                            var value = setFunction.getFromSet(key, valueType);
+                            if (value != null) {
+                                LocalCache.put(L2CachingRegion.GLOBAL_CACHE, key, value);
+                                log.info("Cache sync: refreshed key {} in local cache", key);
+                            }
+                        } else {
+                            LocalCache.remove(L2CachingRegion.GLOBAL_CACHE, key);
+                        }
+                    }
+                    case LIST ->
+                        log.warn("Cache sync: LIST type key {} is not supported for local cache sync", key);
                 }
-//                if (isExpiredEvent(channel)) {
-//                    // 如果是expire事件，设置本地缓存的过期时间与Redis一致
-//                    Long expireTime = keyFunction.getExpire(key);
-//                    LocalCache.expiry(L2CachingRegion.GLOBAL_CACHE, key, expireTime, TimeUnit.SECONDS);
-//                }
             }
         } catch (Exception e) {
             log.error("Error syncing cache: {}", e.getMessage(), e);

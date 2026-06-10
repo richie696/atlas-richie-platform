@@ -50,26 +50,34 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public void set(String key, String value) {
         fn.addValue(key, value);
+        l2.registerType(key, String.class);
         l2.put(KT, key, value);
     }
 
     @Override
     public boolean setIfAbsent(String key, String value) {
         boolean result = fn.addValueIfAbsent(key, value);
-        if (result) l2.put(KT, key, value);
+        if (result) {
+            l2.registerType(key, String.class);
+            l2.put(KT, key, value);
+        }
         return result;
     }
 
     @Override
     public void set(String key, String value, long timeoutMillis) {
         fn.addValue(key, value, timeoutMillis);
+        l2.registerType(key, String.class);
         l2.put(KT, key, value, timeoutMillis);
     }
 
     @Override
     public boolean setIfAbsent(String key, String value, long timeoutMillis) {
         boolean result = fn.addValueIfAbsent(key, value, timeoutMillis);
-        if (result) l2.put(KT, key, value, timeoutMillis);
+        if (result) {
+            l2.registerType(key, String.class);
+            l2.put(KT, key, value, timeoutMillis);
+        }
         return result;
     }
 
@@ -78,26 +86,34 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public void set(String key, int value) {
         fn.addValue(key, value);
+        l2.registerType(key, Integer.class);
         l2.put(KT, key, value);
     }
 
     @Override
     public boolean setIfAbsent(String key, int value) {
         boolean result = fn.addValueIfAbsent(key, value);
-        if (result) l2.put(KT, key, value);
+        if (result) {
+            l2.registerType(key, Integer.class);
+            l2.put(KT, key, value);
+        }
         return result;
     }
 
     @Override
     public void set(String key, int value, long timeoutMillis) {
         fn.addValue(key, value, timeoutMillis);
+        l2.registerType(key, Integer.class);
         l2.put(KT, key, value, timeoutMillis);
     }
 
     @Override
     public boolean setIfAbsent(String key, int value, long timeoutMillis) {
         boolean result = fn.addValueIfAbsent(key, value, timeoutMillis);
-        if (result) l2.put(KT, key, value, timeoutMillis);
+        if (result) {
+            l2.registerType(key, Integer.class);
+            l2.put(KT, key, value, timeoutMillis);
+        }
         return result;
     }
 
@@ -106,26 +122,34 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public void set(String key, long value) {
         fn.addValue(key, value);
+        l2.registerType(key, Long.class);
         l2.put(KT, key, value);
     }
 
     @Override
     public boolean setIfAbsent(String key, long value) {
         boolean result = fn.addValueIfAbsent(key, value);
-        if (result) l2.put(KT, key, value);
+        if (result) {
+            l2.registerType(key, Long.class);
+            l2.put(KT, key, value);
+        }
         return result;
     }
 
     @Override
     public void set(String key, long value, long timeoutMillis) {
         fn.addValue(key, value, timeoutMillis);
+        l2.registerType(key, Long.class);
         l2.put(KT, key, value, timeoutMillis);
     }
 
     @Override
     public boolean setIfAbsent(String key, long value, long timeoutMillis) {
         boolean result = fn.addValueIfAbsent(key, value, timeoutMillis);
-        if (result) l2.put(KT, key, value, timeoutMillis);
+        if (result) {
+            l2.registerType(key, Long.class);
+            l2.put(KT, key, value, timeoutMillis);
+        }
         return result;
     }
 
@@ -134,26 +158,34 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public void set(String key, float value) {
         fn.addValue(key, value);
+        l2.registerType(key, Float.class);
         l2.put(KT, key, value);
     }
 
     @Override
     public boolean setIfAbsent(String key, float value) {
         boolean result = fn.addValueIfAbsent(key, value);
-        if (result) l2.put(KT, key, value);
+        if (result) {
+            l2.registerType(key, Float.class);
+            l2.put(KT, key, value);
+        }
         return result;
     }
 
     @Override
     public void set(String key, float value, long timeoutMillis) {
         fn.addValue(key, value, timeoutMillis);
+        l2.registerType(key, Float.class);
         l2.put(KT, key, value, timeoutMillis);
     }
 
     @Override
     public boolean setIfAbsent(String key, float value, long timeoutMillis) {
         boolean result = fn.addValueIfAbsent(key, value, timeoutMillis);
-        if (result) l2.put(KT, key, value, timeoutMillis);
+        if (result) {
+            l2.registerType(key, Float.class);
+            l2.put(KT, key, value, timeoutMillis);
+        }
         return result;
     }
 
@@ -162,26 +194,34 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public void set(String key, double value) {
         fn.addValue(key, value);
+        l2.registerType(key, Double.class);
         l2.put(KT, key, value);
     }
 
     @Override
     public boolean setIfAbsent(String key, double value) {
         boolean result = fn.addValueIfAbsent(key, value);
-        if (result) l2.put(KT, key, value);
+        if (result) {
+            l2.registerType(key, Double.class);
+            l2.put(KT, key, value);
+        }
         return result;
     }
 
     @Override
     public void set(String key, double value, long timeoutMillis) {
         fn.addValue(key, value, timeoutMillis);
+        l2.registerType(key, Double.class);
         l2.put(KT, key, value, timeoutMillis);
     }
 
     @Override
     public boolean setIfAbsent(String key, double value, long timeoutMillis) {
         boolean result = fn.addValueIfAbsent(key, value, timeoutMillis);
-        if (result) l2.put(KT, key, value, timeoutMillis);
+        if (result) {
+            l2.registerType(key, Double.class);
+            l2.put(KT, key, value, timeoutMillis);
+        }
         return result;
     }
 
@@ -190,26 +230,34 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public void set(String key, boolean value) {
         fn.addValue(key, value);
+        l2.registerType(key, Boolean.class);
         l2.put(KT, key, value);
     }
 
     @Override
     public boolean setIfAbsent(String key, boolean value) {
         boolean result = fn.addValueIfAbsent(key, value);
-        if (result) l2.put(KT, key, value);
+        if (result) {
+            l2.registerType(key, Boolean.class);
+            l2.put(KT, key, value);
+        }
         return result;
     }
 
     @Override
     public void set(String key, boolean value, long timeoutMillis) {
         fn.addValue(key, value, timeoutMillis);
+        l2.registerType(key, Boolean.class);
         l2.put(KT, key, value, timeoutMillis);
     }
 
     @Override
     public boolean setIfAbsent(String key, boolean value, long timeoutMillis) {
         boolean result = fn.addValueIfAbsent(key, value, timeoutMillis);
-        if (result) l2.put(KT, key, value, timeoutMillis);
+        if (result) {
+            l2.registerType(key, Boolean.class);
+            l2.put(KT, key, value, timeoutMillis);
+        }
         return result;
     }
 
@@ -218,6 +266,7 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public long increment(String key) {
         long result = fn.increment(key, null);
+        l2.registerType(key, Long.class);
         l2.put(KT, key, result);
         return result;
     }
@@ -225,6 +274,7 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public long increment(String key, long delta) {
         long result = fn.increment(key, delta, null);
+        l2.registerType(key, Long.class);
         l2.put(KT, key, result);
         return result;
     }
@@ -232,6 +282,7 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public long increment(String key, long delta, long timeoutMillis) {
         long result = fn.increment(key, delta, timeoutMillis);
+        l2.registerType(key, Long.class);
         l2.put(KT, key, result, timeoutMillis);
         return result;
     }
@@ -239,6 +290,7 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public double increment(String key, double delta, long timeoutMillis) {
         double result = fn.increment(key, delta, timeoutMillis);
+        l2.registerType(key, Double.class);
         l2.put(KT, key, result, timeoutMillis);
         return result;
     }
@@ -246,6 +298,7 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public long decrement(String key) {
         long result = fn.decrement(key, null);
+        l2.registerType(key, Long.class);
         l2.put(KT, key, result);
         return result;
     }
@@ -253,6 +306,7 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public long decrement(String key, long delta) {
         long result = fn.decrement(key, delta, null);
+        l2.registerType(key, Long.class);
         l2.put(KT, key, result);
         return result;
     }
@@ -260,6 +314,7 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public long decrement(String key, long delta, long timeoutMillis) {
         long result = fn.decrement(key, delta, timeoutMillis);
+        l2.registerType(key, Long.class);
         l2.put(KT, key, result, timeoutMillis);
         return result;
     }
@@ -269,25 +324,37 @@ public class ValueOpsImpl implements ValueOps {
     @Override
     public void batchSet(Map<String, ?> map) {
         fn.batchAddToString(map);
-        map.forEach((k, v) -> l2.put(KT, k, v));
+        map.forEach((k, v) -> {
+            l2.registerType(k, v.getClass());
+            l2.put(KT, k, v);
+        });
     }
 
     @Override
     public void batchSet(Map<String, ?> map, long timeoutMillis) {
         fn.batchAddToString(map, timeoutMillis);
-        map.forEach((k, v) -> l2.put(KT, k, v, timeoutMillis));
+        map.forEach((k, v) -> {
+            l2.registerType(k, v.getClass());
+            l2.put(KT, k, v, timeoutMillis);
+        });
     }
 
     @Override
     public void batchSetIfAbsent(Map<String, ?> batch) {
         fn.batchUpdateIfAbsent(batch, null);
-        batch.forEach((k, v) -> l2.put(KT, k, v));
+        batch.forEach((k, v) -> {
+            l2.registerType(k, v.getClass());
+            l2.put(KT, k, v);
+        });
     }
 
     @Override
     public void batchSetIfAbsent(Map<String, ?> batch, long timeoutMillis) {
         fn.batchUpdateIfAbsent(batch, timeoutMillis);
-        batch.forEach((k, v) -> l2.put(KT, k, v, timeoutMillis));
+        batch.forEach((k, v) -> {
+            l2.registerType(k, v.getClass());
+            l2.put(KT, k, v, timeoutMillis);
+        });
     }
 
     // ─────────────────────── 防缓存击穿 ───────────────────────
