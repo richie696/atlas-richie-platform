@@ -189,20 +189,15 @@ multi-tenancy:
 multi-tenancy:
   mode: database
   datasource:
-    tenant-template:                # 管理 API 注册时自动生成连接信息
-      url: "jdbc:postgresql://{host}:5432/tenant_{tenantId}"
-      username: "app"
-      password: "{encrypted}"
-      hikari:
-        maximum-pool-size: 10
-        minimum-idle: 2
     tenants:                        # 种子数据
       tenantA:
         url: jdbc:postgresql://localhost:5432/tenant_a
+        username: app
+        password: password
   # ── 其余使用通用配置 ──
 ```
 
-> database 模式**不支持应用侧自动建库**——`CREATE DATABASE` 需 DBA 权限。数据库实例由运维创建后，通过管理 API 注册连接信息完成租户上线。
+> database 模式**不支持应用侧自动建库**——`CREATE DATABASE` 需 DBA 权限。数据库实例由运维创建后，通过管理 API 注册连接信息完成租户上线。连接信息由 API 调用方显式传入，不通过 YAML 模板自动生成。
 
 #### Hybrid 模式（组合）
 
@@ -214,10 +209,6 @@ multi-tenancy:
   table-templates: [t_order, t_user]
   schema-prefix: tenant_            # schema 租户使用
   datasource:
-    tenant-template:                # database 租户使用
-      url: "jdbc:postgresql://{host}:5432/tenant_{tenantId}"
-      username: "app"
-      password: "{encrypted}"
     tenants:                        # 种子数据，含租户级 mode
       tenant_a:
         mode: COLUMN                # 默认 COLUMN，可省略
