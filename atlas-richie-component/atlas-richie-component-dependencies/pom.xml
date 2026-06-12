@@ -118,6 +118,22 @@
                 <artifactId>atlas-richie-component-mfa-management</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
+            <!-- OAuth2.1鉴权组件 -->
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-oauth-core</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-oauth-authz</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-oauth-dcr</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
             <!-- MQTT 物联网消息队列组件（支持自建MQTT和阿里云 MQTT PAAS） -->
             <dependency>
                 <groupId>com.richie.component</groupId>

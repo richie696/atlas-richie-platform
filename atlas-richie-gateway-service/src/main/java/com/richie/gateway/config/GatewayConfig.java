@@ -1,5 +1,6 @@
 package com.richie.gateway.config;
 
+import com.richie.component.oauth.core.config.OAuth2Properties;
 import com.richie.contract.gateway.config.DeployConfig;
 import com.richie.contract.gateway.config.GatewayContract;
 import com.richie.contract.gateway.config.TenantFilterConfig;
@@ -59,9 +60,9 @@ public class GatewayConfig implements Serializable {
     private SecurityFilterConfig security = new SecurityFilterConfig();
 
     /**
-     * 接口权限过滤器配置（适用于第三方接口、feign接口的鉴权通信）
+     * OAuth2.0 配置（适用于第三方接口、feign接口的鉴权通信）
      */
-    private IOAuthFilterConfig interfaceAuth = new IOAuthFilterConfig();
+    private OAuth2Properties oauth2 = new OAuth2Properties();
 
     /**
      * SSO配置

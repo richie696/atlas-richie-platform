@@ -1,19 +1,19 @@
 package com.richie.gateway.filter.thirdparty.auth;
 
-import com.richie.gateway.config.GatewayConfig;
-import com.richie.gateway.config.OAuth2AnomalyDetectionConfig;
-import com.richie.context.utils.spring.JwtUtils;
 import com.richie.component.cache.GlobalCache;
 import com.richie.component.i18n.resolver.I18nResolver;
-import com.richie.gateway.constants.GatewayRedisKey;
+import com.richie.component.oauth.core.ClientRegistry;
+import com.richie.component.oauth.core.config.OAuth2RedisKey;
+import com.richie.component.oauth.core.model.ClientConfig;
+import com.richie.context.utils.spring.JwtUtils;
+import com.richie.contract.gateway.model.OAuth2Constants;
+import com.richie.gateway.config.GatewayConfig;
+import com.richie.gateway.config.OAuth2AnomalyDetectionConfig;
 import com.richie.gateway.filter.AbstractBaseFilter;
 import com.richie.gateway.filter.FilterOrder;
 import com.richie.gateway.filter.common.security.AnomalyDetectionFilter;
 import com.richie.gateway.service.AuditService;
-import com.richie.gateway.service.OAuth2ClientService;
 import com.richie.gateway.utils.NetworkUtils;
-import com.richie.contract.gateway.model.OAuth2Constants;
-import com.richie.gateway.vo.ThirdPartyClientConfigVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -62,7 +62,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class OAuth2AnomalyDetectionFilter extends AbstractBaseFilter {
 
-    private final OAuth2ClientService clientService;
+    private final ClientRegistry clientRegistry;
     private final AuditService auditService;
     private final OAuth2AnomalyDetectionConfig detectionConfig;
     private final AnomalyDetectionFilter commonAnomalyDetectionFilter;
@@ -72,18 +72,18 @@ public class OAuth2AnomalyDetectionFilter extends AbstractBaseFilter {
      *
      * @param config                       网关配置
      * @param i18n                         国际化解析器
-     * @param clientService                客户端服务
+     * @param clientRegistry               客户端注册中心
      * @param auditService                 审计服务
      * @param detectionConfig              OAuth2.0 专属异常检测配置
-     * @param commonAnomalyDetectionFilter 通用异常检测过滤器
+     * @param commonAnomalyDetectionFilter  通用异常检测过滤器
      */
     public OAuth2AnomalyDetectionFilter(GatewayConfig config, I18nResolver i18n,
-                                        OAuth2ClientService clientService,
+                                        ClientRegistry clientRegistry,
                                         AuditService auditService,
                                         OAuth2AnomalyDetectionConfig detectionConfig,
                                         AnomalyDetectionFilter commonAnomalyDetectionFilter) {
         super(config, i18n);
-        this.clientService = clientService;
+        this.clientRegistry = clientRegistry;
         this.auditService = auditService;
         this.detectionConfig = detectionConfig;
         this.commonAnomalyDetectionFilter = commonAnomalyDetectionFilter;
@@ -132,7 +132,7 @@ public class OAuth2AnomalyDetectionFilter extends AbstractBaseFilter {
     protected boolean enableVerifyFilter(ServerWebExchange exchange) {
         String path = exchange.getRequest().getURI().getPath();
         return path.startsWith(OAuth2Constants.OAUTH2_BASE)
-                && config.getInterfaceAuth().isEnable()
+                && config.getOauth2().isEnabled()
                 && detectionConfig.isEnabled();
     }
 
@@ -309,7 +309,7 @@ public class OAuth2AnomalyDetectionFilter extends AbstractBaseFilter {
      */
     private void detectTokenReplay(String token, String ip, String clientId) {
         OAuth2AnomalyDetectionConfig.TokenReplayConfig config = detectionConfig.getTokenReplay();
-        String key = GatewayRedisKey.OAUTH2_ANOMALY_TOKEN_IPS.getKey(token);
+        String key = OAuth2RedisKey.OAUTH2_ANOMALY_TOKEN_IPS.getKey(token);
         long ttl = TimeUnit.SECONDS.toMillis(config.getTimeWindowSeconds());
 
         // 检查 IP 是否已存在
@@ -354,7 +354,7 @@ public class OAuth2AnomalyDetectionFilter extends AbstractBaseFilter {
             // 简化实现：统计刷新请求频率（所有成功的 token 请求都统计）
             // 如果需要更精确的判断，可以在响应 VO 中添加 grant_type 字段
             OAuth2AnomalyDetectionConfig.AbnormalRefreshConfig config = detectionConfig.getAbnormalRefresh();
-            String key = GatewayRedisKey.OAUTH2_ANOMALY_REFRESH_COUNT.getKey(clientId);
+            String key = OAuth2RedisKey.OAUTH2_ANOMALY_REFRESH_COUNT.getKey(clientId);
             long ttl = TimeUnit.SECONDS.toMillis(config.getTimeWindowSeconds());
 
             long refreshCount = GlobalCache.value().increment(key, 1L, ttl);
@@ -380,7 +380,8 @@ public class OAuth2AnomalyDetectionFilter extends AbstractBaseFilter {
         // 注意：通用限流已在 AnomalyDetectionFilter 中处理
         // 这里只处理 OAuth2.0 特定的限流逻辑（基于客户端配置的 rateLimit）
 
-        Integer rateLimitValue = clientService.getClientConfig(clientId, ThirdPartyClientConfigVO.Field.RATE_LIMIT);
+        ClientConfig clientConfig = clientRegistry.getClientConfig(clientId, ClientConfig.Field.RATE_LIMIT);
+        Integer rateLimitValue = clientConfig != null ? clientConfig.getRateLimit() : null;
         if (rateLimitValue == null) {
             return true; // 客户端不存在，不限制
         }
@@ -388,8 +389,8 @@ public class OAuth2AnomalyDetectionFilter extends AbstractBaseFilter {
         // 如果客户端配置中没有 rateLimit，使用通用限流（已在 AnomalyDetectionFilter 中处理）
         // 使用客户端配置的 rateLimit（OAuth2.0 特定）
         int rateLimit = rateLimitValue;
-        String key = GatewayRedisKey.OAUTH2_ANOMALY_RATELIMIT.getKey(clientId);
-        long ttl = TimeUnit.HOURS.toMillis(1); // 1 小时窗口
+        String key = OAuth2RedisKey.OAUTH2_ANOMALY_RATELIMIT.getKey(clientId);
+        long ttl = 60 * 60 * 1000; // 1 小时窗口
 
         long count = GlobalCache.value().increment(key, 1L, ttl);
 

@@ -1,18 +1,18 @@
 package com.richie.gateway.filter.thirdparty.auth;
 
-import com.richie.gateway.config.GatewayConfig;
-import com.richie.contract.gateway.model.OAuth2AuditEvent;
-import com.richie.contract.gateway.model.OAuth2AuditEventType;
+import com.richie.component.i18n.resolver.I18nResolver;
+import com.richie.component.oauth.core.ClientRegistry;
+import com.richie.component.oauth.core.model.ClientConfig;
+import com.richie.component.oauth.core.model.OAuth2ErrorResponse;
+import com.richie.component.oauth.core.model.TokenResponse;
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.context.utils.spring.JwtUtils;
-import com.richie.component.i18n.resolver.I18nResolver;
+import com.richie.contract.gateway.model.OAuth2AuditEvent;
+import com.richie.contract.gateway.model.OAuth2AuditEventType;
+import com.richie.gateway.config.GatewayConfig;
 import com.richie.gateway.filter.AbstractBaseFilter;
 import com.richie.gateway.filter.FilterOrder;
 import com.richie.gateway.service.AuditService;
-import com.richie.gateway.service.OAuth2ClientService;
-import com.richie.gateway.vo.ThirdPartyClientConfigVO;
-import com.richie.gateway.vo.OAuth2ErrorResponseVO;
-import com.richie.gateway.vo.OAuth2TokenResponseVO;
 import com.richie.gateway.utils.NetworkUtils;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -62,7 +62,7 @@ import static com.richie.contract.gateway.model.OAuth2Constants.*;
 public class OAuth2AuditFilter extends AbstractBaseFilter {
 
     private final AuditService auditService;
-    private final OAuth2ClientService clientService;
+    private final ClientRegistry clientRegistry;
 
     /**
      * 构造函数
@@ -70,14 +70,14 @@ public class OAuth2AuditFilter extends AbstractBaseFilter {
      * @param config        网关配置
      * @param i18n          国际化解析器
      * @param auditService  审计服务
-     * @param clientService 客户端服务
+     * @param clientRegistry 客户端注册中心
      */
     public OAuth2AuditFilter(GatewayConfig config, I18nResolver i18n,
                              AuditService auditService,
-                             OAuth2ClientService clientService) {
+                             ClientRegistry clientRegistry) {
         super(config, i18n);
         this.auditService = auditService;
-        this.clientService = clientService;
+        this.clientRegistry = clientRegistry;
     }
 
     @Override
@@ -328,7 +328,7 @@ public class OAuth2AuditFilter extends AbstractBaseFilter {
     @Override
     protected boolean enableVerifyFilter(ServerWebExchange exchange) {
         String path = exchange.getRequest().getURI().getPath();
-        return path.startsWith(OAUTH2_BASE) && config.getInterfaceAuth().isEnable();
+        return path.startsWith(OAUTH2_BASE) && config.getOauth2().isEnabled();
     }
 
     /**
@@ -354,7 +354,7 @@ public class OAuth2AuditFilter extends AbstractBaseFilter {
         try {
             if (statusCode == HttpStatus.OK) {
                 // 成功响应：解析响应体，记录成功审计
-                OAuth2TokenResponseVO response = JsonUtils.getInstance().deserialize(responseBody, OAuth2TokenResponseVO.class);
+                TokenResponse response = JsonUtils.getInstance().deserialize(responseBody, TokenResponse.class);
                 if (response != null && StringUtils.isNotBlank(response.getAccessToken())) {
                     String tokenId = extractJwtId(response.getAccessToken());
                     String clientId = extractClientIdFromToken(response.getAccessToken());
@@ -365,7 +365,8 @@ public class OAuth2AuditFilter extends AbstractBaseFilter {
                     }
 
                     // 获取客户端配置
-                    String clientName = clientService.getClientConfig(clientId, ThirdPartyClientConfigVO.Field.CLIENT_NAME);
+                    ClientConfig clientConfig = clientRegistry.getClientConfig(clientId, ClientConfig.Field.CLIENT_NAME);
+                    String clientName = clientConfig != null ? clientConfig.getClientName() : "unknown";
 
                     // 根据 grant_type 区分首次颁发和刷新
                     if (GRANT_TYPE_REFRESH_TOKEN.equals(grantType)) {
@@ -406,7 +407,7 @@ public class OAuth2AuditFilter extends AbstractBaseFilter {
                 }
             } else {
                 // 失败响应：解析错误信息，记录失败审计
-                OAuth2ErrorResponseVO errorResponse = JsonUtils.getInstance().deserialize(responseBody, OAuth2ErrorResponseVO.class);
+                OAuth2ErrorResponse errorResponse = JsonUtils.getInstance().deserialize(responseBody, OAuth2ErrorResponse.class);
                 String errorCode = errorResponse != null ? errorResponse.getError() : "UNKNOWN";
                 String errorMsg = errorResponse != null ? errorResponse.getErrorDescription() : "未知错误";
 

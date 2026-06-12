@@ -29,15 +29,15 @@ public class GatewayAuthConfigValidator implements SmartInitializingSingleton {
     @Override
     public void afterSingletonsInstantiated() {
         boolean internalAuthEnabled = gatewayConfig.getToken().isEnable();
-        boolean interfaceAuthEnabled = gatewayConfig.getInterfaceAuth().isEnable();
+        boolean interfaceAuthEnabled = gatewayConfig.getOauth2().isEnabled();
 
         if (internalAuthEnabled && interfaceAuthEnabled) {
             String errorMessage = String.format(
-                    "网关认证配置冲突：内部系统认证（platform.gateway.token.enable=true）和外部 OAuth2.0 认证（platform.gateway.interface-auth.enable=true）不能同时启用。\n" +
+                    "网关认证配置冲突：内部系统认证（platform.gateway.token.enable=true）和外部 OAuth2.0 认证（platform.gateway.oauth2.enabled=true）不能同时启用。\n" +
                             "请根据部署场景选择其中一种认证方式：\n" +
-                            "- 内部系统部署：仅启用 platform.gateway.security.enable=true\n" +
-                            "- 外部第三方系统部署：仅启用 platform.gateway.interface-auth.enable=true\n" +
-                            "当前配置：security.enable=%s, interface-auth.enable=%s",
+                            "- 内部系统部署：仅启用 platform.gateway.token.enable=true\n" +
+                            "- 外部第三方系统部署：仅启用 platform.gateway.oauth2.enabled=true\n" +
+                            "当前配置：token.enable=%s, oauth2.enabled=%s",
                     true, true
             );
 
@@ -50,7 +50,7 @@ public class GatewayAuthConfigValidator implements SmartInitializingSingleton {
             throw new IllegalStateException(errorMessage);
         }
 
-        log.info("网关认证配置校验通过：security.enable={}, interface-auth.enable={}",
+        log.info("网关认证配置校验通过：token.enable={}, oauth2.enabled={}",
                 internalAuthEnabled, interfaceAuthEnabled);
     }
 }

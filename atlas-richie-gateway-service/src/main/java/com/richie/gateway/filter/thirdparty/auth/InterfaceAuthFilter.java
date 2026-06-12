@@ -1,18 +1,18 @@
 package com.richie.gateway.filter.thirdparty.auth;
 
-import com.richie.contract.constant.GlobalConstants;
-import com.richie.gateway.config.GatewayConfig;
-import com.richie.context.utils.spring.JwtUtils;
 import com.richie.component.cache.GlobalCache;
 import com.richie.component.i18n.resolver.I18nResolver;
-import com.richie.gateway.constants.GatewayRedisKey;
+import com.richie.component.oauth.core.ScopeResolver;
+import com.richie.component.oauth.core.TokenEndpoint;
+import com.richie.component.oauth.core.config.OAuth2RedisKey;
+import com.richie.contract.constant.GlobalConstants;
+import com.richie.contract.gateway.model.OAuth2Constants;
+import com.richie.context.utils.spring.JwtUtils;
+import com.richie.gateway.config.GatewayConfig;
 import com.richie.gateway.filter.AbstractBaseFilter;
 import com.richie.gateway.filter.FilterOrder;
 import com.richie.gateway.service.AuditService;
-import com.richie.gateway.service.OAuth2AuthService;
-import com.richie.gateway.service.OAuth2ScopeService;
 import com.richie.gateway.utils.NetworkUtils;
-import com.richie.contract.gateway.model.OAuth2Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
@@ -49,24 +49,24 @@ import java.util.Set;
 @Component
 public class InterfaceAuthFilter extends AbstractBaseFilter {
 
-    private final OAuth2AuthService authService;
+    private final TokenEndpoint tokenEndpoint;
     private final AuditService auditService;
-    private final OAuth2ScopeService scopeService;
+    private final ScopeResolver scopeResolver;
 
     /**
      * 构造函数
      *
-     * @param config      网关配置
-     * @param i18n        国际化解析器
-     * @param authService OAuth2.0 认证服务
-     * @param auditService 审计服务
-     * @param scopeService Scope 权限服务
+     * @param config         网关配置
+     * @param i18n           国际化解析器
+     * @param tokenEndpoint   Token 端点
+     * @param auditService   审计服务
+     * @param scopeResolver   Scope 权限解析器
      */
-    public InterfaceAuthFilter(GatewayConfig config, I18nResolver i18n, OAuth2AuthService authService, AuditService auditService, OAuth2ScopeService scopeService) {
+    public InterfaceAuthFilter(GatewayConfig config, I18nResolver i18n, TokenEndpoint tokenEndpoint, AuditService auditService, ScopeResolver scopeResolver) {
         super(config, i18n);
-        this.authService = authService;
+        this.tokenEndpoint = tokenEndpoint;
         this.auditService = auditService;
-        this.scopeService = scopeService;
+        this.scopeResolver = scopeResolver;
     }
 
     /**
@@ -109,7 +109,7 @@ public class InterfaceAuthFilter extends AbstractBaseFilter {
             recordAccessDenied(null, path, method, clientIp, userAgent, "token_invalid", OAuth2Constants.ERROR_INVALID_TOKEN, "访问令牌缺失");
             return returnOAuth2Error(response, OAuth2Constants.ERROR_INVALID_TOKEN, "访问令牌无效");
         }
-        List<String> ipWhitelist = authService.getIpWhitelist(accessToken);
+        List<String> ipWhitelist = tokenEndpoint.getIpWhitelist(accessToken);
         if (ipWhitelist == null) {
             log.warn("access_token 验证失败，请求路径: {}", path);
             // 记录访问被拒绝审计日志
@@ -175,7 +175,7 @@ public class InterfaceAuthFilter extends AbstractBaseFilter {
         if (path.startsWith(OAuth2Constants.OAUTH2_BASE)) {
             return false;
         }
-        return config.getInterfaceAuth().isEnable();
+        return config.getOauth2().isEnabled();
     }
 
     /**
@@ -257,7 +257,7 @@ public class InterfaceAuthFilter extends AbstractBaseFilter {
      * - createdAt
      */
     private boolean verifyAccessTokenIpBinding(String accessToken, String clientIp, String clientId) {
-        String key = GatewayRedisKey.OAUTH2_ACCESS_TOKEN_IP_BIND.getKey(accessToken);
+        String key = OAuth2RedisKey.OAUTH2_ACCESS_TOKEN_IP_BIND.getKey(accessToken);
         Map<String, String> bindData = GlobalCache.field().getAll(key, String.class);
         if (bindData == null || bindData.isEmpty()) {
             // 未绑定视为不校验，兼容历史令牌或特殊场景
@@ -369,7 +369,7 @@ public class InterfaceAuthFilter extends AbstractBaseFilter {
     private boolean verifyScopePermission(String accessToken, String path, String method,
                                           String clientId, String clientIp, String userAgent) {
         // 1. 查找接口所需的 scope 列表
-        List<String> requiredScopes = scopeService.getRequiredScopes(path, method);
+        List<String> requiredScopes = scopeResolver.getRequiredScopes(path, method);
 
         // 2. 如果接口不需要 scope 验证，直接通过
         if (requiredScopes == null || requiredScopes.isEmpty()) {
@@ -378,7 +378,7 @@ public class InterfaceAuthFilter extends AbstractBaseFilter {
         }
 
         // 3. 从 token 中提取 scope 列表
-        Set<String> tokenScopes = scopeService.extractScopesFromToken(accessToken);
+        Set<String> tokenScopes = scopeResolver.extractScopesFromToken(accessToken);
         if (tokenScopes == null || tokenScopes.isEmpty()) {
             log.warn("Token 中未包含 scope，但接口需要 scope 验证: path={}, method={}, requiredScopes={}",
                     path, method, requiredScopes);
@@ -386,7 +386,7 @@ public class InterfaceAuthFilter extends AbstractBaseFilter {
         }
 
         // 4. 验证 token 中的 scope 是否包含至少一个所需的 scope
-        boolean hasRequiredScope = scopeService.verifyScope(tokenScopes, requiredScopes);
+        boolean hasRequiredScope = scopeResolver.verifyScope(tokenScopes, requiredScopes);
         if (!hasRequiredScope) {
             log.warn("Scope 权限验证失败: clientId={}, path={}, method={}, tokenScopes={}, requiredScopes={}",
                     clientId, path, method, tokenScopes, requiredScopes);

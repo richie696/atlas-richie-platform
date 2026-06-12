@@ -1,10 +1,10 @@
 package com.richie.gateway.filter.thirdparty.auth;
 
+import com.richie.component.oauth.core.ClientRegistry;
 import com.richie.gateway.config.GatewayConfig;
 import com.richie.component.i18n.resolver.I18nResolver;
 import com.richie.gateway.filter.thirdparty.auth.OAuth2AuditFilter;
 import com.richie.gateway.service.AuditService;
-import com.richie.gateway.service.OAuth2ClientService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -39,13 +39,13 @@ class OAuth2AuditFilterTest {
     private AuditService auditService;
 
     @Mock
-    private OAuth2ClientService clientService;
+    private ClientRegistry clientRegistry;
 
     private OAuth2AuditFilter oauth2AuditFilter;
 
     @BeforeEach
     void setUp() {
-        oauth2AuditFilter = new OAuth2AuditFilter(gatewayConfig, i18nResolver, auditService, clientService);
+        oauth2AuditFilter = new OAuth2AuditFilter(gatewayConfig, i18nResolver, auditService, clientRegistry);
         lenient().when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
     }
 

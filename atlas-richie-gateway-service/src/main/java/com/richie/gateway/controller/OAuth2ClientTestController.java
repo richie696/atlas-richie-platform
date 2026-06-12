@@ -1,8 +1,8 @@
 package com.richie.gateway.controller;
 
+import com.richie.component.oauth.core.ClientRegistry;
+import com.richie.component.oauth.core.model.ClientConfig;
 import com.richie.gateway.dto.ThirdPartyClientRegisterDTO;
-import com.richie.gateway.service.OAuth2ClientService;
-import com.richie.gateway.vo.ThirdPartyClientConfigVO;
 import com.richie.gateway.vo.ThirdPartyClientRegisterVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
@@ -30,7 +30,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class OAuth2ClientTestController {
 
-    private final OAuth2ClientService oAuth2ClientService;
+    private final ClientRegistry clientRegistry;
 
     /**
      * 注册一个测试用第三方客户端
@@ -43,7 +43,7 @@ public class OAuth2ClientTestController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<ThirdPartyClientRegisterVO> register(@RequestBody Mono<ThirdPartyClientRegisterDTO> requestMono) {
         return requestMono.map(request -> {
-            ThirdPartyClientConfigVO config = oAuth2ClientService.registerTestClient(request.getClientName());
+            ClientConfig config = clientRegistry.registerTestClient(request.getClientName());
             return ThirdPartyClientRegisterVO.builder()
                     .clientId(config.getClientId())
                     .clientSecret(config.getClientSecret())

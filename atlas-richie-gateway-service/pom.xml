@@ -47,6 +47,11 @@
             <groupId>com.richie.base</groupId>
             <artifactId>atlas-richie-contract</artifactId>
         </dependency>
+        <!-- OAuth2.1 鉴权组件 -->
+        <dependency>
+            <groupId>com.richie.component</groupId>
+            <artifactId>atlas-richie-component-oauth-core</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.richie.base</groupId>
             <artifactId>atlas-richie-context</artifactId>

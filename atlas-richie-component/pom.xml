@@ -48,6 +48,8 @@
         <module>atlas-richie-component-mqtt</module>
         <!-- 通用MFA服务组件 -->
         <module>atlas-richie-component-mfa</module>
+        <!-- 通用OAuth2.1鉴权组件 -->
+        <module>atlas-richie-component-oauth</module>
         <!-- 微服务通用组件 -->
         <module>atlas-richie-component-microservice</module>
         <!-- 通用切面日志服务组件 -->

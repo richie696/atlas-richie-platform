@@ -1,8 +1,8 @@
 package com.richie.gateway.controller;
 
+import com.richie.component.oauth.core.ClientRegistry;
+import com.richie.component.oauth.core.model.ClientConfig;
 import com.richie.gateway.dto.ThirdPartyClientRegisterDTO;
-import com.richie.gateway.service.OAuth2ClientService;
-import com.richie.gateway.vo.ThirdPartyClientConfigVO;
 import com.richie.gateway.vo.ThirdPartyClientRegisterVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 class OAuth2ClientTestControllerTest {
 
     @Mock
-    private OAuth2ClientService oAuth2ClientService;
+    private ClientRegistry clientRegistry;
 
     @InjectMocks
     private OAuth2ClientTestController controller;
@@ -36,11 +36,11 @@ class OAuth2ClientTestControllerTest {
         @Test
         @DisplayName("should map request DTO to response VO with clientId and clientSecret")
         void shouldMapDtoToVo() {
-            ThirdPartyClientConfigVO configVO = ThirdPartyClientConfigVO.builder()
+            ClientConfig clientConfig = ClientConfig.builder()
                     .clientId("test-client-id")
                     .clientSecret("test-secret-xyz")
                     .build();
-            when(oAuth2ClientService.registerTestClient(anyString())).thenReturn(configVO);
+            when(clientRegistry.registerTestClient(anyString())).thenReturn(clientConfig);
 
             ThirdPartyClientRegisterDTO request = new ThirdPartyClientRegisterDTO();
             request.setClientName("TestClient");
@@ -54,17 +54,17 @@ class OAuth2ClientTestControllerTest {
                     })
                     .verifyComplete();
 
-            verify(oAuth2ClientService).registerTestClient("TestClient");
+            verify(clientRegistry).registerTestClient("TestClient");
         }
 
         @Test
         @DisplayName("should delegate to service with exact clientName")
         void shouldDelegateWithCorrectName() {
-            ThirdPartyClientConfigVO configVO = ThirdPartyClientConfigVO.builder()
+            ClientConfig clientConfig = ClientConfig.builder()
                     .clientId("cid")
                     .clientSecret("cs")
                     .build();
-            when(oAuth2ClientService.registerTestClient("MyApp")).thenReturn(configVO);
+            when(clientRegistry.registerTestClient("MyApp")).thenReturn(clientConfig);
 
             ThirdPartyClientRegisterDTO request = new ThirdPartyClientRegisterDTO();
             request.setClientName("MyApp");
@@ -75,7 +75,7 @@ class OAuth2ClientTestControllerTest {
                     .assertNext(vo -> assertThat(vo.getClientId()).isEqualTo("cid"))
                     .verifyComplete();
 
-            verify(oAuth2ClientService).registerTestClient("MyApp");
+            verify(clientRegistry).registerTestClient("MyApp");
         }
     }
 }

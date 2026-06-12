@@ -1,12 +1,12 @@
 package com.richie.gateway.filter.thirdparty.auth;
 
+import com.richie.component.oauth.core.ScopeResolver;
+import com.richie.component.oauth.core.TokenEndpoint;
+import com.richie.component.oauth.core.config.OAuth2Properties;
 import com.richie.gateway.config.GatewayConfig;
-import com.richie.gateway.config.IOAuthFilterConfig;
 import com.richie.component.i18n.resolver.I18nResolver;
 import com.richie.gateway.filter.thirdparty.auth.InterfaceAuthFilter;
 import com.richie.gateway.service.AuditService;
-import com.richie.gateway.service.OAuth2AuthService;
-import com.richie.gateway.service.OAuth2ScopeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,22 +38,22 @@ class InterfaceAuthFilterTest {
     private GatewayFilterChain filterChain;
 
     @Mock
-    private OAuth2AuthService authService;
+    private TokenEndpoint tokenEndpoint;
 
     @Mock
     private AuditService auditService;
 
     @Mock
-    private OAuth2ScopeService scopeService;
+    private ScopeResolver scopeResolver;
 
     @Mock
-    private IOAuthFilterConfig interfaceAuthConfig;
+    private OAuth2Properties oauth2Properties;
 
     private InterfaceAuthFilter interfaceAuthFilter;
 
     @BeforeEach
     void setUp() {
-        interfaceAuthFilter = new InterfaceAuthFilter(gatewayConfig, i18nResolver, authService, auditService, scopeService);
+        interfaceAuthFilter = new InterfaceAuthFilter(gatewayConfig, i18nResolver, tokenEndpoint, auditService, scopeResolver);
         lenient().when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
     }
 
@@ -84,8 +84,8 @@ class InterfaceAuthFilterTest {
         @Test
         @DisplayName("should return true for non-OAuth2 paths when enabled")
         void returnsTrueForNonOAuth2PathsWhenEnabled() {
-            when(gatewayConfig.getInterfaceAuth()).thenReturn(interfaceAuthConfig);
-            when(interfaceAuthConfig.isEnable()).thenReturn(true);
+            when(gatewayConfig.getOauth2()).thenReturn(oauth2Properties);
+            when(oauth2Properties.isEnabled()).thenReturn(true);
             MockServerHttpRequest request = MockServerHttpRequest.get("/api/resource").build();
             ServerWebExchange exchange = MockServerWebExchange.from(request);
 
@@ -93,10 +93,10 @@ class InterfaceAuthFilterTest {
         }
 
         @Test
-        @DisplayName("should return false when interface auth disabled")
+        @DisplayName("should return false when OAuth2 disabled")
         void returnsFalseWhenDisabled() {
-            when(gatewayConfig.getInterfaceAuth()).thenReturn(interfaceAuthConfig);
-            when(interfaceAuthConfig.isEnable()).thenReturn(false);
+            when(gatewayConfig.getOauth2()).thenReturn(oauth2Properties);
+            when(oauth2Properties.isEnabled()).thenReturn(false);
             MockServerHttpRequest request = MockServerHttpRequest.get("/api/resource").build();
             ServerWebExchange exchange = MockServerWebExchange.from(request);
 
