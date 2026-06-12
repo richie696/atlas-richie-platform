@@ -278,13 +278,13 @@ sequenceDiagram
 
     Client->>TenantFilter: HTTP 请求（携带认证信息）
     TenantFilter->>TenantFilter: 从 JWT/Session 提取租户 ID，校验格式
-    TenantFilter->>TenantContext: runWithTenant(tenantId, task)
-    TenantContext-->>TenantFilter: 绑定租户到当前线程上下文
+    TenantFilter->>TenantContext: runWithTenant(principal, task)
+    TenantContext-->>TenantFilter: 绑定 TenantPrincipal 到当前线程上下文
     TenantFilter->>BusinessService: 调用业务方法（在 task 内）
     BusinessService->>MyBatisPlusInterceptor: 执行 Mapper 方法
-    MyBatisPlusInterceptor->>TenantContext: getTenantId()
-    TenantContext-->>MyBatisPlusInterceptor: 返回 tenantId
-    MyBatisPlusInterceptor->>TenantInfoProvider: getTenantInfo(tenantId)
+    MyBatisPlusInterceptor->>TenantContext: get()
+    TenantContext-->>MyBatisPlusInterceptor: 返回 TenantPrincipal
+    MyBatisPlusInterceptor->>TenantInfoProvider: getTenantInfo(principal.getTenantId())
     TenantInfoProvider-->>MyBatisPlusInterceptor: 返回 TenantInfo（模式、数据源、schema、表后缀等）
     MyBatisPlusInterceptor->>TenancyStrategy: beforeSqlExecute(invocation, tenantInfo)
     TenancyStrategy-->>MyBatisPlusInterceptor: 改写 SQL（注入列条件/替换表名/切换schema/路由数据源）
@@ -353,14 +353,14 @@ flowchart LR
 该模块负责在请求生命周期内安全地持有和传递租户 ID，并支持 ScopedValue 与 ThreadLocal 两种实现的无感切换。
 
 - **TenantContextHolder 接口**：定义租户上下文的绑定、获取和清理操作。
-  - `void runWithTenant(String tenantId, Runnable task)`
-  - `String getTenantId()`
+  - `void runWithTenant(TenantPrincipal principal, Runnable task)`
+  - `TenantPrincipal get()`
   - `void clear()`
 
 - **ScopedValueHolder 实现**：基于 JDK 20+ 的 `ScopedValue`，在 `StructuredTaskScope` 内虚拟线程间自动继承，作用域结束自动清理；**不跨线程池传递**（JDK 刻意设计），需通过 `TaskDecorator` 显式捕获-恢复。
 - **ThreadLocalHolder 实现**：基于 `TransmittableThreadLocal`（TTL），可通过 `TtlExecutors` 包装实现线程池自动传递，兼容旧 JDK 与非虚拟线程环境。同样支持嵌套绑定（内部覆盖后恢复外层值）。
 - **自动选择机制**：在自动配置阶段检测 `ScopedValue` 是否可用，并允许通过 `multi-tenancy.force-thread-local=true` 强制降级；运行时 JVM 全局只存在一个 `TenantContextHolder` 实例，保证同一上下文不会混用两种机制。
-- **TenantContext 门面**：所有对外 API 委托给当前 `TenantContextHolder` 实例，提供静态方法 `runWithTenant`、`getTenantId` 和 `clear`。
+- **TenantContext 门面**：所有对外 API 委托给当前 `TenantContextHolder` 实例，提供静态方法 `runWithTenant`、`get` 和 `clear`。
 - **上下文传播器（SPI）**：`TenantContextPropagator`，用于跨线程池/消息队列/RPC 时挂载与恢复租户上下文。ScopedValue 模式默认需要显式捕获-恢复；ThreadLocal + TTL 模式可自动传递。
 - **入口绑定器**：提供标准的 Servlet Filter、Reactor Context 支持，实现认证租户提取与绑定。
 
@@ -374,7 +374,7 @@ flowchart LR
 
 > 安全原则不变：header/metadata 中的 `X-Tenant-ID` **仅供交叉校验**，不可作为租户身份的唯一来源。JWT `tenantCode` 始终是权威源。详见 [上下文模块详细设计](上下文模块详细设计.md) §7。
 
-**定时任务与后台线程**：定时任务无 HTTP 请求上下文（无 JWT、无 `TenantIdentityFilter`），必须显式调用 `TenantContext.runWithTenant(tenantId, () -> { ... })` 绑定租户。详见 [README 定时任务模板](多租户设计阅读导览.md#定时任务模板)。
+**定时任务与后台线程**：定时任务无 HTTP 请求上下文（无 JWT、无 `TenantIdentityFilter`），必须显式调用 `TenantContext.runWithTenant(principal, () -> { ... })` 绑定租户。详见 [README 定时任务模板](多租户设计阅读导览.md#定时任务模板)。
 
 **模式迁移与数据迁移**：当租户需要变更隔离模式时，`TenantModeGuard` 仅允许低等级→高等级（COLUMN→TABLE→SCHEMA→DATABASE）迁移。数据迁移由 `TenantDataMigrator` SPI 执行，覆盖 6 条迁移路径，含 SQL 模板、校验机制、回滚策略和人工 SOP。详见 [模式切换数据迁移方案](模式切换数据迁移方案.md)。
 
