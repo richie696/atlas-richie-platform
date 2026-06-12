@@ -6,6 +6,8 @@ import com.richie.component.http.core.HttpMethod;
 import com.richie.component.http.core.HttpRequest;
 import com.richie.component.http.core.HttpRequestSupport;
 import com.richie.component.http.core.HttpResponse;
+import com.richie.component.http.core.SseConnection;
+import com.richie.component.http.core.SseListener;
 import tools.jackson.core.type.TypeReference;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
@@ -22,6 +24,7 @@ import org.apache.hc.core5.util.Timeout;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -34,9 +37,11 @@ import java.util.concurrent.CompletableFuture;
 public class HttpClient5Adapter implements HttpClient {
 
     private final CloseableHttpClient httpClient;
+    private final HttpClient5SseClient sseClient;
 
     public HttpClient5Adapter(CloseableHttpClient httpClient) {
         this.httpClient = httpClient;
+        this.sseClient = new HttpClient5SseClient(httpClient);
     }
 
     @Override
@@ -99,6 +104,16 @@ public class HttpClient5Adapter implements HttpClient {
     @Override
     public <T> CompletableFuture<T> future(HttpRequest request, TypeReference<T> typeRef) {
         return CompletableFuture.supplyAsync(() -> execute(request, typeRef));
+    }
+
+    @Override
+    public SseConnection sse(String url, SseListener listener) {
+        return sseClient.connect(url, null, listener);
+    }
+
+    @Override
+    public SseConnection sse(String url, Map<String, String> headers, SseListener listener) {
+        return sseClient.connect(url, headers, listener);
     }
 
     private HttpUriRequestBase buildRequest(HttpRequest request) {

@@ -2,6 +2,7 @@ package com.richie.component.http.core;
 
 import tools.jackson.core.type.TypeReference;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -21,6 +22,13 @@ import java.util.concurrent.CompletableFuture;
  *   // Future 方式
  *   CompletableFuture<User> future = http.get("https://api/users").future(User.class);
  *   future.thenAccept(user -> log.info("Got: {}", user));
+ *
+ *   // SSE 长连接
+ *   SseConnection conn = http.sse("https://api/events", new SseListener() {
+ *       @Override public void onEvent(SseConnection c, SseEvent e) {
+ *           log.info("event: {}", e.data());
+ *       }
+ *   });
  * }</pre>
  *
  * @author richie696
@@ -40,6 +48,30 @@ public interface HttpClient {
     HttpRequest delete(String url, Object body);
 
     HttpRequest delete(String url);
+
+    // ====== SSE ======
+
+    /**
+     * 打开一个 SSE（Server-Sent Events）长连接。
+     * <p>
+     * 连接建立后由 {@link SseListener} 异步接收事件，业务侧可通过返回的
+     * {@link SseConnection} 获取响应元信息或主动关闭流。
+     *
+     * @param url      SSE 服务端点（{@code text/event-stream}）
+     * @param listener 事件回调，不允许为 {@code null}
+     * @return 连接句柄；调用 {@link SseConnection#close()} 可随时中断
+     */
+    SseConnection sse(String url, SseListener listener);
+
+    /**
+     * 打开一个带自定义请求头的 SSE 长连接。
+     *
+     * @param url      SSE 服务端点
+     * @param headers  额外的请求头（鉴权、租户等），允许为 {@code null}
+     * @param listener 事件回调，不允许为 {@code null}
+     * @return 连接句柄
+     */
+    SseConnection sse(String url, Map<String, String> headers, SseListener listener);
 
     // ====== for HttpRequest delegation ======
 

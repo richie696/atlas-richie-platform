@@ -250,7 +250,7 @@ java -javaagent:/path/to/opentelemetry-javaagent.jar \
 
 - [OpenTelemetry 快速开始](./OpenTelemetry-快速开始.md)
 - [OpenTelemetry 依赖架构说明](./OpenTelemetry-依赖架构说明.md)
-- [Redis Stream 链路追踪说明](./Redis-Stream-Tracing-透传说明.md)
+- [Redis Stream 链路追踪说明](../../atlas-richie-component-redis-streammq/docs/Redis-Stream-Tracing-透传说明.md)
 
 ## 🔄 版本历史
 

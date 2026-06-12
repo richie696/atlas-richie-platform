@@ -133,6 +133,16 @@ class HttpRequestTest {
         }
 
         @Override
+        public SseConnection sse(String url, SseListener listener) {
+            throw new UnsupportedOperationException("SSE not used in this test");
+        }
+
+        @Override
+        public SseConnection sse(String url, Map<String, String> headers, SseListener listener) {
+            throw new UnsupportedOperationException("SSE not used in this test");
+        }
+
+        @Override
         public HttpResponse execute(HttpRequest request) {
             captured.set(request);
             return HttpResponse.of(200, Map.of("X-Stub", List.of("1")),

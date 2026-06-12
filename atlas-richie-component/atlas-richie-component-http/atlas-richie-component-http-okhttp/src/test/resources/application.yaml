@@ -1,0 +1,4 @@
+platform:
+  component:
+    http:
+      provider: okhttp

@@ -6,6 +6,8 @@ import com.richie.component.http.core.HttpMethod;
 import com.richie.component.http.core.HttpRequest;
 import com.richie.component.http.core.HttpRequestSupport;
 import com.richie.component.http.core.HttpResponse;
+import com.richie.component.http.core.SseConnection;
+import com.richie.component.http.core.SseListener;
 import tools.jackson.core.type.TypeReference;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import org.springframework.web.client.RestClient;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -26,9 +29,11 @@ import java.util.concurrent.CompletableFuture;
 public class RestClientAdapter implements HttpClient {
 
     private final RestClient restClient;
+    private final RestClientSseClient sseClient;
 
     public RestClientAdapter(RestClient restClient) {
         this.restClient = restClient;
+        this.sseClient = new RestClientSseClient(restClient);
     }
 
     @Override
@@ -107,6 +112,16 @@ public class RestClientAdapter implements HttpClient {
             future = future.orTimeout(request.timeout().toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS);
         }
         return future;
+    }
+
+    @Override
+    public SseConnection sse(String url, SseListener listener) {
+        return sseClient.connect(url, null, listener);
+    }
+
+    @Override
+    public SseConnection sse(String url, Map<String, String> headers, SseListener listener) {
+        return sseClient.connect(url, headers, listener);
     }
 
     private RestClient.RequestBodySpec buildSpec(HttpRequest request) {

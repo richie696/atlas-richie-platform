@@ -12,7 +12,7 @@
 |------|----------|
 | [缓存核心能力功能.md](./缓存核心能力功能.md) | 各 Ops 能力的设计思路、配置、测试用例 |
 | [Redis-L2与性能守卫设计说明.md](./Redis-L2与性能守卫设计说明.md) | L2、本地锁、Perf 守卫、键空间同步 |
-| [Redis-Stream-使用指南.md](./Redis-Stream-使用指南.md) | **历史文档** → 请以 streammq 模块为准 |
+| [Redis-Stream-使用指南.md](../../atlas-richie-component-redis-streammq/docs/Redis-Stream-使用指南.md) | **历史文档** → 请以 streammq 模块为准 |
 
 ## 配置前缀速查
 

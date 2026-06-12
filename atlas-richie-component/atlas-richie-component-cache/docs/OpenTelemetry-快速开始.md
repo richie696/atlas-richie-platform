@@ -313,7 +313,7 @@ otel:
 ## 更多文档
 
 - [OpenTelemetry 自动配置详细说明](./OpenTelemetry-自动配置说明.md)
-- [Redis Stream 使用指南](./Redis-Stream-使用指南.md)
+- [Redis Stream 使用指南](../../atlas-richie-component-redis-streammq/docs/Redis-Stream-使用指南.md)
 
 ## 反馈
 

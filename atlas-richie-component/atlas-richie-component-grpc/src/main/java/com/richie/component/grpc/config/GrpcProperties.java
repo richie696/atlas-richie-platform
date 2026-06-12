@@ -15,7 +15,7 @@ import java.util.Set;
  * @since 1.0.0
  */
 @Data
-@ConfigurationProperties(prefix = "richie.grpc")
+@ConfigurationProperties(prefix = "platform.grpc")
 public class GrpcProperties {
 
     private Server server = new Server();

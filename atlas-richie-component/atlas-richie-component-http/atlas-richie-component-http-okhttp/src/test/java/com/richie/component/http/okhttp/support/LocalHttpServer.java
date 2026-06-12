@@ -58,4 +58,78 @@ public final class LocalHttpServer implements AutoCloseable {
         exchange.sendResponseHeaders(200, -1);
         exchange.close();
     }
+
+    /**
+     * 发送 SSE 响应的辅助方法。
+     * <p>
+     * 设置 {@code Content-Type: text/event-stream; charset=utf-8}、
+     * {@code Cache-Control: no-cache}、{@code Connection: keep-alive}，
+     * 并发送 200 状态码（0 长度表示 chunked transfer encoding）。
+     *
+     * @param exchange HTTP 交换对象
+     * @return 响应体输出流，调用方写入 SSE 事件后自行关闭
+     * @throws IOException 如果发送响应头失败
+     */
+    public OutputStream respondSse(HttpExchange exchange) throws IOException {
+        exchange.getResponseHeaders().add("Content-Type", "text/event-stream; charset=utf-8");
+        exchange.getResponseHeaders().add("Cache-Control", "no-cache");
+        exchange.getResponseHeaders().add("Connection", "keep-alive");
+        exchange.sendResponseHeaders(200, 0);
+        return exchange.getResponseBody();
+    }
+
+    /**
+     * 发送单个 SSE 事件并关闭连接的辅助方法。
+     * <p>
+     * 适用于只需要发送一个事件的简单测试场景。
+     *
+     * @param exchange    HTTP 交换对象
+     * @param sseContent  SSE 事件帧内容（通常由 {@link #formatEvent(String)} 生成）
+     * @throws IOException 如果发送响应失败
+     */
+    public void respondSseAndClose(HttpExchange exchange, String sseContent) throws IOException {
+        byte[] bytes = sseContent.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().add("Content-Type", "text/event-stream; charset=utf-8");
+        exchange.getResponseHeaders().add("Cache-Control", "no-cache");
+        exchange.getResponseHeaders().add("Connection", "keep-alive");
+        exchange.sendResponseHeaders(200, bytes.length);
+        try (OutputStream out = exchange.getResponseBody()) {
+            out.write(bytes);
+        }
+    }
+
+    /**
+     * 格式化 SSE 事件帧（仅 data 字段）。
+     * <p>
+     * 生成标准 SSE 格式：{@code data: <content>\n\n}
+     *
+     * @param data 事件数据
+     * @return 格式化后的事件帧字符串
+     */
+    public static String formatEvent(String data) {
+        return "data: " + data + "\n\n";
+    }
+
+    /**
+     * 格式化 SSE 事件帧（完整字段）。
+     * <p>
+     * 生成标准 SSE 格式，各字段按协议规范排列。
+     *
+     * @param id    事件 ID（可为 null）
+     * @param event 事件类型（可为 null，默认 message）
+     * @param data  事件数据
+     * @return 格式化后的事件帧字符串
+     */
+    public static String formatEvent(String id, String event, String data) {
+        StringBuilder sb = new StringBuilder();
+        if (id != null) {
+            sb.append("id: ").append(id).append("\n");
+        }
+        if (event != null) {
+            sb.append("event: ").append(event).append("\n");
+        }
+        sb.append("data: ").append(data).append("\n");
+        sb.append("\n");
+        return sb.toString();
+    }
 }

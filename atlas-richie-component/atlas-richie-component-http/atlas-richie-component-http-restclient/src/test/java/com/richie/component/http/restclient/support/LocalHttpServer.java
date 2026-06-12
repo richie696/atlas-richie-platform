@@ -49,6 +49,72 @@ public final class LocalHttpServer implements AutoCloseable {
         }
     }
 
+    /**
+     * 发送 SSE 响应头，保持连接打开。
+     *
+     * @param exchange HTTP 交换对象
+     * @return 响应体输出流
+     * @throws IOException I/O 异常
+     */
+    public OutputStream respondSse(HttpExchange exchange) throws IOException {
+        exchange.getResponseHeaders().add("Content-Type", "text/event-stream; charset=utf-8");
+        exchange.getResponseHeaders().add("Cache-Control", "no-cache");
+        exchange.getResponseHeaders().add("Connection", "keep-alive");
+        exchange.sendResponseHeaders(200, 0);
+        return exchange.getResponseBody();
+    }
+
+    /**
+     * 发送 SSE 内容后关闭连接。
+     *
+     * @param exchange     HTTP 交换对象
+     * @param sseContent   SSE 内容
+     * @throws IOException I/O 异常
+     */
+    public void respondSseAndClose(HttpExchange exchange, String sseContent) throws IOException {
+        byte[] bytes = sseContent.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().add("Content-Type", "text/event-stream; charset=utf-8");
+        exchange.getResponseHeaders().add("Cache-Control", "no-cache");
+        exchange.getResponseHeaders().add("Connection", "keep-alive");
+        exchange.sendResponseHeaders(200, bytes.length);
+        try (OutputStream out = exchange.getResponseBody()) {
+            out.write(bytes);
+        }
+    }
+
+    /**
+     * 格式化 SSE 事件（仅 data 字段）。
+     *
+     * @param data 事件数据
+     * @return 格式化后的事件字符串
+     */
+    public static String formatEvent(String data) {
+        return formatEvent(null, null, data);
+    }
+
+    /**
+     * 格式化 SSE 事件。
+     *
+     * @param id    事件 ID（可为 null）
+     * @param event 事件类型（可为 null）
+     * @param data  事件数据
+     * @return 格式化后的事件字符串
+     */
+    public static String formatEvent(String id, String event, String data) {
+        StringBuilder sb = new StringBuilder();
+        if (id != null) {
+            sb.append("id:").append(id).append("\n");
+        }
+        if (event != null) {
+            sb.append("event:").append(event).append("\n");
+        }
+        if (data != null) {
+            sb.append("data:").append(data).append("\n");
+        }
+        sb.append("\n");
+        return sb.toString();
+    }
+
     @Override
     public void close() {
         server.stop(0);

@@ -743,7 +743,7 @@ spring.data.local:
 消费者、幂等去重、监控、链路追踪等配置已迁移至 **`atlas-richie-component-redis-streammq`**，本模块不再绑定 `platform.cache.redis.stream.*` 或 `spring.data.redis.stream-idempotency`。
 
 - 依赖与用法：见上文 [Redis Stream 消息队列（独立模块）](#-redis-stream-消息队列独立模块)
-- 历史参考：[docs/Redis-Stream-使用指南.md](./docs/Redis-Stream-使用指南.md)（以 streammq 源码为准）
+- 历史参考：[docs/Redis-Stream-使用指南.md](../atlas-richie-component-redis-streammq/docs/Redis-Stream-使用指南.md)（以 streammq 源码为准）
 
 ---
 
@@ -919,9 +919,9 @@ spring.data.redis.perf:
 | **测试规范（蓝本）**        | [TESTING.md](TESTING.md) — 单测/集测命名、JaCoCo 85%、复制清单 |
 | L2 / 分布式锁 / 性能守卫 设计 | [Redis-L2与性能守卫设计说明.md](./docs/Redis-L2与性能守卫设计说明.md)                   |
 | 缓存核心能力功能分析          | [缓存核心能力功能.md](./docs/缓存核心能力功能.md)                                     |
-| Stream 使用与 YAML     | [Redis-Stream-使用指南.md](./docs/Redis-Stream-使用指南.md)                   |
-| 架构选型                | [Redis-Stream-架构对比分析.md](./docs/Redis-Stream-架构对比分析.md)               |
-| 性能调优                | [Redis-Stream-MQ性能分析.md](./docs/Redis-Stream-MQ性能分析.md)               |
-| 监控端点                | [Redis-Stream-Actuator-结构说明.md](./docs/Redis-Stream-Actuator-结构说明.md) |
-| 链路追踪                | [Redis-Stream-Tracing-透传说明.md](./docs/Redis-Stream-Tracing-透传说明.md)   |
+| Stream 使用与 YAML     | [Redis-Stream-使用指南.md](../atlas-richie-component-redis-streammq/docs/Redis-Stream-使用指南.md)                   |
+| 架构选型                | [Redis-Stream-架构对比分析.md](../atlas-richie-component-redis-streammq/docs/Redis-Stream-架构对比分析.md)               |
+| 性能调优                | [Redis-Stream-MQ性能分析.md](../atlas-richie-component-redis-streammq/docs/Redis-Stream-MQ性能分析.md)               |
+| 监控端点                | [Redis-Stream-Actuator-结构说明.md](../atlas-richie-component-redis-streammq/docs/Redis-Stream-Actuator-结构说明.md) |
+| 链路追踪                | [Redis-Stream-Tracing-透传说明.md](../atlas-richie-component-redis-streammq/docs/Redis-Stream-Tracing-透传说明.md)   |
 | OpenTelemetry       | [OpenTelemetry-快速开始.md](./docs/OpenTelemetry-快速开始.md)                 |

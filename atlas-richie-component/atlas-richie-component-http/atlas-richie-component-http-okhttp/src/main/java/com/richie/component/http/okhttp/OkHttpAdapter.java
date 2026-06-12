@@ -6,6 +6,8 @@ import com.richie.component.http.core.HttpMethod;
 import com.richie.component.http.core.HttpRequest;
 import com.richie.component.http.core.HttpRequestSupport;
 import com.richie.component.http.core.HttpResponse;
+import com.richie.component.http.core.SseConnection;
+import com.richie.component.http.core.SseListener;
 import jakarta.annotation.Nonnull;
 import tools.jackson.core.type.TypeReference;
 import okhttp3.*;
@@ -13,6 +15,7 @@ import okhttp3.*;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -30,9 +33,11 @@ public class OkHttpAdapter implements HttpClient {
     private static final MediaType SOAP_MEDIA = Objects.requireNonNull(MediaType.parse("application/soap+xml"));
 
     private final OkHttpClient okHttpClient;
+    private final OkHttpSseClient sseClient;
 
     public OkHttpAdapter(OkHttpClient okHttpClient) {
         this.okHttpClient = okHttpClient;
+        this.sseClient = new OkHttpSseClient(okHttpClient);
     }
 
     @Override
@@ -135,6 +140,16 @@ public class OkHttpAdapter implements HttpClient {
             }
         });
         return f;
+    }
+
+    @Override
+    public SseConnection sse(String url, SseListener listener) {
+        return sseClient.connect(url, null, listener);
+    }
+
+    @Override
+    public SseConnection sse(String url, Map<String, String> headers, SseListener listener) {
+        return sseClient.connect(url, headers, listener);
     }
 
     private <T> void enqueue(HttpRequest request, AsyncCallback<T> callback, BodyParser<T> parser) {

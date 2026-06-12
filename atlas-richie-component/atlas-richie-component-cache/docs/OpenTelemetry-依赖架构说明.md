@@ -311,7 +311,7 @@ java -javaagent:/path/to/opentelemetry-javaagent.jar \
 ## 📚 相关文档
 
 - [OpenTelemetry 快速开始](./OpenTelemetry-快速开始.md)
-- [Redis Stream 链路追踪说明](./Redis-Stream-Tracing-透传说明.md)
+- [Redis Stream 链路追踪说明](../../atlas-richie-component-redis-streammq/docs/Redis-Stream-Tracing-透传说明.md)
 - [CHANGELOG](./CHANGELOG-OpenTelemetry.md)
 
 ## 🔄 版本历史

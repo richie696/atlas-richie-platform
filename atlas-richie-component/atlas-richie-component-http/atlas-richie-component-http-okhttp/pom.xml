@@ -25,6 +25,10 @@
         </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp-sse</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
             <artifactId>logging-interceptor</artifactId>
         </dependency>
     </dependencies>
@@ -45,7 +49,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
-                    <skipITs>true</skipITs>
+                    <skipITs>${skipITs}</skipITs>
                 </configuration>
             </plugin>
             <plugin>

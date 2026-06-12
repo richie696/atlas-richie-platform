@@ -9,6 +9,15 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * 本地 HTTP 测试服务器，支持 SSE（Server-Sent Events）响应。
+ * <p>
+ * 提供 SSE 格式的辅助方法，用于测试 SSE 客户端功能。
+ *
+ * @author richie696
+ * @since 1.0.0
+ * @version 1.0
+ */
 public final class LocalHttpServer implements AutoCloseable {
 
     @FunctionalInterface
@@ -47,6 +56,81 @@ public final class LocalHttpServer implements AutoCloseable {
         try (OutputStream out = exchange.getResponseBody()) {
             out.write(bytes);
         }
+    }
+
+    /**
+     * 发起 SSE 响应，返回 OutputStream 用于写入 SSE 内容。
+     * <p>
+     * 自动设置 SSE 所需的响应头：
+     * <ul>
+     *   <li>Content-Type: text/event-stream; charset=utf-8</li>
+     *   <li>Cache-Control: no-cache</li>
+     *   <li>Connection: keep-alive</li>
+     * </ul>
+     *
+     * @param exchange HTTP 交换对象
+     * @return 响应体 OutputStream，调用方负责写入 SSE 数据后关闭
+     * @throws IOException 如果发生 I/O 错误
+     */
+    public OutputStream respondSse(HttpExchange exchange) throws IOException {
+        exchange.getResponseHeaders().add("Content-Type", "text/event-stream; charset=utf-8");
+        exchange.getResponseHeaders().add("Cache-Control", "no-cache");
+        exchange.getResponseHeaders().add("Connection", "keep-alive");
+        exchange.sendResponseHeaders(200, 0);
+        return exchange.getResponseBody();
+    }
+
+    /**
+     * 发送单个 SSE 事件并关闭连接。
+     * <p>
+     * 写入单个 SSE 事件块后立即关闭连接，适用于测试简单场景。
+     *
+     * @param exchange     HTTP 交换对象
+     * @param sseContent   SSE 格式的事件内容
+     * @throws IOException 如果发生 I/O 错误
+     */
+    public void respondSseAndClose(HttpExchange exchange, String sseContent) throws IOException {
+        byte[] bytes = sseContent.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().add("Content-Type", "text/event-stream; charset=utf-8");
+        exchange.getResponseHeaders().add("Cache-Control", "no-cache");
+        exchange.getResponseHeaders().add("Connection", "keep-alive");
+        exchange.sendResponseHeaders(200, bytes.length);
+        try (OutputStream out = exchange.getResponseBody()) {
+            out.write(bytes);
+        }
+    }
+
+    /**
+     * 格式化仅包含 data 字段的 SSE 事件。
+     *
+     * @param data 事件数据
+     * @return 格式化的 SSE 事件字符串（以空行结尾）
+     */
+    public static String formatEvent(String data) {
+        return formatEvent(null, null, data);
+    }
+
+    /**
+     * 格式化完整的 SSE 事件。
+     *
+     * @param id    事件 ID（可为 null）
+     * @param event 事件类型（可为 null，默认 message）
+     * @param data  事件数据
+     * @return 格式化的 SSE 事件字符串（以空行结尾）
+     */
+    public static String formatEvent(String id, String event, String data) {
+        StringBuilder sb = new StringBuilder();
+        if (id != null) {
+            sb.append("id: ").append(id).append("\n");
+        }
+        if (event != null) {
+            sb.append("event: ").append(event).append("\n");
+        }
+        if (data != null) {
+            sb.append("data: ").append(data).append("\n");
+        }
+        sb.append("\n");
+        return sb.toString();
     }
 
     @Override

@@ -6,12 +6,15 @@ import com.richie.component.http.core.HttpMethod;
 import com.richie.component.http.core.HttpRequest;
 import com.richie.component.http.core.HttpRequestSupport;
 import com.richie.component.http.core.HttpResponse;
+import com.richie.component.http.core.SseConnection;
+import com.richie.component.http.core.SseListener;
 import tools.jackson.core.type.TypeReference;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -24,9 +27,21 @@ import java.util.concurrent.CompletableFuture;
 public class JdkHttpAdapter implements HttpClient {
 
     private final java.net.http.HttpClient httpClient;
+    private final JdkSseClient sseClient;
 
     public JdkHttpAdapter(java.net.http.HttpClient httpClient) {
         this.httpClient = httpClient;
+        this.sseClient = new JdkSseClient(httpClient);
+    }
+
+    @Override
+    public SseConnection sse(String url, SseListener listener) {
+        return sseClient.connect(url, null, listener);
+    }
+
+    @Override
+    public SseConnection sse(String url, Map<String, String> headers, SseListener listener) {
+        return sseClient.connect(url, headers, listener);
     }
 
     @Override public HttpRequest get(String url) { return new HttpRequest(url, HttpMethod.GET, null).client(this); }
