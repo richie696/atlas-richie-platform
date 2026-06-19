@@ -1,5 +1,6 @@
 package com.richie.component.storage.core.impl;
 
+import com.richie.component.storage.bean.DirectDownloadPolicy;
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.DirectUploadPolicy;
@@ -321,6 +322,56 @@ public final class Ks3StorageEngine extends AbstractObjectStorageEngine<Ks3> imp
         } finally {
             destroy(client);
         }
+    }
+
+    @Override
+    public DirectDownloadPolicy issueDirectDownloadPolicy(@Nonnull String key, int expireSeconds) {
+        int safeExpire = Math.max(expireSeconds, 60);
+        String realKey = getRealPath(key);
+        var client = getClient(Ks3.class);
+        try {
+            Date expiration = Date.from(Instant.now().plusSeconds(safeExpire));
+            Object signedUrl = invokeKs3PresignForGet(client, getBucketName(), realKey, expiration);
+            return DirectDownloadPolicy.builder()
+                    .success(true)
+                    .downloadUrl(String.valueOf(signedUrl))
+                    .bucketName(getBucketName())
+                    .key(realKey)
+                    .expireAt(OffsetDateTime.now().plusSeconds(safeExpire))
+                    .fallback(false)
+                    .build();
+        } catch (Exception e) {
+            log.warn("KS3 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
+            return buildFallbackDirectDownloadPolicy(key, safeExpire);
+        } finally {
+            destroy(client);
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Object invokeKs3PresignForGet(Ks3 client, String bucket, String key, Date expiration) throws Exception {
+        Class<?> clazz = client.getClass();
+        for (var method : clazz.getMethods()) {
+            if (!"generatePresignedUrl".equals(method.getName())) {
+                continue;
+            }
+            Class<?>[] paramTypes = method.getParameterTypes();
+            if (paramTypes.length == 3
+                    && paramTypes[0] == String.class
+                    && paramTypes[1] == String.class
+                    && Date.class.isAssignableFrom(paramTypes[2])) {
+                return method.invoke(client, bucket, key, expiration);
+            }
+            if (paramTypes.length == 4
+                    && paramTypes[0] == String.class
+                    && paramTypes[1] == String.class
+                    && Date.class.isAssignableFrom(paramTypes[2])
+                    && paramTypes[3].isEnum()) {
+                Enum get = Enum.valueOf((Class<? extends Enum>) paramTypes[3], "GET");
+                return method.invoke(client, bucket, key, expiration, get);
+            }
+        }
+        throw new NoSuchMethodException("Ks3 generatePresignedUrl method not found");
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

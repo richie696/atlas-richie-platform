@@ -1,5 +1,6 @@
 package com.richie.component.storage.core.impl;
 
+import com.richie.component.storage.bean.DirectDownloadPolicy;
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.DirectUploadPolicy;
@@ -271,6 +272,32 @@ public final class MinioStorageEngine extends AbstractObjectStorageEngine<MinioA
         } catch (Exception e) {
             log.warn("MinIO 预签名签发失败，降级兜底直传链接。key={}, error={}", realKey, e.getMessage());
             return buildFallbackDirectUploadPolicy(key, safeExpire);
+        }
+    }
+
+    @Override
+    public DirectDownloadPolicy issueDirectDownloadPolicy(@Nonnull String key, int expireSeconds) {
+        int safeExpire = Math.max(expireSeconds, 60);
+        String realKey = getRealPath(key);
+        var client = getClient(MinioAsyncClient.class);
+        try {
+            String downloadUrl = client.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                    .method(Http.Method.GET)
+                    .bucket(getBucketName())
+                    .object(realKey)
+                    .expiry(safeExpire)
+                    .build());
+            return DirectDownloadPolicy.builder()
+                    .success(true)
+                    .downloadUrl(downloadUrl)
+                    .bucketName(getBucketName())
+                    .key(realKey)
+                    .expireAt(OffsetDateTime.now().plusSeconds(safeExpire))
+                    .fallback(false)
+                    .build();
+        } catch (Exception e) {
+            log.warn("MinIO 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
+            return buildFallbackDirectDownloadPolicy(key, safeExpire);
         }
     }
 }

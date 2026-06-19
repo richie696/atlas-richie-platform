@@ -1,5 +1,6 @@
 package com.richie.component.storage.core.impl;
 
+import com.richie.component.storage.bean.DirectDownloadPolicy;
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.DirectUploadPolicy;
@@ -9,6 +10,9 @@ import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.converter.StorageTypeConverter;
 import com.richie.component.storage.core.StorageEngine;
 import java.util.UUID;
+
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import tools.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -402,6 +406,33 @@ public final class S3StorageEngine extends AbstractObjectStorageEngine<S3Client>
         }
     }
 
+    @Override
+    public DirectDownloadPolicy issueDirectDownloadPolicy(@Nonnull String key, int expireSeconds) {
+        int safeExpire = Math.max(expireSeconds, 60);
+        String realKey = getRealPath(key);
+        try {
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(getBucketName())
+                    .key(realKey)
+                    .build();
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .getObjectRequest(getObjectRequest)
+                    .signatureDuration(Duration.ofSeconds(safeExpire))
+                    .build();
+            PresignedGetObjectRequest signed = s3Presigner.presignGetObject(presignRequest);
+            return DirectDownloadPolicy.builder()
+                    .success(true)
+                    .downloadUrl(signed.url().toString())
+                    .bucketName(getBucketName())
+                    .key(realKey)
+                    .expireAt(OffsetDateTime.now().plusSeconds(safeExpire))
+                    .fallback(false)
+                    .build();
+        } catch (Exception e) {
+            log.warn("S3 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
+            return buildFallbackDirectDownloadPolicy(key, safeExpire);
+        }
+    }
 
     /**
      * 构建对象访问URL

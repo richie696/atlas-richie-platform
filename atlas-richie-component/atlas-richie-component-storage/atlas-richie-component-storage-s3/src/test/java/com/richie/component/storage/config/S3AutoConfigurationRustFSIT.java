@@ -2,12 +2,14 @@ package com.richie.component.storage.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -26,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Slf4j
 @Testcontainers
+@EnabledIf("isDockerAvailable")
 @SpringBootTest(
     classes = S3AutoConfiguration.class,
     webEnvironment = SpringBootTest.WebEnvironment.NONE
@@ -48,6 +51,14 @@ class S3AutoConfigurationRustFSIT {
             .withExposedPorts(9000)
             .withEnv("RUSTFS_ACCESS_KEY", "rustfsadmin")
             .withEnv("RUSTFS_SECRET_KEY", "rustfsadmin");
+
+    static boolean isDockerAvailable() {
+        try {
+            return DockerClientFactory.instance().isDockerAvailable();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
 
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) {

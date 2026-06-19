@@ -4,10 +4,12 @@ import com.richie.context.common.api.SpringContextHolder;
 import io.minio.BucketExistsArgs;
 import io.minio.MinioAsyncClient;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -27,11 +29,20 @@ import static org.assertj.core.api.Assertions.assertThat;
         SpringContextHolder.class
 })
 @Testcontainers
+@EnabledIf("isDockerAvailable")
 class MinioAutoConfigurationIT {
 
     private static final String BUCKET = "it-autoconfig-bucket";
     private static final String ACCESS_KEY = "minioadmin";
     private static final String SECRET_KEY = "minioadmin";
+
+    static boolean isDockerAvailable() {
+        try {
+            return DockerClientFactory.instance().isDockerAvailable();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
 
     @Container
     static GenericContainer<?> minioContainer = new GenericContainer<>("minio/minio:latest")

@@ -1,5 +1,6 @@
 package com.richie.component.storage.core.impl;
 
+import com.richie.component.storage.bean.DirectDownloadPolicy;
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.DirectUploadPolicy;
@@ -352,6 +353,100 @@ public final class TosStorageEngine extends AbstractObjectStorageEngine<TOSV2> i
             return buildFallbackDirectUploadPolicy(key, safeExpire);
         } finally {
             destroy(client);
+        }
+    }
+
+    @Override
+    public DirectDownloadPolicy issueDirectDownloadPolicy(@Nonnull String key, int expireSeconds) {
+        int safeExpire = Math.max(expireSeconds, 60);
+        String realKey = getRealPath(key);
+        var client = getClient(TOSV2.class);
+        try {
+            String signedUrl = invokeTosPresignForGet(client, getBucketName(), realKey, safeExpire);
+            return DirectDownloadPolicy.builder()
+                    .success(true)
+                    .downloadUrl(signedUrl)
+                    .bucketName(getBucketName())
+                    .key(realKey)
+                    .expireAt(OffsetDateTime.now().plusSeconds(safeExpire))
+                    .fallback(false)
+                    .build();
+        } catch (Exception e) {
+            log.warn("TOS 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
+            return buildFallbackDirectDownloadPolicy(key, safeExpire);
+        } finally {
+            destroy(client);
+        }
+    }
+
+    /**
+     * 为 GET 请求签发预签名 URL。
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private String invokeTosPresignForGet(TOSV2 client, String bucket, String key, int expireSeconds) throws Exception {
+        // 优先尝试常见签名方法：preSignedURL(PreSignedURLInput)
+        for (var method : client.getClass().getMethods()) {
+            String methodName = method.getName();
+            if (!("preSignedURL".equals(methodName) || "preSignedUrl".equals(methodName))) {
+                continue;
+            }
+            Class<?>[] paramTypes = method.getParameterTypes();
+            if (paramTypes.length != 1) {
+                continue;
+            }
+            Object input = buildTosPreSignedInputForGet(paramTypes[0], bucket, key, expireSeconds);
+            Object output = method.invoke(client, input);
+            return String.valueOf(output);
+        }
+        // 次选：generatePresignedUrl(bucket,key,expire,methodEnum)
+        for (var method : client.getClass().getMethods()) {
+            if (!"generatePresignedUrl".equals(method.getName())) {
+                continue;
+            }
+            Class<?>[] paramTypes = method.getParameterTypes();
+            if (paramTypes.length == 4
+                    && paramTypes[0] == String.class
+                    && paramTypes[1] == String.class
+                    && (paramTypes[2] == int.class || paramTypes[2] == Integer.class)
+                    && paramTypes[3].isEnum()) {
+                Enum get = Enum.valueOf((Class<? extends Enum>) paramTypes[3], "GET");
+                Object url = method.invoke(client, bucket, key, expireSeconds, get);
+                return String.valueOf(url);
+            }
+        }
+        throw new NoSuchMethodException("TOS presign method not found");
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Object buildTosPreSignedInputForGet(Class<?> inputClass, String bucket, String key, int expireSeconds) throws Exception {
+        // builder 风格
+        try {
+            Object builder = inputClass.getMethod("builder").invoke(null);
+            invokeIfPresent(builder, "bucket", String.class, bucket);
+            invokeIfPresent(builder, "setBucket", String.class, bucket);
+            invokeIfPresent(builder, "key", String.class, key);
+            invokeIfPresent(builder, "setKey", String.class, key);
+            invokeIfPresent(builder, "expires", int.class, expireSeconds);
+            invokeIfPresent(builder, "setExpires", int.class, expireSeconds);
+            Class<? extends Enum> httpMethodClass =
+                    (Class<? extends Enum>) Class.forName("com.volcengine.tos.comm.HttpMethod");
+            Enum get = Enum.valueOf(httpMethodClass, "GET");
+            invokeIfPresent(builder, "httpMethod", httpMethodClass, get);
+            invokeIfPresent(builder, "setHttpMethod", httpMethodClass, get);
+            return builder.getClass().getMethod("build").invoke(builder);
+        } catch (NoSuchMethodException ignore) {
+            Object input = inputClass.getConstructor().newInstance();
+            invokeIfPresent(input, "setBucket", String.class, bucket);
+            invokeIfPresent(input, "setKey", String.class, key);
+            invokeIfPresent(input, "setExpires", int.class, expireSeconds);
+            try {
+                Class<? extends Enum> httpMethodClass =
+                        (Class<? extends Enum>) Class.forName("com.volcengine.tos.comm.HttpMethod");
+                Enum get = Enum.valueOf(httpMethodClass, "GET");
+                invokeIfPresent(input, "setHttpMethod", httpMethodClass, get);
+            } catch (ClassNotFoundException ignored) {
+            }
+            return input;
         }
     }
 

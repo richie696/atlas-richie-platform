@@ -59,7 +59,6 @@
                     <includes>
                         <include>com/richie/component/storage/converter/*</include>
                         <include>com/richie/component/storage/core/impl/MinioStorageEngine*</include>
-                        <include>com/richie/component/storage/config/MinioAutoConfiguration*</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -69,7 +68,6 @@
                             <includes>
                                 <include>com/richie/component/storage/converter/*</include>
                                 <include>com/richie/component/storage/core/impl/MinioStorageEngine*</include>
-                                <include>com/richie/component/storage/config/MinioAutoConfiguration*</include>
                             </includes>
                             <rules>
                                 <rule>

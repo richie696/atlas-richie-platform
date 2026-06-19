@@ -1,5 +1,6 @@
 package com.richie.component.storage.core.impl;
 
+import com.richie.component.storage.bean.DirectDownloadPolicy;
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.DirectUploadPolicy;
@@ -176,6 +177,32 @@ public final class AzureBlobStorageEngine extends AbstractObjectStorageEngine<Bl
         } catch (Exception e) {
             log.warn("Azure Blob SAS 签发失败，降级兜底直传链接。key={}, error={}", realKey, e.getMessage());
             return buildFallbackDirectUploadPolicy(key, safeExpire);
+        }
+    }
+
+    @Override
+    public DirectDownloadPolicy issueDirectDownloadPolicy(@Nonnull String key, int expireSeconds) {
+        int safeExpire = Math.max(expireSeconds, 60);
+        String realKey = getRealPath(key);
+        var blobContainerClient = getClient(BlobContainerClient.class);
+        try {
+            var blobClient = blobContainerClient.getBlobClient(realKey);
+            var expiryTime = OffsetDateTime.now().plusSeconds(safeExpire);
+            var permissions = new BlobSasPermission().setReadPermission(true);
+            var sasValues = new BlobServiceSasSignatureValues(expiryTime, permissions);
+            String sasToken = blobClient.generateSas(sasValues);
+            String downloadUrl = blobClient.getBlobUrl() + "?" + sasToken;
+            return DirectDownloadPolicy.builder()
+                    .success(true)
+                    .downloadUrl(downloadUrl)
+                    .bucketName(getBucketName())
+                    .key(realKey)
+                    .expireAt(expiryTime)
+                    .fallback(false)
+                    .build();
+        } catch (Exception e) {
+            log.warn("Azure 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
+            return buildFallbackDirectDownloadPolicy(key, safeExpire);
         }
     }
 

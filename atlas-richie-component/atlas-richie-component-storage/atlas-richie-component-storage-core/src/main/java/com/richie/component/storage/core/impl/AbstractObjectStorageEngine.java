@@ -1,5 +1,6 @@
 package com.richie.component.storage.core.impl;
 
+import com.richie.component.storage.bean.DirectDownloadPolicy;
 import com.richie.component.storage.bean.DirectUploadPolicy;
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.component.storage.bean.ObjectConfig;
@@ -148,6 +149,32 @@ public abstract class AbstractObjectStorageEngine<T> extends AbstractDestroyEngi
     @Override
     public DirectUploadPolicy issueDirectUploadPolicy(String key, int expireSeconds) {
         return buildFallbackDirectUploadPolicy(key, expireSeconds);
+    }
+
+    /**
+     * 构建兜底直读策略（当引擎未接入官方预签名时使用公开 URL 作为降级方案）。
+     *
+     * @param key           对象键
+     * @param expireSeconds 有效期（秒）
+     * @return 兜底直读策略
+     */
+    protected DirectDownloadPolicy buildFallbackDirectDownloadPolicy(String key, int expireSeconds) {
+        int safeExpire = Math.max(expireSeconds, 60);
+        String realKey = getRealPath(key);
+        return DirectDownloadPolicy.builder()
+                .success(true)
+                .errorMessage("当前引擎暂未接入官方预签名，返回可用兜底直读链接。")
+                .downloadUrl(buildPublicObjectUrl(realKey))
+                .bucketName(getBucketName())
+                .key(realKey)
+                .expireAt(OffsetDateTime.now().plusSeconds(safeExpire))
+                .fallback(true)
+                .build();
+    }
+
+    @Override
+    public DirectDownloadPolicy issueDirectDownloadPolicy(String key, int expireSeconds) {
+        return buildFallbackDirectDownloadPolicy(key, expireSeconds);
     }
 
     @Override

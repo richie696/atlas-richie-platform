@@ -1,5 +1,6 @@
 package com.richie.component.storage.core.impl;
 
+import com.richie.component.storage.bean.DirectDownloadPolicy;
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.DirectUploadPolicy;
@@ -333,6 +334,61 @@ public final class ObsStorageEngine extends AbstractObjectStorageEngine<ObsClien
             destroy(client);
         }
     }
+
+    @Override
+    public DirectDownloadPolicy issueDirectDownloadPolicy(@Nonnull String key, int expireSeconds) {
+        int safeExpire = Math.max(expireSeconds, 60);
+        String realKey = getRealPath(key);
+        var client = getClient(ObsClient.class);
+        try {
+            Date expiration = Date.from(Instant.now().plusSeconds(safeExpire));
+            Object request = buildObsTemporarySignatureRequestForGet(realKey, expiration, safeExpire);
+            Object response = client.getClass().getMethod("createTemporarySignature", request.getClass()).invoke(client, request);
+            String signedUrl = String.valueOf(response.getClass().getMethod("getSignedUrl").invoke(response));
+            return DirectDownloadPolicy.builder()
+                    .success(true)
+                    .downloadUrl(signedUrl)
+                    .bucketName(getBucketName())
+                    .key(realKey)
+                    .expireAt(OffsetDateTime.ofInstant(expiration.toInstant(), ZoneId.systemDefault()))
+                    .fallback(false)
+                    .build();
+        } catch (Exception e) {
+            log.warn("OBS 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
+            return buildFallbackDirectDownloadPolicy(key, safeExpire);
+        } finally {
+            destroy(client);
+        }
+    }
+
+    /**
+     * 重载版本：指定 HTTP 方法（GET/PUT）构建 OBS 临时签名请求。
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Object buildObsTemporarySignatureRequestForGet(String realKey, Date expiration, int safeExpire) throws Exception {
+        Class<?> requestClass = Class.forName("com.obs.services.model.TemporarySignatureRequest");
+        Class<? extends Enum> methodEnumClass =
+                (Class<? extends Enum>) Class.forName("com.obs.services.model.HttpMethodEnum");
+        Enum get = Enum.valueOf(methodEnumClass, "GET");
+
+        Object request;
+        try {
+            request = requestClass.getConstructor(methodEnumClass, int.class).newInstance(get, safeExpire);
+        } catch (NoSuchMethodException ignore) {
+            try {
+                request = requestClass.getConstructor(methodEnumClass, long.class).newInstance(get, (long) safeExpire);
+            } catch (NoSuchMethodException ex) {
+                request = requestClass.getConstructor().newInstance();
+                requestClass.getMethod("setHttpMethod", methodEnumClass).invoke(request, get);
+                requestClass.getMethod("setExpires", Date.class).invoke(request, expiration);
+            }
+        }
+        requestClass.getMethod("setBucketName", String.class).invoke(request, getBucketName());
+        requestClass.getMethod("setObjectKey", String.class).invoke(request, realKey);
+        return request;
+    }
+
+    
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Object buildObsTemporarySignatureRequest(String realKey, Date expiration, int safeExpire) throws Exception {

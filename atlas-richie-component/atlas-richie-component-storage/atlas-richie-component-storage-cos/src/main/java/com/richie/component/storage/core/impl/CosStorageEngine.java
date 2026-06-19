@@ -1,7 +1,8 @@
-package com.richie.component.storage.core.impl;
+  package com.richie.component.storage.core.impl;
 
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.component.storage.bean.DownloadContext;
+import com.richie.component.storage.bean.DirectDownloadPolicy;
 import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.DirectUploadPolicy;
 import com.richie.component.storage.bean.UploadResponse;
@@ -214,6 +215,30 @@ public final class CosStorageEngine extends AbstractObjectStorageEngine<COSClien
         } catch (Exception e) {
             log.warn("COS 预签名签发失败，降级兜底直传链接。key={}, error={}", realKey, e.getMessage());
             return buildFallbackDirectUploadPolicy(key, safeExpire);
+        } finally {
+            destroy(cosClient);
+        }
+    }
+
+    @Override
+    public DirectDownloadPolicy issueDirectDownloadPolicy(@Nonnull String key, int expireSeconds) {
+        int safeExpire = Math.max(expireSeconds, 60);
+        String realKey = getRealPath(key);
+        COSClient cosClient = getClient(COSClient.class);
+        try {
+            Date expiration = Date.from(Instant.now().plusSeconds(safeExpire));
+            URL url = cosClient.generatePresignedUrl(getBucketName(), realKey, expiration, HttpMethodName.GET);
+            return DirectDownloadPolicy.builder()
+                    .success(true)
+                    .downloadUrl(url.toString())
+                    .bucketName(getBucketName())
+                    .key(realKey)
+                    .expireAt(OffsetDateTime.ofInstant(expiration.toInstant(), ZoneId.systemDefault()))
+                    .fallback(false)
+                    .build();
+        } catch (Exception e) {
+            log.warn("COS 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
+            return buildFallbackDirectDownloadPolicy(key, safeExpire);
         } finally {
             destroy(cosClient);
         }

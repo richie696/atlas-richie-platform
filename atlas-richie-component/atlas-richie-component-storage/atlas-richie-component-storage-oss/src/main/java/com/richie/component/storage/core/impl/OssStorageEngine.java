@@ -1,6 +1,7 @@
 package com.richie.component.storage.core.impl;
 
 import com.richie.context.utils.data.JsonUtils;
+import com.richie.component.storage.bean.DirectDownloadPolicy;
 import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.DirectUploadPolicy;
 import com.richie.component.storage.bean.UploadResponse;
@@ -390,6 +391,32 @@ public final class OssStorageEngine extends AbstractObjectStorageEngine<OSS> imp
         } catch (Exception e) {
             log.warn("OSS 预签名签发失败，降级兜底直传链接。key={}, error={}", realKey, e.getMessage());
             return buildFallbackDirectUploadPolicy(key, safeExpire);
+        } finally {
+            destroy(ossClient);
+        }
+    }
+
+    @Override
+    public DirectDownloadPolicy issueDirectDownloadPolicy(@Nonnull String key, int expireSeconds) {
+        int safeExpire = Math.max(expireSeconds, 60);
+        String realKey = getRealPath(key);
+        var ossClient = getClient(OSS.class);
+        try {
+            Date expiration = Date.from(Instant.now().plusSeconds(safeExpire));
+            GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(getBucketName(), realKey, HttpMethod.GET);
+            request.setExpiration(expiration);
+            var url = ossClient.generatePresignedUrl(request);
+            return DirectDownloadPolicy.builder()
+                    .success(true)
+                    .downloadUrl(url.toString())
+                    .bucketName(getBucketName())
+                    .key(realKey)
+                    .expireAt(OffsetDateTime.ofInstant(expiration.toInstant(), ZoneId.systemDefault()))
+                    .fallback(false)
+                    .build();
+        } catch (Exception e) {
+            log.warn("OSS 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
+            return buildFallbackDirectDownloadPolicy(key, safeExpire);
         } finally {
             destroy(ossClient);
         }

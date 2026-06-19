@@ -5,11 +5,13 @@ import com.richie.component.storage.bean.UploadResponse;
 import com.richie.component.storage.config.MinioAutoConfiguration;
 import com.richie.context.common.api.SpringContextHolder;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -34,11 +36,20 @@ import static org.assertj.core.api.Assertions.assertThat;
         SpringContextHolder.class
 })
 @Testcontainers
+@EnabledIf("isDockerAvailable")
 class MinioStorageEngineIT {
 
     private static final String BUCKET = "it-test-bucket";
     private static final String ACCESS_KEY = "minioadmin";
     private static final String SECRET_KEY = "minioadmin";
+
+    static boolean isDockerAvailable() {
+        try {
+            return DockerClientFactory.instance().isDockerAvailable();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
 
     @Container
     static GenericContainer<?> minioContainer = new GenericContainer<>("minio/minio:latest")

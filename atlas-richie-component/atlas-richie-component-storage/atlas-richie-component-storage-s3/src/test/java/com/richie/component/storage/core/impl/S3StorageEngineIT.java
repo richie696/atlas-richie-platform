@@ -6,12 +6,14 @@ import com.richie.component.storage.config.S3AutoConfiguration;
 import com.richie.context.common.api.SpringContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -27,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @Testcontainers
+@EnabledIf("isDockerAvailable")
 @SpringBootTest(
     classes = {S3AutoConfiguration.class, SpringContextHolder.class},
     webEnvironment = SpringBootTest.WebEnvironment.NONE
@@ -45,6 +48,14 @@ class S3StorageEngineIT {
 
     private static final String BUCKET = "test-bucket";
     private static final String BASE_PATH = "test/";
+
+    static boolean isDockerAvailable() {
+        try {
+            return DockerClientFactory.instance().isDockerAvailable();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
 
     @Container
     static GenericContainer<?> rustfsContainer = new GenericContainer<>("rustfs/rustfs:latest")

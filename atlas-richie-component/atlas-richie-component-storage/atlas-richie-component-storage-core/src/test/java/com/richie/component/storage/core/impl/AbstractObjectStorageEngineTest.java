@@ -171,6 +171,29 @@ class AbstractObjectStorageEngineTest {
     }
 
     @Test
+    void issueDirectDownloadPolicy_returnsFallbackPolicy() {
+        var policy = engine.issueDirectDownloadPolicy("doc.txt", 30);
+        assertThat(policy.isSuccess()).isTrue();
+        assertThat(policy.isFallback()).isTrue();
+        assertThat(policy.getExpireAt()).isNotNull();
+    }
+
+    @Test
+    void issueDirectDownloadPolicy_enforcesMinimumExpireSeconds() {
+        var policy = engine.issueDirectDownloadPolicy("k", 10);
+        assertThat(policy.getExpireAt()).isAfter(java.time.OffsetDateTime.now().plusSeconds(59));
+    }
+
+    @Test
+    void issueDirectDownloadPolicy_populatesUrlKeyAndBucket() {
+        var policy = engine.issueDirectDownloadPolicy("nested/path/file.bin", 600);
+        assertThat(policy.getDownloadUrl()).isEqualTo("https://bucket.cdn.example.com/base/nested/path/file.bin");
+        assertThat(policy.getKey()).isEqualTo("base/nested/path/file.bin");
+        assertThat(policy.getBucketName()).isEqualTo("bucket");
+        assertThat(policy.getExpireAt()).isAfter(java.time.OffsetDateTime.now().plusSeconds(599));
+    }
+
+    @Test
     void getAcl_withFailingConverter_returnsNull() {
         var aclConverter = new com.richie.component.storage.converter.AclTypeConverter<String>() {
             @Override

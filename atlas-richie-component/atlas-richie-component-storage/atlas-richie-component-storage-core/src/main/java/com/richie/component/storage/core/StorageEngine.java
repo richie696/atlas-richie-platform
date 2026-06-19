@@ -1,5 +1,6 @@
 package com.richie.component.storage.core;
 
+import com.richie.component.storage.bean.DirectDownloadPolicy;
 import com.richie.component.storage.bean.DirectUploadPolicy;
 import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.UploadResponse;
@@ -142,6 +143,27 @@ public interface StorageEngine {
                 .uploadUrl(key)
                 .headers(Map.of())
                 .formFields(Map.of())
+                .bucketName("")
+                .key(key)
+                .expireAt(OffsetDateTime.now().plusSeconds(safeExpireSeconds))
+                .fallback(true)
+                .build();
+    }
+
+
+    /**
+     * 生成客户端直读对象存储的统一策略（预签名下载 URL 或可用兜底链接）。
+     *
+     * @param key           对象存储键（业务 key，会由引擎补全 basePath）
+     * @param expireSeconds 策略有效期（秒）
+     * @return 直读策略
+     */
+    default DirectDownloadPolicy issueDirectDownloadPolicy(@Nonnull String key, int expireSeconds) {
+        int safeExpireSeconds = Math.max(expireSeconds, 60);
+        return DirectDownloadPolicy.builder()
+                .success(false)
+                .errorMessage("当前存储引擎暂不支持签发直读策略，请使用服务端下载。")
+                .downloadUrl("")
                 .bucketName("")
                 .key(key)
                 .expireAt(OffsetDateTime.now().plusSeconds(safeExpireSeconds))
