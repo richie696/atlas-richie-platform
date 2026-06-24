@@ -1,7 +1,10 @@
 package com.richie.component.ai.config;
 
 import com.richie.component.ai.support.AiChatOptionsResolver;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
+import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -14,6 +17,7 @@ import org.springframework.core.retry.RetryPolicy;
 import org.springframework.core.retry.RetryTemplate;
 
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -52,6 +56,7 @@ class AiChatClientFactoryTest {
         AiChatClientFactory factory = new AiChatClientFactory(
                 new AiChatOptionsResolver(),
                 stubObservationProvider(),
+                stubMeterRegistryProvider(),
                 retryTemplate
         );
         assertNotNull(factory);
@@ -61,38 +66,30 @@ class AiChatClientFactoryTest {
         return new StaticObjectProvider<>(ObservationRegistry.NOOP);
     }
 
+    private static ObjectProvider<MeterRegistry> stubMeterRegistryProvider() {
+        return new StaticObjectProvider<>(new SimpleMeterRegistry());
+    }
+
     /**
      * 最简 {@link ChatModel} 实现：固定返回预设文本，可用于单测中验证 {@link ChatClient} 调用链路。
      */
-    private static final class StubChatModel implements ChatModel {
-
-        private final String content;
-
-        private StubChatModel(String content) {
-            this.content = content;
-        }
+    private record StubChatModel(String content) implements ChatModel {
 
         @Override
-        public ChatResponse call(Prompt prompt) {
+        public @Nonnull ChatResponse call(@Nonnull Prompt prompt) {
             return new ChatResponse(List.of(new Generation(new AssistantMessage(content))));
         }
     }
 
-    private static final class StaticObjectProvider<T> implements ObjectProvider<T> {
-
-        private final T value;
-
-        private StaticObjectProvider(T value) {
-            this.value = value;
-        }
+    private record StaticObjectProvider<T>(T value) implements ObjectProvider<T> {
 
         @Override
-        public T getObject() {
+        public @Nonnull T getObject() {
             return value;
         }
 
         @Override
-        public T getObject(Object... args) {
+        public @Nonnull T getObject(@Nonnull Object... args) {
             return value;
         }
 
@@ -107,17 +104,17 @@ class AiChatClientFactoryTest {
         }
 
         @Override
-        public T getIfAvailable(java.util.function.Supplier<T> defaultSupplier) {
+        public @Nonnull T getIfAvailable(@Nonnull Supplier<T> defaultSupplier) {
             return value != null ? value : defaultSupplier.get();
         }
 
         @Override
-        public Stream<T> stream() {
+        public @Nonnull Stream<T> stream() {
             return Stream.of(value);
         }
 
         @Override
-        public Stream<T> orderedStream() {
+        public @Nonnull Stream<T> orderedStream() {
             return Stream.of(value);
         }
     }

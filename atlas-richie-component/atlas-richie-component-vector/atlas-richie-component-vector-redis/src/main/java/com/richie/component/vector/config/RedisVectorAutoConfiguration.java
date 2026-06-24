@@ -1,7 +1,6 @@
 package com.richie.component.vector.config;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
@@ -10,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.RedisClient;
 
 @Slf4j
 @Configuration
@@ -30,16 +29,10 @@ public class RedisVectorAutoConfiguration {
         jedisConnFactory.afterPropertiesSet();
         String host = jedisConnFactory.getHostName();
         int port = jedisConnFactory.getPort();
-        JedisPooled jedisPooled;
-        GenericObjectPoolConfig<redis.clients.jedis.Connection> poolConfig = jedisConnFactory.getPoolConfig();
-        if (poolConfig != null) {
-            jedisPooled = new JedisPooled(poolConfig, host, port);
-        } else {
-            jedisPooled = new JedisPooled(host, port);
-        }
+        RedisClient redisClient = RedisClient.builder().hostAndPort(host, port).build();
         String indexName = vectorProperties.getDefaultIndex();
         log.info("初始化Redis向量存储，索引名: {}", indexName);
-        return RedisVectorStore.builder(jedisPooled, embeddingModel)
+        return RedisVectorStore.builder(redisClient, embeddingModel)
                 .indexName(indexName)
                 .initializeSchema(true)
                 .build();

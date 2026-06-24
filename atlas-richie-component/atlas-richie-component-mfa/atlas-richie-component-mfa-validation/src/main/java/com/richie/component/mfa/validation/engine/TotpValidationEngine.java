@@ -321,11 +321,8 @@ public class TotpValidationEngine {
             log.warn("不支持的算法: {}，使用配置中的默认算法", algorithm);
         }
 
-        // 从配置中读取默认算法（优先使用 algorithm，如果没有则使用 defaultAlgorithm）
+        // 从配置中读取默认算法（优先使用 algorithm）
         String defaultAlgorithm = properties.getTotp().getAlgorithm();
-        if (defaultAlgorithm == null || defaultAlgorithm.isEmpty()) {
-            defaultAlgorithm = properties.getTotp().getAlgorithm();
-        }
         if (defaultAlgorithm == null || defaultAlgorithm.isEmpty()) {
             // 最后的兜底：使用 SHA1（RFC 6238 标准）
             log.debug("配置中未设置默认算法，使用 SHA1（RFC 6238 标准）");

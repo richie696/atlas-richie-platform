@@ -50,4 +50,66 @@ class MfaAuditEventTest {
         assertThat(event.getErrorMessage()).isEqualTo("验证码无效");
         assertThat(event.getDurationMs()).isEqualTo(150L);
     }
+
+    @Test
+    void builder_allSetters_chainsCorrectly() {
+        // Test all builder setters are accessible and chain correctly
+        MfaAuditEvent event = MfaAuditEvent.builder(this)
+                .tenantId("tenant-x")
+                .userId("user-x")
+                .operationType(MfaOperationTypeEnum.BIND)
+                .authMethod("TOTP")
+                .ipAddress("10.0.0.1")
+                .userAgent("TestAgent/1.0")
+                .deviceId("device-abc")
+                .result("SUCCESS")
+                .errorCode(null)
+                .errorMessage(null)
+                .durationMs(0L)
+                .timestamp(null)
+                .build();
+
+        assertThat(event.getTenantId()).isEqualTo("tenant-x");
+        assertThat(event.getUserId()).isEqualTo("user-x");
+        assertThat(event.getOperationType()).isEqualTo(MfaOperationTypeEnum.BIND);
+        assertThat(event.getAuthMethod()).isEqualTo("TOTP");
+        assertThat(event.getIpAddress()).isEqualTo("10.0.0.1");
+        assertThat(event.getUserAgent()).isEqualTo("TestAgent/1.0");
+        assertThat(event.getDeviceId()).isEqualTo("device-abc");
+        assertThat(event.getResult()).isEqualTo("SUCCESS");
+        assertThat(event.getErrorCode()).isNull();
+        assertThat(event.getErrorMessage()).isNull();
+        assertThat(event.getDurationMs()).isEqualTo(0L);
+    }
+
+    @Test
+    void constructor_withNullTimestamp_usesCurrentTime() {
+        MfaAuditEvent event = new MfaAuditEvent(
+                this,
+                "t1",
+                "u1",
+                MfaOperationTypeEnum.UNBIND,
+                "EMAIL",
+                "1.2.3.4",
+                "Bot",
+                "dev-1",
+                "SUCCESS",
+                null,
+                null,
+                42L,
+                null // null timestamp
+        );
+
+        assertThat(event.getTenantId()).isEqualTo("t1");
+        assertThat(event.getUserId()).isEqualTo("u1");
+        assertThat(event.getOperationType()).isEqualTo(MfaOperationTypeEnum.UNBIND);
+        assertThat(event.getAuthMethod()).isEqualTo("EMAIL");
+        assertThat(event.getIpAddress()).isEqualTo("1.2.3.4");
+        assertThat(event.getUserAgent()).isEqualTo("Bot");
+        assertThat(event.getDeviceId()).isEqualTo("dev-1");
+        assertThat(event.getResult()).isEqualTo("SUCCESS");
+        assertThat(event.getDurationMs()).isEqualTo(42L);
+        assertThat(event.getEventTimestamp()).isNotNull();
+        assertThat(event.getEventTimestamp()).isEqualTo(event.getEventTimestamp()); // not null, uses now()
+    }
 }

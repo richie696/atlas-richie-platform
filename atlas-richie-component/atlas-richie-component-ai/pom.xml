@@ -32,10 +32,6 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-anthropic</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-model-minimax</artifactId>
-        </dependency>
 
         <!-- M8 增量：可观测 + 重试 + 工具调用 -->
         <dependency>

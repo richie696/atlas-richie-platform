@@ -27,6 +27,11 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Set;
 
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -334,6 +339,104 @@ class MfaValidationServiceImplTest {
 
             assertThat(result.isAccountLocked()).isTrue();
             assertThat(result.getErrorCode()).isEqualTo("ACCOUNT_LOCKED");
+        }
+    }
+
+    @Test
+    void verifyMfaCode_nullStatus_returnsMfaNotEnabled() {
+        MfaUserInfo userInfo = new MfaUserInfo();
+        // Do not set status - tests null-status branch at lines 158-163
+
+        try (MockedStatic<GlobalCache> cache = mockStatic(GlobalCache.class)) {
+            cache.when(GlobalCache::struct).thenReturn(structOps);
+            when(structOps.get(anyString(), eq(MfaUserInfo.class))).thenReturn(userInfo);
+
+            var result = validationService.verifyMfaCode("u1", null, "123456");
+
+            assertThat(result.getErrorCode()).isEqualTo("MFA_NOT_ENABLED");
+        }
+    }
+
+    @Test
+    void verifyMfaCode_kmsThrowsException_returnsVerifyError() {
+        MfaUserInfo userInfo = enabledUser();
+        when(replayService.isCodeUsed(eq("u1"), isNull(), anyLong())).thenReturn(false);
+        when(keyManagementProvider.isAvailable()).thenReturn(true);
+        when(keyManagementProvider.retrieveSecret(anyString())).thenThrow(new RuntimeException("simulated KMS error"));
+
+        try (MockedStatic<GlobalCache> cache = mockStatic(GlobalCache.class)) {
+            cache.when(GlobalCache::struct).thenReturn(structOps);
+            when(structOps.get(anyString(), eq(MfaUserInfo.class))).thenReturn(userInfo);
+
+            var result = validationService.verifyMfaCode("u1", null, "123456");
+
+            assertThat(result.getErrorCode()).isEqualTo("MFA_VERIFY_ERROR");
+        }
+    }
+
+    @Test
+    void verifyMfaCode_withTenantId_usesTenantInSecretReference() {
+        MfaUserInfo userInfo = enabledUser();
+        when(replayService.isCodeUsed(eq("u1"), eq("tenant-1"), anyLong())).thenReturn(false);
+        when(keyManagementProvider.isAvailable()).thenReturn(true);
+        when(keyManagementProvider.retrieveSecret("mfa/tenant-1/u1")).thenReturn("SECRET");
+        when(totpEngine.verifyCode(eq("SECRET"), eq("654321"), eq("u1"), eq("tenant-1"), anyInt(),
+                eq("SHA1"), eq(30), eq(6))).thenReturn(true);
+
+        try (MockedStatic<GlobalCache> cache = mockStatic(GlobalCache.class)) {
+            cache.when(GlobalCache::struct).thenReturn(structOps);
+            cache.when(GlobalCache::key).thenReturn(keyOps);
+            when(structOps.get(anyString(), eq(MfaUserInfo.class))).thenReturn(userInfo);
+
+            var result = validationService.verifyMfaCode("u1", "tenant-1", "654321");
+
+            assertThat(result.isSuccess()).isTrue();
+            verify(keyManagementProvider).retrieveSecret("mfa/tenant-1/u1");
+        }
+    }
+
+    @Test
+    void checkTrustedDevice_nullDevice_returnsMfaRequired() {
+        try (MockedStatic<GlobalCache> cache = mockStatic(GlobalCache.class)) {
+            cache.when(GlobalCache::struct).thenReturn(structOps);
+            when(structOps.get(anyString(), eq(MfaTrustedDevice.class))).thenReturn(null);
+
+            var result = validationService.checkTrustedDevice("u1", null, "unknown-device");
+
+            assertThat(result.isMfaRequired()).isTrue();
+            assertThat(result.isTrustedDevice()).isFalse();
+        }
+    }
+
+    @Test
+    void verifyMfaCode_withEventPublisherAndRequestContext_publishesAuditEvent() {
+        MfaUserInfo userInfo = enabledUser();
+        when(replayService.isCodeUsed(eq("u1"), isNull(), anyLong())).thenReturn(false);
+        when(keyManagementProvider.isAvailable()).thenReturn(true);
+        when(keyManagementProvider.retrieveSecret("mfa/u1")).thenReturn("SECRET");
+        when(totpEngine.verifyCode(anyString(), anyString(), anyString(), isNull(), anyInt(),
+                anyString(), anyInt(), anyInt())).thenReturn(false);
+
+        ApplicationEventPublisher mockEventPublisher = mock(ApplicationEventPublisher.class);
+        ReflectionTestUtils.setField(validationService, "eventPublisher", mockEventPublisher);
+
+        MockHttpServletRequest mockRequest = new MockHttpServletRequest();
+        mockRequest.setRemoteAddr("192.168.1.100");
+        mockRequest.addHeader("User-Agent", "TestBrowser/1.0");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(mockRequest));
+
+        try (MockedStatic<GlobalCache> cache = mockStatic(GlobalCache.class)) {
+            cache.when(GlobalCache::struct).thenReturn(structOps);
+            cache.when(GlobalCache::value).thenReturn(valueOps);
+            when(structOps.get(anyString(), eq(MfaUserInfo.class))).thenReturn(userInfo);
+            when(valueOps.increment(anyString(), eq(1L), anyLong())).thenReturn(1L);
+
+            var result = validationService.verifyMfaCode("u1", null, "000000");
+
+            assertThat(result.getErrorCode()).isEqualTo("MFA_CODE_INVALID");
+            verify(mockEventPublisher).publishEvent(any());
+        } finally {
+            RequestContextHolder.resetRequestAttributes();
         }
     }
 

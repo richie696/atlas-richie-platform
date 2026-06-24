@@ -166,3 +166,4 @@ target
 # It's machine-local runtime state, not source — keep it out of git.
 # Only the agent.md files under .harness/reins/<name>/ are version-controlled.
 /.harness/reins/*/opencode/
+/.omo/

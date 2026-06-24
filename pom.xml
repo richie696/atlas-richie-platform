@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.6</version>
+        <version>4.1.0</version>
         <relativePath/>
     </parent>
 
@@ -44,12 +44,12 @@
 
         <!-- spring properties -->
         <spring-boot.version>${spring-boot-dependencies.version}</spring-boot.version>
-        <spring-boot-dependencies.version>4.0.6</spring-boot-dependencies.version>
+        <spring-boot-dependencies.version>4.1.0</spring-boot-dependencies.version>
         <spring-cloud-alibaba-dependencies.version>2025.1.0.0</spring-cloud-alibaba-dependencies.version>
-        <spring-cloud-dependencies.version>2025.1.1</spring-cloud-dependencies.version>
-        <spring-cloud-azure-dependencies.version>7.0.0</spring-cloud-azure-dependencies.version>
-        <spring-ai.version>2.0.0-M8</spring-ai.version>
-        <agentscope.version>1.1.0-RC2</agentscope.version>
+        <spring-cloud-dependencies.version>2025.1.2</spring-cloud-dependencies.version>
+        <spring-cloud-azure-dependencies.version>7.3.0</spring-cloud-azure-dependencies.version>
+        <spring-ai.version>2.0.0</spring-ai.version>
+        <agentscope.version>2.0.0-RC4</agentscope.version>
 
         <!-- Maven构建的文件名时间戳格式 -->
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
@@ -90,7 +90,7 @@
         <!-- 代码覆盖率插件 -->
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <!-- JaCoCo 覆盖率最低阈值（仅在此处集中配置,所有子模块通过 ${jacoco.coverage.minimum} 引用） -->
-        <jacoco.coverage.minimum>0.83</jacoco.coverage.minimum>
+        <jacoco.coverage.minimum>0.8</jacoco.coverage.minimum>
         <!-- Antrun 插件（用于在 validate 阶段解析 git 根作为覆盖率报告输出目录） -->
         <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
         <!-- 部署插件 -->

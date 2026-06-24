@@ -7,7 +7,6 @@ import org.springframework.ai.anthropic.AnthropicChatOptions;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.deepseek.DeepSeekChatOptions;
 import org.springframework.ai.deepseek.api.DeepSeekApi;
-import org.springframework.ai.minimax.MiniMaxChatOptions;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.ollama.api.OllamaModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
@@ -79,10 +78,9 @@ public class AiChatOptionsResolver {
     public ChatOptions toChatOptions(AiModelProperties.AiProviderType provider,
                                      AiModelProperties.AiModelOptions options) {
         return switch (provider) {
-            case OPENAI, ZHIPUAI, MOONSHOT -> toOpenAiChatOptions(options);
+            case OPENAI, ZHIPUAI, MOONSHOT, MINIMAX -> toOpenAiChatOptions(options);
             case DEEPSEEK -> toDeepSeekChatOptions(options);
             case ANTHROPIC -> toAnthropicChatOptions(options);
-            case MINIMAX -> toMiniMaxChatOptions(options);
             case OLLAMA -> toOllamaChatOptions(options);
         };
     }
@@ -97,10 +95,6 @@ public class AiChatOptionsResolver {
 
     public AnthropicChatOptions toAnthropicChatOptions(AiModelProperties.AiModelOptions options) {
         return buildAnthropic(options);
-    }
-
-    public MiniMaxChatOptions toMiniMaxChatOptions(AiModelProperties.AiModelOptions options) {
-        return buildMiniMax(options);
     }
 
     public OllamaChatOptions toOllamaChatOptions(AiModelProperties.AiModelOptions options) {
@@ -218,33 +212,6 @@ public class AiChatOptionsResolver {
         return builder.build();
     }
 
-    private MiniMaxChatOptions buildMiniMax(AiModelProperties.AiModelOptions options) {
-        if (options == null) {
-            return MiniMaxChatOptions.builder().build();
-        }
-        var builder = MiniMaxChatOptions.builder();
-        applyModelName(builder, options.getModel());
-        if (options.getMaxTokens() != null) {
-            builder.maxTokens(options.getMaxTokens());
-        }
-        if (options.getTemperature() != null) {
-            builder.temperature(options.getTemperature());
-        }
-        if (options.getTopP() != null) {
-            builder.topP(options.getTopP());
-        }
-        if (options.getFrequencyPenalty() != null) {
-            builder.frequencyPenalty(options.getFrequencyPenalty());
-        }
-        if (options.getPresencePenalty() != null) {
-            builder.presencePenalty(options.getPresencePenalty());
-        }
-        if (options.getStop() != null && !options.getStop().isEmpty()) {
-            builder.stop(options.getStop());
-        }
-        return builder.build();
-    }
-
     private OllamaChatOptions buildOllama(AiModelProperties.AiModelOptions options) {
         if (options == null) {
             return OllamaChatOptions.builder().build();
@@ -291,9 +258,7 @@ public class AiChatOptionsResolver {
             return;
         }
         for (OllamaModel ollamaModel : OllamaModel.values()) {
-            if (modelName.equals(ollamaModel.id())
-                    || modelName.equals(ollamaModel.getName())
-                    || modelName.equalsIgnoreCase(ollamaModel.name())) {
+            if (modelName.equals(ollamaModel.id()) || modelName.equalsIgnoreCase(ollamaModel.name())) {
                 builder.model(ollamaModel);
                 return;
             }

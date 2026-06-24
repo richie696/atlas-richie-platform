@@ -4,6 +4,8 @@ import com.richie.component.ai.model.ModelOptions;
 import com.richie.component.ai.support.AiChatOptionsResolver;
 import com.openai.client.OpenAIClient;
 import com.openai.client.OpenAIClientAsync;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.anthropic.AnthropicChatModel;
@@ -14,8 +16,6 @@ import org.springframework.ai.deepseek.DeepSeekChatModel;
 import org.springframework.ai.deepseek.api.DeepSeekApi;
 import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.minimax.MiniMaxChatModel;
-import org.springframework.ai.minimax.api.MiniMaxApi;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.OllamaEmbeddingModel;
@@ -48,13 +48,16 @@ public class AiChatClientFactory {
 
     private final AiChatOptionsResolver optionsResolver;
     private final ObservationRegistry observationRegistry;
+    private final MeterRegistry meterRegistry;
     private final RetryTemplate retryTemplate;
 
     public AiChatClientFactory(AiChatOptionsResolver optionsResolver,
                                ObjectProvider<ObservationRegistry> observationRegistryProvider,
+                               ObjectProvider<MeterRegistry> meterRegistryProvider,
                                RetryTemplate retryTemplate) {
         this.optionsResolver = optionsResolver;
         this.observationRegistry = observationRegistryProvider.getIfAvailable(() -> ObservationRegistry.NOOP);
+        this.meterRegistry = meterRegistryProvider.getIfAvailable(SimpleMeterRegistry::new);
         this.retryTemplate = retryTemplate;
     }
 
@@ -95,7 +98,7 @@ public class AiChatClientFactory {
 
     public ChatClient createChatClient(String modelName, AiModelProperties.AiModel aiModel) {
         ChatModel chatModel = switch (aiModel.getProvider()) {
-            case OPENAI, ZHIPUAI, MOONSHOT -> buildOpenAiChatModel(aiModel);
+            case OPENAI, ZHIPUAI, MOONSHOT, MINIMAX -> buildOpenAiChatModel(aiModel);
             case DEEPSEEK -> {
                 DeepSeekApi deepSeekApi = DeepSeekApi.builder()
                         .apiKey(aiModel.getApiKey())
@@ -120,22 +123,8 @@ public class AiChatClientFactory {
                         .observationRegistry(observationRegistry)
                         .build();
             }
-            case MINIMAX -> {
-                MiniMaxApi miniMaxApi = new MiniMaxApi(
-                        aiModel.getBaseUrl(),
-                        aiModel.getApiKey()
-                );
-                yield new MiniMaxChatModel(
-                        miniMaxApi,
-                        optionsResolver.toMiniMaxChatOptions(aiModel.getOptions()),
-                        ToolCallingManager.builder().build(),
-                        retryTemplate,
-                        observationRegistry,
-                        (options, response) -> false
-                );
-            }
             default -> OllamaChatModel.builder()
-                    .defaultOptions(optionsResolver.toOllamaChatOptions(aiModel.getOptions()))
+                    .options(optionsResolver.toOllamaChatOptions(aiModel.getOptions()))
                     .ollamaApi(OllamaApi.builder()
                             .baseUrl(aiModel.getBaseUrl())
                             .build())
@@ -154,7 +143,7 @@ public class AiChatClientFactory {
                     .ollamaApi(OllamaApi.builder()
                             .baseUrl(aiModel.getBaseUrl())
                             .build())
-                    .defaultOptions(getOllamaEmbeddingOptions(aiModel.getOptions()))
+                    .options(getOllamaEmbeddingOptions(aiModel.getOptions()))
                     .observationRegistry(observationRegistry)
                     .build();
         };
@@ -179,7 +168,10 @@ public class AiChatClientFactory {
                 timeout,
                 maxRetries,
                 chatOptions.getProxy(),
-                chatOptions.getCustomHeaders()
+                chatOptions.getCustomHeaders(),
+                observationRegistry,
+                meterRegistry,
+                List.of()
         );
         OpenAIClientAsync asyncClient = OpenAiSetup.setupAsyncClient(
                 aiModel.getBaseUrl(),
@@ -194,7 +186,10 @@ public class AiChatClientFactory {
                 timeout,
                 maxRetries,
                 chatOptions.getProxy(),
-                chatOptions.getCustomHeaders()
+                chatOptions.getCustomHeaders(),
+                observationRegistry,
+                meterRegistry,
+                List.of()
         );
 
         return OpenAiChatModel.builder()
@@ -220,19 +215,22 @@ public class AiChatClientFactory {
                 DEFAULT_TIMEOUT,
                 DEFAULT_MAX_RETRIES,
                 null,
-                null
+                null,
+                observationRegistry,
+                meterRegistry,
+                List.of()
         );
 
         OpenAiEmbeddingOptions.Builder embeddingOptionsBuilder = OpenAiEmbeddingOptions.builder();
         if (modelName != null) {
             embeddingOptionsBuilder.model(modelName);
         }
-        return new OpenAiEmbeddingModel(
-                client,
-                MetadataMode.EMBED,
-                embeddingOptionsBuilder.build(),
-                observationRegistry
-        );
+        return OpenAiEmbeddingModel.builder()
+                .openAiClient(client)
+                .metadataMode(MetadataMode.EMBED)
+                .options(embeddingOptionsBuilder.build())
+                .observationRegistry(observationRegistry)
+                .build();
     }
 
     private String resolveConfiguredModel(AiModelProperties.AiModel aiModel) {

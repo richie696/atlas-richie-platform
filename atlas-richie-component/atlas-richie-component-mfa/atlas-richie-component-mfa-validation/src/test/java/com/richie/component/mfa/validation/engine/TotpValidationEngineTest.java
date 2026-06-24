@@ -110,6 +110,43 @@ class TotpValidationEngineTest {
         assertThat(badConfigEngine.verifyCode(SECRET, code, "u1", null, 1)).isTrue();
     }
 
+    @Test
+    void normalizeAlgorithm_nullAlgorithm_fallsBackToConfigDefault() {
+        MfaProperties props = new MfaProperties();
+        props.getTotp().setAlgorithm("SHA256");
+        props.getTotp().setTimeWindow(30);
+        props.getTotp().setCodeLength(6);
+        TotpValidationEngine engine = new TotpValidationEngine(props);
+        String code = totpAtSha256(Instant.now().getEpochSecond(), 30, 6);
+
+        // Pass null algorithm, should use config default SHA256
+        assertThat(engine.verifyCode(SECRET, code, "u1", null, 1, null, 30, 6)).isTrue();
+    }
+
+    @Test
+    void generateCode_invalidBase32Secret_throwsRuntimeException() throws Exception {
+        // Use reflection to directly test the private generateCode method
+        // since Commons Codec's Base32 is too lenient to throw on invalid input
+        java.lang.reflect.Method generateCodeMethod = TotpValidationEngine.class.getDeclaredMethod(
+                "generateCode", String.class, long.class, int.class, String.class);
+        generateCodeMethod.setAccessible(true);
+
+        // Passing null will cause NPE in Base32.decode() which is caught and rethrown as RuntimeException
+        try {
+            generateCodeMethod.invoke(engine, null, 12345L, 6, "SHA1");
+            org.junit.jupiter.api.Assertions.fail("Expected RuntimeException to be thrown");
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            org.junit.jupiter.api.Assertions.assertInstanceOf(RuntimeException.class, e.getCause());
+        }
+    }
+
+    @Test
+    void normalizeAlgorithm_hmacPrefix_stripsHmacAndReturnsSha1() {
+        // Algorithm = "HmacSHA1" should trigger replaceFirst("^Hmac", "") path
+        String code = totpAt(Instant.now().getEpochSecond(), 30, 6);
+        assertThat(engine.verifyCode(SECRET, code, "u1", null, 1, "HmacSHA1", 30, 6)).isTrue();
+    }
+
     private static String totpAt(long epochSeconds, int period, int digits) {
         long counter = epochSeconds / period;
         byte[] key = new Base32().decode(SECRET);
