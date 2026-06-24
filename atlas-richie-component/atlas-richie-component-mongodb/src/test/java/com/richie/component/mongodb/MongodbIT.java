@@ -17,7 +17,7 @@ class MongodbIT {
     @Autowired
     private Mongodb mongodb;
 
-    private Class<TestDoc> docClass = TestDoc.class;
+    private final Class<TestDoc> docClass = TestDoc.class;
 
     @BeforeEach
     void cleanUp() {

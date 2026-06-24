@@ -21,44 +21,30 @@ public final class MongoContainerSupport {
     private static final String DEFAULT_PASSWORD = "it_pass";
     private static final String DEFAULT_DATABASE = "it_mongo";
 
-    private final String[] envPrefixes;
-    private final DockerImageName image;
-    private final String unavailableMessage;
-
     private final ContainerMode mode;
     private final String skipReason;
     private final String uri;
     private final String database;
     private final String username;
     private final String password;
-    @SuppressWarnings("resource")
-    private final GenericContainer<?> container;
 
     static {
         TestcontainersEnvironment.ensureConfigured();
     }
 
     private MongoContainerSupport(
-            String[] envPrefixes,
-            DockerImageName image,
-            String unavailableMessage,
             ContainerMode mode,
             String skipReason,
             String uri,
             String database,
             String username,
-            String password,
-            GenericContainer<?> container) {
-        this.envPrefixes = envPrefixes;
-        this.image = image;
-        this.unavailableMessage = unavailableMessage;
+            String password) {
         this.mode = mode;
         this.skipReason = skipReason;
         this.uri = uri;
         this.database = database;
         this.username = username;
         this.password = password;
-        this.container = container;
     }
 
     public static MongoContainerSupport resolve(
@@ -89,12 +75,9 @@ public final class MongoContainerSupport {
         }
 
         return new MongoContainerSupport(
-                envPrefixes,
-                image,
-                unavailableMessage,
                 ContainerMode.UNAVAILABLE,
                 unavailableMessage,
-                null, null, null, null, null);
+                null, null, null, null);
     }
 
     public boolean isAvailable() {
@@ -155,16 +138,12 @@ public final class MongoContainerSupport {
                 + host + ":" + port + "/" + DEFAULT_DATABASE + "?authSource=admin";
 
         return new MongoContainerSupport(
-                envPrefixes,
-                image,
-                unavailableMessage,
                 ContainerMode.TESTCONTAINERS,
                 null,
                 uri,
                 DEFAULT_DATABASE,
                 DEFAULT_USER,
-                DEFAULT_PASSWORD,
-                mongo);
+                DEFAULT_PASSWORD);
     }
 
     private static MongoContainerSupport resolveExternal(
@@ -173,16 +152,12 @@ public final class MongoContainerSupport {
         String uri = firstEnv(envPrefixes, "URI", "uri");
         if (uri != null) {
             return new MongoContainerSupport(
-                    envPrefixes,
-                    imagePlaceholder(),
-                    unavailableMessage,
                     ContainerMode.EXTERNAL,
                     null,
                     uri,
                     firstEnv(envPrefixes, "DATABASE", "database", DEFAULT_DATABASE),
                     firstEnv(envPrefixes, "USERNAME", "username"),
-                    firstEnv(envPrefixes, "PASSWORD", "password"),
-                    null);
+                    firstEnv(envPrefixes, "PASSWORD", "password"));
         }
 
         String host = firstEnv(envPrefixes, "HOST", "host");
@@ -193,16 +168,12 @@ public final class MongoContainerSupport {
             String db = firstEnv(envPrefixes, "DATABASE", "database", DEFAULT_DATABASE);
             String builtUri = "mongodb://" + user + ":" + pass + "@" + host + ":" + port + "/" + db;
             return new MongoContainerSupport(
-                    envPrefixes,
-                    imagePlaceholder(),
-                    unavailableMessage,
                     ContainerMode.EXTERNAL,
                     null,
                     builtUri,
                     db,
                     user,
-                    pass,
-                    null);
+                    pass);
         }
         return null;
     }
@@ -228,9 +199,5 @@ public final class MongoContainerSupport {
 
     private static String toPropertyKey(String prefix) {
         return prefix.toLowerCase().replace('_', '.');
-    }
-
-    private static DockerImageName imagePlaceholder() {
-        return DockerImageName.parse("mongo:7.0");
     }
 }

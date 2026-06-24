@@ -4,7 +4,6 @@ import com.richie.component.vector.config.VectorProperties;
 import com.richie.component.vector.model.VectorDocument;
 import com.richie.component.vector.model.VectorSearchResult;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -78,7 +77,7 @@ class RedisVectorServiceImplTest {
     void afterPropertiesSet_whenNotRedisVectorStore_shouldReturnEarly() {
         VectorStore nonRedisStore = mock(VectorStore.class);
         RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(nonRedisStore, embeddingModel);
-        assertDoesNotThrow(() -> otherService.afterPropertiesSet());
+        assertDoesNotThrow(otherService::afterPropertiesSet);
     }
 
     @Test
@@ -86,7 +85,7 @@ class RedisVectorServiceImplTest {
         when(redisVectorStore.getNativeClient()).thenReturn(Optional.empty());
         RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(redisVectorStore, embeddingModel);
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> otherService.afterPropertiesSet());
+                otherService::afterPropertiesSet);
         assertTrue(ex.getMessage().contains("无法获取Jedis客户端"));
     }
 
@@ -525,8 +524,8 @@ class RedisVectorServiceImplTest {
 
         // Empty array means no content extracted, but ID should still be set
         assertThat(docs).hasSize(1);
-        assertThat(docs.get(0).getId()).isEqualTo("doc1");
-        assertThat(docs.get(0).getContent()).isNull();
+        assertThat(docs.getFirst().getId()).isEqualTo("doc1");
+        assertThat(docs.getFirst().getContent()).isNull();
     }
 
     @Test
