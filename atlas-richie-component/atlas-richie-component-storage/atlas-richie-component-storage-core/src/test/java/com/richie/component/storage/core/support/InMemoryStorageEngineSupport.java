@@ -8,6 +8,7 @@ import com.richie.component.storage.converter.StorageTypeConverter;
 import com.richie.component.storage.core.impl.AbstractObjectStorageEngine;
 import com.richie.component.storage.enums.StorageEngineEnum;
 import com.richie.component.storage.enums.StorageTypeEnum;
+import org.jspecify.annotations.NonNull;
 import tools.jackson.core.type.TypeReference;
 
 import java.io.File;
@@ -54,7 +55,7 @@ public final class InMemoryStorageEngineSupport {
         }
 
         @Override
-        public UploadResponse putObject(String key, InputStream inputStream) {
+        public UploadResponse putObject(@NonNull String key, @NonNull InputStream inputStream) {
             try {
                 Path target = root.resolve(key);
                 Files.createDirectories(target.getParent());
@@ -66,7 +67,7 @@ public final class InMemoryStorageEngineSupport {
         }
 
         @Override
-        public UploadResponse putObject(String key, File file) {
+        public UploadResponse putObject(@NonNull String key, @NonNull File file) {
             try {
                 return putObject(key, new java.io.FileInputStream(file));
             } catch (java.io.FileNotFoundException e) {
@@ -75,35 +76,35 @@ public final class InMemoryStorageEngineSupport {
         }
 
         @Override
-        public UploadResponse putImage(String key, File file, ImageOptions options) {
+        public UploadResponse putImage(@NonNull String key, @NonNull File file, ImageOptions options) {
             return putObject(key, file);
         }
 
         @Override
-        public UploadResponse putImage(String key, InputStream inputStream, ImageOptions options) {
+        public UploadResponse putImage(@NonNull String key, @NonNull InputStream inputStream, ImageOptions options) {
             return putObject(key, inputStream);
         }
 
         @Override
-        public <T> com.richie.component.storage.bean.DownloadResponse<T> getData(String key,
-                TypeReference<T> typeReference) {
+        public <T> com.richie.component.storage.bean.DownloadResponse<T> getData(@NonNull String key,
+                                                                                 @NonNull TypeReference<T> typeReference) {
             return new com.richie.component.storage.bean.DownloadResponse<>();
         }
 
         @Override
-        public com.richie.component.storage.bean.DownloadResponse<byte[]> getObject(String key, File targetPath,
-                boolean returnData) {
+        public com.richie.component.storage.bean.DownloadResponse<byte[]> getObject(@NonNull String key, @NonNull File targetPath,
+                                                                                    boolean returnData) {
             return new com.richie.component.storage.bean.DownloadResponse<>();
         }
 
         @Override
-        public com.richie.component.storage.bean.DownloadResponse<byte[]> getResumableObject(String key,
-                String targetPath, boolean returnData) {
+        public com.richie.component.storage.bean.DownloadResponse<byte[]> getResumableObject(@NonNull String key,
+                                                                                             @NonNull String targetPath, boolean returnData) {
             return new com.richie.component.storage.bean.DownloadResponse<>();
         }
 
         @Override
-        public boolean existsObject(String key) {
+        public boolean existsObject(@NonNull String key) {
             return Files.exists(root.resolve(key));
         }
     }

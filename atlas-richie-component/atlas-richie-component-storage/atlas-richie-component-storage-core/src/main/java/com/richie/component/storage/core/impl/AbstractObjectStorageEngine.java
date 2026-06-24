@@ -11,6 +11,7 @@ import com.richie.component.storage.converter.StorageTypeConverter;
 import com.richie.component.storage.util.ObjectStorageKeys;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.annotation.Nonnull;
 
@@ -147,7 +148,7 @@ public abstract class AbstractObjectStorageEngine<T> extends AbstractDestroyEngi
     }
 
     @Override
-    public DirectUploadPolicy issueDirectUploadPolicy(String key, int expireSeconds) {
+    public DirectUploadPolicy issueDirectUploadPolicy(@NonNull String key, int expireSeconds) {
         return buildFallbackDirectUploadPolicy(key, expireSeconds);
     }
 
@@ -173,7 +174,7 @@ public abstract class AbstractObjectStorageEngine<T> extends AbstractDestroyEngi
     }
 
     @Override
-    public DirectDownloadPolicy issueDirectDownloadPolicy(String key, int expireSeconds) {
+    public DirectDownloadPolicy issueDirectDownloadPolicy(@NonNull String key, int expireSeconds) {
         return buildFallbackDirectDownloadPolicy(key, expireSeconds);
     }
 

@@ -8,6 +8,7 @@ import com.richie.component.storage.converter.StorageTypeConverter;
 import com.richie.component.storage.enums.AclTypeEnum;
 import com.richie.component.storage.enums.StorageEngineEnum;
 import com.richie.component.storage.enums.StorageTypeEnum;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -232,48 +233,48 @@ class AbstractObjectStorageEngineTest {
         }
 
         @Override
-        public com.richie.component.storage.bean.UploadResponse putObject(String key, java.io.InputStream inputStream) {
+        public com.richie.component.storage.bean.UploadResponse putObject(@NonNull String key, java.io.@NonNull InputStream inputStream) {
             return com.richie.component.storage.bean.UploadResponse.builder()
                     .success(true).key(getRealPath(key)).build();
         }
 
         @Override
-        public com.richie.component.storage.bean.UploadResponse putObject(String key, java.io.File file) {
+        public com.richie.component.storage.bean.UploadResponse putObject(@NonNull String key, java.io.@NonNull File file) {
             return putObject(key, new ByteArrayInputStream(new byte[0]));
         }
 
         @Override
-        public com.richie.component.storage.bean.UploadResponse putImage(String key, java.io.File file,
-                com.richie.component.storage.bean.image.ImageOptions options) {
+        public com.richie.component.storage.bean.UploadResponse putImage(@NonNull String key, java.io.@NonNull File file,
+                                                                         com.richie.component.storage.bean.image.ImageOptions options) {
             return putObject(key, file);
         }
 
         @Override
-        public com.richie.component.storage.bean.UploadResponse putImage(String key, java.io.InputStream inputStream,
-                com.richie.component.storage.bean.image.ImageOptions options) {
+        public com.richie.component.storage.bean.UploadResponse putImage(@NonNull String key, java.io.@NonNull InputStream inputStream,
+                                                                         com.richie.component.storage.bean.image.ImageOptions options) {
             return putObject(key, inputStream);
         }
 
         @Override
-        public <T> com.richie.component.storage.bean.DownloadResponse<T> getData(String key,
-                tools.jackson.core.type.TypeReference<T> typeReference) {
+        public <T> com.richie.component.storage.bean.DownloadResponse<T> getData(@NonNull String key,
+                                                                                 tools.jackson.core.type.@NonNull TypeReference<T> typeReference) {
             return new com.richie.component.storage.bean.DownloadResponse<>();
         }
 
         @Override
-        public com.richie.component.storage.bean.DownloadResponse<byte[]> getObject(String key, java.io.File targetPath,
-                boolean returnData) {
+        public com.richie.component.storage.bean.DownloadResponse<byte[]> getObject(@NonNull String key, java.io.@NonNull File targetPath,
+                                                                                    boolean returnData) {
             return new com.richie.component.storage.bean.DownloadResponse<>();
         }
 
         @Override
-        public com.richie.component.storage.bean.DownloadResponse<byte[]> getResumableObject(String key,
-                String targetPath, boolean returnData) {
+        public com.richie.component.storage.bean.DownloadResponse<byte[]> getResumableObject(@NonNull String key,
+                                                                                             @NonNull String targetPath, boolean returnData) {
             return new com.richie.component.storage.bean.DownloadResponse<>();
         }
 
         @Override
-        public boolean existsObject(String key) {
+        public boolean existsObject(@NonNull String key) {
             return false;
         }
     }
