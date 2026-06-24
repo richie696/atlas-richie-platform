@@ -139,7 +139,13 @@ public final class MongoContainerSupport {
                 .withEnv("MONGO_INITDB_ROOT_USERNAME", DEFAULT_USER)
                 .withEnv("MONGO_INITDB_ROOT_PASSWORD", DEFAULT_PASSWORD)
                 .withEnv("MONGO_INITDB_DATABASE", DEFAULT_DATABASE)
-                .waitingFor(Wait.forListeningPort());
+                // 使用 ping 命令等待 MongoDB 完全就绪（包括 init 脚本和用户创建完成），
+                // 仅依赖 forLogMessage("Waiting for connections") 可能在 init 脚本执行前就通过，
+                // 导致客户端握手阶段遭遇 Connection reset。
+                .waitingFor(Wait.forSuccessfulCommand(
+                                "mongosh --eval 'db.runCommand(\"ping\").ok' --quiet")
+                        .withStartupTimeout(java.time.Duration.ofSeconds(120)))
+                .withStartupTimeout(java.time.Duration.ofSeconds(180));
         mongo.start();
         Runtime.getRuntime().addShutdownHook(new Thread(mongo::stop));
 

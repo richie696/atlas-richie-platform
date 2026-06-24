@@ -15,7 +15,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.RedisClient;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 import redis.clients.jedis.search.FTCreateParams;
@@ -56,7 +56,7 @@ class RedisVectorServiceImplTest {
     private EmbeddingModel embeddingModel;
 
     @Mock
-    private JedisPooled jedisPooled;
+    private RedisClient jedisPooled;
 
     private RedisVectorServiceImpl vectorService;
 

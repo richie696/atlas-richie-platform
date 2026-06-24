@@ -29,10 +29,10 @@ public class RedisVectorAutoConfiguration {
         jedisConnFactory.afterPropertiesSet();
         String host = jedisConnFactory.getHostName();
         int port = jedisConnFactory.getPort();
-        RedisClient redisClient = RedisClient.builder().hostAndPort(host, port).build();
+        RedisClient jedisClient = RedisClient.builder().hostAndPort(host, port).build();
         String indexName = vectorProperties.getDefaultIndex();
         log.info("初始化Redis向量存储，索引名: {}", indexName);
-        return RedisVectorStore.builder(redisClient, embeddingModel)
+        return RedisVectorStore.builder(jedisClient, embeddingModel)
                 .indexName(indexName)
                 .initializeSchema(true)
                 .build();

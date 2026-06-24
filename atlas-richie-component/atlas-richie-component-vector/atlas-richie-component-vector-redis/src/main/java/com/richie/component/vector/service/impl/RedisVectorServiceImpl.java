@@ -12,7 +12,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.RedisClient;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.search.FTCreateParams;
 import redis.clients.jedis.search.IndexDataType;
@@ -51,13 +51,13 @@ public class RedisVectorServiceImpl extends VectorServiceImpl implements VectorS
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             return;
         }
-        Optional<JedisPooled> nativeClient = rvs.getNativeClient();
+        Optional<RedisClient> nativeClient = rvs.getNativeClient();
         if (nativeClient.isEmpty()) {
             throw new IllegalStateException(
                     "Redis向量搜索不可用：无法获取Jedis客户端。"
                     + "请确保Redis版本>=7.0且已加载RediSearch模块（Redis Stack）");
         }
-        JedisPooled jedis = nativeClient.get();
+        RedisClient jedis = nativeClient.get();
         try {
             jedis.ftList();
         } catch (Exception e) {
@@ -74,11 +74,11 @@ public class RedisVectorServiceImpl extends VectorServiceImpl implements VectorS
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持向量搜索");
         }
-        Optional<JedisPooled> clientOpt = rvs.getNativeClient();
+        Optional<RedisClient> clientOpt = rvs.getNativeClient();
         if (clientOpt.isEmpty()) {
             throw new IllegalStateException("无法获取Jedis客户端");
         }
-        JedisPooled jedis = clientOpt.get();
+        RedisClient jedis = clientOpt.get();
         try {
             String queryStr = "*=>[KNN " + limit + " @embedding $BLOB AS score]";
             Query query = new Query(queryStr)
@@ -116,11 +116,11 @@ public class RedisVectorServiceImpl extends VectorServiceImpl implements VectorS
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持创建索引");
         }
-        Optional<JedisPooled> clientOpt = rvs.getNativeClient();
+        Optional<RedisClient> clientOpt = rvs.getNativeClient();
         if (clientOpt.isEmpty()) {
             throw new IllegalStateException("无法获取Jedis客户端");
         }
-        JedisPooled jedis = clientOpt.get();
+        RedisClient jedis = clientOpt.get();
 
         Map<String, Object> vectorAttrs = new HashMap<>();
         vectorAttrs.put("DIM", config.getDimension() != null ? config.getDimension() : 1536);
@@ -185,11 +185,11 @@ public class RedisVectorServiceImpl extends VectorServiceImpl implements VectorS
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持删除索引");
         }
-        Optional<JedisPooled> clientOpt = rvs.getNativeClient();
+        Optional<RedisClient> clientOpt = rvs.getNativeClient();
         if (clientOpt.isEmpty()) {
             throw new IllegalStateException("无法获取Jedis客户端");
         }
-        JedisPooled jedis = clientOpt.get();
+        RedisClient jedis = clientOpt.get();
         try {
             jedis.ftDropIndex(indexName);
             log.info("Redis向量索引删除成功: {}", indexName);
@@ -203,11 +203,11 @@ public class RedisVectorServiceImpl extends VectorServiceImpl implements VectorS
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             return false;
         }
-        Optional<JedisPooled> clientOpt = rvs.getNativeClient();
+        Optional<RedisClient> clientOpt = rvs.getNativeClient();
         if (clientOpt.isEmpty()) {
             return false;
         }
-        JedisPooled jedis = clientOpt.get();
+        RedisClient jedis = clientOpt.get();
         try {
             return jedis.ftList().contains(indexName);
         } catch (Exception e) {
@@ -220,11 +220,11 @@ public class RedisVectorServiceImpl extends VectorServiceImpl implements VectorS
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持获取索引配置");
         }
-        Optional<JedisPooled> clientOpt = rvs.getNativeClient();
+        Optional<RedisClient> clientOpt = rvs.getNativeClient();
         if (clientOpt.isEmpty()) {
             throw new IllegalStateException("无法获取Jedis客户端");
         }
-        JedisPooled jedis = clientOpt.get();
+        RedisClient jedis = clientOpt.get();
         try {
             Map<String, Object> info = jedis.ftInfo(indexName);
             VectorProperties.IndexConfig config = new VectorProperties.IndexConfig();
@@ -243,11 +243,11 @@ public class RedisVectorServiceImpl extends VectorServiceImpl implements VectorS
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持计数");
         }
-        Optional<JedisPooled> clientOpt = rvs.getNativeClient();
+        Optional<RedisClient> clientOpt = rvs.getNativeClient();
         if (clientOpt.isEmpty()) {
             throw new IllegalStateException("无法获取Jedis客户端");
         }
-        JedisPooled jedis = clientOpt.get();
+        RedisClient jedis = clientOpt.get();
         try {
             Map<String, Object> info = jedis.ftInfo(indexName);
             Object numDocs = info.get("num_docs");
@@ -264,11 +264,11 @@ public class RedisVectorServiceImpl extends VectorServiceImpl implements VectorS
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持列表查询");
         }
-        Optional<JedisPooled> clientOpt = rvs.getNativeClient();
+        Optional<RedisClient> clientOpt = rvs.getNativeClient();
         if (clientOpt.isEmpty()) {
             throw new IllegalStateException("无法获取Jedis客户端");
         }
-        JedisPooled jedis = clientOpt.get();
+        RedisClient jedis = clientOpt.get();
         try {
             String prefix = indexName + ":";
             ScanParams scanParams = new ScanParams().match(prefix + "*").count(500);

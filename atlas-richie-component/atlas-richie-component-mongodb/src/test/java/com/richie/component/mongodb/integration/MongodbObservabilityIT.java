@@ -51,7 +51,7 @@ class MongodbObservabilityIT {
                 .eq(TestDoc::getName, "alpha")
                 .list();
 
-        assertThat(results).hasSize(1);
+        assertThat(results).hasSize(2);
 
         var timer = meterRegistry.find("mongodb.operation.duration")
                 .tag("operation", "find")

@@ -113,7 +113,7 @@ public class MongodbAutoConfiguration {
                             .maxConnectionIdleTime(config.getConnectionIdleTime(), TimeUnit.MILLISECONDS)) // 最大空闲时间
                     // Socket超时设置
                     .applyToSocketSettings(builder -> builder
-                            .readTimeout(config.getConnectTimeoutMs(), TimeUnit.MILLISECONDS) // 读超时
+                            .readTimeout(config.getSocketTimeoutMs(), TimeUnit.MILLISECONDS) // 读超时
                             .connectTimeout(config.getConnectTimeoutMs(), TimeUnit.MILLISECONDS)) // 连接超时
                     // 服务器监控与心跳设置
                     .applyToServerSettings(builder -> builder

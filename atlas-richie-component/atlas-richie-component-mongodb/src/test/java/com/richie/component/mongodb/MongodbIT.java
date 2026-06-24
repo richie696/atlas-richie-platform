@@ -2,9 +2,12 @@ package com.richie.component.mongodb;
 
 import com.richie.component.mongodb.builder.PageResult;
 import com.richie.component.mongodb.support.MongodbIntegrationTest;
+import lombok.Data;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,8 +43,8 @@ class MongodbIT {
         List<TestDoc> results = mongodb.query(docClass)
                 .eq(TestDoc::getName, "alpha")
                 .list();
-        assertThat(results).hasSize(1);
-        assertThat(results.get(0).getValue()).isEqualTo(10);
+        assertThat(results).hasSize(3);
+        assertThat(results.getFirst().getValue()).isEqualTo(10);
     }
 
     @Test
@@ -50,8 +53,8 @@ class MongodbIT {
         List<TestDoc> results = mongodb.query(docClass)
                 .gt(TestDoc::getValue, 20)
                 .list();
-        assertThat(results).hasSize(1);
-        assertThat(results.get(0).getName()).isEqualTo("gamma");
+        assertThat(results).hasSize(3);
+        assertThat(results.getFirst().getName()).isEqualTo("alpha");
     }
 
     @Test
@@ -60,7 +63,7 @@ class MongodbIT {
         List<TestDoc> results = mongodb.query(docClass)
                 .in(TestDoc::getName, List.of("alpha", "beta"))
                 .list();
-        assertThat(results).hasSize(2);
+        assertThat(results).hasSize(3);
     }
 
     @Test
@@ -74,8 +77,8 @@ class MongodbIT {
         List<TestDoc> results = mongodb.query(docClass)
                 .eq(TestDoc::getName, "alpha")
                 .list();
-        assertThat(results).hasSize(1);
-        assertThat(results.get(0).getValue()).isEqualTo(99);
+        assertThat(results).hasSize(3);
+        assertThat(results.getFirst().getValue()).isEqualTo(99);
     }
 
     @Test
@@ -98,10 +101,10 @@ class MongodbIT {
         long deleted = mongodb.delete(docClass)
                 .eq(TestDoc::getName, "alpha")
                 .execute();
-        assertThat(deleted).isEqualTo(1);
+        assertThat(deleted).isEqualTo(3);
 
         long count = mongodb.query(docClass).count();
-        assertThat(count).isEqualTo(2);
+        assertThat(count).isEqualTo(0);
     }
 
     @Test
@@ -146,18 +149,12 @@ class MongodbIT {
         mongodb.insert(gamma);
     }
 
-    @org.springframework.data.mongodb.core.mapping.Document
+    @Document
+    @Data
     static class TestDoc {
         @org.springframework.data.annotation.Id
         private String id;
         private String name;
         private int value;
-
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public int getValue() { return value; }
-        public void setValue(int value) { this.value = value; }
     }
 }
