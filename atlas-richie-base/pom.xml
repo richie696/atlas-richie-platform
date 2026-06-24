@@ -55,15 +55,6 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- 覆盖 Spring Boot BOM：org.apache.artemis:artemis-bom 与 activemq 旧坐标并存，避免解析到不存在的 2.43.0 -->
-            <dependency>
-                <groupId>org.apache.artemis</groupId>
-                <artifactId>artemis-bom</artifactId>
-                <version>2.53.0</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
             <!-- Spring Cloud 依赖管理 -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>

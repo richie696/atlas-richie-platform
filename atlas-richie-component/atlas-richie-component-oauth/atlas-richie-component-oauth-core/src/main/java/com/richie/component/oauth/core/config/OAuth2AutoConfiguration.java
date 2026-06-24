@@ -1,6 +1,7 @@
 package com.richie.component.oauth.core.config;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.ComponentScan;
 
@@ -15,5 +16,6 @@ import org.springframework.context.annotation.ComponentScan;
 @AutoConfiguration
 @EnableConfigurationProperties(OAuth2Properties.class)
 @ComponentScan("com.richie.component.oauth.core")
+@ConditionalOnProperty(prefix = "platform.component.oauth", name = "enabled", havingValue = "true")
 public class OAuth2AutoConfiguration {
 }
