@@ -125,15 +125,16 @@ TenantContext initialized with ScopedValue (preferred for virtual threads)
 
 ```sql
 CREATE TABLE sys_tenant (
-    id              BIGINT PRIMARY KEY,
-    tenant_name     VARCHAR(100) NOT NULL,
-    status          VARCHAR(20) NOT NULL,    -- ACTIVE/EXPIRED/MIGRATING/DISABLED
-    isolation_mode  VARCHAR(20) NOT NULL,    -- COLUMN/TABLE/SCHEMA/DATABASE/HYBRID
-    data_source_key VARCHAR(50),             -- Database 模式专用
-    table_suffix    VARCHAR(50),             -- Table 模式专用
-    schema_name     VARCHAR(50),             -- Schema 模式专用
-    expired_time    TIMESTAMP WITH TIME ZONE,
-    created_at      TIMESTAMP DEFAULT NOW()
+    id                  BIGINT PRIMARY KEY,
+    tenant_name         VARCHAR(100) NOT NULL,
+    status              VARCHAR(20) NOT NULL,    -- ACTIVE/INACTIVE/MIGRATING/PROVISIONING/EXPIRED
+    isolation_mode      VARCHAR(20) NOT NULL,    -- COLUMN/TABLE/SCHEMA/DATABASE/HYBRID
+    data_source_name    VARCHAR(50),             -- Database 模式专用
+    table_suffix        VARCHAR(50),             -- Table 模式专用
+    schema_name         VARCHAR(50),             -- Schema 模式专用
+    canary              BOOLEAN NOT NULL DEFAULT FALSE,  -- 是否灰度
+    expired_time        TIMESTAMP WITH TIME ZONE,
+    created_at          TIMESTAMP DEFAULT NOW()
 );
 ```
 
@@ -148,15 +149,14 @@ public class MyTenantInfoProvider implements TenantInfoProvider {
     public TenantInfo getTenantInfo(Long tenantId) {
         SysTenant entity = mapper.selectById(tenantId);
         if (entity == null) return null;
-        return TenantInfo.builder()
-            .id(entity.getId())
-            .name(entity.getTenantName())
-            .status(TenantStatus.valueOf(entity.getStatus()))
-            .mode(IsolationMode.valueOf(entity.getIsolationMode()))
-            .dataSourceName(entity.getDataSourceKey())
-            .tableSuffix(entity.getTableSuffix())
-            .schemaName(entity.getSchemaName())
-            .build();
+        return new TenantInfo()
+            .setTenantId(entity.getId())
+            .setMode(IsolationMode.valueOf(entity.getIsolationMode()))
+            .setDataSourceName(entity.getDataSourceName())
+            .setSchemaName(entity.getSchemaName())
+            .setTableSuffix(entity.getTableSuffix())
+            .setStatus(TenantStatus.valueOf(entity.getStatus()))
+            .setCanary(Boolean.TRUE.equals(entity.getCanary()));
     }
     
     @Override
@@ -166,7 +166,11 @@ public class MyTenantInfoProvider implements TenantInfoProvider {
 }
 ```
 
-> ⚠️ **必须实现此 SPI**,组件默认提供一个 NoOp 实现 (返回 null),会导致所有 SQL 抛出 `TenantNotFoundException`。
+> ⚠️ **必须实现此 SPI**,组件默认 NoOp 实现 (返回 null),会导致所有 SQL 抛 `TenantNotFoundException`。
+>
+> 🧩 **无需手写缓存**。框架内置 `CachingTenantInfoProvider` 自动装饰你的实现（`@ConditionalOnProperty(matchIfMissing=true)`），
+> 以 JDK `ConcurrentHashMap` 实现 `ttl=60s`、`max-size=10000` 缓存，业务方只写纯 DB 查询即可。
+> 若需关闭内置缓存：`multi-tenancy.cache.tenant-info.enabled=false`。
 
 ### 4. 配置 application.yml
 
@@ -347,16 +351,17 @@ public enum IsolationMode {
 ### TenantInfo (租户运行时信息)
 
 ```java
-@Data @Builder
+@Data
+@Accessors(chain = true)
 public class TenantInfo {
-    private Long id;
-    private String name;
-    private TenantStatus status;          // ACTIVE/EXPIRED/MIGRATING/DISABLED
-    private IsolationMode mode;           // 该租户实际隔离模式
-    private String dataSourceName;        // DATABASE 模式: 数据源 key
-    private String tableSuffix;           // TABLE 模式: 表名后缀
-    private String schemaName;            // SCHEMA 模式: schema 名
-    private OffsetDateTime expiredTime;
+    private Long tenantId;                    // 租户 ID（主键）
+    private IsolationMode mode;               // 该租户实际隔离模式
+    private String dataSourceName;            // DATABASE 模式: 数据源 key
+    private String canaryDataSourceName;      // 灰度数据源 key
+    private String schemaName;                // SCHEMA 模式: schema 名
+    private String tableSuffix;               // TABLE 模式: 表名后缀
+    private TenantStatus status;              // ACTIVE/INACTIVE/MIGRATING/PROVISIONING/EXPIRED
+    private boolean canary;                   // 是否处于灰度阶段
 }
 ```
 
@@ -703,7 +708,7 @@ multi-tenancy:
 
 ```sql
 -- 1001 大客户 → 独立 DB
-UPDATE sys_tenant SET isolation_mode = 'DATABASE', data_source_key = '1001' WHERE id = 1001;
+UPDATE sys_tenant SET isolation_mode = 'DATABASE', data_source_name = '1001' WHERE id = 1001;
 
 -- 1002 中型客户 → 独立 schema
 UPDATE sys_tenant SET isolation_mode = 'SCHEMA', schema_name = 'tenant_1002' WHERE id = 1002;
@@ -737,9 +742,18 @@ UPDATE sys_tenant SET isolation_mode = 'COLUMN' WHERE id = 1003;
 
 ### 超级管理员 (无租户用户)
 
-JWT 中**无 `tenantId` claim** → 视为平台超管,**不绑定租户上下文**,直接放行。
+JWT 中**无 `tenantId` claim** 时的行为取决于 `enforceAuthTenant` 配置：
+
+| `enforceAuthTenant` | 行为 |
+|---------------------|------|
+| `false` | 视为平台超管，**不绑定租户上下文**，直接放行 |
+| `true`（默认） | **拒绝请求**（返回 401 `TENANT_AUTH_MISSING_TOKEN`），除非路径在 `superAdminPaths` 中 |
 
 适用场景: 平台管理后台、租户开通/审核、跨租户数据查询。
+
+> ⚠️ 默认配置下（`enforceAuthTenant=true`），超管路径必须通过 `superAdminPaths` 白名单放行，
+> 避免"构造一个不带 tenantId 的请求即可绕过租户隔离"的安全漏洞。
+> **禁止通过传 `tenantId=0` 来实现无租户模式**——`tenantId <= 0` 会被直接拒绝。
 
 ### 配置白名单
 
@@ -1203,7 +1217,7 @@ public class MultiTenancyProperties {
     private boolean enabled = true;                              // 总开关
     private IsolationMode mode = IsolationMode.COLUMN;          // 默认模式
     private String tenantIdHeader = "X-Tenant-ID";               // HTTP header key
-    private boolean enforceAuthTenant = true;                    // JWT ↔ Header 交叉校验
+    private boolean enforceAuthTenant = true;                    // 无 tenantId 时是否拒绝（防绕过租户隔离）
     private String tenantIdColumn = "tenant_id";                 // 列名
     private List<String> ignoreTables = new ArrayList<>();       // 不隔离的表
     private String tableNameSuffix = "_${tenant}";               // TABLE 模式后缀
@@ -1267,25 +1281,16 @@ public interface TenantInfoProvider {
 
 ```java
 @Component
-public class CachedTenantInfoProvider implements TenantInfoProvider {
+public class SysTenantInfoProvider implements TenantInfoProvider {
 
     private final SysTenantMapper mapper;                       // 你的 sys_tenant Mapper
-    private final Cache<Long, TenantInfo> cache = Caffeine.newBuilder()
-        .expireAfterWrite(Duration.ofSeconds(60))
-        .maximumSize(10_000)
-        .build();
+
+    public SysTenantInfoProvider(SysTenantMapper mapper) {
+        this.mapper = mapper;
+    }
 
     @Override
     public TenantInfo getTenantInfo(Long tenantId) {
-        return cache.get(tenantId, this::loadFromDb);
-    }
-
-    @Override
-    public boolean exists(Long tenantId) {
-        return getTenantInfo(tenantId) != null;
-    }
-
-    private TenantInfo loadFromDb(Long tenantId) {
         SysTenant entity = mapper.selectById(tenantId);
         if (entity == null) return null;
         return new TenantInfo()
@@ -1295,10 +1300,19 @@ public class CachedTenantInfoProvider implements TenantInfoProvider {
             .setSchemaName(entity.getSchemaName())
             .setTableSuffix(entity.getTableSuffix())
             .setStatus(TenantStatus.valueOf(entity.getStatus()))
-            .setCanary(entity.getCanary() != null && entity.getCanary());
+            .setCanary(Boolean.TRUE.equals(entity.getCanary()));
+    }
+
+    @Override
+    public boolean exists(Long tenantId) {
+        return getTenantInfo(tenantId) != null;
     }
 }
 ```
+
+> 🧩 **无需手写缓存**。框架内置 `CachingTenantInfoProvider` 装饰器已通过
+> `@ConditionalOnProperty(matchIfMissing=true)` 自动装配，以 JDK `ConcurrentHashMap` 实现
+> `ttl=60s`、`max-size=10000` 缓存。业务方只需实现上述纯 DB 查询逻辑。
 
 #### `com.richie.component.tenant.context.TenantContext.TransactionTenantChecker` (内部 SPI,框架调用)
 
@@ -1358,7 +1372,7 @@ RuntimeException
 
 | 错误码 | HTTP | 含义 | 触发场景 |
 |--------|------|------|---------|
-| `TENANT_AUTH_MISSING_TOKEN` | 401 | 无认证 token | 未登录或 token 过期 |
+| `TENANT_AUTH_MISSING_TOKEN` | 401 | 无租户上下文（`enforceAuthTenant=true`） | JWT 无 tenantId claim 且路径不在 `superAdminPaths` 中 |
 | `TENANT_AUTH_BLANK_CLAIM` | 403 | JWT tenantId 为空字符串 | token 签发时没填租户 |
 | `TENANT_AUTH_INVALID_FORMAT` | 403 | tenantId 格式非法 | 非数字/负数/0 |
 | `TENANT_AUTH_EXPIRED` | 403 | 租户已过期 | `expiredTime` < 当前时间 |
@@ -1465,22 +1479,11 @@ RuntimeException
 
 **原因**: `TenantLineInnerInterceptor` 和 `TenantStrategyInterceptor` **每次 SQL 都调用** `TenantInfoProvider.getTenantInfo(tenantId)`,如果实现里直接查 `sys_tenant` 表,等于每次业务查询都多一次 DB 查询
 
-**解决**: 在 `TenantInfoProvider` 实现里加缓存:
+**解决**: 框架已内置 `CachingTenantInfoProvider` 装饰器（默认开启，`multi-tenancy.cache.tenant-info.enabled=true`），
+自动为业务实现的 `TenantInfoProvider` 叠加 JDK `ConcurrentHashMap` 缓存（`ttl=60s`、`max-size=10000`）。
+**业务方只需写纯 DB 查询实现，无需手写缓存**。
 
-```java
-@Component
-public class CachedTenantInfoProvider implements TenantInfoProvider {
-    private final Cache<Long, TenantInfo> cache = Caffeine.newBuilder()
-        .expireAfterWrite(Duration.ofSeconds(60))
-        .maximumSize(10_000)
-        .build();
-    
-    @Override
-    public TenantInfo getTenantInfo(Long tenantId) {
-        return cache.get(tenantId, this::loadFromDb);  // 缓存未命中才查 DB
-    }
-}
-```
+如果关闭了内置缓存（`enabled=false`），需自行在实现里加缓存层。
 
 #### 12. SCHEMA 模式没加 `@Transactional` 导致数据写入错的 schema(史上最难排查的 silent failure)
 
@@ -1647,16 +1650,16 @@ public class App {
 
 ```sql
 CREATE TABLE sys_tenant (
-    id              BIGINT PRIMARY KEY,
-    tenant_name     VARCHAR(200) NOT NULL,
-    isolation_mode  VARCHAR(20)  NOT NULL DEFAULT 'COLUMN',  -- COLUMN/TABLE/SCHEMA/DATABASE/HYBRID
-    data_source_name VARCHAR(100),                            -- 仅 DATABASE 模式使用
-    schema_name     VARCHAR(100),                             -- 仅 SCHEMA 模式使用
-    table_suffix    VARCHAR(50),                              -- 仅 TABLE 模式使用
-    status          VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE',   -- ACTIVE/INACTIVE/MIGRATING/PROVISIONING/EXPIRED
-    canary          BOOLEAN      NOT NULL DEFAULT FALSE,
-    expired_time    TIMESTAMP,
-    created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
+    id                  BIGINT PRIMARY KEY,
+    tenant_name         VARCHAR(200) NOT NULL,
+    status              VARCHAR(20)  NOT NULL,                -- ACTIVE/INACTIVE/MIGRATING/PROVISIONING/EXPIRED
+    isolation_mode      VARCHAR(20)  NOT NULL,                -- COLUMN/TABLE/SCHEMA/DATABASE/HYBRID
+    data_source_name    VARCHAR(100),                         -- 仅 DATABASE 模式使用
+    table_suffix        VARCHAR(50),                          -- 仅 TABLE 模式使用
+    schema_name         VARCHAR(100),                         -- 仅 SCHEMA 模式使用
+    canary              BOOLEAN      NOT NULL DEFAULT FALSE,  -- 是否灰度
+    expired_time        TIMESTAMP,
+    created_at          TIMESTAMP    DEFAULT NOW()
 );
 
 INSERT INTO sys_tenant (id, tenant_name, isolation_mode) VALUES
@@ -1664,7 +1667,7 @@ INSERT INTO sys_tenant (id, tenant_name, isolation_mode) VALUES
     (1002, 'Beta Industries', 'COLUMN');
 ```
 
-### 4. TenantInfoProvider 实现(必加缓存)
+### 4. TenantInfoProvider 实现（无需手写缓存，框架内置装饰器自动叠加）
 
 ```java
 package com.example.app.tenant;
@@ -1672,40 +1675,23 @@ package com.example.app.tenant;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.app.entity.SysTenant;
 import com.example.app.mapper.SysTenantMapper;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.richie.component.tenant.model.IsolationMode;
 import com.richie.component.tenant.model.TenantInfo;
 import com.richie.component.tenant.model.TenantStatus;
 import com.richie.component.tenant.spi.TenantInfoProvider;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-
 @Component
-public class CachedTenantInfoProvider implements TenantInfoProvider {
+public class SysTenantInfoProvider implements TenantInfoProvider {
 
     private final SysTenantMapper mapper;
-    private final Cache<Long, TenantInfo> cache = Caffeine.newBuilder()
-        .expireAfterWrite(Duration.ofSeconds(60))
-        .maximumSize(10_000)
-        .build();
 
-    public CachedTenantInfoProvider(SysTenantMapper mapper) {
+    public SysTenantInfoProvider(SysTenantMapper mapper) {
         this.mapper = mapper;
     }
 
     @Override
     public TenantInfo getTenantInfo(Long tenantId) {
-        return cache.get(tenantId, this::loadFromDb);
-    }
-
-    @Override
-    public boolean exists(Long tenantId) {
-        return getTenantInfo(tenantId) != null;
-    }
-
-    private TenantInfo loadFromDb(Long tenantId) {
         SysTenant entity = mapper.selectOne(
             new LambdaQueryWrapper<SysTenant>().eq(SysTenant::getId, tenantId));
         if (entity == null) return null;
@@ -1719,8 +1705,18 @@ public class CachedTenantInfoProvider implements TenantInfoProvider {
             .setStatus(TenantStatus.valueOf(entity.getStatus()))
             .setCanary(Boolean.TRUE.equals(entity.getCanary()));
     }
+
+    @Override
+    public boolean exists(Long tenantId) {
+        return mapper.exists(tenantId);
+    }
 }
 ```
+
+> 🧩 **无需手写缓存**。框架内置 `CachingTenantInfoProvider` 装饰器已通过
+> `@ConditionalOnProperty(prefix="multi-tenancy.cache.tenant-info", name="enabled", matchIfMissing=true)`
+> 自动装配，以 JDK `ConcurrentHashMap` 实现 `ttl=60s`、`max-size=10000` 缓存。
+> 业务方只需实现上述纯 DB 查询逻辑，缓存层由框架透明叠加。
 
 ### 5. 业务 Entity / Mapper / Service / Controller
 
