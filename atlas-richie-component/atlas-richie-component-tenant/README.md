@@ -109,7 +109,13 @@
 </dependency>
 ```
 
-**零配置即可使用 COLUMN 模式 + Web 集成**。启动日志看到:
+**零配置即可使用 COLUMN 模式 + Web 集成**。
+
+> 🧩 **租户信息缓存默认开启**：框架自动为 {@link TenantInfoProvider} 装饰 {@link com.richie.component.tenant.spi.CachingTenantInfoProvider}，
+> 以 {@code ttl=60s}、{@code max-size=10000} 缓存 {@code getTenantInfo()} 结果，避免每次 SQL 都穿透业务实现。
+> 可通过 {@code multi-tenancy.cache.tenant-info.enabled=false} 关闭。
+
+启动日志看到:
 ```
 TenantContext initialized with ScopedValue (preferred for virtual threads)
 [多租户] 微服务通信框架已就绪: HTTP (Feign/RestClient)
@@ -268,7 +274,7 @@ curl -H "X-ACCESS-TOKEN: $JWT" -H "X-Tenant-ID: 1001" \
 | `@Async` 线程池 | ✅ 自动 | TenantTaskDecoratorBeanPostProcessor |
 | `@Scheduled` 定时任务 | ✅ 自动 | 同上 |
 | CompletableFuture 链 | ⚠️ 部分 | 依赖业务用 TaskDecorator |
-| Reactive (WebFlux) | ❌ | 需业务方手动 capture/restore |
+| Reactive (WebFlux) | ✅ 自动 | TenantWebFilter + ReactorTenantContext |
 | Feign 调用下游 | ✅ | 由 `atlas-richie-component-microservice` 处理 |
 | RocketMQ 消费 | ✅ | 由 `atlas-richie-component-messaging` 处理 |
 
@@ -765,6 +771,57 @@ public class MyWhitelistConfig {
 
 ---
 
+### WebFlux / Reactive 集成
+
+本组件提供 **WebFlux 原生支持**。Spring WebFlux 应用的租户解析和上下文传播与 Servlet 应用一致：
+
+| 组件 | Servlet (MVC) | Reactive (WebFlux) |
+|------|--------------|-------------------|
+| 拦截器 | `TenantIdentityFilter` (`OncePerRequestFilter`) | `TenantWebFilter` (`WebFilter`) |
+| 异常处理器 | `TenantExceptionHandler` (`@RestControllerAdvice`) | 复用 `TenantExceptionHandler` (兼容) |
+| 租户上下文 | `TenantContext.get()` (ScopedValue/ThreadLocal) | `ReactorTenantContext.get()` (Reactor Context) |
+
+#### TenantWebFilter
+
+`@Order(HIGHEST_PRECEDENCE + 500)` 的 `WebFilter`。解析逻辑与 Servlet 版完全相同：
+
+1. **白名单检查** — 配置路径直接放行
+2. **从 JWT 解析** — `X-ACCESS-TOKEN` header → `JwtUtils.getTenantPrincipal()`
+3. **降级从 Header** — `X-Tenant-ID` header
+4. **校验** — tenantId 格式 + `TenantInfoProvider` 验证存在/过期/迁移中
+5. **写入 Reactor Context** — `ReactorTenantContext.write(principal)` 供下游 reactive 算子读取
+
+#### ReactorTenantContext
+
+Reactive 代码中通过 `ReactorTenantContext` 读取租户上下文：
+
+```java
+// Reactive 链中获取租户
+Mono<TenantPrincipal> principal = ReactorTenantContext.get();
+Mono<Long> tenantId = ReactorTenantContext.getTenantId();
+
+// 桥接到阻塞代码（如 MyBatis 调用），自动将 Reactor Context → ThreadLocal/ScopedValue
+Mono<Order> order = ReactorTenantContext.bridgeToBlocking(() ->
+    orderMapper.selectById(orderId)  // 此 TenantContext.get() 可正常读取
+);
+```
+
+#### 配置
+
+引入 WebFlux 依赖后自动生效，无需额外配置：
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-webflux</artifactId>
+</dependency>
+```
+
+> ⚠️ **注意**：Servlet (`spring-boot-starter-web`) 和 Reactive (`spring-boot-starter-webflux`) 是互斥的。
+> 框架通过 `@ConditionalOnWebApplication(type = REACTIVE)` 自动判断，不会同时激活两套 Filter。
+
+---
+
 ## 事务管理
 
 ### 事务内租户冻结
@@ -852,7 +909,7 @@ executor.submit(() -> {
 | `CompletableFuture.supplyAsync(supplier, executor)` | ✅ | executor 是 Spring 托管的 `ThreadPoolTaskExecutor` 时 |
 | `new Thread(() -> {...}).start()` | ❌ | **必须**手动包 `runWithTenant` |
 | `ForkJoinPool.commonPool()` | ❌ | 公共池,BPP 无法注入 |
-| WebFlux `Mono`/`Flux` operator chain | ❌ | Reactive 不传播 ScopedValue |
+| WebFlux `Mono`/`Flux` operator chain | ✅ 自动 | TenantWebFilter + ReactorTenantContext |
 | Spring `@Scheduled` 定时任务 | ✅ | BPP 注入到 `ThreadPoolTaskScheduler` |
 
 ---
@@ -963,6 +1020,9 @@ multi-tenancy:
 | `multi-tenancy.circuit.failure-threshold` | `5` | 熔断失败阈值 |
 | `multi-tenancy.circuit.open-window-ms` | `30000` | 熔断打开后等待时间 (ms) |
 | `multi-tenancy.health.probe-interval-ms` | `30000` | 健康探测间隔 (ms) |
+| `multi-tenancy.cache.tenant-info.enabled` | `true` | 开启 {@link com.richie.component.tenant.spi.CachingTenantInfoProvider} 装饰器 |
+| `multi-tenancy.cache.tenant-info.ttl-seconds` | `60` | 缓存 TTL（秒），过短命中率低，过长 sys_tenant 变更生效延迟 |
+| `multi-tenancy.cache.tenant-info.max-size` | `10000` | 缓存最大租户数，超出按 LRU 淘汰一半，`<=0` 不限制 |
 
 ### 通信框架依赖
 
@@ -1015,7 +1075,18 @@ public interface TenantInfoProvider {
 
 > ⚠️ **必须实现此 SPI**。组件默认 NoOp 实现返回 `null`,会导致所有 SQL 抛 `TenantNotFoundException`。
 
-> ⚠️ **必须加缓存**。`TenantInfoProvider.getTenantInfo(tenantId)` 在 COLUMN 模式 + HYBRID 模式下被 `TenantLineInnerInterceptor` 和 `TenantStrategyInterceptor` **每次 SQL 都调用**,如果实现里直接查 `sys_tenant` 表,P99 延迟会爆炸。建议接入方用 Caffeine 加 30-60 秒 TTL 缓存(`@Cacheable` 也可),租户状态变更时通过消息广播失效。
+> 🧩 **框架已提供内置缓存**。`CachingTenantInfoProvider` 默认自动装饰在业务实现的 `TenantInfoProvider` 上，
+> 在拦截器层以 {@code ttl=60s}、{@code max-size=10000} 缓存 {@code getTenantInfo()} 结果，避免每次 SQL 都穿透到底层实现。
+> 业务方无需自行实现缓存层。
+>
+> 若需关闭内置缓存（例如业务方希望使用自定义缓存策略），设置：
+> ```yaml
+> multi-tenancy:
+>   cache:
+>     tenant-info:
+>       enabled: false
+> ```
+> 租户状态变更后可通过 {@code CachingTenantInfoProvider.invalidate(tenantId)} 主动失效缓存。
 
 ---
 
@@ -1352,11 +1423,11 @@ RuntimeException
 
 **症状**: Mono/Flux 链中 `TenantContext.get()` 始终 null
 
-**原因**: Reactive 算子不传播 ScopedValue,且本组件没适配 WebFlux
+**原因**: Reactive 算子不传播 ScopedValue。
 
-**解决**:
-- 项目用 Servlet Web (Spring MVC) 而非 WebFlux
-- 如果必须用 WebFlux,自己实现 `Mono.deferContextual` capture/restore 逻辑
+**解决**: 本组件已适配 WebFlux，`TenantWebFilter` 自动将租户上下文写入 Reactor `Context`。
+在 reactive 代码中通过 `ReactorTenantContext.get()` 读取租户。
+若需桥接到阻塞代码，使用 `ReactorTenantContext.bridgeToBlocking()`。
 
 #### 7. Table 模式 join 了 sys_dict
 
