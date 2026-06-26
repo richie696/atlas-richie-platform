@@ -4,6 +4,7 @@ import com.richie.component.tenant.circuit.DataSourceCircuitBreaker;
 import com.richie.component.tenant.config.MultiTenancyProperties;
 import com.richie.component.tenant.context.TenantContext;
 import com.richie.component.tenant.context.ThreadLocalHolder;
+import com.richie.component.tenant.context.TransactionTenantHolder;
 import com.richie.component.tenant.exception.DataSourceUnavailableException;
 import com.richie.component.tenant.exception.TenantNotFoundException;
 import com.richie.component.tenant.model.IsolationMode;
@@ -69,6 +70,7 @@ class TenantStrategyInterceptorTest {
     @AfterEach
     void tearDown() {
         TenantContext.clear();
+        TransactionTenantHolder.clear();
     }
 
     // ==================== 功能开关 ====================
