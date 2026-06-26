@@ -180,8 +180,8 @@ class DatabaseStrategyIT {
         @DisplayName("beforeSqlExecute 将 TenantInfo.dataSourceName 写入 DataSourceContextHolder")
         void beforeSqlExecuteSetsDataSourceKey() {
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(TENANT_100), () -> {
-                databaseStrategy.beforeSqlExecute(null, tenantInfo(TENANT_100, "ds-100"));
-                assertThat(DataSourceContextHolder.get()).isEqualTo("ds-100");
+                databaseStrategy.beforeSqlExecute(null, tenantInfo(TENANT_100, "ds_100"));
+                assertThat(DataSourceContextHolder.get()).isEqualTo("ds_100");
             });
         }
 
@@ -189,11 +189,11 @@ class DatabaseStrategyIT {
         @DisplayName("同一线程连续调用以最后一次为准")
         void overwritesPreviousDataSourceKey() {
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(TENANT_100), () -> {
-                databaseStrategy.beforeSqlExecute(null, tenantInfo(TENANT_100, "ds-100"));
-                assertThat(DataSourceContextHolder.get()).isEqualTo("ds-100");
+                databaseStrategy.beforeSqlExecute(null, tenantInfo(TENANT_100, "ds_100"));
+                assertThat(DataSourceContextHolder.get()).isEqualTo("ds_100");
 
-                databaseStrategy.beforeSqlExecute(null, tenantInfo(TENANT_100, "ds-100-v2"));
-                assertThat(DataSourceContextHolder.get()).isEqualTo("ds-100-v2");
+                databaseStrategy.beforeSqlExecute(null, tenantInfo(TENANT_100, "ds_100_v2"));
+                assertThat(DataSourceContextHolder.get()).isEqualTo("ds_100_v2");
             });
         }
     }
@@ -208,13 +208,13 @@ class DatabaseStrategyIT {
         @DisplayName("不同租户上下文对应不同 dataSourceKey")
         void differentTenantsGetDifferentDataSourceKeys() {
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(TENANT_100), () -> {
-                databaseStrategy.beforeSqlExecute(null, tenantInfo(TENANT_100, "ds-100"));
-                assertThat(DataSourceContextHolder.get()).isEqualTo("ds-100");
+                databaseStrategy.beforeSqlExecute(null, tenantInfo(TENANT_100, "ds_100"));
+                assertThat(DataSourceContextHolder.get()).isEqualTo("ds_100");
             });
 
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(TENANT_200), () -> {
-                databaseStrategy.beforeSqlExecute(null, tenantInfo(TENANT_200, "ds-200"));
-                assertThat(DataSourceContextHolder.get()).isEqualTo("ds-200");
+                databaseStrategy.beforeSqlExecute(null, tenantInfo(TENANT_200, "ds_200"));
+                assertThat(DataSourceContextHolder.get()).isEqualTo("ds_200");
             });
         }
     }
@@ -229,7 +229,7 @@ class DatabaseStrategyIT {
         @DisplayName("未绑定租户上下文时 beforeSqlExecute 抛 BusinessException")
         void rejectsWithoutTenantContext() {
             assertThatThrownBy(() ->
-                    databaseStrategy.beforeSqlExecute(null, tenantInfo(TENANT_100, "ds-100")))
+                    databaseStrategy.beforeSqlExecute(null, tenantInfo(TENANT_100, "ds_100")))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("Tenant not bound");
         }
@@ -239,7 +239,7 @@ class DatabaseStrategyIT {
         void rejectsNegativeTenantId() {
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(-1L), () -> {
                 assertThatThrownBy(() ->
-                        databaseStrategy.beforeSqlExecute(null, tenantInfo(-1L, "ds-neg")))
+                        databaseStrategy.beforeSqlExecute(null, tenantInfo(-1L, "ds_neg")))
                         .isInstanceOf(BusinessException.class)
                         .hasMessageContaining("Invalid tenant ID");
             });

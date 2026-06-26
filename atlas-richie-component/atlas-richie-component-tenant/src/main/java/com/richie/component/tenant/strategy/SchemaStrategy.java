@@ -25,15 +25,36 @@ import java.sql.Statement;
  * 该语句会被静默忽略，数据将写入错误的 schema 而不抛任何异常。
  * 本策略会预先检测并抛 {@link TenantErrorCode#TENANT_SCHEMA_REQUIRES_TRANSACTION} 阻断。</p>
  *
+ * <p><b>schemaName 校验</b>：通过 {@link NamingConventionValidator} 校验为合法 SQL 标识符
+ * （{@code ^[A-Za-z_][A-Za-z0-9_]*$}，1-128 字符），不合法时抛 {@link TenantErrorCode#TENANT_INVALID_NAMING}。</p>
+ *
  * @author richie696
  * @since 2.0
  */
 public class SchemaStrategy extends AbstractTenancyStrategy {
 
+    /**
+     * 构造 SCHEMA 模式策略。
+     *
+     * @param properties         多租户配置
+     * @param tenantInfoProvider 租户信息提供方
+     */
+    /**
+     * 构造 SCHEMA 模式策略。
+     *
+     * @param properties         多租户配置
+     * @param tenantInfoProvider 租户信息提供方
+     */
     public SchemaStrategy(MultiTenancyProperties properties, TenantInfoProvider tenantInfoProvider) {
         super(properties, tenantInfoProvider);
     }
 
+    /**
+     * 仅匹配 {@link IsolationMode#SCHEMA} 模式。
+     *
+     * @param mode 隔离模式
+     * @return 是否由本策略处理
+     */
     @Override
     public boolean supports(IsolationMode mode) {
         return mode == IsolationMode.SCHEMA;
@@ -46,9 +67,7 @@ public class SchemaStrategy extends AbstractTenancyStrategy {
         validateTenantId(tenantId);
 
         String schemaName = tenantInfo.getSchemaName();
-        if (schemaName == null || !schemaName.matches("^[a-zA-Z0-9_]+$")) {
-            throw new BusinessException("Schema name validation failed: " + schemaName);
-        }
+        NamingConventionValidator.validate(schemaName, "schemaName");
 
         try {
             Connection conn = getConnection(invocation);

@@ -123,6 +123,13 @@ public class MultiTenancyProperties {
      */
     private HealthCheckConfig healthCheck = new HealthCheckConfig();
 
+    /**
+     * 启动期 Schema 校验配置。默认关闭；启用后会在应用启动完成前校验
+     * {@code ignore-tables} 中的表是否存在以及 {@code schema-tables} 中的表是否含
+     * {@link #tenantIdColumn} 列。
+     */
+    private StartupValidationConfig startupValidation = new StartupValidationConfig();
+
     // ==================== 嵌套配置类 ====================
 
     /**
@@ -265,5 +272,23 @@ public class MultiTenancyProperties {
          * 应用启动失败。默认 {@code false}。
          */
         private boolean enabled = false;
+    }
+
+    /**
+     * 启动期 Schema 校验配置。
+     */
+    @Data
+    public static class StartupValidationConfig {
+        /**
+         * 是否启用 {@link com.richie.component.tenant.healthcheck.StartupSchemaValidator}。
+         * 默认 {@code false}（业务方按需开启）。
+         */
+        private boolean enabled = false;
+
+        /**
+         * 需要校验 {@code tenantIdColumn} 列是否存在的业务表清单。
+         * 仅在 {@code mode=COLUMN} 模式下生效。
+         */
+        private List<String> schemaTables = new ArrayList<>();
     }
 }

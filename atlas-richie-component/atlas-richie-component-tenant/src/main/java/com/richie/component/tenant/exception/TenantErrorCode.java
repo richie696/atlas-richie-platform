@@ -109,7 +109,38 @@ public enum TenantErrorCode {
      * 常见错误：sys_tenant.tableSuffix 字段包含空格、分号、引号、Unicode 字符。
      * 解决方案：修正 sys_tenant 中该租户的 tableSuffix，仅使用字母/数字/下划线。
      */
-    TENANT_TABLE_SUFFIX_INVALID(500, "Table suffix validation failed: {0}. Must match ^[a-zA-Z0-9_]+$");
+    TENANT_TABLE_SUFFIX_INVALID(500, "Table suffix validation failed: {0}. Must match ^[a-zA-Z0-9_]+$"),
+
+    // ==================== 命名规范校验（NamingConventionValidator） ====================
+
+    /**
+     * SQL 标识符白名单校验失败 — 适用于 schema 名、table 后缀、dataSource key 等
+     * 任何会被拼接到 SQL 字符串或用于 DataSource 路由的命名。
+     * 白名单规则：{@code ^[A-Za-z_][A-Za-z0-9_]*$}，长度 1-128 字符。
+     * 常见错误：含空格、分号、引号、连字符、Unicode、长度超限。
+     * 解决方案：修正命名，仅使用字母/数字/下划线，且以字母或下划线开头。
+     */
+    TENANT_INVALID_NAMING(500, "Naming convention violation: {0}"),
+
+    // ==================== 启动期 Schema 校验（StartupSchemaValidator） ====================
+
+    /**
+     * 业务表缺少租户 ID 列 — {@code multi-tenancy.tenant-id-column} 配置的列
+     * 在 {@code multi-tenancy.startup-validation.schema-tables} 列出的某张表中不存在。
+     * 常见错误：表 schema 漂移、tenant_id 列名拼错、表建表脚本未包含租户列。
+     * 解决方案：在该表中添加 {@code ALTER TABLE xxx ADD COLUMN tenant_id BIGINT},
+     * 或调整 {@code schema-tables} 配置去除该表。
+     */
+    TENANT_TENANT_ID_COLUMN_MISSING(500,
+        "Table {0} is missing tenant_id column '{1}' required by multi-tenancy"),
+
+    /**
+     * 配置在 {@code multi-tenancy.ignore-tables} 的表名在数据库中不存在。
+     * 常见错误：表名拼写错误、schema 漂移、拼大小写不一致（注意 PG 默认折叠小写）。
+     * 解决方案：修正 {@code ignore-tables} 配置中的表名，或确认该表应在多租户 SQL 改写范围内。
+     */
+    TENANT_IGNORE_TABLE_NOT_FOUND(500,
+        "Table '{0}' listed in multi-tenancy.ignore-tables does not exist in the database");
 
     // ==================== 枚举定义 ====================
 

@@ -214,11 +214,11 @@ class TenantStrategyInterceptorTest {
 
         TenantPrincipal principal = new TenantPrincipal();
         principal.setTenantId(2002L);
-        TenantInfo tenantInfo = buildTenantInfo(2002L, IsolationMode.DATABASE, "ds-2002");
+        TenantInfo tenantInfo = buildTenantInfo(2002L, IsolationMode.DATABASE, "ds_2002");
 
         when(tenantInfoProvider.getTenantInfo(2002L)).thenReturn(tenantInfo);
         when(circuitBreaker.isOpen("shared")).thenReturn(false);
-        when(circuitBreaker.isOpen("ds-2002")).thenReturn(false);
+        when(circuitBreaker.isOpen("ds_2002")).thenReturn(false);
         when(strategyFactory.getStrategy(IsolationMode.DATABASE)).thenReturn(strategy);
         when(invocation.proceed()).thenReturn("db-result");
 
@@ -232,7 +232,7 @@ class TenantStrategyInterceptorTest {
         });
 
         verify(strategy).beforeSqlExecute(invocation, tenantInfo);
-        verify(circuitBreaker).recordSuccess("ds-2002");
+        verify(circuitBreaker).recordSuccess("ds_2002");
     }
 
     // ==================== 异常记录 failure ====================
@@ -272,11 +272,11 @@ class TenantStrategyInterceptorTest {
 
         TenantPrincipal principal = new TenantPrincipal();
         principal.setTenantId(3003L);
-        TenantInfo tenantInfo = buildTenantInfo(3003L, IsolationMode.DATABASE, "ds-3003");
+        TenantInfo tenantInfo = buildTenantInfo(3003L, IsolationMode.DATABASE, "ds_3003");
 
         when(tenantInfoProvider.getTenantInfo(3003L)).thenReturn(tenantInfo);
         when(circuitBreaker.isOpen("shared")).thenReturn(false);
-        when(circuitBreaker.isOpen("ds-3003")).thenReturn(false);
+        when(circuitBreaker.isOpen("ds_3003")).thenReturn(false);
         when(strategyFactory.getStrategy(IsolationMode.DATABASE)).thenReturn(strategy);
 
         RuntimeException error = new RuntimeException("Connection lost");
@@ -291,7 +291,7 @@ class TenantStrategyInterceptorTest {
                     .hasMessage("Connection lost");
         });
 
-        verify(circuitBreaker).recordFailure("ds-3003");
+        verify(circuitBreaker).recordFailure("ds_3003");
     }
 
     // ==================== 辅助方法 ====================

@@ -207,7 +207,7 @@ class SchemaStrategyIT {
             Invocation invocation = createInvocation();
             assertThatThrownBy(() -> schemaStrategy.beforeSqlExecute(invocation, tenantInfo))
                     .isInstanceOf(BusinessException.class)
-                    .hasMessageContaining("Schema name validation failed");
+                    .hasMessageContaining("schemaName");
         });
     }
 
@@ -226,7 +226,7 @@ class SchemaStrategyIT {
             Invocation invocation = createInvocation();
             assertThatThrownBy(() -> schemaStrategy.beforeSqlExecute(invocation, tenantInfo))
                     .isInstanceOf(BusinessException.class)
-                    .hasMessageContaining("Schema name validation failed");
+                    .hasMessageContaining("schemaName");
         });
     }
 

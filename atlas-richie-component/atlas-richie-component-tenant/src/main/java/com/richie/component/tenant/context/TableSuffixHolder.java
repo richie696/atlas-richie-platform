@@ -34,14 +34,34 @@ public final class TableSuffixHolder {
     private TableSuffixHolder() {
     }
 
+    /**
+     * 写入当前线程的表名后缀。
+     *
+     * <p>由 {@code TableStrategy.beforeSqlExecute} 调用。
+     * {@code DynamicTableNameInnerInterceptor} 读取后缀后将 SQL 中的
+     * {@code t_order} 替换为 {@code t_order_1001}（租户 1001 的后缀示例）。</p>
+     *
+     * @param suffix 表名后缀（已通过 {@code NamingConventionValidator} 校验）
+     */
     public static void set(String suffix) {
         HOLDER.set(suffix);
     }
 
+    /**
+     * 读取当前线程的表名后缀。
+     *
+     * @return 表名后缀；未设置时返回 {@code null}
+     */
     public static String get() {
         return HOLDER.get();
     }
 
+    /**
+     * 清理当前线程的表名后缀。
+     *
+     * <p>由 {@code ConnectionResetInterceptor} 在 SQL 执行完毕后调用，
+     * 防止跨请求表名替换泄漏。</p>
+     */
     public static void clear() {
         HOLDER.remove();
     }

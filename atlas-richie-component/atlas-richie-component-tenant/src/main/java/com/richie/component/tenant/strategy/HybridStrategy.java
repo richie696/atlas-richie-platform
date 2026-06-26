@@ -31,6 +31,16 @@ public class HybridStrategy extends AbstractTenancyStrategy {
     private final SchemaStrategy schemaStrategy;
     private final DatabaseStrategy databaseStrategy;
 
+    /**
+     * 构造 HYBRID 模式策略,直接注入 4 个 base 策略避免 Spring Bean 循环依赖。
+     *
+     * @param properties         多租户配置
+     * @param tenantInfoProvider 租户信息提供方
+     * @param columnStrategy     COLUMN 模式委托目标
+     * @param tableStrategy      TABLE 模式委托目标
+     * @param schemaStrategy     SCHEMA 模式委托目标
+     * @param databaseStrategy   DATABASE 模式委托目标
+     */
     public HybridStrategy(MultiTenancyProperties properties,
                           TenantInfoProvider tenantInfoProvider,
                           ColumnStrategy columnStrategy,
@@ -44,11 +54,28 @@ public class HybridStrategy extends AbstractTenancyStrategy {
         this.databaseStrategy = databaseStrategy;
     }
 
+    /**
+     * 仅匹配 {@link IsolationMode#HYBRID} 模式。
+     *
+     * @param mode 隔离模式
+     * @return 是否由本策略处理
+     */
     @Override
     public boolean supports(IsolationMode mode) {
         return mode == IsolationMode.HYBRID;
     }
 
+    /**
+     * 校验租户上下文 + 根据 {@code tenantInfo.mode} 委托给 4 个 base 策略之一。
+     *
+     * <p>委托关系由 {@link #resolveDelegate(IsolationMode)} 在编译期 switch 决定,
+     * 新增 {@link IsolationMode} 时编译器会立即报错提醒补充分支。</p>
+     *
+     * @param invocation MyBatis 调用上下文（透传给目标策略）
+     * @param tenantInfo 当前租户信息，{@code mode} 字段决定派发目标
+     * @throws com.richie.component.tenant.exception.BusinessException
+     *         租户未绑定 / tenantId 非法 / tenantInfo.mode == HYBRID 时
+     */
     @Override
     public void beforeSqlExecute(Invocation invocation, TenantInfo tenantInfo) {
         assertTenantPresent();

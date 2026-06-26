@@ -81,7 +81,7 @@ class TenantTaskDecoratorTest {
     @DisplayName("DataSourceContextHolder / TableSuffixHolder 跨线程传播")
     void multipleContextsPropagatedAcrossThreads() throws Exception {
         holder.set(principal(3001L));
-        com.richie.component.tenant.context.DataSourceContextHolder.set("ds-3001");
+        com.richie.component.tenant.context.DataSourceContextHolder.set("ds_3001");
         com.richie.component.tenant.context.TableSuffixHolder.set("_3001");
 
         AtomicLong capturedTenant = new AtomicLong(-1);
@@ -92,7 +92,7 @@ class TenantTaskDecoratorTest {
             TenantPrincipal p = holder.get();
             String ds = com.richie.component.tenant.context.DataSourceContextHolder.get();
             if (p != null) capturedTenant.set(p.getTenantId());
-            if (ds != null) capturedDs.set(Long.parseLong(ds.replace("ds-", "")));
+            if (ds != null) capturedDs.set(Long.parseLong(ds.replace("ds_", "")));
             latch.countDown();
         });
 

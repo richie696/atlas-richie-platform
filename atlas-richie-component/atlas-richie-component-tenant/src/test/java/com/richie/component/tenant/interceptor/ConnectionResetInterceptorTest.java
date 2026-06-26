@@ -34,7 +34,7 @@ class ConnectionResetInterceptorTest {
     @Test
     @DisplayName("SQL 执行后 DataSourceContextHolder 和 TableSuffixHolder 被清理")
     void clearsContextAfterSqlExecution() throws Throwable {
-        DataSourceContextHolder.set("ds-1001");
+        DataSourceContextHolder.set("ds_1001");
         TableSuffixHolder.set("_1001");
 
         Invocation invocation = mock(Invocation.class);
@@ -50,7 +50,7 @@ class ConnectionResetInterceptorTest {
     @Test
     @DisplayName("SQL 执行抛异常后仍然清理上下文")
     void clearsContextEvenOnException() throws Throwable {
-        DataSourceContextHolder.set("ds-1001");
+        DataSourceContextHolder.set("ds_1001");
         TableSuffixHolder.set("_1001");
 
         Invocation invocation = mock(Invocation.class);
@@ -69,7 +69,7 @@ class ConnectionResetInterceptorTest {
     @DisplayName("enabled=false 时不清理（但 proceed 仍执行）")
     void disabledSkipsCleanup() throws Throwable {
         props.setEnabled(false);
-        DataSourceContextHolder.set("ds-1001");
+        DataSourceContextHolder.set("ds_1001");
 
         Invocation invocation = mock(Invocation.class);
         when(invocation.proceed()).thenReturn("ok");
@@ -77,6 +77,6 @@ class ConnectionResetInterceptorTest {
         interceptor.intercept(invocation);
 
         // enabled=false 时不清理
-        assertThat(DataSourceContextHolder.get()).isEqualTo("ds-1001");
+        assertThat(DataSourceContextHolder.get()).isEqualTo("ds_1001");
     }
 }

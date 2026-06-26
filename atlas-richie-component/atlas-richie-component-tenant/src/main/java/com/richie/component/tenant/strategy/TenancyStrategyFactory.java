@@ -22,6 +22,28 @@ public class TenancyStrategyFactory {
 
     private final Map<IsolationMode, TenancyStrategy> strategyMap;
 
+    /**
+     * 构造策略工厂,自动扫描所有 {@link TenancyStrategy} Bean,
+     * 按 {@link TenancyStrategy#supports(IsolationMode)} 构建策略路由表。
+     *
+     * <p>每种 {@link IsolationMode} 必须有恰好一个 Bean {@code supports()} 它,
+     * 否则构造时抛 {@link IllegalArgumentException}（fail-fast）。</p>
+     *
+     * @param strategies Spring 注入的所有 {@link TenancyStrategy} Bean
+     * @throws IllegalArgumentException 某 {@link IsolationMode} 无对应策略时
+     */
+    /**
+     * 构造策略工厂。扫描注入的 5 个 {@link TenancyStrategy} Bean,
+     * 按 {@link TenancyStrategy#supports(IsolationMode)} 构建
+     * {@code IsolationMode → TenancyStrategy} 映射。
+     *
+     * <p>5 种 {@link IsolationMode} 必须全部找到对应策略(否则启动失败),
+     * 例如忘记注册 {@code SchemaStrategy} Bean 时启动即报错,
+     * 比运行时 SQL 报错更早暴露配置错误。</p>
+     *
+     * @param strategies 所有策略实现 Bean(Spring 自动注入 List)
+     * @throws IllegalArgumentException 任意 IsolationMode 找不到对应策略时
+     */
     public TenancyStrategyFactory(List<TenancyStrategy> strategies) {
         this.strategyMap = Arrays.stream(IsolationMode.values())
             .collect(Collectors.toMap(

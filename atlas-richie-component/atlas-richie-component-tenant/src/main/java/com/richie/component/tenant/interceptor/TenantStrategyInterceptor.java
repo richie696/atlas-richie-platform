@@ -47,6 +47,14 @@ public class TenantStrategyInterceptor implements Interceptor {
     private final TenantInfoProvider tenantInfoProvider;
     private final DataSourceCircuitBreaker circuitBreaker;
 
+    /**
+     * 构造策略调度拦截器。
+     *
+     * @param properties         多租户配置
+     * @param strategyFactory    隔离模式 → 策略实现工厂
+     * @param tenantInfoProvider 租户信息提供方（查 {@code sys_tenant} 表）
+     * @param circuitBreaker     数据源熔断器（共享 + 租户独立）
+     */
     public TenantStrategyInterceptor(MultiTenancyProperties properties,
                                      TenancyStrategyFactory strategyFactory,
                                      TenantInfoProvider tenantInfoProvider,
@@ -57,6 +65,23 @@ public class TenantStrategyInterceptor implements Interceptor {
         this.circuitBreaker = circuitBreaker;
     }
 
+    /**
+     * 拦截 MyBatis {@code StatementHandler.prepare(Connection, Integer)} 调用,完成：
+     * <ol>
+     *   <li>熔断检查（shared + 租户独立数据源）</li>
+     *   <li>查租户信息（缺失时抛 {@link TenantNotFoundException}）</li>
+     *   <li>按 {@code tenantInfo.mode} 委派给 4 个 base 策略之一</li>
+     *   <li>执行 SQL 并按结果记录熔断器成功/失败</li>
+     * </ol>
+     *
+     * <p>早返回条件：{@code multi-tenancy.enabled=false} 或租户上下文未绑定时,直接
+     * 透传 MyBatis 调用不做任何租户处理（单租户兼容）。</p>
+     *
+     * @param invocation MyBatis 调用上下文
+     * @return {@code invocation.proceed()} 的返回值
+     * @throws Throwable 透传 SQL 执行异常 + 业务异常（{@link TenantNotFoundException} /
+     *                   {@link DataSourceUnavailableException} / 策略内部异常）
+     */
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
         if (!properties.isEnabled()) {

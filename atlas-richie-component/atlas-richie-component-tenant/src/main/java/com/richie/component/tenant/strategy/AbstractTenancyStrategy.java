@@ -23,7 +23,11 @@ public abstract class AbstractTenancyStrategy implements TenancyStrategy {
     }
 
     /**
-     * 确保当前线程存在租户上下文。
+     * 确保当前线程已绑定租户上下文。
+     *
+     * <p>未绑定时抛 {@link BusinessException}（消息：
+     * {@code "Tenant not bound to current context"}），由调用方捕获后转换为
+     * 401/403 错误响应或日志告警。</p>
      */
     protected void assertTenantPresent() {
         if (TenantContext.getTenantId() == null) {
@@ -32,7 +36,14 @@ public abstract class AbstractTenancyStrategy implements TenancyStrategy {
     }
 
     /**
-     * 校验租户 ID 合法性（Long 类型仅做正整数校验）。
+     * 校验租户 ID 合法性。仅接受 {@code null} 以外的正整数（{@code > 0}），
+     * 拒绝 null / 0 / 负数。校验失败抛 {@link BusinessException}。
+     *
+     * <p>不校验租户是否存在（{@code sys_tenant} 表中是否注册）— 这是
+     * {@code TenantIdentityFilter} 的职责，本方法只做格式校验。</p>
+     *
+     * @param tenantId 租户 ID
+     * @throws BusinessException tenantId 为 null 或非正整数时
      */
     protected void validateTenantId(Long tenantId) {
         if (tenantId == null || tenantId <= 0) {

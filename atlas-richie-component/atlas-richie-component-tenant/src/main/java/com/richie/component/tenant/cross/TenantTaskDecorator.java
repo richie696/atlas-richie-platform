@@ -32,6 +32,34 @@ public class TenantTaskDecorator implements TaskDecorator {
     private static final ContextSnapshotFactory SNAPSHOT_FACTORY =
             ContextSnapshotFactory.builder().build();
 
+    /**
+     * 装饰 {@link Runnable} 使其执行时自动恢复租户上下文。
+     *
+     * <p>在任务<b>提交线程</b>中通过 micrometer {@link ContextSnapshot} 捕获所有
+     * 已注册的 {@code ThreadLocalAccessor}（包括 TenantContext / DataSourceContextHolder
+     * / TableSuffixHolder），返回的 Runnable 在<b>执行线程</b>中自动恢复快照。</p>
+     *
+     * <p>适配 {@code @Async}、{@code CompletableFuture}、{@code @Scheduled}、
+     * 虚拟线程等所有跨线程场景。Spring {@code ThreadPoolTaskExecutor} 配合
+     * {@code TenantTaskDecoratorBeanPostProcessor} 可全自动织入。</p>
+     *
+     * @param runnable 原始任务
+     * @return 装饰后的任务,执行前自动恢复租户上下文
+     */
+    /**
+     * 装饰 {@link Runnable} 使其执行时自动恢复租户上下文。
+     *
+     * <p>在任务提交线程中通过 micrometer {@link ContextSnapshot} 捕获所有已注册的
+     * {@code ThreadLocalAccessor}(包括 TenantContext / DataSourceContextHolder /
+     * TableSuffixHolder),返回的 Runnable 在执行线程中自动恢复快照。</p>
+     *
+     * <p>覆盖 {@code @Async}、{@code CompletableFuture}、{@code @Scheduled}、虚拟线程
+     * 等所有跨线程场景。Spring {@code ThreadPoolTaskExecutor} 配合
+     * {@code TenantTaskDecoratorBeanPostProcessor} 可全自动织入。</p>
+     *
+     * @param runnable 原始任务
+     * @return 装饰后的任务,执行前自动恢复租户上下文
+     */
     @Nonnull
     @Override
     public Runnable decorate(@Nonnull Runnable runnable) {

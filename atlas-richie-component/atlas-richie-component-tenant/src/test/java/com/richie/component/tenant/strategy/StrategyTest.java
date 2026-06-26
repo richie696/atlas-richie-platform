@@ -48,7 +48,7 @@ class StrategyTest {
         return new TenantInfo()
                 .setTenantId(1001L)
                 .setMode(mode)
-                .setDataSourceName("ds-1001")
+                .setDataSourceName("ds_1001")
                 .setSchemaName("tenant_1001")
                 .setTableSuffix("_1001")
                 .setStatus(TenantStatus.ACTIVE);
@@ -96,7 +96,7 @@ class StrategyTest {
                 assertThatThrownBy(() -> strategy.beforeSqlExecute(null, info))
                         .isInstanceOf(BusinessException.class)
                         .extracting("code")
-                        .isEqualTo(TenantErrorCode.TENANT_TABLE_SUFFIX_INVALID.name());
+                        .isEqualTo(TenantErrorCode.TENANT_INVALID_NAMING.name());
             });
         }
 
@@ -106,7 +106,7 @@ class StrategyTest {
                 assertThatThrownBy(() -> strategy.beforeSqlExecute(null, info))
                         .isInstanceOf(BusinessException.class)
                         .extracting("code")
-                        .isEqualTo(TenantErrorCode.TENANT_TABLE_SUFFIX_INVALID.name());
+                        .isEqualTo(TenantErrorCode.TENANT_INVALID_NAMING.name());
             });
         }
 
@@ -116,7 +116,7 @@ class StrategyTest {
                 assertThatThrownBy(() -> strategy.beforeSqlExecute(null, info))
                         .isInstanceOf(BusinessException.class)
                         .extracting("code")
-                        .isEqualTo(TenantErrorCode.TENANT_TABLE_SUFFIX_INVALID.name());
+                        .isEqualTo(TenantErrorCode.TENANT_INVALID_NAMING.name());
             });
         }
 
@@ -126,7 +126,7 @@ class StrategyTest {
                 assertThatThrownBy(() -> strategy.beforeSqlExecute(null, info))
                         .isInstanceOf(BusinessException.class)
                         .extracting("code")
-                        .isEqualTo(TenantErrorCode.TENANT_TABLE_SUFFIX_INVALID.name());
+                        .isEqualTo(TenantErrorCode.TENANT_INVALID_NAMING.name());
             });
         }
 
@@ -150,7 +150,7 @@ class StrategyTest {
         @Test void beforeSqlExecuteSetsDataSourceKey() {
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 strategy.beforeSqlExecute(null, tenantInfo(IsolationMode.DATABASE));
-                assertThat(DataSourceContextHolder.get()).isEqualTo("ds-1001");
+                assertThat(DataSourceContextHolder.get()).isEqualTo("ds_1001");
             });
         }
 
@@ -171,12 +171,13 @@ class StrategyTest {
         @Test void supportsSchema() { assertThat(strategy.supports(IsolationMode.SCHEMA)).isTrue(); }
         @Test void notSupportsDatabase() { assertThat(strategy.supports(IsolationMode.DATABASE)).isFalse(); }
 
-        @Test void invalidSchemaNameThrows() {
+@Test void invalidSchemaNameThrows() {
             TenantInfo info = tenantInfo(IsolationMode.SCHEMA).setSchemaName("bad;schema");
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 assertThatThrownBy(() -> strategy.beforeSqlExecute(null, info))
                         .isInstanceOf(BusinessException.class)
-                        .hasMessageContaining("Schema name validation failed");
+                        .extracting("code")
+                        .isEqualTo(TenantErrorCode.TENANT_INVALID_NAMING.name());
             });
         }
 
@@ -219,7 +220,7 @@ class StrategyTest {
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 TenantInfo info = tenantInfo(IsolationMode.DATABASE);
                 strategy.beforeSqlExecute(null, info);
-                assertThat(DataSourceContextHolder.get()).isEqualTo("ds-1001");
+                assertThat(DataSourceContextHolder.get()).isEqualTo("ds_1001");
             });
         }
 

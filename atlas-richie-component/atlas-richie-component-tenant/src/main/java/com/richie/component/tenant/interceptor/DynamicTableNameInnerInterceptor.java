@@ -46,6 +46,21 @@ public class DynamicTableNameInnerInterceptor implements Interceptor {
 
     private final MultiTenancyProperties properties;
 
+    /**
+     * 构造动态表名拦截器。
+     *
+     * @param properties 多租户配置（{@code multi-tenancy.ignore-tables} 控制白名单）
+     */
+    /**
+     * 构造动态表名拦截器。
+     *
+     * @param properties 多租户配置
+     */
+    /**
+     * 构造动态表名改写拦截器。
+     *
+     * @param properties 多租户配置（{@code ignoreTables} 配置排除不需要加后缀的表）
+     */
     public DynamicTableNameInnerInterceptor(MultiTenancyProperties properties) {
         this.properties = properties;
     }

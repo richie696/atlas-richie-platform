@@ -60,11 +60,29 @@ public class TenantLineInnerInterceptor implements Interceptor {
     private final MultiTenancyProperties properties;
     private final TenantInfoProvider tenantInfoProvider;
 
-    public TenantLineInnerInterceptor(MultiTenancyProperties properties,
-                                      TenantInfoProvider tenantInfoProvider) {
-        this.properties = properties;
-        this.tenantInfoProvider = tenantInfoProvider;
-    }
+    /**
+     * 构造 SQL 改写拦截器。
+     *
+     * @param properties         多租户配置（{@code multi-tenancy.*}）
+     * @param tenantInfoProvider 租户信息提供方,用于读取租户实际隔离模式以决定是否改写
+     */
+    /**
+ * 构造 SQL 改写拦截器。
+ *
+ * @param properties         多租户配置（{@code multi-tenancy.*}）
+ * @param tenantInfoProvider 租户信息提供方,用于根据租户实际 mode 决定是否触发改写
+ */
+    /**
+ * 构造 SQL 改写拦截器。
+ *
+ * @param properties         多租户配置（{@code multi-tenancy.*}）
+ * @param tenantInfoProvider 租户信息提供方（HYBRID 模式下查租户实际模式）
+ */
+public TenantLineInnerInterceptor(MultiTenancyProperties properties,
+                                  TenantInfoProvider tenantInfoProvider) {
+    this.properties = properties;
+    this.tenantInfoProvider = tenantInfoProvider;
+}
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {

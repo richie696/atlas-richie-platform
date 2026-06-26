@@ -36,10 +36,27 @@ public class ConnectionResetInterceptor implements Interceptor {
 
     private final MultiTenancyProperties properties;
 
+    /**
+     * 构造连接重置拦截器。
+     *
+     * @param properties 多租户配置（{@code isEnabled()} 控制是否清理）
+     */
     public ConnectionResetInterceptor(MultiTenancyProperties properties) {
         this.properties = properties;
     }
 
+    /**
+     * 拦截 MyBatis {@code StatementHandler.prepare(Connection, Integer)} 调用，
+     * 在 {@code invocation.proceed()} 返回或抛异常后清理 {@link DataSourceContextHolder}
+     * 和 {@link TableSuffixHolder}，防止连接复用时跨租户数据泄漏。
+     *
+     * <p>仅当 {@code multi-tenancy.enabled=true} 时执行清理，
+     * 多租户组件整体禁用时（单租户模式）跳过清理逻辑以减少开销。</p>
+     *
+     * @param invocation MyBatis 调用上下文
+     * @return {@code invocation.proceed()} 的返回值（由 MyBatis 决定类型）
+     * @throws Throwable 透传 {@code proceed()} 的异常，清理逻辑在 finally 块保证执行
+     */
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
         try {

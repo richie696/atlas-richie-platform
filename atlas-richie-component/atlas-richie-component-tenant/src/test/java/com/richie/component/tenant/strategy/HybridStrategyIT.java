@@ -161,7 +161,7 @@ class HybridStrategyIT {
             info.setSchemaName(SCHEMA_TENANT_100);
         }
         if (mode == IsolationMode.DATABASE) {
-            info.setDataSourceName("ds-" + tenantId);
+            info.setDataSourceName("ds_" + tenantId);
         }
         return info;
     }
@@ -258,14 +258,14 @@ class HybridStrategyIT {
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(TENANT_100), () -> {
                 hybridStrategy.beforeSqlExecute(null,
                         tenantInfo(TENANT_100, IsolationMode.DATABASE));
-                assertThat(DataSourceContextHolder.get()).isEqualTo("ds-100");
+                assertThat(DataSourceContextHolder.get()).isEqualTo("ds_100");
                 DataSourceContextHolder.clear();
             });
 
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(TENANT_200), () -> {
                 hybridStrategy.beforeSqlExecute(null,
                         tenantInfo(TENANT_200, IsolationMode.DATABASE));
-                assertThat(DataSourceContextHolder.get()).isEqualTo("ds-200");
+                assertThat(DataSourceContextHolder.get()).isEqualTo("ds_200");
             });
         }
     }
