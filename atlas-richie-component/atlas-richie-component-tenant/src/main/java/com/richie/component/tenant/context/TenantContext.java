@@ -1,7 +1,6 @@
 package com.richie.component.tenant.context;
 
 import com.richie.component.tenant.exception.BusinessException;
-import com.richie.component.tenant.exception.TenantSwitchInTransactionException;
 import com.richie.contract.model.TenantPrincipal;
 import lombok.Setter;
 
@@ -191,12 +190,18 @@ public final class TenantContext {
     }
 
     /**
-     * 检测事务内租户切换（仅在 TransactionTenantHolder 可用时生效）。
-     * 由持久层模块注入检测逻辑，此处通过反射或回调解耦。
+     * 检测事务内租户切换。
+     *
+     * <p>直接调用 {@link TransactionTenantHolder#checkSwitch(Long)} — 由
+     * {@code TenantStrategyInterceptor} 在每条 SQL 执行入口 {@code freeze} 当前租户 ID,
+     * 此处读取已冻结值判断是否与本次 runWithTenant 的目标租户一致,
+     * 不一致时抛 {@link com.richie.component.tenant.exception.TenantSwitchInTransactionException}。
+     * SPI {@link TransactionTenantChecker} 仍保留以供业务方自定义扩展。</p>
      */
     private static void checkTransactionTenantSwitch(TenantPrincipal principal) {
-        // 事务冻结检测由 TransactionTenantHolder 在持久层模块实现
-        // 此处预留扩展点，通过 TransactionTenantChecker SPI 注入
+        // 默认检查：TransactionTenantHolder.checkSwitch 抛 TenantSwitchInTransactionException
+        TransactionTenantHolder.checkSwitch(principal.getTenantId());
+        // 自定义 SPI 仍可拦截(向后兼容)
         if (transactionChecker != null) {
             transactionChecker.check(principal.getTenantId());
         }

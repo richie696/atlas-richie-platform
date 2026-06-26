@@ -43,7 +43,16 @@ import java.util.Map;
  * </ol>
  *
  * <h2>超级管理员</h2>
- * <p>JWT 中无 tenantId claim → 视为平台超管，不绑定租户上下文，直接放行。</p>
+ * <p>JWT 中无 tenantId claim → 默认视为平台超管（{@code enforceAuthTenant=false} 时
+ * 直接放行），不绑定租户上下文。</p>
+ *
+ * <p>{@code enforceAuthTenant=true}（默认）时，无 tenantId 的请求会被拒绝
+ * （返回 {@link TenantErrorCode#TENANT_AUTH_MISSING_TOKEN} 401），除非：</p>
+ * <ul>
+ *   <li>请求路径在白名单中（{@code whitelistPaths}）</li>
+ *   <li>请求路径是平台超管专用路径（{@code superAdminPaths}）</li>
+ * </ul>
+ * <p>这避免了"构造一个不带 tenantId 的请求即可走超管放行分支、绕过租户隔离"的安全洞。</p>
  *
  * @author richie696
  * @since 2.0
@@ -60,12 +69,26 @@ public class TenantIdentityFilter extends OncePerRequestFilter {
      */
     private final List<String> whitelistPaths;
 
+    /**
+     * 超管专用路径列表（仅 enforceAuthTenant=true 时生效）。
+     * 这些路径允许 JWT 中无 tenantId 时放行（平台超管场景）。
+     */
+    private final List<String> superAdminPaths;
+
     public TenantIdentityFilter(MultiTenancyProperties properties,
                                 TenantInfoProvider tenantInfoProvider,
                                 List<String> whitelistPaths) {
+        this(properties, tenantInfoProvider, whitelistPaths, List.of());
+    }
+
+    public TenantIdentityFilter(MultiTenancyProperties properties,
+                                TenantInfoProvider tenantInfoProvider,
+                                List<String> whitelistPaths,
+                                List<String> superAdminPaths) {
         this.properties = properties;
         this.tenantInfoProvider = tenantInfoProvider;
         this.whitelistPaths = whitelistPaths != null ? whitelistPaths : List.of();
+        this.superAdminPaths = superAdminPaths != null ? superAdminPaths : List.of();
     }
 
     @Override
@@ -95,8 +118,16 @@ public class TenantIdentityFilter extends OncePerRequestFilter {
             principal = resolveFromHeader(request);
         }
 
-        // 3. 超管或无租户信息 → 直接放行
+        // 3. 超管或无租户信息 → 视配置决定
         if (principal == null) {
+            // enforceAuthTenant=true 且路径非超管专用 → 拒绝(防绕过租户隔离)
+            if (properties.isEnforceAuthTenant() && !isSuperAdminPath(requestUri)) {
+                log.warn("Rejecting request to {} without tenant context (enforceAuthTenant=true)",
+                    requestUri);
+                writeError(response, TenantErrorCode.TENANT_AUTH_MISSING_TOKEN, requestUri);
+                return;
+            }
+            // 默认行为:视为平台超管,直接放行
             filterChain.doFilter(request, response);
             return;
         }
@@ -205,6 +236,20 @@ public class TenantIdentityFilter extends OncePerRequestFilter {
      */
     private boolean isWhitelisted(String requestUri) {
         for (String path : whitelistPaths) {
+            if (requestUri.startsWith(path) || matchSimplePattern(requestUri, path)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检查请求路径是否在超管专用路径列表中。
+     * 超管专用路径仅在 {@code enforceAuthTenant=true} 时生效,
+     * 允许 JWT 无 tenantId 时放行(平台超管运维场景)。
+     */
+    private boolean isSuperAdminPath(String requestUri) {
+        for (String path : superAdminPaths) {
             if (requestUri.startsWith(path) || matchSimplePattern(requestUri, path)) {
                 return true;
             }

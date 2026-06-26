@@ -78,7 +78,8 @@ class TenantIdentityFilterTest {
             }
         };
 
-        filter = new TenantIdentityFilter(props, provider, List.of("/health", "/public/**"));
+        filter = new TenantIdentityFilter(props, provider, List.of("/health", "/public/**"),
+            List.of("/platform-admin/**"));
         TenantContext.init(new ThreadLocalHolder());
 
         request = mock(HttpServletRequest.class);
@@ -154,8 +155,9 @@ class TenantIdentityFilterTest {
         }
 
         @Test
-        @DisplayName("无效 X-Tenant-ID（非数字）→ 直接放行")
+        @DisplayName("无效 X-Tenant-ID（非数字）+ enforceAuthTenant=false → 超管放行")
         void invalidHeaderPassesThrough() throws Exception {
+            props.setEnforceAuthTenant(false);
             when(request.getRequestURI()).thenReturn("/api/orders");
             when(request.getHeader(GlobalConstants.X_ACCESS_TOKEN)).thenReturn(null);
             when(request.getHeader("X-ACCESS-TOKEN")).thenReturn(null);
@@ -168,8 +170,9 @@ class TenantIdentityFilterTest {
         }
 
         @Test
-        @DisplayName("无租户信息 → 超管放行")
+        @DisplayName("无租户信息 + enforceAuthTenant=false → 超管放行")
         void noTenantInfoPassesThrough() throws Exception {
+            props.setEnforceAuthTenant(false);
             when(request.getRequestURI()).thenReturn("/api/orders");
             when(request.getHeader(GlobalConstants.X_ACCESS_TOKEN)).thenReturn(null);
             when(request.getHeader("X-ACCESS-TOKEN")).thenReturn(null);
@@ -179,6 +182,54 @@ class TenantIdentityFilterTest {
             filter.doFilterInternal(request, response, chain);
 
             verify(chain).doFilter(request, response);
+        }
+
+        @Test
+        @DisplayName("无效 X-Tenant-ID + enforceAuthTenant=true → 拒绝(401)")
+        void invalidHeaderRejectedWhenEnforced() throws Exception {
+            // 默认 enforceAuthTenant=true
+            when(request.getRequestURI()).thenReturn("/api/orders");
+            when(request.getHeader(GlobalConstants.X_ACCESS_TOKEN)).thenReturn(null);
+            when(request.getHeader("X-ACCESS-TOKEN")).thenReturn(null);
+            when(request.getHeader(props.getTenantIdHeader())).thenReturn("not-a-number");
+            when(request.getHeader(GlobalConstants.X_TENANT_ID)).thenReturn(null);
+
+            filter.doFilterInternal(request, response, chain);
+
+            verify(chain, never()).doFilter(any(), any());
+            verify(response).setStatus(HttpStatus.UNAUTHORIZED.value());
+        }
+
+        @Test
+        @DisplayName("无租户信息 + enforceAuthTenant=true → 拒绝(401)")
+        void noTenantInfoRejectedWhenEnforced() throws Exception {
+            // 默认 enforceAuthTenant=true
+            when(request.getRequestURI()).thenReturn("/api/orders");
+            when(request.getHeader(GlobalConstants.X_ACCESS_TOKEN)).thenReturn(null);
+            when(request.getHeader("X-ACCESS-TOKEN")).thenReturn(null);
+            when(request.getHeader(props.getTenantIdHeader())).thenReturn(null);
+            when(request.getHeader(GlobalConstants.X_TENANT_ID)).thenReturn(null);
+
+            filter.doFilterInternal(request, response, chain);
+
+            verify(chain, never()).doFilter(any(), any());
+            verify(response).setStatus(HttpStatus.UNAUTHORIZED.value());
+        }
+
+        @Test
+        @DisplayName("超管专用路径 + 无租户信息 + enforceAuthTenant=true → 放行")
+        void superAdminPathBypassesEnforcement() throws Exception {
+            // 默认 enforceAuthTenant=true
+            when(request.getRequestURI()).thenReturn("/platform-admin/users");
+            when(request.getHeader(GlobalConstants.X_ACCESS_TOKEN)).thenReturn(null);
+            when(request.getHeader("X-ACCESS-TOKEN")).thenReturn(null);
+            when(request.getHeader(props.getTenantIdHeader())).thenReturn(null);
+            when(request.getHeader(GlobalConstants.X_TENANT_ID)).thenReturn(null);
+
+            filter.doFilterInternal(request, response, chain);
+
+            verify(chain).doFilter(request, response);
+            verify(response, never()).setStatus(any(Integer.class));
         }
     }
 

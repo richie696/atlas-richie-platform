@@ -7,6 +7,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -150,6 +155,132 @@ class DataSourceCircuitBreakerTest {
             Map<String, DataSourceCircuitBreaker.CircuitStatusSnapshot> all = breaker.getAllStatuses();
             assertThat(all).containsKeys("ds-a", "ds-b");
             assertThat(all.get("ds-b").status()).isEqualTo("OPEN");
+        }
+    }
+
+    @Nested
+    @DisplayName("并发安全(v2.1.0 修复)")
+    class ConcurrencySafety {
+
+        @Test
+        @DisplayName("100 并发 recordFailure 不丢计数")
+        void concurrentFailureCounting() throws Exception {
+            int threads = 100;
+            int failuresPerThread = 50;
+            ExecutorService executor =
+                Executors.newFixedThreadPool(16);
+            CountDownLatch latch =
+                new CountDownLatch(threads);
+
+            for (int i = 0; i < threads; i++) {
+                executor.submit(() -> {
+                    try {
+                        for (int j = 0; j < failuresPerThread; j++) {
+                            breaker.recordFailure("ds-concurrent");
+                        }
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+
+            latch.await(10, TimeUnit.SECONDS);
+            executor.shutdown();
+
+            // 应至少触发一次 OPEN(总失败数远超阈值 3)
+            assertThat(breaker.isOpen("ds-concurrent")).isTrue();
+            assertThat(breaker.getStatus("ds-concurrent"))
+                .isEqualTo(DataSourceCircuitBreaker.CircuitStatus.OPEN);
+
+            // onOpen 回调只触发一次
+            AtomicInteger openCount =
+                new AtomicInteger(0);
+            DataSourceCircuitBreaker breaker2 = new DataSourceCircuitBreaker(props);
+            breaker2.onOpen(k -> openCount.incrementAndGet());
+
+            CountDownLatch latch2 =
+                new CountDownLatch(threads);
+            ExecutorService executor2 =
+                Executors.newFixedThreadPool(16);
+            for (int i = 0; i < threads; i++) {
+                executor2.submit(() -> {
+                    try {
+                        for (int j = 0; j < failuresPerThread; j++) {
+                            breaker2.recordFailure("ds-cb");
+                        }
+                    } finally {
+                        latch2.countDown();
+                    }
+                });
+            }
+            latch2.await(10, TimeUnit.SECONDS);
+            executor2.shutdown();
+
+            assertThat(openCount.get())
+                .as("OPEN 状态翻转的 CAS 保护 — onOpen 回调应仅触发一次")
+                .isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("OPEN → HALF_OPEN 翻转仅一个探测请求通过")
+        void halfOpenAllowsOnlyOneProbe() throws Exception {
+            breaker.recordFailure("ds-probe");
+            breaker.recordFailure("ds-probe");
+            breaker.recordFailure("ds-probe");
+            assertThat(breaker.isOpen("ds-probe")).isTrue();
+
+            // 等到超时
+            Thread.sleep(150);
+
+            // 100 并发 isOpen 调用:只一个返回 false (HALF_OPEN 探测)
+            int threads = 100;
+            ExecutorService executor =
+                Executors.newFixedThreadPool(16);
+            CountDownLatch latch =
+                new CountDownLatch(threads);
+            AtomicInteger allowedProbes =
+                new AtomicInteger(0);
+
+            for (int i = 0; i < threads; i++) {
+                executor.submit(() -> {
+                    try {
+                        if (!breaker.isOpen("ds-probe")) {
+                            allowedProbes.incrementAndGet();
+                        }
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+
+            latch.await(10, TimeUnit.SECONDS);
+            executor.shutdown();
+
+            assertThat(allowedProbes.get())
+                .as("HALF_OPEN 状态应仅放行 1 个探测请求")
+                .isEqualTo(1);
+            assertThat(breaker.getStatus("ds-probe"))
+                .isEqualTo(DataSourceCircuitBreaker.CircuitStatus.HALF_OPEN);
+        }
+
+        @Test
+        @DisplayName("CLOSED 态下成功调用清零 failureCount,避免零星失败累加误熔断")
+        void successInClosedResetsFailureCount() {
+            breaker.recordFailure("ds-reset");
+            breaker.recordFailure("ds-reset");
+            assertThat(breaker.getAllStatuses().get("ds-reset").failures()).isEqualTo(2);
+
+            breaker.recordSuccess("ds-reset");
+            assertThat(breaker.getAllStatuses().get("ds-reset").failures())
+                .as("CLOSED 态成功应清零失败计数")
+                .isEqualTo(0);
+
+            // 重新累计失败,需要达到阈值才能熔断
+            breaker.recordFailure("ds-reset");
+            breaker.recordFailure("ds-reset");
+            assertThat(breaker.isOpen("ds-reset"))
+                .as("清零后,需要重新累计 3 次才会熔断")
+                .isFalse();
         }
     }
 }

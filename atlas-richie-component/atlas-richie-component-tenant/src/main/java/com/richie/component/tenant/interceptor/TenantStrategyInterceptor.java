@@ -3,6 +3,7 @@ package com.richie.component.tenant.interceptor;
 import com.richie.component.tenant.circuit.DataSourceCircuitBreaker;
 import com.richie.component.tenant.config.MultiTenancyProperties;
 import com.richie.component.tenant.context.TenantContext;
+import com.richie.component.tenant.context.TransactionTenantHolder;
 import com.richie.component.tenant.exception.DataSourceUnavailableException;
 import com.richie.component.tenant.exception.TenantNotFoundException;
 import com.richie.component.tenant.model.TenantInfo;
@@ -99,6 +100,10 @@ public class TenantStrategyInterceptor implements Interceptor {
             throw new TenantNotFoundException(tenantId);
         }
 
+        // 冻结事务内租户 ID — 防 runWithTenant(tenantB) 跨租户写入
+        // 该检测由 TenantContext.checkTransactionTenantSwitch() 调 TransactionTenantHolder.checkSwitch() 完成
+        TransactionTenantHolder.freeze(tenantId);
+
         // 熔断检查
         checkCircuitBreaker(tenantInfo);
 
@@ -118,6 +123,9 @@ public class TenantStrategyInterceptor implements Interceptor {
             String dsKey = resolveDataSourceKey(tenantInfo);
             circuitBreaker.recordFailure(dsKey);
             throw t;
+        } finally {
+            // 清除事务租户冻结 — 同事务下次 SQL 重新冻结(若上下文未变则冻结值不变)
+            TransactionTenantHolder.clear();
         }
 
         return result;
