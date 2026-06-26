@@ -5,9 +5,9 @@ import com.richie.component.tenant.exception.TenantErrorCode;
 import com.richie.component.tenant.model.TenantInfo;
 import com.richie.component.tenant.model.TenantStatus;
 import com.richie.component.tenant.spi.TenantInfoProvider;
+import com.richie.context.utils.spring.JwtUtils;
+import com.richie.contract.constant.GlobalConstants;
 import com.richie.contract.model.TenantPrincipal;
-import com.richie.contract.util.GlobalConstants;
-import com.richie.contract.util.JwtUtils;
 import jakarta.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,11 +37,10 @@ import java.util.Map;
  *   <li>将租户上下文写入 Reactor {@code Context}，纯 Reactive 链路通过
  *       {@link ReactorTenantContext#get()} 读取</li>
  *   <li>阻塞链路（如 MyBatis 拦截器）需使用
- *       {@link ReactorTenantContext#bridgeToBlocking()} 手动桥接</li>
+ *       {@link ReactorTenantContext#bridgeToBlocking(Runnable)} 手动桥接</li>
  * </ol>
- * </p>
  *
- * <p>仅当 {@link MultiTenancyProperties#isEnabled()} 为 {@code true} 且
+ * <p>仅当 {@code MultiTenancyProperties#isEnabled()} 为 {@code true} 且
  * 应用为 Reactive Web 环境时生效。</p>
  *
  * @author richie696
@@ -93,16 +92,20 @@ public class TenantWebFilter implements WebFilter {
             .flatMap(principal ->
                 chain.filter(exchange)
                     .contextWrite(ctx -> ctx.put(TenantContextKeys.TENANT_KEY, principal))
+                    .then(Mono.just(true))
             )
             .switchIfEmpty(Mono.defer(() -> {
                 if (properties.isEnforceAuthTenant() && !isSuperAdminPath(requestPath)) {
-                    return writeError(exchange, TenantErrorCode.TENANT_AUTH_MISSING_TOKEN, requestPath);
+                    return writeError(exchange, TenantErrorCode.TENANT_AUTH_MISSING_TOKEN, requestPath)
+                        .then(Mono.just(true));
                 }
-                return chain.filter(exchange);
+                return chain.filter(exchange).then(Mono.just(true));
             }))
             .onErrorResume(this::isTenantException, ex ->
                 writeError(exchange, ((TenantValidationException) ex).getErrorCode(),
-                    ((TenantValidationException) ex).getArgs()));
+                    ((TenantValidationException) ex).getArgs())
+                    .then(Mono.just(true)))
+            .then();
     }
 
     /**
@@ -117,9 +120,6 @@ public class TenantWebFilter implements WebFilter {
             principal = resolveFromHeader(exchange);
             return principal;
         }).flatMap(principal -> {
-            if (principal == null) {
-                return Mono.empty();
-            }
 
             Long tenantId = principal.getTenantId();
             if (tenantId == null || tenantId <= 0) {

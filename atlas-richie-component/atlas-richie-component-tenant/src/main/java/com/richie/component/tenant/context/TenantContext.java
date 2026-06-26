@@ -1,6 +1,7 @@
 package com.richie.component.tenant.context;
 
 import com.richie.component.tenant.exception.BusinessException;
+import com.richie.component.tenant.exception.TenantSwitchInTransactionException;
 import com.richie.contract.model.TenantPrincipal;
 import lombok.Setter;
 

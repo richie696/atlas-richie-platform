@@ -7,6 +7,9 @@ import com.richie.component.mongodb.core.AuditFieldHandler;
 import com.richie.component.mongodb.core.EntityIntrospector;
 import com.richie.component.mongodb.core.TenantHandler;
 import com.richie.component.mongodb.exception.DuplicateKeyException;
+import com.richie.component.tenant.context.TenantContext;
+import com.richie.component.tenant.context.ThreadLocalHolder;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +28,11 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MongodbTest {
+
+    @BeforeAll
+    static void initTenantContext() {
+        TenantContext.init(new ThreadLocalHolder());
+    }
 
     @Mock
     private MongoTemplate mongoTemplate;

@@ -10,7 +10,7 @@ import reactor.util.context.Context;
  * Reactor {@link Context} 中，避免依赖 ThreadLocal / ScopedValue
  * 在响应式环境下不可靠的问题。</p>
  *
- * <h3>用法</h3>
+ * <h2>用法</h2>
  * <pre>{@code
  * // 写入（通常在 TenantWebFilter 或入口拦截器）
  * Mono.deferContextual(ctx -> {

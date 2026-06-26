@@ -18,6 +18,7 @@ import com.richie.component.tenant.interceptor.TenantLineInnerInterceptor;
 import com.richie.component.tenant.interceptor.TenantStrategyInterceptor;
 import com.richie.component.tenant.monitor.TenantMeterBinder;
 import com.richie.component.tenant.monitor.TenantMetricsCollector;
+import com.richie.component.tenant.reactive.TenantWebFilter;
 import com.richie.component.tenant.spi.CachingTenantInfoProvider;
 import com.richie.component.tenant.spi.TenantInfoProvider;
 import com.richie.component.tenant.strategy.ColumnStrategy;
@@ -39,9 +40,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.web.server.WebFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
@@ -117,6 +118,7 @@ public class TenantAutoConfiguration {
          * 若关闭则每次 SQL 都直接穿透到业务实现的 {@link TenantInfoProvider}。
          */
         @Bean
+        @Primary
         @ConditionalOnProperty(prefix = "multi-tenancy.cache.tenant-info", name = "enabled", havingValue = "true", matchIfMissing = true)
         public CachingTenantInfoProvider cachingTenantInfoProvider(TenantInfoProvider tenantInfoProvider,
                                                                     ObjectProvider<TenantMetricsCollector> metricsCollectorProvider) {
