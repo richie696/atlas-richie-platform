@@ -1,14 +1,17 @@
 package com.richie.context.common.api;
 
 import com.richie.context.utils.data.Collections;
-import com.alibaba.ttl.TransmittableThreadLocal;
+import io.micrometer.context.ContextRegistry;
+import io.micrometer.context.ThreadLocalAccessor;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Map;
 import java.util.Optional;
 
 /**
- * 请求头上下文持有者类
+ * 请求头上下文持有者类。
+ *
+ * <p>通过 micrometer {@link ThreadLocalAccessor} 注册，支持跨异步边界自动传播。</p>
  *
  * @author richie696
  * @version 1.0
@@ -16,10 +19,20 @@ import java.util.Optional;
  */
 public class HeaderContextHolder {
 
-    private HeaderContextHolder() {
+    private static final String CONTEXT_KEY = "header-context";
+    private static final ThreadLocal<Map<String, String>> CTX = new ThreadLocal<>();
+
+    static {
+        ContextRegistry.getInstance().registerThreadLocalAccessor(new ThreadLocalAccessor<Map<String, String>>() {
+            @Override public Object key() { return CONTEXT_KEY; }
+            @Override public Map<String, String> getValue() { return CTX.get(); }
+            @Override public void setValue(Map<String, String> value) { CTX.set(value); }
+            @Override public void setValue() { CTX.remove(); }
+        });
     }
 
-    private static final TransmittableThreadLocal<Map<String, String>> CTX = new TransmittableThreadLocal<>();
+    private HeaderContextHolder() {
+    }
 
     /**
      * 设置请求头上下文的方法

@@ -1,8 +1,10 @@
 package com.richie.component.mongodb.builder;
 
 import com.richie.component.mongodb.core.EntityIntrospector;
-import com.richie.component.tenant.context.TenantContextHolder;
+import com.richie.component.tenant.context.TenantContext;
+import com.richie.component.tenant.context.ThreadLocalHolder;
 import com.richie.contract.model.TenantPrincipal;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +23,14 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class QueryBuilderTest {
+
+    private static ThreadLocalHolder holder;
+
+    @BeforeAll
+    static void initContext() {
+        holder = new ThreadLocalHolder();
+        TenantContext.init(holder);
+    }
 
     @Mock
     private MongoTemplate mongoTemplate;
@@ -452,12 +462,12 @@ class QueryBuilderTest {
     void applyAnnotationFilters_withTenantFieldAndContext_shouldAddCriteria() {
         when(entityIntrospector.getSoftDeleteField(TestEntity.class)).thenReturn(null);
         when(entityIntrospector.getTenantField(TestEntity.class)).thenReturn("tenantId");
-        TenantContextHolder.set(new TenantPrincipal().setTenantId(1L));
+        holder.set(new TenantPrincipal().setTenantId(1L));
         try {
             builder.list();
             verify(mongoTemplate).find(any(Query.class), eq(TestEntity.class));
         } finally {
-            TenantContextHolder.clear();
+            TenantContext.clear();
         }
     }
 

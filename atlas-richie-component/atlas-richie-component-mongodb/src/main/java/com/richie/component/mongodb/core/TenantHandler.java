@@ -1,7 +1,7 @@
 package com.richie.component.mongodb.core;
 
 import com.richie.component.mongodb.annotation.TenantScoped;
-import com.richie.component.tenant.context.TenantContextHolder;
+import com.richie.component.tenant.context.TenantContext;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
@@ -16,7 +16,7 @@ public class TenantHandler {
 
     public void addTenantCriteria(Query query, Class<?> entityClass) {
         String fieldName = getTenantField(entityClass);
-        Long tenantId = TenantContextHolder.getTenantId();
+        Long tenantId = TenantContext.getTenantId();
         if (fieldName != null && tenantId != null) {
             query.addCriteria(Criteria.where(fieldName).is(String.valueOf(tenantId)));
         }
@@ -24,7 +24,7 @@ public class TenantHandler {
 
     public void fillOnInsert(Object entity) {
         String fieldName = getTenantField(entity.getClass());
-        Long tenantId = TenantContextHolder.getTenantId();
+        Long tenantId = TenantContext.getTenantId();
         if (fieldName != null && tenantId != null) {
             setField(entity, fieldName, String.valueOf(tenantId));
         }

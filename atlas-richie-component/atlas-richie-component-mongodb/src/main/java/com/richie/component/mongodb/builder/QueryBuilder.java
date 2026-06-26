@@ -1,7 +1,7 @@
 package com.richie.component.mongodb.builder;
 
 import com.richie.component.mongodb.core.EntityIntrospector;
-import com.richie.component.tenant.context.TenantContextHolder;
+import com.richie.component.tenant.context.TenantContext;
 import com.richie.component.mongodb.observability.MongodbMetricsRecorder;
 import com.richie.component.mongodb.observability.MongodbSlowQueryLogger;
 import com.richie.component.mongodb.observability.MongodbTracing;
@@ -409,7 +409,7 @@ public class QueryBuilder<T> {
         }
         if (!bypassTenant) {
             String tenantField = entityIntrospector.getTenantField(entityClass);
-            Long tenantId = TenantContextHolder.getTenantId();
+            Long tenantId = TenantContext.getTenantId();
             if (tenantField != null && tenantId != null) {
                 query.addCriteria(Criteria.where(tenantField).is(String.valueOf(tenantId)));
             }

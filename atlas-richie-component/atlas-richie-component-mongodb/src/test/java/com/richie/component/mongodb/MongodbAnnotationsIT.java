@@ -6,9 +6,11 @@ import com.richie.component.mongodb.annotation.SoftDelete;
 import com.richie.component.mongodb.annotation.TenantScoped;
 import com.richie.component.mongodb.builder.IndexBuilder;
 import com.richie.component.mongodb.support.MongodbIntegrationTest;
-import com.richie.component.tenant.context.TenantContextHolder;
+import com.richie.component.tenant.context.TenantContext;
+import com.richie.component.tenant.context.ThreadLocalHolder;
 import com.richie.contract.model.TenantPrincipal;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 @MongodbIntegrationTest
 class MongodbAnnotationsIT {
 
+    private static ThreadLocalHolder holder;
+
+    @BeforeAll
+    static void initContext() {
+        holder = new ThreadLocalHolder();
+        TenantContext.init(holder);
+    }
+
     @Autowired
     private Mongodb mongodb;
 
@@ -32,7 +42,7 @@ class MongodbAnnotationsIT {
 
     @AfterEach
     void tearDown() {
-        TenantContextHolder.clear();
+        TenantContext.clear();
         mongodb.dropCollection(SoftDeleteDoc.class);
         mongodb.dropCollection(TenantDoc.class);
         mongodb.dropCollection(AuditDoc.class);
@@ -71,17 +81,17 @@ class MongodbAnnotationsIT {
 
     @Test
     void tenantScoped_insertAndQuery_autoFiltersByTenant() {
-        TenantContextHolder.set(new TenantPrincipal().setTenantId(1L));
+        holder.set(new TenantPrincipal().setTenantId(1L));
         TenantDoc doc = new TenantDoc();
         doc.setName("test");
         mongodb.insert(doc);
 
-        TenantContextHolder.set(new TenantPrincipal().setTenantId(2L));
+        holder.set(new TenantPrincipal().setTenantId(2L));
         TenantDoc doc2 = new TenantDoc();
         doc2.setName("test2");
         mongodb.insert(doc2);
 
-        TenantContextHolder.set(new TenantPrincipal().setTenantId(1L));
+        holder.set(new TenantPrincipal().setTenantId(1L));
         List<TenantDoc> results = mongodb.query(TenantDoc.class).list();
         assertThat(results).hasSize(1);
         assertThat(results.get(0).getName()).isEqualTo("test");
@@ -90,17 +100,17 @@ class MongodbAnnotationsIT {
 
     @Test
     void tenantScoped_bypassTenant_includesAll() {
-        TenantContextHolder.set(new TenantPrincipal().setTenantId(1L));
+        holder.set(new TenantPrincipal().setTenantId(1L));
         TenantDoc doc = new TenantDoc();
         doc.setName("test");
         mongodb.insert(doc);
 
-        TenantContextHolder.set(new TenantPrincipal().setTenantId(2L));
+        holder.set(new TenantPrincipal().setTenantId(2L));
         TenantDoc doc2 = new TenantDoc();
         doc2.setName("test2");
         mongodb.insert(doc2);
 
-        TenantContextHolder.set(new TenantPrincipal().setTenantId(1L));
+        holder.set(new TenantPrincipal().setTenantId(1L));
         List<TenantDoc> results = mongodb.query(TenantDoc.class).bypassTenant().list();
         assertThat(results).hasSize(2);
     }
@@ -144,7 +154,7 @@ class MongodbAnnotationsIT {
 
     @Test
     void combinedAnnotations_allFourWorkTogether() {
-        TenantContextHolder.set(new TenantPrincipal().setTenantId(1L));
+        holder.set(new TenantPrincipal().setTenantId(1L));
         CombinedDoc doc = new CombinedDoc();
         doc.setName("combined");
         CombinedDoc saved = mongodb.insert(doc);

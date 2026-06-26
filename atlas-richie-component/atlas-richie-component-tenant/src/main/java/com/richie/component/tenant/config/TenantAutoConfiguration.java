@@ -1,33 +1,326 @@
 package com.richie.component.tenant.config;
 
-import com.richie.component.tenant.web.TenantContextInitializer;
+import com.richie.component.tenant.circuit.DataSourceCircuitBreaker;
+import com.richie.component.tenant.circuit.DataSourceHealthProbe;
+import com.richie.component.tenant.context.ScopedValueHolder;
+import com.richie.component.tenant.context.TenantContext;
+import com.richie.component.tenant.context.TenantContextHolder;
+import com.richie.component.tenant.context.TransactionTenantHolder;
+import com.richie.component.tenant.context.ThreadLocalHolder;
+import com.richie.component.tenant.datasource.DynamicTenantDataSource;
+import com.richie.component.tenant.cross.TenantTaskDecorator;
+import com.richie.component.tenant.cross.TenantTaskDecoratorBeanPostProcessor;
+import com.richie.component.tenant.handler.TenantExceptionHandler;
+import com.richie.component.tenant.handler.TenantMetaObjectHandler;
+import com.richie.component.tenant.interceptor.ConnectionResetInterceptor;
+import com.richie.component.tenant.interceptor.DynamicTableNameInnerInterceptor;
+import com.richie.component.tenant.interceptor.TenantLineInnerInterceptor;
+import com.richie.component.tenant.interceptor.TenantStrategyInterceptor;
+import com.richie.component.tenant.spi.CachingTenantInfoProvider;
+import com.richie.component.tenant.spi.TenantInfoProvider;
+import com.richie.component.tenant.strategy.ColumnStrategy;
+import com.richie.component.tenant.strategy.DatabaseStrategy;
+import com.richie.component.tenant.strategy.HybridStrategy;
+import com.richie.component.tenant.strategy.SchemaStrategy;
+import com.richie.component.tenant.strategy.TableStrategy;
+import com.richie.component.tenant.strategy.TenancyStrategy;
+import com.richie.component.tenant.strategy.TenancyStrategyFactory;
+import com.richie.component.tenant.web.TenantIdentityFilter;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+
+import java.util.List;
 
 /**
- * 租户组件自动配置
+ * 多租户组件自动配置（2.0 重写）。
  *
- * <p>在 Servlet Web 环境下注册 {@link TenantContextInitializer} 拦截器，
- * 自动从请求头解析租户 ID 并设置到 {@link com.richie.component.tenant.context.TenantContextHolder}。</p>
+ * <p>按职责拆分为多个内部配置类：
+ * <ul>
+ *   <li>{@link CoreConfig} — 配置绑定 + 上下文持有器初始化 + 通信框架诊断（任何环境）</li>
+ *   <li>{@link ServletConfig} — Servlet Filter + ExceptionHandler（仅 Servlet Web）</li>
+ *   <li>{@link MyBatisConfig} — SQL 拦截器 + 策略工厂（仅 MyBatis classpath）</li>
+ * </ul>
+ *
+ * <h2>微服务通信框架租户上下文透传</h2>
+ * <p>多租户上下文（{@code X-Tenant-ID}）在微服务间透传需引入对应的通信组件（二选一）：
+ * <ul>
+ *   <li><b>HTTP</b> — 引入 {@code atlas-richie-component-microservice}（覆盖 Feign + RestClient）</li>
+ *   <li><b>gRPC</b> — 引入 {@code atlas-richie-component-grpc}（{@code x-tenant-id} 已在默认透传白名单中）</li>
+ * </ul>
+ * <p>启动时自动检测；若两者均未引入，输出 WARN 日志（不影响启动，但跨服务调用时租户上下文会中断）。</p>
  *
  * @author richie696
- * @since 1.0
+ * @since 2.0
  */
 @AutoConfiguration
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-public class TenantAutoConfiguration implements WebMvcConfigurer {
+@EnableConfigurationProperties(MultiTenancyProperties.class)
+public class TenantAutoConfiguration {
 
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(tenantContextInitializer())
-                .addPathPatterns("/**");
+    private static final Logger log = LoggerFactory.getLogger(TenantAutoConfiguration.class);
+
+    // ==================== 核心配置（任何环境） ====================
+
+    @Configuration
+    static class CoreConfig {
+
+        private final MultiTenancyProperties properties;
+
+        CoreConfig(MultiTenancyProperties properties) {
+            this.properties = properties;
+        }
+
+        @PostConstruct
+        public void initTenantContext() {
+            TenantContextHolder holder;
+            if (properties.isForceThreadLocal()) {
+                holder = new ThreadLocalHolder();
+                log.info("TenantContext initialized with ThreadLocal + micrometer context-propagation (force-thread-local=true)");
+            } else {
+                holder = new ScopedValueHolder();
+                log.info("TenantContext initialized with ScopedValue (preferred for virtual threads)");
+            }
+            TenantContext.init(holder);
+
+            // 注册事务租户切换检测器
+            TenantContext.setTransactionChecker(TransactionTenantHolder::checkSwitch);
+
+            // 微服务通信框架诊断
+            diagnoseCommunicationFrameworks(properties);
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        public TenantInfoProvider tenantInfoProvider() {
+            return new com.richie.component.tenant.spi.NoOpTenantInfoProvider();
+        }
+
+        /**
+         * TTL 缓存装饰器，挂在真实 {@link TenantInfoProvider} 上拦截重复查询。
+         * 仅当 {@code multi-tenancy.cache.tenant-info.enabled=true} 时激活。
+         */
+        @Bean
+        @ConditionalOnProperty(prefix = "multi-tenancy.cache.tenant-info", name = "enabled", havingValue = "true")
+        public CachingTenantInfoProvider cachingTenantInfoProvider(TenantInfoProvider tenantInfoProvider) {
+            MultiTenancyProperties.TenantInfoCacheConfig cfg = properties.getCache();
+            return new CachingTenantInfoProvider(tenantInfoProvider, cfg.getTtlSeconds(), cfg.getMaxSize());
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        public DataSourceCircuitBreaker dataSourceCircuitBreaker() {
+            return new DataSourceCircuitBreaker(properties);
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        public DataSourceHealthProbe dataSourceHealthProbe(
+            ObjectProvider<DynamicTenantDataSource> dynamicDataSourceProvider,
+            DataSourceCircuitBreaker circuitBreaker) {
+            DynamicTenantDataSource dynamicDataSource = dynamicDataSourceProvider.getIfAvailable();
+            if (dynamicDataSource == null) {
+                log.debug("DynamicTenantDataSource not available, DataSourceHealthProbe disabled");
+                return new DataSourceHealthProbe(circuitBreaker);
+            }
+            return new DataSourceHealthProbe(dynamicDataSource, circuitBreaker);
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        public TenantTaskDecorator tenantTaskDecorator() {
+            return new TenantTaskDecorator();
+        }
+
+        /**
+         * 自动给所有 Spring {@code ThreadPoolTaskExecutor} / {@code ThreadPoolTaskScheduler}
+         * Bean 注入 {@link TenantTaskDecorator},解决 {@code @Async} / {@code @Scheduled}
+         * 任务租户上下文丢失的 silent failure。
+         *
+         * <p>作为 {@link org.springframework.beans.factory.config.BeanPostProcessor} Bean
+         * 注册,Spring 会在所有其他 Bean 初始化完成后调用 {@code postProcessAfterInitialization},
+         * 自动注入任务装饰器,业务代码无需手动配置。</p>
+         */
+        @Bean
+        @ConditionalOnMissingBean
+        public TenantTaskDecoratorBeanPostProcessor tenantTaskDecoratorBeanPostProcessor(
+                TenantTaskDecorator tenantTaskDecorator) {
+            return new TenantTaskDecoratorBeanPostProcessor(tenantTaskDecorator);
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        public TenantMetaObjectHandler tenantMetaObjectHandler() {
+            return new TenantMetaObjectHandler();
+        }
+
+        // ==================== 微服务通信框架诊断 ====================
+
+        /**
+         * 检测 classpath 上的微服务通信框架，确认租户上下文可透传。
+         *
+         * <p>两种通信协议互斥，只需引入其一：
+         * <ul>
+         *   <li><b>HTTP</b> — 引入 {@code atlas-richie-component-microservice}（覆盖 Feign + RestClient）</li>
+         *   <li><b>gRPC</b> — 引入 {@code atlas-richie-component-grpc}</li>
+         * </ul>
+         * <p>若两者均未引入，输出 WARN 日志（不阻断启动）。
+         */
+        private void diagnoseCommunicationFrameworks(MultiTenancyProperties props) {
+            if (!props.isEnabled()) {
+                return;
+            }
+
+            // 单体应用无需跨服务透传检测
+            if (!props.isMicroservice()) {
+                log.info("[多租户] 单体应用模式 (microservice=false)，跳过通信框架检测");
+                return;
+            }
+
+            boolean hasHttp = isClassPresent("feign.RequestInterceptor")
+                    || isClassPresent("org.springframework.web.client.RestClient");
+            boolean hasGrpc = isClassPresent("io.grpc.ClientInterceptor");
+
+            if (hasHttp || hasGrpc) {
+                log.info("[多租户] 微服务通信框架已就绪: {}{}{}",
+                    hasHttp ? "HTTP (Feign/RestClient)" : "",
+                    hasHttp && hasGrpc ? " + " : "",
+                    hasGrpc ? "gRPC" : "");
+            } else {
+                log.warn("[多租户] 微服务模式已开启但未检测到通信框架！跨服务调用时租户上下文将中断。");
+                log.warn("  请根据通信协议引入其中一个组件:");
+                log.warn("    • HTTP (Feign/RestClient) → atlas-richie-component-microservice");
+                log.warn("    • gRPC                    → atlas-richie-component-grpc");
+                log.warn("  若为单体应用，请设置 multi-tenancy.microservice=false 关闭此检测");
+            }
+        }
+
+        private boolean isClassPresent(String className) {
+            try {
+                Class.forName(className, false, getClass().getClassLoader());
+                return true;
+            } catch (ClassNotFoundException e) {
+                return false;
+            }
+        }
     }
 
-    @Bean
-    public TenantContextInitializer tenantContextInitializer() {
-        return new TenantContextInitializer();
+    // ==================== Servlet Web 配置 ====================
+
+    @Configuration
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+    static class ServletConfig {
+
+        private final MultiTenancyProperties properties;
+
+        ServletConfig(MultiTenancyProperties properties) {
+            this.properties = properties;
+        }
+
+        @Bean
+        public FilterRegistrationBean<TenantIdentityFilter> tenantIdentityFilter(
+            TenantInfoProvider tenantInfoProvider,
+            ObjectProvider<List<String>> whitelistPathsProvider) {
+
+            List<String> whitelistPaths = whitelistPathsProvider.getIfAvailable();
+            TenantIdentityFilter filter = new TenantIdentityFilter(
+                properties, tenantInfoProvider, whitelistPaths);
+
+            FilterRegistrationBean<TenantIdentityFilter> registration = new FilterRegistrationBean<>(filter);
+            registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 500);
+            registration.addUrlPatterns("/*");
+            registration.setName("tenantIdentityFilter");
+            return registration;
+        }
+
+        @Bean
+        public TenantExceptionHandler tenantExceptionHandler() {
+            return new TenantExceptionHandler();
+        }
+    }
+
+    // ==================== MyBatis 配置 ====================
+
+    @Configuration
+    @ConditionalOnClass(name = "org.apache.ibatis.plugin.Interceptor")
+    static class MyBatisConfig {
+
+        private final MultiTenancyProperties properties;
+
+        MyBatisConfig(MultiTenancyProperties properties) {
+            this.properties = properties;
+        }
+
+        // ---------- 策略 Bean 注册 ----------
+
+        @Bean
+        public ColumnStrategy columnStrategy(TenantInfoProvider provider) {
+            return new ColumnStrategy(properties, provider);
+        }
+
+        @Bean
+        public TableStrategy tableStrategy(TenantInfoProvider provider) {
+            return new TableStrategy(properties, provider);
+        }
+
+        @Bean
+        public SchemaStrategy schemaStrategy(TenantInfoProvider provider) {
+            return new SchemaStrategy(properties, provider);
+        }
+
+        @Bean
+        public DatabaseStrategy databaseStrategy(TenantInfoProvider provider) {
+            return new DatabaseStrategy(properties, provider);
+        }
+
+        @Bean
+        public TenancyStrategyFactory tenancyStrategyFactory(List<TenancyStrategy> strategies) {
+            return new TenancyStrategyFactory(strategies);
+        }
+
+        @Bean
+        public HybridStrategy hybridStrategy(TenantInfoProvider provider,
+                                             ColumnStrategy columnStrategy,
+                                             TableStrategy tableStrategy,
+                                             SchemaStrategy schemaStrategy,
+                                             DatabaseStrategy databaseStrategy) {
+            return new HybridStrategy(properties, provider,
+                    columnStrategy, tableStrategy, schemaStrategy, databaseStrategy);
+        }
+
+        // ---------- MyBatis 拦截器 ----------
+
+        @Bean
+        public TenantLineInnerInterceptor tenantLineInnerInterceptor(TenantInfoProvider provider) {
+            return new TenantLineInnerInterceptor(properties, provider);
+        }
+
+        @Bean
+        public DynamicTableNameInnerInterceptor dynamicTableNameInnerInterceptor() {
+            return new DynamicTableNameInnerInterceptor(properties);
+        }
+
+        @Bean
+        public TenantStrategyInterceptor tenantStrategyInterceptor(
+            TenancyStrategyFactory factory,
+            TenantInfoProvider provider,
+            DataSourceCircuitBreaker circuitBreaker) {
+            return new TenantStrategyInterceptor(properties, factory, provider, circuitBreaker);
+        }
+
+        @Bean
+        public ConnectionResetInterceptor connectionResetInterceptor() {
+            return new ConnectionResetInterceptor(properties);
+        }
     }
 }

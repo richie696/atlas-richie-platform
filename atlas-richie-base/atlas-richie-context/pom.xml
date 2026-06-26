@@ -29,8 +29,8 @@
             <artifactId>spring-context</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>transmittable-thread-local</artifactId>
+            <groupId>io.micrometer</groupId>
+            <artifactId>context-propagation</artifactId>
         </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>

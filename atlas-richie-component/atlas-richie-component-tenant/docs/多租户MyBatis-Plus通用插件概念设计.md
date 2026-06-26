@@ -124,7 +124,6 @@ multi-tenancy:
   force-thread-local: false
   tenant-id-header: X-Tenant-ID
   enforce-auth-tenant: true
-  allowed-tenant-pattern: "^[a-zA-Z0-9_\\-]{1,64}$"
   tenant-id-column: tenant_id
   ignore-tables:
     - sys_config
@@ -136,13 +135,13 @@ multi-tenancy:
       hikari:
         maximum-pool-size: 20
     tenants:                        # 种子数据，仅首次启动生效
-      tenantA:
-        url: jdbc:postgresql://localhost:5432/tenant_a
+      1001:
+        url: jdbc:postgresql://localhost:5432/tenant_1001
 ```
 
 > **`tenant-id-header` 用途**：跨服务调用时通过 HTTP Header / gRPC Metadata 传递租户 ID 的统一 key，默认 `X-Tenant-ID`。
 > 
-> - **入口**：`TenantIdentityFilter` 用此 header 与 JWT `tenantCode` 交叉校验（不可单独信任 header）。
+> - **入口**：`TenantIdentityFilter` 用此 header 与 JWT `tenantId`（Long）交叉校验（不可单独信任 header）。
 > - **出站**：所有出站 HTTP/Feign/gRPC 客户端自动注入此 header，值为当前 `TenantContext` 中的租户 ID。
 > - **可配置**：允许改名以适配不同的网关/服务网格约定。
 > 
@@ -165,7 +164,13 @@ multi-tenancy:
   mode: table
   table-name-suffix: _${tenant}
   table-auto-create: true           # 注册租户时自动 CREATE TABLE ... LIKE
-  table-templates:                  # 需要按 suffix 复制的表模板列表
+  table-auto-discover: true         # 自动发现所有业务表（默认 false）
+  table-auto-discover-exclude:      # 自动发现时排除的表
+    - sys_config
+    - sys_tenant
+    - flyway_schema_history
+    - databasechangelog*
+  table-templates:                  # 显式指定表模板列表（与自动发现合并去重）
     - t_order
     - t_user
     - t_product
@@ -178,10 +183,13 @@ multi-tenancy:
 multi-tenancy:
   mode: schema
   schema-prefix: tenant_
+  schema-auto-create: true          # 注册租户时自动 CREATE SCHEMA + 复制表结构
   # ── 其余使用通用配置 ──
 ```
 
 > MySQL 不支持 schema 模式，配置校验器会在启动时拒绝。
+> 
+> **MySQL 兼容规则**：MySQL 中 `schema` 等同于 `database`，有且只有 1 个。如果配置 `mode: schema` 且检测到 MySQL，配置校验器直接启动失败并提示改用 `mode: database`。在 Hybrid 模式下，如果某租户的 `isolation_mode = SCHEMA` 但底层为 MySQL，启动时同样拦截。
 
 #### Database 模式
 
@@ -190,8 +198,8 @@ multi-tenancy:
   mode: database
   datasource:
     tenants:                        # 种子数据
-      tenantA:
-        url: jdbc:postgresql://localhost:5432/tenant_a
+      1001:
+        url: jdbc:postgresql://localhost:5432/tenant_1001
         username: app
         password: password
   # ── 其余使用通用配置 ──
@@ -210,14 +218,14 @@ multi-tenancy:
   schema-prefix: tenant_            # schema 租户使用
   datasource:
     tenants:                        # 种子数据，含租户级 mode
-      tenant_a:
+      1001:
         mode: COLUMN                # 默认 COLUMN，可省略
-      tenant_b:
+      1002:
         mode: TABLE
-        table-suffix: _b_custom     # 可选覆盖全局 table-name-suffix
-      tenant_c:
+        table-suffix: _1002_custom  # 可选覆盖全局 table-name-suffix
+      1003:
         mode: DATABASE
-        url: jdbc:postgresql://pg2:5432/tenant_c  # database 租户可覆盖连接信息
+        url: jdbc:postgresql://pg2:5432/tenant_1003  # database 租户可覆盖连接信息
   # ── 其余使用通用配置 ──
 ```
 
@@ -226,9 +234,9 @@ multi-tenancy:
 > ```sql
 > -- hybrid 模式下 sys_tenant 示例：三个租户使用不同策略
 > SELECT tenant_id, tenant_name, isolation_mode FROM sys_tenant;
-> -- tenant_a | Tenant A Corp | COLUMN     → WHERE tenant_id = 'tenant_a'
-> -- tenant_b | Tenant B Ltd  | TABLE      → t_order_tenant_b + 自动建表
-> -- tenant_c | Tenant C Bank | DATABASE   → jdbc:.../tenant_tenant_c 独立库
+> -- 1001 | Tenant A Corp | COLUMN     → WHERE tenant_id = 1001
+> -- 1002 | Tenant B Ltd  | TABLE      → t_order_1002 + 自动建表
+> -- 1003 | Tenant C Bank | DATABASE   → jdbc:.../tenant_1003 独立库
 > ```
 >
 > 详见 [租户生命周期详细设计](租户生命周期详细设计.md) §2 `sys_tenant` 元数据表。
@@ -242,15 +250,19 @@ multi-tenancy:
 - 结构：基于 `ScopedValue` 的单值容器，不可变，随虚拟线程生命周期自动清理；同时提供 `ThreadLocal` 降级实现。
 
 **TenantInfo**  
-
 - 属性：  
-  `String tenantId`  
+  `Long tenantId`  
   `IsolationMode mode`  
   `String dataSourceName`  
   `String schemaName`  
   `String tableSuffix`  
+  `TenantStatus status` — 租户生命周期状态（`ACTIVE / INACTIVE / MIGRATING`），策略层据此拒绝 `MIGRATING` 租户的请求  
+  `boolean canary` — 是否处于灰度阶段，`DatabaseStrategy` 据此路由到灰度数据源  
 
 由 `TenantInfoProvider` 根据租户 ID 返回，是策略执行的核心元数据。
+
+**TenantStatus 枚举**  
+`ACTIVE, INACTIVE, MIGRATING`
 
 **IsolationMode 枚举**  
 `COLUMN, TABLE, SCHEMA, DATABASE, HYBRID`
@@ -345,7 +357,7 @@ flowchart LR
 
 ### 5.1 配置管理模块
 - **MultiTenancyProperties**：映射全部 YAML 配置，提供模式、租户标识列、数据源定义等。
-- **配置校验器**：启动时校验 `allowed-tenant-pattern`、数据源完整性，以及混合模式下租户元数据存在性。
+- **配置校验器**：启动时校验数据源完整性、数据库类型与隔离模式兼容性，以及混合模式下租户元数据存在性。
 - **动态配置刷新**（预留）：监听配置变更（Spring Cloud Config / Nacos）后重建部分组件，需保证数据源刷新线程安全。
 
 ### 5.2 租户上下文模块
@@ -364,7 +376,7 @@ flowchart LR
 - **上下文传播器（SPI）**：`TenantContextPropagator`，用于跨线程池/消息队列/RPC 时挂载与恢复租户上下文。ScopedValue 模式默认需要显式捕获-恢复；ThreadLocal + TTL 模式可自动传递。
 - **入口绑定器**：提供标准的 Servlet Filter、Reactor Context 支持，实现认证租户提取与绑定。
 
-**跨服务租户传递**：当请求跨越微服务边界时，租户 ID 通过统一的 `X-Tenant-ID`（由 `tenant-id-header` 配置，默认 `X-Tenant-ID`）注入出站协议头，下游服务的 `TenantIdentityFilter` 收到后与 JWT `tenantCode` 交叉校验：
+**跨服务租户传递**：当请求跨越微服务边界时，租户 ID 通过统一的 `X-Tenant-ID`（由 `tenant-id-header` 配置，默认 `X-Tenant-ID`）注入出站协议头，下游服务的 `TenantIdentityFilter` 收到后与 JWT `tenantId`（Long）交叉校验：
 
 | 协议 | 出站注入方式 | 入站提取方式 |
 |------|------------|------------|
@@ -372,15 +384,15 @@ flowchart LR
 | **OpenFeign** | `TenantFeignInterceptor` 实现 `RequestInterceptor`，通过 `properties.getTenantIdHeader()` 注入 header | 同上（Feign 调用走 HTTP，下游同样经过 Filter 链） |
 | **gRPC** | `ClientInterceptor` 通过 `Metadata.Key.of(properties.getTenantIdHeader(), ...)` 注入 gRPC Metadata | `ServerInterceptor` 从 Metadata 提取并写入 `HttpServletRequest` wrapper，使 `TenantIdentityFilter` 无感处理 |
 
-> 安全原则不变：header/metadata 中的 `X-Tenant-ID` **仅供交叉校验**，不可作为租户身份的唯一来源。JWT `tenantCode` 始终是权威源。详见 [上下文模块详细设计](上下文模块详细设计.md) §7。
+> 安全原则不变：header/metadata 中的 `X-Tenant-ID` **仅供交叉校验**，不可作为租户身份的唯一来源。JWT `tenantId`（Long）始终是权威源。详见 [上下文模块详细设计](上下文模块详细设计.md) §7。
 
 **定时任务与后台线程**：定时任务无 HTTP 请求上下文（无 JWT、无 `TenantIdentityFilter`），必须显式调用 `TenantContext.runWithTenant(principal, () -> { ... })` 绑定租户。详见 [README 定时任务模板](多租户设计阅读导览.md#定时任务模板)。
 
 **模式迁移与数据迁移**：当租户需要变更隔离模式时，`TenantModeGuard` 仅允许低等级→高等级（COLUMN→TABLE→SCHEMA→DATABASE）迁移。数据迁移由 `TenantDataMigrator` SPI 执行，覆盖 6 条迁移路径，含 SQL 模板、校验机制、回滚策略和人工 SOP。详见 [模式切换数据迁移方案](模式切换数据迁移方案.md)。
 
 ### 5.3 元数据模块
-- **TenantInfoProvider 接口**：`getTenantInfo(String tenantId)` → `TenantInfo`（DB 中无记录返回 `null`）；`exists(String tenantId)` → `boolean`（O(1) 缓存查询，供 Filter 存在性校验）。
-- **DatabaseBasedTenantInfoProvider（默认）**：从 `sys_tenant` 表读取，本地缓存 + Nacos 事件刷新。DB 中未记录的租户返回 `null`（调用方应拒绝请求，引导通过管理 API 注册）。
+- **TenantInfoProvider 接口**：`getTenantInfo(Long tenantId)` → `TenantInfo`（DB 中无记录返回 `null`）；`exists(Long tenantId)` → `boolean`（O(1) 缓存查询，供 Filter 存在性校验）。
+- **DatabaseBasedTenantInfoProvider（默认）**：从 `sys_tenant` 表读取，L1 本地缓存 + L2 分布式缓存 + Nacos 事件刷新。DB 中未记录的租户返回 `null`（调用方应拒绝请求，引导通过管理 API 注册）。
 - **Extension 预留**：可扩展为从 Redis、配置中心等多源聚合。
 
 ### 5.4 策略执行模块

@@ -2,10 +2,13 @@ package com.richie.context.common.api;
 
 import com.richie.contract.exception.BusinessException;
 import com.richie.contract.model.LoginUserPrincipal;
-import com.alibaba.ttl.TransmittableThreadLocal;
+import io.micrometer.context.ContextRegistry;
+import io.micrometer.context.ThreadLocalAccessor;
 
 /**
- * 登录用户上下文
+ * 登录用户上下文。
+ *
+ * <p>通过 micrometer {@link ThreadLocalAccessor} 注册，支持跨异步边界自动传播。</p>
  *
  * @author richie696
  * @version 1.0
@@ -13,8 +16,25 @@ import com.alibaba.ttl.TransmittableThreadLocal;
  */
 public class LoginUserContextHolder {
 
-    private static final TransmittableThreadLocal<LoginUserPrincipal> USER_CONTEXT = new TransmittableThreadLocal<>();
-    private static final TransmittableThreadLocal<String> TOKEN_CONTEXT = new TransmittableThreadLocal<>();
+    private static final String USER_CONTEXT_KEY = "login-user";
+    private static final String TOKEN_CONTEXT_KEY = "login-token";
+    private static final ThreadLocal<LoginUserPrincipal> USER_CONTEXT = new ThreadLocal<>();
+    private static final ThreadLocal<String> TOKEN_CONTEXT = new ThreadLocal<>();
+
+    static {
+        ContextRegistry.getInstance().registerThreadLocalAccessor(new ThreadLocalAccessor<LoginUserPrincipal>() {
+            @Override public Object key() { return USER_CONTEXT_KEY; }
+            @Override public LoginUserPrincipal getValue() { return USER_CONTEXT.get(); }
+            @Override public void setValue(LoginUserPrincipal value) { USER_CONTEXT.set(value); }
+            @Override public void setValue() { USER_CONTEXT.remove(); }
+        });
+        ContextRegistry.getInstance().registerThreadLocalAccessor(new ThreadLocalAccessor<String>() {
+            @Override public Object key() { return TOKEN_CONTEXT_KEY; }
+            @Override public String getValue() { return TOKEN_CONTEXT.get(); }
+            @Override public void setValue(String value) { TOKEN_CONTEXT.set(value); }
+            @Override public void setValue() { TOKEN_CONTEXT.remove(); }
+        });
+    }
 
     private LoginUserContextHolder() {
     }

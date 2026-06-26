@@ -1,8 +1,10 @@
 package com.richie.component.mongodb.core;
 
 import com.richie.component.mongodb.annotation.TenantScoped;
-import com.richie.component.tenant.context.TenantContextHolder;
+import com.richie.component.tenant.context.TenantContext;
+import com.richie.component.tenant.context.ThreadLocalHolder;
 import com.richie.contract.model.TenantPrincipal;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +16,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TenantHandlerTest {
 
+    private static ThreadLocalHolder holder;
     private TenantHandler handler;
+
+    @BeforeAll
+    static void initContext() {
+        holder = new ThreadLocalHolder();
+        TenantContext.init(holder);
+    }
 
     @BeforeEach
     void setUp() {
@@ -23,12 +32,12 @@ class TenantHandlerTest {
 
     @AfterEach
     void tearDown() {
-        TenantContextHolder.clear();
+        TenantContext.clear();
     }
 
     @Test
     void addTenantCriteria_whenTenantScopedAndContextSet() {
-        TenantContextHolder.set(new TenantPrincipal().setTenantId(123L));
+        holder.set(new TenantPrincipal().setTenantId(123L));
         Query query = new Query();
         handler.addTenantCriteria(query, TenantScopedEntity.class);
         assertThat(query.getQueryObject()).containsKey("tenantId");
@@ -43,7 +52,7 @@ class TenantHandlerTest {
 
     @Test
     void addTenantCriteria_whenNotTenantScoped() {
-        TenantContextHolder.set(new TenantPrincipal().setTenantId(123L));
+        holder.set(new TenantPrincipal().setTenantId(123L));
         Query query = new Query();
         handler.addTenantCriteria(query, PlainEntity.class);
         assertThat(query.getQueryObject()).isEmpty();
@@ -66,7 +75,7 @@ class TenantHandlerTest {
 
     @Test
     void fillOnInsert_whenTenantScopedAndContextSet() {
-        TenantContextHolder.set(new TenantPrincipal().setTenantId(123L));
+        holder.set(new TenantPrincipal().setTenantId(123L));
         TenantScopedEntity entity = new TenantScopedEntity();
         handler.fillOnInsert(entity);
         assertThat(entity.getTenantId()).isEqualTo("123");
