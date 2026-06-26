@@ -39,6 +39,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.web.server.WebFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -395,6 +396,55 @@ public class TenantAutoConfiguration {
         @Order(1)
         public ConnectionResetInterceptor connectionResetInterceptor() {
             return new ConnectionResetInterceptor(properties);
+        }
+    }
+
+    // ==================== Reactive Web 配置 ====================
+
+    @Configuration
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+    @ConditionalOnClass(name = "reactor.core.publisher.Mono")
+    static class ReactiveConfig {
+
+        private final MultiTenancyProperties properties;
+        private final TenantInfoProvider tenantInfoProvider;
+        private final ObjectProvider<List<String>> whitelistPathsProvider;
+        private final ObjectProvider<List<String>> superAdminPathsProvider;
+
+        ReactiveConfig(MultiTenancyProperties properties,
+                       TenantInfoProvider tenantInfoProvider,
+                       ObjectProvider<List<String>> whitelistPathsProvider,
+                       ObjectProvider<List<String>> superAdminPathsProvider) {
+            this.properties = properties;
+            this.tenantInfoProvider = tenantInfoProvider;
+            this.whitelistPathsProvider = whitelistPathsProvider;
+            this.superAdminPathsProvider = superAdminPathsProvider;
+        }
+
+        /**
+         * Reactive 环境租户身份过滤器（WebFlux WebFilter）。
+         * <p>与 Servlet 版 {@link TenantIdentityFilter} 同优先级，
+         * 从 JWT / Header 解析租户，写入 Reactor {@code Context}。</p>
+         */
+        @Bean
+        @ConditionalOnMissingBean
+        public TenantWebFilter tenantWebFilter() {
+            return new TenantWebFilter(
+                properties,
+                tenantInfoProvider,
+                whitelistPathsProvider.getIfAvailable(),
+                superAdminPathsProvider.getIfAvailable()
+            );
+        }
+
+        /**
+         * WebFlux 环境异常处理器（委托给已有的 {@link com.richie.component.tenant.handler.TenantExceptionHandler}）。
+         * 已有的 {@code @RestControllerAdvice} 在 WebFlux 下同样生效。
+         */
+        @Bean
+        @ConditionalOnMissingBean(name = "tenantWebFluxExceptionHandler")
+        public com.richie.component.tenant.handler.TenantExceptionHandler tenantWebFluxExceptionHandler() {
+            return new com.richie.component.tenant.handler.TenantExceptionHandler();
         }
     }
 }

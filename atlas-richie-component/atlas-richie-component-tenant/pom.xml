@@ -33,6 +33,12 @@
             <artifactId>spring-boot-starter-web</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!-- Spring WebFlux（TenantWebFilter + ReactorTenantContext） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <!-- Micrometer 核心（MeterBinder / MeterRegistry，provided 由消费端引入） -->
         <dependency>
             <groupId>io.micrometer</groupId>
