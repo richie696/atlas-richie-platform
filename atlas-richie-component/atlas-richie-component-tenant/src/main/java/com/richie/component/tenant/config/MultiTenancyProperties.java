@@ -110,8 +110,8 @@ public class MultiTenancyProperties {
     /**
      * 租户信息缓存配置（{@link com.richie.component.tenant.spi.CachingTenantInfoProvider}）。
      *
-     * <p>默认关闭，业务方按需启用。开启后拦截器层 / 策略层每次 SQL 前的
-     * {@code TenantInfoProvider.getTenantInfo()} 调用会命中本地 TTL 缓存。</p>
+     * <p>默认开启，大幅降低 {@code TenantInfoProvider.getTenantInfo()} 调用频率。
+     * 若需关闭，设置 {@code multi-tenancy.cache.tenant-info.enabled=false}。</p>
      */
     private TenantInfoCacheConfig cache = new TenantInfoCacheConfig();
 
@@ -246,9 +246,9 @@ public class MultiTenancyProperties {
     public static class TenantInfoCacheConfig {
         /**
          * 是否启用 {@link com.richie.component.tenant.spi.CachingTenantInfoProvider} 装饰器。
-         * 默认 {@code false}（业务方需主动开启）。
+         * 默认 {@code true}（框架自动为 {@link TenantInfoProvider} 叠加本地 TTL 缓存）。
          */
-        private boolean enabled = false;
+        private boolean enabled = true;
 
         /**
          * 缓存项 TTL（秒）。推荐 30-300，过短则命中率低，过长则 sys_tenant 变更生效延迟。

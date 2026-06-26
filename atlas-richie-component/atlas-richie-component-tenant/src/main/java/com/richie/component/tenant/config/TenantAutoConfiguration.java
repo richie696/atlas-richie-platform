@@ -53,6 +53,7 @@ import java.util.List;
  * <ul>
  *   <li>{@link CoreConfig} — 配置绑定 + 上下文持有器初始化 + 通信框架诊断（任何环境）</li>
  *   <li>{@link ServletConfig} — Servlet Filter + ExceptionHandler（仅 Servlet Web）</li>
+ *   <li>{@link ReactiveConfig} — WebFlux WebFilter + Reactor Context 集成（仅 Reactive Web）</li>
  *   <li>{@link MyBatisConfig} — SQL 拦截器 + 策略工厂（仅 MyBatis classpath）</li>
  * </ul>
  *
@@ -111,10 +112,11 @@ public class TenantAutoConfiguration {
 
         /**
          * TTL 缓存装饰器，挂在真实 {@link TenantInfoProvider} 上拦截重复查询。
-         * 仅当 {@code multi-tenancy.cache.tenant-info.enabled=true} 时激活。
+         * 默认开启（{@code multi-tenancy.cache.tenant-info.enabled=true}）。
+         * 若关闭则每次 SQL 都直接穿透到业务实现的 {@link TenantInfoProvider}。
          */
         @Bean
-        @ConditionalOnProperty(prefix = "multi-tenancy.cache.tenant-info", name = "enabled", havingValue = "true")
+        @ConditionalOnProperty(prefix = "multi-tenancy.cache.tenant-info", name = "enabled", havingValue = "true", matchIfMissing = true)
         public CachingTenantInfoProvider cachingTenantInfoProvider(TenantInfoProvider tenantInfoProvider,
                                                                     ObjectProvider<TenantMetricsCollector> metricsCollectorProvider) {
             MultiTenancyProperties.TenantInfoCacheConfig cfg = properties.getCache();
