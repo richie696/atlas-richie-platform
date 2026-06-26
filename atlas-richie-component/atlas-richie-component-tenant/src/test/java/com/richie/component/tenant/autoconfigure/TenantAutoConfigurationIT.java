@@ -5,12 +5,17 @@ import com.richie.component.tenant.config.MultiTenancyProperties;
 import com.richie.component.tenant.context.TenantContext;
 import com.richie.component.tenant.cross.TenantTaskDecorator;
 import com.richie.component.tenant.handler.TenantMetaObjectHandler;
+import com.richie.component.tenant.interceptor.ConnectionResetInterceptor;
+import com.richie.component.tenant.interceptor.DynamicTableNameInnerInterceptor;
+import com.richie.component.tenant.interceptor.TenantLineInnerInterceptor;
+import com.richie.component.tenant.interceptor.TenantStrategyInterceptor;
 import com.richie.component.tenant.spi.TenantInfoProvider;
 import com.richie.component.tenant.support.PostgresTestSupport;
 import com.richie.component.tenant.support.TenantIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.annotation.Order;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -88,6 +93,34 @@ class TenantAutoConfigurationIT {
         // 未绑定租户时返回 null
         assertThat(TenantContext.get()).isNull();
         assertThat(TenantContext.getTenantId()).isNull();
+    }
+
+    // ==================== MyBatis Interceptor 顺序 ====================
+
+    /**
+     * 验证 4 个 MyBatis Interceptor 均标注 {@link Order} 且值达预期:
+     * <pre>
+     *   @Order(1) ConnectionResetInterceptor    — 最内层,SQL 后清理连接资源
+     *   @Order(2) TenantLineInnerInterceptor    — tenant_id WHERE 条件
+     *   @Order(3) DynamicTableNameInnerInterceptor — 表名后缀改写
+     *   @Order(4) TenantStrategyInterceptor     — 最外层,租户解析 + 熔断 + 策略调度
+     * </pre>
+     *
+     * <p>MyBatis-Spring-Boot-Starter 收集 {@code Interceptor} 后经
+     * {@code AnnotationAwareOrderComparator.sort()} 排序才注册到
+     * {@code InterceptorChain},低 {@code @Order} 值先注册(内层),
+     * 高 {@code @Order} 值后注册(外层)。</p>
+     */
+    @Test
+    void interceptorOrder_shouldBeExplicit() {
+        assertThat(applicationContext.findAnnotationOnBean(
+            "connectionResetInterceptor", Order.class).value()).isEqualTo(1);
+        assertThat(applicationContext.findAnnotationOnBean(
+            "tenantLineInnerInterceptor", Order.class).value()).isEqualTo(2);
+        assertThat(applicationContext.findAnnotationOnBean(
+            "dynamicTableNameInnerInterceptor", Order.class).value()).isEqualTo(3);
+        assertThat(applicationContext.findAnnotationOnBean(
+            "tenantStrategyInterceptor", Order.class).value()).isEqualTo(4);
     }
 
     // ==================== PostgreSQL 连接 ====================

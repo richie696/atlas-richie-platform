@@ -180,6 +180,10 @@ public class TenantIdentityFilter extends OncePerRequestFilter {
             try {
                 filterChain.doFilter(request, response);
             } catch (ServletException | IOException e) {
+                if (e instanceof ServletException se
+                    && se.getRootCause() instanceof RuntimeException re) {
+                    throw re;
+                }
                 throw new RuntimeException(e);
             }
         });

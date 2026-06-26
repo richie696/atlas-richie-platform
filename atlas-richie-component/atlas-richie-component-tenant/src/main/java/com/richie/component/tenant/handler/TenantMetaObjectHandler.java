@@ -49,8 +49,7 @@ public class TenantMetaObjectHandler implements MetaObjectHandler {
                     + "Set multi-tenancy.enforce-auth-tenant=false to allow this, "
                     + "or ensure the entry point binds a tenant via TenantContext.runWithTenant().");
         }
-        // 多租户禁用时,tenant_id 默认为 0,不允许为 null
-        this.strictInsertFill(metaObject, TENANT_ID, Long.class, Objects.requireNonNullElse(tenantId, 0L));
+        metaObject.setValue(TENANT_ID, Objects.requireNonNullElse(tenantId, 0L));
     }
 
     @Override

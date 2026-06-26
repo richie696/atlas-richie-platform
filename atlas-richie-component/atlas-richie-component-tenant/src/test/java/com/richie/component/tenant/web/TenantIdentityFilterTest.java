@@ -3,12 +3,14 @@ package com.richie.component.tenant.web;
 import com.richie.component.tenant.config.MultiTenancyProperties;
 import com.richie.component.tenant.context.TenantContext;
 import com.richie.component.tenant.context.ThreadLocalHolder;
+import com.richie.component.tenant.exception.BusinessException;
 import com.richie.component.tenant.model.TenantInfo;
 import com.richie.component.tenant.model.TenantStatus;
 import com.richie.component.tenant.model.IsolationMode;
 import com.richie.component.tenant.spi.TenantInfoProvider;
 import com.richie.contract.constant.GlobalConstants;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
@@ -18,12 +20,15 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -321,6 +326,44 @@ class TenantIdentityFilterTest {
             verify(response).setStatus(HttpStatus.FORBIDDEN.value());
             verify(chain, never()).doFilter(any(), any());
             assertThat(responseWriter.toString()).contains("TENANT_AUTH_MISMATCH");
+        }
+    }
+
+    @Nested
+    @DisplayName("异常解包")
+    class ExceptionUnwrapping {
+
+        @Test
+        @DisplayName("ServletException 解包 BusinessException")
+        void servletExceptionUnwrapsBusinessException() throws Exception {
+            when(request.getRequestURI()).thenReturn("/api/orders");
+            when(request.getHeader(GlobalConstants.X_ACCESS_TOKEN)).thenReturn(null);
+            when(request.getHeader("X-ACCESS-TOKEN")).thenReturn(null);
+            when(request.getHeader(props.getTenantIdHeader())).thenReturn("1001");
+            when(request.getHeader(GlobalConstants.X_TENANT_ID)).thenReturn("1001");
+
+            BusinessException be = new BusinessException("TENANT_BUSINESS_ERROR", "业务异常");
+            doThrow(new ServletException(be)).when(chain).doFilter(any(), any());
+
+            assertThatThrownBy(() -> filter.doFilterInternal(request, response, chain))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("业务异常");
+        }
+
+        @Test
+        @DisplayName("IOException 包装为 RuntimeException")
+        void ioExceptionWrappedInRuntimeException() throws Exception {
+            when(request.getRequestURI()).thenReturn("/api/orders");
+            when(request.getHeader(GlobalConstants.X_ACCESS_TOKEN)).thenReturn(null);
+            when(request.getHeader("X-ACCESS-TOKEN")).thenReturn(null);
+            when(request.getHeader(props.getTenantIdHeader())).thenReturn("1001");
+            when(request.getHeader(GlobalConstants.X_TENANT_ID)).thenReturn("1001");
+
+            doThrow(new IOException("IO error")).when(chain).doFilter(any(), any());
+
+            assertThatThrownBy(() -> filter.doFilterInternal(request, response, chain))
+                .isInstanceOf(RuntimeException.class)
+                .hasCauseInstanceOf(IOException.class);
         }
     }
 }

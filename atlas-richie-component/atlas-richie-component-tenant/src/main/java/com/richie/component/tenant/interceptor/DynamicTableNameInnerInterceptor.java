@@ -2,6 +2,7 @@ package com.richie.component.tenant.interceptor;
 
 import com.richie.component.tenant.config.MultiTenancyProperties;
 import com.richie.component.tenant.context.TableSuffixHolder;
+import com.richie.component.tenant.monitor.TenantMetricsCollector;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
@@ -45,24 +46,27 @@ public class DynamicTableNameInnerInterceptor implements Interceptor {
     private static final Logger log = LoggerFactory.getLogger(DynamicTableNameInnerInterceptor.class);
 
     private final MultiTenancyProperties properties;
+    private final TenantMetricsCollector metricsCollector;
 
-    /**
-     * 构造动态表名拦截器。
-     *
-     * @param properties 多租户配置（{@code multi-tenancy.ignore-tables} 控制白名单）
-     */
-    /**
-     * 构造动态表名拦截器。
-     *
-     * @param properties 多租户配置
-     */
     /**
      * 构造动态表名改写拦截器。
      *
      * @param properties 多租户配置（{@code ignoreTables} 配置排除不需要加后缀的表）
      */
     public DynamicTableNameInnerInterceptor(MultiTenancyProperties properties) {
+        this(properties, null);
+    }
+
+    /**
+     * 构造动态表名改写拦截器（含指标收集）。
+     *
+     * @param properties       多租户配置
+     * @param metricsCollector 指标收集器（可为 {@code null}）
+     */
+    public DynamicTableNameInnerInterceptor(MultiTenancyProperties properties,
+                                            TenantMetricsCollector metricsCollector) {
         this.properties = properties;
+        this.metricsCollector = metricsCollector;
     }
 
     @Override
@@ -81,9 +85,15 @@ public class DynamicTableNameInnerInterceptor implements Interceptor {
         String originalSql = boundSql.getSql();
 
         try {
+            if (metricsCollector != null) {
+                metricsCollector.incrementTableRewriteAttempts();
+            }
             String modifiedSql = rewriteTableNames(originalSql, suffix);
             if (!originalSql.equals(modifiedSql)) {
                 setBoundSqlField(boundSql, modifiedSql);
+                if (metricsCollector != null) {
+                    metricsCollector.incrementTableRewriteSuccess();
+                }
                 if (log.isDebugEnabled()) {
                     log.debug("Table name rewritten: {} -> {}", originalSql, modifiedSql);
                 }

@@ -1,6 +1,7 @@
 package com.richie.component.tenant.spi;
 
 import com.richie.component.tenant.model.TenantInfo;
+import com.richie.component.tenant.monitor.TenantMetricsCollector;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,7 @@ public class CachingTenantInfoProvider implements TenantInfoProvider {
     private final TenantInfoProvider delegate;
     private final Duration ttl;
     private final int maxSize;
+    private final TenantMetricsCollector metricsCollector;
 
     private final ConcurrentHashMap<Long, CacheEntry> cache = new ConcurrentHashMap<>();
     private final ScheduledExecutorService janitor;
@@ -60,9 +62,23 @@ public class CachingTenantInfoProvider implements TenantInfoProvider {
      * @param maxSize   最大缓存租户数，超出时清空一半（按 LRU 时间），{@code <= 0} 视为不限
      */
     public CachingTenantInfoProvider(TenantInfoProvider delegate, long ttlSeconds, int maxSize) {
+        this(delegate, ttlSeconds, maxSize, null);
+    }
+
+    /**
+     * 构造带 TTL 缓存的装饰器（含指标收集）。
+     *
+     * @param delegate         底层真实 provider（必传，不能为 null）
+     * @param ttlSeconds       TTL（秒），{@code <= 0} 视为禁用缓存（直接穿透）
+     * @param maxSize          最大缓存租户数，超出时清空一半（按 LRU 时间），{@code <= 0} 视为不限
+     * @param metricsCollector 指标收集器（可为 {@code null}）
+     */
+    public CachingTenantInfoProvider(TenantInfoProvider delegate, long ttlSeconds, int maxSize,
+                                     TenantMetricsCollector metricsCollector) {
         this.delegate = Objects.requireNonNull(delegate, "delegate must not be null");
         this.ttl = ttlSeconds <= 0 ? Duration.ZERO : Duration.ofSeconds(ttlSeconds);
         this.maxSize = maxSize;
+        this.metricsCollector = metricsCollector;
         if (this.ttl.isZero()) {
             this.janitor = null;
             log.info("CachingTenantInfoProvider created with TTL=0, caching disabled");
@@ -86,10 +102,16 @@ public class CachingTenantInfoProvider implements TenantInfoProvider {
         }
         CacheEntry cached = cache.get(tenantId);
         if (cached != null && !cached.isExpired()) {
+            if (metricsCollector != null) {
+                metricsCollector.incrementCacheHits();
+            }
             return cached.value;
         }
         TenantInfo fresh = delegate.getTenantInfo(tenantId);
         if (fresh != null) {
+            if (metricsCollector != null) {
+                metricsCollector.incrementCacheMisses();
+            }
             cache.put(tenantId, new CacheEntry(fresh, Instant.now().plus(ttl)));
             enforceCapacity();
         }

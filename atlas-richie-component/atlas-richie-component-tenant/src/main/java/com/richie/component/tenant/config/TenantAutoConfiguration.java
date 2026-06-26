@@ -16,6 +16,8 @@ import com.richie.component.tenant.interceptor.ConnectionResetInterceptor;
 import com.richie.component.tenant.interceptor.DynamicTableNameInnerInterceptor;
 import com.richie.component.tenant.interceptor.TenantLineInnerInterceptor;
 import com.richie.component.tenant.interceptor.TenantStrategyInterceptor;
+import com.richie.component.tenant.monitor.TenantMeterBinder;
+import com.richie.component.tenant.monitor.TenantMetricsCollector;
 import com.richie.component.tenant.spi.CachingTenantInfoProvider;
 import com.richie.component.tenant.spi.TenantInfoProvider;
 import com.richie.component.tenant.strategy.ColumnStrategy;
@@ -40,6 +42,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 
 import java.util.List;
 
@@ -112,9 +115,11 @@ public class TenantAutoConfiguration {
          */
         @Bean
         @ConditionalOnProperty(prefix = "multi-tenancy.cache.tenant-info", name = "enabled", havingValue = "true")
-        public CachingTenantInfoProvider cachingTenantInfoProvider(TenantInfoProvider tenantInfoProvider) {
+        public CachingTenantInfoProvider cachingTenantInfoProvider(TenantInfoProvider tenantInfoProvider,
+                                                                    ObjectProvider<TenantMetricsCollector> metricsCollectorProvider) {
             MultiTenancyProperties.TenantInfoCacheConfig cfg = properties.getCache();
-            return new CachingTenantInfoProvider(tenantInfoProvider, cfg.getTtlSeconds(), cfg.getMaxSize());
+            return new CachingTenantInfoProvider(tenantInfoProvider, cfg.getTtlSeconds(), cfg.getMaxSize(),
+                metricsCollectorProvider.getIfUnique());
         }
 
         @Bean
@@ -161,7 +166,19 @@ public class TenantAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean
         public TenantMetaObjectHandler tenantMetaObjectHandler() {
-            return new TenantMetaObjectHandler();
+            return new TenantMetaObjectHandler(properties);
+        }
+
+        /**
+         * 监控指标收集器（轻量 AtomicLong 计数器 holder，无 Micrometer 依赖）。
+         * <p>始终可用，拦截器通过 {@code ObjectProvider} 获取（缺省时跳过采集）。
+         * MeteorBinder 由 {@link MetricsConfig} 通过 {@code @ConditionalOnClass(MeterRegistry)}
+         * 控制，Actuator 端暴露由 {@code management.metrics.enable.*} 控制。</p>
+         */
+        @Bean
+        @ConditionalOnMissingBean
+        public TenantMetricsCollector tenantMetricsCollector() {
+            return new TenantMetricsCollector();
         }
 
         // ==================== 微服务通信框架诊断 ====================
@@ -212,6 +229,36 @@ public class TenantAutoConfiguration {
             } catch (ClassNotFoundException e) {
                 return false;
             }
+        }
+    }
+
+    // ==================== Micrometer 指标配置 ====================
+
+    @Configuration
+    @ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
+    static class MetricsConfig {
+
+        private final DataSourceCircuitBreaker circuitBreaker;
+        private final TenantMetricsCollector metricsCollector;
+        private final ObjectProvider<CachingTenantInfoProvider> cachingProvider;
+
+        MetricsConfig(DataSourceCircuitBreaker circuitBreaker,
+                      ObjectProvider<TenantMetricsCollector> metricsCollectorProvider,
+                      ObjectProvider<CachingTenantInfoProvider> cachingProvider) {
+            this.circuitBreaker = circuitBreaker;
+            this.metricsCollector = metricsCollectorProvider.getIfUnique();
+            this.cachingProvider = cachingProvider;
+        }
+
+        /**
+         * 多租户 Micrometer {@link io.micrometer.core.instrument.binder.MeterBinder}。
+         * <p>仅在 {@link TenantMetricsCollector} 存在时注册指标；若 monitor 关闭，
+         * {@code metricsCollector} 为 null，则 {@link TenantMeterBinder#bindTo} 自动跳过。</p>
+         */
+        @Bean
+        @ConditionalOnMissingBean
+        public TenantMeterBinder tenantMeterBinder() {
+            return new TenantMeterBinder(circuitBreaker, metricsCollector, cachingProvider);
         }
     }
 
@@ -300,17 +347,35 @@ public class TenantAutoConfiguration {
 
         // ---------- MyBatis 拦截器 ----------
 
+        /**
+         * 注册 {@link TenantLineInnerInterceptor} (Column 模式 SQL 改写)。
+         * <p>{@code @Order(2)}:在第 3 层执行,先于它的是策略调度 + 表名改写。</p>
+         */
         @Bean
-        public TenantLineInnerInterceptor tenantLineInnerInterceptor(TenantInfoProvider provider) {
-            return new TenantLineInnerInterceptor(properties, provider);
+        @Order(2)
+        public TenantLineInnerInterceptor tenantLineInnerInterceptor(TenantInfoProvider provider,
+                                                                      ObjectProvider<TenantMetricsCollector> metricsCollectorProvider) {
+            return new TenantLineInnerInterceptor(properties, provider, metricsCollectorProvider.getIfUnique());
         }
 
+        /**
+         * 注册 {@link DynamicTableNameInnerInterceptor} (表后缀改写)。
+         * <p>{@code @Order(3)}:在第 2 层执行,先于它的是策略调度。</p>
+         */
         @Bean
-        public DynamicTableNameInnerInterceptor dynamicTableNameInnerInterceptor() {
-            return new DynamicTableNameInnerInterceptor(properties);
+        @Order(3)
+        public DynamicTableNameInnerInterceptor dynamicTableNameInnerInterceptor(
+                ObjectProvider<TenantMetricsCollector> metricsCollectorProvider) {
+            return new DynamicTableNameInnerInterceptor(properties, metricsCollectorProvider.getIfUnique());
         }
 
+        /**
+         * 注册 {@link TenantStrategyInterceptor} (策略调度)。
+         * <p>{@code @Order(4)}:在最外层执行(最先拦截),完成租户解析 + 熔断检查 +
+         * 策略前置(schema切换/数据源路由/表后缀设置)。</p>
+         */
         @Bean
+        @Order(4)
         public TenantStrategyInterceptor tenantStrategyInterceptor(
             TenancyStrategyFactory factory,
             TenantInfoProvider provider,
@@ -318,7 +383,14 @@ public class TenantAutoConfiguration {
             return new TenantStrategyInterceptor(properties, factory, provider, circuitBreaker);
         }
 
+        /**
+         * 注册 {@link ConnectionResetInterceptor} (连接资源清理)。
+         * <p>{@code @Order(1)}:在最内层执行(紧贴 MyBatis Executor),SQL 完成后清理
+         * {@code DataSourceContextHolder} + {@code TableSuffixHolder},
+         * 防止连接归还连接池时携带租户状态导致跨租户数据泄漏。</p>
+         */
         @Bean
+        @Order(1)
         public ConnectionResetInterceptor connectionResetInterceptor() {
             return new ConnectionResetInterceptor(properties);
         }

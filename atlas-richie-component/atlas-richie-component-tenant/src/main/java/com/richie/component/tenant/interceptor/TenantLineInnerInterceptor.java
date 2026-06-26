@@ -4,6 +4,7 @@ import com.richie.component.tenant.config.MultiTenancyProperties;
 import com.richie.component.tenant.context.TenantContext;
 import com.richie.component.tenant.model.IsolationMode;
 import com.richie.component.tenant.model.TenantInfo;
+import com.richie.component.tenant.monitor.TenantMetricsCollector;
 import com.richie.component.tenant.spi.TenantInfoProvider;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
@@ -59,30 +60,33 @@ public class TenantLineInnerInterceptor implements Interceptor {
 
     private final MultiTenancyProperties properties;
     private final TenantInfoProvider tenantInfoProvider;
+    private final TenantMetricsCollector metricsCollector;
 
     /**
      * 构造 SQL 改写拦截器。
      *
      * @param properties         多租户配置（{@code multi-tenancy.*}）
-     * @param tenantInfoProvider 租户信息提供方,用于读取租户实际隔离模式以决定是否改写
+     * @param tenantInfoProvider 租户信息提供方（HYBRID 模式下查租户实际模式）
      */
+    public TenantLineInnerInterceptor(MultiTenancyProperties properties,
+                                      TenantInfoProvider tenantInfoProvider) {
+        this(properties, tenantInfoProvider, null);
+    }
+
     /**
- * 构造 SQL 改写拦截器。
- *
- * @param properties         多租户配置（{@code multi-tenancy.*}）
- * @param tenantInfoProvider 租户信息提供方,用于根据租户实际 mode 决定是否触发改写
- */
-    /**
- * 构造 SQL 改写拦截器。
- *
- * @param properties         多租户配置（{@code multi-tenancy.*}）
- * @param tenantInfoProvider 租户信息提供方（HYBRID 模式下查租户实际模式）
- */
-public TenantLineInnerInterceptor(MultiTenancyProperties properties,
-                                  TenantInfoProvider tenantInfoProvider) {
-    this.properties = properties;
-    this.tenantInfoProvider = tenantInfoProvider;
-}
+     * 构造 SQL 改写拦截器（含指标收集）。
+     *
+     * @param properties         多租户配置
+     * @param tenantInfoProvider 租户信息提供方
+     * @param metricsCollector   指标收集器（可为 {@code null}）
+     */
+    public TenantLineInnerInterceptor(MultiTenancyProperties properties,
+                                      TenantInfoProvider tenantInfoProvider,
+                                      TenantMetricsCollector metricsCollector) {
+        this.properties = properties;
+        this.tenantInfoProvider = tenantInfoProvider;
+        this.metricsCollector = metricsCollector;
+    }
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
@@ -104,9 +108,15 @@ public TenantLineInnerInterceptor(MultiTenancyProperties properties,
         String originalSql = boundSql.getSql();
 
         try {
+            if (metricsCollector != null) {
+                metricsCollector.incrementLineRewriteAttempts();
+            }
             String modifiedSql = processSql(originalSql, tenantId);
             if (!originalSql.equals(modifiedSql)) {
                 setBoundSqlField(boundSql, modifiedSql);
+                if (metricsCollector != null) {
+                    metricsCollector.incrementLineRewriteSuccess();
+                }
                 if (log.isDebugEnabled()) {
                     log.debug("Tenant SQL rewritten: {} -> {}", originalSql, modifiedSql);
                 }
