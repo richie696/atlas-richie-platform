@@ -325,13 +325,15 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
         try {
             info = jetStreamManagement.getMessage(sourceStream, streamSeq);
         } catch (JetStreamApiException e) {
-            if (e.getErrorCode() == ERR_CODE_MESSAGE_NOT_FOUND) {
+            // nats 2.10 'Message Not Found': main code=404 + api code=10037; 早期 jnats 用 10060
+            // 三个错误码都代表 "message not found":原消息已被 purge / retention / 手动删除
+            if (e.getErrorCode() == 404 || e.getErrorCode() == 10060 || e.getErrorCode() == 10037) {
                 log.warn("DLQ advisory: source message already gone, ack and skip: stream={} seq={}",
                         sourceStream, streamSeq);
                 safeAck(msg);
                 return;
             }
-            log.error("DLQ advisory getMessage failed (non-10060), nak for retry: stream={} seq={}",
+            log.error("DLQ advisory getMessage failed (not message-not-found), nak for retry: stream={} seq={}",
                     sourceStream, streamSeq, e);
             safeNak(msg);
             return;
