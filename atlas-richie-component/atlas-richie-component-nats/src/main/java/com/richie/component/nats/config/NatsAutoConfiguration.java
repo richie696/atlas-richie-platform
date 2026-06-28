@@ -225,14 +225,14 @@ public class NatsAutoConfiguration {
     // ==================== L7 DLQ (JetStream advisory 范式) ====================
 
     @Bean(destroyMethod = "")
-    @ConditionalOnProperty(name = "platform.nats.jetstream.dlq.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "platform.nats.dlq.enabled", havingValue = "true")
     public NatsDeadLetterPublisher natsDeadLetterPublisher(NatsConnectionManager connectionManager,
                                                             NatsProperties properties) {
         return new NatsDeadLetterPublisher(natsJetStream(connectionManager), properties);
     }
 
     @Bean(destroyMethod = "stop")
-    @ConditionalOnProperty(name = "platform.nats.jetstream.dlq.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "platform.nats.dlq.enabled", havingValue = "true")
     public NatsDeadLetterAdvisoryConsumer natsDeadLetterAdvisoryConsumer(NatsConnectionManager connectionManager,
                                                                           NatsDeadLetterPublisher natsDeadLetterPublisher,
                                                                           NatsProperties properties) {
