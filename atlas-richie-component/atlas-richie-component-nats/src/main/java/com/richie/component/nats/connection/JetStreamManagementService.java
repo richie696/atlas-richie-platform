@@ -116,8 +116,11 @@ public class JetStreamManagementService {
      * {@code jsm.addStream} 幂等声明。</p>
      *
      * <p>DLQ stream 已存在但配置不同时跳过不覆盖(M1 fall-back)。
-     * advisory stream 无需显式 provision,由 NATS 在
-     * {@code js.subscribe("$JS.EVENT.ADVISORY.*")} 时自动管理。</p>
+     * nats 2.10 不会在首次 js.subscribe("$JS.EVENT.ADVISORY.*") 时自动建承载 advisory
+     * 事件的内部 stream,会导致 NatsDeadLetterAdvisoryConsumer 报 "No matching streams
+     * for subject" 降级到 Core NATS fallback → DLQ 永远不工作。故此处先幂等预创建
+     * {@code JSAPI_ADVISORY} stream,subjects = {@code $JS.EVENT.ADVISORY.>},
+     * retention = Interest(自动清理已被 ack 的 advisory),storage = Memory(advisory 高频)。</p>
      *
      * @param properties NATS 全量配置
      */
@@ -130,6 +133,10 @@ public class JetStreamManagementService {
         var subjectSuffix = dlq.getSubjectSuffix();
         try {
             var mgmt = connectionManager.getConnection().jetStreamManagement();
+            // 预创建承载 advisory 事件的内部 stream,避免首次 js.subscribe 触发 No matching
+            // streams for subject 错误导致 NatsDeadLetterAdvisoryConsumer 降级到 Core NATS
+            // fallback → DLQ 永远不工作
+            ensureAdvisoryStream(mgmt);
             for (var businessStream : properties.getJetstream().getStreams()) {
                 if (businessStream.getName().endsWith(streamNameSuffix)) {
                     continue;
@@ -162,6 +169,38 @@ public class JetStreamManagementService {
             }
         } catch (Exception e) {
             throw new NatsException("Failed to provision DLQ streams", e);
+        }
+    }
+
+    /**
+     * 幂等预创建承载 {@code $JS.EVENT.ADVISORY.>} 事件的内部 stream。
+     *
+     * <p>不存在则按 advisory 语义创建(Memory + Interest + Discard=New);
+     * 已存在则跳过,绝不覆盖已有配置 — 同 DLQ stream 策略。</p>
+     *
+     * <p>错误码 {@code 404}(Not Found)与 {@code 10059}(Stream Not Found)均表示 stream
+     * 未创建,均需走 addStream 分支;其他错误码抛出。</p>
+     */
+    private void ensureAdvisoryStream(io.nats.client.JetStreamManagement mgmt)
+            throws java.io.IOException, io.nats.client.JetStreamApiException {
+        final String advisoryStream = "JSAPI_ADVISORY";
+        try {
+            mgmt.getStreamInfo(advisoryStream);
+            log.info("Advisory stream [{}] already exists, skipping", advisoryStream);
+        } catch (io.nats.client.JetStreamApiException e) {
+            int code = e.getErrorCode();
+            if (code == 10059 || code == 404) {
+                mgmt.addStream(StreamConfiguration.builder()
+                        .name(advisoryStream)
+                        .subjects("$JS.EVENT.ADVISORY.>")
+                        .storageType(StorageType.Memory)
+                        .retentionPolicy(RetentionPolicy.Interest)
+                        .discardPolicy(DiscardPolicy.New)
+                        .build());
+                log.info("Advisory stream [{}] created", advisoryStream);
+            } else {
+                throw e;
+            }
         }
     }
 
