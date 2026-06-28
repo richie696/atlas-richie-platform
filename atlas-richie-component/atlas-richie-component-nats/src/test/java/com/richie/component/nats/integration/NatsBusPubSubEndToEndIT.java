@@ -72,9 +72,12 @@ class NatsBusPubSubEndToEndIT {
             latch.countDown();
         });
 
+        // Ensure SUB is registered on server BEFORE publishing (avoid subscribe/publish race)
+        subscriberConn.flush(Duration.ofSeconds(2));
+
         // Publish
         publisherConn.publish(subject, "hello-nats".getBytes(StandardCharsets.UTF_8));
-        subscriberConn.flush(Duration.ofSeconds(2));
+        publisherConn.flush(Duration.ofSeconds(2));
 
         boolean delivered = latch.await(5, TimeUnit.SECONDS);
         assertThat(delivered).isTrue();
@@ -95,10 +98,13 @@ class NatsBusPubSubEndToEndIT {
             latch.countDown();
         });
 
+        // Ensure SUB is registered on server BEFORE publishing (avoid subscribe/publish race)
+        subscriberConn.flush(Duration.ofSeconds(2));
+
         for (int i = 0; i < messageCount; i++) {
             publisherConn.publish(subject, ("msg-" + i).getBytes(StandardCharsets.UTF_8));
         }
-        subscriberConn.flush(Duration.ofSeconds(2));
+        publisherConn.flush(Duration.ofSeconds(2));
 
         boolean delivered = latch.await(5, TimeUnit.SECONDS);
         assertThat(delivered).isTrue();
@@ -120,12 +126,15 @@ class NatsBusPubSubEndToEndIT {
             latch.countDown();
         });
 
+        // Ensure SUB is registered on server BEFORE publishing (avoid subscribe/publish race)
+        subscriberConn.flush(Duration.ofSeconds(2));
+
         Headers headers = new Headers();
         headers.put("X-Trace-Id", "trace-12345");
         headers.put("X-Tenant-Id", "tenant-42");
 
         publisherConn.publish(subject, headers, "with-headers".getBytes(StandardCharsets.UTF_8));
-        subscriberConn.flush(Duration.ofSeconds(2));
+        publisherConn.flush(Duration.ofSeconds(2));
 
         boolean delivered = latch.await(5, TimeUnit.SECONDS);
         assertThat(delivered).isTrue();
@@ -148,6 +157,9 @@ class NatsBusPubSubEndToEndIT {
             String reply = "echo:" + request;
             subscriberConn.publish(msg.getReplyTo(), reply.getBytes(StandardCharsets.UTF_8));
         });
+
+        // Ensure SUB is registered on server BEFORE requesting (avoid subscribe/request race)
+        subscriberConn.flush(Duration.ofSeconds(2));
 
         // Send request and wait for reply
         Message response = publisherConn.request(subject,
@@ -180,6 +192,10 @@ class NatsBusPubSubEndToEndIT {
                 latch.countDown();
             });
 
+            // Ensure both SUBs are registered on server BEFORE publishing (avoid subscribe/publish race)
+            subscriberConn.flush(Duration.ofSeconds(2));
+            sub2Conn.flush(Duration.ofSeconds(2));
+
             publisherConn.publish(subject, "broadcast".getBytes(StandardCharsets.UTF_8));
             publisherConn.flush(Duration.ofSeconds(2));
 
@@ -207,6 +223,9 @@ class NatsBusPubSubEndToEndIT {
             subjects.add(msg.getSubject());
             latch.countDown();
         });
+
+        // Ensure SUB is registered on server BEFORE publishing (avoid subscribe/publish race)
+        subscriberConn.flush(Duration.ofSeconds(2));
 
         publisherConn.publish(topic1, "s1".getBytes(StandardCharsets.UTF_8));
         publisherConn.publish(topic2, "s2".getBytes(StandardCharsets.UTF_8));
