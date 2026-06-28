@@ -4,6 +4,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -41,6 +42,13 @@ public class WebMvcProperties {
      * 令牌有效时长
      */
     private long tokenExpirationDate;
+
+    /**
+     * 默认 Locale（IETF BCP 47 语言标签，如 zh-CN、en-US）。
+     * <p>当 i18n 组件同时存在时，建议两边配置保持一致。
+     * 默认值：{@code Locale.CHINA}。
+     */
+    private Locale defaultLocale = Locale.CHINA;
 
     /**
      * 跨域配置

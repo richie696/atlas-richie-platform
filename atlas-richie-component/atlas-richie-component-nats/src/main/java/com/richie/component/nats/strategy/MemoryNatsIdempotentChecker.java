@@ -1,0 +1,34 @@
+package com.richie.component.nats.strategy;
+
+import com.richie.component.nats.NatsConstants;
+import com.richie.component.nats.strategy.NatsIdempotentChecker;
+
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * 基于内存的 NATS 消息幂等去重实现
+ *
+ * <p>使用 {@link ConcurrentHashMap} + 时间戳实现本地去重，适用于单实例部署。
+ * 多实例部署请使用 {@link RedisNatsIdempotentChecker}。</p>
+ *
+ * @author richie696
+ * @since 1.0.0
+ */
+public class MemoryNatsIdempotentChecker implements NatsIdempotentChecker {
+
+    private final ConcurrentHashMap<String, Long> seen = new ConcurrentHashMap<>();
+
+    @Override
+    public boolean isFirstTime(String messageId, long ttlMillis) {
+        long now = System.currentTimeMillis();
+        // 清理过期记录
+        seen.entrySet().removeIf(entry -> now - entry.getValue() > ttlMillis);
+        // 尝试记录（原子操作）
+        return seen.putIfAbsent(messageId, now) == null;
+    }
+
+    @Override
+    public void clear(String messageId) {
+        seen.remove(messageId);
+    }
+}

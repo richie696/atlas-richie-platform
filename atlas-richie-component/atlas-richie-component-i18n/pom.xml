@@ -22,6 +22,7 @@
         <dependency>
             <groupId>com.richie.component</groupId>
             <artifactId>atlas-richie-component-cache</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>

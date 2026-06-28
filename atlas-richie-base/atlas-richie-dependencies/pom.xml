@@ -92,6 +92,7 @@
         <jackson-bom.version>3.2.0</jackson-bom.version>
         <jackson-datatype-jsr310.version>3.0.0-rc2</jackson-datatype-jsr310.version>
         <grpc-bom.version>1.82.0</grpc-bom.version>
+        <jnats.version>2.25.3</jnats.version>
         <sentinel.version>1.8.10</sentinel.version>
         <jakarta.jakartaee-bom.version>11.0.0</jakarta.jakartaee-bom.version>
         <testcontainers.version>2.0.5</testcontainers.version>
@@ -113,6 +114,12 @@
                 <version>${grpc-bom.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- NATS Java Client -->
+            <dependency>
+                <groupId>io.nats</groupId>
+                <artifactId>jnats</artifactId>
+                <version>${jnats.version}</version>
             </dependency>
             <dependency>
                 <groupId>tools.jackson</groupId>

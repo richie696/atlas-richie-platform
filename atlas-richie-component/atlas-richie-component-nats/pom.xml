@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.richie.component</groupId>
+        <artifactId>atlas-richie-component-dependencies</artifactId>
+        <version>${revision}</version>
+        <relativePath>../atlas-richie-component-dependencies/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>atlas-richie-component-nats</artifactId>
+    <name>atlas-richie-component-nats</name>
+    <description>Richie NATS 生产级组件 — 连接管理 / 消息总线 / RPC 端点 / 链路追踪 / 上下文透传 / 幂等去重 / JetStream</description>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <!-- 内部依赖 -->
+        <dependency>
+            <groupId>com.richie.base</groupId>
+            <artifactId>atlas-richie-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.richie.base</groupId>
+            <artifactId>atlas-richie-contract</artifactId>
+        </dependency>
+
+        <!-- NATS Java Client -->
+        <dependency>
+            <groupId>io.nats</groupId>
+            <artifactId>jnats</artifactId>
+        </dependency>
+
+        <!-- Spring Boot AutoConfiguration -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Micrometer 指标采集（可选） -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- OpenTelemetry 链路追踪（可选） -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-context</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Redis 幂等去重（可选，依赖 cache 组件的 GlobalCache） -->
+        <dependency>
+            <groupId>com.richie.component</groupId>
+            <artifactId>atlas-richie-component-cache</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- 单测支撑：JUnit 5 + AssertJ + Mockito（隐式随 spring-boot-starter-test 引入） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- 单测与集成测试执行器（继承父 POM pluginManagement 的配置，仅显式声明以便覆盖） -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
+            <!-- 覆盖率：模块行覆盖率 ≥ 85%（见 TESTING.md 排除项说明） -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <!-- 白名单：仅统计可单测覆盖的实现类与纯逻辑（IT 覆盖的 Manager/有界结构不计入） -->
+                    <includes>
+                        <include>com/richie/component/nats/pipeline/**</include>
+                        <include>com/richie/component/nats/strategy/**</include>
+                        <include>com/richie/component/nats/bus/**</include>
+                        <include>com/richie/component/nats/connection/NatsAuthConfigurator*</include>
+                        <include>com/richie/component/nats/exception/**</include>
+                    </includes>
+                    <excludes>
+                        <!-- 需真实 NATS 服务器，由 IT 覆盖 -->
+                        <exclude>com/richie/component/nats/connection/NatsConnectionManager</exclude>
+                        <exclude>com/richie/component/nats/connection/JetStreamManagementService</exclude>
+                        <!-- 需 Redis 依赖，可选实现 -->
+                        <exclude>com/richie/component/nats/strategy/RedisNatsIdempotentChecker</exclude>
+                        <!-- 配置属性与门面 -->
+                        <exclude>com/richie/component/nats/NatsComponent</exclude>
+                        <exclude>com/richie/component/nats/NatsConstants</exclude>
+                    </excludes>
+                    <rules>
+                        <rule>
+                            <element>BUNDLE</element>
+                            <limits>
+                                <limit>
+                                    <counter>LINE</counter>
+                                    <value>COVEREDRATIO</value>
+                                    <minimum>${jacoco.coverage.minimum}</minimum>
+                                </limit>
+                            </limits>
+                        </rule>
+                    </rules>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <configuration>
+                            <includes>
+                                <include>com/richie/component/nats/pipeline/**</include>
+                                <include>com/richie/component/nats/strategy/**</include>
+                                <include>com/richie/component/nats/bus/**</include>
+                                <include>com/richie/component/nats/connection/NatsAuthConfigurator*</include>
+                                <include>com/richie/component/nats/exception/**</include>
+                            </includes>
+                            <excludes>
+                                <exclude>com/richie/component/nats/connection/NatsConnectionManager</exclude>
+                                <exclude>com/richie/component/nats/connection/JetStreamManagementService</exclude>
+                                <exclude>com/richie/component/nats/strategy/RedisNatsIdempotentChecker</exclude>
+                                <exclude>com/richie/component/nats/NatsComponent</exclude>
+                                <exclude>com/richie/component/nats/NatsConstants</exclude>
+                                <exclude>com.richie.component.**.*AutoConfiguration</exclude>
+                                <exclude>com.richie.component.**.config.**</exclude>
+                                <exclude>com.richie.component.**.enums.**</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

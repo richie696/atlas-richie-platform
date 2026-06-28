@@ -1,0 +1,54 @@
+package com.richie.component.nats.pipeline;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
+/**
+ * NATS 消息处理管道构建器
+ *
+ * <p>使用装饰器模式将横切关注点（追踪 → 上下文恢复 → 去重）链式包装在业务 Handler 外层。
+ * 装饰器按添加顺序从外到内包装：先添加的在最外层执行。</p>
+ *
+ * <p>示例构建顺序（外层到内层）：</p>
+ * <pre>{@code
+ * pipeline.addDecorator(tracing)      // 最外层：追踪
+ *         .addDecorator(context)      // 中间层：上下文恢复
+ *         .addDecorator(idempotent)   // 内层：去重
+ *         .build(businessHandler);    // 核心：业务处理
+ * }</pre>
+ *
+ * @author richie696
+ * @since 1.0.0
+ */
+public class NatsMessageHandlerPipeline {
+
+    private final List<Function<NatsMessageHandler, NatsMessageHandler>> decorators = new ArrayList<>();
+
+    /**
+     * 添加装饰器
+     *
+     * @param decorator 装饰器工厂函数：接受内层 Handler，返回包装后的 Handler
+     * @return 当前构建器（链式调用）
+     */
+    public NatsMessageHandlerPipeline addDecorator(
+            Function<NatsMessageHandler, NatsMessageHandler> decorator) {
+        decorators.add(decorator);
+        return this;
+    }
+
+    /**
+     * 构建最终管道：装饰器按添加顺序从外到内包装业务 Handler
+     *
+     * @param businessHandler 业务处理 Handler
+     * @return 完整的管道 Handler
+     */
+    public NatsMessageHandler build(NatsMessageHandler businessHandler) {
+        NatsMessageHandler current = businessHandler;
+        // 从最后一个装饰器开始包装，使第一个添加的在最外层
+        for (int i = decorators.size() - 1; i >= 0; i--) {
+            current = decorators.get(i).apply(current);
+        }
+        return current;
+    }
+}

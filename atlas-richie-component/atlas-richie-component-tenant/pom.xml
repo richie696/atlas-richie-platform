@@ -68,14 +68,6 @@
         </dependency>
 
         <!-- ==================== Test ==================== -->
-
-        <!-- Spring Boot Test (MockMvc, Mockito, AssertJ) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- PostgreSQL 驱动（集成测试） -->
         <dependency>
             <groupId>org.postgresql</groupId>

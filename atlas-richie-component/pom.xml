@@ -72,6 +72,8 @@
         <module>atlas-richie-component-redis-streammq</module>
         <!-- gRPC 组件 -->
         <module>atlas-richie-component-grpc</module>
+        <!-- NATS 组件 -->
+        <module>atlas-richie-component-nats</module>
     </modules>
 
 </project>
