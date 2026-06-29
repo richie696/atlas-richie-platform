@@ -12,7 +12,7 @@ public final class MessagingRedisIntegrationTestSupport implements RedisIntegrat
     private static final GenericRedisIntegrationTestSupport DELEGATE = GenericRedisIntegrationTestSupport.create(
             DockerImageName.parse("redis:7-alpine"),
             15,
-            "Redis 集成测试需要 Docker。参见 atlas-richie-testing-support/README.md",
+            "Redis 集成测试需要 Docker。参见 atlas-richie-testing-support/README.zh.md",
             MessagingRedisIntegrationTestSupport::appendComponentProperties,
             "MESSAGING");
 

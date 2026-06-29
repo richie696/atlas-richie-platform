@@ -19,7 +19,7 @@ public final class StorageRedisIntegrationTestSupport {
     private static final String UNAVAILABLE_MESSAGE =
             "Redis 集成测试需要 Docker（Testcontainers）。请安装并启动 Docker 后执行 mvn verify；"
                     + "CI 请设置 IT_REQUIRE_DOCKER=true。本机已有 Redis 时可设 "
-                    + "IT_USE_EXTERNAL=true，或启动 compose（16379），参见 atlas-richie-testing-support/README.md";
+                    + "IT_USE_EXTERNAL=true，或启动 compose（16379），参见 atlas-richie-testing-support/README.zh.md";
 
     private static final RedisContainerSupport DELEGATE = createDelegate();
 

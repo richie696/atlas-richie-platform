@@ -24,7 +24,7 @@ public final class StorageLocalIntegrationTestSupport {
     private static final String UNAVAILABLE_MESSAGE =
             "storage-local 集成测试需要 Docker（Redis + MySQL）。请安装并启动 Docker 后执行 "
                     + "IT_REQUIRE_DOCKER=true mvn verify -am；本机已有中间件时可设 IT_USE_EXTERNAL=true，"
-                    + "或启动 compose（Redis 16379 / MySQL 53366），参见 atlas-richie-testing-support/README.md";
+                    + "或启动 compose（Redis 16379 / MySQL 53366），参见 atlas-richie-testing-support/README.zh.md";
 
     private static final RedisContainerSupport REDIS = createRedis();
     private static final MySqlContainerSupport MYSQL = createMySql();

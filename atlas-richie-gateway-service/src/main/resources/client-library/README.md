@@ -575,7 +575,7 @@ npm install --save-dev ts-node@^10.9.0
 cd web  # 或 ts
 
 # 2. 查看文档和依赖说明
-cat README.md
+cat README.zh.md
 
 # 3. 选择你的框架
 cd examples/react     # 或 angular, vue
@@ -592,7 +592,7 @@ cd examples/react     # 或 angular, vue
 cd nodejs
 
 # 2. 查看文档和依赖说明
-cat README.md
+cat README.zh.md
 
 # 3. 运行示例（需要Node.js 18+）
 # 注意：运行时零依赖，仅使用Node.js内置模块
@@ -604,7 +604,7 @@ npm run example  # 如果安装了开发依赖
 ```bash
 # 1. 查看文档
 cd go
-cat README.md
+cat README.zh.md
 
 # 2. 运行示例
 cd example
@@ -631,7 +631,7 @@ cat kotlin/example/LoginActivity.kt
 cd rust
 
 # 2. 查看文档
-cat README.md
+cat README.zh.md
 
 # 3. 运行示例
 cargo run --example main

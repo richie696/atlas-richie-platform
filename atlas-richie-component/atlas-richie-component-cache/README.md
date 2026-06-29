@@ -1,25 +1,87 @@
 # Richie Cache Component
 
-基于 Redis 的缓存与数据结构组件。通过 **`GlobalCache` + Ops 访问器** 提供 KV、Hash、Set/ZSet、分布式锁、有界队列/栈、限流等能力；内置 L2、布隆过滤器、性能守卫。
+Redis-backed cache and data structure component. Provides KV, Hash, Set/ZSet, distributed locks, bounded queues / stacks, rate limiting, and more through the **`GlobalCache` + Ops accessor** API. L2 caching, Bloom filter, and performance guard are built in.
 
-> **消息队列**：可靠 Stream MQ 已独立为 [`atlas-richie-component-redis-streammq`](../atlas-richie-component-redis-streammq)，门面为 `StreamMQ.stream()`。本模块的 `queue()` 仅为削峰缓冲，不是 MQ。
+> **Message queue**: the reliable Stream MQ has been split out into a standalone module, [`atlas-richie-component-redis-streammq`](../atlas-richie-component-redis-streammq), with the entry point `StreamMQ.stream()`. The `queue()` accessor in this module is a bounded buffer for traffic shaping, not a message queue.
 
-> **目标读者**：业务服务开发者。如果你想知道"这个组件能帮我解决什么问题、怎么用"，这是你要的文档。
-> **深度设计**：L2/分布式锁/性能守卫的完整设计思路见 [docs/](./docs/README.md)。
-
----
-
-## 📖 目录
-
-[TOC]
-
-
+> **Audience**: business service developers. If you want to know "what problems this component solves and how to use it", this is the doc for you.
+> **Deep design**: see [docs/](./docs/README.md) for the full design notes on L2 caching, distributed locks, and the performance guard.
 
 ---
 
-## 🚀 快速开始
+## 📖 Contents
 
-### 1. 添加依赖
+- [🚀 Quick Start](#-quick-start)
+  - [1. Add the Dependency](#1-add-the-dependency)
+  - [2. Configuration](#2-configuration)
+  - [3. Write Code](#3-write-code)
+  - [Ops Accessor Reference](#ops-accessor-reference)
+- [🔧 Core Features](#-core-features)
+  - [String / Number / Boolean (`value()`)](#string--number--booleanvalue)
+  - [Hash (`struct()` / `field()`)](#hashstruct--field)
+  - [Bounded Queue / Stack (`queue()` / `stack()`)](#bounded-queue--stackqueue--stack)
+  - [Set / ZSet (`collection()` / `ranking()`)](#set--zsetcollection--ranking)
+  - [Key Management (`key()`)](#key-managementkey)
+  - [Distributed Lock (`lock()`)](#distributed-locklock)
+  - [Lua / Rate Limit / GEO / HyperLogLog / Bitmap](#lua--rate-limit--geo--hyperloglog--bitmap)
+  - [Batch Operations (`value()`)](#batch-operationsvalue)
+- [📨 Redis Stream Message Queue (Standalone Module)](#-redis-stream-message-queue-standalone-module)
+- [🛡 Advanced Capabilities](#-advanced-capabilities)
+  - [Distributed Lock (`lock()`)](#distributed-locklock-1)
+    - [Batch Lock (`lock().batch()`)](#batch-locklockbatch)
+  - [Cache Stampede Prevention (`getWithLock`)](#cache-stampede-preventiongetwithlock)
+  - [L2 Secondary Cache](#l2-secondary-cache)
+  - [Bloom Filter](#bloom-filter)
+  - [Performance Guard (RedisPerfGuard)](#performance-guardredisperfguard)
+  - [Multi-Redis Instance Routing](#multi-redis-instance-routing)
+- [📦 Local Cache](#-local-cache)
+- [⚙️ Complete Configuration Reference](#-complete-configuration-reference)
+  - [1. Redis Connection (`spring.data.redis`)](#1-redis-connectionspringdataredis)
+    - [1.1 Multi-Redis Instance Routing (`spring.data.redis.slaves`)](#11-multi-redis-instance-routingspringdataredisslaves)
+    - [1.2 Lettuce Extensions (`spring.data.redis.lettuce.*`)](#12-lettuce-extensionsspringdataredislettuce)
+      - [1.2.1 Why Lettuce (and not Jedis)](#121-why-lettuce-and-not-jedis)
+      - [1.2.2 Connection Pool Configuration (`spring.data.redis.lettuce.pool.*`)](#122-connection-pool-configurationspringdataredislettucepool)
+      - [1.2.3 Epoll Connection Mode (Linux High-Performance IO)](#123-epoll-connection-modelinux-high-performance-io)
+      - [1.2.4 Keep-Alive Configuration](#124-keep-alive-configuration)
+      - [1.2.5 Memory Release Policy (Netty Direct Buffer Management)](#125-memory-release-policynetty-direct-buffer-management)
+    - [1.3 RESP Protocol Version (`spring.data.redis.protocol-version`)](#13-resp-protocol-versionspringdataredisprotocol-version)
+  - [2. L2 Secondary Cache (`spring.data.redis`)](#2-l2-secondary-cachespringdataredis)
+  - [3. Distributed Lock (`spring.data.redis`)](#3-distributed-lockspringdataredis)
+  - [4. Performance Guard (`spring.data.redis.perf`)](#4-performance-guardspringdataredisperf)
+  - [5. Local Cache (`spring.data.local`)](#5-local-cachespringdatalocal)
+    - [6.1 Top-Level Configuration](#61-top-level-configuration)
+    - [6.2 Cache Definitions (`spring.data.local.cache-definitions[].*`)](#62-cache-definitionsspringdatalocalcache-definitions)
+  - [6. Component-Level Configuration (`platform.cache`)](#6-component-level-configurationplatformcache)
+    - [6.1 Bloom Filter (`platform.cache.bloom-filter`)](#61-bloom-filterplatformcachebloom-filter)
+  - [7. Stream MQ Configuration (Standalone Module)](#7-stream-mq-configurationstandalone-module)
+  - [8. Configuration Overview (By Function)](#8-configuration-overviewby-function)
+- [🎯 Best Practices](#-best-practices)
+  - [Key Naming Conventions](#key-naming-conventions)
+  - [Cache Strategy Selection](#cache-strategy-selection)
+  - [Expiration Strategy](#expiration-strategy)
+  - [Performance Tuning](#performance-tuning)
+  - [Big Key Threshold Reference](#big-key-threshold-reference)
+    - [Collection Type Thresholds](#collection-type-thresholds)
+    - [String Value Thresholds (aligned with `RedisPerfGuard`)](#string-value-thresholds-aligned-with-redisperfguard)
+    - [Key Names](#key-names)
+    - [Big Key Detection Methods](#big-key-detection-methods)
+    - [Big Key Remediation](#big-key-remediation)
+    - [Bounded Queue / Stack (`queue()` / `stack()`)](#bounded-queue--stackqueue--stack-1)
+  - [Migration Window](#migration-window)
+- [❓ FAQ](#-faq)
+  - [How do I prevent cache penetration / avalanche / stampede?](#how-do-i-prevent-cache-penetration--avalanche--stampede)
+  - [How does the local lock pool relate to the distributed lock?](#how-does-the-local-lock-pool-relate-to-the-distributed-lock)
+  - [What do I do when Stream messages pile up?](#what-do-i-do-when-stream-messages-pile-up)
+  - [Startup fails with a migration window error. What now?](#startup-fails-with-a-migration-window-error-what-now)
+- [📚 Topic Documents](#-topic-documents)
+
+
+
+---
+
+## 🚀 Quick Start
+
+### 1. Add the Dependency
 
 ```xml
 <dependency>
@@ -28,9 +90,9 @@
 </dependency>
 ```
 
-### 2. 配置
+### 2. Configuration
 
-这是 **生产推荐配置**（带二级缓存 + 本地锁 + 性能守卫），复制后改 Redis 地址即可：
+This is the **production-recommended configuration** (with L2 cache, local lock, and performance guard enabled). Copy it, change the Redis address, and you are good to go:
 
 ```yaml
 spring:
@@ -42,35 +104,35 @@ spring:
       database: 0
       timeout: 3s
 
-      # ---------- 二级缓存 ----------
-      enable-l2-caching: true               # 开启 L2 本地缓存
-      l2-caching-data: [STRING, HASH]       # String/Hash 走 L2 加速
+      # ---------- L2 secondary cache ----------
+      enable-l2-caching: true               # enable L1 local cache
+      l2-caching-data: [STRING, HASH]       # route String / Hash through L2
 
-      # ---------- 分布式锁 ----------
-      enable-local-lock: true               # JVM 锁池（默认已开启）
+      # ---------- Distributed lock ----------
+      enable-local-lock: true               # JVM-local lock pool (on by default)
 
-      # ---------- 性能守卫 ----------
+      # ---------- Performance guard ----------
       perf:
-        enabled: true                       # 开启运行时检测
-        warn-non-o1: true                   # 非 O(1) 操作打 WARN
-        toc-soft-ms: 8                      # 超过 8ms 告警
-        toc-hard-ms: 50                     # 超过 50ms ERROR
-        block-forbidden-tiers: false        # 灰度阶段仅告警不阻断
+        enabled: true                       # enable runtime checks
+        warn-non-o1: true                   # WARN on non-O(1) operations
+        toc-soft-ms: 8                      # WARN when latency exceeds 8ms
+        toc-hard-ms: 50                     # ERROR when latency exceeds 50ms
+        block-forbidden-tiers: false        # canary phase: warn only, do not block
         warn-string-payload-anti-patterns: true
         block-string-payload-violations: false
 
 platform:
   cache:
     bloom-filter:
-      enable: false                         # 有缓存穿透风险时开启
+      enable: false                         # enable when cache penetration is a risk
       type: REDISSON
       expected-insertions: 10000000
       false-probability: 0.001
 ```
 
-### 3. 写代码
+### 3. Write Code
 
-所有能力通过 **`GlobalCache.<ops>()`** 访问，无需注入 Bean（Spring 启动后自动绑定 `GlobalCacheManager`）：
+Every capability is reached through **`GlobalCache.<ops>()`**. No bean injection needed: the framework auto-binds `GlobalCacheManager` after Spring starts.
 
 ```java
 import com.richie.component.cache.GlobalCache;
@@ -79,58 +141,58 @@ import com.richie.component.cache.GlobalCache;
 GlobalCache.value().set("user:123", "Tom", 3_600_000L);
 String name = GlobalCache.value().get("user:123", String.class);
 
-// Hash 对象 / 字段
+// Hash: whole object / field
 GlobalCache.struct().set("user:info:123", user, 3_600_000L);
 GlobalCache.field().set("user:1", "name", "Tom");
 
-// 防击穿
+// Stampede prevention
 String cfg = GlobalCache.value().getWithLock("config:pay", 3_600_000L,
         () -> configService.load("pay"));
 
-// 分布式锁
+// Distributed lock
 try (var lock = GlobalCache.lock().optimisticWithRenewal("lock:order:123", 5L)) {
     if (lock.success()) {
         orderService.process("123");
     }
 }
 
-// 有界队列（削峰，FIFO，满则丢最老）
+// Bounded queue (traffic shaping, FIFO, drop oldest when full)
 var q = GlobalCache.queue().getOrCreate("order:pending", 1000L, Task.class);
 q.offer(task);
 Task t = q.poll();
 
-// Key 事件订阅（需 notify-keyspace-events）
+// Keyspace event subscription (requires notify-keyspace-events)
 GlobalCache.event().subscribeKeyEvent("__keyevent@0__:expired", listener);
 
-// 可靠消息队列 → 依赖 atlas-richie-component-redis-streammq
+// Reliable message queue: depends on atlas-richie-component-redis-streammq
 // StreamMQ.stream().publish("order-events", event);
 ```
 
-### Ops 访问器一览
+### Ops Accessor Reference
 
-| 访问器                                 | 用途                      |
-|-------------------------------------|-------------------------|
-| `value()`                           | String / 数值 / 布尔 KV、计数器 |
-| `struct()`                          | Hash 存取整对象              |
-| `field()`                           | Hash 字段级读写              |
-| `collection()`                      | Set                     |
-| `ranking()`                         | ZSet / 排行榜              |
-| `lock()`                            | 分布式锁                    |
-| `queue()` / `stack()`               | 有界 FIFO / LIFO（非 MQ）    |
-| `key()`                             | 过期、删除、类型                |
-| `script()`                          | Lua 原子脚本                |
-| `limiter()`                         | 滑动窗口限流                  |
-| `bitmap()` / `hyperLog()` / `geo()` | 位图 / UV / 地理位置          |
-| `notification()`                    | Pub/Sub 发布              |
-| `event()`                           | Key 空间事件订阅              |
+| Accessor                                 | Purpose                            |
+|------------------------------------------|------------------------------------|
+| `value()`                                | String / Number / Boolean KV, counters |
+| `struct()`                               | Hash: store whole objects          |
+| `field()`                                | Hash: field-level read / write     |
+| `collection()`                           | Set                                |
+| `ranking()`                              | ZSet / leaderboard                 |
+| `lock()`                                 | Distributed lock                   |
+| `queue()` / `stack()`                    | Bounded FIFO / LIFO (not MQ)       |
+| `key()`                                  | Expire, delete, inspect type       |
+| `script()`                               | Lua atomic scripts                 |
+| `limiter()`                              | Sliding-window rate limit          |
+| `bitmap()` / `hyperLog()` / `geo()`      | Bitmaps / UV / geo location        |
+| `notification()`                         | Pub/Sub publish                    |
+| `event()`                                | Keyspace event subscription        |
 
-> 所有写路径已集成 L2（可配置）、布隆过滤器（可配置）、性能守卫（建议生产开启 `perf.enabled=true`）。
+> All write paths integrate L2 (configurable), the Bloom filter (configurable), and the performance guard (recommended: turn on `perf.enabled=true` in production).
 
 ---
 
-## 🔧 核心功能
+## 🔧 Core Features
 
-### String / 数值 / 布尔（`value()`）
+### String / Number / Boolean (`value()`)
 
 ```java
 GlobalCache.value().set("key", "value", 10_000L);
@@ -143,7 +205,7 @@ GlobalCache.value().set("flag", true, 3_600_000L);
 
 ---
 
-### Hash（`struct()` / `field()`）
+### Hash (`struct()` / `field()`)
 
 ```java
 GlobalCache.field().set("user:1", "name", "Tom");
@@ -154,13 +216,13 @@ UserInfo loaded = GlobalCache.struct().getWithLock("user:999", UserInfo.class,
         3_600_000L, () -> userRepository.findById("999"));
 ```
 
-**注意**：对象优先用 Hash（`struct`/`field`），不要把大 JSON 塞进 String value。
+**Note**: prefer Hash (`struct` / `field`) for whole objects. Do not stuff large JSON blobs into a String value.
 
 ---
 
-### 有界队列 / 栈（`queue()` / `stack()`）
+### Bounded Queue / Stack (`queue()` / `stack()`)
 
-原生无界 List API 已移除。FIFO 削峰用 `queue()`，LIFO 最近 N 条用 `stack()`。
+The native unbounded List API has been removed. Use `queue()` for FIFO traffic shaping, and `stack()` for "latest N" LIFO.
 
 ```java
 var queue = GlobalCache.queue().getOrCreate("task:pending", 500L, Task.class);
@@ -173,11 +235,11 @@ stack.push(event);
 Event latest = stack.peek();
 ```
 
-> 可靠消息队列请用 **`atlas-richie-component-redis-streammq`** 的 `StreamMQ`，不是 `queue()`。
+> For reliable messaging, use `StreamMQ` from **`atlas-richie-component-redis-streammq`**, not `queue()`.
 
 ---
 
-### Set / ZSet（`collection()` / `ranking()`）
+### Set / ZSet (`collection()` / `ranking()`)
 
 ```java
 GlobalCache.collection().add("tags", "java");
@@ -188,7 +250,7 @@ Long rank = GlobalCache.ranking().reverseRank("rank", "user1");
 
 ---
 
-### Key 管理（`key()`）
+### Key Management (`key()`)
 
 ```java
 GlobalCache.key().hasKey("k1");
@@ -199,7 +261,7 @@ GlobalCache.key().getExpire("k1");
 
 ---
 
-### 分布式锁（`lock()`）
+### Distributed Lock (`lock()`)
 
 ```java
 try (var lock = GlobalCache.lock().optimisticWithRenewal("lock:order:123", 5L)) {
@@ -209,7 +271,7 @@ try (var lock = GlobalCache.lock().optimisticWithRenewal("lock:order:123", 5L)) 
 
 ---
 
-### Lua / 限流 / GEO / HyperLogLog / Bitmap
+### Lua / Rate Limit / GEO / HyperLogLog / Bitmap
 
 ```java
 GlobalCache.script().eval(script, keys, args, Long.class);
@@ -221,9 +283,9 @@ GlobalCache.bitmap().set("sign:202501", 1, true);
 
 ---
 
-## 📨 Redis Stream 消息队列（独立模块）
+## 📨 Redis Stream Message Queue (Standalone Module)
 
-Stream MQ 已拆至 **`atlas-richie-component-redis-streammq`**，门面 **`StreamMQ`**：
+Stream MQ has been split out into **`atlas-richie-component-redis-streammq`**, with `StreamMQ` as the entry point:
 
 ```xml
 <dependency>
@@ -234,16 +296,16 @@ Stream MQ 已拆至 **`atlas-richie-component-redis-streammq`**，门面 **`Stre
 
 ```java
 StreamMQ.stream().publish("order-events", event);
-// 消费：@RedisStreamConsumer + 见 streammq 模块 README
+// consumption: @RedisStreamConsumer + see the streammq module README
 ```
 
-本模块 **`GlobalCache.queue()`** 是有界 List + 主动拉，用于削峰；需要消费组、ACK、死信时请用 StreamMQ。
+In this module, **`GlobalCache.queue()`** is a bounded List that you pull from actively, used for traffic shaping. When you need consumer groups, ACKs, or dead-letter handling, use StreamMQ.
 
-> 本目录 `docs/Redis-Stream-*.md` 为历史设计文档，实现以 **streammq 模块** 为准。
+> The `docs/Redis-Stream-*.md` files in this directory are historical design notes. The current implementation lives in the **streammq module**.
 
 ---
 
-### 批量操作（`value()`）
+### Batch Operations (`value()`)
 
 ```java
 Map<String, String> data = Map.of("k1", "v1", "k2", "v2");
@@ -254,23 +316,23 @@ Map<String, String> values = GlobalCache.value().getMap(List.of("k1", "k2"),
 
 ---
 
-## 🛡 高级能力
+## 🛡 Advanced Capabilities
 
-### 分布式锁（`lock()`）
+### Distributed Lock (`lock()`)
 
-**解决什么问题**：跨 JVM 实例的资源互斥访问（扣库存、下单、发放优惠券）。
+**What problem it solves**: cross-JVM mutual exclusion for shared resources (inventory deduction, order placement, coupon issuance).
 
-**三层架构**：JVM 本地锁池 → 可重入检测 → Redisson FencedLock。
+**Three-layer architecture**: JVM local lock pool, then reentrant check, then Redisson FencedLock.
 
 ```java
-// 乐观锁 + 看门狗续期（推荐）
+// Optimistic lock + watchdog renewal (recommended)
 try (var lock = GlobalCache.lock().optimisticWithRenewal("lock:order:123", 5L)) {
     if (lock.success()) {
         orderService.processOrder("123");
     }
 }
 
-// 悲观锁（阻塞直到获取或超时）
+// Pessimistic lock (blocks until acquired or timed out)
 try (var lock = GlobalCache.lock().pessimistic("lock:order:456", 10L)) {
     if (lock.success()) {
         orderService.processOrder("456");
@@ -278,9 +340,9 @@ try (var lock = GlobalCache.lock().pessimistic("lock:order:456", 10L)) {
 }
 ```
 
-**推荐配置**：`spring.data.redis.enable-local-lock: true`（默认已开启）
+**Recommended configuration**: `spring.data.redis.enable-local-lock: true` (enabled by default)
 
-#### 批量锁（`lock().batch()`）
+#### Batch Lock (`lock().batch()`)
 
 ```java
 Collection<String> keys = Set.of("lock:stock:1001", "lock:stock:1002", "lock:stock:1003");
@@ -292,13 +354,13 @@ try (var lock = GlobalCache.lock().batch(keys, 20L, TimeUnit.MINUTES)) {
 }
 ```
 
-> 任一 key 获取失败会立即释放已持有的锁，避免部分锁定导致死锁。
+> If any single key fails to acquire, the already-held locks are released immediately to avoid a partial-lock deadlock.
 
 ---
 
-### 防缓存击穿（`getWithLock`）
+### Cache Stampede Prevention (`getWithLock`)
 
-拦截链路：L2 → 布隆过滤器 → Redis → 分布式锁 → DB。
+Interception chain: L2, then Bloom filter, then Redis, then distributed lock, then DB.
 
 ```java
 String value = GlobalCache.value().getWithLock("config:app:pay_ratio",
@@ -310,25 +372,25 @@ UserInfo user = GlobalCache.struct().getWithLock("user:profile:123",
 
 ---
 
-### L2 二级缓存
+### L2 Secondary Cache
 
-读路径：`value().get()` / `struct().get()` → L1 本地 → Redis → `getWithLock` 回源 DB。
+Read path: `value().get()` / `struct().get()` -> L1 local -> Redis -> `getWithLock` falls through to DB.
 
-写路径：`set()` → Redis SET → 双写 L1 → 键空间通知失效其他实例 L1。
+Write path: `set()` -> Redis SET -> dual-write L1 -> keyspace notification invalidates L1 on other instances.
 
 ```yaml
 spring.data.redis:
   enable-l2-caching: true
-  l2-caching-data: [STRING, HASH]   # LIST/SET 谨慎，数据量大时 JVM 压力大
+  l2-caching-data: [STRING, HASH]   # LIST / SET with care: high data volume stresses the JVM
 ```
 
-深度设计见 [docs/Redis-L2与性能守卫设计说明.md](./docs/Redis-L2与性能守卫设计说明.md)。
+For the deep design see [Redis-L2与性能守卫设计说明.md](docs/zh/Redis-L2与性能守卫设计说明.md).
 
 ---
 
-### 布隆过滤器
+### Bloom Filter
 
-开启后，`value().getWithLock` 自动联动布隆判定，拦截「一定不存在」的 key，减少穿透。
+When enabled, `value().getWithLock` automatically consults the Bloom filter to short-circuit "definitely absent" keys and reduce cache penetration.
 
 ```yaml
 platform.cache.bloom-filter:
@@ -340,19 +402,19 @@ platform.cache.bloom-filter:
 
 ---
 
-### 性能守卫（RedisPerfGuard）
+### Performance Guard (RedisPerfGuard)
 
-| 维度        | 检测内容                                      | 可选阻断                                    |
-|-----------|-------------------------------------------|-----------------------------------------|
-| 复杂度       | 非 O(1) 操作打 WARN                           | `block-forbidden-tiers: true`           |
-| 延迟        | 超过 `toc-soft-ms` WARN，`toc-hard-ms` ERROR | —                                       |
-| String 载荷 | 集合/Map 整包写入 String、超大 JSON                | `block-string-payload-violations: true` |
+| Dimension     | Detection                                                              | Optional blocking                            |
+|---------------|------------------------------------------------------------------------|----------------------------------------------|
+| Complexity    | WARN on non-O(1) operations                                            | `block-forbidden-tiers: true`                 |
+| Latency       | WARN over `toc-soft-ms`, ERROR over `toc-hard-ms`                       | —                                            |
+| String payload| Collection / Map blobs written as String, oversized JSON               | `block-string-payload-violations: true`       |
 
-`MigrationWindow` 约束项（`perf.enabled` 等）在 **2026-12-01** 前须设为 `true`，否则启动失败。
+`MigrationWindow`-constrained items (`perf.enabled`, and so on) **must** be set to `true` before **2026-12-01**, or startup fails.
 
 ---
 
-### 多 Redis 实例路由
+### Multi-Redis Instance Routing
 
 ```yaml
 spring.data.redis:
@@ -365,11 +427,11 @@ spring.data.redis:
 
 ---
 
-## 📦 本地缓存
+## 📦 Local Cache
 
-独立于 Redis 的 JVM 本地缓存（与 L2 不同，这是业务显式使用的独立区域）。基于 JSR-107 标准，支持切换 Caffeine / Ehcache / Cache2k。
+JVM-local cache independent from Redis. This is a business-explicit region, not L2. Built on the JSR-107 standard; Caffeine / Ehcache / Cache2k can be swapped as the underlying provider.
 
-**解决什么问题**：业务需要缓存一些配置项、路由表等不需要 Redis 的数据。或者 L2 是按数据类型自动启用的，业务需要独立的命名缓存区域。
+**What problem it solves**: business code needs to cache things that do not belong in Redis, such as config items or routing tables. Or business code wants a named cache region separate from the data-type-driven L2.
 
 ```yaml
 spring.data.local:
@@ -377,13 +439,13 @@ spring.data.local:
   cache-definitions:
     - name: appConfig
       expiry-policy: CREATED
-      ttl: 300_000             # 5 分钟
+      ttl: 300_000             # 5 minutes
     - name: routeTable
       expiry-policy: ACCESSED
-      ttl: 3_600_000           # 1 小时
+      ttl: 3_600_000           # 1 hour
 ```
 
-Cache2k 额外支持 refresh-ahead（过期前异步刷新）：
+Cache2k additionally supports refresh-ahead (asynchronous refresh before expiry):
 
 ```yaml
 spring.data.local:
@@ -400,30 +462,30 @@ spring.data.local:
 
 ---
 
-## ⚙️ 完整配置参考
+## ⚙️ Complete Configuration Reference
 
-> 下方按 **配置前缀 + 功能** 双维度组织，每个配置项都标注默认值、取值范围及对功能的影响。
-> 标注 ⚠️ 的项有 @MigrationWindow 约束，到期未迁移会阻止应用启动。
+> Below is organized along two dimensions, **config prefix** and **feature**. Every option lists its default, accepted range, and impact on functionality.
+> Items marked with ⚠️ are subject to a `@MigrationWindow` constraint. Failing to migrate by the deadline prevents the application from starting.
 
-### 1. Redis 连接（`spring.data.redis`）
+### 1. Redis Connection (`spring.data.redis`)
 
-| 配置项           | 类型       | 默认值          | 说明                                         |
-|---------------|----------|--------------|--------------------------------------------|
-| `host`        | String   | `localhost`  | Redis 主机                                   |
-| `port`        | int      | `6379`       | Redis 端口                                   |
-| `password`    | String   | —            | Redis 密码                                   |
-| `database`    | int      | `0`          | Redis 库索引                                  |
-| `timeout`     | Duration | `3s`         | 操作超时时间                                     |
-| `server-type` | enum     | `STANDALONE` | 部署类型：`STANDALONE` / `SENTINEL` / `CLUSTER` |
-| `slaves`      | Map      | —            | 命名子 Redis 实例（用于读写分离 / 多业务隔离），详见下文 §1.1     |
+| Config         | Type      | Default     | Description                                                                 |
+|----------------|-----------|-------------|-----------------------------------------------------------------------------|
+| `host`         | String    | `localhost` | Redis host                                                                 |
+| `port`         | int       | `6379`      | Redis port                                                                 |
+| `password`     | String    | —           | Redis password                                                             |
+| `database`     | int       | `0`         | Redis database index                                                       |
+| `timeout`      | Duration  | `3s`        | Operation timeout                                                          |
+| `server-type`  | enum      | `STANDALONE`| Deployment type: `STANDALONE` / `SENTINEL` / `CLUSTER`                      |
+| `slaves`       | Map       | —           | Named child Redis instances (for read-write split / multi-business isolation), see §1.1 below |
 
-#### 1.1 多 Redis 实例路由（`spring.data.redis.slaves`）
+#### 1.1 Multi-Redis Instance Routing (`spring.data.redis.slaves`)
 
 ```yaml
 spring.data.redis:
-  host: primary.redis.com       # 主 Redis
+  host: primary.redis.com       # primary Redis
   port: 6379
-  slaves:                       # 命名子 Redis，可独立配置连接
+  slaves:                       # named child Redis, each with its own connection
     order-redis:
       host: order.redis.com
       port: 6379
@@ -433,89 +495,90 @@ spring.data.redis:
       port: 6380
 ```
 
-子 Redis 在 `MultiRedisTemplate` 中按名称路由。运行时新增/删除子 Redis 需要重启。
+Child Redis instances are routed by name in `MultiRedisTemplate`. Adding or removing a child Redis at runtime requires a restart.
 
-#### 1.2 Lettuce 扩展（`spring.data.redis.lettuce.*`）
+#### 1.2 Lettuce Extensions (`spring.data.redis.lettuce.*`)
 
-> 本节扩展配置是为了解决 Spring Boot 原生 Lettuce 配置在**生产环境**中不够用的问题。涉及三个维度：**连接池调优**、**Socket 连接模式（epoll）**、**Netty 直接内存管理**。
-
----
-
-##### 1.2.1 为什么选择 Lettuce（而非 Jedis）
-
-项目默认采用 **Lettuce** 作为 Redis 客户端。Jedis 本质上属于直连模式（每个实例对应一个 Redis 连接，非线程安全，需通过连接池来模拟复用），而 Lettuce 是**基于 Netty 的异步驱动客户端**，具有以下差异：
-
-| 对比维度        | Lettuce                | Jedis                  |
-|-------------|------------------------|------------------------|
-| 线程安全        | ✅ 是，单例复用               | ❌ 否，需连接池配合             |
-| 连接模式        | 异步 + 同步 + 响应式          | 同步阻塞                   |
-| 底层 IO       | Netty epoll（Linux 高性能） | BIO / NIO              |
-| Redis 集群    | 原生支持                   | 需要额外的哨兵/集群适配           |
-| 连接保活（epoll） | ✅ 支持 TCP_USER_TIMEOUT  | ❌ JDK SO_KEEPALIVE 粗粒度 |
-
-结论：Lettuce 在连接复用、多线程并发、Linux 内核特性利用上优于 Jedis。Jedis 的优势仅在于上手简单，但生产环境推荐 Lettuce。
+> These extension settings exist because Spring Boot's stock Lettuce configuration is not enough for **production**. They cover three dimensions: **connection pool tuning**, **Socket connection mode (epoll)**, and **Netty direct memory management**.
 
 ---
 
-##### 1.2.2 连接池配置（`spring.data.redis.lettuce.pool.*`）
+##### 1.2.1 Why Lettuce (and not Jedis)
 
-> 这是继承自 Spring Boot `DataRedisProperties.Lettuce` 的标准连接池配置。
+The project defaults to **Lettuce** as the Redis client. Jedis is essentially a direct-connection model (one connection per instance, not thread-safe, must be paired with a connection pool to simulate reuse), whereas Lettuce is a **Netty-based asynchronous driver**. The two differ in important ways:
 
-Lettuce 虽然是异步驱动，但在同步调用模式下仍然使用连接池来限制并发连接数。**连接池没有通用标准配置**，因为最优值取决于 Redis 服务器性能、网络带宽、应用并发量等因素。推荐的调整方式：
+| Comparison           | Lettuce                                | Jedis                                  |
+|----------------------|----------------------------------------|----------------------------------------|
+| Thread safety        | ✅ Yes, single-instance reuse          | ❌ No, requires a connection pool      |
+| Connection mode      | Async + sync + reactive               | Sync, blocking                         |
+| Underlying I/O       | Netty epoll (Linux high-performance)   | BIO / NIO                              |
+| Redis cluster        | Native support                        | Requires Sentinel / cluster adapter    |
+| Keep-alive (epoll)   | ✅ Supports `TCP_USER_TIMEOUT`        | ❌ JDK `SO_KEEPALIVE` only (coarse-grained) |
 
-1. 根据从业务侧统计到的并发量、访问峰值做一个初步估算
-2. 设置一组初始值
-3. 通过压测工具压测，观察 `RedisPool Exhausted` 异常、连接等待耗时等指标
-4. 反复调整直到找到平衡点
-
-| 配置项                               | 类型       | 默认值    | 说明                     |
-|-----------------------------------|----------|--------|------------------------|
-| `pool.max-active`                 | int      | `8`    | 最大活跃连接数（压测重点调整项）       |
-| `pool.max-idle`                   | int      | `8`    | 最大空闲连接数                |
-| `pool.min-idle`                   | int      | `0`    | 最小空闲连接数                |
-| `pool.max-wait`                   | Duration | `-1ms` | 获取连接的最大等待时间（-1 = 无限等待） |
-| `pool.time-between-eviction-runs` | Duration | —      | 空闲连接驱逐线程运行间隔           |
+Conclusion: Lettuce is strictly better than Jedis for connection reuse, multi-thread concurrency, and Linux kernel feature utilization. Jedis is easier to pick up, but Lettuce is the right call for production.
 
 ---
 
-##### 1.2.3 Epoll 连接模式（Linux 高性能 IO）
+##### 1.2.2 Connection Pool Configuration (`spring.data.redis.lettuce.pool.*`)
 
-> ⚠️ **本节特性仅 Linux x86_64 / aarch64 / riscv64 系统支持**。非 Linux 系统下会收到 Lettuce 的警告日志且配置不会生效。
+> This is the standard connection pool configuration inherited from Spring Boot's `DataRedisProperties.Lettuce`.
 
-**什么是 epoll？**
+Lettuce is asynchronous under the hood, but in sync-call mode it still uses a connection pool to bound the number of concurrent connections. **There is no universal best-value for the pool**, because the optimum depends on Redis server capacity, network bandwidth, and application concurrency. The recommended tuning loop is:
 
-epoll 是 Linux 内核提供的**改进型 IO 多路复用接口**，是传统 `select` / `poll` 的增强替代。核心区别：
+1. Start with a rough estimate of concurrency and peak access from the business side.
+2. Pick an initial set of values.
+3. Run load tests, and watch for `RedisPool Exhausted` exceptions and connection-wait time.
+4. Adjust iteratively until the balance is right.
 
-| 特性            | select / poll         | epoll                                           |
-|---------------|-----------------------|-------------------------------------------------|
-| **FD 上限**     | 有限（默认 2048，需重新编译内核扩大） | 无上限（仅受 `/proc/sys/fs/file-max` 限制，1GB 内存约 10 万） |
-| **效率与连接数的关系** | 线性扫描全部 FD，连接越多越慢      | 仅操作"活跃的"FD，空闲连接不参与扫描                            |
-| **内核通信方式**    | 用户空间与内核空间消息拷贝         | **mmap 共享内存**，避免内核态/用户态数据拷贝                     |
-| **触发模式**      | 仅水平触发（持续通知直到状态变更）     | 支持水平触发 + **边缘触发**（仅状态变化时通知一次）                   |
-| **适用场景**      | 少量活跃连接                | 大量连接 + 少量活跃（典型 WAN 场景）                          |
-
-**为什么这个重要？**
-
-生产环境一个微服务实例可能需要同时维护数十到数百个 Redis 连接（主 Redis + 哨兵 + 各子 Redis 实例）。使用 `select` / `poll` 时，每次 IO 多路复用都要线性扫描全部 FD，即使绝大多数连接处于空闲状态。epoll 只会在活跃连接上有回调，空闲连接不消耗 CPU。在 WAN 场景（大量空闲 + 少量活跃）下，**epoll 的效率远高于 select/poll**。
+| Config                              | Type      | Default | Description                                              |
+|-------------------------------------|-----------|---------|----------------------------------------------------------|
+| `pool.max-active`                   | int       | `8`     | Max active connections (the key tuning knob for load tests) |
+| `pool.max-idle`                     | int       | `8`     | Max idle connections                                     |
+| `pool.min-idle`                     | int       | `0`     | Min idle connections                                     |
+| `pool.max-wait`                     | Duration  | `-1ms`  | Max wait time when acquiring a connection (-1 = forever) |
+| `pool.time-between-eviction-runs`   | Duration  | —       | Idle connection eviction thread run interval            |
 
 ---
 
-##### 1.2.4 保活配置（Keep-Alive）
+##### 1.2.3 Epoll Connection Mode (Linux High-Performance I/O)
 
-**解决的问题**：Redis 长连接经过云负载均衡（SLB/ALB/NLB）、NAT 网关、防火墙时，这些设备有空闲超时策略（通常 60-300 秒）。一旦连接空闲超过设备超时时间，设备会**静默断开 TCP 连接**而客户端毫不知情。下次请求时才发现连接已死，触发连接重建，极端情况下会耗尽连接池。
+> ⚠️ **This feature is only supported on Linux x86_64 / aarch64 / riscv64 systems.** On non-Linux systems Lettuce emits a warning log and the config is a no-op.
 
-**为什么扩展配置？**
-- JDK 标准 `SO_KEEPALIVE` 只提供开启/关闭（boolean），无法细调 `idle`、`interval`、`count`
-- Linux sysctl 全局参数（`/proc/sys/net/ipv4/tcp_keepalive_time`）影响主机上所有进程
-- Netty epoll 原生传输支持逐连接设置 `TCP_KEEPIDLE`、`TCP_KEEPINTVL`、`TCP_KEEPCNT` + **`TCP_USER_TIMEOUT`（RFC 5482）**
+**What is epoll?**
 
-**`TCP_USER_TIMEOUT` 是什么？**
-RFC 5482 定义的 TCP 选项，指定 TCP 在未收到对端 ACK 的情况下，最多等待多久后强制关闭连接。它比单纯依赖 keep-alive 探针更可靠——keep-alive 探针只检测连接是否可达，而 `TCP_USER_TIMEOUT` 同时检测**数据是否被对端确认**。推荐公式：
+epoll is a Linux kernel **improved I/O multiplexing interface**, the modern replacement for the classic `select` / `poll`. The core differences:
+
+| Feature                            | select / poll                                                | epoll                                                                       |
+|------------------------------------|--------------------------------------------------------------|-----------------------------------------------------------------------------|
+| **FD upper bound**                 | Limited (default 2048, must recompile the kernel to expand)  | None (only limited by `/proc/sys/fs/file-max`; ~100K per 1GB of memory)     |
+| **Scaling with connection count**  | Linear scan of all FDs; the more connections, the slower    | Only "active" FDs are touched; idle ones are not scanned                    |
+| **Kernel communication**           | User-space ↔ kernel-space message copy                       | **mmap shared memory**, no user/kernel data copy                            |
+| **Trigger mode**                   | Level-triggered only (notifies until state changes)         | Level-triggered + **edge-triggered** (notifies once on state change)        |
+| **Use cases**                      | Few active connections                                       | Many connections + few active (typical WAN scenarios)                       |
+
+**Why does this matter?**
+
+In production, a single microservice instance may need to maintain dozens to hundreds of Redis connections simultaneously (primary Redis + Sentinels + child Redis instances). With `select` / `poll`, every I/O multiplexing pass has to scan all FDs linearly, even when the vast majority are idle. epoll only fires callbacks on active connections; idle ones do not consume CPU. In WAN scenarios (lots of idle + a few active), **epoll is dramatically more efficient than select / poll**.
+
+---
+
+##### 1.2.4 Keep-Alive Configuration
+
+**Problem solved**: long-lived Redis connections traverse cloud load balancers (SLB / ALB / NLB), NAT gateways, and firewalls. These devices have idle-timeout policies (typically 60 to 300 seconds). Once a connection is idle longer than the device timeout, the device **silently closes the TCP connection** and the client has no idea. The next request discovers the dead connection, triggering a rebuild. In the worst case, this drains the connection pool.
+
+**Why extend the default?**
+- JDK standard `SO_KEEPALIVE` is just a boolean on/off, with no fine control over `idle`, `interval`, or `count`.
+- Linux sysctl (`/proc/sys/net/ipv4/tcp_keepalive_time`) affects every process on the host.
+- Netty epoll native transport supports per-connection `TCP_KEEPIDLE`, `TCP_KEEPINTVL`, `TCP_KEEPCNT`, and **`TCP_USER_TIMEOUT` (RFC 5482)**.
+
+**What is `TCP_USER_TIMEOUT`?**
+
+A TCP option defined in RFC 5482, it specifies how long TCP waits for the peer's ACK before forcibly closing the connection. It is more reliable than keep-alive probes alone: keep-alive probes only check whether the connection is reachable, whereas `TCP_USER_TIMEOUT` also checks **whether data has been acknowledged by the peer**. Recommended formula:
 ```
 tcpUserTimeout ≈ idle + interval × count
 ```
 
-**生产推荐配置**：
+**Production-recommended configuration**:
 
 ```yaml
 spring:
@@ -523,128 +586,128 @@ spring:
     redis:
       lettuce:
         keep-alive:
-          enabled: true                             # 启用保活（仅 Linux 有效）
-          count: 6                                  # 连续 6 次无响应判定连接死亡
-          idle: 90                                  # 空闲 90 秒后开始发送探针
+          enabled: true                             # enable keep-alive (Linux only)
+          count: 6                                  # 6 consecutive missed responses = dead
+          idle: 90                                  # start probing after 90s of idle
           idle-unit: seconds
-          interval: 60                              # 探针间隔 60 秒
+          interval: 60                              # probe interval 60s
           interval-unit: seconds
-          tcp-user-timeout: 450                     # TCP 用户超时（RFC 5482）
-          tcp-user-timeout-unit: seconds             # 90 + 6 × 60 = 450 秒
+          tcp-user-timeout: 450                     # TCP user timeout (RFC 5482)
+          tcp-user-timeout-unit: seconds             # 90 + 6 * 60 = 450 seconds
 ```
 
-**各参数的物理含义**：
+**Physical meaning of each parameter**:
 
-| 参数                 | 含义                       | 默认值   | 生产推荐 | 备注                           |
-|--------------------|--------------------------|-------|------|------------------------------|
-| `idle`             | 连接空闲多久后开始发 keep-alive 探针 | 2 小时  | 90s  | Linux 内核默认 2h，对云环境过长         |
-| `interval`         | 相邻探针的间隔                  | 75s   | 60s  | 过于密集增加服务器负担，过于稀疏检测太慢         |
-| `count`            | 连续无响应多少次后判定死亡            | 9     | 6    | 结合 interval 计算总检测时间          |
-| `tcp-user-timeout` | TCP 等待对端 ACK 的最长时间       | 7875s | 450s | 推荐 ≈ idle + interval × count |
+| Parameter           | Meaning                                              | Default | Prod. recommended | Notes                                       |
+|---------------------|------------------------------------------------------|---------|-------------------|---------------------------------------------|
+| `idle`              | Idle time before keep-alive probes start             | 2h      | 90s               | Linux kernel default of 2h is too long for cloud |
+| `interval`          | Interval between consecutive probes                  | 75s     | 60s               | Too dense adds server load; too sparse delays detection |
+| `count`             | Consecutive failures before declaring the connection dead | 9   | 6                 | Combined with `interval` to compute total detection time |
+| `tcp-user-timeout`  | Max time TCP waits for peer ACK                      | 7875s   | 450s              | Recommended ≈ idle + interval × count       |
 
-**非 Linux 系统降级**：非 Linux 下 epoll 不可用，保活配置不会应到 Socket 通道，Lettuce 会输出 ⚠️ 警告日志，不影响程序运行。
+**Non-Linux fallback**: on non-Linux systems epoll is unavailable, the keep-alive config is not applied to the socket channel, Lettuce emits a ⚠️ warning log, and the program continues to run.
 
 ---
 
-##### 1.2.5 内存释放策略（Netty Direct Buffer 管理）
+##### 1.2.5 Memory Release Policy (Netty Direct Buffer Management)
 
-**解决的问题**：Lettuce 基于 Netty，Netty 使用**引用计数的 Direct Buffer（直接内存/堆外内存）池**。池化可以减少分配/释放开销，但有一个代价——**池只涨不缩**。流量高峰时 Netty 分配的 Direct Buffer 在低峰期不会自动释放回操作系统，堆积在池中。最终触达 `-XX:MaxDirectMemorySize`（默认 = `-Xmx`）上限后抛出 `OutOfMemoryError: Direct buffer memory`。
+**Problem solved**: Lettuce runs on Netty, and Netty uses a **reference-counted direct buffer pool**. Pooling reduces allocation / release overhead, but it has a cost: **the pool only grows, it does not shrink on its own**. Direct buffers Netty allocates during traffic peaks do not return to the OS during off-peak hours. They pile up in the pool, and once `-XX:MaxDirectMemorySize` (default = `-Xmx`) is hit, the JVM throws `OutOfMemoryError: Direct buffer memory`.
 
 ```yaml
 spring:
   data:
     redis:
       lettuce:
-        memory-release-policy: USAGE_RADIO    # 内存释放策略（默认）
-        memory-release-ratio: 3               # 使用率达到 75% 时触发释放（默认）
+        memory-release-policy: USAGE_RADIO    # memory release policy (default)
+        memory-release-ratio: 3               # trigger release at 75% utilization (default)
 ```
 
-**`memory-release-policy` 可选值**：
+**Allowed values for `memory-release-policy`**:
 
-| 策略                | 行为                              | 适用场景            |
-|-------------------|---------------------------------|-----------------|
-| `USAGE_RADIO`（默认） | 池使用率达到 `ratio/(ratio+1)` 时释放旧缓存 | 通用场景，平衡 CPU 和内存 |
+| Policy                       | Behavior                                                              | Use case                          |
+|------------------------------|-----------------------------------------------------------------------|-----------------------------------|
+| `USAGE_RADIO` (default)      | Release old buffers when pool utilization reaches `ratio/(ratio+1)`   | General scenarios, balanced CPU and memory |
 
-**`memory-release-ratio` 的影响**（仅 `USAGE_RADIO` 模式生效）：
+**Impact of `memory-release-ratio`** (only meaningful for `USAGE_RADIO`):
 
-| ratio | 触发阈值 | 内存倾向 | CPU 倾向           | 推荐场景          |
-|-------|------|------|------------------|---------------|
-| 1     | 50%  | 低内存  | 较高 CPU（频繁释放/再分配） | 低 QPS、内存敏感    |
-| 3（默认） | 75%  | 中等   | 中等               | 通用场景          |
-| 5     | 83%  | 较高   | 较低               | 高 QPS 服务      |
-| 10    | 90%  | 高    | 低                | 极高 QPS、CPU 敏感 |
+| ratio        | Trigger threshold | Memory tendency | CPU tendency                              | Recommended scenario                |
+|--------------|-------------------|-----------------|-------------------------------------------|-------------------------------------|
+| 1            | 50%               | Low             | Higher CPU (frequent release / re-alloc)   | Low QPS, memory-sensitive           |
+| 3 (default)  | 75%               | Medium          | Medium                                    | General scenarios                   |
+| 5            | 83%               | Higher          | Lower                                     | High-QPS services                   |
+| 10           | 90%               | High            | Low                                       | Very high QPS, CPU-sensitive        |
 
-**带来的好处**：
-- 直接内存在低峰期可收敛，避免 `OutOfDirectMemoryError`
-- 高 QPS 服务用高 ratio（减少释放/再分配的 CPU 开销），低 QPS 服务用低 ratio（节省内存）
-- 通过配置调节，无需堆 JVM 参数间接调优
-
----
-
-#### 1.3 RESP 协议版本（`spring.data.redis.protocol-version`）
-
-| 取值      | 适用          | 特点                      |
-|---------|-------------|-------------------------|
-| `RESP2` | Redis 2 - 5 | 传统协议                    |
-| `RESP3` | Redis 6+    | 性能更好、支持客户端缓存、避免响应数据二次转换 |
-
-Redis 6+ 强烈建议 RESP3。Redis 禁用 HELLO 命令时需用 RESP2 避免连接失败。
+**Benefits**:
+- Direct memory converges during off-peak, avoiding `OutOfDirectMemoryError`.
+- High-QPS services use a high ratio (less release / re-alloc CPU overhead); low-QPS services use a low ratio (memory savings).
+- Tuned via config rather than indirect JVM flags.
 
 ---
 
-### 2. L2 二级缓存（`spring.data.redis`）
+#### 1.3 RESP Protocol Version (`spring.data.redis.protocol-version`)
 
-| 配置项                 | 类型                | 默认值     | 关联功能    | 说明                                               |
-|---------------------|-------------------|---------|---------|--------------------------------------------------|
-| `enable-l2-caching` | boolean           | `false` | L2 二级缓存 | 是否启用 L1 本地缓存                                     |
-| `l2-caching-data`   | List<KeyTypeEnum> | `[]`    | L2 二级缓存 | 哪些数据类型走 L2，可选 `STRING` / `HASH` / `LIST` / `SET` |
+| Value   | Applies to  | Characteristics                                                              |
+|---------|-------------|------------------------------------------------------------------------------|
+| `RESP2` | Redis 2 to 5| Legacy protocol                                                              |
+| `RESP3` | Redis 6+    | Better performance, client-side caching, avoids double conversion of response data |
 
-> TTL 自动追加 1~10 分钟随机偏移防雪崩。`enable-l2-caching=false` 时配置无效但 `*WithLock` 的本地查路径仍会工作。
+Redis 6+ strongly recommends RESP3. If Redis has the `HELLO` command disabled, fall back to RESP2 to avoid connection failures.
 
-**多实例一致性**：依赖 Redis 键空间通知
+---
+
+### 2. L2 Secondary Cache (`spring.data.redis`)
+
+| Config                | Type                | Default | Related feature   | Description                                                                                  |
+|-----------------------|---------------------|---------|-------------------|----------------------------------------------------------------------------------------------|
+| `enable-l2-caching`   | boolean             | `false` | L2 secondary cache | Whether to enable the L1 local cache                                                         |
+| `l2-caching-data`     | List<KeyTypeEnum>   | `[]`    | L2 secondary cache | Which data types go through L2. Options: `STRING` / `HASH` / `LIST` / `SET`                  |
+
+> TTLs automatically get a 1 to 10 minute random offset to prevent cache avalanche. When `enable-l2-caching=false`, the config has no effect, but the local-cache lookup path used by `*WithLock` still works.
+
+**Multi-instance consistency**: depends on Redis keyspace notifications
 
 ```bash
-# Redis 服务端必须开启
+# Required on the Redis server
 notify-keyspace-events KEA
 ```
 
-短暂脏读窗口：写入 Redis 到收到通知之间，跨实例 L1 仍是旧值。建议 L1 TTL 不超过「原始 TTL × 2」。
+There is a short dirty-read window: between the Redis write and the moment the notification arrives, cross-instance L1 still holds the old value. It is recommended to keep L1 TTL at no more than `original TTL × 2`.
 
 ---
 
-### 3. 分布式锁（`spring.data.redis`）
+### 3. Distributed Lock (`spring.data.redis`)
 
-| 配置项                 | 类型      | 默认值                 | 关联功能     | 说明                                                          |
-|---------------------|---------|---------------------|----------|-------------------------------------------------------------|
-| `enable-local-lock` | boolean | **`true`** ⚠️ 已默认开启 | JVM 本地锁池 | 同一 JVM 内对同一锁 key 走 `ConcurrentHashMap` 查表，关闭则每次直接打 Redisson |
+| Config                | Type      | Default                 | Related feature | Description                                                                                            |
+|-----------------------|-----------|-------------------------|-----------------|--------------------------------------------------------------------------------------------------------|
+| `enable-local-lock`   | boolean   | **`true`** ⚠️ enabled by default | JVM local lock pool | Within the same JVM, the same lock key is resolved through a `ConcurrentHashMap` lookup. If disabled, every call goes directly to Redisson. |
 
-> **何时考虑关闭**：极端情况下锁 key 极多、命中率极低、`ConcurrentHashMap` 内存膨胀。实际业务中几乎不会出现。
+> **When to consider disabling it**: in extreme cases with very many lock keys, a very low hit rate, and `ConcurrentHashMap` memory bloat. This almost never happens in real workloads.
 
 ---
 
-### 4. 性能守卫（`spring.data.redis.perf`）
+### 4. Performance Guard (`spring.data.redis.perf`)
 
-> 关联功能：[性能守卫](#性能守卫redisperfguard)。⚠️ = @MigrationWindow 约束，2026-12-01 前必须设为 `true`，否则启动失败。
+> Related feature: [Performance Guard](#performance-guardredisperfguard). ⚠️ = `@MigrationWindow` constraint. The marked flags must be set to `true` before 2026-12-01, or the application fails to start.
 
-| 配置项                                  | 类型           | 默认值               | 说明                                                           |
-|--------------------------------------|--------------|-------------------|--------------------------------------------------------------|
-| `enabled` ⚠️                         | boolean      | `false`           | 总开关。关闭则 perf 治理全部失效                                          |
-| `warn-non-o1`                        | boolean      | `true`            | 非 O(1) 操作打 WARN                                              |
-| `toc-soft-ms`                        | long         | `8`               | 软阈值（毫秒），超过 WARN                                              |
-| `toc-hard-ms`                        | long         | `50`              | 硬阈值（毫秒），超过 ERROR                                             |
-| `block-forbidden-tiers` ⚠️           | boolean      | `false`           | 阻断 LINEAR_N / WORSE 复杂度操作（抛异常）                               |
-| `log-big-key-probe-hints`            | boolean      | `true`            | 非 O(1) 时输出 BIGKEY 探测建议                                       |
-| `toc-allowed-complexities`           | List<String> | `[]`              | 复杂度白名单（`O1` / `LOG_N` / `SCRIPT_OR_UNKNOWN`），非空则不在列表内即 ERROR |
-| `warn-string-payload-anti-patterns`  | boolean      | `true`            | String 写入前检测反模式（集合/Map 整包、超大 JSON）                           |
-| `warn-json-like-string-blob`         | boolean      | `true`            | 启用 JSON 形状启发式                                                |
-| `json-like-min-chars-for-warn`       | int          | `128`             | JSON 整包 WARN 阈值（去空白字符数）                                      |
-| `string-payload-max-chars-warn`      | int          | `100_000`         | String 字符数 WARN 阈值                                           |
-| `string-payload-max-chars-error`     | int          | `1_000_000`       | String 字符数 ERROR 阈值                                          |
-| `string-payload-max-bytes-warn`      | int          | `262_144` (256KB) | byte[] 写入 WARN 阈值                                            |
-| `string-payload-max-bytes-error`     | int          | `1_048_576` (1MB) | byte[] 写入 ERROR 阈值                                           |
-| `block-string-payload-violations` ⚠️ | boolean      | `false`           | 阻断 String 载荷违规写入（抛异常）                                        |
+| Config                                    | Type           | Default               | Description                                                                                              |
+|-------------------------------------------|----------------|-----------------------|----------------------------------------------------------------------------------------------------------|
+| `enabled` ⚠️                              | boolean        | `false`               | Master switch. When off, the entire perf governance is disabled                                          |
+| `warn-non-o1`                             | boolean        | `true`                | WARN on non-O(1) operations                                                                              |
+| `toc-soft-ms`                             | long           | `8`                   | Soft threshold (ms); over this, WARN                                                                     |
+| `toc-hard-ms`                             | long           | `50`                  | Hard threshold (ms); over this, ERROR                                                                    |
+| `block-forbidden-tiers` ⚠️                | boolean        | `false`               | Block operations whose complexity is `LINEAR_N` or worse (throw an exception)                           |
+| `log-big-key-probe-hints`                 | boolean        | `true`                | When non-O(1) is detected, output BIGKEY probe hints                                                     |
+| `toc-allowed-complexities`                | List<String>   | `[]`                  | Complexity allow-list (`O1` / `LOG_N` / `SCRIPT_OR_UNKNOWN`); when non-empty, anything outside is ERROR |
+| `warn-string-payload-anti-patterns`       | boolean        | `true`                | Detect anti-patterns on String writes (Collection / Map blobs, oversized JSON)                           |
+| `warn-json-like-string-blob`              | boolean        | `true`                | Enable the JSON-shape heuristic                                                                          |
+| `json-like-min-chars-for-warn`            | int            | `128`                 | JSON blob WARN threshold (whitespace-stripped character count)                                          |
+| `string-payload-max-chars-warn`           | int            | `100_000`             | String character-count WARN threshold                                                                    |
+| `string-payload-max-chars-error`          | int            | `1_000_000`           | String character-count ERROR threshold                                                                   |
+| `string-payload-max-bytes-warn`           | int            | `262_144` (256KB)     | byte[] write WARN threshold                                                                              |
+| `string-payload-max-bytes-error`          | int            | `1_048_576` (1MB)     | byte[] write ERROR threshold                                                                             |
+| `block-string-payload-violations` ⚠️     | boolean        | `false`               | Block String payload violations (throw an exception)                                                     |
 
-**生产推荐**（灰度完成）：
+**Production-recommended** (canary done):
 
 ```yaml
 spring.data.redis.perf:
@@ -655,37 +718,37 @@ spring.data.redis.perf:
 
 ---
 
-### 5. 本地缓存（`spring.data.local`）
+### 5. Local Cache (`spring.data.local`)
 
-> 关联功能：[本地缓存](#-本地缓存)。独立于 L2 的业务显式使用区域，基于 JSR-107。
+> Related feature: [Local Cache](#-local-cache). A business-explicit region, independent from L2, built on JSR-107.
 
-#### 6.1 顶层配置
+#### 6.1 Top-Level Configuration
 
-| 配置项                 | 类型                   | 默认值       | 说明                                      |
-|---------------------|----------------------|-----------|-----------------------------------------|
-| `provider`          | enum                 | `EHCACHE` | 底层实现：`EHCACHE` / `CAFFEINE` / `CACHE2K` |
-| `cache-definitions` | Set<CacheDefinition> | `[]`      | 缓存定义列表，详见 §6.2                          |
+| Config               | Type                   | Default   | Description                                                                |
+|----------------------|------------------------|-----------|----------------------------------------------------------------------------|
+| `provider`           | enum                   | `EHCACHE` | Underlying implementation: `EHCACHE` / `CAFFEINE` / `CACHE2K`              |
+| `cache-definitions`  | Set<CacheDefinition>   | `[]`      | List of cache definitions. See §6.2 for details                            |
 
-#### 6.2 缓存定义（`spring.data.local.cache-definitions[].*`）
+#### 6.2 Cache Definitions (`spring.data.local.cache-definitions[].*`)
 
-每条 `CacheDefinition` 定义一个独立的本地缓存区域（按 `name` 区分）：
+Each `CacheDefinition` defines an independent local cache region (distinguished by `name`):
 
-| 配置项                           | 类型       | 默认值        | 说明                                                                         |
-|-------------------------------|----------|------------|----------------------------------------------------------------------------|
-| `name`                        | String   | —          | 缓存区域名称（必填，业务按名获取）                                                          |
-| `expiry-policy`               | enum     | —          | 过期策略：`CREATED` / `ACCESSED` / `ETERNAL` / `MODIFIED` / `TOUCHED`           |
-| `expiry`                      | int      | `5`        | 过期时间数值（`ETERNAL` 时无效）                                                      |
-| `expiry-unit`                 | TimeUnit | `MINUTES`  | 过期时间单位（`ETERNAL` 时无效）                                                      |
-| `statistics-enabled`          | boolean  | `false`    | 是否启用命中率/操作数统计                                                              |
-| `store-by-value`              | boolean  | `false`    | `true` 按值存（深拷贝）、`false` 按引用存                                               |
-| `read-through`                | boolean  | `false`    | 启用 read-through，miss 时调用 CacheLoader 回源（需配合 `cache-loader-class-name`）     |
-| `cache-loader-class-name`     | String   | —          | `javax.cache.integration.CacheLoader` 全类名                                  |
-| `write-through`               | boolean  | `false`    | 启用 write-through，put/remove 时回调 CacheWriter（需配合 `cache-writer-class-name`） |
-| `cache-writer-class-name`     | String   | —          | `javax.cache.integration.CacheWriter` 全类名                                  |
-| `cache2k-refresh-ahead`       | boolean  | `false`    | **仅 CACHE2K** 生效：过期前异步刷新（需 `read-through=true`）                            |
-| `cache2k-loader-thread-count` | Integer  | cache2k 默认 | **仅 CACHE2K** 生效：后台刷新线程数                                                   |
+| Config                          | Type       | Default             | Description                                                                                                  |
+|---------------------------------|------------|---------------------|--------------------------------------------------------------------------------------------------------------|
+| `name`                          | String     | —                   | Cache region name (required; business looks up by name)                                                      |
+| `expiry-policy`                 | enum       | —                   | Expiry policy: `CREATED` / `ACCESSED` / `ETERNAL` / `MODIFIED` / `TOUCHED`                                  |
+| `expiry`                        | int        | `5`                 | Expiry duration value (no effect when `ETERNAL`)                                                            |
+| `expiry-unit`                   | TimeUnit   | `MINUTES`           | Expiry duration unit (no effect when `ETERNAL`)                                                             |
+| `statistics-enabled`            | boolean    | `false`             | Enable hit-rate / operation-count statistics                                                                 |
+| `store-by-value`                | boolean    | `false`             | `true` stores by value (deep copy); `false` stores by reference                                              |
+| `read-through`                  | boolean    | `false`             | Enable read-through; on miss, call CacheLoader to load (requires `cache-loader-class-name`)                  |
+| `cache-loader-class-name`       | String     | —                   | Fully qualified class name of `javax.cache.integration.CacheLoader`                                        |
+| `write-through`                 | boolean    | `false`             | Enable write-through; on put/remove, call CacheWriter (requires `cache-writer-class-name`)                  |
+| `cache-writer-class-name`       | String     | —                   | Fully qualified class name of `javax.cache.integration.CacheWriter`                                        |
+| `cache2k-refresh-ahead`         | boolean    | `false`             | **CACHE2K only**: refresh asynchronously before expiry (requires `read-through=true`)                       |
+| `cache2k-loader-thread-count`   | Integer    | cache2k default     | **CACHE2K only**: number of background refresh threads                                                      |
 
-**示例**：
+**Example**:
 
 ```yaml
 spring.data.local:
@@ -697,7 +760,7 @@ spring.data.local:
       expiry-unit: MINUTES
       statistics-enabled: true
     - name: hotData
-      provider: CACHE2K          # 单独 provider（需要在 CacheDefinition 中加）
+      provider: CACHE2K          # per-cache provider (must be added to CacheDefinition)
       expiry-policy: ACCESSED
       expiry: 30
       expiry-unit: SECONDS
@@ -709,199 +772,199 @@ spring.data.local:
 
 ---
 
-### 6. 组件级配置（`platform.cache`）
+### 6. Component-Level Configuration (`platform.cache`)
 
-| 配置项              | 类型   | 默认值     | 关联功能  | 说明             |
-|------------------|------|---------|-------|----------------|
-| `cache-provider` | enum | `REDIS` | 全局选择  | 当前实现：仅 `REDIS` |
-| `bloom-filter.*` | —    | —       | 布隆过滤器 | 详见 §6.1        |
+| Config           | Type   | Default | Related feature | Description                          |
+|------------------|--------|---------|-----------------|--------------------------------------|
+| `cache-provider` | enum   | `REDIS` | Global choice   | Current implementation: `REDIS` only |
+| `bloom-filter.*` | —      | —       | Bloom filter    | See §6.1 for details                 |
 
-#### 6.1 布隆过滤器（`platform.cache.bloom-filter`）
+#### 6.1 Bloom Filter (`platform.cache.bloom-filter`)
 
-> 关联功能：[布隆过滤器](#布隆过滤器)。`enable=false` 时其他配置无效。
+> Related feature: [Bloom Filter](#bloom-filter). When `enable=false`, the rest of the config has no effect.
 
-| 配置项                   | 类型      | 默认值                           | 说明                                     |
-|-----------------------|---------|-------------------------------|----------------------------------------|
-| `enable`              | boolean | `false`                       | 总开关                                    |
-| `type`                | enum    | `REDISSON`                    | 实现：`REDISSON`（跨实例共享）/ `GUAVA`（单实例，零网络） |
-| `key`                 | String  | `platform:cache:bloom:global` | 布隆数据 key（Redisson 模式）                  |
-| `expected-insertions` | long    | `10_000_000`                  | 预期插入数量（建议略大于实际最大值 20~50%）              |
-| `false-probability`   | double  | `0.001`                       | 误判率（0.001 = 0.1%，最低 0.0001 极低误判）       |
+| Config                 | Type      | Default                           | Description                                                                                  |
+|------------------------|-----------|-----------------------------------|----------------------------------------------------------------------------------------------|
+| `enable`               | boolean   | `false`                           | Master switch                                                                                |
+| `type`                 | enum      | `REDISSON`                        | Implementation: `REDISSON` (shared across instances) / `GUAVA` (single instance, zero network) |
+| `key`                  | String    | `platform:cache:bloom:global`     | Bloom data key (Redisson mode)                                                               |
+| `expected-insertions`  | long      | `10_000_000`                      | Expected number of insertions (recommend ~20% to 50% above the actual maximum)              |
+| `false-probability`    | double    | `0.001`                           | False-positive rate (0.001 = 0.1%; lowest 0.0001 for very low false positives)              |
 
-**内存估算**（公式：`bits ≈ -n × ln(p) / (ln2)²`）：
+**Memory estimate** (formula: `bits ≈ -n × ln(p) / (ln 2)²`):
 
-| n           | p     | 内存     |
-|-------------|-------|--------|
-| 1_000_000   | 0.001 | 1.8 MB |
-| 10_000_000  | 0.001 | 18 MB  |
-| 100_000_000 | 0.001 | 180 MB |
-
----
-
-### 7. Stream MQ 配置（独立模块）
-
-消费者、幂等去重、监控、链路追踪等配置已迁移至 **`atlas-richie-component-redis-streammq`**，本模块不再绑定 `platform.cache.redis.stream.*` 或 `spring.data.redis.stream-idempotency`。
-
-- 依赖与用法：见上文 [Redis Stream 消息队列（独立模块）](#-redis-stream-消息队列独立模块)
-- 历史参考：[docs/Redis-Stream-使用指南.md](../atlas-richie-component-redis-streammq/docs/Redis-Stream-使用指南.md)（以 streammq 源码为准）
+| n             | p     | Memory  |
+|---------------|-------|---------|
+| 1_000_000     | 0.001 | 1.8 MB  |
+| 10_000_000    | 0.001 | 18 MB   |
+| 100_000_000   | 0.001 | 180 MB  |
 
 ---
 
-### 8. 配置总览（按功能定位）
+### 7. Stream MQ Configuration (Standalone Module)
 
-> 不确定去哪儿查？按这个表反过来定位。
+Consumer, idempotent dedup, monitoring, and tracing config have all moved to **`atlas-richie-component-redis-streammq`**. This module no longer binds `platform.cache.redis.stream.*` or `spring.data.redis.stream-idempotency`.
 
-| 你想改什么      | 配置前缀                                        | 章节   |
-|------------|---------------------------------------------|------|
-| Redis 连接   | `spring.data.redis`                         | §1   |
-| 多 Redis 实例 | `spring.data.redis.slaves`                  | §1.1 |
-| Lettuce 调优 | `spring.data.redis.lettuce`                 | §1.2 |
-| L2 二级缓存    | `spring.data.redis.enable-l2-caching`       | §2   |
-| JVM 本地锁池   | `spring.data.redis.enable-local-lock`       | §3   |
-| 性能守卫       | `spring.data.redis.perf`                    | §4   |
-| 本地缓存       | `spring.data.local`                         | §5   |
-| 布隆过滤器      | `platform.cache.bloom-filter`               | §6.1 |
-| Stream MQ  | streammq 模块 `platform.cache.redis.stream.*` | §7   |
+- Dependency and usage: see [Redis Stream Message Queue (Standalone Module)](#-redis-stream-message-queue-standalone-module) above
+- Historical reference: [docs/Redis-Stream-使用指南.md](../atlas-richie-component-redis-streammq/docs/Redis-Stream-使用指南.md) (refer to the streammq source for the actual implementation)
 
 ---
 
-## 🎯 最佳实践
+### 8. Configuration Overview (By Function)
 
-### Key 命名规范
+> Not sure where to look? Use this table to navigate in reverse.
+
+| What you want to change  | Config prefix                                | Section |
+|--------------------------|----------------------------------------------|---------|
+| Redis connection         | `spring.data.redis`                          | §1      |
+| Multi-Redis instances    | `spring.data.redis.slaves`                   | §1.1    |
+| Lettuce tuning           | `spring.data.redis.lettuce`                  | §1.2    |
+| L2 secondary cache       | `spring.data.redis.enable-l2-caching`        | §2      |
+| JVM local lock pool      | `spring.data.redis.enable-local-lock`        | §3      |
+| Performance guard        | `spring.data.redis.perf`                     | §4      |
+| Local cache              | `spring.data.local`                          | §5      |
+| Bloom filter             | `platform.cache.bloom-filter`                | §6.1    |
+| Stream MQ                | streammq module `platform.cache.redis.stream.*` | §7   |
+
+---
+
+## 🎯 Best Practices
+
+### Key Naming Conventions
 
 ```
-{business}:{object}:{id}:{field}
+{业务}:{object}:{id}:{field}
 user:info:123
 order:status:456
 lock:order:789
 ```
 
-### 缓存策略选择
+### Cache Strategy Selection
 
-| 场景         | 推荐方案                   | 配置                                      |
-|------------|------------------------|-----------------------------------------|
-| 热点 KV 读多写少 | L2 + 防击穿               | `enable-l2-caching: true` + `*WithLock` |
-| 高并发锁争用     | 分布式锁 + 本地锁             | `enable-local-lock: true`（默认）           |
-| 大列表缓存      | `*WithLock` 防重复        | 不走 L2，用防击穿方法                            |
-| 排行榜        | ZSet                   | 无需额外配置                                  |
-| 去重统计（大量）   | HyperLogLog            | 12KB 统计 2^64 元素                         |
-| 去重统计（少量）   | Set                    | O(1) 成员判断                               |
-| 限流         | `limiter().tryAcquire` | Lua 原子滑动窗口                              |
-| 附近查询       | `geo()`                | 无需额外配置                                  |
-| 签到打卡       | `bitmap()`             | 1 亿用户每天约 12MB                           |
-| 削峰缓冲       | `queue()` / `stack()`  | 有界 List，非 MQ                            |
-| 可靠 MQ      | `StreamMQ`（独立模块）       | 消费组 / ACK / 死信                          |
+| Scenario                       | Recommended approach                  | Configuration                                       |
+|--------------------------------|---------------------------------------|-----------------------------------------------------|
+| Hot KV, read-heavy, write-light | L2 + stampede prevention              | `enable-l2-caching: true` + `*WithLock`             |
+| High-concurrency lock contention | Distributed lock + local lock       | `enable-local-lock: true` (default)                 |
+| Large list cache               | `*WithLock` for dedup                 | Do not route through L2; use stampede prevention     |
+| Leaderboard                    | ZSet                                  | No extra config                                     |
+| Dedup stats (large)            | HyperLogLog                           | 12KB for 2^64 elements                              |
+| Dedup stats (small)            | Set                                   | O(1) membership check                               |
+| Rate limiting                  | `limiter().tryAcquire`                | Atomic sliding-window Lua                           |
+| Nearby search                  | `geo()`                               | No extra config                                     |
+| Sign-in / check-in             | `bitmap()`                            | ~12MB per day for 100M users                        |
+| Traffic shaping                | `queue()` / `stack()`                 | Bounded list, not MQ                                |
+| Reliable MQ                    | `StreamMQ` (standalone module)        | Consumer group / ACK / DLQ                          |
 
-### 过期时间策略
+### Expiration Strategy
 
-- **热点数据**：短过期（秒级），配合 L2 读放大
-- **配置数据**：中等过期（分钟级）
-- **基础数据**：长过期（小时级），TTL 加随机偏移防雪崩
+- **Hot data**: short TTL (seconds), paired with L2 read amplification.
+- **Config data**: medium TTL (minutes).
+- **Base data**: long TTL (hours), with a random offset to prevent avalanche.
 
-### 性能优化
+### Performance Tuning
 
-- 热点读必须开 L2 + `*WithLock`，避免 Redis 成为瓶颈
-- 批量操作代替循环逐 key 读写，减少网络 RTT
-- 预发环境灰度 `perf.enabled`，消除 `[RedisPerf]` 告警后再上生产
-- ToC 核心链路避免 `KEYS *`、全量 `HGETALL`/`SMEMBERS`
+- Hot reads must turn on L2 + `*WithLock` to keep Redis from becoming a bottleneck.
+- Use batch operations instead of looping per-key reads and writes; this cuts down on network RTT.
+- Roll out `perf.enabled` in pre-production until all `[RedisPerf]` warnings are gone, then promote to production.
+- Avoid `KEYS *` and full `HGETALL` / `SMEMBERS` on ToC core paths.
 
-### 大 Key 阈值参考
+### Big Key Threshold Reference
 
-大 Key 会导致 Redis 主线程阻塞、主从同步延迟、AOF 重写卡顿、集群迁移卡死等隐患。以下阈值综合了 **Redis 内部编码优化分界线**与**组件性能守卫默认值**，两者对齐、互为验证。
+Big keys cause Redis main-thread blocking, replication lag, AOF rewrite stalls, cluster migration hangs, and similar issues. The thresholds below combine **Redis internal encoding switch-over points** with **the component's performance guard defaults**, aligned and cross-validated.
 
-#### 集合类型阈值
+#### Collection Type Thresholds
 
-| 类型   | 编码优化阈值                      | 推荐业务上限       | 越过编码线的影响                  | 典型隐患命令                                                                   |
-|------|-----------------------------|--------------|---------------------------|--------------------------------------------------------------------------|
-| list | 512 元素（quicklist 节点切换）      | **5,000** 元素 | 节点从 ziplist 退化为链表，单节点内存增大 | `LRANGE 0 -1`（O(N) 全量）；**List 无去重能力，任何去重方案都需 O(N) 遍历，必须借助伴生 Set 在写入前拦截** |
-| set  | 512 元素（intset → hashtable）  | **5,000** 元素 | 内存暴增 2~3 倍，rehash 卡顿      | `SMEMBERS`（O(N) 全量）                                                      |
-| zset | 128 元素（ziplist → skiplist）  | **5,000** 元素 | 内存暴增 2~3 倍                | `ZRANGE 0 -1`（O(N)）、`ZREMRANGEBYRANK`（O(log N+M)）                        |
-| hash | 512 字段（ziplist → hashtable） | **1,000** 字段 | 内存暴增 2~3 倍，rehash 卡顿      | `HGETALL`（O(N)）、`HKEYS`（O(N)）                                            |
+| Type   | Encoding threshold                                 | Recommended upper bound | Impact of crossing the line                          | Typical dangerous commands                                                                                                                                       |
+|--------|----------------------------------------------------|-------------------------|------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| list   | 512 elements (quicklist node switch)               | **5,000** elements      | Nodes fall back from ziplist to linked list; per-node memory grows | `LRANGE 0 -1` (O(N) full scan); **Lists have no de-duplication, so any dedup scheme is O(N) and must use a companion Set to filter on write**                |
+| set    | 512 elements (intset → hashtable)                  | **5,000** elements      | Memory grows 2x to 3x, rehash stalls                | `SMEMBERS` (O(N) full scan)                                                                                                                                      |
+| zset   | 128 elements (ziplist → skiplist)                  | **5,000** elements      | Memory grows 2x to 3x                                | `ZRANGE 0 -1` (O(N)), `ZREMRANGEBYRANK` (O(log N + M))                                                                                                          |
+| hash   | 512 fields (ziplist → hashtable)                   | **1,000** fields        | Memory grows 2x to 3x, rehash stalls                | `HGETALL` (O(N)), `HKEYS` (O(N))                                                                                                                                 |
 
-> **有界队列 / 栈**（非 Stream MQ）：`queue()` FIFO、**主动拉**消费，适合削峰与轻量缓冲；`stack()` LIFO、满则拒绝压入。二者均不能替代 [StreamMQ 独立模块](#-redis-stream-消息队列独立模块)。`maxLen` 合法 **1～4,999**；默认不可变，仅 `grow()` 单次 ×2 至封顶。创建时校验 Redis 类型为 none/list。`drain` 的 `count` 为 **1～20**；读路径反序列化失败打 **WARN**（批量跳过坏元素，`poll`/`pop` 已弹出但失败时返回 `null`）。
+> **Bounded Queue / Stack** (not Stream MQ): `queue()` is FIFO with **active pull**, suitable for traffic shaping and lightweight buffering; `stack()` is LIFO, refusing pushes when full. Neither is a replacement for the [StreamMQ standalone module](#-redis-stream-message-queue-standalone-module). `maxLen` must be in **1 to 4,999**; the default is immutable, and `grow()` doubles it only once up to the cap. On creation, the Redis type is validated to be `none` or `list`. The `count` of `drain` is **1 to 20**; the read path logs **WARN** on deserialization failure (skips bad elements in batch mode; `poll` / `pop` already popped but failed elements return `null`).
 
-> **说明**：「编码优化阈值」是 Redis 内部从紧凑编码切换到宽松编码的分界线，越过即导致内存与 CPU 代价跳变；「推荐业务上限」是在紧凑编码之上留出安全余量的经验值，超过后全量扫描类命令延迟明显上升。两者取**较小值**作为实际红线。
+> **Note**: the "encoding threshold" is the point at which Redis's internal encoding switches from compact to relaxed, and crossing it causes a step change in memory and CPU cost. The "recommended upper bound" is a heuristic safety margin on top of the compact encoding; above this, full-scan commands show noticeably higher latency. The actual red line is the **smaller** of the two.
 
-#### String 值阈值（与 `RedisPerfGuard` 对齐）
+#### String Value Thresholds (aligned with `RedisPerfGuard`)
 
-| 级别    | 字符数阈值             | 字节数阈值            | 配置项                                                                 | 行为                                                              |
-|-------|-------------------|------------------|---------------------------------------------------------------------|-----------------------------------------------------------------|
-| OK    | < 100,000（~100KB） | < 256KB          | —                                                                   | 正常写入                                                            |
-| WARN  | ≥ 100,000         | ≥ 262,144（256KB） | `string-payload-max-chars-warn` / `string-payload-max-bytes-warn`   | 输出 WARN 日志                                                      |
-| ERROR | ≥ 1,000,000（~1MB） | ≥ 1,048,576（1MB） | `string-payload-max-chars-error` / `string-payload-max-bytes-error` | 输出 ERROR 日志；若 `block-string-payload-violations=true` 则直接抛异常阻断写入 |
+| Level  | Character threshold       | Byte threshold            | Config                                                                  | Behavior                                                                                            |
+|--------|---------------------------|---------------------------|-------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
+| OK     | < 100,000 (~100KB)        | < 256KB                   | —                                                                       | Normal write                                                                                        |
+| WARN   | ≥ 100,000                 | ≥ 262,144 (256KB)         | `string-payload-max-chars-warn` / `string-payload-max-bytes-warn`       | Emit WARN log                                                                                       |
+| ERROR  | ≥ 1,000,000 (~1MB)        | ≥ 1,048,576 (1MB)         | `string-payload-max-chars-error` / `string-payload-max-bytes-error`     | Emit ERROR log; if `block-string-payload-violations=true`, throw an exception and block the write   |
 
-此外，`RedisStringPayloadInspector` 还会检测以下反模式并直接报 ERROR：
-- 将 `Collection` / `Map` / 数组整包序列化进 String（应改用 Hash / List / ZSet）
-- 将任意 JavaBean 整包 JSON 塞进单 key（建议 Hash 字段建模）
-- 以 `{` 或 `[` 开头且长度 ≥ 128 字符的疑似整包 JSON（WARN）
+In addition, `RedisStringPayloadInspector` also detects the following anti-patterns and immediately reports ERROR:
+- Serializing a whole `Collection` / `Map` / array into a String (use Hash / List / ZSet instead).
+- Stuffing an arbitrary JavaBean as a whole-JSON blob into a single key (prefer Hash field modeling).
+- Strings starting with `{` or `[` and longer than or equal to 128 characters, which look like JSON blobs (WARN).
 
-#### Key 名称
+#### Key Names
 
-| 项目     | 建议                                        |
-|--------|-------------------------------------------|
-| Key 长度 | < 128 字节（Redis 限制 512MB，但长 key 增加内存与比较开销） |
-| 命名规范   | `{业务}:{实体}:{ID}`，避免空格与特殊字符                |
+| Item               | Recommendation                                                                |
+|--------------------|-------------------------------------------------------------------------------|
+| Key length         | < 128 bytes (Redis limit is 512MB, but long keys add memory and comparison overhead) |
+| Naming convention  | `{business}:{entity}:{id}`, avoid spaces and special characters                |
 
-#### 大 Key 检测手段
+#### Big Key Detection Methods
 
-| 方式                                                                       | 适用场景                                                                                                                   |
-|--------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
-| `redis-cli --bigkeys`                                                    | 离线扫描，快速定位 Top N 大 Key                                                                                                  |
-| `MEMORY USAGE key`                                                       | 在线查看单 key 内存占用（Redis 4.0+）                                                                                             |
-| `redis-cli --scan --pattern '*' \| xargs -I{} redis-cli MEMORY USAGE {}` | 批量扫描（慎用，生产建议采样）                                                                                                        |
-| 组件内置 `RedisPerfGuard`                                                    | 运行时自动检测：非 O(1) 调用 WARN + BIGKEY 探测建议（HLEN/LLEN/SCARD/ZCARD），受 `spring.data.redis.perf.log-big-key-probe-hints=true` 控制 |
-| 慢查询日志 `SLOWLOG GET`                                                      | 发现延迟 ≥ `toc-hard-ms`（默认 50ms）的可疑操作                                                                                     |
+| Method                                                                              | Use case                                                                                                                                                                                                                                |
+|-------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `redis-cli --bigkeys`                                                               | Offline scan; quickly locate Top N big keys                                                                                                                                                                                              |
+| `MEMORY USAGE key`                                                                  | Online check of single-key memory usage (Redis 4.0+)                                                                                                                                                                                     |
+| `redis-cli --scan --pattern '*' \| xargs -I{} redis-cli MEMORY USAGE {}`            | Bulk scan (use with care; sample in production)                                                                                                                                                                                          |
+| Component-built-in `RedisPerfGuard`                                                  | Runtime auto-detection: non-O(1) calls log WARN + BIGKEY probe hints (HLEN / LLEN / SCARD / ZCARD); controlled by `spring.data.redis.perf.log-big-key-probe-hints=true`                                                                  |
+| Slow query log `SLOWLOG GET`                                                         | Find suspicious operations with latency ≥ `toc-hard-ms` (default 50ms)                                                                                                                                                                   |
 
-#### 大 Key 治理建议
+#### Big Key Remediation
 
-- **删除用 UNLINK 而非 DEL**：`GlobalCache.key().removeCache()` 内部已使用 `UNLINK`（异步释放内存），避免主线程阻塞。业务代码禁止自行调用 `DEL`。
-- **分片代替单 Key**：大 Hash 拆成 `key:shard:{0..N}`，大 List 拆成多段，大 Set 按业务维度分桶。
-- **渐进式扫描**：用 `HSCAN` / `SSCAN` / `ZSCAN` 代替 `HGETALL` / `SMEMBERS` / `ZRANGE 0 -1`，每次取有界批次。
-- **超限迁移**：单 key 体量持续超标（> 10MB 或元素 > 50,000）应迁至 MongoDB / HBase / ES 等专用存储，Redis 只做热点小数据缓存。
+- **Use `UNLINK` rather than `DEL`**: `GlobalCache.key().removeCache()` already uses `UNLINK` internally (asynchronous memory release), avoiding main-thread blocking. Business code must not call `DEL` directly.
+- **Sharding instead of a single key**: split a large Hash into `key:shard:{0..N}`; large Lists into multiple segments; large Sets by business dimension into buckets.
+- **Incremental scans**: use `HSCAN` / `SSCAN` / `ZSCAN` in place of `HGETALL` / `SMEMBERS` / `ZRANGE 0 -1`, taking bounded batches each time.
+- **Move out of Redis**: any single key consistently exceeding the limit (> 10MB or > 50,000 elements) should migrate to MongoDB / HBase / ES, leaving Redis to do the hot small-data caching.
 
-#### 有界队列 / 栈（`queue()` / `stack()`）
+#### Bounded Queue / Stack (`queue()` / `stack()`)
 
-原生无界 List API 已移除。List 场景统一走有界结构，容量由 `maxLen`（1～4999）治理。
+The native unbounded List API has been removed. List scenarios now go through the bounded structure, with capacity governed by `maxLen` (1 to 4,999).
 
-| 操作                  | 底层命令                                  | 复杂度      | 说明          |
-|---------------------|---------------------------------------|----------|-------------|
-| `offer` / `push`    | RPUSH + LTRIM（queue）/ RPUSH 拒绝（stack） | O(1)     | 写路径 Lua 原子  |
-| `poll` / `pop`      | LPOP / RPOP                           | O(1)     | 单元素弹出       |
-| `peek` / `peekTail` | LINDEX                                | O(1)     | 只读不弹出       |
-| `drain(count)`      | LPOP count                            | O(count) | count 上限 20 |
-| `size`              | LLEN                                  | O(1)     | 当前长度        |
+| Operation             | Underlying command                                    | Complexity | Description                            |
+|-----------------------|-------------------------------------------------------|------------|----------------------------------------|
+| `offer` / `push`      | RPUSH + LTRIM (queue) / RPUSH reject (stack)          | O(1)       | Atomic Lua write path                  |
+| `poll` / `pop`        | LPOP / RPOP                                           | O(1)       | Single-element pop                     |
+| `peek` / `peekTail`   | LINDEX                                                | O(1)       | Read-only, no pop                      |
+| `drain(count)`        | LPOP count                                            | O(count)   | `count` upper bound 20                 |
+| `size`                | LLEN                                                  | O(1)       | Current length                         |
 
-**选型**：语义是「集合/去重」用 `collection()`（Set）；「排行榜」用 `ranking()`（ZSet）；「削峰 FIFO」用 `queue()`；「最近 N 条 LIFO」用 `stack()`。需要消费组 / ACK / 死信用 **StreamMQ**。
+**How to pick**: use `collection()` (Set) for "set / dedup" semantics, `ranking()` (ZSet) for "leaderboard", `queue()` for "FIFO traffic shaping", and `stack()` for "latest N, LIFO". For consumer group / ACK / DLQ, use **StreamMQ**.
 
-### 迁移窗口
+### Migration Window
 
-`perf.enabled`、`blockForbiddenTiers`、`blockStringPayloadViolations` 在 `2026-12-01` 前必须设为 `true`，到期未迁移会阻止应用启动。建议在截止日期前完成灰度验证。
+`perf.enabled`, `blockForbiddenTiers`, and `blockStringPayloadViolations` must be set to `true` before `2026-12-01`. Failing to migrate by the deadline prevents the application from starting. Complete the canary validation before the cutoff.
 
 ---
 
-## ❓ 常见问题
+## ❓ FAQ
 
-### 缓存穿透 / 雪崩 / 击穿 怎么防？
+### How do I prevent cache penetration / avalanche / stampede?
 
-- **穿透**（不存在 key 反复打到 DB）：布隆过滤器 + `*WithLock` + 空值缓存
-- **雪崩**（大量 key 同时过期）：TTL 随机偏移 + L2 本地缓存
-- **击穿**（热点 key 过期瞬间高并发）：`*WithLock` 方法自动加分布式锁
+- **Penetration** (non-existent keys repeatedly hit the DB): Bloom filter + `*WithLock` + null-value caching.
+- **Avalanche** (many keys expire at once): TTL random offset + L2 local cache.
+- **Stampede** (high concurrency on a hot key at the moment it expires): the `*WithLock` methods automatically take a distributed lock.
 
-### 本地锁池和分布式锁什么关系？
+### How does the local lock pool relate to the distributed lock?
 
-本地锁池是 JVM 内的请求合并优化。同一 JVM 内多个线程抢同一把锁时，在 `ConcurrentHashMap` 层面感知到锁状态，不需要每次都打 Redisson。跨 JVM 的互斥仍然由 Redisson FencedLock 保障。对业务代码完全透明。
+The local lock pool is a JVM-internal request-coalescing optimization. When multiple threads within the same JVM compete for the same lock, they observe the lock state at the `ConcurrentHashMap` level and do not have to go through Redisson every time. Cross-JVM mutual exclusion is still guaranteed by Redisson FencedLock. Completely transparent to business code.
 
-### Stream 消息堆积了怎么办？
+### What do I do when Stream messages pile up?
 
-Stream MQ 已独立为 `atlas-richie-component-redis-streammq`。增加消费者 `concurrency`、优化 `handle()`、调整 `count`，并通过 streammq 模块的 Actuator 端点监控积压（见 `docs/Redis-Stream-Actuator-结构说明.md`）。
+Stream MQ has been split out into `atlas-richie-component-redis-streammq`. Increase the consumer `concurrency`, optimize `handle()`, tune `count`, and monitor backlog via the streammq module's Actuator endpoint (see `docs/Redis-Stream-Actuator-结构说明.md`).
 
-### 迁移窗口报错导致启动失败？
+### Startup fails with a migration window error. What now?
 
 ```
 [MigrationWindow] violation(s) detected
 ```
 
-将以下配置设为 `true` 后重启：
+Set the following config to `true` and restart:
 
 ```yaml
 spring.data.redis.perf:
@@ -912,16 +975,10 @@ spring.data.redis.perf:
 
 ---
 
-## 📚 专题文档
+## 📚 Topic Documents
 
-| 主题                  | 文档                                                                    |
-|---------------------|-----------------------------------------------------------------------|
-| **测试规范（蓝本）**        | [TESTING.md](TESTING.md) — 单测/集测命名、JaCoCo 85%、复制清单 |
-| L2 / 分布式锁 / 性能守卫 设计 | [Redis-L2与性能守卫设计说明.md](./docs/Redis-L2与性能守卫设计说明.md)                   |
-| 缓存核心能力功能分析          | [缓存核心能力功能.md](./docs/缓存核心能力功能.md)                                     |
-| Stream 使用与 YAML     | [Redis-Stream-使用指南.md](../atlas-richie-component-redis-streammq/docs/Redis-Stream-使用指南.md)                   |
-| 架构选型                | [Redis-Stream-架构对比分析.md](../atlas-richie-component-redis-streammq/docs/Redis-Stream-架构对比分析.md)               |
-| 性能调优                | [Redis-Stream-MQ性能分析.md](../atlas-richie-component-redis-streammq/docs/Redis-Stream-MQ性能分析.md)               |
-| 监控端点                | [Redis-Stream-Actuator-结构说明.md](../atlas-richie-component-redis-streammq/docs/Redis-Stream-Actuator-结构说明.md) |
-| 链路追踪                | [Redis-Stream-Tracing-透传说明.md](../atlas-richie-component-redis-streammq/docs/Redis-Stream-Tracing-透传说明.md)   |
-| OpenTelemetry       | [OpenTelemetry-快速开始.md](./docs/OpenTelemetry-快速开始.md)                 |
+| Topic                                       | Document                                                                                                                                  |
+|---------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| L2 / Distributed Lock / Performance Guard design | [Redis-L2-and-Performance-Guard-Design.md](docs/en/Redis-L2-and-Performance-Guard-Design.md)                                                  |
+| Cache core capabilities analysis            | [Cache-Core-Capabilities.md](docs/en/Cache-Core-Capabilities.md)                                                                              |
+

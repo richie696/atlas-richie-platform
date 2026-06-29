@@ -12,7 +12,7 @@ public final class StatemachineRedisIntegrationTestSupport implements RedisInteg
             DockerImageName.parse("redis:7-alpine"),
             15,
             "Redis 集成测试需要 Docker（Testcontainers）。请安装并启动 Docker 后执行 mvn verify；"
-                    + "CI 请设置 IT_REQUIRE_DOCKER=true。参见 atlas-richie-testing-support/README.md",
+                    + "CI 请设置 IT_REQUIRE_DOCKER=true。参见 atlas-richie-testing-support/README.zh.md",
             StatemachineRedisIntegrationTestSupport::appendComponentProperties,
             "STATEMACHINE");
 
