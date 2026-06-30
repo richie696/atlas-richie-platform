@@ -1,19 +1,17 @@
 package com.richie.component.storage.config;
 
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.richie.component.storage.bean.ObjectConfig;
 import com.richie.component.storage.exception.StorageException;
 import com.richie.component.storage.support.ObjectStorageStartupProbe;
-import com.azure.storage.blob.BlobContainerClient;
-import com.azure.storage.blob.BlobServiceClientBuilder;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Scope;
 
 import java.io.ByteArrayInputStream;
 
@@ -38,7 +36,6 @@ public class AzureBlobAutoConfiguration {
      * @return 返回 Azure Blob 容器客户端
      */
     @Bean
-    @Scope(BeanDefinition.SCOPE_PROTOTYPE)
     @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "azure_blob")
     public BlobContainerClient blobContainerClient(StorageProperties properties) throws StorageException {
         ObjectConfig config = properties.getObject();

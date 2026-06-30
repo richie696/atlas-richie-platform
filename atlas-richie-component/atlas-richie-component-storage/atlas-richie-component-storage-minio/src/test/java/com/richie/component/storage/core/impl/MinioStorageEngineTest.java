@@ -20,7 +20,7 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-
+import org.springframework.test.util.ReflectionTestUtils;
 import tools.jackson.core.type.TypeReference;
 
 import java.io.ByteArrayInputStream;
@@ -32,8 +32,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -80,7 +78,7 @@ class MinioStorageEngineTest {
         when(objectConfig.getEndpoint()).thenReturn("play.min.io");
         when(objectConfig.getAcl()).thenReturn(null);
 
-        engine = new MinioStorageEngine(storageProperties);
+        engine = new MinioStorageEngine(storageProperties, minioAsyncClient);
     }
 
     // ==================== putObject(File) tests ====================

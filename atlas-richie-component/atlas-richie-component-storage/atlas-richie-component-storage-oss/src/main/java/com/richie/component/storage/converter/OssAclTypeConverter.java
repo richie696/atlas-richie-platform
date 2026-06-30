@@ -1,10 +1,10 @@
 package com.richie.component.storage.converter;
 
+import com.aliyun.oss.model.CannedAccessControlList;
 import com.richie.component.storage.enums.AclTypeEnum;
 import com.richie.component.storage.enums.StorageEngineEnum;
-import com.aliyun.oss.model.CannedAccessControlList;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import jakarta.annotation.Nonnull;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import static com.richie.component.storage.enums.AclTypeEnum.*;

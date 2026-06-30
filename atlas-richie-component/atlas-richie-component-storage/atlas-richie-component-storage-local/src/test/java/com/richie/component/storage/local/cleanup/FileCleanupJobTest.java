@@ -1,12 +1,10 @@
 package com.richie.component.storage.local.cleanup;
 
 import com.richie.component.storage.bean.LocalConfig;
-import com.richie.component.storage.local.repository.entity.FileMetadata;
 import com.richie.component.storage.local.repository.mapper.FileMetadataMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

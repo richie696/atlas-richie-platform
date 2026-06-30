@@ -1,20 +1,18 @@
 package com.richie.component.storage.config;
 
-import com.richie.component.storage.bean.ObjectConfig;
-import com.richie.component.storage.exception.StorageException;
-import com.richie.component.storage.support.ObjectStorageStartupProbe;
 import com.obs.services.ObsClient;
 import com.obs.services.exception.ObsException;
 import com.obs.services.model.DeleteObjectRequest;
 import com.obs.services.model.PutObjectRequest;
+import com.richie.component.storage.bean.ObjectConfig;
+import com.richie.component.storage.exception.StorageException;
+import com.richie.component.storage.support.ObjectStorageStartupProbe;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Scope;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -40,7 +38,6 @@ public class ObsAutoConfiguration {
      * @return 返回华为云OBS客户端
      */
     @Bean
-    @Scope(BeanDefinition.SCOPE_PROTOTYPE)
     @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "huawei_obs")
     public ObsClient obsClient(StorageProperties properties) throws StorageException {
         ObjectConfig config = properties.getObject();

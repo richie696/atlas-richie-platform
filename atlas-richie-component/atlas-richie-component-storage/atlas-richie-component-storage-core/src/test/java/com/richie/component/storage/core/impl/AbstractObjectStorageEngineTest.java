@@ -3,11 +3,11 @@ package com.richie.component.storage.core.impl;
 import com.richie.component.storage.bean.ObjectConfig;
 import com.richie.component.storage.bean.UploadResponse;
 import com.richie.component.storage.config.StorageProperties;
-import com.richie.context.utils.data.JsonUtils;
 import com.richie.component.storage.converter.StorageTypeConverter;
 import com.richie.component.storage.enums.AclTypeEnum;
 import com.richie.component.storage.enums.StorageEngineEnum;
 import com.richie.component.storage.enums.StorageTypeEnum;
+import com.richie.context.utils.data.JsonUtils;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,9 +22,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AbstractObjectStorageEngineTest {

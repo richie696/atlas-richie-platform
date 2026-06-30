@@ -5,8 +5,8 @@ import com.richie.component.storage.bean.DirectUploadPolicy;
 import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.UploadResponse;
 import com.richie.component.storage.bean.image.ImageOptions;
-import tools.jackson.core.type.TypeReference;
 import jakarta.annotation.Nonnull;
+import tools.jackson.core.type.TypeReference;
 
 import java.io.File;
 import java.io.InputStream;

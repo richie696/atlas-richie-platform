@@ -4,8 +4,8 @@ import com.richie.component.storage.enums.StorageEngineEnum;
 import com.richie.component.storage.enums.StorageTypeEnum;
 import com.richie.component.storage.exception.StorageTypeUnsupportedException;
 import com.volcengine.tos.comm.common.StorageClassType;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import jakarta.annotation.Nonnull;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import static com.richie.component.storage.enums.StorageTypeEnum.*;

@@ -1,12 +1,11 @@
 package com.richie.component.storage.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.codelibs.jcifs.smb.CIFSContext;
 import org.codelibs.jcifs.smb.CIFSException;
 import org.codelibs.jcifs.smb.config.PropertyConfiguration;
 import org.codelibs.jcifs.smb.context.BaseContext;
-import org.codelibs.jcifs.smb.context.SingletonContext;
 import org.codelibs.jcifs.smb.impl.NtlmPasswordAuthenticator;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;

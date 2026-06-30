@@ -3,11 +3,9 @@ package com.richie.component.storage.pool;
 import com.richie.component.storage.bean.FtpConfig;
 import org.apache.commons.net.ftp.FTPClient;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.Duration;
 

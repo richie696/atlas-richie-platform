@@ -1,11 +1,11 @@
 package com.richie.component.storage.converter;
 
+import com.qcloud.cos.model.StorageClass;
 import com.richie.component.storage.enums.StorageEngineEnum;
 import com.richie.component.storage.enums.StorageTypeEnum;
 import com.richie.component.storage.exception.StorageTypeUnsupportedException;
-import com.qcloud.cos.model.StorageClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import jakarta.annotation.Nonnull;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import static com.richie.component.storage.enums.StorageTypeEnum.*;

@@ -4,6 +4,61 @@
 
 `richie-component-storage` 是Richie平台统一的对象存储抽象组件，提供了统一的存储接口，支持多种存储后端（本地、云存储、FTP/SFTP/SMB等）。
 
+## 线程安全与客户端生命周期
+
+> **本组件是线程安全的，`StorageEngine` 应作为单例使用。**
+
+### 设计原则
+
+- `StorageEngine` 实现类注册为 Spring `@Service` Bean，默认即为**单例**，所有线程共享同一实例。
+- 各云存储 SDK 客户端（OSSClient、COSClient、ObsClient、S3Client、MinioAsyncClient、Ks3、TOSV2、BlobContainerClient）在组件内部均以 **Spring 单例 Bean** 方式注册，由容器统一管理生命周期。
+- `StorageEngine` 本身是**无状态**的，所有操作所需的配置通过构造函数注入，方法调用不修改任何共享可变状态，天然支持多线程并发。
+
+### 官方 SDK 线程安全背书
+
+| 存储引擎       | 客户端类型                 | 官方是否声明线程安全 | 推荐模式              |
+|------------|-----------------------|:----------:|-------------------|
+| 阿里云 OSS    | `OSSClient`           |    ✅ 是     | 单例，复用连接池          |
+| 腾讯云 COS    | `COSClient`           |    ✅ 是     | 单例，内部维护连接池        |
+| 华为云 OBS    | `ObsClient`           |    ✅ 是     | 单例，可在并发场景下使用      |
+| 金山云 KS3    | `Ks3Client`           |    ✅ 是     | 单例，支持并发使用         |
+| AWS S3     | `S3Client`            |    ✅ 是     | 单例，内部连接池          |
+| MinIO      | `MinioAsyncClient`    |    ✅ 是     | 单例，Okhttp 线程安全    |
+| 火山引擎 TOS   | `TOSV2`               |    ✅ 是     | 单例，Transport 线程安全 |
+| Azure Blob | `BlobContainerClient` |    ✅ 是     | 单例，微软官方保证         |
+
+### 使用建议
+
+1. **不要手动创建 `StorageEngine` 实例**，直接通过 Spring 依赖注入获取即可：
+   ```java
+   @Service
+   @RequiredArgsConstructor
+   public class FileService {
+       private final StorageEngine storageEngine; // 单例注入，线程安全
+   }
+   ```
+2. **不要在每次操作后关闭/销毁客户端**。各 SDK 客户端内部维护了 HTTP 连接池，频繁创建和销毁会导致连接池资源泄漏（如 `ClientBuilderConfiguration` 残留），长期运行后可能造成内存膨胀和文件描述符耗尽。
+3. **不要在业务代码中自行创建底层 SDK 客户端**（如 `new OSSClientBuilder().build(...)`），应统一由组件管理，避免与组件内部的单例客户端产生冲突。
+
+### 反面示例（请勿使用）
+
+```java
+// ❌ 错误：每次请求创建新的 StorageEngine 或 SDK 客户端
+public void upload(File file) {
+    OSSClient client = new OSSClientBuilder().build(endpoint, credentials);
+    // ... 使用 client
+    client.shutdown(); // 频繁创建/销毁，导致资源泄漏
+}
+
+// ✅ 正确：通过 Spring 注入单例 StorageEngine
+@Autowired
+private StorageEngine storageEngine;
+
+public void upload(File file) {
+    storageEngine.putObject(key, file); // 线程安全，连接池复用
+}
+```
+
 ## 核心特性
 
 - ✅ **统一存储接口** - 提供 `StorageEngine` 接口，屏蔽底层存储差异

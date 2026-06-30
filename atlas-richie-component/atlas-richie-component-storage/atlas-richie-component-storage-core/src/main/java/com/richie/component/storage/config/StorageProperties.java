@@ -1,7 +1,6 @@
 package com.richie.component.storage.config;
 
 import com.richie.component.storage.bean.*;
-import com.richie.component.storage.bean.*;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

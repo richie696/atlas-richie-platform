@@ -1,41 +1,121 @@
 package com.richie.component.storage.core.impl;
 
 import com.richie.component.storage.bean.DirectDownloadPolicy;
-import com.richie.context.utils.data.JsonUtils;
-import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.DirectUploadPolicy;
+import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.UploadResponse;
 import com.richie.component.storage.bean.image.ImageOptions;
 import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.core.StorageEngine;
-import java.util.UUID;
-import tools.jackson.core.type.TypeReference;
+import com.richie.component.storage.exception.StorageException;
+import com.richie.component.storage.support.ObjectStorageStartupProbe;
+import com.richie.context.utils.data.JsonUtils;
 import io.minio.*;
-import io.minio.errors.InsufficientDataException;
-import io.minio.Http;
-import io.minio.errors.InternalException;
-import io.minio.errors.XmlParserException;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.type.TypeReference;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service("objectStorageEngine")
 @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "minio")
 public final class MinioStorageEngine extends AbstractObjectStorageEngine<MinioAsyncClient> implements StorageEngine {
 
-    public MinioStorageEngine(StorageProperties properties) {
+    /**
+     * MinIO 异步客户端实例，由 Spring 容器注入（{@code prototype} 作用域）。
+     * <p>
+     * 在构造期注入避免业务方法中再走 {@code SpringContextHolder} 静态查找，
+     * 同时保证单元测试中可直接 {@code new} 传入 mock 客户端。
+     */
+    private final MinioAsyncClient minioClient;
+
+    public MinioStorageEngine(StorageProperties properties, MinioAsyncClient minioClient) {
         super(properties, null);
+        this.minioClient = minioClient;
+    }
+
+    /**
+     * 启动阶段对桶 / 前缀做一次探活；探活失败时仅记录告警而不阻塞 Spring 上下文启动，
+     * 真实部署可在恢复后由运维触发重试或由首次业务调用按需补齐。
+     */
+    @PostConstruct
+    public void initializeBucket() {
+        if (objectConfig().isAutoCreateBucket()) {
+            ensureBucketExists();
+        } else {
+            verifyMinioPrefix();
+        }
+    }
+
+    /**
+     * 检测目标桶是否存在，不存在则创建。所有异常降级为日志告警。
+     */
+    private void ensureBucketExists() {
+        String bucket = getBucketName();
+        try {
+            BucketExistsArgs existsArgs = BucketExistsArgs.builder().bucket(bucket).build();
+            boolean exists = minioClient.bucketExists(existsArgs).get(10, TimeUnit.SECONDS);
+            if (!exists) {
+                MakeBucketArgs makeArgs = MakeBucketArgs.builder().bucket(bucket).build();
+                minioClient.makeBucket(makeArgs);
+                log.info("MinIO 桶自动创建成功. bucket={}", bucket);
+            }
+        } catch (Exception e) {
+            log.warn("MinIO 桶自动创建失败，启动后首次业务调用将按需重试. bucket={}, endpoint={}, error={}",
+                    bucket, objectConfig().getEndpoint(), e.getMessage());
+        }
+    }
+
+    /**
+     * 对 {@code basePath} 前缀做一次临时对象的写入 / 读取 / 删除校验，
+     * 失败时降级为日志告警而非抛出 {@link StorageException}，避免阻塞 Spring 启动。
+     */
+    private void verifyMinioPrefix() {
+        String bucket = getBucketName();
+        String key = ObjectStorageStartupProbe.newProbeObjectKey(objectConfig().getBasePath());
+        byte[] bytes = ObjectStorageStartupProbe.content();
+        try {
+            minioClient.putObject(
+                            PutObjectArgs.builder().bucket(bucket).object(key)
+                                    .stream(new ByteArrayInputStream(bytes), (long) bytes.length, -1L)
+                                    .build())
+                    .get(30, TimeUnit.SECONDS);
+            try (var is = minioClient.getObject(GetObjectArgs.builder().bucket(bucket).object(key).build())
+                    .get(30, TimeUnit.SECONDS)) {
+                is.readAllBytes();
+            }
+            log.info("MinIO 存储前缀读写校验成功. bucket={}, prefix={}", bucket, objectConfig().getBasePath());
+        } catch (Exception e) {
+            log.warn("MinIO 存储前缀读写校验失败，启动后首次业务调用将按需重试. bucket={}, prefix={}, error={}",
+                    bucket, objectConfig().getBasePath(), e.getMessage());
+        } finally {
+            try {
+                minioClient.removeObject(RemoveObjectArgs.builder().bucket(bucket).object(key).build())
+                        .get(30, TimeUnit.SECONDS);
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    /**
+     * 返回构造期注入的 MinIO 客户端，避免再走 {@code SpringContextHolder} 静态查找。
+     *
+     * @param clientClass 客户端类（必须为 {@link MinioAsyncClient}）
+     * @return MinIO 异步客户端实例
+     */
+    @Override
+    protected MinioAsyncClient getClient(Class<MinioAsyncClient> clientClass) {
+        return minioClient;
     }
 
     @Override
