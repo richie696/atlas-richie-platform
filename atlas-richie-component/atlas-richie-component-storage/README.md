@@ -11,10 +11,12 @@
 ### 设计原则
 
 - `StorageEngine` 实现类注册为 Spring `@Service` Bean，默认即为**单例**，所有线程共享同一实例。
-- 各云存储 SDK 客户端（OSSClient、COSClient、ObsClient、S3Client、MinioAsyncClient、Ks3、TOSV2、BlobContainerClient）在组件内部均以 **Spring 单例 Bean** 方式注册，由容器统一管理生命周期。
+- 各存储 SDK 客户端在组件内部均以 **Spring 单例 Bean** 方式注册，由容器统一管理生命周期。
 - `StorageEngine` 本身是**无状态**的，所有操作所需的配置通过构造函数注入，方法调用不修改任何共享可变状态，天然支持多线程并发。
 
-### 官方 SDK 线程安全背书
+### 各引擎客户端线程安全背书
+
+#### 对象存储
 
 | 存储引擎       | 客户端类型                 | 官方是否声明线程安全 | 推荐模式              |
 |------------|-----------------------|:----------:|-------------------|
@@ -26,6 +28,15 @@
 | MinIO      | `MinioAsyncClient`    |    ✅ 是     | 单例，Okhttp 线程安全    |
 | 火山引擎 TOS   | `TOSV2`               |    ✅ 是     | 单例，Transport 线程安全 |
 | Azure Blob | `BlobContainerClient` |    ✅ 是     | 单例，微软官方保证         |
+
+#### 文件传输 / 网络存储
+
+| 存储引擎 | 客户端/资源类型                        | 线程安全机制 | 推荐模式                                       |
+|------|---------------------------------|:------:|--------------------------------------------|
+| FTP  | `FtpClientPool`                 |  ✅ 是   | 单例连接池（Apache Commons Pool），池内借用/归还天然线程安全   |
+| SFTP | `SshClient` + `SftpSessionPool` |  ✅ 是   | `SshClient` 单例 + 会话池，Apache MINA SSHD 线程安全 |
+| SMB  | `CIFSContext`                   |  ✅ 是   | 单例上下文，jcifs-ng `BaseContext` 线程安全          |
+| 本地   | 无客户端（直接文件 I/O）                  |  ✅ 是   | `LocalStorageEngine` 无状态，直接操作本地文件系统        |
 
 ### 使用建议
 
