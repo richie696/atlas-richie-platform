@@ -2,7 +2,7 @@ package com.richie.component.tenant.strategy;
 
 import com.richie.component.tenant.config.MultiTenancyProperties;
 import com.richie.component.tenant.context.TenantContext;
-import com.richie.component.tenant.exception.BusinessException;
+import com.richie.contract.exception.BusinessException;
 import com.richie.component.tenant.spi.TenantInfoProvider;
 
 /**
@@ -31,7 +31,7 @@ public abstract class AbstractTenancyStrategy implements TenancyStrategy {
      */
     protected void assertTenantPresent() {
         if (TenantContext.getTenantId() == null) {
-            throw new BusinessException("Tenant not bound to current context");
+            throw new BusinessException("TENANT_NOT_BOUND", "Tenant not bound to current context");
         }
     }
 
@@ -47,7 +47,7 @@ public abstract class AbstractTenancyStrategy implements TenancyStrategy {
      */
     protected void validateTenantId(Long tenantId) {
         if (tenantId == null || tenantId <= 0) {
-            throw new BusinessException("Invalid tenant ID: " + tenantId);
+            throw new BusinessException("INVALID_TENANT_ID", "Invalid tenant ID: " + tenantId);
         }
     }
 }

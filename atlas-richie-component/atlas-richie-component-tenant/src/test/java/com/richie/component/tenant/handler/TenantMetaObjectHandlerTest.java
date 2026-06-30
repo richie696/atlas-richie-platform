@@ -3,7 +3,7 @@ package com.richie.component.tenant.handler;
 import com.richie.component.tenant.config.MultiTenancyProperties;
 import com.richie.component.tenant.context.TenantContext;
 import com.richie.component.tenant.context.ThreadLocalHolder;
-import com.richie.component.tenant.exception.BusinessException;
+import com.richie.contract.exception.BusinessException;
 import com.richie.contract.model.TenantPrincipal;
 import org.apache.ibatis.reflection.DefaultReflectorFactory;
 import org.apache.ibatis.reflection.MetaObject;

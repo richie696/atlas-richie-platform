@@ -1,7 +1,7 @@
 package com.richie.component.tenant.healthcheck;
 
 import com.richie.component.tenant.config.MultiTenancyProperties;
-import com.richie.component.tenant.exception.BusinessException;
+import com.richie.contract.exception.BusinessException;
 import com.richie.component.tenant.exception.TenantErrorCode;
 import com.richie.component.tenant.model.IsolationMode;
 import org.junit.jupiter.api.BeforeEach;

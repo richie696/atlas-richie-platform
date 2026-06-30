@@ -1,6 +1,6 @@
 package com.richie.component.tenant.context;
 
-import com.richie.component.tenant.exception.BusinessException;
+import com.richie.contract.exception.BusinessException;
 import com.richie.contract.model.TenantPrincipal;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

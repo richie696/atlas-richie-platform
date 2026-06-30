@@ -1,6 +1,6 @@
 package com.richie.component.tenant.strategy;
 
-import com.richie.component.tenant.exception.BusinessException;
+import com.richie.contract.exception.BusinessException;
 import com.richie.component.tenant.exception.TenantErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

@@ -2,7 +2,7 @@ package com.richie.component.tenant.strategy;
 
 import com.richie.component.tenant.config.MultiTenancyProperties;
 import com.richie.component.tenant.context.TenantContext;
-import com.richie.component.tenant.exception.BusinessException;
+import com.richie.contract.exception.BusinessException;
 import com.richie.component.tenant.exception.TenantErrorCode;
 import com.richie.component.tenant.model.IsolationMode;
 import com.richie.component.tenant.model.TenantInfo;
@@ -100,7 +100,7 @@ public class SchemaStrategy extends AbstractTenancyStrategy {
         // BaseStatementHandler 在 MyBatis 3.5.x 已移除 getConnection()，改读 Invocation 入参
         Object arg = invocation.getArgs()[0];
         if (!(arg instanceof Connection conn)) {
-            throw new BusinessException("Expected Connection as first argument of Invocation, got: "
+            throw new BusinessException("TENANT_SCHEMA_INVALID_CONNECTION", "Expected Connection as first argument of Invocation, got: "
                     + (arg == null ? "null" : arg.getClass().getName()));
         }
         return conn;

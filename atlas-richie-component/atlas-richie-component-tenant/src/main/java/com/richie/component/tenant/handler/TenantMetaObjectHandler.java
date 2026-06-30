@@ -3,6 +3,7 @@ package com.richie.component.tenant.handler;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.richie.component.tenant.config.MultiTenancyProperties;
 import com.richie.component.tenant.context.TenantContext;
+import com.richie.contract.exception.BusinessException;
 import org.apache.ibatis.reflection.MetaObject;
 
 import java.util.Objects;
@@ -44,7 +45,7 @@ public class TenantMetaObjectHandler implements MetaObjectHandler {
         }
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null && properties.isEnforceAuthTenant()) {
-            throw new com.richie.component.tenant.exception.BusinessException(
+            throw new BusinessException("TENANT_BUSINESS_ERROR",
                 "Tenant context not bound — INSERT would silently write tenant_id=0 (platform default). "
                     + "Set multi-tenancy.enforce-auth-tenant=false to allow this, "
                     + "or ensure the entry point binds a tenant via TenantContext.runWithTenant().");

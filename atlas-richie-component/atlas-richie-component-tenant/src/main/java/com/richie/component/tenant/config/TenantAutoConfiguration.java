@@ -21,6 +21,7 @@ import com.richie.component.tenant.monitor.TenantMetricsCollector;
 import com.richie.component.tenant.reactive.TenantWebFilter;
 import com.richie.component.tenant.spi.CachingTenantInfoProvider;
 import com.richie.component.tenant.spi.TenantInfoProvider;
+import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.richie.component.tenant.strategy.ColumnStrategy;
 import com.richie.component.tenant.strategy.DatabaseStrategy;
 import com.richie.component.tenant.strategy.HybridStrategy;
@@ -169,7 +170,7 @@ public class TenantAutoConfiguration {
         }
 
         @Bean
-        @ConditionalOnMissingBean
+        @ConditionalOnMissingBean(MetaObjectHandler.class)
         public TenantMetaObjectHandler tenantMetaObjectHandler() {
             return new TenantMetaObjectHandler(properties);
         }

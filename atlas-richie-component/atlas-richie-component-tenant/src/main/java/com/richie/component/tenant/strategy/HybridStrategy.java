@@ -2,7 +2,7 @@ package com.richie.component.tenant.strategy;
 
 import com.richie.component.tenant.config.MultiTenancyProperties;
 import com.richie.component.tenant.context.TenantContext;
-import com.richie.component.tenant.exception.BusinessException;
+import com.richie.contract.exception.BusinessException;
 import com.richie.component.tenant.model.IsolationMode;
 import com.richie.component.tenant.model.TenantInfo;
 import com.richie.component.tenant.spi.TenantInfoProvider;
@@ -96,7 +96,7 @@ public class HybridStrategy extends AbstractTenancyStrategy {
             case TABLE -> tableStrategy;
             case SCHEMA -> schemaStrategy;
             case DATABASE -> databaseStrategy;
-            case HYBRID -> throw new BusinessException(
+            case HYBRID -> throw new BusinessException("TENANT_HYBRID_DELEGATE_INVALID",
                     "Hybrid strategy cannot delegate to itself for tenant: "
                             + TenantContext.getTenantId());
         };

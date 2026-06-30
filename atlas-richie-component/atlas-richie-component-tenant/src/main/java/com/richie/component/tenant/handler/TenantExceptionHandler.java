@@ -1,6 +1,6 @@
 package com.richie.component.tenant.handler;
 
-import com.richie.component.tenant.exception.BusinessException;
+import com.richie.contract.exception.BusinessException;
 import com.richie.component.tenant.exception.DataSourceUnavailableException;
 import com.richie.component.tenant.exception.TenantMigratingException;
 import com.richie.component.tenant.exception.TenantModeMigrationException;

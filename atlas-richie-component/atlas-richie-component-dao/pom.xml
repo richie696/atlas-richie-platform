@@ -67,10 +67,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.richie.component</groupId>
-            <artifactId>atlas-richie-component-tenant</artifactId>
-        </dependency>
 
     </dependencies>
 

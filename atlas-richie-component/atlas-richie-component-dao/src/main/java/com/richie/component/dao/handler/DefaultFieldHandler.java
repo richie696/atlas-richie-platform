@@ -3,7 +3,6 @@ package com.richie.component.dao.handler;
 import com.richie.context.common.api.LoginUserContextHolder;
 import com.richie.contract.model.LoginUserPrincipal;
 import com.richie.component.dao.config.DaoProperties;
-import com.richie.component.tenant.context.TenantContext;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.reflection.MetaObject;
@@ -52,15 +51,6 @@ public class DefaultFieldHandler implements MetaObjectHandler {
         }
         if (metaObject.hasGetter(DELETED) && metaObject.getValue(DELETED) == null) {
             this.strictInsertFill(metaObject, DELETED, Boolean.class, false);
-        }
-        if (metaObject.hasGetter("tenantId") && metaObject.getValue("tenantId") == null) {
-            Long tenantId = TenantContext.getTenantId();
-            if (tenantId != null) {
-                this.strictInsertFill(metaObject, "tenantId", Long.class, tenantId);
-            } else {
-                // 未开启租户时，tenant_id 默认为 0，DDL 约定：BIGINT NOT NULL DEFAULT 0
-                this.strictInsertFill(metaObject, "tenantId", Long.class, 0L);
-            }
         }
     }
 

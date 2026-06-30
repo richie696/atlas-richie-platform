@@ -1,6 +1,6 @@
 package com.richie.component.tenant.context;
 
-import com.richie.component.tenant.exception.BusinessException;
+import com.richie.contract.exception.BusinessException;
 import com.richie.component.tenant.exception.TenantSwitchInTransactionException;
 import com.richie.contract.model.TenantPrincipal;
 import lombok.Setter;
@@ -121,7 +121,7 @@ public final class TenantContext {
     public static TenantPrincipal require() {
         TenantPrincipal principal = get();
         if (principal == null) {
-            throw new BusinessException("Tenant context not bound, ensure request passed through TenantIdentityFilter");
+            throw new BusinessException("TENANT_NOT_BOUND", "Tenant context not bound, ensure request passed through TenantIdentityFilter");
         }
         return principal;
     }
