@@ -349,24 +349,28 @@ sequenceDiagram
     AC->>Reg: @Bean storageEngineRegistry()
     AC->>Eng: @Bean objectStorageEngine...（依 engine 配置）
     Boot->>AR: 启动完成，执行 autoBindEngineToProxy
+
+    rect rgb(187, 247, 208)
+    Note over Eng: 引擎 Bean
     AR->>Eng: 按优先级 (object>ftp>sftp>smb>local) 查找
+    end
+
     alt 找到引擎
+        rect rgb(233, 213, 255)
+        Note over Reg,Proxy: Registry + Proxy
         AR->>Reg: registerInitialEngine(type, id, engine)
         AR->>Proxy: setDelegate(defaultEngine)
         Note over Reg,Proxy: 日志：actor=auto-init, reason=startup
+        end
     else 未找到
         AR-->>Boot: log.warn 未找到引擎 Bean
     end
+
+    rect rgb(251, 207, 232)
+    Note over App: 业务调用
     App->>Proxy: @Autowired 注入代理
     Proxy->>Eng: 委托方法调用
-
-    style Boot fill:#94a3b8,stroke:#475569,color:#fff
-    style AC fill:#fed7aa,stroke:#ea580c,color:#7c2d12
-    style AR fill:#fed7aa,stroke:#ea580c,color:#7c2d12
-    style Reg fill:#e9d5ff,stroke:#9333ea,color:#581c87
-    style Proxy fill:#e9d5ff,stroke:#9333ea,color:#581c87
-    style Eng fill:#bbf7d0,stroke:#16a34a,color:#14532d
-    style App fill:#fbcfe8,stroke:#db2777,color:#831843
+    end
 ```
 
 ### 手动模式
@@ -459,15 +463,6 @@ sequenceDiagram
     App->>DefB: @Autowired StorageEngine
     DefB->>Reg: getDefaultProxy() 委托
     Reg->>Reg: 调用当前 delegate
-
-    style Boot fill:#94a3b8,stroke:#475569,color:#fff
-    style AC fill:#fed7aa,stroke:#ea580c,color:#7c2d12
-    style Reg fill:#e9d5ff,stroke:#9333ea,color:#581c87
-    style Qual fill:#bbf7d0,stroke:#16a34a,color:#14532d
-    style DefB fill:#bbf7d0,stroke:#16a34a,color:#14532d
-    style Biz fill:#fbcfe8,stroke:#db2777,color:#831843
-    style App fill:#fbcfe8,stroke:#db2777,color:#831843
-    style Provider fill:#e5e7eb,stroke:#6b7280,color:#1f2937
 ```
 
 #### 1. 配置关闭自动初始化
