@@ -13,7 +13,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.codelibs.jcifs.smb.CIFSContext;
 import org.codelibs.jcifs.smb.impl.SmbFile;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 
@@ -29,6 +31,8 @@ import java.util.UUID;
 @Slf4j
 @Service("smbStorageEngine")
 @ConditionalOnBean(CIFSContext.class)
+@ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+        havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public final class SmbStorageEngine implements StorageEngine {
 

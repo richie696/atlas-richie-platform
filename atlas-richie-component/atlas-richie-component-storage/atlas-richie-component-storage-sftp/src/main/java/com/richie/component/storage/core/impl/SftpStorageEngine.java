@@ -17,6 +17,7 @@ import org.apache.sshd.sftp.client.SftpClient;
 import org.apache.sshd.sftp.client.SftpClient.OpenMode;
 import org.apache.sshd.sftp.client.SftpClientFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 
@@ -28,6 +29,8 @@ import java.util.*;
 @Slf4j
 @Service("sftpStorageEngine")
 @ConditionalOnBean(SftpSessionPool.class)
+@ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+        havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public final class SftpStorageEngine implements StorageEngine {
 

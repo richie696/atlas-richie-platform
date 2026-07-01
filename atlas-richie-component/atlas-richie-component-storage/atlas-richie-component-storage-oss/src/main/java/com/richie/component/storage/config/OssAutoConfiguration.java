@@ -5,6 +5,7 @@ import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.common.auth.CredentialsProviderFactory;
 import com.aliyun.oss.common.auth.DefaultCredentialProvider;
 import com.richie.component.storage.bean.ObjectConfig;
+import com.richie.component.storage.core.StorageEngineProvider;
 import com.richie.component.storage.exception.StorageException;
 import com.richie.component.storage.support.ObjectStorageStartupProbe;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,8 @@ public class OssAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "aliyun_oss")
+    @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+            havingValue = "true", matchIfMissing = true)
     public OSS ossClient(StorageProperties properties) throws StorageException {
         ObjectConfig config = properties.getObject();
         DefaultCredentialProvider credentialProvider = CredentialsProviderFactory
@@ -72,6 +75,14 @@ public class OssAutoConfiguration {
             } catch (Exception ignored) {
             }
         }
+    }
+
+    /**
+     * OSS 存储引擎 Provider（手动模式 + 自动模式均注册）
+     */
+    @Bean
+    public StorageEngineProvider ossStorageEngineProvider() {
+        return new OssStorageEngineProvider();
     }
 
 }

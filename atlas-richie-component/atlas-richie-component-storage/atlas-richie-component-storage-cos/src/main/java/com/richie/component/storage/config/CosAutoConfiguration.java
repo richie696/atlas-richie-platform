@@ -11,6 +11,7 @@ import com.qcloud.cos.model.HeadBucketRequest;
 import com.qcloud.cos.model.ObjectMetadata;
 import com.qcloud.cos.region.Region;
 import com.richie.component.storage.bean.ObjectConfig;
+import com.richie.component.storage.core.StorageEngineProvider;
 import com.richie.component.storage.exception.StorageException;
 import com.richie.component.storage.support.ObjectStorageStartupProbe;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,8 @@ public class CosAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "tencent_cos")
+    @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+            havingValue = "true", matchIfMissing = true)
     public COSClient cosClient(StorageProperties properties) throws StorageException {
         ObjectConfig config = properties.getObject();
         COSCredentials credentials = new BasicCOSCredentials(config.getAccessKeyId(), config.getAccessKeySecret());
@@ -103,6 +106,14 @@ public class CosAutoConfiguration {
             } catch (Exception ignored) {
             }
         }
+    }
+
+    /**
+     * COS 存储引擎 Provider（手动模式 + 自动模式均注册）
+     */
+    @Bean
+    public StorageEngineProvider cosStorageEngineProvider() {
+        return new CosStorageEngineProvider();
     }
 
 }

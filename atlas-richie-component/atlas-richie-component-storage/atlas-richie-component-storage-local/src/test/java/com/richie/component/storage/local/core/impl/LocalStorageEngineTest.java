@@ -60,7 +60,8 @@ class LocalStorageEngineTest {
         localConfig = new LocalConfig();
         localConfig.setPath(tempDir.toString());
         properties.setLocal(localConfig);
-        engine = new LocalStorageEngine(properties, localConfig, fileMetadataMapper);
+        engine = new LocalStorageEngine(properties, localConfig);
+        engine.setFileMetadataMapper(fileMetadataMapper);
         when(fileMetadataMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
     }
 

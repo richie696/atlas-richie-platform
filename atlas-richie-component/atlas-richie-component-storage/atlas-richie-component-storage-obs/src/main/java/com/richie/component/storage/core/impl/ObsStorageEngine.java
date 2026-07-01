@@ -39,6 +39,8 @@ import java.util.UUID;
 @Slf4j
 @Service("objectStorageEngine")
 @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "huawei_obs")
+@ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+        havingValue = "true", matchIfMissing = true)
 public final class ObsStorageEngine extends AbstractObjectStorageEngine<ObsClient> implements StorageEngine {
 
     public ObsStorageEngine(StorageProperties properties,

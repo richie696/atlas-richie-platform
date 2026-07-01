@@ -3,6 +3,7 @@ package com.richie.component.storage.config;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.richie.component.storage.bean.ObjectConfig;
+import com.richie.component.storage.core.StorageEngineProvider;
 import com.richie.component.storage.exception.StorageException;
 import com.richie.component.storage.support.ObjectStorageStartupProbe;
 import lombok.NoArgsConstructor;
@@ -37,6 +38,8 @@ public class AzureBlobAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "azure_blob")
+    @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+            havingValue = "true", matchIfMissing = true)
     public BlobContainerClient blobContainerClient(StorageProperties properties) throws StorageException {
         ObjectConfig config = properties.getObject();
 
@@ -72,6 +75,14 @@ public class AzureBlobAutoConfiguration {
             } catch (Exception ignored) {
             }
         }
+    }
+
+    /**
+     * Azure Blob 存储引擎 Provider（手动模式 + 自动模式均注册）
+     */
+    @Bean
+    public StorageEngineProvider azureBlobStorageEngineProvider() {
+        return new AzureBlobStorageEngineProvider();
     }
 
 }

@@ -1,6 +1,7 @@
 package com.richie.component.storage.config;
 
 import com.richie.component.storage.bean.ObjectConfig;
+import com.richie.component.storage.core.StorageEngineProvider;
 import com.richie.component.storage.exception.StorageException;
 import com.richie.component.storage.support.ObjectStorageStartupProbe;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,8 @@ public class S3AutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "aws_s3")
+    @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+            havingValue = "true", matchIfMissing = true)
     public S3Client s3Client(StorageProperties properties) throws StorageException {
         ObjectConfig config = properties.getObject();
 
@@ -122,6 +125,8 @@ public class S3AutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "aws_s3")
+    @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+            havingValue = "true", matchIfMissing = true)
     public S3Presigner s3Presigner(StorageProperties properties) {
         ObjectConfig config = properties.getObject();
 
@@ -138,6 +143,14 @@ public class S3AutoConfiguration {
                         AwsBasicCredentials.create(config.getAccessKeyId(), config.getAccessKeySecret())
                 ))
                 .build();
+    }
+
+    /**
+     * S3 存储引擎 Provider（手动模式 + 自动模式均注册）
+     */
+    @Bean
+    public StorageEngineProvider s3StorageEngineProvider() {
+        return new S3StorageEngineProvider();
     }
 
 }

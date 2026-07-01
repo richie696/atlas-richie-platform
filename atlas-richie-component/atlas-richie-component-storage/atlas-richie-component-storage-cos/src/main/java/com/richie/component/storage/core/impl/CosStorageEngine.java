@@ -42,6 +42,8 @@
 @Slf4j
 @Service("objectStorageEngine")
 @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "tencent_cos")
+@ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+        havingValue = "true", matchIfMissing = true)
 public final class CosStorageEngine extends AbstractObjectStorageEngine<COSClient>
         implements StorageEngine {
 

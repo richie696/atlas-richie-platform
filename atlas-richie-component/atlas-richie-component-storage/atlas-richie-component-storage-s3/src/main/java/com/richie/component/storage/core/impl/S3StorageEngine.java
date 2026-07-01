@@ -45,6 +45,8 @@ import java.util.UUID;
 @Slf4j
 @Service("objectStorageEngine")
 @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "aws_s3")
+@ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+        havingValue = "true", matchIfMissing = true)
 public final class S3StorageEngine extends AbstractObjectStorageEngine<S3Client> implements StorageEngine {
 
     @Autowired
@@ -53,6 +55,10 @@ public final class S3StorageEngine extends AbstractObjectStorageEngine<S3Client>
     public S3StorageEngine(StorageProperties properties,
                            StorageTypeConverter converter) {
         super(properties, converter);
+    }
+
+    public void setS3Presigner(S3Presigner s3Presigner) {
+        this.s3Presigner = s3Presigner;
     }
 
     @Override

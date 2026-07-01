@@ -38,6 +38,8 @@ import java.util.UUID;
 @Slf4j
 @Service("objectStorageEngine")
 @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "volcengine_tos")
+@ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+        havingValue = "true", matchIfMissing = true)
 public final class TosStorageEngine extends AbstractObjectStorageEngine<TOSV2> implements StorageEngine {
 
     public TosStorageEngine(StorageProperties properties,

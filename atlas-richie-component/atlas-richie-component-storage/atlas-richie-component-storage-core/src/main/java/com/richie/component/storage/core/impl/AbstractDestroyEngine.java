@@ -13,13 +13,36 @@ import com.richie.context.common.api.SpringContextHolder;
 public abstract class AbstractDestroyEngine<T> implements StorageEngine {
 
     /**
-     * 从 Spring 容器获取指定类型的存储客户端 Bean。
+     * 手动模式下直注的客户端（绕过 SpringContextHolder）。
+     * <p>
+     * 自动模式下为 null，走 Spring Bean 查找；
+     * 手动模式下由 Provider 创建引擎后主动设置，优先使用。
+     */
+    private T clientOverride;
+
+    /**
+     * 获取存储客户端。
+     * <p>
+     * 优先返回直注的客户端（手动模式），否则从 Spring 容器查找（自动模式）。
      *
      * @param clientClass 客户端类
      * @return 客户端实例
      */
     protected T getClient(Class<T> clientClass) {
+        T override = this.clientOverride;
+        if (override != null) {
+            return override;
+        }
         return SpringContextHolder.getBean(clientClass);
+    }
+
+    /**
+     * 设置直注客户端（由 Provider 在手动模式下调用）。
+     *
+     * @param client 客户端实例
+     */
+    public void setClientOverride(T client) {
+        this.clientOverride = client;
     }
 
     /**

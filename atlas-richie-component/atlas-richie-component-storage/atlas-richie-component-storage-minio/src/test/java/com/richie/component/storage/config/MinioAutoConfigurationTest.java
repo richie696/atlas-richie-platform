@@ -76,13 +76,21 @@ class MinioAutoConfigurationTest {
 
     @Test
     void minioAsyncClientMethod_shouldHaveConditionalOnPropertyAnnotation() throws NoSuchMethodException {
-        ConditionalOnProperty conditionalOnProperty = MinioAutoConfiguration.class
+        ConditionalOnProperty[] annotations = MinioAutoConfiguration.class
                 .getMethod("minioAsyncClient", StorageProperties.class)
-                .getAnnotation(ConditionalOnProperty.class);
-        assertThat(conditionalOnProperty).isNotNull();
-        assertThat(conditionalOnProperty.prefix()).isEqualTo("platform.component.storage.object");
-        assertThat(conditionalOnProperty.name()).containsExactly("engine");
-        assertThat(conditionalOnProperty.havingValue()).isEqualTo("minio");
+                .getAnnotationsByType(ConditionalOnProperty.class);
+        assertThat(annotations).hasSize(2);
+        assertThat(annotations).anyMatch(a ->
+                a.prefix().equals("platform.component.storage.object")
+                        && a.name().length == 1
+                        && "engine".equals(a.name()[0])
+                        && "minio".equals(a.havingValue()));
+        assertThat(annotations).anyMatch(a ->
+                a.prefix().equals("platform.component.storage")
+                        && a.name().length == 1
+                        && "auto-init".equals(a.name()[0])
+                        && "true".equals(a.havingValue())
+                        && a.matchIfMissing());
     }
 
     @Test

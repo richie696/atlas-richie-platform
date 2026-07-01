@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.ftp.FTPClient;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 
@@ -27,6 +28,8 @@ import java.util.UUID;
 
 @Slf4j
 @Service("ftpStorageEngine")
+@ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+        havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public class FtpStorageEngine extends AbstractDestroyEngine<FTPClient> implements StorageEngine {
 

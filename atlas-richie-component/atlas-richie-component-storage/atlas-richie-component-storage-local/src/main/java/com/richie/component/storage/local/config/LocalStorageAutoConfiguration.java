@@ -2,12 +2,14 @@ package com.richie.component.storage.local.config;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.richie.component.liquibase.migration.ChangeLogRegistry;
+import com.richie.component.storage.core.StorageEngineProvider;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.context.annotation.Bean;
 
 /**
  * 本地存储自动装配
@@ -36,6 +38,14 @@ public class LocalStorageAutoConfiguration {
     public void init() {
         log.info("Do LocalStorageAutoConfiguration init.");
         changeLogRegistry.add("db/changelog/storage-local/db.changelog-master.yaml");
+    }
+
+    /**
+     * 本地存储引擎 Provider（支持自动模式 + 手动模式）
+     */
+    @Bean
+    public StorageEngineProvider localStorageEngineProvider() {
+        return new LocalStorageEngineProvider();
     }
 }
 

@@ -1,5 +1,6 @@
 package com.richie.component.storage.config;
 
+import com.richie.component.storage.core.StorageEngineProvider;
 import com.richie.component.storage.pool.SftpSessionPool;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.sshd.client.SshClient;
@@ -20,6 +21,8 @@ public class SftpAutoConfiguration {
 
     @Bean(destroyMethod = "stop")
     @ConditionalOnProperty(prefix = "platform.component.storage.sftp", name = "enable", havingValue = "true")
+    @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+            havingValue = "true", matchIfMissing = true)
     public SshClient sshClient() {
         var client = SshClient.setUpDefaultClient();
         client.setServerKeyVerifier((_, _, _) -> true);
@@ -31,8 +34,18 @@ public class SftpAutoConfiguration {
 
     @Bean(destroyMethod = "close")
     @ConditionalOnProperty(prefix = "platform.component.storage.sftp", name = "enable", havingValue = "true")
+    @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+            havingValue = "true", matchIfMissing = true)
     public SftpSessionPool sftpSessionPool(SshClient sshClient, StorageProperties properties) {
         return new SftpSessionPool(sshClient, properties.getSftp());
+    }
+
+    /**
+     * SFTP 存储引擎 Provider（手动模式 + 自动模式均注册）
+     */
+    @Bean
+    public StorageEngineProvider sftpStorageEngineProvider() {
+        return new SftpStorageEngineProvider();
     }
 
 }

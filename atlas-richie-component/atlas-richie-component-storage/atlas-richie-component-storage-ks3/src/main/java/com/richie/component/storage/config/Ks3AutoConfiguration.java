@@ -9,6 +9,7 @@ import com.ksyun.ks3.service.Ks3ClientConfig;
 import com.ksyun.ks3.service.request.GetObjectRequest;
 import com.ksyun.ks3.service.request.PutObjectRequest;
 import com.richie.component.storage.bean.ObjectConfig;
+import com.richie.component.storage.core.StorageEngineProvider;
 import com.richie.component.storage.exception.StorageException;
 import com.richie.component.storage.support.ObjectStorageStartupProbe;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,8 @@ public class Ks3AutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "ksyun_ks3")
+    @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+            havingValue = "true", matchIfMissing = true)
     public Ks3 ks3Client(StorageProperties properties) throws StorageException {
         ObjectConfig config = properties.getObject();
         Ks3ClientConfig ks3ClientConfig = new Ks3ClientConfig();
@@ -85,6 +88,14 @@ public class Ks3AutoConfiguration {
             } catch (Exception ignored) {
             }
         }
+    }
+
+    /**
+     * KS3 存储引擎 Provider（手动模式 + 自动模式均注册）
+     */
+    @Bean
+    public StorageEngineProvider ks3StorageEngineProvider() {
+        return new Ks3StorageEngineProvider();
     }
 
 }

@@ -4,9 +4,11 @@ import com.richie.component.cache.config.CacheAutoConfiguration;
 import com.richie.component.cache.local.config.LocalCacheAutoConfiguration;
 import com.richie.component.cache.redis.config.base.RedisBaseAutoConfiguration;
 import com.richie.component.liquibase.config.LiquibaseAutoConfiguration;
+import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.local.config.LocalStorageAutoConfiguration;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.context.annotation.Import;
 
@@ -16,6 +18,7 @@ import org.springframework.context.annotation.Import;
         LiquibaseAutoConfiguration.class,
         LocalStorageAutoConfiguration.class
 })
+@EnableConfigurationProperties(StorageProperties.class)
 @Import({
         CacheAutoConfiguration.class,
         RedisBaseAutoConfiguration.class,

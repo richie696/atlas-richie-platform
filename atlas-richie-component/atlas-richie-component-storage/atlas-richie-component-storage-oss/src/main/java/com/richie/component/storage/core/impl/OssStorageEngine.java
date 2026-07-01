@@ -39,6 +39,8 @@ import java.util.UUID;
 @Slf4j
 @Service("objectStorageEngine")
 @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "aliyun_oss")
+@ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+        havingValue = "true", matchIfMissing = true)
 public final class OssStorageEngine extends AbstractObjectStorageEngine<OSS> implements StorageEngine {
 
     public OssStorageEngine(StorageProperties properties,

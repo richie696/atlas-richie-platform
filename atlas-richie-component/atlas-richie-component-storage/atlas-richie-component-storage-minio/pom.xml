@@ -19,7 +19,6 @@
         <dependency>
             <groupId>com.richie.component</groupId>
             <artifactId>atlas-richie-component-storage-core</artifactId>
-            <scope>provided</scope>
         </dependency>
         <!-- Minio 对象存储 SDK -->
         <dependency>

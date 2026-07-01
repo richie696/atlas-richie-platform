@@ -3,6 +3,8 @@ package com.richie.component.storage.enums;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Optional;
+
 /**
  * 对象存储引擎枚举
  *
@@ -17,42 +19,64 @@ public enum StorageEngineEnum {
     /**
      * Minio
      */
-    MINIO("Minio", "minio"),
+    MINIO("Minio", "minio", true),
 
     /**
      * 阿里云OSS
      */
-    ALIYUN_OSS("阿里云OSS", "aliyun_oss"),
+    ALIYUN_OSS("阿里云OSS", "aliyun_oss", true),
 
     /**
      * 腾讯云COS
      */
-    TENCENT_COS("腾讯云COS", "tencent_cos"),
+    TENCENT_COS("腾讯云COS", "tencent_cos", true),
 
     /**
      * 华为云OBS
      */
-    HUAWEI_OBS("华为云OBS", "huawei_obs"),
+    HUAWEI_OBS("华为云OBS", "huawei_obs", true),
 
     /**
      * AWS S3
      */
-    AWS_S3("AWS S3", "aws_s3"),
+    AWS_S3("AWS S3", "aws_s3", true),
 
     /**
      * 金山云KS3
      */
-    KSYUN_KS3("金山云KS3", "ksyun_ks3"),
+    KSYUN_KS3("金山云KS3", "ksyun_ks3", true),
 
     /**
      * 火山引擎TOS
      */
-    VOLCENGINE_TOS("火山引擎TOS", "volcengine_tos"),
+    VOLCENGINE_TOS("火山引擎TOS", "volcengine_tos", true),
 
     /**
      * 微软Azure Blob
      */
-    AZURE_BLOB("微软Azure Blob", "azure_blob");
+    AZURE_BLOB("微软Azure Blob", "azure_blob", true),
+
+    // ========== 文件协议引擎 ==========
+
+    /**
+     * FTP
+     */
+    FTP("FTP", "ftp", false),
+
+    /**
+     * SFTP
+     */
+    SFTP("SFTP", "sftp", false),
+
+    /**
+     * SMB
+     */
+    SMB("SMB", "smb", false),
+
+    /**
+     * 本地存储
+     */
+    LOCAL("本地存储", "local", false);
 
     private final String description;
 
@@ -62,21 +86,33 @@ public enum StorageEngineEnum {
     private final String configValue;
 
     /**
+     * 是否为对象存储引擎（区别于文件协议引擎 FTP/SFTP/SMB/LOCAL）
+     */
+    private final boolean objectStorage;
+
+    /**
+     * 判断是否为对象存储引擎
+     */
+    public boolean isObjectStorage() {
+        return objectStorage;
+    }
+
+    /**
      * 根据配置值查找对应的引擎枚举
      *
      * @param configValue 配置文件中的引擎值（如 "aws_s3"、"aliyun_oss"）
-     * @return 对应的引擎枚举，如果没有匹配则返回 null
+     * @return 对应的引擎枚举；未匹配或为 {@code null} 时返回 {@link Optional#empty()}
      */
-    public static StorageEngineEnum fromConfigValue(String configValue) {
+    public static Optional<StorageEngineEnum> fromConfigValue(String configValue) {
         if (configValue == null) {
-            return null;
+            return Optional.empty();
         }
         for (StorageEngineEnum engine : values()) {
             if (engine.configValue.equals(configValue)) {
-                return engine;
+                return Optional.of(engine);
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     /**

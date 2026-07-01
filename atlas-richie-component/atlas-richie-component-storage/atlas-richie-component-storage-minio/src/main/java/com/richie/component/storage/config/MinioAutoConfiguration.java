@@ -1,6 +1,7 @@
 package com.richie.component.storage.config;
 
 import com.richie.component.storage.bean.ObjectConfig;
+import com.richie.component.storage.core.StorageEngineProvider;
 import io.minio.MinioAsyncClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -40,6 +41,8 @@ public class MinioAutoConfiguration {
     @Bean
     @Scope("prototype")
     @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "minio")
+    @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+            havingValue = "true", matchIfMissing = true)
     public MinioAsyncClient minioAsyncClient(StorageProperties properties) {
         ObjectConfig config = properties.getObject();
         return MinioAsyncClient.builder()
@@ -47,6 +50,14 @@ public class MinioAutoConfiguration {
                 .credentials(config.getAccessKeyId(), config.getAccessKeySecret())
                 .region(config.getRegion())
                 .build();
+    }
+
+    /**
+     * MinIO 存储引擎 Provider（手动模式 + 自动模式均注册）
+     */
+    @Bean
+    public StorageEngineProvider minioStorageEngineProvider() {
+        return new MinioStorageEngineProvider();
     }
 
 }

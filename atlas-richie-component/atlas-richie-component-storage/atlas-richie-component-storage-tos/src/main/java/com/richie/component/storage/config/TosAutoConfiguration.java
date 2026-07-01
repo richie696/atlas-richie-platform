@@ -1,6 +1,7 @@
 package com.richie.component.storage.config;
 
 import com.richie.component.storage.bean.ObjectConfig;
+import com.richie.component.storage.core.StorageEngineProvider;
 import com.richie.component.storage.exception.StorageException;
 import com.richie.component.storage.support.ObjectStorageStartupProbe;
 import com.volcengine.tos.*;
@@ -42,6 +43,8 @@ public class TosAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "volcengine_tos")
+    @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+            havingValue = "true", matchIfMissing = true)
     public TOSV2 tosClient(StorageProperties properties) throws StorageException {
         ObjectConfig config = properties.getObject();
         int connectTimeoutMills = 10000;
@@ -89,6 +92,14 @@ public class TosAutoConfiguration {
             } catch (Exception ignored) {
             }
         }
+    }
+
+    /**
+     * TOS 存储引擎 Provider（手动模式 + 自动模式均注册）
+     */
+    @Bean
+    public StorageEngineProvider tosStorageEngineProvider() {
+        return new TosStorageEngineProvider();
     }
 
 }

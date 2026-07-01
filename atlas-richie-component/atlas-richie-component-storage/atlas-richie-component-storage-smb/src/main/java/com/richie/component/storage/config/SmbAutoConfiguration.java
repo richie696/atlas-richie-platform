@@ -1,5 +1,6 @@
 package com.richie.component.storage.config;
 
+import com.richie.component.storage.core.StorageEngineProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.codelibs.jcifs.smb.CIFSContext;
 import org.codelibs.jcifs.smb.CIFSException;
@@ -35,6 +36,8 @@ public class SmbAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.storage.smb3", name = "enable", havingValue = "true")
+    @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+            havingValue = "true", matchIfMissing = true)
     public CIFSContext cifsContext(StorageProperties properties) throws CIFSException {
         var smb3 = properties.getSmb3();
         var ps = new Properties();
@@ -45,6 +48,14 @@ public class SmbAutoConfiguration {
         var baseContext = new BaseContext(new PropertyConfiguration(ps));
         var auth = new NtlmPasswordAuthenticator("WORKGROUP", smb3.getUsername(), smb3.getPassword());
         return baseContext.withCredentials(auth);
+    }
+
+    /**
+     * SMB 存储引擎 Provider（手动模式 + 自动模式均注册）
+     */
+    @Bean
+    public StorageEngineProvider smbStorageEngineProvider() {
+        return new SmbStorageEngineProvider();
     }
 
 }

@@ -45,6 +45,8 @@ import java.util.UUID;
 @Slf4j
 @Component("objectStorageEngine")
 @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "ksyun_ks3")
+@ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
+        havingValue = "true", matchIfMissing = true)
 public final class Ks3StorageEngine extends AbstractObjectStorageEngine<Ks3> implements StorageEngine {
 
     public Ks3StorageEngine(StorageProperties properties,

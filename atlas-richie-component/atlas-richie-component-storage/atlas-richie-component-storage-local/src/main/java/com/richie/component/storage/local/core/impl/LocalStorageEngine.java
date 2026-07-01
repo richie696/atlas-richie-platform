@@ -13,9 +13,9 @@ import com.richie.component.storage.local.repository.mapper.FileMetadataMapper;
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.context.utils.security.HashUtils;
 import jakarta.annotation.Nonnull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 
@@ -40,18 +40,19 @@ import java.util.*;
  *   <li>基于全局缓存的文件存在性/内容/元数据缓存</li>
  * </ul>
  *
+ * <p>支持自动模式（Spring Bean 注入）和手动模式（Provider 创建 + setter 注入 Mapper）。
+ *
  * @author richie696
  * @version 1.0
  * @since 2025-10-14
  */
 @Slf4j
 @Service("localStorageEngine")
-@RequiredArgsConstructor
 public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
 
     private final StorageProperties properties;
     private final LocalConfig localConfig;
-    private final FileMetadataMapper fileMetadataMapper;
+    private FileMetadataMapper fileMetadataMapper;
 
     // 缓存键前缀
     private static final String FILE_EXISTS_PREFIX = "file:exists:";
@@ -62,6 +63,26 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
     private static final long FILE_EXISTS_TTL = 3600000; // 1小时
     private static final long FILE_METADATA_TTL = 1800000; // 30分钟
     private static final long FILE_CONTENT_TTL = 600000; // 10分钟
+
+    /**
+     * 自动模式构造函数（Spring Bean 注入）
+     */
+    public LocalStorageEngine(StorageProperties properties, LocalConfig localConfig) {
+        this.properties = properties;
+        this.localConfig = localConfig;
+    }
+
+    /**
+     * 设置 FileMetadataMapper。
+     * <p>
+     * 自动模式下由 Spring 自动注入；手动模式下由 Provider 从 Spring 上下文获取后主动调用。
+     *
+     * @param mapper 文件元数据 Mapper
+     */
+    @Autowired
+    public void setFileMetadataMapper(FileMetadataMapper mapper) {
+        this.fileMetadataMapper = mapper;
+    }
 
     @Override
     public UploadResponse putData(@Nonnull String key, @Nonnull Map<?, ?> collection) {
