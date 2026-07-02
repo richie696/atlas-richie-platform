@@ -9,9 +9,9 @@ spring:
             matching-strategy: ant_path_matcher
     config:
         import:
-            - optional:nacos:platform-cache.yaml?refreshEnabled=true     # Redis配置
-            - optional:nacos:platform-gateway.yaml?refreshEnabled=true   # 应用网关配置
-#            - optional:nacos:platform-gateway-openapi.yaml?refreshEnabled=true   # OpenAPI网关配置
+            - optional:nacos:platform-cache.yaml?refreshEnabled=true                # Redis配置
+            - optional:nacos:platform-gateway.yaml?refreshEnabled=true              # 应用网关配置
+#            - optional:nacos:platform-gateway-openapi.yaml?refreshEnabled=true      # OpenAPI网关配置
     cloud:
         inetutils:
             ignored-interfaces:

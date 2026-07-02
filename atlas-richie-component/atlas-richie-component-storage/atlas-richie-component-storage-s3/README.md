@@ -1,28 +1,100 @@
 # Richie Component Storage - AWS S3
 
-## 概述
+## Overview
 
-`richie-component-storage-s3` 是 AWS S3 对象存储的实现，基于 AWS SDK for Java 2.x 提供完整的 S3 存储能力。
+`richie-component-storage-s3` is the AWS S3 object storage implementation, built on AWS SDK for Java 2.x to provide the full S3 storage capability.
 
-## 核心特性
+## Core Features
 
-- ✅ **AWS S3 兼容** - 完整支持 AWS S3 API
-- ✅ **多种存储类型** - 支持标准、低频、归档、智能分层等
-- ✅ **断点续传** - 支持大文件断点续传
-- ✅ **自动配置** - Spring Boot 自动配置
+- ✅ **AWS S3 compatible** - full support for the AWS S3 API
+- ✅ **Multiple storage classes** - supports Standard, Infrequent Access, Archive, Intelligent Tiering, and more
+- ✅ **Resumable upload/download** - supports resumable transfer for large files
+- ✅ **Dual-mode architecture** - supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to Spring Boot auto-configuration and non-Spring environments
+- ✅ **Auto-configuration** - Spring Boot auto-configuration
 
-## 快速开始
+## Dual-Mode Architecture
 
-### 1. 添加依赖
+This component supports two initialization modes:
+
+### 1. Auto Mode (Auto-Init, default)
+
+When `auto-init: true` (the default), Spring Boot auto-configuration handles:
+
+- Creating the `S3StorageEngineProvider` Bean based on the `engine: AWS_S3` configuration
+- Calling the Provider's `create(properties)` to build the engine instance
+- The engine instance probes the bucket and validates the prefix through `@PostConstruct initializeBucket()`
+- Injecting the engine for use via `@Qualifier("objectStorageEngine")`
+
+### 2. Manual Mode (Manual)
+
+When `auto-init: false`, the engine is discovered and managed by `StorageEngineRegistry` through SPI:
+
+- The Provider is not auto-registered as a Bean; it is discovered by `ServiceLoader`
+- Switch engines at runtime via `registry.switchEngine(StorageEngineEnum.AWS_S3)`
+- Suitable for non-Spring environments or scenarios requiring dynamic engine switching
+
+```java
+// Manual mode: switch the engine at runtime
+storageEngineRegistry.switchEngine(StorageEngineEnum.AWS_S3);
+UploadResponse response = storageEngineRegistry.getCurrentEngine()
+    .putObject("key", file);
+```
+
+## StorageEngineProvider
+
+Each implementation package provides a `StorageEngineProvider` SPI implementation. `S3StorageEngineProvider` is responsible for:
+
+| Method | Description |
+|------|------|
+| `supportedEngineType()` | Returns `StorageEngineEnum.AWS_S3` |
+| `create(properties)` | Creates the `S3Client` and `S3StorageEngine` from the configuration |
+| `validate(properties)` | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
+| `afterPropertiesSet(engine)` | Triggers bucket probing and prefix validation in manual mode |
+| `destroy(engine)` | Releases client resources |
+
+In auto mode, the Provider is registered as a Bean in `S3AutoConfiguration`; in manual mode, it is discovered by the Registry through SPI.
+
+## Parameter Validation (ConfigValidation)
+
+Before creating the engine, the `ConfigValidation` utility validates required parameters. If validation fails, an `IllegalArgumentException` is thrown:
+
+| Parameter | Validation rule |
+|------|---------|
+| endpoint | Non-empty |
+| accessKeyId | Non-empty |
+| accessKeySecret | Non-empty |
+| bucketName | Non-empty |
+
+## Direct Upload Policy (DirectUploadPolicy)
+
+The AWS S3 engine supports client-side direct upload to object storage through presigned URLs, reducing server-side traffic pressure:
+
+| Field | Description |
+|------|------|
+| uploadUrl | Presigned upload URL |
+| method | HTTP method (PUT) |
+| headers | Signature headers |
+| expireAt | Policy expiration time |
+| success | Whether the policy is usable |
+
+```java
+DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
+    "uploads/example.jpg", 3600);
+// Returns a presigned PUT URL that the client can upload to directly
+```
+
+## Quick Start
+
+### 1. Add Dependency
 
 ```xml
-<!-- 必备核心库 -->
+<!-- Required core library -->
 <dependency>
     <groupId>com.richie.component</groupId>
-    <artifactId>atlas-richie-component-storage</artifactId>
+    <artifactId>atlas-richie-component-storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
-<!-- 实现库 -->
+<!-- Implementation library -->
 <dependency>
 <groupId>com.richie.component</groupId>
 <artifactId>atlas-richie-component-storage-s3</artifactId>
@@ -30,40 +102,40 @@
 </dependency>
 ```
 
-### 2. 配置
+### 2. Configuration
 
 ```yaml
 platform:
   component:
     storage:
       object:
-        # 存储引擎类型（必填）
+        # Storage engine type (required)
         engine: AWS_S3
-        # S3访问域名（必填）
-        # 格式：s3.region.amazonaws.com 或 s3-region.amazonaws.com
-        # 示例：s3.us-east-1.amazonaws.com
+        # S3 access domain (required)
+        # Format: s3.region.amazonaws.com or s3-region.amazonaws.com
+        # Example: s3.us-east-1.amazonaws.com
         endpoint: s3.us-east-1.amazonaws.com
-        # 区域（必填）
-        # 示例：us-east-1, us-west-2, ap-southeast-1
+        # Region (required)
+        # Example: us-east-1, us-west-2, ap-southeast-1
         region: us-east-1
-        # 访问密钥ID（Access Key ID）（必填）
+        # Access Key ID (required)
         accessKeyId: your-access-key-id
-        # 访问密钥（Secret Access Key）（必填）
+        # Secret Access Key (required)
         accessKeySecret: your-secret-access-key
-        # 存储桶名称（必填）
+        # Bucket name (required)
         bucketName: my-bucket
-        # 桶内基础路径（可选）
+        # Base path within the bucket (optional)
         basePath: /storage
-        # 存储类型（可选，默认：STANDARD）
-        # 可选值：STANDARD, STANDARD_IA, ONEZONE_IA, ARCHIVE, ARCHIVE_FR, 
+        # Storage class (optional, default: STANDARD)
+        # Allowed values: STANDARD, STANDARD_IA, ONEZONE_IA, ARCHIVE, ARCHIVE_FR, 
         #         COLD_ARCHIVE, DEEP_COLD_ARCHIVE, INTELLIGENT_TIERING,
         #         REDUCED_REDUNDANCY, GLACIER, GLACIER_IR, SNOW, Outposts
         storageType: STANDARD
 ```
 
-### 3. 使用
+### 3. Usage
 
-注入 `StorageEngine`（Bean 名称为 `objectStorageEngine`）即可使用：
+Inject `StorageEngine` (the Bean name is `objectStorageEngine`) to start using it:
 
 ```java
 @Service
@@ -76,116 +148,116 @@ public class FileService {
     public void uploadFile(String key, File file) {
         UploadResponse response = storageEngine.putObject(key, file);
         if (response.isSuccess()) {
-            log.info("上传成功: {}", response.getUrl());
+            log.info("Upload succeeded: {}", response.getUrl());
         }
     }
 }
 ```
 
-## 配置说明
+## Configuration Reference
 
-### ⚠️ 重要配置差异
+### ⚠️ Important Configuration Differences
 
-AWS S3 与其他云存储的主要配置差异：
+The main configuration differences between AWS S3 and other cloud storage services:
 
-| 配置项 | AWS S3 | 其他云存储 |
+| Configuration | AWS S3 | Other cloud storage |
 |--------|--------|-----------|
-| **engine 值** | `AWS_S3` | 各不相同 |
-| **endpoint 格式** | `s3.region.amazonaws.com` | 各云服务商格式不同 |
-| **region 格式** | AWS 区域代码（如 `us-east-1`） | 各云服务商格式不同 |
-| **访问密钥名称** | Access Key ID / Secret Access Key | 各云服务商命名不同 |
-| **存储类型** | 支持最多（15+种） | 支持较少 |
-| **特殊存储类型** | 支持 GLACIER、SNOW、Outposts | 不支持 |
+| **engine value** | `AWS_S3` | Varies |
+| **endpoint format** | `s3.region.amazonaws.com` | Varies by cloud provider |
+| **region format** | AWS region code (e.g., `us-east-1`) | Varies by cloud provider |
+| **Credential name** | Access Key ID / Secret Access Key | Varies by cloud provider |
+| **Storage classes** | The most extensive (15+) | Fewer |
+| **Special storage classes** | Supports GLACIER, SNOW, Outposts | Not supported |
 
-### endpoint 配置
+### endpoint Configuration
 
-AWS S3 的 endpoint 格式：
+The AWS S3 endpoint format:
 
-- **标准格式**: `s3.region.amazonaws.com`
-  - 示例：`s3.us-east-1.amazonaws.com`
-  - 示例：`s3.ap-southeast-1.amazonaws.com`
+- **Standard format**: `s3.region.amazonaws.com`
+  - Example: `s3.us-east-1.amazonaws.com`
+  - Example: `s3.ap-southeast-1.amazonaws.com`
 
-- **兼容格式**: `s3-region.amazonaws.com`
-  - 示例：`s3-us-east-1.amazonaws.com`
+- **Compatible format**: `s3-region.amazonaws.com`
+  - Example: `s3-us-east-1.amazonaws.com`
 
-- **S3 加速端点**: `s3-accelerate.amazonaws.com`（需要启用传输加速）
+- **S3 Transfer Acceleration endpoint**: `s3-accelerate.amazonaws.com` (requires Transfer Acceleration to be enabled)
 
-### region 配置
+### region Configuration
 
-AWS S3 支持的区域代码：
+Region codes supported by AWS S3:
 
-| 区域 | 代码 |
+| Region | Code |
 |------|------|
-| 美国东部（弗吉尼亚北部） | `us-east-1` |
-| 美国东部（俄亥俄） | `us-east-2` |
-| 美国西部（加利福尼亚北部） | `us-west-1` |
-| 美国西部（俄勒冈） | `us-west-2` |
-| 亚太地区（新加坡） | `ap-southeast-1` |
-| 亚太地区（东京） | `ap-northeast-1` |
-| 欧洲（爱尔兰） | `eu-west-1` |
-| 中国（北京） | `cn-north-1` |
-| 中国（宁夏） | `cn-northwest-1` |
+| US East (N. Virginia) | `us-east-1` |
+| US East (Ohio) | `us-east-2` |
+| US West (N. California) | `us-west-1` |
+| US West (Oregon) | `us-west-2` |
+| Asia Pacific (Singapore) | `ap-southeast-1` |
+| Asia Pacific (Tokyo) | `ap-northeast-1` |
+| Europe (Ireland) | `eu-west-1` |
+| China (Beijing) | `cn-north-1` |
+| China (Ningxia) | `cn-northwest-1` |
 
-> **注意**: 中国区域需要单独的 AWS 账户和访问凭证。
+> **Note**: China regions require a separate AWS account and credentials.
 
-### 存储类型
+### Storage Classes
 
-AWS S3 支持丰富的存储类型：
+AWS S3 supports a rich set of storage classes:
 
-| 存储类型 | 说明 | 适用场景 |
+| Storage class | Description | Use case |
 |---------|------|---------|
-| `STANDARD` | 标准存储 | 频繁访问的数据 |
-| `STANDARD_IA` | 标准-不频繁访问 | 不经常访问但需要快速访问的数据 |
-| `ONEZONE_IA` | 单区-不频繁访问 | 不经常访问且可容忍单区故障的数据 |
-| `ARCHIVE` | 归档存储 | 长期保存、很少访问的数据 |
-| `ARCHIVE_FR` | 归档闪回存储 | 需要快速检索的归档数据 |
-| `COLD_ARCHIVE` | 冷归档存储 | 极长期保存、极少访问的数据 |
-| `DEEP_COLD_ARCHIVE` | 深冷归档存储 | 极长期保存、几乎不访问的数据 |
-| `INTELLIGENT_TIERING` | 智能分层 | 访问模式未知或变化的数据 |
-| `REDUCED_REDUNDANCY` | 降低冗余存储 | 可重新生成的数据（已不推荐） |
-| `GLACIER` | 冰川存储 | 长期归档（需要恢复时间） |
-| `GLACIER_IR` | 冰川即时存取 | 需要即时访问的归档数据 |
-| `SNOW` | 雪存储 | 边缘设备数据迁移 |
-| `Outposts` | 本地存储 | AWS Outposts 本地存储 |
+| `STANDARD` | Standard storage | Frequently accessed data |
+| `STANDARD_IA` | Standard - Infrequent Access | Data accessed infrequently but requiring rapid access |
+| `ONEZONE_IA` | One Zone - Infrequent Access | Infrequently accessed data that can tolerate single-zone failure |
+| `ARCHIVE` | Archive storage | Long-term retention, rarely accessed data |
+| `ARCHIVE_FR` | Archive with Flash Retrieval | Archive data requiring fast retrieval |
+| `COLD_ARCHIVE` | Cold archive storage | Very long-term retention, extremely rarely accessed data |
+| `DEEP_COLD_ARCHIVE` | Deep cold archive storage | Very long-term retention, almost never accessed data |
+| `INTELLIGENT_TIERING` | Intelligent tiering | Data with unknown or changing access patterns |
+| `REDUCED_REDUNDANCY` | Reduced redundancy storage | Reproducible data (no longer recommended) |
+| `GLACIER` | Glacier storage | Long-term archive (requires retrieval time) |
+| `GLACIER_IR` | Glacier Instant Retrieval | Archive data requiring instant access |
+| `SNOW` | Snow storage | Edge device data migration |
+| `Outposts` | On-premises storage | AWS Outposts on-premises storage |
 
-### 访问凭证
+### Access Credentials
 
-AWS S3 使用 Access Key ID 和 Secret Access Key 进行身份验证：
+AWS S3 uses Access Key ID and Secret Access Key for authentication:
 
-1. 登录 AWS 控制台
-2. 进入 IAM 服务
-3. 创建用户并分配 S3 访问权限
-4. 生成访问密钥对
+1. Sign in to the AWS console
+2. Open IAM
+3. Create a user and grant S3 access permissions
+4. Generate the access key pair
 
-> **安全提示**: 
-> - 不要将访问密钥提交到代码仓库
-> - 使用环境变量或密钥管理服务（如 AWS Secrets Manager）
-> - 定期轮换访问密钥
+> **Security tips**:
+> - Do not commit access keys to the code repository
+> - Use environment variables or a secret management service (e.g., AWS Secrets Manager)
+> - Rotate access keys regularly
 
-## 功能特性
+## Features
 
-### 1. 存储类型自动转换
+### 1. Automatic Storage Class Conversion
 
-上传文件时，会根据配置的 `storageType` 自动设置对象的存储类型：
+When uploading a file, the object storage class is set automatically based on the configured `storageType`:
 
 ```java
-// 配置为 ARCHIVE 存储类型
+// Configure the ARCHIVE storage class
 UploadResponse response = storageEngine.putObject("backup.zip", file);
-// 文件会自动设置为归档存储类型
+// The file is automatically set to the archive storage class
 ```
 
-### 2. 版本控制
+### 2. Versioning
 
-AWS S3 支持对象版本控制，上传的文件会自动获得版本ID：
+AWS S3 supports object versioning, so uploaded files automatically receive a version ID:
 
 ```java
 UploadResponse response = storageEngine.putObject("file.txt", file);
-String versionId = response.getVersionId(); // 获取版本ID
+String versionId = response.getVersionId(); // Retrieve the version ID
 ```
 
-### 3. 断点续传
+### 3. Resumable Transfer
 
-支持大文件的断点续传下载：
+Resumable download is supported for large files:
 
 ```java
 DownloadResponse<byte[]> response = storageEngine.getResumableObject(
@@ -195,49 +267,50 @@ DownloadResponse<byte[]> response = storageEngine.getResumableObject(
 );
 ```
 
-## 最佳实践
+## Best Practices
 
-1. **区域选择**
-   - 选择距离用户最近的区域，降低延迟
-   - 考虑数据合规要求（如 GDPR）
+1. **Region selection**
+   - Choose the region closest to your users to reduce latency
+   - Consider data compliance requirements (e.g., GDPR)
 
-2. **存储类型选择**
-   - 频繁访问：`STANDARD`
-   - 偶尔访问：`STANDARD_IA` 或 `ONEZONE_IA`
-   - 长期归档：`ARCHIVE` 或 `COLD_ARCHIVE`
-   - 访问模式未知：`INTELLIGENT_TIERING`
+2. **Storage class selection**
+   - Frequently accessed: `STANDARD`
+   - Occasionally accessed: `STANDARD_IA` or `ONEZONE_IA`
+   - Long-term archive: `ARCHIVE` or `COLD_ARCHIVE`
+   - Unknown access pattern: `INTELLIGENT_TIERING`
 
-3. **访问凭证管理**
-   - 使用 IAM 角色（在 EC2/ECS/Lambda 上）
-   - 使用环境变量或密钥管理服务
-   - 最小权限原则
+3. **Access credential management**
+   - Use IAM roles (on EC2/ECS/Lambda)
+   - Use environment variables or a secret management service
+   - Follow the principle of least privilege
 
-4. **成本优化**
-   - 使用生命周期策略自动转换存储类型
-   - 删除不需要的对象版本
-   - 使用 `INTELLIGENT_TIERING` 自动优化成本
+4. **Cost optimization**
+   - Use lifecycle policies to transition storage classes automatically
+   - Remove unnecessary object versions
+   - Use `INTELLIGENT_TIERING` to optimize costs automatically
 
-## 常见问题
+## FAQ
 
-### Q: 如何配置 S3 传输加速？
+### Q: How do I configure S3 Transfer Acceleration?
 
-A: 需要在 AWS 控制台启用存储桶的传输加速，然后使用 `s3-accelerate.amazonaws.com` 作为 endpoint。
+A: Enable Transfer Acceleration for the bucket in the AWS console, then use `s3-accelerate.amazonaws.com` as the endpoint.
 
-### Q: 中国区域如何配置？
+### Q: How do I configure the China regions?
 
-A: 中国区域需要单独的 AWS 账户，endpoint 格式为 `s3.cn-north-1.amazonaws.com` 或 `s3.cn-northwest-1.amazonaws.com`。
+A: The China regions require a separate AWS account. The endpoint format is `s3.cn-north-1.amazonaws.com` or `s3.cn-northwest-1.amazonaws.com`.
 
-### Q: 支持 S3 兼容的其他服务吗？
+### Q: Are other S3-compatible services supported?
 
-A: 理论上支持，但需要确保 endpoint 和 region 配置正确。建议使用专门的实现（如 MinIO）。
+A: In theory, yes, but you must ensure the endpoint and region are configured correctly. We recommend using a dedicated implementation (e.g., MinIO).
 
-### Q: 如何设置对象的访问权限？
+### Q: How do I set object access permissions?
 
-A: 需要在 AWS 控制台或通过 AWS CLI/SDK 单独设置存储桶和对象的访问策略。
+A: Configure bucket and object access policies separately through the AWS console or via the AWS CLI/SDK.
 
-## 相关文档
+## Related Documentation
 
-- [核心存储组件](../richie-component-storage/README.md)
-- [AWS S3 官方文档](https://docs.aws.amazon.com/s3/)
+- [Core Storage Component (Core SPI)](../atlas-richie-component-storage-core/README.md)
+- [AWS S3 Official Documentation](https://docs.aws.amazon.com/s3/)
 - [AWS SDK for Java 2.x](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html)
-
+- [Direct Upload Policy (DirectUploadPolicy)](../atlas-richie-component-storage-core/README.md#configuration-model)
+- [Storage Engine SPI (StorageEngineProvider)](../atlas-richie-component-storage-core/README.md)

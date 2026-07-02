@@ -19,10 +19,6 @@
         <!-- 内部依赖 -->
         <dependency>
             <groupId>com.richie.base</groupId>
-            <artifactId>atlas-richie-context</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.richie.base</groupId>
             <artifactId>atlas-richie-contract</artifactId>
         </dependency>
 
@@ -30,13 +26,6 @@
         <dependency>
             <groupId>io.nats</groupId>
             <artifactId>jnats</artifactId>
-        </dependency>
-
-        <!-- Spring Boot AutoConfiguration -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
-            <optional>true</optional>
         </dependency>
 
         <!-- Lombok -->
@@ -75,13 +64,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-        </dependency>
-
-        <!-- 单测支撑：JUnit 5 + AssertJ + Mockito（隐式随 spring-boot-starter-test 引入） -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

@@ -38,7 +38,7 @@ import org.springframework.stereotype.Component;
  * </ul>
  *
  * @author richie696
- * @since 2.1.0
+ * @since 1.0.0
  */
 @Component
 @Order(0)

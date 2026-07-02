@@ -15,10 +15,6 @@
     <description>Richie微服务组件</description>
     <packaging>jar</packaging>
 
-    <properties>
-        <skywalking.version>9.4.0</skywalking.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.aspectj</groupId>

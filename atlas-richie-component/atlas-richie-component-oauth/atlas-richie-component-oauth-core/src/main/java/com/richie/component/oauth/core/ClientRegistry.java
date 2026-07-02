@@ -6,7 +6,6 @@ import com.richie.component.oauth.core.model.ClientConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.springframework.stereotype.Component;
 
 import java.security.SecureRandom;
 import java.time.LocalDate;
@@ -27,7 +26,6 @@ import java.util.concurrent.TimeUnit;
  * @since 2026-06-12
  */
 @Slf4j
-@Component
 public class ClientRegistry {
 
     private static final SecureRandom RANDOM = new SecureRandom();

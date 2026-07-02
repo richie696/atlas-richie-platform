@@ -18,6 +18,7 @@ import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.reactivestreams.Publisher;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
@@ -59,6 +60,7 @@ import static com.richie.contract.gateway.model.OAuth2Constants.*;
  */
 @Slf4j
 @Component
+@ConditionalOnBean(ClientRegistry.class)
 public class OAuth2AuditFilter extends AbstractBaseFilter {
 
     private final AuditService auditService;

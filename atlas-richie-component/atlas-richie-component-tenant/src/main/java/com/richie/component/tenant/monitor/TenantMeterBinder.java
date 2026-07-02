@@ -43,7 +43,7 @@ import java.util.List;
  * {@code redis.stream.*} / {@code grpc.server.*} 一致。</p>
  *
  * @author richie696
- * @since 2.1.0
+ * @since 1.0.0
  */
 public class TenantMeterBinder implements MeterBinder {
 

@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -24,7 +23,6 @@ import java.util.Base64;
  * @since 2026-06-12
  */
 @Slf4j
-@Component
 public class AuthorizationEndpoint {
 
     private static final SecureRandom RANDOM = new SecureRandom();

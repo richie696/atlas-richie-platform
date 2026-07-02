@@ -6,7 +6,6 @@ import com.richie.contract.gateway.model.OAuth2Constants;
 import com.richie.context.utils.spring.JwtUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 
 import java.util.ArrayList;
@@ -27,7 +26,6 @@ import java.util.stream.Collectors;
  * @since 2026-06-12
  */
 @Slf4j
-@Component
 public class ScopeResolver {
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();

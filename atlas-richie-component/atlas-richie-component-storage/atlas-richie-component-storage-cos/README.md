@@ -1,23 +1,100 @@
-# Richie Component Storage - 腾讯云 COS
+# Richie Component Storage - Tencent Cloud COS
 
-## 概述
+## Overview
 
-`richie-component-storage-cos` 是腾讯云对象存储服务（COS）的实现，基于腾讯云 COS SDK 提供完整的 COS 存储能力，支持多可用区存储、图片处理等高级功能。
+`richie-component-storage-cos` is the Tencent Cloud Object Storage (COS) implementation, built on the Tencent Cloud COS SDK to provide the full COS storage capability, including advanced features such as multi-AZ storage and image processing.
 
-## 核心特性
+## Core Features
 
-- ✅ **腾讯云 COS 兼容** - 完整支持腾讯云 COS API
-- ✅ **多可用区存储** - 支持多可用区标准、低频、归档存储
-- ✅ **图片处理** - 支持图片缩放、裁剪、水印等
-- ✅ **多种存储类型** - 支持标准、低频、归档、冷归档、深冷归档
-- ✅ **断点续传** - 支持大文件断点续传
-- ✅ **自动配置** - Spring Boot 自动配置
+- ✅ **Tencent Cloud COS compatible** - full support for the Tencent Cloud COS API
+- ✅ **Multi-AZ storage** - supports multi-AZ Standard, Infrequent Access, and Archive storage
+- ✅ **Image processing** - supports image resizing, cropping, watermarking, and more
+- ✅ **Multiple storage classes** - supports Standard, Infrequent Access, Archive, Cold Archive, and Deep Cold Archive
+- ✅ **Resumable upload/download** - supports resumable transfer for large files
+- ✅ **Dual-mode architecture** - supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to Spring Boot auto-configuration and non-Spring environments
+- ✅ **Auto-configuration** - Spring Boot auto-configuration
 
-## 快速开始
+## Dual-Mode Architecture
 
-### 1. 添加依赖
+This component supports two initialization modes:
+
+### 1. Auto Mode (Auto-Init, default)
+
+When `auto-init: true` (the default), Spring Boot auto-configuration handles:
+
+- Creating the `CosStorageEngineProvider` Bean based on the `engine: TENCENT_COS` configuration
+- Calling the Provider's `create(properties)` to build the engine instance
+- The engine instance probes the bucket and validates the prefix through `@PostConstruct initializeBucket()`
+- Injecting the engine for use via `@Qualifier("objectStorageEngine")`
+
+### 2. Manual Mode (Manual)
+
+When `auto-init: false`, the engine is discovered and managed by `StorageEngineRegistry` through SPI:
+
+- The Provider is not auto-registered as a Bean; it is discovered by `ServiceLoader`
+- Switch engines at runtime via `registry.switchEngine(StorageEngineEnum.TENCENT_COS)`
+- Suitable for non-Spring environments or scenarios requiring dynamic engine switching
+
+```java
+// Manual mode: switch the engine at runtime
+storageEngineRegistry.switchEngine(StorageEngineEnum.TENCENT_COS);
+UploadResponse response = storageEngineRegistry.getCurrentEngine()
+    .putObject("key", file);
+```
+
+## StorageEngineProvider
+
+Each implementation package provides a `StorageEngineProvider` SPI implementation. `CosStorageEngineProvider` is responsible for:
+
+| Method | Description |
+|------|------|
+| `supportedEngineType()` | Returns `StorageEngineEnum.TENCENT_COS` |
+| `create(properties)` | Creates the `COSClient` and `CosStorageEngine` from the configuration |
+| `validate(properties)` | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
+| `afterPropertiesSet(engine)` | Triggers bucket probing and prefix validation in manual mode |
+| `destroy(engine)` | Releases client resources |
+
+In auto mode, the Provider is registered as a Bean in `CosAutoConfiguration`; in manual mode, it is discovered by the Registry through SPI.
+
+## Parameter Validation (ConfigValidation)
+
+Before creating the engine, the `ConfigValidation` utility validates required parameters. If validation fails, an `IllegalArgumentException` is thrown:
+
+| Parameter | Validation rule |
+|------|---------|
+| endpoint | Non-empty |
+| accessKeyId | Non-empty |
+| accessKeySecret | Non-empty |
+| bucketName | Non-empty |
+
+## Direct Upload Policy (DirectUploadPolicy)
+
+The Tencent Cloud COS engine supports client-side direct upload to object storage through presigned URLs, reducing server-side traffic pressure:
+
+| Field | Description |
+|------|------|
+| uploadUrl | Presigned upload URL |
+| method | HTTP method (PUT) |
+| headers | Signature headers |
+| expireAt | Policy expiration time |
+| success | Whether the policy is usable |
+
+```java
+DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
+    "uploads/example.jpg", 3600);
+// Returns a presigned PUT URL that the client can upload to directly
+```
+
+## Quick Start
+
+### 1. Add Dependency
 
 ```xml
+<dependency>
+    <groupId>com.richie.component</groupId>
+    <artifactId>atlas-richie-component-storage-core</artifactId>
+    <version>${atlas.richie.version}</version>
+</dependency>
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-storage-cos</artifactId>
@@ -25,41 +102,41 @@
 </dependency>
 ```
 
-### 2. 配置
+### 2. Configuration
 
 ```yaml
 platform:
   component:
     storage:
       object:
-        # 存储引擎类型（必填）
+        # Storage engine type (required)
         engine: TENCENT_COS
-        # COS访问域名（必填）
-        # 格式：cos.region.myqcloud.com
-        # 示例：cos.ap-guangzhou.myqcloud.com
+        # COS access domain (required)
+        # Format: cos.region.myqcloud.com
+        # Example: cos.ap-guangzhou.myqcloud.com
         endpoint: cos.ap-guangzhou.myqcloud.com
-        # 区域（必填）
-        # 示例：ap-guangzhou, ap-beijing, ap-shanghai, ap-chengdu
+        # Region (required)
+        # Example: ap-guangzhou, ap-beijing, ap-shanghai, ap-chengdu
         region: ap-guangzhou
-        # 访问密钥ID（SecretId）（必填）
+        # Access Key ID (SecretId) (required)
         accessKeyId: your-secret-id
-        # 访问密钥（SecretKey）（必填）
+        # Access Key (SecretKey) (required)
         accessKeySecret: your-secret-key
-        # 存储桶名称（Bucket）（必填）
-        # 格式：bucket-name-appid（appid 为腾讯云账号 ID）
+        # Bucket name (required)
+        # Format: bucket-name-appid (appid is the Tencent Cloud account ID)
         bucketName: my-bucket-1234567890
-        # 桶内基础路径（可选）
+        # Base path within the bucket (optional)
         basePath: /storage
-        # 存储类型（可选，默认：STANDARD）
-        # 可选值：STANDARD, STANDARD_IA, ARCHIVE, COLD_ARCHIVE, DEEP_COLD_ARCHIVE,
+        # Storage class (optional, default: STANDARD)
+        # Allowed values: STANDARD, STANDARD_IA, ARCHIVE, COLD_ARCHIVE, DEEP_COLD_ARCHIVE,
         #         MULTI_AZ_STANDARD, MULTI_AZ_STANDARD_IA, MULTI_AZ_ARCHIVE,
         #         MULTI_AZ_COLD_ARCHIVE, MULTI_AZ_DEEP_COLD_ARCHIVE, MULTI_AZ_INTELLIGENT_TIERING
         storageType: STANDARD
 ```
 
-### 3. 使用
+### 3. Usage
 
-注入 `StorageEngine`（Bean 名称为 `objectStorageEngine`）即可使用：
+Inject `StorageEngine` (the Bean name is `objectStorageEngine`) to start using it:
 
 ```java
 @Service
@@ -72,205 +149,206 @@ public class FileService {
     public void uploadFile(String key, File file) {
         UploadResponse response = storageEngine.putObject(key, file);
         if (response.isSuccess()) {
-            log.info("上传成功: {}", response.getUrl());
+            log.info("Upload succeeded: {}", response.getUrl());
         }
     }
 }
 ```
 
-## 配置说明
+## Configuration Reference
 
-### ⚠️ 重要配置差异
+### ⚠️ Important Configuration Differences
 
-腾讯云 COS 与其他云存储的主要配置差异：
+The main configuration differences between Tencent Cloud COS and other cloud storage services:
 
-| 配置项 | 腾讯云 COS | 阿里云 OSS | AWS S3 |
+| Configuration | Tencent Cloud COS | Alibaba Cloud OSS | AWS S3 |
 |--------|-----------|-----------|--------|
-| **engine 值** | `TENCENT_COS` | `ALIYUN_OSS` | `AWS_S3` |
-| **endpoint 格式** | `cos.region.myqcloud.com` | `oss-cn-region.aliyuncs.com` | `s3.region.amazonaws.com` |
-| **region 格式** | `ap-region` | `cn-region` | `us-east-1` |
-| **访问密钥名称** | SecretId / SecretKey | AccessKey ID / AccessKey Secret | Access Key ID / Secret Access Key |
-| **bucketName 格式** | `bucket-name-appid` | `bucket-name` | `bucket-name` |
-| **存储类型** | 11种（含多可用区） | 4种 | 15+种 |
-| **多可用区存储** | ✅ 支持 | ❌ 不支持 | ❌ 不支持 |
+| **engine value** | `TENCENT_COS` | `ALIYUN_OSS` | `AWS_S3` |
+| **endpoint format** | `cos.region.myqcloud.com` | `oss-cn-region.aliyuncs.com` | `s3.region.amazonaws.com` |
+| **region format** | `ap-region` | `cn-region` | `us-east-1` |
+| **Credential name** | SecretId / SecretKey | AccessKey ID / AccessKey Secret | Access Key ID / Secret Access Key |
+| **bucketName format** | `bucket-name-appid` | `bucket-name` | `bucket-name` |
+| **Storage classes** | 11 (including multi-AZ) | 4 | 15+ |
+| **Multi-AZ storage** | ✅ Supported | ❌ Not supported | ❌ Not supported |
 
-### endpoint 配置
+### endpoint Configuration
 
-腾讯云 COS 的 endpoint 格式：
+The Tencent Cloud COS endpoint format:
 
-- **标准格式**: `cos.region.myqcloud.com`
-  - 示例：`cos.ap-guangzhou.myqcloud.com`
-  - 示例：`cos.ap-beijing.myqcloud.com`
-  - 示例：`cos.ap-shanghai.myqcloud.com`
+- **Standard format**: `cos.region.myqcloud.com`
+  - Example: `cos.ap-guangzhou.myqcloud.com`
+  - Example: `cos.ap-beijing.myqcloud.com`
+  - Example: `cos.ap-shanghai.myqcloud.com`
 
-- **内网 endpoint**: `cos-internal.region.myqcloud.com`
-  - 适用于同区域 CVM 访问，免流量费
-  - 示例：`cos-internal.ap-guangzhou.myqcloud.com`
+- **Internal endpoint**: `cos-internal.region.myqcloud.com`
+  - Suitable for CVM access from the same region, traffic-free
+  - Example: `cos-internal.ap-guangzhou.myqcloud.com`
 
-- **自定义域名**: 可在 COS 控制台绑定自定义域名
+- **Custom domain**: A custom domain can be bound in the COS console
 
-### region 配置
+### region Configuration
 
-腾讯云 COS 支持的区域：
+Regions supported by Tencent Cloud COS:
 
-| 区域 | 代码 |
+| Region | Code |
 |------|------|
-| 广州 | `ap-guangzhou` |
-| 北京 | `ap-beijing` |
-| 上海 | `ap-shanghai` |
-| 成都 | `ap-chengdu` |
-| 重庆 | `ap-chongqing` |
-| 南京 | `ap-nanjing` |
-| 中国香港 | `ap-hongkong` |
-| 新加坡 | `ap-singapore` |
-| 孟买 | `ap-mumbai` |
-| 首尔 | `ap-seoul` |
-| 东京 | `ap-tokyo` |
-| 硅谷 | `na-siliconvalley` |
-| 弗吉尼亚 | `na-ashburn` |
-| 法兰克福 | `eu-frankfurt` |
+| Guangzhou | `ap-guangzhou` |
+| Beijing | `ap-beijing` |
+| Shanghai | `ap-shanghai` |
+| Chengdu | `ap-chengdu` |
+| Chongqing | `ap-chongqing` |
+| Nanjing | `ap-nanjing` |
+| Hong Kong (China) | `ap-hongkong` |
+| Singapore | `ap-singapore` |
+| Mumbai | `ap-mumbai` |
+| Seoul | `ap-seoul` |
+| Tokyo | `ap-tokyo` |
+| Silicon Valley | `na-siliconvalley` |
+| Virginia | `na-ashburn` |
+| Frankfurt | `eu-frankfurt` |
 
-### 存储类型
+### Storage Classes
 
-腾讯云 COS 支持的存储类型（含多可用区）：
+Storage classes supported by Tencent Cloud COS (including multi-AZ):
 
-| 存储类型 | 说明 | 适用场景 |
+| Storage class | Description | Use case |
 |---------|------|---------|
-| `STANDARD` | 标准存储 | 频繁访问的数据 |
-| `STANDARD_IA` | 低频访问存储 | 不经常访问但需要快速访问的数据 |
-| `ARCHIVE` | 归档存储 | 长期保存、很少访问的数据 |
-| `COLD_ARCHIVE` | 冷归档存储 | 极长期保存、极少访问的数据 |
-| `DEEP_COLD_ARCHIVE` | 深冷归档存储 | 极长期保存、几乎不访问的数据 |
-| `MULTI_AZ_STANDARD` | 多可用区标准存储 | 需要高可用性的频繁访问数据 |
-| `MULTI_AZ_STANDARD_IA` | 多可用区低频访问存储 | 需要高可用性的偶尔访问数据 |
-| `MULTI_AZ_ARCHIVE` | 多可用区归档存储 | 需要高可用性的归档数据 |
-| `MULTI_AZ_COLD_ARCHIVE` | 多可用区冷归档存储 | 需要高可用性的冷归档数据 |
-| `MULTI_AZ_DEEP_COLD_ARCHIVE` | 多可用区深冷归档存储 | 需要高可用性的深冷归档数据 |
-| `MULTI_AZ_INTELLIGENT_TIERING` | 多可用区智能分层存储 | 需要高可用性的访问模式未知数据 |
+| `STANDARD` | Standard storage | Frequently accessed data |
+| `STANDARD_IA` | Infrequent access storage | Data accessed infrequently but requiring rapid access |
+| `ARCHIVE` | Archive storage | Long-term retention, rarely accessed data |
+| `COLD_ARCHIVE` | Cold archive storage | Very long-term retention, extremely rarely accessed data |
+| `DEEP_COLD_ARCHIVE` | Deep cold archive storage | Very long-term retention, almost never accessed data |
+| `MULTI_AZ_STANDARD` | Multi-AZ standard storage | Frequently accessed data requiring high availability |
+| `MULTI_AZ_STANDARD_IA` | Multi-AZ infrequent access storage | Occasionally accessed data requiring high availability |
+| `MULTI_AZ_ARCHIVE` | Multi-AZ archive storage | Archive data requiring high availability |
+| `MULTI_AZ_COLD_ARCHIVE` | Multi-AZ cold archive storage | Cold archive data requiring high availability |
+| `MULTI_AZ_DEEP_COLD_ARCHIVE` | Multi-AZ deep cold archive storage | Deep cold archive data requiring high availability |
+| `MULTI_AZ_INTELLIGENT_TIERING` | Multi-AZ intelligent tiering storage | Data with unknown access patterns requiring high availability |
 
-> **注意**: 多可用区存储提供更高的可用性和数据持久性，但成本略高。
+> **Note**: Multi-AZ storage provides higher availability and data durability, but at a slightly higher cost.
 
-### bucketName 配置
+### bucketName Configuration
 
-腾讯云 COS 的存储桶名称格式特殊，必须包含 AppID：
+Tencent Cloud COS bucket names have a special format and must include the AppID:
 
-- **格式**: `bucket-name-appid`
-- **示例**: `my-bucket-1234567890`
-- **AppID 获取**: 在腾讯云控制台右上角查看账号信息
+- **Format**: `bucket-name-appid`
+- **Example**: `my-bucket-1234567890`
+- **Where to find AppID**: View your account information in the top-right corner of the Tencent Cloud console
 
-### 访问凭证
+### Access Credentials
 
-腾讯云 COS 使用 SecretId 和 SecretKey 进行身份验证：
+Tencent Cloud COS uses SecretId and SecretKey for authentication:
 
-1. 登录腾讯云控制台
-2. 进入访问管理（CAM）服务
-3. 创建子用户并分配 COS 访问权限
-4. 创建访问密钥
+1. Sign in to the Tencent Cloud console
+2. Open Cloud Access Management (CAM)
+3. Create a sub-user and grant COS access permissions
+4. Create an access key
 
-> **安全提示**: 
-> - 使用 CAM 子用户，遵循最小权限原则
-> - 不要将访问密钥提交到代码仓库
-> - 使用环境变量或密钥管理服务（如腾讯云 KMS）
+> **Security tips**:
+> - Use a CAM sub-user and follow the principle of least privilege
+> - Do not commit access keys to the code repository
+> - Use environment variables or a secret management service (e.g., Tencent Cloud KMS)
 
-## 功能特性
+## Features
 
-### 1. 多可用区存储
+### 1. Multi-AZ Storage
 
-腾讯云 COS 支持多可用区存储，提供更高的可用性和数据持久性：
+Tencent Cloud COS supports multi-AZ storage, providing higher availability and data durability:
 
 ```yaml
 platform:
   component:
     storage:
       object:
-        storageType: MULTI_AZ_STANDARD  # 多可用区标准存储
+        storageType: MULTI_AZ_STANDARD  # Multi-AZ standard storage
 ```
 
-### 2. 图片处理
+### 2. Image Processing
 
-腾讯云 COS 支持图片处理功能（需在控制台开启）：
+Tencent Cloud COS supports image processing features (must be enabled in the console):
 
-- **格式转换**: JPEG、PNG、WEBP、GIF 等
-- **缩放**: 按比例、按尺寸、按长边/短边
-- **裁剪**: 矩形裁剪、圆形裁剪、圆角矩形
-- **水印**: 图片水印、文字水印
-- **旋转**: 自动旋转、手动旋转
-- **质量调整**: JPEG/WebP 质量压缩
+- **Format conversion**: JPEG, PNG, WEBP, GIF, and more
+- **Resizing**: by ratio, by dimension, or by long/short edge
+- **Cropping**: rectangular, circular, rounded rectangle
+- **Watermarking**: image watermark, text watermark
+- **Rotation**: automatic, manual
+- **Quality adjustment**: JPEG/WebP quality compression
 
-### 3. 存储类型自动转换
+### 3. Automatic Storage Class Conversion
 
-上传文件时，会根据配置的 `storageType` 自动设置对象的存储类型：
+When uploading a file, the object storage class is set automatically based on the configured `storageType`:
 
 ```java
-// 配置为 MULTI_AZ_STANDARD 存储类型
+// Configure the MULTI_AZ_STANDARD storage class
 UploadResponse response = storageEngine.putObject("file.txt", file);
-// 文件会自动设置为多可用区标准存储类型
+// The file is automatically set to the multi-AZ standard storage class
 ```
 
-### 4. 内网访问
+### 4. Internal Network Access
 
-如果应用部署在腾讯云 CVM 上，可以使用内网 endpoint 免流量费：
+If your application runs on Tencent Cloud CVM, you can use the internal endpoint to avoid traffic charges:
 
 ```yaml
 platform:
   component:
     storage:
       object:
-        endpoint: cos-internal.ap-guangzhou.myqcloud.com  # 内网 endpoint
+        endpoint: cos-internal.ap-guangzhou.myqcloud.com  # Internal endpoint
 ```
 
-## 最佳实践
+## Best Practices
 
-1. **区域选择**
-   - 选择距离用户最近的区域，降低延迟
-   - 考虑数据合规要求
+1. **Region selection**
+   - Choose the region closest to your users to reduce latency
+   - Consider data compliance requirements
 
-2. **存储类型选择**
-   - 频繁访问：`STANDARD` 或 `MULTI_AZ_STANDARD`
-   - 偶尔访问：`STANDARD_IA` 或 `MULTI_AZ_STANDARD_IA`
-   - 长期归档：`ARCHIVE` 或 `MULTI_AZ_ARCHIVE`
-   - 需要高可用性：选择多可用区存储类型
+2. **Storage class selection**
+   - Frequently accessed: `STANDARD` or `MULTI_AZ_STANDARD`
+   - Occasionally accessed: `STANDARD_IA` or `MULTI_AZ_STANDARD_IA`
+   - Long-term archive: `ARCHIVE` or `MULTI_AZ_ARCHIVE`
+   - High availability required: choose multi-AZ storage classes
 
-3. **bucketName 配置**
-   - 必须包含 AppID，格式：`bucket-name-appid`
-   - AppID 可在腾讯云控制台查看
+3. **bucketName configuration**
+   - Must include the AppID, format: `bucket-name-appid`
+   - The AppID can be found in the Tencent Cloud console
 
-4. **访问凭证管理**
-   - 使用 CAM 子用户，遵循最小权限原则
-   - 使用环境变量或密钥管理服务
-   - 定期轮换访问密钥
+4. **Access credential management**
+   - Use CAM sub-users and follow the principle of least privilege
+   - Use environment variables or a secret management service
+   - Rotate access keys regularly
 
-5. **成本优化**
-   - 使用生命周期策略自动转换存储类型
-   - 删除不需要的对象
-   - 使用内网 endpoint 免流量费
+5. **Cost optimization**
+   - Use lifecycle policies to transition storage classes automatically
+   - Remove unnecessary objects
+   - Use internal endpoints to avoid traffic charges
 
-## 常见问题
+## FAQ
 
-### Q: bucketName 中的 AppID 是什么？
+### Q: What is the AppID in the bucketName?
 
-A: AppID 是腾讯云账号的唯一标识，可在控制台右上角查看。存储桶名称必须包含 AppID，格式为 `bucket-name-appid`。
+A: The AppID is the unique identifier of your Tencent Cloud account and can be found in the top-right corner of the console. The bucket name must include the AppID, in the format `bucket-name-appid`.
 
-### Q: 如何配置图片处理？
+### Q: How do I configure image processing?
 
-A: 在 COS 控制台开启图片处理功能，然后通过 `ImageOptions` 配置处理参数。
+A: Enable image processing in the COS console, then configure processing parameters through `ImageOptions`.
 
-### Q: 支持自定义域名吗？
+### Q: Are custom domains supported?
 
-A: 支持，在 COS 控制台绑定自定义域名后，使用自定义域名作为 endpoint。
+A: Yes. After binding a custom domain in the COS console, use that custom domain as the endpoint.
 
-### Q: 多可用区存储有什么优势？
+### Q: What are the advantages of multi-AZ storage?
 
-A: 多可用区存储提供更高的可用性（99.995%）和数据持久性（99.999999999%），适合对可用性要求高的场景。
+A: Multi-AZ storage provides higher availability (99.995%) and data durability (99.999999999%), making it ideal for scenarios with strict availability requirements.
 
-### Q: 内网访问有什么优势？
+### Q: What are the advantages of internal network access?
 
-A: 内网访问免流量费，延迟更低，但仅限同区域 CVM 访问。
+A: Internal network access is traffic-free and has lower latency, but it is limited to CVM in the same region.
 
-## 相关文档
+## Related Documentation
 
-- [核心存储组件](../richie-component-storage/README.md)
-- [腾讯云 COS 官方文档](https://cloud.tencent.com/document/product/436)
+- [Core Storage Component (Core SPI)](../atlas-richie-component-storage-core/README.md)
+- [Tencent Cloud COS Official Documentation](https://cloud.tencent.com/document/product/436)
 - [COS Java SDK](https://cloud.tencent.com/document/product/436/10199)
-- [COS 图片处理](https://cloud.tencent.com/document/product/436/44880)
-
+- [COS Image Processing](https://cloud.tencent.com/document/product/436/44880)
+- [Direct Upload Policy (DirectUploadPolicy)](../atlas-richie-component-storage-core/README.md#configuration-model)
+- [Storage Engine SPI (StorageEngineProvider)](../atlas-richie-component-storage-core/README.md)

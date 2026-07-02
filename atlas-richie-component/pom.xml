@@ -56,12 +56,10 @@
         <module>atlas-richie-component-logging</module>
         <!-- 通用追踪组件 -->
         <module>atlas-richie-component-tracing</module>
-        <!-- 动态线程池组件 -->
-        <module>atlas-richie-component-threadpool</module>
+        <!-- 并发编程组件 -->
+        <module>atlas-richie-component-concurrency</module>
         <!-- 通用 Spring MVC 服务组件 -->
         <module>atlas-richie-component-web</module>
-        <!-- APM 监控组件 -->
-        <module>atlas-richie-component-skywalking</module>
         <!-- 通用存储服务组件 -->
         <module>atlas-richie-component-storage</module>
         <!-- 向量数据库组件 -->

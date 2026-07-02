@@ -14,7 +14,6 @@ import com.richie.contract.exception.BusinessException;
 import com.richie.contract.gateway.model.OAuth2Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.security.SecureRandom;
@@ -38,7 +37,6 @@ import java.util.concurrent.TimeUnit;
  * @since 2026-06-12
  */
 @Slf4j
-@Component
 public class DynamicClientRegistrationEndpoint {
 
     private static final SecureRandom RANDOM = new SecureRandom();

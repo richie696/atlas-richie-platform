@@ -173,22 +173,16 @@
                 <artifactId>atlas-richie-component-liquibase</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
-            <!-- 动态线程池组件 -->
+            <!-- 并发编程组件 -->
             <dependency>
                 <groupId>com.richie.component</groupId>
-                <artifactId>atlas-richie-component-threadpool</artifactId>
+                <artifactId>atlas-richie-component-concurrency</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- 链路追踪组件 -->
             <dependency>
                 <groupId>com.richie.component</groupId>
                 <artifactId>atlas-richie-component-tracing</artifactId>
-                <version>${middle.platform.version}</version>
-            </dependency>
-            <!-- APM 监控组件 -->
-            <dependency>
-                <groupId>com.richie.component</groupId>
-                <artifactId>atlas-richie-component-skywalking</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- HTTP Client -->

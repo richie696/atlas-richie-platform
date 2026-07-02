@@ -1,22 +1,99 @@
-# Richie Component Storage - 华为云 OBS
+# Richie Component Storage - Huawei Cloud OBS
 
-## 概述
+## Overview
 
-`richie-component-storage-obs` 是华为云对象存储服务（OBS）的实现，基于华为云 OBS SDK 提供完整的 OBS 存储能力，支持生命周期管理、跨区域复制等高级功能。
+`richie-component-storage-obs` is the implementation of Huawei Cloud Object Storage Service (OBS), built on the Huawei Cloud OBS SDK to deliver complete OBS storage capabilities, with support for advanced features such as lifecycle management and cross-region replication.
 
-## 核心特性
+## Core Features
 
-- ✅ **华为云 OBS 兼容** - 完整支持华为云 OBS API
-- ✅ **多种存储类型** - 支持标准、低频、归档、深度归档
-- ✅ **生命周期管理** - 支持自动转换存储类型
-- ✅ **断点续传** - 支持大文件断点续传
-- ✅ **自动配置** - Spring Boot 自动配置
+- ✅ **Huawei Cloud OBS Compatible** - Full support for the Huawei Cloud OBS API
+- ✅ **Multiple Storage Tiers** - Standard, Infrequent Access, Archive, and Deep Archive
+- ✅ **Lifecycle Management** - Automatic storage tier transitions
+- ✅ **Resumable Upload** - Resumable upload support for large files
+- ✅ **Dual-Mode Architecture** - Supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to Spring Boot auto-configuration and non-Spring environments
+- ✅ **Auto-Configuration** - Spring Boot auto-configuration
 
-## 快速开始
+## Dual-Mode Architecture
 
-### 1. 添加依赖
+This component supports two initialization modes:
+
+### 1. Auto Mode (Auto-Init, Default)
+
+When `auto-init: true` (the default value), Spring Boot auto-configuration handles:
+
+- Creating the `ObsStorageEngineProvider` Bean based on the `engine: HUAWEI_OBS` configuration
+- Calling the Provider's `create(properties)` to create the engine instance
+- Injecting and using the engine through `@Qualifier("objectStorageEngine")`
+
+### 2. Manual Mode
+
+When `auto-init: false`, the engine is discovered and managed by `StorageEngineRegistry` through SPI:
+
+- The Provider is not auto-registered as a Bean, but is discovered by `ServiceLoader`
+- Switch engines at runtime via `registry.switchEngine(StorageEngineEnum.HUAWEI_OBS)`
+- Suitable for non-Spring environments or scenarios that require dynamic engine switching
+
+```java
+// Manual mode: switch engines at runtime
+storageEngineRegistry.switchEngine(StorageEngineEnum.HUAWEI_OBS);
+UploadResponse response = storageEngineRegistry.getCurrentEngine()
+    .putObject("key", file);
+```
+
+## StorageEngineProvider
+
+Each implementation package provides a `StorageEngineProvider` SPI implementation. `ObsStorageEngineProvider` is responsible for:
+
+| Method | Description |
+|------|------|
+| `supportedEngineType()` | Returns `StorageEngineEnum.HUAWEI_OBS` |
+| `create(properties)` | Creates an engine instance from configuration |
+| `validate(properties)` | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
+| `destroy(engine)` | Releases resources |
+
+In auto mode, the Provider is registered as a Bean in `ObsAutoConfiguration`. In manual mode, it is discovered by the Registry through SPI.
+
+## Config Validation
+
+Before the engine is created, the `ConfigValidation` utility validates the required parameters. If validation fails, an `IllegalArgumentException` is thrown:
+
+| Parameter | Validation Rule |
+|------|---------|
+| endpoint | Non-empty |
+| accessKeyId | Non-empty |
+| accessKeySecret | Non-empty |
+| bucketName | Non-empty |
+
+## Direct Upload Policy
+
+The OBS engine supports client-side direct upload to object storage through presigned URLs, reducing server-side traffic pressure:
+
+| Field | Description |
+|------|------|
+| uploadUrl | Presigned upload URL |
+| method | HTTP method (PUT) |
+| headers | Signature headers |
+| expireAt | Policy expiration time |
+| success | Whether the policy is usable |
+
+```java
+DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
+    "uploads/example.jpg", 3600);
+// Returns a presigned PUT URL; the client can upload directly
+```
+
+## Quick Start
+
+### 1. Add Dependency
 
 ```xml
+<!-- Required core library -->
+<dependency>
+    <groupId>com.richie.component</groupId>
+    <artifactId>atlas-richie-component-storage-core</artifactId>
+    <version>${atlas.richie.version}</version>
+</dependency>
+<!-- Implementation library -->
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-storage-obs</artifactId>
@@ -24,38 +101,38 @@
 </dependency>
 ```
 
-### 2. 配置
+### 2. Configuration
 
 ```yaml
 platform:
   component:
     storage:
       object:
-        # 存储引擎类型（必填）
+        # Storage engine type (required)
         engine: HUAWEI_OBS
-        # OBS访问域名（必填）
-        # 格式：obs.region.myhuaweicloud.com
-        # 示例：obs.cn-north-4.myhuaweicloud.com
+        # OBS access endpoint (required)
+        # Format: obs.region.myhuaweicloud.com
+        # Example: obs.cn-north-4.myhuaweicloud.com
         endpoint: obs.cn-north-4.myhuaweicloud.com
-        # 区域（必填）
-        # 示例：cn-north-4, cn-east-3, cn-south-1
+        # Region (required)
+        # Example: cn-north-4, cn-east-3, cn-south-1
         region: cn-north-4
-        # 访问密钥ID（Access Key Id）（必填）
+        # Access Key Id (required)
         accessKeyId: your-access-key-id
-        # 访问密钥（Secret Access Key）（必填）
+        # Secret Access Key (required)
         accessKeySecret: your-secret-access-key
-        # 存储桶名称（Bucket）（必填）
+        # Bucket name (required)
         bucketName: my-bucket
-        # 桶内基础路径（可选）
+        # Base path inside the bucket (optional)
         basePath: /storage
-        # 存储类型（可选，默认：STANDARD）
-        # 可选值：STANDARD, STANDARD_IA, ARCHIVE, DEEP_ARCHIVE
+        # Storage tier (optional, default: STANDARD)
+        # Allowed values: STANDARD, STANDARD_IA, ARCHIVE, DEEP_ARCHIVE
         storageType: STANDARD
 ```
 
-### 3. 使用
+### 3. Usage
 
-注入 `StorageEngine`（Bean 名称为 `objectStorageEngine`）即可使用：
+Inject `StorageEngine` (the Bean name is `objectStorageEngine`) to start using it:
 
 ```java
 @Service
@@ -68,173 +145,174 @@ public class FileService {
     public void uploadFile(String key, File file) {
         UploadResponse response = storageEngine.putObject(key, file);
         if (response.isSuccess()) {
-            log.info("上传成功: {}", response.getUrl());
+            log.info("Upload successful: {}", response.getUrl());
         }
     }
 }
 ```
 
-## 配置说明
+## Configuration Reference
 
-### ⚠️ 重要配置差异
+### ⚠️ Important Configuration Differences
 
-华为云 OBS 与其他云存储的主要配置差异：
+The main configuration differences between Huawei Cloud OBS and other cloud storage providers:
 
-| 配置项 | 华为云 OBS | 阿里云 OSS | 腾讯云 COS |
+| Configuration Item | Huawei Cloud OBS | Alibaba Cloud OSS | Tencent Cloud COS |
 |--------|-----------|-----------|-----------|
-| **engine 值** | `HUAWEI_OBS` | `ALIYUN_OSS` | `TENCENT_COS` |
-| **endpoint 格式** | `obs.region.myhuaweicloud.com` | `oss-cn-region.aliyuncs.com` | `cos.region.myqcloud.com` |
-| **region 格式** | `cn-region-n` | `cn-region` | `ap-region` |
-| **访问密钥名称** | Access Key Id / Secret Access Key | AccessKey ID / AccessKey Secret | SecretId / SecretKey |
-| **存储类型** | 4种（标准、低频、归档、深度归档） | 4种 | 11种 |
-| **生命周期管理** | ✅ 支持 | ✅ 支持 | ✅ 支持 |
+| **engine value** | `HUAWEI_OBS` | `ALIYUN_OSS` | `TENCENT_COS` |
+| **endpoint format** | `obs.region.myhuaweicloud.com` | `oss-cn-region.aliyuncs.com` | `cos.region.myqcloud.com` |
+| **region format** | `cn-region-n` | `cn-region` | `ap-region` |
+| **Access key names** | Access Key Id / Secret Access Key | AccessKey ID / AccessKey Secret | SecretId / SecretKey |
+| **Storage tiers** | 4 (Standard, IA, Archive, Deep Archive) | 4 | 11 |
+| **Lifecycle management** | ✅ Supported | ✅ Supported | ✅ Supported |
 
-### endpoint 配置
+### endpoint Configuration
 
-华为云 OBS 的 endpoint 格式：
+Huawei Cloud OBS endpoint format:
 
-- **标准格式**: `obs.region.myhuaweicloud.com`
-  - 示例：`obs.cn-north-4.myhuaweicloud.com`
-  - 示例：`obs.cn-east-3.myhuaweicloud.com`
-  - 示例：`obs.cn-south-1.myhuaweicloud.com`
+- **Standard format**: `obs.region.myhuaweicloud.com`
+  - Example: `obs.cn-north-4.myhuaweicloud.com`
+  - Example: `obs.cn-east-3.myhuaweicloud.com`
+  - Example: `obs.cn-south-1.myhuaweicloud.com`
 
-- **内网 endpoint**: `obs.region-internal.myhuaweicloud.com`
-  - 适用于同区域 ECS 访问，免流量费
-  - 示例：`obs.cn-north-4-internal.myhuaweicloud.com`
+- **Internal endpoint**: `obs.region-internal.myhuaweicloud.com`
+  - Suitable for same-region ECS access, no traffic fees
+  - Example: `obs.cn-north-4-internal.myhuaweicloud.com`
 
-- **自定义域名**: 可在 OBS 控制台绑定自定义域名
+- **Custom domain**: You can bind a custom domain in the OBS console
 
-### region 配置
+### region Configuration
 
-华为云 OBS 支持的区域：
+Regions supported by Huawei Cloud OBS:
 
-| 区域 | 代码 |
+| Region | Code |
 |------|------|
-| 华北-北京四 | `cn-north-4` |
-| 华北-北京一 | `cn-north-1` |
-| 华东-上海一 | `cn-east-3` |
-| 华东-上海二 | `cn-east-2` |
-| 华南-广州 | `cn-south-1` |
-| 西南-贵阳一 | `cn-southwest-2` |
-| 亚太-曼谷 | `ap-southeast-2` |
-| 亚太-新加坡 | `ap-southeast-1` |
-| 非洲-约翰内斯堡 | `af-south-1` |
-| 拉美-圣保罗一 | `la-south-2` |
-| 拉美-墨西哥城二 | `la-north-2` |
+| CN North-Beijing 4 | `cn-north-4` |
+| CN North-Beijing 1 | `cn-north-1` |
+| CN East-Shanghai 1 | `cn-east-3` |
+| CN East-Shanghai 2 | `cn-east-2` |
+| CN South-Guangzhou | `cn-south-1` |
+| CN Southwest-Guiyang 1 | `cn-southwest-2` |
+| AP-Bangkok | `ap-southeast-2` |
+| AP-Singapore | `ap-southeast-1` |
+| AF-Johannesburg | `af-south-1` |
+| LA-Sao Paulo 1 | `la-south-2` |
+| LA-Mexico City 2 | `la-north-2` |
 
-### 存储类型
+### Storage Tiers
 
-华为云 OBS 支持的存储类型：
+Storage tiers supported by Huawei Cloud OBS:
 
-| 存储类型 | 说明 | 适用场景 |
+| Storage Tier | Description | Suitable Scenario |
 |---------|------|---------|
-| `STANDARD` | 标准存储 | 频繁访问的数据 |
-| `STANDARD_IA` | 低频访问存储 | 不经常访问但需要快速访问的数据 |
-| `ARCHIVE` | 归档存储 | 长期保存、很少访问的数据 |
-| `DEEP_ARCHIVE` | 深度归档存储 | 极长期保存、几乎不访问的数据 |
+| `STANDARD` | Standard storage | Frequently accessed data |
+| `STANDARD_IA` | Infrequent access storage | Data that is not accessed often but requires fast retrieval |
+| `ARCHIVE` | Archive storage | Long-term retention, rarely accessed data |
+| `DEEP_ARCHIVE` | Deep archive storage | Very long-term retention, almost never accessed data |
 
-### 访问凭证
+### Access Credentials
 
-华为云 OBS 使用 Access Key Id 和 Secret Access Key 进行身份验证：
+Huawei Cloud OBS uses Access Key Id and Secret Access Key for authentication:
 
-1. 登录华为云控制台
-2. 进入统一身份认证服务（IAM）
-3. 创建用户并分配 OBS 访问权限
-4. 创建访问密钥
+1. Sign in to the Huawei Cloud console
+2. Open the Unified Identity Authentication Service (IAM)
+3. Create a user and grant OBS access permissions
+4. Create access keys
 
-> **安全提示**: 
-> - 使用 IAM 子用户，遵循最小权限原则
-> - 不要将访问密钥提交到代码仓库
-> - 使用环境变量或密钥管理服务（如华为云 KMS）
+> **Security Tips**: 
+> - Use IAM sub-users and follow the principle of least privilege
+> - Do not commit access keys to source control
+> - Use environment variables or a secrets management service (such as Huawei Cloud KMS)
 
-## 功能特性
+## Feature Details
 
-### 1. 生命周期管理
+### 1. Lifecycle Management
 
-华为云 OBS 支持生命周期策略，自动转换存储类型：
+Huawei Cloud OBS supports lifecycle policies that automatically transition storage tiers:
 
 ```yaml
-# 在 OBS 控制台配置生命周期策略
-# 例如：30天后转换为低频存储，90天后转换为归档存储
+# Configure lifecycle policies in the OBS console
+# For example: transition to Infrequent Access after 30 days, and to Archive after 90 days
 ```
 
-### 2. 存储类型自动转换
+### 2. Automatic Storage Tier Conversion
 
-上传文件时，会根据配置的 `storageType` 自动设置对象的存储类型：
+When uploading files, the configured `storageType` automatically sets the object's storage tier:
 
 ```java
-// 配置为 ARCHIVE 存储类型
+// Configure as ARCHIVE storage tier
 UploadResponse response = storageEngine.putObject("backup.zip", file);
-// 文件会自动设置为归档存储类型
+// The file is automatically stored as the Archive storage tier
 ```
 
-### 3. 内网访问
+### 3. Internal Network Access
 
-如果应用部署在华为云 ECS 上，可以使用内网 endpoint 免流量费：
+If your application is deployed on Huawei Cloud ECS, you can use the internal endpoint to avoid traffic fees:
 
 ```yaml
 platform:
   component:
     storage:
       object:
-        endpoint: obs.cn-north-4-internal.myhuaweicloud.com  # 内网 endpoint
+        endpoint: obs.cn-north-4-internal.myhuaweicloud.com  # Internal endpoint
 ```
 
-### 4. 跨区域复制
+### 4. Cross-Region Replication
 
-华为云 OBS 支持跨区域复制功能（需在控制台配置），实现数据异地备份。
+Huawei Cloud OBS supports cross-region replication (configured in the console), enabling off-site data backup.
 
-## 最佳实践
+## Best Practices
 
-1. **区域选择**
-   - 选择距离用户最近的区域，降低延迟
-   - 考虑数据合规要求
+1. **Region Selection**
+   - Choose the region closest to your users to minimize latency
+   - Consider data compliance requirements
 
-2. **存储类型选择**
-   - 频繁访问：`STANDARD`
-   - 偶尔访问：`STANDARD_IA`
-   - 长期归档：`ARCHIVE` 或 `DEEP_ARCHIVE`
+2. **Storage Tier Selection**
+   - Frequent access: `STANDARD`
+   - Occasional access: `STANDARD_IA`
+   - Long-term archiving: `ARCHIVE` or `DEEP_ARCHIVE`
 
-3. **生命周期管理**
-   - 配置生命周期策略，自动转换存储类型
-   - 根据访问频率设置转换时间点
+3. **Lifecycle Management**
+   - Configure lifecycle policies to automatically transition storage tiers
+   - Set transition time points based on access frequency
 
-4. **访问凭证管理**
-   - 使用 IAM 子用户，遵循最小权限原则
-   - 使用环境变量或密钥管理服务
-   - 定期轮换访问密钥
+4. **Access Credential Management**
+   - Use IAM sub-users and follow the principle of least privilege
+   - Use environment variables or a secrets management service
+   - Rotate access keys regularly
 
-5. **成本优化**
-   - 使用生命周期策略自动转换存储类型
-   - 删除不需要的对象
-   - 使用内网 endpoint 免流量费
+5. **Cost Optimization**
+   - Use lifecycle policies to automatically transition storage tiers
+   - Delete unnecessary objects
+   - Use the internal endpoint to avoid traffic fees
 
-## 常见问题
+## FAQ
 
-### Q: 如何配置生命周期管理？
+### Q: How do I configure lifecycle management?
 
-A: 在 OBS 控制台配置生命周期策略，设置对象在不同时间点的存储类型转换规则。
+A: Configure lifecycle policies in the OBS console to define storage tier transition rules for objects at different time points.
 
-### Q: 支持自定义域名吗？
+### Q: Does it support custom domains?
 
-A: 支持，在 OBS 控制台绑定自定义域名后，使用自定义域名作为 endpoint。
+A: Yes. After binding a custom domain in the OBS console, use the custom domain as the endpoint.
 
-### Q: 如何设置对象的访问权限？
+### Q: How do I set object access permissions?
 
-A: 可以在 OBS 控制台设置存储桶和对象的访问权限，或通过 SDK 设置 ACL。
+A: You can configure bucket and object access permissions in the OBS console, or set ACLs through the SDK.
 
-### Q: 内网访问有什么优势？
+### Q: What are the benefits of internal network access?
 
-A: 内网访问免流量费，延迟更低，但仅限同区域 ECS 访问。
+A: Internal network access is free of traffic fees and offers lower latency, but is limited to same-region ECS access.
 
-### Q: 深度归档存储有什么特点？
+### Q: What are the characteristics of Deep Archive storage?
 
-A: 深度归档存储成本最低，但恢复时间较长（通常需要 12-24 小时），适合极长期保存的数据。
+A: Deep Archive storage has the lowest cost, but restoration takes longer (typically 12 to 24 hours), making it suitable for very long-term retention.
 
-## 相关文档
+## Related Documentation
 
-- [核心存储组件](../richie-component-storage/README.md)
-- [华为云 OBS 官方文档](https://support.huaweicloud.com/obs/)
+- [Core Storage Component (Core SPI)](../atlas-richie-component-storage-core/README.md)
+- [Huawei Cloud OBS Official Documentation](https://support.huaweicloud.com/obs/)
 - [OBS Java SDK](https://support.huaweicloud.com/sdk-java-devg-obs/obs_21_0101.html)
-- [OBS 生命周期管理](https://support.huaweicloud.com/usermanual-obs/obs_03_0049.html)
-
+- [OBS Lifecycle Management](https://support.huaweicloud.com/usermanual-obs/obs_03_0049.html)
+- [Direct Upload Policy (DirectUploadPolicy)](../atlas-richie-component-storage-core/README.md#配置模型)
+- [Storage Engine SPI (StorageEngineProvider)](../atlas-richie-component-storage-core/README.md)

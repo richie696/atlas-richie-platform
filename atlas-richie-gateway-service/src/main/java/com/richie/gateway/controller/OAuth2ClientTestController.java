@@ -5,6 +5,7 @@ import com.richie.component.oauth.core.model.ClientConfig;
 import com.richie.gateway.dto.ThirdPartyClientRegisterDTO;
 import com.richie.gateway.vo.ThirdPartyClientRegisterVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,6 +29,7 @@ import reactor.core.publisher.Mono;
 @Profile("!prod")
 @RequestMapping("/api/oauth2/test/client")
 @RequiredArgsConstructor
+@ConditionalOnBean(ClientRegistry.class)
 public class OAuth2ClientTestController {
 
     private final ClientRegistry clientRegistry;

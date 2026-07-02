@@ -14,7 +14,6 @@ import com.richie.contract.gateway.model.OAuth2Constants;
 import com.richie.context.utils.spring.JwtUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -36,7 +35,6 @@ import java.util.UUID;
  * @since 2026-06-12
  */
 @Slf4j
-@Component
 public class AuthorizationCodeGrant {
 
     private static final SecureRandom RANDOM = new SecureRandom();

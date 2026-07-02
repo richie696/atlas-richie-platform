@@ -315,7 +315,6 @@
 | `atlas-richie-component-tenant` | 多租户 DAO 扩展 | 多租户场景 |
 | `atlas-richie-component-logging` | 统一日志格式、脱敏、traceId 透传 | 所有日志 |
 | `atlas-richie-component-tracing` | OpenTelemetry 接入 | 链路追踪 |
-| `atlas-richie-component-skywalking` | SkyWalking APM 接入 | 应用监控 |
 | `atlas-richie-component-threadpool` | 统一线程池配置、动态调整 | 异步任务 |
 | `atlas-richie-component-web` | 统一异常处理、响应包装、全局过滤器 | Controller 层 |
 | `atlas-richie-component-i18n` | 国际化消息、错误码多语言 | 错误提示 |

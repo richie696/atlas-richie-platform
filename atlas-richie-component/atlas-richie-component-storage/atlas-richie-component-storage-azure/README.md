@@ -1,21 +1,96 @@
 # Richie Component Storage - Azure Blob Storage
 
-## 概述
+## Overview
 
-`richie-component-storage-azure` 是微软 Azure Blob Storage 的实现，基于 Azure Storage SDK for Java 提供完整的 Azure Blob 存储能力。
+`richie-component-storage-azure` is the implementation of Microsoft Azure Blob Storage, built on the Azure Storage SDK for Java to deliver complete Azure Blob storage capabilities.
 
-## 核心特性
+## Core Features
 
-- ✅ **Azure Blob 兼容** - 完整支持 Azure Blob Storage API
-- ✅ **多种访问层** - 支持热、冷、归档访问层
-- ✅ **断点续传** - 支持大文件断点续传
-- ✅ **自动配置** - Spring Boot 自动配置
+- ✅ **Azure Blob Compatible** - Full support for the Azure Blob Storage API
+- ✅ **Multiple Access Tiers** - Hot, Cool, and Archive access tiers
+- ✅ **Resumable Upload** - Resumable upload support for large files
+- ✅ **Dual-Mode Architecture** - Supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to Spring Boot auto-configuration and non-Spring environments
+- ✅ **Auto-Configuration** - Spring Boot auto-configuration
 
-## 快速开始
+## Dual-Mode Architecture
 
-### 1. 添加依赖
+This component supports two initialization modes:
+
+### 1. Auto Mode (Auto-Init, Default)
+
+When `auto-init: true` (the default value), Spring Boot auto-configuration handles:
+
+- Creating the `AzureBlobStorageEngineProvider` Bean based on the `engine: AZURE_BLOB` configuration
+- Calling the Provider's `create(properties)` to create the engine instance
+- Injecting and using the engine through `@Qualifier("objectStorageEngine")`
+
+### 2. Manual Mode
+
+When `auto-init: false`, the engine is discovered and managed by `StorageEngineRegistry` through SPI:
+
+- The Provider is not auto-registered as a Bean, but is discovered by `ServiceLoader`
+- Switch engines at runtime via `registry.switchEngine(StorageEngineEnum.AZURE_BLOB)`
+- Suitable for non-Spring environments or scenarios that require dynamic engine switching
+
+```java
+// Manual mode: switch engines at runtime
+storageEngineRegistry.switchEngine(StorageEngineEnum.AZURE_BLOB);
+UploadResponse response = storageEngineRegistry.getCurrentEngine()
+    .putObject("key", file);
+```
+
+## StorageEngineProvider
+
+Each implementation package provides a `StorageEngineProvider` SPI implementation. `AzureBlobStorageEngineProvider` is responsible for:
+
+| Method | Description |
+|------|------|
+| `supportedEngineType()` | Returns `StorageEngineEnum.AZURE_BLOB` |
+| `create(properties)` | Creates an engine instance from configuration |
+| `validate(properties)` | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
+| `destroy(engine)` | Releases resources |
+
+In auto mode, the Provider is registered as a Bean in `AzureBlobAutoConfiguration`. In manual mode, it is discovered by the Registry through SPI.
+
+## Config Validation
+
+Before the engine is created, the `ConfigValidation` utility validates the required parameters. If validation fails, an `IllegalArgumentException` is thrown:
+
+| Parameter | Validation Rule |
+|------|---------|
+| endpoint | Non-empty |
+| accessKeyId | Non-empty |
+| accessKeySecret | Non-empty |
+| bucketName | Non-empty |
+
+## Direct Upload Policy
+
+The Azure Blob engine supports client-side direct upload to object storage through SAS-signed URLs, reducing server-side traffic pressure:
+
+| Field | Description |
+|------|------|
+| uploadUrl | Presigned upload URL |
+| method | HTTP method (PUT) |
+| headers | Signature headers |
+| expireAt | Policy expiration time |
+| success | Whether the policy is usable |
+
+```java
+DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
+    "uploads/example.jpg", 3600);
+// Returns a SAS-signed PUT URL; the client can upload directly
+```
+
+## Quick Start
+
+### 1. Add Dependency
 
 ```xml
+<dependency>
+    <groupId>com.richie.component</groupId>
+    <artifactId>atlas-richie-component-storage-core</artifactId>
+    <version>${atlas.richie.version}</version>
+</dependency>
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-storage-azure</artifactId>
@@ -23,35 +98,35 @@
 </dependency>
 ```
 
-### 2. 配置
+### 2. Configuration
 
 ```yaml
 platform:
   component:
     storage:
       object:
-        # 存储引擎类型（必填）
+        # Storage engine type (required)
         engine: AZURE_BLOB
-        # Azure Blob访问域名（必填）
-        # 格式：account.blob.core.windows.net
-        # 示例：mystorageaccount.blob.core.windows.net
+        # Azure Blob access endpoint (required)
+        # Format: account.blob.core.windows.net
+        # Example: mystorageaccount.blob.core.windows.net
         endpoint: mystorageaccount.blob.core.windows.net
-        # 区域（必填）
-        # 示例：eastus, westus, westeurope
+        # Region (required)
+        # Example: eastus, westus, westeurope
         region: eastus
-        # 访问密钥ID（Storage Account Name）（必填）
+        # Access Key ID (Storage Account Name) (required)
         accessKeyId: mystorageaccount
-        # 访问密钥（Storage Account Key）（必填）
+        # Secret Access Key (Storage Account Key) (required)
         accessKeySecret: your-storage-account-key
-        # 存储桶名称（Container Name）（必填）
+        # Container name (required)
         bucketName: my-container
-        # 桶内基础路径（可选）
+        # Base path inside the container (optional)
         basePath: /storage
 ```
 
-### 3. 使用
+### 3. Usage
 
-注入 `StorageEngine`（Bean 名称为 `objectStorageEngine`）即可使用：
+Inject `StorageEngine` (the Bean name is `objectStorageEngine`) to start using it:
 
 ```java
 @Service
@@ -64,135 +139,136 @@ public class FileService {
     public void uploadFile(String key, File file) {
         UploadResponse response = storageEngine.putObject(key, file);
         if (response.isSuccess()) {
-            log.info("上传成功: {}", response.getUrl());
+            log.info("Upload successful: {}", response.getUrl());
         }
     }
 }
 ```
 
-## 配置说明
+## Configuration Reference
 
-### ⚠️ 重要配置差异
+### ⚠️ Important Configuration Differences
 
-Azure Blob Storage 与其他云存储的主要配置差异：
+The main configuration differences between Azure Blob Storage and other cloud storage providers:
 
-| 配置项 | Azure Blob | AWS S3 | 阿里云 OSS |
+| Configuration Item | Azure Blob | AWS S3 | Alibaba Cloud OSS |
 |--------|-----------|--------|-----------|
-| **engine 值** | `AZURE_BLOB` | `AWS_S3` | `ALIYUN_OSS` |
-| **endpoint 格式** | `account.blob.core.windows.net` | `s3.region.amazonaws.com` | `oss-cn-region.aliyuncs.com` |
-| **region 格式** | Azure 区域代码（如 `eastus`） | AWS 区域代码（如 `us-east-1`） | 阿里云区域代码（如 `cn-hangzhou`） |
-| **访问密钥名称** | Storage Account Name / Storage Account Key | Access Key ID / Secret Access Key | AccessKey ID / AccessKey Secret |
-| **存储桶名称** | Container Name | Bucket Name | Bucket Name |
-| **访问层** | 热、冷、归档 | 存储类型（15+种） | 存储类型（4种） |
-| **连接字符串** | ✅ 支持 | ❌ 不支持 | ❌ 不支持 |
+| **engine value** | `AZURE_BLOB` | `AWS_S3` | `ALIYUN_OSS` |
+| **endpoint format** | `account.blob.core.windows.net` | `s3.region.amazonaws.com` | `oss-cn-region.aliyuncs.com` |
+| **region format** | Azure region code (e.g., `eastus`) | AWS region code (e.g., `us-east-1`) | Alibaba Cloud region code (e.g., `cn-hangzhou`) |
+| **Access key names** | Storage Account Name / Storage Account Key | Access Key ID / Secret Access Key | AccessKey ID / AccessKey Secret |
+| **Bucket name** | Container Name | Bucket Name | Bucket Name |
+| **Access tiers** | Hot, Cool, Archive | Storage tiers (15+) | Storage tiers (4) |
+| **Connection string** | ✅ Supported | ❌ Not supported | ❌ Not supported |
 
-### endpoint 配置
+### endpoint Configuration
 
-Azure Blob Storage 的 endpoint 格式：
+Azure Blob Storage endpoint format:
 
-- **标准格式**: `account.blob.core.windows.net`
-  - 示例：`mystorageaccount.blob.core.windows.net`
-  - `account` 为存储账户名称
+- **Standard format**: `account.blob.core.windows.net`
+  - Example: `mystorageaccount.blob.core.windows.net`
+  - `account` is the storage account name
 
-- **自定义域名**: 可在 Azure 门户配置自定义域名
+- **Custom domain**: You can configure a custom domain in the Azure portal
 
-### region 配置
+### region Configuration
 
-Azure Blob Storage 支持的区域：
+Regions supported by Azure Blob Storage:
 
-| 区域 | 代码 |
+| Region | Code |
 |------|------|
-| 美国东部 | `eastus` |
-| 美国西部 | `westus` |
-| 美国中部 | `centralus` |
-| 欧洲西部 | `westeurope` |
-| 欧洲北部 | `northeurope` |
-| 亚太东部 | `eastasia` |
-| 亚太东南部 | `southeastasia` |
-| 中国东部 | `chinaeast` |
-| 中国北部 | `chinanorth` |
+| East US | `eastus` |
+| West US | `westus` |
+| Central US | `centralus` |
+| West Europe | `westeurope` |
+| North Europe | `northeurope` |
+| East Asia | `eastasia` |
+| Southeast Asia | `southeastasia` |
+| China East | `chinaeast` |
+| China North | `chinanorth` |
 
-### 访问凭证
+### Access Credentials
 
-Azure Blob Storage 使用存储账户名称和存储账户密钥进行身份验证：
+Azure Blob Storage uses the storage account name and storage account key for authentication:
 
-1. 登录 Azure 门户
-2. 创建存储账户
-3. 在"访问密钥"中获取存储账户名称和密钥
+1. Sign in to the Azure portal
+2. Create a storage account
+3. Retrieve the storage account name and key from "Access Keys"
 
-> **安全提示**: 
-> - 使用共享访问签名（SAS）替代存储账户密钥（如可能）
-> - 不要将访问密钥提交到代码仓库
-> - 使用 Azure Key Vault 管理密钥
+> **Security Tips**: 
+> - Use Shared Access Signatures (SAS) instead of storage account keys when possible
+> - Do not commit access keys to source control
+> - Use Azure Key Vault to manage keys
 
-### 访问层
+### Access Tiers
 
-Azure Blob Storage 支持三种访问层：
+Azure Blob Storage supports three access tiers:
 
-| 访问层 | 说明 | 适用场景 |
+| Access Tier | Description | Suitable Scenario |
 |--------|------|---------|
-| **热** | 频繁访问的数据 | 活跃数据 |
-| **冷** | 不经常访问的数据 | 备份数据 |
-| **归档** | 很少访问的数据 | 长期归档 |
+| **Hot** | Frequently accessed data | Active data |
+| **Cool** | Infrequently accessed data | Backup data |
+| **Archive** | Rarely accessed data | Long-term archiving |
 
-> **注意**: Azure Blob Storage 的访问层概念与其他云存储的存储类型类似，但配置方式不同。
+> **Note**: The access tier concept in Azure Blob Storage is similar to storage tiers in other cloud storage services, but is configured differently.
 
-## 功能特性
+## Feature Details
 
-### 1. 连接字符串支持
+### 1. Connection String Support
 
-Azure Blob Storage 支持使用连接字符串进行身份验证（本组件暂未实现，可通过配置 accessKeyId 和 accessKeySecret 实现）。
+Azure Blob Storage supports authentication using a connection string. This component authenticates through accessKeyId (storage account name) and accessKeySecret (storage account key). The connection string approach can be used directly through the Azure SDK.
 
-### 2. 访问层自动设置
+### 2. Automatic Access Tier Setting
 
-上传文件时，可以根据配置自动设置访问层（需在 Azure 门户或通过 SDK 配置生命周期策略）。
+When uploading files, the access tier can be set automatically based on configuration (lifecycle policies must be configured in the Azure portal or through the SDK).
 
-### 3. 共享访问签名（SAS）
+### 3. Shared Access Signature (SAS)
 
-Azure Blob Storage 支持使用 SAS 进行临时访问（本组件暂未实现）。
+Azure Blob Storage supports using SAS (Shared Access Signature) for temporary authorized access, which is suitable for generating temporary URLs for direct client-side upload or download.
 
-## 最佳实践
+## Best Practices
 
-1. **区域选择**
-   - 选择距离用户最近的区域，降低延迟
-   - 考虑数据合规要求
+1. **Region Selection**
+   - Choose the region closest to your users to minimize latency
+   - Consider data compliance requirements
 
-2. **访问层选择**
-   - 频繁访问：热访问层
-   - 偶尔访问：冷访问层
-   - 长期归档：归档访问层
+2. **Access Tier Selection**
+   - Frequent access: Hot tier
+   - Occasional access: Cool tier
+   - Long-term archiving: Archive tier
 
-3. **访问凭证管理**
-   - 使用 SAS 替代存储账户密钥（如可能）
-   - 使用 Azure Key Vault 管理密钥
-   - 定期轮换访问密钥
+3. **Access Credential Management**
+   - Use SAS instead of storage account keys when possible
+   - Use Azure Key Vault to manage keys
+   - Rotate access keys regularly
 
-4. **成本优化**
-   - 使用生命周期策略自动转换访问层
-   - 删除不需要的 Blob
-   - 使用冷或归档访问层存储不常访问的数据
+4. **Cost Optimization**
+   - Use lifecycle policies to automatically transition access tiers
+   - Delete unnecessary blobs
+   - Use the Cool or Archive tier to store infrequently accessed data
 
-## 常见问题
+## FAQ
 
-### Q: Azure Blob Storage 与 AWS S3 有什么区别？
+### Q: What is the difference between Azure Blob Storage and AWS S3?
 
-A: Azure Blob Storage 是 Azure 的对象存储服务，API 与 S3 不同，但功能类似。本组件提供了统一的接口，屏蔽了底层差异。
+A: Azure Blob Storage is Azure's object storage service. Its API differs from S3, but the features are similar. This component provides a unified interface that hides the underlying differences.
 
-### Q: 如何配置访问层？
+### Q: How do I configure access tiers?
 
-A: 可以在 Azure 门户设置容器的默认访问层，或通过生命周期策略自动转换。
+A: You can set the default access tier for a container in the Azure portal, or use lifecycle policies to automatically transition access tiers.
 
-### Q: 支持自定义域名吗？
+### Q: Does it support custom domains?
 
-A: 支持，在 Azure 门户配置自定义域名后，使用自定义域名作为 endpoint。
+A: Yes. After configuring a custom domain in the Azure portal, use the custom domain as the endpoint.
 
-### Q: 如何从 S3 迁移到 Azure Blob？
+### Q: How do I migrate from S3 to Azure Blob?
 
-A: 由于 API 不同，需要修改代码。但本组件提供了统一的接口，只需修改配置即可。
+A: Because the APIs differ, code changes are required. However, this component provides a unified interface, so you only need to change the configuration.
 
-## 相关文档
+## Related Documentation
 
-- [核心存储组件](../richie-component-storage/README.md)
-- [Azure Blob Storage 官方文档](https://docs.microsoft.com/azure/storage/blobs/)
+- [Core Storage Component (Core SPI)](../atlas-richie-component-storage-core/README.md)
+- [Azure Blob Storage Official Documentation](https://docs.microsoft.com/azure/storage/blobs/)
 - [Azure Storage SDK for Java](https://github.com/Azure/azure-sdk-for-java/tree/main/sdk/storage)
-
+- [Direct Upload Policy (DirectUploadPolicy)](../atlas-richie-component-storage-core/README.md#配置模型)
+- [Storage Engine SPI (StorageEngineProvider)](../atlas-richie-component-storage-core/README.md)

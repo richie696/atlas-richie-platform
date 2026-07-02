@@ -279,9 +279,9 @@ graph TB
 | `richie-component-web`        | Web 组件，CORS、国际化、异常处理             | [README](./richie-component-web/README.md)        |
 | `richie-component-i18n`       | 国际化组件，资源文件和字典管理                  | [README](./richie-component-i18n/README.md)       |
 | `richie-component-logging`    | 日志组件，访问日志和方法追踪                   | [README](./richie-component-logging/README.md)    |
-| `richie-component-threadpool` | 线程池组件，动态线程池管理                    | [README](./richie-component-threadpool/README.md) |
+| `richie-component-concurrency` | 并发编程组件，结构化并发 + 虚拟线程            | [README](./richie-component-concurrency/README.md) |
 | `richie-component-tracing`    | 追踪组件，OpenTelemetry 集成            | [README](./richie-component-tracing/README.md)    |
-| `richie-component-skywalking` | APM 组件，SkyWalking 集成             | [README](./richie-component-skywalking/README.md) |
+
 
 ### 业务能力组件
 
@@ -582,9 +582,8 @@ public class Application {
 - [Web 组件](./richie-component-web/README.md) - CORS、国际化、异常处理
 - [国际化组件](./richie-component-i18n/README.md) - 资源文件和字典管理
 - [日志组件](./richie-component-logging/README.md) - 访问日志和方法追踪
-- [线程池组件](./richie-component-threadpool/README.md) - 动态线程池管理
+- [并发编程组件](./richie-component-concurrency/README.md) - 结构化并发 + 虚拟线程
 - [追踪组件](./richie-component-tracing/README.md) - OpenTelemetry 集成
-- [APM 组件](./richie-component-skywalking/README.md) - SkyWalking 集成
 
 ### 存储组件文档
 

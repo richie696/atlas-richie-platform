@@ -1,89 +1,89 @@
 # Richie Component Storage
 
-## 概述
+## Overview
 
-`richie-component-storage` 是Richie平台统一的对象存储抽象组件，提供了统一的存储接口，支持多种存储后端（本地、云存储、FTP/SFTP/SMB等）。
+`richie-component-storage` is the unified object storage abstraction component of the Richie platform. It provides a unified storage interface and supports multiple storage backends (local, cloud storage, FTP/SFTP/SMB, etc.).
 
-## 线程安全与客户端生命周期
+## Thread Safety and Client Lifecycle
 
-> **本组件是线程安全的，`StorageEngine` 应作为单例使用。**
+> **This component is thread-safe, and `StorageEngine` should be used as a singleton.**
 
-### 设计原则
+### Design Principles
 
-- `StorageEngine` 实现类注册为 Spring `@Service` Bean，默认即为**单例**，所有线程共享同一实例。
-- 各存储 SDK 客户端在组件内部均以 **Spring 单例 Bean** 方式注册，由容器统一管理生命周期。
-- `StorageEngine` 本身是**无状态**的，所有操作所需的配置通过构造函数注入，方法调用不修改任何共享可变状态，天然支持多线程并发。
+- `StorageEngine` implementation classes are registered as Spring `@Service` beans, which are **singletons** by default, and all threads share the same instance.
+- Each storage SDK client is registered within the component as a **Spring singleton bean**, and its lifecycle is managed uniformly by the container.
+- `StorageEngine` itself is **stateless**. All configuration required for operations is injected through the constructor, and method calls do not modify any shared mutable state. It naturally supports multi-threaded concurrency.
 
-### 各引擎客户端线程安全背书
+### Thread Safety Endorsement for Each Engine Client
 
-#### 对象存储
+#### Object Storage
 
-| 存储引擎       | 客户端类型                 | 官方是否声明线程安全 | 推荐模式              |
-|------------|-----------------------|:----------:|-------------------|
-| 阿里云 OSS    | `OSSClient`           |    ✅ 是     | 单例，复用连接池          |
-| 腾讯云 COS    | `COSClient`           |    ✅ 是     | 单例，内部维护连接池        |
-| 华为云 OBS    | `ObsClient`           |    ✅ 是     | 单例，可在并发场景下使用      |
-| 金山云 KS3    | `Ks3Client`           |    ✅ 是     | 单例，支持并发使用         |
-| AWS S3     | `S3Client`            |    ✅ 是     | 单例，内部连接池          |
-| MinIO      | `MinioAsyncClient`    |    ✅ 是     | 单例，Okhttp 线程安全    |
-| 火山引擎 TOS   | `TOSV2`               |    ✅ 是     | 单例，Transport 线程安全 |
-| Azure Blob | `BlobContainerClient` |    ✅ 是     | 单例，微软官方保证         |
+| Storage Engine | Client Type           | Officially Declared Thread-Safe | Recommended Pattern                       |
+|----------------|-----------------------|:-------------------------------:|-------------------------------------------|
+| Aliyun OSS     | `OSSClient`           |               Yes               | Singleton, reuse connection pool          |
+| Tencent COS    | `COSClient`           |               Yes               | Singleton, internal connection pool       |
+| Huawei OBS     | `ObsClient`           |               Yes               | Singleton, usable in concurrent scenarios |
+| Kingsoft KS3   | `Ks3Client`           |               Yes               | Singleton, supports concurrent use        |
+| AWS S3         | `S3Client`            |               Yes               | Singleton, internal connection pool       |
+| MinIO          | `MinioAsyncClient`    |               Yes               | Singleton, Okhttp is thread-safe          |
+| Volcano TOS    | `TOSV2`               |               Yes               | Singleton, Transport is thread-safe       |
+| Azure Blob     | `BlobContainerClient` |               Yes               | Singleton, guaranteed by Microsoft        |
 
-#### 文件传输 / 网络存储
+#### File Transfer / Network Storage
 
-| 存储引擎 | 客户端/资源类型                        | 线程安全机制 | 推荐模式                                       |
-|------|---------------------------------|:------:|--------------------------------------------|
-| FTP  | `FtpClientPool`                 |  ✅ 是   | 单例连接池（Apache Commons Pool），池内借用/归还天然线程安全   |
-| SFTP | `SshClient` + `SftpSessionPool` |  ✅ 是   | `SshClient` 单例 + 会话池，Apache MINA SSHD 线程安全 |
-| SMB  | `CIFSContext`                   |  ✅ 是   | 单例上下文，jcifs-ng `BaseContext` 线程安全          |
-| 本地   | 无客户端（直接文件 I/O）                  |  ✅ 是   | `LocalStorageEngine` 无状态，直接操作本地文件系统        |
+| Storage Engine | Client/Resource Type            | Thread-Safe Mechanism | Recommended Pattern                                                           |
+|----------------|---------------------------------|:---------------------:|-------------------------------------------------------------------------------|
+| FTP            | `FtpClientPool`                 |          Yes          | Singleton connection pool (Apache Commons Pool), borrow/return is thread-safe |
+| SFTP           | `SshClient` + `SftpSessionPool` |          Yes          | `SshClient` singleton + session pool, Apache MINA SSHD is thread-safe         |
+| SMB            | `CIFSContext`                   |          Yes          | Singleton context, jcifs-ng `BaseContext` is thread-safe                      |
+| Local          | No client (direct file I/O)     |          Yes          | `LocalStorageEngine` is stateless, directly operates the local file system    |
 
-### 使用建议
+### Usage Recommendations
 
-1. **自动模式下不要手动创建 `StorageEngine` 实例**，直接通过 Spring 依赖注入获取即可（手动模式请参考“双模式架构”章节）：
+1. **Do not manually create `StorageEngine` instances in automatic mode**. Obtain it directly through Spring dependency injection (for manual mode, please refer to the "Dual-Mode Architecture" section):
    ```java
    @Service
    @RequiredArgsConstructor
    public class FileService {
-       private final StorageEngine storageEngine; // 单例注入，线程安全
+       private final StorageEngine storageEngine; // Singleton injection, thread-safe
    }
    ```
-2. **不要在每次操作后关闭/销毁客户端**。各 SDK 客户端内部维护了 HTTP 连接池，频繁创建和销毁会导致连接池资源泄漏（如 `ClientBuilderConfiguration` 残留），长期运行后可能造成内存膨胀和文件描述符耗尽。
-3. **不要在业务代码中自行创建底层 SDK 客户端**（如 `new OSSClientBuilder().build(...)`），应统一由组件管理，避免与组件内部的单例客户端产生冲突。
+2. **Do not close/destroy clients after each operation**. Each SDK client maintains an internal HTTP connection pool. Frequent creation and destruction will lead to connection pool resource leaks (e.g., `ClientBuilderConfiguration` residue), which may cause memory inflation and file descriptor exhaustion after long-term operation.
+3. **Do not create underlying SDK clients yourself in business code** (e.g., `new OSSClientBuilder().build(...)`). They should be managed uniformly by the component to avoid conflicts with the component's internal singleton clients.
 
-### 反面示例（请勿使用）
+### Negative Examples (Do Not Use)
 
 ```java
-// ❌ 错误：每次请求创建新的 StorageEngine 或 SDK 客户端
+// Wrong: Create a new StorageEngine or SDK client for every request
 public void upload(File file) {
     OSSClient client = new OSSClientBuilder().build(endpoint, credentials);
-    // ... 使用 client
-    client.shutdown(); // 频繁创建/销毁，导致资源泄漏
+    // ... use client
+    client.shutdown(); // Frequent creation/destruction leads to resource leaks
 }
 
-// ✅ 正确：通过 Spring 注入单例 StorageEngine
+// Correct: Inject the singleton StorageEngine through Spring
 @Autowired
 private StorageEngine storageEngine;
 
 public void upload(File file) {
-    storageEngine.putObject(key, file); // 线程安全，连接池复用
+    storageEngine.putObject(key, file); // Thread-safe, connection pool reuse
 }
 ```
 
-## 核心特性
+## Core Features
 
-- ✅ **统一存储接口** - 提供 `StorageEngine` 接口，屏蔽底层存储差异
-- ✅ **多存储后端支持** - 支持本地、云存储（S3/OSS/COS/OBS等）、FTP/SFTP/SMB
-- ✅ **文件上传/下载** - 支持文件、流、JSON数据的上传和下载
-- ✅ **图片处理** - 支持图片上传时的格式转换和压缩
-- ✅ **断点续传** - 支持大文件的断点续传下载
-- ✅ **双模式架构** - 自动模式开箱即用，手动模式支持运行时热切换
-- ✅ **多引擎并存** - 对象存储 + FTP/SFTP/SMB/本地可同时运行，通过 `@Qualifier` 精确选择
-- ✅ **JDK 动态代理** - 每种引擎类型独立 Proxy，业务代码注入无感知
+- **Unified Storage Interface** - Provides the `StorageEngine` interface that shields underlying storage differences
+- **Multiple Storage Backend Support** - Supports local storage, cloud storage (S3/OSS/COS/OBS, etc.), and FTP/SFTP/SMB
+- **File Upload/Download** - Supports uploading and downloading files, streams, and JSON data
+- **Image Processing** - Supports format conversion and compression when uploading images
+- **Resumable Transfer** - Supports resumable download of large files
+- **Dual-Mode Architecture** - Automatic mode works out of the box; manual mode supports hot switching at runtime
+- **Multi-Engine Coexistence** - Object storage + FTP/SFTP/SMB/Local can run simultaneously, with precise selection via `@Qualifier`
+- **JDK Dynamic Proxy** - Independent Proxy for each engine type, transparent to business code injection
 
-## 快速开始
+## Quick Start
 
-### 1. 添加依赖
+### 1. Add Dependency
 
 ```xml
 <dependency>
@@ -93,34 +93,34 @@ public void upload(File file) {
 </dependency>
 ```
 
-### 2. 选择存储实现
+### 2. Select Storage Implementation
 
-根据需求选择对应的存储实现模块：
+Choose the corresponding storage implementation module based on your needs:
 
-- **本地存储**: `richie-component-storage-local`
+- **Local Storage**: `richie-component-storage-local`
 - **AWS S3**: `richie-component-storage-s3`
-- **阿里云 OSS**: `richie-component-storage-oss`
-- **腾讯云 COS**: `richie-component-storage-cos`
-- **华为云 OBS**: `richie-component-storage-obs`
+- **Aliyun OSS**: `richie-component-storage-oss`
+- **Tencent COS**: `richie-component-storage-cos`
+- **Huawei OBS**: `richie-component-storage-obs`
 - **MinIO**: `richie-component-storage-minio`
-- **金山云 KS3**: `richie-component-storage-ks3`
-- **火山引擎 TOS**: `richie-component-storage-tos`
+- **Kingsoft KS3**: `richie-component-storage-ks3`
+- **Volcano TOS**: `richie-component-storage-tos`
 - **Azure Blob**: `richie-component-storage-azure`
 - **SFTP**: `richie-component-storage-sftp`
 - **SMB**: `richie-component-storage-smb`
 
-### 3. 配置存储
+### 3. Configure Storage
 
 ```yaml
 platform:
   component:
     storage:
-      # 本地存储配置
+      # Local storage configuration
       local:
         path: ./storage/
-      # 对象存储配置
+      # Object storage configuration
       object:
-        engine: minio  # 或 aws_s3, aliyun_oss, tencent_cos, huawei_obs, ksyun_ks3, volcengine_tos, azure_blob
+        engine: minio  # or aws_s3, aliyun_oss, tencent_cos, huawei_obs, ksyun_ks3, volcengine_tos, azure_blob
         endpoint: http://localhost:9000
         region: us-east-1
         accessKeyId: your-access-key
@@ -129,7 +129,7 @@ platform:
         basePath: /files/
 ```
 
-### 4. 使用示例
+### 4. Usage Example
 
 ```java
 @Service
@@ -138,31 +138,31 @@ public class FileService {
     
     private final StorageEngine storageEngine;
     
-    // 上传文件
+    // Upload file
     public void uploadFile(String key, File file) {
         UploadResponse response = storageEngine.putObject(key, file);
         if (response.isSuccess()) {
-            log.info("上传成功: {}", response.getUrl());
+            log.info("Upload successful: {}", response.getUrl());
         }
     }
     
-    // 下载文件
+    // Download file
     public void downloadFile(String key, File targetPath) {
         DownloadResponse<byte[]> response = storageEngine.getObject(key, targetPath, false);
         if (response.isSuccess()) {
-            log.info("下载成功: {}", targetPath);
+            log.info("Download successful: {}", targetPath);
         }
     }
     
-    // 上传JSON数据
+    // Upload JSON data
     public void uploadData(String key, Map<String, Object> data) {
         UploadResponse response = storageEngine.putData(key, data);
         if (response.isSuccess()) {
-            log.info("数据上传成功: {}", key);
+            log.info("Data upload successful: {}", key);
         }
     }
     
-    // 下载JSON数据
+    // Download JSON data
     public <T> T downloadData(String key, TypeReference<T> typeRef) {
         DownloadResponse<T> response = storageEngine.getData(key, typeRef);
         if (response.isSuccess()) {
@@ -173,69 +173,69 @@ public class FileService {
 }
 ```
 
-## 核心接口
+## Core Interfaces
 
 ### StorageEngine
 
 ```java
 public interface StorageEngine {
-    // 上传文件
+    // Upload file
     UploadResponse putObject(String key, File file);
     UploadResponse putObject(String key, InputStream inputStream);
     
-    // 上传数据（JSON）
+    // Upload data (JSON)
     UploadResponse putData(String key, Object object);
     UploadResponse putData(String key, Map<?, ?> collection);
     UploadResponse putData(String key, Collection<?> collection);
     
-    // 上传图片（支持处理）
+    // Upload image (supports processing)
     UploadResponse putImage(String key, File file, ImageOptions options);
     UploadResponse putImage(String key, InputStream inputStream, ImageOptions options);
     
-    // 下载文件
+    // Download file
     DownloadResponse<byte[]> getObject(String key, File targetPath, boolean returnData);
     DownloadResponse<byte[]> getResumableObject(String key, String targetPath, boolean returnData);
     
-    // 下载数据（JSON）
+    // Download data (JSON)
     <T> DownloadResponse<T> getData(String key, TypeReference<T> typeReference);
     
-    // 检查文件是否存在
+    // Check if file exists
     boolean existsObject(String key);
 }
 ```
 
-## 配置说明
+## Configuration Description
 
-### 本地存储配置
+### Local Storage Configuration
 
 ```yaml
 platform:
   component:
     storage:
       local:
-        path: ./storage/  # 存储路径
+        path: ./storage/  # Storage path
         cache:
-          contentMaxSize: 1048576  # 内容最大大小（字节）
+          contentMaxSize: 1048576  # Maximum content size (bytes)
 ```
 
-### 对象存储配置
+### Object Storage Configuration
 
 ```yaml
 platform:
   component:
     storage:
       object:
-        engine: minio  # 存储引擎
-        storageType: STANDARD  # 存储类型（STANDARD, IA, ARCHIVE等）
-        endpoint: http://localhost:9000  # 访问端点
-        region: us-east-1  # 区域
-        accessKeyId: your-access-key  # 访问密钥ID
-        accessKeySecret: your-secret-key  # 访问密钥
-        bucketName: my-bucket  # 存储桶名称
-        basePath: /files/  # 基础路径
+        engine: minio  # Storage engine
+        storageType: STANDARD  # Storage type (STANDARD, IA, ARCHIVE, etc.)
+        endpoint: http://localhost:9000  # Access endpoint
+        region: us-east-1  # Region
+        accessKeyId: your-access-key  # Access key ID
+        accessKeySecret: your-secret-key  # Access key
+        bucketName: my-bucket  # Bucket name
+        basePath: /files/  # Base path
 ```
 
-### FTP/SFTP/SMB 配置
+### FTP/SFTP/SMB Configuration
 
 ```yaml
 platform:
@@ -264,37 +264,37 @@ platform:
         basePath: /storage/
 ```
 
-## 双模式架构
+## Dual-Mode Architecture
 
-本组件支持两种初始化模式，通过 `auto-init` 属性控制：
+This component supports two initialization modes, controlled by the `auto-init` property:
 
-| 模式 | 配置值 | 适用场景 | 引擎创建方式 |
-|------|--------|---------|-------------|
-| **自动模式**（默认） | `auto-init: true`（或不配置） | 配置固定写在 YAML/配置文件，启动后无需切换 | YAML + Spring Boot 自动注册到 `Registry` |
-| **手动模式** | `auto-init: false` | 配置来自数据库/Nacos/管理后台，**需要运行时热切换** | 业务代码手工调用 `Registry.switchEngine()` |
+| Mode                         | Configuration Value                   | Applicable Scenario                                                                          | Engine Creation Method                                 |
+|------------------------------|---------------------------------------|----------------------------------------------------------------------------------------------|--------------------------------------------------------|
+| **Automatic Mode** (default) | `auto-init: true` (or not configured) | Configuration is fixed in YAML/config file, no need to switch after startup                  | YAML + Spring Boot auto-registration to `Registry`     |
+| **Manual Mode**              | `auto-init: false`                    | Configuration comes from database/Nacos/admin console, **requires hot switching at runtime** | Business code manually calls `Registry.switchEngine()` |
 
-### 使用场景对照
+### Use Case Comparison
 
-| 场景 | 推荐模式 | 理由 |
-|------|---------|------|
-| 中小型项目，存储后端写死（如只用 MinIO） | **自动模式** | YAML 配一次即用，零业务代码 |
-| 多环境差异（dev/prod 不同后端） | **自动模式** | profile + YAML 切换，无需改代码 |
-| 配置存数据库，租户隔离（每个租户独立存储） | **手动模式** | 启动后根据租户配置动态创建引擎 |
-| 运维后台切换存储后端（不停机迁移） | **手动模式** | `switchEngine` 热切换，连接池自动重建 |
-| 多引擎并存（对象存储 + FTP + SFTP 同时使用） | **手动模式** | 手工注册多个引擎到 Registry |
-| 灰度切换（如 S3 → MinIO 平滑迁移） | **手动模式** | 先注册新引擎，`switchEngine` 原子切换 |
+| Scenario                                                                                 | Recommended Mode   | Reason                                                                   |
+|------------------------------------------------------------------------------------------|--------------------|--------------------------------------------------------------------------|
+| Small/medium projects with fixed storage backend (e.g., MinIO only)                      | **Automatic Mode** | Configure YAML once and use it, zero business code                       |
+| Multi-environment differences (different backends for dev/prod)                          | **Automatic Mode** | profile + YAML switching, no code changes needed                         |
+| Configuration stored in database, tenant isolation (each tenant has independent storage) | **Manual Mode**    | Dynamically create engines after startup based on tenant configuration   |
+| Ops console switches storage backend (migration without downtime)                        | **Manual Mode**    | `switchEngine` hot switching, connection pool auto-rebuilt               |
+| Multi-engine coexistence (object storage + FTP + SFTP used simultaneously)               | **Manual Mode**    | Manually register multiple engines to Registry                           |
+| Grayscale switching (e.g., S3 → MinIO smooth migration)                                  | **Manual Mode**    | Register the new engine first, then atomically switch via `switchEngine` |
 
-> **两种模式互斥，不可在同一系统中同时使用。** 自动模式下禁止调用 `switchEngine()`；手动模式下禁止配置引擎相关 YAML。
+> **The two modes are mutually exclusive and cannot be used simultaneously in the same system.** In automatic mode, calling `switchEngine()` is prohibited; in manual mode, configuring engine-related YAML is prohibited.
 
-### 自动模式（默认）
+### Automatic Mode (Default)
 
-即前文“快速开始”中的用法，通过 YAML 配置 + Spring Boot 自动配置完成引擎注册，无需额外代码。
+That is, the usage in the "Quick Start" section above. Engine registration is completed through YAML configuration + Spring Boot auto-configuration, no additional code required.
 
-**架构图**：
+**Architecture Diagram**:
 
 ```mermaid
 graph LR
-    YAML["YAML 配置<br/>platform.component.storage.*"]
+    YAML["YAML Configuration<br/>platform.component.storage.*"]
     SP["StorageProperties<br/>@ConfigurationProperties"]
     AC["StorageEngineAutoConfiguration"]
     AR["ApplicationRunner<br/>autoBindEngineToProxy"]
@@ -305,15 +305,15 @@ graph LR
     LB["@Bean localStorageEngine"]
     REG["StorageEngineRegistry"]
     PROXY["StorageEngineProxyFactoryBean<br/>@Primary"]
-    APP["业务代码<br/>@Autowired StorageEngine"]
+    APP["Business Code<br/>@Autowired StorageEngine"]
 
     YAML --> SP --> AC
-    AC -.创建.-> OB
-    AC -.创建.-> FB
-    AC -.创建.-> SB
-    AC -.创建.-> MB
-    AC -.创建.-> LB
-    AR -->|读取所有引擎 Bean| OB & FB & SB & MB & LB
+    AC -.Create.-> OB
+    AC -.Create.-> FB
+    AC -.Create.-> SB
+    AC -.Create.-> MB
+    AC -.Create.-> LB
+    AR -->|Read all engine Beans| OB & FB & SB & MB & LB
     AR -->|registerInitialEngine| REG
     AR -->|setDelegate| PROXY
     REG -->|getDefaultProxy| APP
@@ -332,73 +332,73 @@ graph LR
     class APP businessLayer
 ```
 
-**启动流程图**：
+**Startup Flow Diagram**:
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Boot as Spring Boot 启动
+    participant Boot as Spring Boot Startup
     participant AC as AutoConfiguration
     participant Reg as StorageEngineRegistry
     participant AR as ApplicationRunner
-    participant Eng as 引擎 Bean
+    participant Eng as Engine Bean
     participant Proxy as ProxyFactoryBean
-    participant App as 业务代码
+    participant App as Business Code
 
-    Boot->>AC: 加载 StorageEngineAutoConfiguration
+    Boot->>AC: Load StorageEngineAutoConfiguration
     AC->>Reg: @Bean storageEngineRegistry()
-    AC->>Eng: @Bean objectStorageEngine...（依 engine 配置）
-    Boot->>AR: 启动完成，执行 autoBindEngineToProxy
+    AC->>Eng: @Bean objectStorageEngine... (depending on engine config)
+    Boot->>AR: Startup complete, execute autoBindEngineToProxy
 
     rect rgb(187, 247, 208)
-    Note over Eng: 引擎 Bean
-    AR->>Eng: 按优先级 (object>ftp>sftp>smb>local) 查找
+    Note over Eng: Engine Bean
+    AR->>Eng: Find by priority (object>ftp>sftp>smb>local)
     end
 
-    alt 找到引擎
+    alt Engine found
         rect rgb(233, 213, 255)
         Note over Reg,Proxy: Registry + Proxy
         AR->>Reg: registerInitialEngine(type, id, engine)
         AR->>Proxy: setDelegate(defaultEngine)
-        Note over Reg,Proxy: 日志：actor=auto-init, reason=startup
+        Note over Reg,Proxy: Log: actor=auto-init, reason=startup
         end
-    else 未找到
-        AR-->>Boot: log.warn 未找到引擎 Bean
+    else Not found
+        AR-->>Boot: log.warn No engine Bean found
     end
 
     rect rgb(251, 207, 232)
-    Note over App: 业务调用
-    App->>Proxy: @Autowired 注入代理
-    Proxy->>Eng: 委托方法调用
+    Note over App: Business Call
+    App->>Proxy: @Autowired inject proxy
+    Proxy->>Eng: Delegate method call
     end
 ```
 
-### 手动模式
+### Manual Mode
 
-业务代码完全控制引擎生命周期。`auto-init=false` 关闭自动注册，`StorageEngineRegistry` 预创建空 Proxy 占位，业务代码在合适的时机（如启动 `@PostConstruct`、租户登录、管理员操作）调用 `switchEngine` 创建/切换引擎。
+Business code fully controls the engine lifecycle. `auto-init=false` disables automatic registration, and `StorageEngineRegistry` pre-creates empty Proxy placeholders. Business code creates/switches engines by calling `switchEngine` at the appropriate time (e.g., startup `@PostConstruct`, tenant login, admin operation).
 
-**架构图**：
+**Architecture Diagram**:
 
 ```mermaid
 graph LR
-    SP["StorageProperties<br/>(autoInit=false, 配置占位)"]
+    SP["StorageProperties<br/>(autoInit=false, config placeholder)"]
     AC["StorageEngineAutoConfiguration"]
     Qual["qualifier-named Bean<br/>objectStorageEngine<br/>ftpStorageEngine<br/>sftpStorageEngine<br/>smbStorageEngine<br/>localStorageEngine"]
     DefaultB["@Bean defaultStorageEngine<br/>@Primary"]
-    Reg["StorageEngineRegistry<br/>(预创建 12 个 Proxy)"]
+    Reg["StorageEngineRegistry<br/>(pre-create 12 Proxies)"]
     Proxy["StorageEngineProxyFactoryBean"]
-    Provider["StorageEngineProvider<br/>(SPI, SpringContextHolder 动态查找)"]
-    Biz["业务代码<br/>StorageInitService<br/>TenantConfigService<br/>AdminController"]
-    App["业务代码<br/>@Autowired StorageEngine"]
+    Provider["StorageEngineProvider<br/>(SPI, SpringContextHolder dynamic lookup)"]
+    Biz["Business Code<br/>StorageInitService<br/>TenantConfigService<br/>AdminController"]
+    App["Business Code<br/>@Autowired StorageEngine"]
 
     SP --> AC
-    AC -.创建空 Proxy.-> Qual
-    AC -.创建空 Proxy.-> DefaultB
-    AC -.创建.-> Reg
-    AC -.创建.-> Proxy
+    AC -.Create empty Proxy.-> Qual
+    AC -.Create empty Proxy.-> DefaultB
+    AC -.Create.-> Reg
+    AC -.Create.-> Proxy
     Provider -.supports/validate/create/destroy.-> Reg
     Biz -->|switchEngine<br/>refreshEngine| Reg
-    Biz -.读取数据库/接口.-> Reg
+    Biz -.Read database/API.-> Reg
     Reg -->|getDefaultProxy| DefaultB
     Qual & DefaultB --> App
     Proxy --> App
@@ -418,66 +418,66 @@ graph LR
     class Provider spiLayer
 ```
 
-**运行时流程图（启动 + 切换）**：
+**Runtime Flow Diagram (Startup + Switching)**:
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Boot as Spring Boot 启动
+    participant Boot as Spring Boot Startup
     participant AC as AutoConfiguration
     participant Reg as Registry
     participant Qual as qualifier Bean
     participant DefB as default Bean (@Primary)
-    participant Biz as 业务代码
+    participant Biz as Business Code
     participant Provider as Provider (SPI)
-    participant App as 业务调用方
+    participant App as Business Caller
 
-    Boot->>AC: 加载 (autoInit=false)
+    Boot->>AC: Load (autoInit=false)
     AC->>Reg: @Bean storageEngineRegistry()
-    Note over Reg: 预创建 12 个 Proxy<br/>delegate 全部为 null
+    Note over Reg: Pre-create 12 Proxies<br/>delegate all null
     AC->>Qual: @Bean objectStorageEngine<br/>(= registry.getObjectProxy())
     AC->>DefB: @Bean defaultStorageEngine<br/>(= registry.getDefaultProxy())
-    Boot->>Biz: 业务 Bean 初始化
+    Boot->>Biz: Business Bean initialization
 
     rect rgb(219, 234, 254)
-    Note over Biz: 场景 A: 启动时初始化
-    Biz->>Provider: 读取数据库配置
+    Note over Biz: Scenario A: Initialize at startup
+    Biz->>Provider: Read database configuration
     Biz->>Reg: switchEngine(MINIO, props)
     Reg->>Provider: validate(props) → create → afterPropertiesSet
-    Reg->>Reg: 销毁旧 (无) → 设置 delegate
-    Note over Reg: 日志: 存储引擎注册完成
+    Reg->>Reg: Destroy old (none) → Set delegate
+    Note over Reg: Log: Storage engine registration complete
     end
 
     rect rgb(254, 215, 170)
-    Note over Biz: 场景 B: 运行时切换 (运维后台)
-    Biz->>Provider: 从请求体读取新配置
-    Biz->>Reg: switchEngine(MINIO, newProps,<br/>actor=admin, reason=迁移到新集群)
-    Reg->>Provider: validate(newProps) ✅
+    Note over Biz: Scenario B: Switch at runtime (ops console)
+    Biz->>Provider: Read new configuration from request body
+    Biz->>Reg: switchEngine(MINIO, newProps,<br/>actor=admin, reason=migrate to new cluster)
+    Reg->>Provider: validate(newProps)
     Reg->>Provider: create(newProps) → newEngine
-    Reg->>Provider: afterPropertiesSet(newEngine) ✅
-    Reg->>Provider: destroy(oldEngine) 释放连接池
+    Reg->>Provider: afterPropertiesSet(newEngine)
+    Reg->>Provider: destroy(oldEngine) release connection pool
     Reg->>Reg: delegate ← newEngine
-    Note over Reg: 日志: 存储引擎切换完成
+    Note over Reg: Log: Storage engine switch complete
     end
 
     App->>DefB: @Autowired StorageEngine
-    DefB->>Reg: getDefaultProxy() 委托
-    Reg->>Reg: 调用当前 delegate
+    DefB->>Reg: getDefaultProxy() delegate
+    Reg->>Reg: Call current delegate
 ```
 
-#### 1. 配置关闭自动初始化
+#### 1. Configure to Disable Auto Initialization
 
 ```yaml
 platform:
   component:
     storage:
-      auto-init: false  # 关闭自动模式
-      # 注意：手动模式下不要配置 object / local / ftp 等引擎相关属性
+      auto-init: false  # Disable automatic mode
+      # Note: Do not configure engine-related properties like object / local / ftp in manual mode
 ```
 
-#### 2. 手工初始化引擎
+#### 2. Manually Initialize the Engine
 
-应用启动后，通过 `StorageEngineRegistry.switchEngine()` 创建并注册引擎实例。配置参数复用 `StorageProperties`，业务代码自行构造即可：
+After the application starts, create and register engine instances by calling `StorageEngineRegistry.switchEngine()`. Configuration parameters reuse `StorageProperties`, which business code can construct itself:
 
 ```java
 @Service
@@ -487,10 +487,10 @@ public class StorageInitService {
     private final StorageEngineRegistry registry;
 
     /**
-     * 应用启动后调用（如从数据库读取配置后初始化）
+     * Called after application startup (e.g., initialize after reading configuration from database)
      */
     public void initStorageEngine(StorageConfigFromDb dbConfig) {
-        // 1. 构造 StorageProperties
+        // 1. Construct StorageProperties
         StorageProperties properties = new StorageProperties();
         ObjectConfig objectConfig = properties.getObject();
         objectConfig.setEngine(StorageEngineEnum.MINIO);
@@ -501,15 +501,15 @@ public class StorageInitService {
         objectConfig.setBucketName(dbConfig.getBucketName());
         objectConfig.setBasePath(dbConfig.getBasePath());
 
-        // 2. 通过 Registry 创建引擎并注册到 Proxy
+        // 2. Create engine through Registry and register to Proxy
         registry.switchEngine(StorageEngineEnum.MINIO, properties);
     }
 }
 ```
 
-#### 3. 运行时热切换
+#### 3. Hot Switching at Runtime
 
-管理后台修改存储配置时，调用 `switchEngine()` 即可切换指定类型的引擎。Registry 自动销毁旧引擎（释放连接池等资源）、创建新引擎并更新对应 Proxy 引用，**不影响其他类型的引擎**：
+When the admin console modifies storage configuration, call `switchEngine()` to switch the specified type of engine. The Registry automatically destroys the old engine (releasing connection pool and other resources), creates the new engine, and updates the corresponding Proxy reference, **without affecting other types of engines**:
 
 ```java
 @PostMapping("/api/admin/storage/switch")
@@ -527,9 +527,9 @@ public void switchStorage(@RequestBody StorageConfigRequest request) {
 }
 ```
 
-#### 3.1 文件协议引擎切换（FTP / SFTP / SMB）
+#### 3.1 File Protocol Engine Switching (FTP / SFTP / SMB)
 
-`switchEngine()` 同样适用于 FTP/SFTP/SMB 等文件协议引擎。下例展示管理后台动态切换 FTP 主机（连接池会在切换时自动销毁并重建，业务调用线程无感知）：
+`switchEngine()` also applies to file protocol engines such as FTP/SFTP/SMB. The following example shows the admin console dynamically switching the FTP host (the connection pool will be automatically destroyed and rebuilt during switching, transparent to business calling threads):
 
 ```java
 @Service
@@ -545,16 +545,16 @@ public class FtpServerAdminService {
         props.getFtp().setUsername(username);
         props.getFtp().setPassword(password);
 
-        // actor 标识运维操作者；reason 写入审计日志
+        // actor identifies the ops operator; reason is written to the audit log
         registry.switchEngine(
                 StorageEngineEnum.FTP, props,
                 SecurityContextHolder.getContext().getAuthentication().getName(),
-                "运维后台切换FTP服务器");
+                "Ops console switches FTP server");
     }
 }
 ```
 
-类似地，SFTP 切换示例（注意 SFTP 在切换时会关闭 Apache MINA SSHD 客户端并清理 session 池）：
+Similarly, the SFTP switching example (note that SFTP closes the Apache MINA SSHD client and cleans up the session pool during switching):
 
 ```java
 public void switchSftp(String host, int port, String user, String password) {
@@ -564,11 +564,11 @@ public void switchSftp(String host, int port, String user, String password) {
     props.getSftp().setUsername(user);
     props.getSftp().setPassword(password);
     registry.switchEngine(StorageEngineEnum.SFTP, props,
-            currentOperator(), "切换SFTP跳板机");
+            currentOperator(), "Switch SFTP bastion");
 }
 ```
 
-SMB 切换（认证失败时 `validate()` 会直接抛异常，旧引擎保持不变，不会污染运行态）：
+SMB switching (when authentication fails, `validate()` will directly throw an exception, the old engine remains unchanged, and will not pollute the running state):
 
 ```java
 public void switchSmb(String host, String domain, String user, String password) {
@@ -578,17 +578,17 @@ public void switchSmb(String host, String domain, String user, String password) 
     props.getSmb3().setUsername(user);
     props.getSmb3().setPassword(password);
     try {
-        registry.switchEngine(StorageEngineEnum.SMB, props, currentOperator(), "切换SMB域控");
+        registry.switchEngine(StorageEngineEnum.SMB, props, currentOperator(), "Switch SMB domain controller");
     } catch (IllegalArgumentException e) {
-        // 配置校验失败，旧 SMB 引擎继续工作
-        log.warn("SMB 配置校验失败，保持旧引擎: {}", e.getMessage());
+        // Configuration validation failed, old SMB engine continues to work
+        log.warn("SMB configuration validation failed, keep old engine: {}", e.getMessage());
     }
 }
 ```
 
-#### 3.2 安全刷新：失败回滚（refreshEngine）
+#### 3.2 Safe Refresh: Failure Rollback (refreshEngine)
 
-`switchEngine()` 在新引擎初始化失败时会**抛异常但不影响旧引擎**。若希望保留旧引擎的引用不被任何瞬时异常替换，可使用 `refreshEngine()` 语义相同的双重方法，但 API 名称更明确表达"原地刷新"意图：
+`switchEngine()` throws an exception when the new engine fails to initialize but **does not affect the old engine**. If you want to keep the reference to the old engine from being replaced by any transient exception, you can use `refreshEngine()`, which has the same semantics but the API name more clearly expresses the "in-place refresh" intent:
 
 ```java
 public void refreshLocal(String newPath) {
@@ -596,20 +596,20 @@ public void refreshLocal(String newPath) {
             .local(new LocalConfig(newPath))
             .build();
     StorageEngine newEngine = registry.refreshEngine(StorageEngineEnum.LOCAL, props,
-            currentOperator(), "刷新本地存储路径");
-    // newEngine 一定可用；旧引擎若失败则原样保留
+            currentOperator(), "Refresh local storage path");
+    // newEngine is always available; if the old engine fails, it remains as-is
 }
 ```
 
-`refreshEngine()` 的回滚语义：
-- 引擎未初始化 → 抛 `IllegalStateException`（区别于 `switchEngine` 的允许首次创建）
-- `validate()` 失败 → 抛异常，旧 delegate 不变
-- `create()` + `afterPropertiesSet()` 失败 → 自动 `destroy()` 新引擎后抛异常，旧 delegate 不变
-- 旧引擎 `destroy()` 失败 → 仅记 warn，新引擎仍生效
+Rollback semantics of `refreshEngine()`:
+- Engine not initialized → throw `IllegalStateException` (different from `switchEngine` which allows first-time creation)
+- `validate()` fails → throw exception, old delegate unchanged
+- `create()` + `afterPropertiesSet()` fails → automatically `destroy()` the new engine then throw exception, old delegate unchanged
+- Old engine `destroy()` fails → only log warn, new engine still takes effect
 
-#### 4. 多引擎并存
+#### 4. Multi-Engine Coexistence
 
-系统中可以同时注册多种引擎类型，典型场景：对象存储（业务数据） + FTP/SMB（系统间数据交换）。Registry 为每种引擎类型维护独立的 Proxy，互不影响：
+Multiple engine types can be registered in the system at the same time. Typical scenario: object storage (business data) + FTP/SMB (inter-system data exchange). The Registry maintains independent Proxies for each engine type, which do not affect each other:
 
 ```java
 @Service
@@ -619,102 +619,102 @@ public class StorageInitService {
     private final StorageEngineRegistry registry;
 
     /**
-     * 初始化多引擎并存
+     * Initialize multi-engine coexistence
      */
     public void initEngines(StorageConfigFromDb dbConfig) {
-        // 注册对象存储（业务数据上传/下载）
+        // Register object storage (business data upload/download)
         StorageProperties objectProps = buildObjectProperties(dbConfig);
         registry.switchEngine(StorageEngineEnum.MINIO, objectProps);
 
-        // 注册 FTP（与外部系统数据交换）
+        // Register FTP (data exchange with external systems)
         StorageProperties ftpProps = buildFtpProperties(dbConfig);
         registry.switchEngine(StorageEngineEnum.FTP, ftpProps);
 
-        // 注册本地存储（临时文件缓存）
+        // Register local storage (temporary file cache)
         StorageProperties localProps = buildLocalProperties(dbConfig);
         registry.switchEngine(StorageEngineEnum.LOCAL, localProps);
     }
 }
 ```
 
-#### 5. 业务代码通过 @Qualifier 精确选择引擎
+#### 5. Business Code Selects Engine Precisely via `@Qualifier`
 
-无论自动模式还是手动模式，业务代码都可以通过 `@Qualifier` 注入特定类型的引擎：
+Whether in automatic or manual mode, business code can inject a specific type of engine via `@Qualifier`:
 
 ```java
 @Service
 @RequiredArgsConstructor
 public class DataSyncService {
 
-    // 对象存储 —— 业务数据上传/下载
+    // Object storage - business data upload/download
     @Autowired @Qualifier("objectStorageEngine")
     private StorageEngine objectEngine;
 
-    // FTP —— 与外部系统数据交换
+    // FTP - data exchange with external systems
     @Autowired @Qualifier("ftpStorageEngine")
     private StorageEngine ftpEngine;
 
-    // 本地存储 —— 临时文件缓存
+    // Local storage - temporary file cache
     @Autowired @Qualifier("localStorageEngine")
     private StorageEngine localEngine;
 
-    // 默认引擎（@Primary，指向优先级最高的已注册引擎）
+    // Default engine (@Primary, points to the registered engine with the highest priority)
     @Autowired
     private StorageEngine defaultEngine;
 
     public void uploadAvatar(String key, File file) {
-        objectEngine.putObject(key, file); // 走对象存储
+        objectEngine.putObject(key, file); // Goes to object storage
     }
 
     public void syncToRemote(String key, File file) {
-        ftpEngine.putObject(key, file); // 走 FTP
+        ftpEngine.putObject(key, file); // Goes to FTP
     }
 }
 ```
 
-> **限定符对照表**：
-> | 限定符 | 说明 | 自动模式来源 | 手动模式来源 |
+> **Qualifier Mapping Table**:
+> | Qualifier | Description | Automatic Mode Source | Manual Mode Source |
 > |---|---|---|---|
-> | `@Qualifier("objectStorageEngine")` | 对象存储 | `@Service` Bean | Registry `objectProxy` |
+> | `@Qualifier("objectStorageEngine")` | Object storage | `@Service` Bean | Registry `objectProxy` |
 > | `@Qualifier("ftpStorageEngine")` | FTP | `@Service` Bean | Registry `ProxyHolder(FTP)` |
 > | `@Qualifier("sftpStorageEngine")` | SFTP | `@Service` Bean | Registry `ProxyHolder(SFTP)` |
 > | `@Qualifier("smbStorageEngine")` | SMB | `@Service` Bean | Registry `ProxyHolder(SMB)` |
-> | `@Qualifier("localStorageEngine")` | 本地存储 | `@Service` Bean | Registry `ProxyHolder(LOCAL)` |
-> | 无 `@Qualifier`（`@Primary`） | 默认引擎 | ProxyFactoryBean 代理 | Registry `defaultProxy` |
+> | `@Qualifier("localStorageEngine")` | Local storage | `@Service` Bean | Registry `ProxyHolder(LOCAL)` |
+> | No `@Qualifier` (`@Primary`) | Default engine | ProxyFactoryBean proxy | Registry `defaultProxy` |
 
-> **重要约束**：业务代码必须通过 `@Autowired StorageEngine` 注入代理对象，**禁止**直接持有或缓存 `StorageEngineRegistry.getEngine()` 返回的实例引用，否则热切换后将指向已销毁的旧引擎。
+> **Important Constraint**: Business code must inject the proxy object via `@Autowired StorageEngine`. **Prohibited** from directly holding or caching the instance reference returned by `StorageEngineRegistry.getEngine()`, otherwise after hot switching it will point to the destroyed old engine.
 
-### 支持的引擎类型枚举
+### Supported Engine Type Enums
 
-| 枚举值 | `configValue` | 说明 |
+| Enum Value | `configValue` | Description |
 |--------|--------------|------|
 | `MINIO` | `minio` | MinIO |
 | `AWS_S3` | `aws_s3` | AWS S3 |
-| `ALIYUN_OSS` | `aliyun_oss` | 阿里云 OSS |
-| `TENCENT_COS` | `tencent_cos` | 腾讯云 COS |
-| `HUAWEI_OBS` | `huawei_obs` | 华为云 OBS |
-| `KSYUN_KS3` | `ksyun_ks3` | 金山云 KS3 |
-| `VOLCENGINE_TOS` | `volcengine_tos` | 火山引擎 TOS |
+| `ALIYUN_OSS` | `aliyun_oss` | Aliyun OSS |
+| `TENCENT_COS` | `tencent_cos` | Tencent COS |
+| `HUAWEI_OBS` | `huawei_obs` | Huawei OBS |
+| `KSYUN_KS3` | `ksyun_ks3` | Kingsoft KS3 |
+| `VOLCENGINE_TOS` | `volcengine_tos` | Volcano TOS |
 | `AZURE_BLOB` | `azure_blob` | Azure Blob |
 | `FTP` | `ftp` | FTP |
 | `SFTP` | `sftp` | SFTP |
 | `SMB` | `smb` | SMB |
-| `LOCAL` | `local` | 本地存储 |
+| `LOCAL` | `local` | Local Storage |
 
-> `StorageEngineEnum.fromConfigValue("aws_s3")` 可将字符串配置值转换为枚举。
+> `StorageEngineEnum.fromConfigValue("aws_s3")` can convert a string configuration value to an enum.
 
-### 内部架构
+### Internal Architecture
 
 ```
-业务代码
+Business Code
   │
   ├── @Autowired StorageEngine (Proxy @Primary) ──────▶ defaultProxy.delegate
   │                                                       │
-  ├── @Qualifier("objectStorageEngine") StorageEngine ──▶ @Service Bean (自动) / objectProxy.delegate (手动)
-  ├── @Qualifier("ftpStorageEngine") StorageEngine ─────▶ @Service Bean (自动) / ProxyHolder(FTP).delegate (手动)
-  ├── @Qualifier("sftpStorageEngine") StorageEngine ────▶ @Service Bean (自动) / ProxyHolder(SFTP).delegate (手动)
-  ├── @Qualifier("smbStorageEngine") StorageEngine ─────▶ @Service Bean (自动) / ProxyHolder(SMB).delegate (手动)
-  └── @Qualifier("localStorageEngine") StorageEngine ───▶ @Service Bean (自动) / ProxyHolder(LOCAL).delegate (手动)
+  ├── @Qualifier("objectStorageEngine") StorageEngine ──▶ @Service Bean (automatic) / objectProxy.delegate (manual)
+  ├── @Qualifier("ftpStorageEngine") StorageEngine ─────▶ @Service Bean (automatic) / ProxyHolder(FTP).delegate (manual)
+  ├── @Qualifier("sftpStorageEngine") StorageEngine ────▶ @Service Bean (automatic) / ProxyHolder(SFTP).delegate (manual)
+  ├── @Qualifier("smbStorageEngine") StorageEngine ─────▶ @Service Bean (automatic) / ProxyHolder(SMB).delegate (manual)
+  └── @Qualifier("localStorageEngine") StorageEngine ───▶ @Service Bean (automatic) / ProxyHolder(LOCAL).delegate (manual)
 
                         ┌──────────────────────────────────────┐
                         │         StorageEngineRegistry         │
@@ -738,43 +738,43 @@ public class DataSyncService {
                         └──────────────────────────────────────┘
 ```
 
-## 可观测性：HealthIndicator + Micrometer 指标
+## Observability: HealthIndicator + Micrometer Metrics
 
-存储引擎在 Spring Boot Actuator 框架下提供两个可选的观测 Bean。未对接 Prometheus/Grafana/APM 时可关闭，避免 CollectorRegistry 找不到收集器等噪音日志。
+The storage engine provides two optional observability beans under the Spring Boot Actuator framework. When not connected to Prometheus/Grafana/APM, they can be turned off to avoid noise logs such as "CollectorRegistry cannot find collector".
 
-### HealthIndicator（健康检查）
+### HealthIndicator (Health Check)
 
-通过 Spring Boot 标准的 `management.health.*` 命名空间控制：
+Controlled through Spring Boot's standard `management.health.*` namespace:
 
 ```yaml
 management:
   health:
     storage:
-      enabled: false   # 关闭存储引擎健康检查
+      enabled: false   # Disable storage engine health check
     defaults:
-      enabled: false   # 关闭所有 HealthIndicator（全局）
+      enabled: false   # Disable all HealthIndicators (global)
 ```
 
-- Bean 名：`storageHealthIndicator`（→ `management.health.storage.enabled`）
-- 默认值：`true`（未配置时启用）
-- 端点：注册后可通过 `/actuator/health` 查看，当前引擎数量、默认引擎类型、引擎 ID 均会暴露在 details
+- Bean name: `storageHealthIndicator` (→ `management.health.storage.enabled`)
+- Default value: `true` (enabled when not configured)
+- Endpoint: After registration, view via `/actuator/health`. The current engine count, default engine type, and engine ID will be exposed in details
 
-### Micrometer 指标绑定器
+### Micrometer Metrics Binder
 
-通过 Spring Boot 标准的 `management.metrics.enable.*` 命名空间控制：
+Controlled through Spring Boot's standard `management.metrics.enable.*` namespace:
 
 ```yaml
 management:
   metrics:
     enable:
-      storage: NONE   # 关闭存储指标（默认 ALL）
+      storage: NONE   # Disable storage metrics (default ALL)
 ```
 
-- 属性：`management.metrics.enable.storage`
-- 取值：`ALL`（默认，启用）/ `NONE`（禁用）
-- 注册指标：默认引擎类型（gauge）、已注册引擎数（gauge）、切换次数（counter × 12 引擎）、注册次数（counter × 12 引擎）
+- Property: `management.metrics.enable.storage`
+- Value: `ALL` (default, enabled) / `NONE` (disabled)
+- Registered metrics: default engine type (gauge), number of registered engines (gauge), switch count (counter × 12 engines), registration count (counter × 12 engines)
 
-### 关闭示例（不接监控）
+### Disable Example (No Monitoring)
 
 ```yaml
 management:
@@ -786,49 +786,49 @@ management:
       storage: NONE
 ```
 
-完全关闭后，`/actuator/health` 不再暴露存储引擎状态，Prometheus exporter 也不再尝试收集存储相关 metric，零噪音。
+After fully disabling, `/actuator/health` no longer exposes the storage engine status, and the Prometheus exporter no longer attempts to collect storage-related metrics, with zero noise.
 
-## 存储引擎对比
+## Storage Engine Comparison
 
-| 存储引擎 | engine 值 | endpoint 格式 | region 要求 | 特殊说明 |
+| Storage Engine | engine value | endpoint format | region required | Special Notes |
 |---------|----------|--------------|-------------|---------|
-| MinIO | `MINIO` | `http://host:port` | 可选 | 支持自定义域名 |
-| AWS S3 | `AWS_S3` | `s3.region.amazonaws.com` | 必填 | 支持多种存储类型 |
-| 阿里云 OSS | `ALIYUN_OSS` | `oss-cn-region.aliyuncs.com` | 必填 | 支持图片处理 |
-| 腾讯云 COS | `TENCENT_COS` | `cos.region.myqcloud.com` | 必填 | 支持多可用区存储 |
-| 华为云 OBS | `HUAWEI_OBS` | `obs.region.myhuaweicloud.com` | 必填 | 支持生命周期管理 |
-| 金山云 KS3 | `KSYUN_KS3` | `ks3-cn-region.ksyuncs.com` | 必填 | 兼容 S3 协议 |
-| 火山引擎 TOS | `VOLCENGINE_TOS` | `tos-cn-region.volces.com` | 必填 | 支持图片处理 |
-| Azure Blob | `AZURE_BLOB` | `account.blob.core.windows.net` | 必填 | 需要连接字符串 |
+| MinIO | `MINIO` | `http://host:port` | Optional | Supports custom domain |
+| AWS S3 | `AWS_S3` | `s3.region.amazonaws.com` | Required | Supports multiple storage types |
+| Aliyun OSS | `ALIYUN_OSS` | `oss-cn-region.aliyuncs.com` | Required | Supports image processing |
+| Tencent COS | `TENCENT_COS` | `cos.region.myqcloud.com` | Required | Supports multi-AZ storage |
+| Huawei OBS | `HUAWEI_OBS` | `obs.region.myhuaweicloud.com` | Required | Supports lifecycle management |
+| Kingsoft KS3 | `KSYUN_KS3` | `ks3-cn-region.ksyuncs.com` | Required | S3-compatible protocol |
+| Volcano TOS | `VOLCENGINE_TOS` | `tos-cn-region.volces.com` | Required | Supports image processing |
+| Azure Blob | `AZURE_BLOB` | `account.blob.core.windows.net` | Required | Requires connection string |
 
-> **注意**: 各存储后端的配置差异较大，请参考对应的子组件文档了解详细配置说明。
+> **Note**: The configuration differences between storage backends are significant. Please refer to the corresponding sub-component documentation for detailed configuration instructions.
 
-## 最佳实践
+## Best Practices
 
-1. **选择合适的存储后端**
-   - 开发/测试环境：使用本地存储或 MinIO
-   - 生产环境：根据云服务商选择对应的云存储
+1. **Choose the Right Storage Backend**
+   - Development/test environment: Use local storage or MinIO
+   - Production environment: Choose the corresponding cloud storage based on the cloud service provider
 
-2. **文件路径规范**
-   - 使用相对路径，避免绝对路径
-   - 使用日期/业务维度组织路径，如：`/2024/01/15/user-123/avatar.jpg`
+2. **File Path Conventions**
+   - Use relative paths, avoid absolute paths
+   - Organize paths by date/business dimension, e.g., `/2024/01/15/user-123/avatar.jpg`
 
-3. **大文件处理**
-   - 使用 `getResumableObject` 支持断点续传
-   - 设置 `returnData=false` 避免内存溢出
+3. **Large File Handling**
+   - Use `getResumableObject` to support resumable transfer
+   - Set `returnData=false` to avoid out-of-memory errors
 
-4. **错误处理**
-   - 检查 `UploadResponse.isSuccess()` 和 `DownloadResponse.isSuccess()`
-   - 记录错误信息用于排查问题
+4. **Error Handling**
+   - Check `UploadResponse.isSuccess()` and `DownloadResponse.isSuccess()`
+   - Record error information for troubleshooting
 
-5. **组件边界约束（推荐）**
-   - `richie-component-storage` 只提供能力接口与引擎实现，不内置 HTTP Controller
-   - 业务服务自行定义上传/签发接口，避免所有引用方自动暴露同一路由
-   - Controller 中仅做鉴权、参数校验、业务 key 生成，实际能力委托给 `StorageEngine`
+5. **Component Boundary Constraints (Recommended)**
+   - `richie-component-storage` only provides capability interfaces and engine implementations, and does not include built-in HTTP Controllers
+   - Business services define their own upload/issuance interfaces to avoid all consumers automatically exposing the same route
+   - The Controller only handles authentication, parameter validation, and business key generation; the actual capabilities are delegated to `StorageEngine`
 
-## 业务侧 Controller 参考实现
+## Business-side Controller Reference Implementation
 
-> 说明：以下示例为“业务服务侧”的标准 MVC 用法，不应放入 storage 组件本身。
+> Note: The following examples are standard MVC usage on the "business service side" and should not be placed in the storage component itself.
 
 ```java
 package com.example.storage.controller;
@@ -859,7 +859,7 @@ public class StorageUploadController {
     @Data
     public static class IssuePolicyRequest {
         @NotBlank
-        private String bizType; // 例如: agent-attachment
+        private String bizType; // e.g., agent-attachment
         @NotBlank
         private String fileName;
         @Min(60)
@@ -909,9 +909,9 @@ public class StorageUploadServiceImpl implements StorageUploadService {
 
     @Override
     public DirectUploadPolicy issuePolicy(StorageUploadController.IssuePolicyRequest request) {
-        // 业务系统自己定义 key 规则（租户、日期、业务域等）
+        // Business system defines its own key rules (tenant, date, business domain, etc.)
         String key = buildObjectKey(request.getBizType(), request.getFileName());
-        // 透传调用组件能力
+        // Pass through to call component capabilities
         return storageEngine.issueDirectUploadPolicy(key, request.getExpireSeconds());
     }
 
@@ -923,33 +923,33 @@ public class StorageUploadServiceImpl implements StorageUploadService {
 }
 ```
 
-## 常见问题
+## FAQ
 
-### Q: 如何切换存储后端？
+### Q: How to switch the storage backend?
 
-A: 两种方式：
-- **自动模式**：修改配置中的 `engine` 字段，并引入对应的存储实现模块依赖，重启应用。
-- **手动模式**：通过 `StorageEngineRegistry.switchEngine(engineType, properties)` 运行时热切换，无需重启。详见“双模式架构”章节。
+A: Two ways:
+- **Automatic Mode**: Modify the `engine` field in the configuration, and add the corresponding storage implementation module dependency, then restart the application.
+- **Manual Mode**: Use `StorageEngineRegistry.switchEngine(engineType, properties)` to hot switch at runtime, no restart required. See the "Dual-Mode Architecture" section for details.
 
-### Q: 支持哪些图片格式？
+### Q: What image formats are supported?
 
-A: 通过 `ImageOptions` 配置，支持常见的图片格式转换和压缩。
+A: Configured through `ImageOptions`, supports common image format conversion and compression.
 
-### Q: 如何实现文件去重？
+### Q: How to implement file deduplication?
 
-A: 本地存储实现已支持基于 SHA-256 的内容去重，云存储需要根据具体实现。
+A: The local storage implementation already supports content deduplication based on SHA-256. Cloud storage needs to be implemented based on the specific implementation.
 
-## 相关文档
+## Related Documentation
 
-- [本地存储实现](./richie-component-storage-local/README.md)
-- [AWS S3 实现](./richie-component-storage-s3/README.md)
-- [阿里云 OSS 实现](./richie-component-storage-oss/README.md)
-- [腾讯云 COS 实现](./richie-component-storage-cos/README.md)
-- [华为云 OBS 实现](./richie-component-storage-obs/README.md)
-- [MinIO 实现](./richie-component-storage-minio/README.md)
-- [金山云 KS3 实现](./richie-component-storage-ks3/README.md)
-- [火山引擎 TOS 实现](./richie-component-storage-tos/README.md)
-- [Azure Blob 实现](./richie-component-storage-azure/README.md)
-- [SFTP 实现](./richie-component-storage-sftp/README.md)
-- [SMB 实现](./richie-component-storage-smb/README.md)
+- [Local Storage Implementation](./atlas-richie-component-storage-local/README.md)
+- [AWS S3 Implementation](./atlas-richie-component-storage-s3/README.md)
+- [Aliyun OSS Implementation](./atlas-richie-component-storage-oss/README.md)
+- [Tencent COS Implementation](./atlas-richie-component-storage-cos/README.md)
+- [Huawei OBS Implementation](./atlas-richie-component-storage-obs/README.md)
+- [MinIO Implementation](./atlas-richie-component-storage-minio/README.md)
+- [Kingsoft KS3 Implementation](./atlas-richie-component-storage-ks3/README.md)
+- [Volcano TOS Implementation](./atlas-richie-component-storage-tos/README.md)
+- [Azure Blob Implementation](./atlas-richie-component-storage-azure/README.md)
+- [SFTP Implementation](./atlas-richie-component-storage-sftp/README.md)
+- [SMB Implementation](./atlas-richie-component-storage-smb/README.md)
 

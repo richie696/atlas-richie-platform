@@ -49,7 +49,7 @@ import java.util.Set;
  * 业务方显式声明要校验的表,既保证启动速度,也保证校验准确性。</p>
  *
  * @author richie696
- * @since 2.1.0
+ * @since 1.0.0
  */
 @Component
 @Order(1)

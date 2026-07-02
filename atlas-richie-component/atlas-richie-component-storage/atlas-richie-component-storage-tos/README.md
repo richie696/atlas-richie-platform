@@ -1,22 +1,97 @@
-# Richie Component Storage - 火山引擎 TOS
+# Richie Component Storage - Volcengine TOS
 
-## 概述
+## Overview
 
-`richie-component-storage-tos` 是火山引擎对象存储服务（TOS）的实现，基于火山引擎 TOS SDK 提供完整的 TOS 存储能力。TOS 兼容 AWS S3 API，支持图片处理、视频处理等高级功能。
+`richie-component-storage-tos` is the implementation of Volcengine Object Storage Service (TOS), built on the Volcengine TOS SDK to deliver complete TOS storage capabilities. TOS is compatible with the AWS S3 API and supports advanced features such as image processing and video processing.
 
-## 核心特性
+## Core Features
 
-- ✅ **S3 兼容** - 兼容 AWS S3 API
-- ✅ **图片处理** - 支持图片缩放、裁剪、水印等
-- ✅ **多种存储类型** - 支持标准、低频、归档、冷归档
-- ✅ **断点续传** - 支持大文件断点续传
-- ✅ **自动配置** - Spring Boot 自动配置
+- ✅ **S3 Compatible** - Compatible with the AWS S3 API
+- ✅ **Image Processing** - Image resizing, cropping, watermarking, and more
+- ✅ **Multiple Storage Tiers** - Standard, Infrequent Access, Archive, and Cold Archive
+- ✅ **Resumable Upload** - Resumable upload support for large files
+- ✅ **Dual-Mode Architecture** - Supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to Spring Boot auto-configuration and non-Spring environments
+- ✅ **Auto-Configuration** - Spring Boot auto-configuration
 
-## 快速开始
+## Dual-Mode Architecture
 
-### 1. 添加依赖
+This component supports two initialization modes:
+
+### 1. Auto Mode (Auto-Init, Default)
+
+When `auto-init: true` (the default value), Spring Boot auto-configuration handles:
+
+- Creating the `TosStorageEngineProvider` Bean based on the `engine: VOLCENGINE_TOS` configuration
+- Calling the Provider's `create(properties)` to create the engine instance
+- Injecting and using the engine through `@Qualifier("objectStorageEngine")`
+
+### 2. Manual Mode
+
+When `auto-init: false`, the engine is discovered and managed by `StorageEngineRegistry` through SPI:
+
+- The Provider is not auto-registered as a Bean, but is discovered by `ServiceLoader`
+- Switch engines at runtime via `registry.switchEngine(StorageEngineEnum.VOLCENGINE_TOS)`
+- Suitable for non-Spring environments or scenarios that require dynamic engine switching
+
+```java
+// Manual mode: switch engines at runtime
+storageEngineRegistry.switchEngine(StorageEngineEnum.VOLCENGINE_TOS);
+UploadResponse response = storageEngineRegistry.getCurrentEngine()
+    .putObject("key", file);
+```
+
+## StorageEngineProvider
+
+Each implementation package provides a `StorageEngineProvider` SPI implementation. `TosStorageEngineProvider` is responsible for:
+
+| Method | Description |
+|------|------|
+| `supportedEngineType()` | Returns `StorageEngineEnum.VOLCENGINE_TOS` |
+| `create(properties)` | Creates an engine instance from configuration |
+| `validate(properties)` | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
+| `destroy(engine)` | Releases resources |
+
+In auto mode, the Provider is registered as a Bean in `TosAutoConfiguration`. In manual mode, it is discovered by the Registry through SPI.
+
+## Config Validation
+
+Before the engine is created, the `ConfigValidation` utility validates the required parameters. If validation fails, an `IllegalArgumentException` is thrown:
+
+| Parameter | Validation Rule |
+|------|---------|
+| endpoint | Non-empty |
+| accessKeyId | Non-empty |
+| accessKeySecret | Non-empty |
+| bucketName | Non-empty |
+
+## Direct Upload Policy
+
+The TOS engine supports client-side direct upload to object storage through presigned URLs, reducing server-side traffic pressure:
+
+| Field | Description |
+|------|------|
+| uploadUrl | Presigned upload URL |
+| method | HTTP method (PUT) |
+| headers | Signature headers |
+| expireAt | Policy expiration time |
+| success | Whether the policy is usable |
+
+```java
+DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
+    "uploads/example.jpg", 3600);
+// Returns a presigned PUT URL; the client can upload directly
+```
+
+## Quick Start
+
+### 1. Add Dependency
 
 ```xml
+<dependency>
+    <groupId>com.richie.component</groupId>
+    <artifactId>atlas-richie-component-storage-core</artifactId>
+    <version>${atlas.richie.version}</version>
+</dependency>
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-storage-tos</artifactId>
@@ -24,38 +99,38 @@
 </dependency>
 ```
 
-### 2. 配置
+### 2. Configuration
 
 ```yaml
 platform:
   component:
     storage:
       object:
-        # 存储引擎类型（必填）
+        # Storage engine type (required)
         engine: VOLCENGINE_TOS
-        # TOS访问域名（必填）
-        # 格式：tos-cn-region.volces.com
-        # 示例：tos-cn-beijing.volces.com
+        # TOS access endpoint (required)
+        # Format: tos-cn-region.volces.com
+        # Example: tos-cn-beijing.volces.com
         endpoint: tos-cn-beijing.volces.com
-        # 区域（必填）
-        # 示例：cn-beijing, cn-shanghai, ap-singapore
+        # Region (required)
+        # Example: cn-beijing, cn-shanghai, ap-singapore
         region: cn-beijing
-        # 访问密钥ID（Access Key ID）（必填）
+        # Access Key ID (required)
         accessKeyId: your-access-key-id
-        # 访问密钥（Secret Access Key）（必填）
+        # Secret Access Key (required)
         accessKeySecret: your-secret-access-key
-        # 存储桶名称（Bucket）（必填）
+        # Bucket name (required)
         bucketName: my-bucket
-        # 桶内基础路径（可选）
+        # Base path inside the bucket (optional)
         basePath: /storage
-        # 存储类型（可选，默认：STANDARD）
-        # 可选值：STANDARD, STANDARD_IA, ARCHIVE, COLD_ARCHIVE
+        # Storage tier (optional, default: STANDARD)
+        # Allowed values: STANDARD, STANDARD_IA, ARCHIVE, COLD_ARCHIVE
         storageType: STANDARD
 ```
 
-### 3. 使用
+### 3. Usage
 
-注入 `StorageEngine`（Bean 名称为 `objectStorageEngine`）即可使用：
+Inject `StorageEngine` (the Bean name is `objectStorageEngine`) to start using it:
 
 ```java
 @Service
@@ -68,11 +143,11 @@ public class FileService {
     public void uploadFile(String key, File file) {
         UploadResponse response = storageEngine.putObject(key, file);
         if (response.isSuccess()) {
-            log.info("上传成功: {}", response.getUrl());
+            log.info("Upload successful: {}", response.getUrl());
         }
     }
     
-    // 上传图片并处理
+    // Upload an image with processing
     public void uploadImage(String key, File imageFile) {
         ImageOptions options = ImageOptions.builder()
             .format(ImageFormat.WEBP)
@@ -84,181 +159,182 @@ public class FileService {
 }
 ```
 
-## 配置说明
+## Configuration Reference
 
-### ⚠️ 重要配置差异
+### ⚠️ Important Configuration Differences
 
-火山引擎 TOS 与其他云存储的主要配置差异：
+The main configuration differences between Volcengine TOS and other cloud storage providers:
 
-| 配置项 | 火山引擎 TOS | AWS S3 | 阿里云 OSS |
+| Configuration Item | Volcengine TOS | AWS S3 | Alibaba Cloud OSS |
 |--------|-------------|--------|-----------|
-| **engine 值** | `VOLCENGINE_TOS` | `AWS_S3` | `ALIYUN_OSS` |
-| **endpoint 格式** | `tos-cn-region.volces.com` | `s3.region.amazonaws.com` | `oss-cn-region.aliyuncs.com` |
-| **region 格式** | `cn-region` 或 `ap-region` | `us-east-1` | `cn-region` |
-| **访问密钥名称** | Access Key ID / Secret Access Key | Access Key ID / Secret Access Key | AccessKey ID / AccessKey Secret |
-| **S3 兼容性** | ✅ 兼容 | ✅ 原生 | ❌ 不兼容 |
-| **图片处理** | ✅ 支持 | ❌ 不支持 | ✅ 支持 |
-| **存储类型** | 4种（标准、低频、归档、冷归档） | 15+种 | 4种 |
+| **engine value** | `VOLCENGINE_TOS` | `AWS_S3` | `ALIYUN_OSS` |
+| **endpoint format** | `tos-cn-region.volces.com` | `s3.region.amazonaws.com` | `oss-cn-region.aliyuncs.com` |
+| **region format** | `cn-region` or `ap-region` | `us-east-1` | `cn-region` |
+| **Access key names** | Access Key ID / Secret Access Key | Access Key ID / Secret Access Key | AccessKey ID / AccessKey Secret |
+| **S3 compatibility** | ✅ Compatible | ✅ Native | ❌ Not compatible |
+| **Image processing** | ✅ Supported | ❌ Not supported | ✅ Supported |
+| **Storage tiers** | 4 (Standard, IA, Archive, Cold Archive) | 15+ | 4 |
 
-### endpoint 配置
+### endpoint Configuration
 
-火山引擎 TOS 的 endpoint 格式：
+Volcengine TOS endpoint format:
 
-- **标准格式**: `tos-cn-region.volces.com`
-  - 示例：`tos-cn-beijing.volces.com`
-  - 示例：`tos-cn-shanghai.volces.com`
-  - 示例：`tos-ap-singapore.volces.com`
+- **Standard format**: `tos-cn-region.volces.com`
+  - Example: `tos-cn-beijing.volces.com`
+  - Example: `tos-cn-shanghai.volces.com`
+  - Example: `tos-ap-singapore.volces.com`
 
-- **内网 endpoint**: `tos-cn-region-internal.volces.com`
-  - 适用于同区域 ECS 访问，免流量费
-  - 示例：`tos-cn-beijing-internal.volces.com`
+- **Internal endpoint**: `tos-cn-region-internal.volces.com`
+  - Suitable for same-region ECS access, no traffic fees
+  - Example: `tos-cn-beijing-internal.volces.com`
 
-### region 配置
+### region Configuration
 
-火山引擎 TOS 支持的区域：
+Regions supported by Volcengine TOS:
 
-| 区域 | 代码 |
+| Region | Code |
 |------|------|
-| 华北2（北京） | `cn-beijing` |
-| 华东2（上海） | `cn-shanghai` |
-| 华南1（广州） | `cn-guangzhou` |
-| 华东1（杭州） | `cn-hangzhou` |
-| 亚太（新加坡） | `ap-singapore` |
-| 亚太（雅加达） | `ap-jakarta` |
-| 美国（硅谷） | `us-east-1` |
-| 美国（弗吉尼亚） | `us-west-1` |
+| CN North 2 (Beijing) | `cn-beijing` |
+| CN East 2 (Shanghai) | `cn-shanghai` |
+| CN South 1 (Guangzhou) | `cn-guangzhou` |
+| CN East 1 (Hangzhou) | `cn-hangzhou` |
+| AP (Singapore) | `ap-singapore` |
+| AP (Jakarta) | `ap-jakarta` |
+| US (Silicon Valley) | `us-east-1` |
+| US (Virginia) | `us-west-1` |
 
-### 存储类型
+### Storage Tiers
 
-火山引擎 TOS 支持的存储类型：
+Storage tiers supported by Volcengine TOS:
 
-| 存储类型 | 说明 | 适用场景 |
+| Storage Tier | Description | Suitable Scenario |
 |---------|------|---------|
-| `STANDARD` | 标准存储 | 频繁访问的数据 |
-| `STANDARD_IA` | 低频访问存储 | 不经常访问但需要快速访问的数据 |
-| `ARCHIVE` | 归档存储 | 长期保存、很少访问的数据 |
-| `COLD_ARCHIVE` | 冷归档存储 | 极长期保存、极少访问的数据 |
+| `STANDARD` | Standard storage | Frequently accessed data |
+| `STANDARD_IA` | Infrequent access storage | Data that is not accessed often but requires fast retrieval |
+| `ARCHIVE` | Archive storage | Long-term retention, rarely accessed data |
+| `COLD_ARCHIVE` | Cold archive storage | Very long-term retention, almost never accessed data |
 
-### 访问凭证
+### Access Credentials
 
-火山引擎 TOS 使用 Access Key ID 和 Secret Access Key 进行身份验证：
+Volcengine TOS uses Access Key ID and Secret Access Key for authentication:
 
-1. 登录火山引擎控制台
-2. 进入访问控制（IAM）服务
-3. 创建用户并分配 TOS 访问权限
-4. 创建访问密钥
+1. Sign in to the Volcengine console
+2. Open the Identity and Access Management (IAM) service
+3. Create a user and grant TOS access permissions
+4. Create access keys
 
-> **安全提示**: 
-> - 使用 IAM 子用户，遵循最小权限原则
-> - 不要将访问密钥提交到代码仓库
-> - 使用环境变量或密钥管理服务
+> **Security Tips**: 
+> - Use IAM sub-users and follow the principle of least privilege
+> - Do not commit access keys to source control
+> - Use environment variables or a secrets management service
 
-## 功能特性
+## Feature Details
 
-### 1. S3 兼容性
+### 1. S3 Compatibility
 
-火山引擎 TOS 兼容 AWS S3 API，可以无缝迁移：
+Volcengine TOS is compatible with the AWS S3 API, enabling seamless migration:
 
 ```java
-// 使用 TOS 的代码与使用 S3 的代码基本相同
+// Code that uses TOS is essentially the same as code that uses S3
 UploadResponse response = storageEngine.putObject("file.txt", file);
 ```
 
-### 2. 图片处理
+### 2. Image Processing
 
-火山引擎 TOS 支持图片处理功能（需在控制台开启）：
+Volcengine TOS supports image processing (must be enabled in the console):
 
-- **格式转换**: JPEG、PNG、WEBP、GIF 等
-- **缩放**: 按比例、按尺寸、按长边/短边
-- **裁剪**: 矩形裁剪、圆形裁剪、圆角矩形
-- **水印**: 图片水印、文字水印
-- **旋转**: 自动旋转、手动旋转
-- **质量调整**: JPEG/WebP 质量压缩
+- **Format conversion**: JPEG, PNG, WEBP, GIF, etc.
+- **Resizing**: By ratio, by dimensions, by long/short edge
+- **Cropping**: Rectangle, circle, rounded rectangle
+- **Watermarks**: Image watermark, text watermark
+- **Rotation**: Auto rotation, manual rotation
+- **Quality adjustment**: JPEG/WebP quality compression
 
 ```java
 ImageOptions options = ImageOptions.builder()
-    .format(ImageFormat.WEBP)           // 转换为 WEBP 格式
-    .quality(80)                         // 质量 80%
-    .resize(800, 600)                    // 缩放到 800x600
-    .watermark("text", "Richie")        // 添加文字水印
+    .format(ImageFormat.WEBP)           // Convert to WEBP format
+    .quality(80)                         // Quality 80%
+    .resize(800, 600)                    // Resize to 800x600
+    .watermark("text", "Richie")        // Add text watermark
     .build();
 
 UploadResponse response = storageEngine.putImage("image.jpg", file, options);
 ```
 
-### 3. 存储类型自动转换
+### 3. Automatic Storage Tier Conversion
 
-上传文件时，会根据配置的 `storageType` 自动设置对象的存储类型：
+When uploading files, the configured `storageType` automatically sets the object's storage tier:
 
 ```java
-// 配置为 ARCHIVE 存储类型
+// Configure as ARCHIVE storage tier
 UploadResponse response = storageEngine.putObject("backup.zip", file);
-// 文件会自动设置为归档存储类型
+// The file is automatically stored as the Archive storage tier
 ```
 
-### 4. 内网访问
+### 4. Internal Network Access
 
-如果应用部署在火山引擎 ECS 上，可以使用内网 endpoint 免流量费：
+If your application is deployed on Volcengine ECS, you can use the internal endpoint to avoid traffic fees:
 
 ```yaml
 platform:
   component:
     storage:
       object:
-        endpoint: tos-cn-beijing-internal.volces.com  # 内网 endpoint
+        endpoint: tos-cn-beijing-internal.volces.com  # Internal endpoint
 ```
 
-## 最佳实践
+## Best Practices
 
-1. **区域选择**
-   - 选择距离用户最近的区域，降低延迟
-   - 考虑数据合规要求
+1. **Region Selection**
+   - Choose the region closest to your users to minimize latency
+   - Consider data compliance requirements
 
-2. **存储类型选择**
-   - 频繁访问：`STANDARD`
-   - 偶尔访问：`STANDARD_IA`
-   - 长期归档：`ARCHIVE` 或 `COLD_ARCHIVE`
+2. **Storage Tier Selection**
+   - Frequent access: `STANDARD`
+   - Occasional access: `STANDARD_IA`
+   - Long-term archiving: `ARCHIVE` or `COLD_ARCHIVE`
 
-3. **图片处理**
-   - 上传时进行格式转换和压缩，节省存储空间
-   - 使用 CDN 加速图片访问
-   - 根据设备类型返回不同尺寸的图片
+3. **Image Processing**
+   - Perform format conversion and compression on upload to save storage space
+   - Use a CDN to accelerate image access
+   - Return different image sizes based on device type
 
-4. **访问凭证管理**
-   - 使用 IAM 子用户，遵循最小权限原则
-   - 使用环境变量或密钥管理服务
-   - 定期轮换访问密钥
+4. **Access Credential Management**
+   - Use IAM sub-users and follow the principle of least privilege
+   - Use environment variables or a secrets management service
+   - Rotate access keys regularly
 
-5. **成本优化**
-   - 使用生命周期策略自动转换存储类型
-   - 删除不需要的对象
-   - 使用内网 endpoint 免流量费
+5. **Cost Optimization**
+   - Use lifecycle policies to automatically transition storage tiers
+   - Delete unnecessary objects
+   - Use the internal endpoint to avoid traffic fees
 
-## 常见问题
+## FAQ
 
-### Q: TOS 与 AWS S3 有什么区别？
+### Q: What is the difference between TOS and AWS S3?
 
-A: TOS 是 S3 兼容的对象存储服务，API 与 S3 基本一致，但存储类型和支持的功能略有差异。
+A: TOS is an S3-compatible object storage service. Its API is essentially the same as S3, but storage tiers and supported features differ slightly.
 
-### Q: 如何从 S3 迁移到 TOS？
+### Q: How do I migrate from S3 to TOS?
 
-A: 由于 API 兼容，只需修改 endpoint 和访问凭证即可，代码基本无需修改。
+A: Because the API is compatible, you only need to change the endpoint and access credentials; the code essentially remains unchanged.
 
-### Q: 如何配置图片处理？
+### Q: How do I configure image processing?
 
-A: 在 TOS 控制台开启图片处理功能，然后通过 `ImageOptions` 配置处理参数。
+A: Enable image processing in the TOS console, then configure processing parameters through `ImageOptions`.
 
-### Q: 支持自定义域名吗？
+### Q: Does it support custom domains?
 
-A: 支持，在 TOS 控制台绑定自定义域名后，使用自定义域名作为 endpoint。
+A: Yes. After binding a custom domain in the TOS console, use the custom domain as the endpoint.
 
-### Q: 内网访问有什么优势？
+### Q: What are the benefits of internal network access?
 
-A: 内网访问免流量费，延迟更低，但仅限同区域 ECS 访问。
+A: Internal network access is free of traffic fees and offers lower latency, but is limited to same-region ECS access.
 
-## 相关文档
+## Related Documentation
 
-- [核心存储组件](../richie-component-storage/README.md)
-- [火山引擎 TOS 官方文档](https://www.volcengine.com/docs/6349)
+- [Core Storage Component (Core SPI)](../atlas-richie-component-storage-core/README.md)
+- [Volcengine TOS Official Documentation](https://www.volcengine.com/docs/6349)
 - [TOS Java SDK](https://www.volcengine.com/docs/6349/1099475)
-
+- [Direct Upload Policy (DirectUploadPolicy)](../atlas-richie-component-storage-core/README.md#配置模型)
+- [Storage Engine SPI (StorageEngineProvider)](../atlas-richie-component-storage-core/README.md)

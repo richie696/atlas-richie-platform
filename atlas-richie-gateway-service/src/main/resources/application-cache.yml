@@ -19,7 +19,7 @@ spring:
             # Redis客户端类型
             client-type: lettuce
             # Redis 主机地址
-            host: 10.100.0.90
+            host: 127.0.0.1
             # Redis 主机端口
             port: 16379
             # Redis 主机密码

@@ -26,7 +26,7 @@ import java.util.function.Consumer;
  *                探测失败 ─────────────────→ OPEN
  * </pre>
  *
- * <p><b>并发安全</b>(v2.1.0 重写):
+ * <p><b>并发安全</b>(v1.0.0 重写):
  * <ul>
  *   <li>{@link AtomicInteger} 计数,杜绝 {@code failureCount++} 丢计数</li>
  *   <li>{@link AtomicReference} 整体状态对象,CAS 替换避免锁</li>

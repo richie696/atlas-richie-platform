@@ -65,26 +65,6 @@ public class WebUtils {
     }
 
     /**
-     * 刷新 HTTP 消息转换器（旧 API，List 方式）：为 MappingJackson2HttpMessageConverter 注入平台 ObjectMapper（Long/日期/Geo 等）。
-     *
-     * @param converters 已注册的转换器列表
-     * @deprecated 请使用 {@link #refreshHttpMessageConverter(HttpMessageConverters.ServerBuilder)} 配合 Spring Boot 4.x
-     */
-    @Deprecated
-    public static void refreshHttpMessageConverter(List<HttpMessageConverter<?>> converters) {
-        JacksonJsonHttpMessageConverter newConverter = createPlatformJacksonJsonConverter();
-        List<Integer> indicesToReplace = new ArrayList<>();
-        for (int i = 0; i < converters.size(); i++) {
-            if (converters.get(i) instanceof JacksonJsonHttpMessageConverter) {
-                indicesToReplace.add(i);
-            }
-        }
-        for (int i = indicesToReplace.size() - 1; i >= 0; i--) {
-            converters.set(indicesToReplace.get(i), newConverter);
-        }
-    }
-
-    /**
      * 创建使用平台 JsonMapper（Long/日期/时区/可选 XML 模块）的 JacksonJsonHttpMessageConverter。
      *
      * @return 配置好的 JSON 消息转换器

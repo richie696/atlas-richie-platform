@@ -11,6 +11,7 @@ import com.richie.contract.gateway.model.OAuth2Constants;
 import com.richie.gateway.utils.NetworkUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -39,6 +40,7 @@ import java.util.Base64;
 @RestController
 @RequestMapping(OAuth2Constants.OAUTH2_BASE)
 @RequiredArgsConstructor
+@ConditionalOnBean(TokenEndpoint.class)
 public class OAuth2TokenController {
 
     private final TokenEndpoint tokenEndpoint;

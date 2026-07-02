@@ -1,7 +1,6 @@
 package com.richie.component.oauth.authz;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -19,7 +18,6 @@ import java.util.Base64;
  * @since 2026-06-12
  */
 @Slf4j
-@Component
 public class PKCESupport {
 
     private static final SecureRandom RANDOM = new SecureRandom();

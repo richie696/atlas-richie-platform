@@ -16,6 +16,7 @@ import com.richie.gateway.utils.NetworkUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -47,6 +48,7 @@ import java.util.Set;
  */
 @Slf4j
 @Component
+@ConditionalOnBean(TokenEndpoint.class)
 public class InterfaceAuthFilter extends AbstractBaseFilter {
 
     private final TokenEndpoint tokenEndpoint;

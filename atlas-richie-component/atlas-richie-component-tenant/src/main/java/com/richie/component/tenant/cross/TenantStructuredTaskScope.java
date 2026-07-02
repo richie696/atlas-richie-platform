@@ -44,7 +44,7 @@ import java.util.concurrent.StructuredTaskScope.Joiner;
  * 等较长的 API 名称。</p>
  *
  * @author richie696
- * @since 2.1.0
+ * @since 1.0.0
  */
 public final class TenantStructuredTaskScope {
 

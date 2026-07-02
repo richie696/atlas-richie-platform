@@ -4,8 +4,6 @@ import com.richie.component.cache.GlobalCache;
 import com.richie.component.oauth.core.config.OAuth2RedisKey;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -24,7 +22,6 @@ import java.util.regex.Pattern;
  * @since 2026-06-12
  */
 @Slf4j
-@Component
 public class SSRFProtection {
 
     private static final Pattern IPV4_PATTERN = Pattern.compile("^\\d{1,3}(\\.\\d{1,3}){3}$");
@@ -36,8 +33,8 @@ public class SSRFProtection {
 
     public SSRFProtection(
             GlobalCache globalCache,
-            @Value("${platform.component.oauth.dcr.allowed-domains:}") List<String> allowedDomains,
-            @Value("${platform.component.oauth.dcr.ssrf-cache-ttl:3600}") long cacheTtlSeconds
+            List<String> allowedDomains,
+            long cacheTtlSeconds
     ) {
         this.globalCache = globalCache;
         this.allowedDomains = allowedDomains != null ? allowedDomains : List.of();

@@ -159,7 +159,7 @@ class DataSourceCircuitBreakerTest {
     }
 
     @Nested
-    @DisplayName("并发安全(v2.1.0 修复)")
+    @DisplayName("并发安全(v1.0.0 修复)")
     class ConcurrencySafety {
 
         @Test
