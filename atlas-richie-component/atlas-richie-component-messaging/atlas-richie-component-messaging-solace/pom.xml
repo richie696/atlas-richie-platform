@@ -23,7 +23,7 @@
         <dependency>
             <groupId>com.solace.spring.cloud</groupId>
             <artifactId>spring-cloud-starter-stream-solace</artifactId>
-            <version>4.1.0</version>
+            <version>6.0.0</version>
         </dependency>
     </dependencies>
 
