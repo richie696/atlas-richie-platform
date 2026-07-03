@@ -1,19 +1,21 @@
 package com.richie.component.oauth.dcr.support;
 
-import com.richie.component.cache.GlobalCache;
 import com.richie.component.cache.config.CacheAutoConfiguration;
 import com.richie.component.cache.redis.config.base.RedisBaseAutoConfiguration;
-import com.richie.component.oauth.core.spi.TokenStore;
-import com.richie.component.oauth.core.support.DefaultTokenStore;
 import com.richie.component.oauth.dcr.config.OAuth2DCRAutoConfiguration;
-import com.richie.component.oauth.dcr.spi.ClientIdMetadataDocumentResolver;
-import com.richie.component.oauth.dcr.support.DefaultClientIdMetadataDocumentResolver;
-import com.richie.component.oauth.dcr.support.SSRFProtection;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
+/**
+ * OAuth DCR 模块集成测试装配。
+ *
+ * <p>仅作为 {@code @Import} 容器，不定义任何业务 Bean。所有 OAuth 相关 Bean
+ * （{@code TokenStore} / {@code ClientIdMetadataDocumentResolver} /
+ * {@code SSRFProtection} / {@code DynamicClientRegistrationEndpoint}）由
+ * {@code OAuth2DCRAutoConfiguration} 统一装配，且业务方可通过
+ * {@code @ConditionalOnMissingBean} 自行覆盖默认实现。</p>
+ */
 @SpringBootConfiguration
 @EnableAutoConfiguration
 @Import({
@@ -22,16 +24,4 @@ import org.springframework.context.annotation.Import;
         OAuth2DCRAutoConfiguration.class,
 })
 public class OAuthDcrIntegrationTestConfiguration {
-
-    @Bean
-    public TokenStore tokenStore() {
-        return new DefaultTokenStore();
-    }
-
-    @Bean
-    public ClientIdMetadataDocumentResolver clientIdMetadataDocumentResolver(
-            GlobalCache globalCache,
-            SSRFProtection ssrfProtection) {
-        return new DefaultClientIdMetadataDocumentResolver(globalCache, ssrfProtection);
-    }
 }

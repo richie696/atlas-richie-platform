@@ -24,7 +24,7 @@ import java.util.function.Function;
  * {@link StructuredTaskScope.Configuration#withTimeout} 控制；并发上限由
  * {@link Semaphore} 控制。</p>
  *
- * <h3>两种执行模式</h3>
+ * <h2>两种执行模式</h2>
  * <pre>{@code
  * // 方式一：处理每条记录，不需要返回值（fire-and-forget）
  * BatchResult result = BatchProcessor.of(order_list)
@@ -142,7 +142,7 @@ public final class BatchProcessor {
          * <p>与 {@link #forEach(Consumer)} 的关键区别在于：本方法会保留每个元素的映射结果，
          * 返回的 {@link BatchMappingResult} 同时承载统计信息与结果列表。</p>
          *
-         * <h3>行为契约</h3>
+         * <h4>行为契约</h4>
          * <ul>
          *   <li><b>顺序保证：</b>{@code result.results()} 的下标与输入集合的下标一一对应，
          *       与任务实际完成顺序无关。</li>
@@ -154,7 +154,7 @@ public final class BatchProcessor {
          *       results=[]} 的空结果实例。</li>
          * </ul>
          *
-         * <h3>结果顺序保证实现</h3>
+         * <h4>结果顺序保证实现</h4>
          * <p>内部使用 {@link AtomicReferenceArray} 按输入下标原子写入结果，
          * 完成后通过 {@link List#copyOf} 构造不可变列表，保证外部读取的顺序
          * 与输入严格一致。</p>

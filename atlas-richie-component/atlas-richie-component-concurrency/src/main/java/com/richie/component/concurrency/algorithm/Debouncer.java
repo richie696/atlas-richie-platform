@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 防抖器 —— 用语义化 API 替代 {@code ScheduledExecutorService} 的手动调用，
  * 将“重复触发即重置计时”的防抖模式封装为两个方法：{@link #trigger()} 和 {@link #close()}。
  *
- * <h3>基本使用</h3>
+ * <h2>基本使用</h2>
  * <pre>{@code
  * // 300ms 内无新 trigger() 触发，则执行一次 save()
  * Debouncer debouncer = Debouncer.of(Duration.ofMillis(300), this::save);

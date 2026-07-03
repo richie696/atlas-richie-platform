@@ -9,7 +9,7 @@ import java.io.Serial;
  * 也可让其自然向上传播。异常的 {@link #getCause()} 返回最后一次失败的原始异常，
  * 可用于获取完整的错误堆栈信息以辅助排障。</p>
  *
- * <h3>典型使用</h3>
+ * <h2>典型使用</h2>
  * <pre>{@code
  * try {
  *     String result = Retryer.of(Duration.ofMillis(100))

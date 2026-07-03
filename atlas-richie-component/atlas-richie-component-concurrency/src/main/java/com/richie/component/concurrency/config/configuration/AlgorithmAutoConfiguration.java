@@ -36,8 +36,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@code platform.concurrency.async.enabled} 总开关；每个 Bean 独立由各自子系统的
  * {@code enabled} 开关控制，用户按需启用。</p>
  *
- * <h3>装配清单</h3>
+ * <h2>装配清单</h2>
  * <table>
+ *   <caption>并发组件 Bean、配置前缀与默认值对照表</caption>
  *   <tr><th>Bean</th><th>配置前缀</th><th>启用开关</th><th>默认</th></tr>
  *   <tr>
  *     <td>{@link RateLimiter}</td>

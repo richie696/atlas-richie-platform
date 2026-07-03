@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *   </li>
  * </ul>
  *
- * <h3>基本使用</h3>
+ * <h2>基本使用</h2>
  * <pre>{@code
  * // 1) 每秒补充 100 个令牌（突发最大 100 个/秒）
  * RateLimiter limiter = RateLimiter.ofTokensPerSecond(100);
@@ -102,7 +102,7 @@ public final class RateLimiter implements AutoCloseable {
      *
      * @param permitsPerSecond 每秒允许通过的令牌数（必须 ≥ 1）
      * @return 限流器实例
-     * @throws IllegalArgumentException 如果 {@code permitsPerSecond} < 1
+     * @throws IllegalArgumentException 如果 {@code permitsPerSecond} &lt; 1
      */
     public static RateLimiter ofTokensPerSecond(int permitsPerSecond) {
         validatePermits(permitsPerSecond);
@@ -186,7 +186,7 @@ public final class RateLimiter implements AutoCloseable {
      *
      * @param permits 要获取的令牌数（必须 ≥ 1）
      * @return 获取成功返回 {@code true}；桶空时立即返回 {@code false}
-     * @throws IllegalArgumentException 如果 {@code permits} < 1
+     * @throws IllegalArgumentException 如果 {@code permits} &lt; 1
      * @since 1.0.0
      */
     public boolean tryAcquire(int permits) {
@@ -221,13 +221,14 @@ public final class RateLimiter implements AutoCloseable {
     /**
      * 如果令牌不足，在指定超时内等待 {@code permits} 个令牌，超时后仍无令牌则返回 {@code false}。
      *
-     * <p>这是显式的<b>限时阻塞</b>语义，与 {@link #tryAcquire(int)} 的<b>非阻塞</b>语义
-     * 彻底分离 —— 两者共用 {@code try*} 前缀但语义不同，调用方应根据需要选择合适的方法：
-     * <ul>
-     *   <li>立即判断 → {@link #tryAcquire(int)}</li>
-     *   <li>限时等待 → {@link #tryAcquire(int, Duration)}</li>
-     *   <li>无限等待 → {@link #acquire(int)}</li>
-     * </ul></p>
+      * <p>这是显式的<b>限时阻塞</b>语义，与 {@link #tryAcquire(int)} 的<b>非阻塞</b>语义
+      * 彻底分离 —— 两者共用 {@code try*} 前缀但语义不同，调用方应根据需要选择合适的方法：</p>
+      * <ul>
+      *   <li>立即判断 → {@link #tryAcquire(int)}</li>
+      *   <li>限时等待 → {@link #tryAcquire(int, Duration)}</li>
+      *   <li>无限等待 → {@link #acquire(int)}</li>
+      * </ul>
+      * <p>调用方应根据需要选择合适的方法。</p>
      *
      * <p>等待期间线程被中断时恢复中断标志并返回 {@code false}。</p>
      *
@@ -274,7 +275,7 @@ public final class RateLimiter implements AutoCloseable {
      *
      * @param permits 要获取的令牌数（必须 ≥ 1）
      * @throws InterruptedException       如果等待期间线程被中断
-     * @throws IllegalArgumentException   如果 {@code permits} < 1
+     * @throws IllegalArgumentException   如果 {@code permits} &lt; 1
      * @throws IllegalStateException      如果限流器已关闭
      */
     public void acquire(int permits) throws InterruptedException {
@@ -297,7 +298,7 @@ public final class RateLimiter implements AutoCloseable {
      * @param permits 要获取的令牌数（必须 ≥ 1）
      * @return 是否成功获取令牌（{@code false} 表示因并发被关闭导致 {@link Semaphore} 中断，
      *         实际场景几乎不会发生，仅作为非阻塞契约返回）
-     * @throws IllegalArgumentException 如果 {@code permits} < 1
+     * @throws IllegalArgumentException 如果 {@code permits} &lt; 1
      */
     public boolean acquireUninterruptibly(int permits) {
         if (permits < 1) {

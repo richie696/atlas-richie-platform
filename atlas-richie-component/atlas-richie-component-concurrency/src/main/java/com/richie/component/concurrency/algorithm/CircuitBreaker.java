@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *   <li><b>HALF_OPEN (半开)</b>：探测状态，等待一段时间后放一个请求"试探"，成功则闭合，否则再次断开</li>
  * </ul>
  *
- * <h3>状态机</h3>
+ * <h2>状态机</h2>
  * <pre>{@code
  *      ┌─────────────┐
  *      │   CLOSED    │ ←─── 成功 ───┐

@@ -8,7 +8,7 @@ import java.util.Objects;
  * <p>该对象为不可变快照，供外部监控系统（Micrometer / Prometheus / 日志 / Actuator Endpoint）
  * 拉取使用。本组件不绑定任何监控框架，只负责暴露结构化的状态数据。</p>
  *
- * <h3>典型用法</h3>
+ * <h2>典型用法</h2>
  * <pre>{@code
  * DynamicExecutor executor = ...;
  * PoolStatus status = executor.snapshot();

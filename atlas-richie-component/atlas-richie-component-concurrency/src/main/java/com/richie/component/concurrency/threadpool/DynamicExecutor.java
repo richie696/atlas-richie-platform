@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * 可运行时调整的线程池 —— 在不依赖任何配置中心/三方组件的前提下，通过事件驱动的方式
  * 动态调整核心线程数、最大线程数、空闲存活时间和拒绝策略。
  *
- * <h3>设计思想</h3>
+ * <h2>设计思想</h2>
  * <p>传统线程池的缺点之一是参数在构造时固定，生产环境遇到突发流量或慢调用时只能通过
  * 重启应用来调整。本类通过{@link #onResize(PoolResizeEvent)}方法开放运行时调整能力，
  * 外部事件源可以是配置中心、Admin API、定时任务或 JMX 等任意机制——组件内部不绑定任何
@@ -147,7 +147,7 @@ public class DynamicExecutor extends ThreadPoolExecutor {
      *
      * <p>仅更新事件中非 {@code null} 的字段，{@code null} 字段表示"不调整"。</p>
      *
-     * <h3>可调整参数</h3>
+     * <h4>可调整参数</h4>
      * <ul>
      *   <li>{@code corePoolSize} → {@link ThreadPoolExecutor#setCorePoolSize(int)}</li>
      *   <li>{@code maximumPoolSize} → {@link ThreadPoolExecutor#setMaximumPoolSize(int)}</li>
@@ -155,7 +155,7 @@ public class DynamicExecutor extends ThreadPoolExecutor {
      *   <li>{@code rejectedHandler} → {@link ThreadPoolExecutor#setRejectedExecutionHandler(RejectedExecutionHandler)}</li>
      * </ul>
      *
-     * <h3>使用经验</h3>
+     * <h4>使用经验</h4>
      * <ul>
      *   <li>突发流量：适当增大 {@code maximumPoolSize} 让更多任务能被处理</li>
      *   <li>慢调用积压：增大 {@code corePoolSize} 提高并发处理能力</li>

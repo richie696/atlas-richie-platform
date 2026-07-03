@@ -23,7 +23,7 @@ import java.util.function.Supplier;
  *   <li><b>尽力汇聚 (Best-Effort Gather):</b>任何子任务失败不影响其他子任务，返回成功与失败明细</li>
  * </ol>
  *
- * <h3>基本使用</h3>
+ * <h2>基本使用</h2>
  * <pre>{@code
  * // 汇聚：并行查询两个服务
  * var results = StructuredConcurrency.gatherAll(List.of(
@@ -225,7 +225,7 @@ public final class StructuredConcurrency {
      * 而是收集全部任务的执行结果：成功的返回结果值，失败的任务其 {@link Throwable} 被记录。
      * 适用于"部分失败不影响整体"的容错场景，例如批量数据获取时偶尔几个数据源临时不可用。</p>
      *
-     * <h3>返回值详解</h3>
+     * <h4>返回值详解</h4>
      * <p>{@link BestEffortResult} 包含三个核心部分：</p>
      * <ul>
      *   <li>{@link BestEffortResult#successes() successes} — 成功结果集合（按原始顺序排列）</li>
@@ -233,7 +233,7 @@ public final class StructuredConcurrency {
      *   <li>{@link BestEffortResult#failedIndices() failedIndices} — 失败任务在原始集合中的下标集合</li>
      * </ul>
      *
-     * <h3>实现说明</h3>
+     * <h4>实现说明</h4>
      * <p>内部 fork 出与任务数相等的虚拟线程，每个任务独立捕获 {@link Throwable}（含 {@link Error}），
      * 并将其包装为 {@link Outcome}。然后用 {@link Joiner#awaitAllSuccessfulOrThrow()} 等待所有 fork 完成，
      * scope 层面不会因单个任务失败而中断其他任务。最后从 {@link Outcome} 中还原成功结果与失败明细。</p>
@@ -332,7 +332,7 @@ public final class StructuredConcurrency {
      * <p>所有 list 字段在构造时通过 {@link List#copyOf} 进行防御性拷贝，对外暴露的列表不可修改。
      * 成功数加失败索引数等于原始任务数：{@code successes().size() + failedIndices().size() == 原始任务数}。</p>
      *
-     * <h3>使用示例</h3>
+     * <h2>使用示例</h2>
      * <pre>{@code
      * var outcome = StructuredConcurrency.gatherAllBestEffort(List.of(
      *     () -> queryA(),

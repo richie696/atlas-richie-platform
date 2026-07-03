@@ -10,7 +10,7 @@ import java.util.concurrent.RejectedExecutionHandler;
  * <p>事件源可以是配置中心、Admin API、定时器或 JMX 等任意外部机制。本组件只定义"要改成什么"，
  * 不关心事件从哪来，也不绑定任何配置中心依赖。</p>
  *
- * <h3>使用方式</h3>
+ * <h2>使用方式</h2>
  * <pre>{@code
  * // 外部发布事件（比如 Nacos/Etcd 配置变更监听器）
  * var event = PoolResizeEvent.builder()

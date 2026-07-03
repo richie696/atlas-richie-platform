@@ -9,7 +9,7 @@ import java.util.List;
  * 失败项对应的槽位为 {@code null}，调用方可通过 {@code result.results().get(i) == null}
  * 配合 {@code result.errors()} 精确定位失败原因与位置。</p>
  *
- * <h3>结果顺序保证</h3>
+ * <h2>结果顺序保证</h2>
  * <ul>
  *   <li>{@link #results()} 的下标与输入集合的下标一一对应</li>
  *   <li>成功项的返回值位于其原始下标位置</li>

@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * 虚拟线程工厂 —— 创建带命名规则的可观测虚拟线程，并支持 {@link ScopedValue} 上下文绑定。
  *
- * <h3>基本用法</h3>
+ * <h2>基本用法</h2>
  * <pre>{@code
  * // 创建带前缀的虚拟线程
  * var factory = VirtualThreadFactory.of("async-job");

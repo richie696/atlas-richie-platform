@@ -13,7 +13,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * 本工具封装了<b>指数退避</b>(Exponential Backoff)、<b>全量抖动</b>(Full Jitter)、
  * <b>异常类型过滤</b>三大关键能力，避免业务代码重复实现。</p>
  *
- * <h3>基本用法</h3>
+ * <h2>基本用法</h2>
  * <pre>{@code
  * // 简单重试：3 次尝试，初始退避 100ms
  * String result = Retryer.of(Duration.ofMillis(100))
@@ -107,7 +107,7 @@ public final class Retryer {
          *
          * @param maxAttempts 最大尝试次数（必须 ≥ 1）
          * @return 当前构建器
-         * @throws IllegalArgumentException 如果 {@code maxAttempts} < 1
+         * @throws IllegalArgumentException 如果 {@code maxAttempts} &lt; 1
          */
         public RetryBuilder maxAttempts(int maxAttempts) {
             if (maxAttempts < 1) {

@@ -8,7 +8,7 @@ import java.util.List;
  * <p>使用 record 封装，字段不可变；{@link #errors()} 在构造时已通过 {@link List#copyOf}
  * 进行防御性拷贝，对外暴露的列表不可修改。</p>
  *
- * <h3>基本使用</h3>
+ * <h2>基本使用</h2>
  * <pre>{@code
  * BatchResult result = BatchProcessor.of(order_list)
  *     .parallelism(20)

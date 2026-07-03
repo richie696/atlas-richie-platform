@@ -29,7 +29,7 @@ import java.util.concurrent.RejectedExecutionHandler;
  *（corePoolSize / maximumPoolSize / keepAliveTime / rejectedHandler），
  * 自动调用对应 {@link DynamicExecutor#onResize(PoolResizeEvent)} 完成动态调整。</p>
  *
- * <h3>使用方式</h3>
+ * <h2>使用方式</h2>
  * <p>零配置。只要 classpath 中存在 Spring Cloud Context（即
  * {@code EnvironmentChangeEvent} 可用），本组件自动生效。无需任何额外代码。</p>
  *
