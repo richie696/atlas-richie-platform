@@ -17,9 +17,14 @@
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
-    <artifactId>atlas-richie-component-vector-milvus</artifactId>
-    <version>${atlas.richie.version}</version>
+   <groupId>com.richie.component</groupId>
+   <artifactId>atlas-richie-component-vector-core</artifactId>
+   <version>${atlas.richie.version}</version>
+</dependency>
+<dependency>
+<groupId>com.richie.component</groupId>
+<artifactId>atlas-richie-component-vector-milvus</artifactId>
+<version>${atlas.richie.version}</version>
 </dependency>
 ```
 

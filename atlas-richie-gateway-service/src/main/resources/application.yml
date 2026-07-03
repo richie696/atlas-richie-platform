@@ -6,6 +6,3 @@ spring:
         name: platform-gateway-service
 #    profiles:
 #        include: cache,gateway
-
-
-platform.gateway
