@@ -71,7 +71,7 @@
         <poi.version>5.5.1</poi.version>
         <asm.version>9.9.1</asm.version>
         <weixin-java.version>4.8.4.B</weixin-java.version>
-        <alipay-sdk-java.version>4.40.795.ALL</alipay-sdk-java.version>
+        <alipay-sdk-java.version>4.40.865.ALL</alipay-sdk-java.version>
         <pdfbox.version>3.0.7</pdfbox.version>
         <thumbnailator.version>0.4.21</thumbnailator.version>
 
