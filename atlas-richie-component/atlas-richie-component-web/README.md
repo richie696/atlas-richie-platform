@@ -1,257 +1,264 @@
-# Richie Component Web
+# Atlas Richie Web Component (atlas-richie-component-web)
 
-## 概述
+> **Web / Servlet infrastructure** component. Bundles Spring Boot Web autoconfig, CORS, exception handling, i18n message resolution, WebSocket / SSE endpoints, and security filter chain conventions. One import away from a "production-grade" Spring MVC application.
 
-`richie-component-web` 是Richie平台 Web 组件，提供 Web 应用的基础能力，包括 CORS 配置、国际化支持、异常处理、WebSocket、SSE、Undertow 配置等。
+---
 
-## 核心特性
+## 📖 Contents
 
-- ✅ **CORS 配置** - 支持跨域资源共享配置
-- ✅ **国际化支持** - 支持多语言和时区处理
-- ✅ **异常处理** - 统一异常处理和错误响应
-- ✅ **WebSocket 支持** - 支持 WebSocket 通信
-- ✅ **SSE 支持** - 支持服务器发送事件
-- ✅ **Undertow 配置** - 支持 Undertow Web 服务器配置
-- ✅ **消息转换** - 统一消息体类型转换处理
+- [📖 Overview](#📖-overview)
+  - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
+- [✨ Features](#✨-features)
+  - [Core capabilities](#core-capabilities)
+  - [Design choices](#design-choices)
+- [🏗️ Architecture & Module Layout](#🏗️-architecture-&-module-layout)
+- [🚀 Quick Start](#🚀-quick-start)
+  - [1. Add the dependency](#1-add-the-dependency)
+  - [2. Configure](#2-configure)
+  - [3. Your first controller](#3-your-first-controller)
+- [🔧 Core Capabilities](#🔧-core-capabilities)
+  - [1. CORS](#1-cors)
+  - [2. Global exception handling](#2-global-exception-handling)
+  - [3. WebSocket](#3-websocket)
+  - [4. SSE endpoint](#4-sse-endpoint)
+- [⚙️ Configuration Reference](#⚙️-configuration-reference)
+- [🎯 Best Practices](#🎯-best-practices)
+- [⚠️ Known Limitations](#⚠️-known-limitations)
+- [❓ FAQ](#❓-faq)
+  - [Q1: How do I add a custom CORS origin dynamically?](#q1-how-do-i-add-a-custom-cors-origin-dynamically?)
+  - [Q2: How do I throw errors with i18n messages?](#q2-how-do-i-throw-errors-with-i18n-messages?)
+  - [Q3: Can I disable WebSocket?](#q3-can-i-disable-websocket?)
+  - [Q4: How do I add CSRF protection?](#q4-how-do-i-add-csrf-protection?)
+- [📚 Further Reading](#📚-further-reading)
+---
 
-## 快速开始
+## 📖 Overview
 
-### 1. 添加依赖
+| Item | Value |
+|------|-------|
+| **Artifact** | `com.richie.component:atlas-richie-component-web` |
+| **Category** | Web framework — Spring MVC infrastructure |
+| **Hard dependencies** | `spring-boot-starter-web` |
+| **Compatible with** | Spring Boot 4.x, JDK 25 |
+
+### `What` this component is — and what it isn't
+
+| ✅ It gives you | ❌ It does not give you |
+|-----------------|------------------------|
+| CORS preconfiguration | An API gateway (use Spring Cloud Gateway) |
+| Global exception handling (`@RestControllerAdvice`) | Auth / permission rules (use `atlas-richie-component-oauth`) |
+| WebSocket / SSE endpoints | Rate limiting (use Sentinel or gateway) |
+| I18n message resolution (Locale resolver) | A web framework replacement (still Spring MVC) |
+
+## ✨ Features
+
+### `Core` capabilities
+
+- ✅ **CORS** — declarative allowed origins / methods / headers.
+- ✅ **Global exception handling** — typed `@RestControllerAdvice` with i18n message support.
+- ✅ **WebSocket** — STOMP and raw WebSocket endpoints.
+- ✅ **SSE** — `SseEmitter` helpers + auto-completion.
+- ✅ **Locale resolver** — header / cookie / session based.
+- ✅ **Static resource handling** — with caching headers.
+
+### `Design` choices
+
+- ✅ **Spring Boot native** — no override of WebMvcConfigurer.
+- ✅ **Convention over configuration** — sensible defaults, opt-in overrides.
+- ✅ **Header propagation** — auto-read tenant / user / trace from `HeaderContextHolder`.
+
+## 🏗️ Architecture & Module Layout
+
+```
+atlas-richie-component-web
+├── config/
+│   ├── WebAutoConfiguration
+│   ├── WebProperties
+│   ├── CorsAutoConfiguration
+│   └── LocaleAutoConfiguration
+├── cors/
+│   ├── CorsProperties
+│   └── CorsFilter
+├── exception/
+│   ├── GlobalExceptionHandler          ← @RestControllerAdvice
+│   └── BusinessException               ← canonical error type
+├── websocket/
+│   ├── WebSocketConfig
+│   └── StompEndpoint
+├── sse/
+│   └── SseEndpoint                     ← @GetMapping(produces="text/event-stream")
+└── locale/
+    ├── HeaderLocaleResolver
+    └── MessageSourceConfiguration
+```
+
+## 🚀 Quick Start
+
+### 1) `Add` the dependency
 
 ```xml
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-web</artifactId>
-    <version>${atlas.richie.version}</version>
 </dependency>
 ```
 
-### 2. 配置
-
-```yaml
-platform:
-  component:
-    web:
-      # 支持的语言标签（IETF BCP 47 标准）
-      supportedLanguageTags:
-        - zh-CN
-        - en-US
-        - ja-JP
-        - ko-KR
-      # 登录地址清单
-      loginUrls:
-        - /api/auth/login
-        - /api/auth/oauth2/callback
-      # 令牌签发秘钥
-      tokenSecret: your-token-secret
-      # 令牌有效时长（秒）
-      tokenExpirationDate: 86400
-      # 跨域配置
-      cors:
-        # 是否启用CORS（默认：false）
-        enable: true
-        # 路径模式（默认：/**）
-        pathPattern: /**
-        # 允许的来源（可选）
-        allowedOrigin:
-          - http://localhost:3000
-          - https://example.com
-        # 允许的来源模式（默认：["*"]）
-        allowedOriginPatterns:
-          - "*"
-        # 允许的HTTP方法（默认：["GET", "POST", "PUT", "DELETE", "OPTIONS"]）
-        allowedMethods:
-          - GET
-          - POST
-          - PUT
-          - DELETE
-          - OPTIONS
-        # 允许的请求头（默认：["*"]）
-        allowedHeaders:
-          - "*"
-        # 暴露的响应头（可选）
-        exposedHeaders:
-          - X-Request-Id
-          - X-Trace-Id
-        # 是否允许凭证（默认：true）
-        allowCredentials: true
-        # 是否允许专用网络访问（默认：false）
-        allowPrivateNetwork: false
-        # 预检请求缓存时间（秒，默认：3600）
-        maxAge: 3600
-```
-
-### 3. 使用
-
-组件会自动配置，无需额外代码。
-
-## 配置说明
-
-### CORS 配置
-
-CORS（跨域资源共享）配置用于控制跨域请求：
+### 2) `Configure`
 
 ```yaml
 platform:
   component:
     web:
       cors:
-        enable: true  # 是否启用CORS
-        pathPattern: /**  # 路径模式
-        allowedOriginPatterns: ["*"]  # 允许的来源模式
-        allowedMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]  # 允许的HTTP方法
-        allowedHeaders: ["*"]  # 允许的请求头
-        allowCredentials: true  # 是否允许凭证
-        allowPrivateNetwork: false  # 是否允许专用网络访问
-        maxAge: 3600  # 预检请求缓存时间（秒）
+        enabled: true
+        allowed-origins: [https://app.example.com]
+        allowed-methods: [GET, POST, PUT, DELETE, OPTIONS]
+        allowed-headers: [*]
+        allow-credentials: true
+        max-age: 3600
+      locale:
+        default: en
+        supported: [en, zh]
+        header: Accept-Language
+      exception:
+        include-stack-trace: false
+        include-binding-errors: true
 ```
 
-### 国际化配置
+### 3) `Your` first controller
 
-国际化配置支持多语言和时区处理：
+```java
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+public class UserController {
+    private final UserService userService;
+
+    @GetMapping("/{id}")
+    public User get(@PathVariable String id) {
+        return userService.findById(id);
+    }
+}
+```
+
+## 🔧 Core Capabilities
+
+### 1) `CORS`
 
 ```yaml
 platform:
   component:
     web:
-      # 支持的语言标签（IETF BCP 47 标准）
-      supportedLanguageTags:
-        - zh-CN  # 简体中文
-        - en-US  # 美式英语
-        - ja-JP  # 日语
-        - ko-KR  # 韩语
+      cors:
+        allowed-origins: [https://app.example.com, https://admin.example.com]
+        allowed-methods: [GET, POST, PUT, DELETE]
+        allow-credentials: true
 ```
 
-### 令牌配置
+### 2) `Global` exception handling
 
-令牌配置用于 JWT 令牌管理：
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
 
-```yaml
-platform:
-  component:
-    web:
-      # 令牌签发秘钥
-      tokenSecret: your-token-secret
-      # 令牌有效时长（秒）
-      tokenExpirationDate: 86400  # 24小时
+    @ExceptionHandler(BusinessException.class)
+    public ResultVO<?> handleBusiness(BusinessException e) {
+        return ResultVO.error(e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResultVO<?> handleOther(Exception e) {
+        log.error("unexpected error", e);
+        return ResultVO.error("INTERNAL_ERROR", "Internal server error");
+    }
+}
 ```
 
-### Undertow 配置
+### 3) `WebSocket`
 
-Undertow Web 服务器配置：
-
-```yaml
-server:
-  undertow:
-    # 线程配置
-    threads:
-      io: 4  # IO线程数
-      worker: 64  # 工作线程数
-    # 缓冲区配置
-    buffer-size: 1024  # 缓冲区大小（字节）
-    # 直接缓冲区配置
-    direct-buffers: true  # 是否使用直接缓冲区
+```java
+@Configuration
+@EnableWebSocket
+public class WebSocketConfig implements WebSocketConfigurer {
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        registry.addHandler(new MyHandler(), "/ws")
+                .setAllowedOrigins("*");
+    }
+}
 ```
 
-## 功能特性
+### 4) `SSE` endpoint
 
-### 1. CORS 支持
+```java
+@GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+public SseEmitter stream() {
+    SseEmitter emitter = new SseEmitter(60_000L);
+    eventBus.subscribe(emitter::send);
+    return emitter;
+}
+```
 
-支持跨域资源共享配置，可以灵活控制跨域请求：
+## ⚙️ Configuration Reference
 
-- 支持来源模式匹配
-- 支持凭证传递
-- 支持专用网络访问
-- 支持预检请求缓存
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `cors.enabled` | boolean | `true` | Enable CORS filter |
+| `cors.allowed-origins` | List<String> | `[]` | Allowed origins (use `*` for any) |
+| `cors.allowed-methods` | List<String> | `[GET, POST, OPTIONS]` | Allowed HTTP methods |
+| `cors.allowed-headers` | List<String> | `[*]` | Allowed request headers |
+| `cors.allow-credentials` | boolean | `false` | Allow cookies / auth headers |
+| `cors.max-age` | long | `1800` | Pre-flight cache duration (s) |
+| `locale.default` | String | `en` | Default locale |
+| `locale.supported` | List<String> | `[en]` | Supported locales |
+| `locale.header` | String | `Accept-Language` | Locale source header |
+| `exception.include-stack-trace` | boolean | `false` | Include trace in API response |
+| `exception.include-binding-errors` | boolean | `true` | Include validation errors |
 
-### 2. 国际化支持
+## 🎯 Best Practices
 
-支持多语言和时区处理：
+1. **Never set `cors.allowed-origins: *` with `allow-credentials: true`** — browsers reject this combo.
+2. **Always use `BusinessException`** + global handler — never throw raw `Exception`.
+3. **Use i18n message keys, not literals** — `messageSource.getMessage("user.notFound", null, locale)`.
+4. **Configure SSE timeouts explicitly** — default 0 = forever (memory leak risk).
+5. **Validate `Origin` server-side too** — CORS is a browser convenience, not security.
 
-- 支持 IETF BCP 47 标准语言标签
-- 支持 Accept-Language 请求头解析
-- 支持时区处理
-- 支持 Cookie 和请求头语言切换
+## ⚠️ Known Limitations
 
-### 3. 异常处理
+| Limitation | Impact | Workaround |
+|------------|--------|------------|
+| **No built-in rate limiting** | Clients can spam endpoints | Use Sentinel at gateway layer |
+| **No CSRF token helper** | SPA / mobile clients struggle | Custom CSRF filter or use SameSite cookies |
+| **WebSocket auth not built in** | You wire your own handshake | Inject `HandshakeInterceptor` |
 
-统一异常处理和错误响应：
+## ❓ FAQ
 
-- 全局异常处理
-- 统一错误响应格式
-- 支持自定义异常处理
+### `Q1` — `How` do `I` add a custom `CORS` origin dynamically?
 
-### 4. WebSocket 支持
+Implement `CorsConfigurationSource` and register as `@Bean`.
 
-支持 WebSocket 通信：
+### `Q2` — `How` do `I` throw errors with i18n messages?
 
-- 自动配置 WebSocket
-- 支持消息转换
-- 支持连接管理
+```java
+throw new BusinessException("USER_NOT_FOUND", locale);  // looks up messages.properties
+```
 
-### 5. SSE 支持
+### `Q3` — `Can` `I` disable `WebSocket`?
 
-支持服务器发送事件（SSE）：
+Don't include `spring-boot-starter-websocket` — the autoconfig won't activate.
 
-- 自动配置 SSE
-- 支持事件推送
-- 支持连接管理
+### `Q4` — `How` do `I` add `CSRF` protection?
 
-### 6. Undertow 配置
+Extend `WebSecurityConfigurerAdapter` (legacy) or use `SecurityFilterChain` bean with `csrf()` config.
 
-支持 Undertow Web 服务器配置：
+## 📚 Further Reading
 
-- 线程配置
-- 缓冲区配置
-- 性能优化
+- **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
+- **HTTP client** — [`../atlas-richie-component-http/README.md`](../atlas-richie-component-http/README.md)
+- **OAuth** — [`../atlas-richie-component-oauth/README.md`](../atlas-richie-component-oauth/README.md)
+- **i18n** — [`../atlas-richie-component-i18n/README.md`](../atlas-richie-component-i18n/README.md)
+- **Microservice / Sentinel** — [`../atlas-richie-component-microservice/README.md`](../atlas-richie-component-microservice/README.md)
 
-## 最佳实践
+---
 
-1. **CORS 配置**
-   - 生产环境不要使用 `allowedOriginPatterns: ["*"]`
-   - 明确指定允许的来源
-   - 启用 `allowCredentials` 时，不能使用 `*` 作为来源
-
-2. **国际化配置**
-   - 使用 IETF BCP 47 标准语言标签
-   - 支持的语言标签要明确
-   - 考虑时区处理
-
-3. **令牌配置**
-   - 使用强密钥
-   - 设置合理的过期时间
-   - 定期轮换密钥
-
-4. **Undertow 配置**
-   - 根据服务器资源调整线程数
-   - 使用直接缓冲区提高性能
-   - 根据业务场景调整缓冲区大小
-
-## 常见问题
-
-### Q: 如何配置 CORS？
-
-A: 在配置文件中设置 `platform.component.web.cors.enable: true`，并配置相应的 CORS 参数。
-
-### Q: 如何支持多语言？
-
-A: 在配置文件中设置 `platform.component.web.supportedLanguageTags`，并在请求头中添加 `Accept-Language`。
-
-### Q: 如何配置 Undertow？
-
-A: 在配置文件中设置 `server.undertow` 相关参数，如线程数、缓冲区大小等。
-
-### Q: 如何支持 WebSocket？
-
-A: 组件会自动配置 WebSocket，无需额外配置。只需在代码中使用 `@ServerEndpoint` 注解即可。
-
-### Q: 如何支持 SSE？
-
-A: 组件会自动配置 SSE，无需额外配置。使用 `SseManager` 可以管理 SSE 连接。
-
-## 相关文档
-
-- [Spring Web 官方文档](https://docs.spring.io/spring-framework/reference/web/webmvc.html)
-- [Undertow 官方文档](https://undertow.io/)
-- [WebSocket 官方文档](https://docs.spring.io/spring-framework/reference/web/websocket.html)
-
+**atlas-richie-component-web** 🚀
