@@ -34,7 +34,7 @@
         <javassist.version>3.32.0-GA</javassist.version>
 
         <!-- 对象存储 SDK 相关版本 -->
-        <jettison.version>1.5.5</jettison.version>
+        <jettison.version>1.5.6</jettison.version>
         <aliyun-sdk-oss.version>3.18.5</aliyun-sdk-oss.version>
         <tencentcloud.cos_api.version>5.6.251</tencentcloud.cos_api.version>
         <tencentcloud.cos-sts_api.version>3.1.1</tencentcloud.cos-sts_api.version>
