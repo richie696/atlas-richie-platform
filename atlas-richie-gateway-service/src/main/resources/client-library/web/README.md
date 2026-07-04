@@ -1,4 +1,4 @@
-# 统一HTTP客户端库
+# Atlas Richie Unified Web HTTP Client (atlas-richie-gateway-web-client)
 
 ## 📚 概述
 

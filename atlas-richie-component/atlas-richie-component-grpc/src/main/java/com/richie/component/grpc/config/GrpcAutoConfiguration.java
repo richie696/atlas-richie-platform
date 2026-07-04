@@ -54,7 +54,7 @@ public class GrpcAutoConfiguration {
      * gRPC 服务端请求头拦截器，从 Metadata 提取白名单头信息注入 {@code HeaderContextHolder}
      */
     @Bean
-    @ConditionalOnProperty(name = "richie.grpc.server.header-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "platform.grpc.server.header-enabled", havingValue = "true", matchIfMissing = true)
     public GrpcServerHeaderInterceptor grpcServerHeaderInterceptor(GrpcProperties properties) {
         return new GrpcServerHeaderInterceptor(properties.getHeaderPropagation().getHeaders());
     }
@@ -63,7 +63,7 @@ public class GrpcAutoConfiguration {
      * gRPC 客户端请求头拦截器，从 {@code HeaderContextHolder} 读取白名单头信息写入 Metadata
      */
     @Bean
-    @ConditionalOnProperty(name = "richie.grpc.client.header-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "platform.grpc.client.header-enabled", havingValue = "true", matchIfMissing = true)
     public GrpcClientHeaderInterceptor grpcClientHeaderInterceptor(GrpcProperties properties) {
         return new GrpcClientHeaderInterceptor(properties.getHeaderPropagation().getHeaders());
     }
@@ -73,11 +73,11 @@ public class GrpcAutoConfiguration {
     /**
      * gRPC 服务端指标拦截器，基于 Micrometer 记录 requests / duration / errors 三指标
      *
-     * <p>仅在容器中存在 {@link MeterRegistry} Bean 且 {@code richie.grpc.server.metrics-enabled=true} 时激活</p>
+     * <p>仅在容器中存在 {@link MeterRegistry} Bean 且 {@code platform.grpc.server.metrics-enabled=true} 时激活</p>
      */
     @Bean
     @ConditionalOnBean(MeterRegistry.class)
-    @ConditionalOnProperty(name = "richie.grpc.server.metrics-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "platform.grpc.server.metrics-enabled", havingValue = "true", matchIfMissing = true)
     public GrpcServerMetricsInterceptor grpcServerMetricsInterceptor(MeterRegistry meterRegistry) {
         return new GrpcServerMetricsInterceptor(meterRegistry);
     }
@@ -85,11 +85,11 @@ public class GrpcAutoConfiguration {
     /**
      * gRPC 客户端指标拦截器，基于 Micrometer 记录客户端请求 / 延迟 / 错误
      *
-     * <p>仅在容器中存在 {@link MeterRegistry} Bean 且 {@code richie.grpc.client.metrics-enabled=true} 时激活</p>
+     * <p>仅在容器中存在 {@link MeterRegistry} Bean 且 {@code platform.grpc.client.metrics-enabled=true} 时激活</p>
      */
     @Bean
     @ConditionalOnBean(MeterRegistry.class)
-    @ConditionalOnProperty(name = "richie.grpc.client.metrics-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "platform.grpc.client.metrics-enabled", havingValue = "true", matchIfMissing = true)
     public GrpcClientMetricsInterceptor grpcClientMetricsInterceptor(MeterRegistry meterRegistry) {
         return new GrpcClientMetricsInterceptor(meterRegistry);
     }
@@ -100,7 +100,7 @@ public class GrpcAutoConfiguration {
      * gRPC 服务端日志拦截器，记录每次调用的方法名、状态码和耗时
      */
     @Bean
-    @ConditionalOnProperty(name = "richie.grpc.server.logging-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "platform.grpc.server.logging-enabled", havingValue = "true", matchIfMissing = true)
     public GrpcServerLoggingInterceptor grpcServerLoggingInterceptor() {
         return new GrpcServerLoggingInterceptor();
     }
@@ -111,7 +111,7 @@ public class GrpcAutoConfiguration {
      * gRPC 服务端异常拦截器，将 {@link RuntimeException} 映射为 gRPC {@code Status}
      */
     @Bean
-    @ConditionalOnProperty(name = "richie.grpc.server.exception-mapping-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "platform.grpc.server.exception-mapping-enabled", havingValue = "true", matchIfMissing = true)
     public GrpcServerExceptionInterceptor grpcServerExceptionInterceptor() {
         return new GrpcServerExceptionInterceptor();
     }
@@ -121,10 +121,10 @@ public class GrpcAutoConfiguration {
     /**
      * gRPC 服务端 JWT 鉴权拦截器，验证请求 Metadata 中的 access token
      *
-     * <p>仅在 {@code richie.grpc.server.auth-enabled=true} 时激活</p>
+     * <p>仅在 {@code platform.grpc.server.auth-enabled=true} 时激活</p>
      */
     @Bean
-    @ConditionalOnProperty(name = "richie.grpc.server.auth-enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "platform.grpc.server.auth-enabled", havingValue = "true")
     public GrpcServerAuthInterceptor grpcServerAuthInterceptor(GrpcProperties properties) {
         return new GrpcServerAuthInterceptor(properties.getServer().getAuthSecret());
     }
@@ -134,11 +134,11 @@ public class GrpcAutoConfiguration {
     /**
      * gRPC 服务端 Sentinel 拦截器，限流 → {@code RESOURCE_EXHAUSTED}，熔断 → {@code UNAVAILABLE}
      *
-     * <p>仅在 classpath 存在 {@code sentinel-core} 且 {@code richie.grpc.server.sentinel-enabled=true} 时激活</p>
+     * <p>仅在 classpath 存在 {@code sentinel-core} 且 {@code platform.grpc.server.sentinel-enabled=true} 时激活</p>
      */
     @Bean
     @ConditionalOnClass(name = "com.alibaba.csp.sentinel.SphU")
-    @ConditionalOnProperty(name = "richie.grpc.server.sentinel-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "platform.grpc.server.sentinel-enabled", havingValue = "true", matchIfMissing = true)
     public GrpcServerSentinelInterceptor grpcServerSentinelInterceptor() {
         return new GrpcServerSentinelInterceptor();
     }
@@ -148,11 +148,11 @@ public class GrpcAutoConfiguration {
     /**
      * gRPC 服务端链路追踪拦截器，创建 OpenTelemetry SERVER span 并提取 W3C traceparent
      *
-     * <p>仅在 classpath 存在 {@code opentelemetry-api} 且 {@code richie.grpc.server.tracing-enabled=true} 时激活</p>
+     * <p>仅在 classpath 存在 {@code opentelemetry-api} 且 {@code platform.grpc.server.tracing-enabled=true} 时激活</p>
      */
     @Bean
     @ConditionalOnClass(name = "io.opentelemetry.api.GlobalOpenTelemetry")
-    @ConditionalOnProperty(name = "richie.grpc.server.tracing-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "platform.grpc.server.tracing-enabled", havingValue = "true", matchIfMissing = true)
     public GrpcServerTracingInterceptor grpcServerTracingInterceptor() {
         return new GrpcServerTracingInterceptor();
     }
@@ -160,11 +160,11 @@ public class GrpcAutoConfiguration {
     /**
      * gRPC 客户端链路追踪拦截器，创建 OpenTelemetry CLIENT span 并注入 W3C traceparent
      *
-     * <p>仅在 classpath 存在 {@code opentelemetry-api} 且 {@code richie.grpc.client.tracing-enabled=true} 时激活</p>
+     * <p>仅在 classpath 存在 {@code opentelemetry-api} 且 {@code platform.grpc.client.tracing-enabled=true} 时激活</p>
      */
     @Bean
     @ConditionalOnClass(name = "io.opentelemetry.api.GlobalOpenTelemetry")
-    @ConditionalOnProperty(name = "richie.grpc.client.tracing-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "platform.grpc.client.tracing-enabled", havingValue = "true", matchIfMissing = true)
     public GrpcClientTracingInterceptor grpcClientTracingInterceptor() {
         return new GrpcClientTracingInterceptor();
     }
@@ -174,11 +174,11 @@ public class GrpcAutoConfiguration {
     /**
      * gRPC 客户端 Sentinel 拦截器，出站方向限流 / 熔断保护
      *
-     * <p>仅在 classpath 存在 {@code sentinel-core} 且 {@code richie.grpc.client.sentinel-enabled=true} 时激活</p>
+     * <p>仅在 classpath 存在 {@code sentinel-core} 且 {@code platform.grpc.client.sentinel-enabled=true} 时激活</p>
      */
     @Bean
     @ConditionalOnClass(name = "com.alibaba.csp.sentinel.SphU")
-    @ConditionalOnProperty(name = "richie.grpc.client.sentinel-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "platform.grpc.client.sentinel-enabled", havingValue = "true", matchIfMissing = true)
     public GrpcClientSentinelInterceptor grpcClientSentinelInterceptor() {
         return new GrpcClientSentinelInterceptor();
     }
@@ -189,7 +189,7 @@ public class GrpcAutoConfiguration {
      * gRPC 客户端日志拦截器，记录出站调用的方法名、状态码和耗时
      */
     @Bean
-    @ConditionalOnProperty(name = "richie.grpc.client.logging-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "platform.grpc.client.logging-enabled", havingValue = "true", matchIfMissing = true)
     public GrpcClientLoggingInterceptor grpcClientLoggingInterceptor() {
         return new GrpcClientLoggingInterceptor();
     }

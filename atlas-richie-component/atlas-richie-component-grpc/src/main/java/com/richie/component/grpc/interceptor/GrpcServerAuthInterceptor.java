@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
  * <p>从请求 Metadata 中提取 JWT、验证签名，拒绝无效令牌。
  * 验证通过后将用户名写入 Metadata 供下游拦截器使用。</p>
  *
- * <p>JWT secret 通过构造参数注入，建议从 {@code richie.grpc.server.auth-secret} 配置读取。</p>
+ * <p>JWT secret 通过构造参数注入，建议从 {@code platform.grpc.server.auth-secret} 配置读取。</p>
  *
  * <p>推荐注册顺序紧随 Header 拦截器之后（Header 先提取上下文，Auth 再校验）。</p>
  *

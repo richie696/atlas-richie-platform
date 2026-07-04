@@ -1,4 +1,4 @@
-# Swift HTTP客户端库
+# Atlas Richie Swift HTTP Client (atlas-richie-gateway-swift-client)
 
 Swift版本的HTTP客户端库，支持ECC+AES-GCM加密和防重复提交功能。
 

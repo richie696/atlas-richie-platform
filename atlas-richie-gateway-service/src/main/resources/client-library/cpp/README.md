@@ -1,4 +1,4 @@
-# C++ HTTP客户端库
+# Atlas Richie C++ HTTP Client (atlas-richie-gateway-cpp-client)
 
 C++版本的HTTP客户端库，支持ECC+AES-GCM加密和防重复提交功能。
 

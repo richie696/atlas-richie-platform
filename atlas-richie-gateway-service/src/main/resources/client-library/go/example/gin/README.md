@@ -1,4 +1,4 @@
-# Gin 框架集成示例
+# Atlas Richie Gin Integration Example (atlas-richie-gateway-gin-example)
 
 展示如何在Gin框架应用中使用HTTP客户端库。
 

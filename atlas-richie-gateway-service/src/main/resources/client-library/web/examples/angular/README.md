@@ -1,4 +1,4 @@
-# Angular 使用示例
+# Atlas Richie Angular Example (atlas-richie-gateway-angular-example)
 
 Angular 17+ 完整使用示例，使用最新的Standalone Components和Signals。
 

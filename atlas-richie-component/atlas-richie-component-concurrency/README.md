@@ -1,37 +1,37 @@
-# atlas-richie-component-concurrency
+# Atlas Richie Concurrency Component (atlas-richie-component-concurrency)
 
 > Concurrency utilities for the Richie platform, focused on high-frequency pattern encapsulation for **JDK 25 Structured Concurrency** and **Virtual Threads**.
 
 ---
 
-## Table of Contents
+## 📖 Contents
 
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Environment Requirements](#environment-requirements)
-- [Quick Start](#quick-start)
-- [Core Concepts at a Glance](#core-concepts-at-a-glance)
-- [The Three Modules in Detail](#the-three-modules-in-detail)
-  - [Module 1: Structured Concurrency and Virtual Threads (`virtual/`)](#module-1-structured-concurrency-and-virtual-threads-virtual)
-    - [1.1 StructuredConcurrency](#11-structuredconcurrency-structured-concurrency)
-    - [1.2 VirtualThreadFactory](#12-virtualthreadfactory-virtual-thread-factory)
-    - [1.3 BatchProcessor](#13-batchprocessor-batch-processor)
-  - [Module 2: Rate Limiting and Fault Tolerance Algorithms (`algorithm/`)](#module-2-rate-limiting-and-fault-tolerance-algorithms-algorithm)
-    - [2.1 Retryer](#21-retryer)
-    - [2.2 RateLimiter](#22-ratelimiter-token-bucket-rate-limiter)
-    - [2.3 CircuitBreaker](#23-circuitbreaker)
-    - [2.4 Debouncer](#24-debouncer)
-  - [Module 3: Dynamic Thread Pool (`threadpool/`)](#module-3-dynamic-thread-pool-threadpool)
-    - [3.0 Implementation Principles](#30-implementation-principles)
-      - [3.0.1 Overall Architecture](#301-overall-architecture)
-      - [3.0.2 Tuning Workflow](#302-tuning-workflow)
-      - [3.0.3 Rejection Counting Principle](#303-rejection-counting-principle)
-      - [3.0.4 Positioning Difference from dynamic-tp](#304-positioning-difference-from-dynamic-tp)
-    - [3.1 DynamicExecutor](#31-dynamicexecutor-dynamic-thread-pool)
-- [Configuration Reference](#configuration-reference)
-- [Best Practices](#best-practices)
-- [FAQ](#faq)
-- [Related Documentation](#related-documentation)
+- [📋 Overview](#overview)
+- [✨ Key Features](#key-features)
+- [⚙️ Environment Requirements](#environment-requirements)
+- [🚀 Quick Start](#quick-start)
+- [🧠 Core Concepts at a Glance](#core-concepts-at-a-glance)
+- [🏗️ The Three Modules in Detail](#the-three-modules-in-detail)
+  - [✨ Module 1: Structured Concurrency and Virtual Threads (`virtual/`)](#module-1-structured-concurrency-and-virtual-threads-virtual)
+    - [🔌 1.1 StructuredConcurrency](#11-structuredconcurrency-structured-concurrency)
+    - [🔧 1.2 VirtualThreadFactory](#12-virtualthreadfactory-virtual-thread-factory)
+    - [🔧 1.3 BatchProcessor](#13-batchprocessor-batch-processor)
+  - [✨ Module 2: Rate Limiting and Fault Tolerance Algorithms (`algorithm/`)](#module-2-rate-limiting-and-fault-tolerance-algorithms-algorithm)
+    - [🔧 2.1 Retryer](#21-retryer)
+    - [🔧 2.2 RateLimiter](#22-ratelimiter-token-bucket-rate-limiter)
+    - [🔧 2.3 CircuitBreaker](#23-circuitbreaker)
+    - [🔧 2.4 Debouncer](#24-debouncer)
+  - [✨ Module 3: Dynamic Thread Pool (`threadpool/`)](#module-3-dynamic-thread-pool-threadpool)
+    - [🔧 3.0 Implementation Principles](#30-implementation-principles)
+      - [🏗️ 3.0.1 Overall Architecture](#301-overall-architecture)
+      - [🔄 3.0.2 Tuning Workflow](#302-tuning-workflow)
+      - [📊 3.0.3 Rejection Counting Principle](#303-rejection-counting-principle)
+      - [🆚 3.0.4 Positioning Difference from dynamic-tp](#304-positioning-difference-from-dynamic-tp)
+    - [🔧 3.1 DynamicExecutor](#31-dynamicexecutor-dynamic-thread-pool)
+- [⚙️ Configuration Reference](#configuration-reference)
+- [🎯 Best Practices](#best-practices)
+- [❓ FAQ](#faq)
+- [📚 Related Documentation](#related-documentation)
 
 ---
 
@@ -88,7 +88,7 @@ Additional capabilities:
 
 ## Quick Start
 
-### 1. Add the Dependency
+### 1) `Add` the `Dependency`
 
 ```xml
 <dependency>
@@ -100,7 +100,7 @@ Additional capabilities:
 
 No need to separately introduce Resilience4j, Guava, or other concurrency libraries. This component only depends on Spring Boot (in `provided` scope).
 
-### 2. Minimal Example
+### 2) `Minimal` `Example`
 
 ```java
 import com.richie.component.concurrency.virtual.StructuredConcurrency;
@@ -130,7 +130,7 @@ public class QuickStart {
 
 ## Core Concepts at a Glance
 
-### What is Structured Concurrency
+### `What` is `Structured` `Concurrency`
 
 `java.util.concurrent.StructuredTaskScope`, introduced in JDK 25, treats a group of concurrent tasks as a single "unit of work". The parent task forks child tasks via `fork()` and waits for all of them to complete via `join()`. When the parent task ends, regardless of whether the children have finished, the scope automatically ensures they are cancelled or joined. This "parent-child binding + lifecycle consistency" semantics is more suitable than `CompletableFuture` for expressing "a group of mutually independent parallel tasks".
 
@@ -144,11 +144,11 @@ This component's `StructuredConcurrency` utility encapsulates these semantics in
 | `gatherBatched`       | Concurrent batching                      | Very large task count, concurrency control needed       |
 | `gatherAllBestEffort` | Single failure does not affect the whole | Bulk aggregation where a few failures are acceptable    |
 
-### What is a Virtual Thread
+### `What` is a `Virtual` `Thread`
 
 Lightweight threads introduced in JDK 21+. The JVM unparks blocking operations onto a pool of OS threads. For I/O-bound tasks, millions of virtual threads can exist simultaneously without exhausting memory. All `forEach`, `mapParallel`, and `fork` operations in this component run on virtual threads, so business code does not need to worry about thread pool size.
 
-### What is ScopedValue
+### `What` is `ScopedValue`
 
 Immutable thread-local variables introduced in JDK 21+, with better performance than `ThreadLocal` and free from inheritance-chain pollution. `VirtualThreadFactory.Builder.scopedValue()` can bind context at virtual thread creation time, avoiding the manual `where().run()` boilerplate.
 
@@ -158,11 +158,11 @@ Immutable thread-local variables introduced in JDK 21+, with better performance 
 
 This component is divided into three modules by scenario responsibility, each corresponding to one source sub-package. Readers may skip as needed: read Module 1 for concurrency orchestration, Module 2 for call protection, and Module 3 for thread pool tuning.
 
-### Module 1: Structured Concurrency and Virtual Threads (`virtual/`)
+### Module 1 — Structured Concurrency and Virtual Threads (`virtual/`)
 
 Focused on encapsulating the high-frequency patterns of JDK 25 `StructuredTaskScope` and `Thread.ofVirtual()`, packaging "concurrency orchestration patterns + virtual thread context propagation" into semantically clear static utilities and factory classes. The `virtual/` sub-package contains three components: `StructuredConcurrency` (5 structured concurrency modes: gather, race, deadline, batched gather, best-effort gather), `VirtualThreadFactory` (virtual thread factory with naming prefix and `ScopedValue` bindings), and `BatchProcessor` (concurrency throttling + error isolation + batch processing with results collected in input order). All APIs in this module run on virtual threads, so business code does not need to worry about thread pool size or lifecycle.
 
-#### 1.1 StructuredConcurrency
+#### 1.1 `StructuredConcurrency`
 
 ##### 1.1.1 What It Is
 
@@ -331,7 +331,7 @@ public class StructuredConcurrencyExamples {
 
 ---
 
-#### 1.2 VirtualThreadFactory
+#### 1.2 `VirtualThreadFactory`
 
 ##### 1.2.1 What It Is
 
@@ -445,7 +445,7 @@ public class VirtualThreadFactoryExamples {
 
 ---
 
-#### 1.3 BatchProcessor
+#### 1.3 `BatchProcessor`
 
 ##### 1.3.1 What It Is
 
@@ -613,11 +613,11 @@ public class BatchProcessorExamples {
 
 ---
 
-### Module 2: Rate Limiting and Fault Tolerance Algorithms (`algorithm/`)
+### Module 2 — Rate Limiting and Fault Tolerance Algorithms (`algorithm/`)
 
 Encapsulates the most common "protection for outbound calls" algorithms in distributed and high-concurrency scenarios into stateless utilities and builders, which the caller composes via the Builder pattern as needed. The `algorithm/` sub-package contains four components: `Retryer` (exponential backoff + full jitter + exception filtering + Fallback in one), `RateLimiter` (token bucket with three waiting semantics), `CircuitBreaker` (three-state-machine circuit-breaker protection), and `Debouncer` (one `trigger()` method for all debounce scheduling). None of these components bind to any third-party libraries, with zero runtime reflection; the business side is free to evolve or replace the implementation.
 
-#### 2.1 Retryer
+#### 2.1 `Retryer`
 
 ##### 2.1.1 What It Is
 
@@ -768,7 +768,7 @@ public class RetryerExamples {
 
 ---
 
-#### 2.2 RateLimiter (Token Bucket Rate Limiter)
+#### 2.2 `RateLimiter` (`Token` `Bucket` `Rate` `Limiter`)
 
 ##### 2.2.1 What It Is
 
@@ -932,7 +932,7 @@ public class RateLimiterExamples {
 
 ---
 
-#### 2.3 CircuitBreaker
+#### 2.3 `CircuitBreaker`
 
 ##### 2.3.1 What It Is
 
@@ -1125,7 +1125,7 @@ public class CircuitBreakerExamples {
 
 ---
 
-#### 2.4 Debouncer
+#### 2.4 `Debouncer`
 
 ##### 2.4.1 What It Is
 
@@ -1261,15 +1261,15 @@ public class DebouncerExamples {
 
 ---
 
-### Module 3: Dynamic Thread Pool (`threadpool/`)
+### Module 3 — Dynamic Thread Pool (`threadpool/`)
 
 Extends the standard `ThreadPoolExecutor` with "event-driven resize + rejection counting + one-stop runtime snapshot", allowing thread pool parameters to be adjusted at runtime without restarting the application. The `threadpool/` sub-package contains three components: `DynamicExecutor` (a tunable thread pool extending `ThreadPoolExecutor`), `PoolResizeEvent` (a hot-update event that updates only non-null fields), and `PoolStatus` (an immutable runtime snapshot of 9 core metrics). The multi-pool scenario is configuration-driven via the `platform.concurrency.thread-pools` Map, and injected by name with `@Resource(name = "<poolName>")`, without writing any `@Bean` methods on the business side.
 
-### 3.0 Implementation Principles
+### 3.0 `Implementation` `Principles`
 
 This section deconstructs the dynamic thread pool's runtime mechanism at the source-code level, helping readers judge the extension boundaries and room for modification. Section 3.1 describes the API for callers; this section describes the design for implementers.
 
-#### 3.0.1 Overall Architecture
+#### 3.0.1 `Overall` `Architecture`
 
 The mechanism is split into three layers: the core layer is responsible for hot-update capability itself; the auto-configuration layer is responsible for registering multiple pools into the Spring container; the config-center integration layer is responsible for listening to external configuration changes and triggering the core layer. The three layers have strictly separated responsibilities; the core layer does not depend on the Spring container at all, so unit tests can run without Spring.
 
@@ -1320,7 +1320,7 @@ Key points of each layer:
 - **Auto-configuration layer only does "config → Bean" translation**: at startup, `AlgorithmAutoConfiguration` iterates the `platform.concurrency.thread-pools` Map, registering each key as a `DynamicExecutor` singleton Bean; bean name = key, making `@Qualifier` references easy.
 - **Integration layer activates on demand**: it is only effective when Spring Cloud's `EnvironmentChangeEvent` class is on the classpath; if that dependency is missing, this Bean will not appear in the project. It works with any config center that can trigger this event — Nacos, Apollo, Config, ZK, Consul, etc.
 
-#### 3.0.2 Tuning Workflow
+#### 3.0.2 `Tuning` `Workflow`
 
 Taking Nacos push as an example, the complete chain is as follows:
 
@@ -1470,7 +1470,7 @@ public class ThreadPoolConfigRefresher {
   - **`threadNamePrefix`** only affects "Workers newly created from then on"; existing thread names cannot be retroactively changed. If thread names appear inconsistent immediately after a tuning change, that is the expected behavior.
   - If the above two items appear in a config change, this component will log a WARN and silently ignore them, without throwing an exception to interrupt the whole batch of refreshes.
 
-#### 3.0.3 Rejection Counting Principle
+#### 3.0.3 `Rejection` `Counting` `Principle`
 
 `ThreadPoolExecutor.rejectedExecution(Runnable, ThreadPoolExecutor)` is a package-private method and cannot be overridden by subclasses to count rejections. `DynamicExecutor` solves this with a "decorator + delegation" pattern:
 
@@ -1544,7 +1544,7 @@ Key points:
 
 > Note: the `CountingHandler` above is a simplified example used to illustrate the principle; in the actual implementation, the counter is an instance field of `DynamicExecutor` rather than a static variable, so each pool counts independently.
 
-#### 3.0.4 Positioning Difference from dynamic-tp
+#### 3.0.4 `Positioning` `Difference` from dynamic-tp
 
 In one sentence: **this component is a "just enough" JDK 25 + Spring Boot native implementation; dynamic-tp is a "feature-complete" open-source platform solution**.
 
@@ -1572,7 +1572,7 @@ For a complete difference comparison, decision tree, and repo URL see [FAQ Q1](#
 
 dynamic-tp repo: <https://github.com/dromara/dynamic-tp>; detailed capability matrix and usage docs are in that repo's README.
 
-#### 3.1 DynamicExecutor
+#### 3.1 `DynamicExecutor`
 
 ##### 3.1.1 What It Is
 
@@ -1826,7 +1826,7 @@ metrics.gauge("threadpool.rejected_count", status.getRejectedCount());
 
 This section expands the configuration by the three subsystems corresponding to the three modules: `rate-limiter` for the `RateLimiter` in [Module 2.2](#22-ratelimiter-token-bucket-rate-limiter), `circuit-breaker` for the `CircuitBreaker` in [Module 2.3](#23-circuitbreaker), and `thread-pools` for the `DynamicExecutor` in [Module 3.1](#31-dynamicexecutor-dynamic-thread-pool). The components in the other modules (`StructuredConcurrency` / `VirtualThreadFactory` / `BatchProcessor` / `Retryer` / `Debouncer`) have no runtime configuration entries and are only provided via imperative Builders.
 
-### 1. Unified Configuration Entry
+### 1) `Unified` `Configuration` `Entry`
 
 All configuration is mounted under the unified prefix `platform.concurrency.*`, bound by `ConcurrencyProperties`:
 
@@ -1842,7 +1842,7 @@ platform:
         ...
 ```
 
-### 2. Complete YAML Example
+### 2) `Complete` `YAML` `Example`
 
 ```yaml
 spring:
@@ -1909,7 +1909,7 @@ platform:
         rejected-handler: AbortPolicy
 ```
 
-### 3. Field Reference
+### 3) `Field` `Reference`
 
 #### 3.1 Token Bucket Rate Limiter (`platform.concurrency.rate-limiter.*`, Module 2.2)
 
@@ -1945,7 +1945,7 @@ Per-pool (`PoolProperties`) configurable items:
 
 > On container shutdown, `shutdown()` is automatically called on each registered `DynamicExecutor`, with a maximum wait of 5 seconds; if not terminated, it falls back to `shutdownNow()`.
 
-### 4. Key Design Decisions
+### 4) `Key` `Design` `Decisions`
 
 - **`failure-rate-threshold` exposed as `double`**: configuration readability is more intuitive as `0.5` than `50`; internally, when building `CircuitBreaker.Builder`, it is multiplied by 100 to convert to integer percent.
 - **`permits-per-second` is the only tunable RateLimiter configuration**: the default factory is `RateLimiter.ofTokensPerSecond`, suitable for "out-of-the-box" scenarios; complex scenarios (custom period, capacity) recommend overriding with a `@Primary` Bean on the business side.
@@ -1956,16 +1956,16 @@ Per-pool (`PoolProperties`) configurable items:
 
 ## Best Practices
 
-### General Principles
+### `General` `Principles`
 
 1. **Prefer semantically-named methods**: `gatherAll`, `race`, `withDeadline` express intent at a glance and are more maintainable than `CompletableFuture.allOf().get()`.
 2. **Virtual threads first**: JDK 25 projects should default to `spring.threads.virtual.enabled=true` so I/O-bound tasks enjoy million-level concurrency.
 3. **Zero-dependency philosophy**: this component does not bind to third-party concurrency libraries; if you really need Resilience4j, Hystrix, etc., please introduce them yourself in your business modules.
 4. **Configuration-driven**: if config can solve it, don't write code. `platform.concurrency.*` config items cover 90% of scenarios.
 
-### Module 1: Structured Concurrency and Virtual Threads
+### `Module` 1 — `Structured` `Concurrency` and `Virtual` `Threads`
 
-#### StructuredConcurrency (Section 1.1)
+#### `StructuredConcurrency` (`Section` 1.1)
 
 1. **Prefer `gatherAll` over manual `CompletableFuture`**: error propagation is more accurate and cancellation semantics are clearer.
 2. **Race mode is for disaster recovery only**: for multiple implementations of the same goal, any one succeeding is enough (multi-level cache, multi-region disaster recovery).
@@ -1973,23 +1973,23 @@ Per-pool (`PoolProperties`) configurable items:
 4. **Batch execution for large tasks**: when there are more than 100 concurrent tasks, use `gatherBatched` to control concurrency and avoid forking too many virtual threads.
 5. **Best-effort gather for fault-tolerant aggregation**: when the goal is "get as many results as possible" rather than "all must succeed", use `gatherAllBestEffort` instead of `gatherAll`.
 
-#### VirtualThreadFactory (Section 1.2)
+#### `VirtualThreadFactory` (`Section` 1.2)
 
 1. **Always set a thread-name prefix**: helps with troubleshooting (JFR, Micrometer).
 2. **ScopedValue instead of ThreadLocal**: ThreadLocal has performance issues with virtual threads; prefer `ScopedValue`.
 3. **Don't pool virtual threads**: virtual threads are lightweight (creation cost ~1KB), creating a new thread is simpler than pooling.
 4. **Avoid CPU-intensive computation inside virtual threads**: virtual threads are for I/O-blocking scenarios; CPU-bound work should still use platform thread pools.
 
-#### BatchProcessor (Section 1.3)
+#### `BatchProcessor` (`Section` 1.3)
 
 1. **Set parallelism reasonably**: 50-200 for I/O-bound; `CPU count ± 2` for CPU-bound.
 2. **Set an appropriate timeout**: prevent one slow task from blocking the whole batch; partial results are still usable after timeout.
 3. **Always check `result.hasError()`**: do compensation processing for failed items.
 4. **No need to pool under virtual threads**: `BatchProcessor` leverages the lightweight nature of virtual threads; no extra thread pool is needed.
 
-### Module 2: Rate Limiting and Fault Tolerance Algorithms
+### `Module` 2 — `Rate` `Limiting` and `Fault` `Tolerance` `Algorithms`
 
-#### Retryer (Section 2.1)
+#### `Retryer` (`Section` 2.1)
 
 1. **Always set a reasonable backoff**: start `initialBackoff` from 50-200ms to avoid dense retries that knock down the downstream.
 2. **Always enable jitter in multi-client scenarios**: `jitter(true)` avoids the server receiving a flood of retries simultaneously.
@@ -1997,7 +1997,7 @@ Per-pool (`PoolProperties`) configurable items:
 4. **Use Fallback for critical business**: `execute(task, fallback)` returns a fallback after retries are exhausted, avoiding upstream crashes.
 5. **Don't retry `Error`**: `Retryer` only catches `Exception`; `OutOfMemoryError` and others are propagated.
 
-#### RateLimiter (Section 2.2)
+#### `RateLimiter` (`Section` 2.2)
 
 1. **Choose rate-limit granularity based on downstream SLA**: external APIs use `ofTokensPerSecond`; batch tasks use `ofTokensPerDuration`.
 2. **Pick `tryAcquire` variant by scenario**:
@@ -2008,7 +2008,7 @@ Per-pool (`PoolProperties`) configurable items:
 4. **Avoid deprecated APIs**: don't use `ofTryAcquireTimeout` or `Builder.tryAcquireTimeoutEnabled`; switch to `ofTokensPerDuration` + `tryAcquire(Duration)`.
 5. **Resource management**: call `close()` in a `@PreDestroy` hook to release the scheduler thread.
 
-#### CircuitBreaker (Section 2.3)
+#### `CircuitBreaker` (`Section` 2.3)
 
 1. **Granularity by service**: one circuit breaker per downstream service; avoid one fault polluting all calls.
 2. **Failure rate vs failure count**: high QPS uses failure-rate mode; low QPS uses absolute-count mode (to avoid cold-start misjudgment).
@@ -2017,7 +2017,7 @@ Per-pool (`PoolProperties`) configurable items:
 5. **Don't break the circuit inside transactions**: fast-fail bypasses the transaction rollback path; circuit breaking fits external services better.
 6. **Monitor `state()`**: expose `CircuitBreaker.State` to Prometheus for real-time observation.
 
-#### Debouncer (Section 2.4)
+#### `Debouncer` (`Section` 2.4)
 
 1. **Adjust delay per scenario**: search box 300ms; form save 1s; button double-submit 500ms.
 2. **Call `close()` when the Spring Bean is destroyed**: release the virtual-thread scheduler.
@@ -2025,9 +2025,9 @@ Per-pool (`PoolProperties`) configurable items:
 4. **`cancel()` for undo**: when the user clicks "Cancel Edit", call `cancel()` to cancel the pending operation.
 5. **Don't do heavy work inside the debounced action**: debouncing is meant to delay execution; the debounced action itself should remain async.
 
-### Module 3: Dynamic Thread Pool
+### `Module` 3 — `Dynamic` `Thread` `Pool`
 
-#### DynamicExecutor (Section 3.1)
+#### `DynamicExecutor` (`Section` 3.1)
 
 1. **One independent pool per business scenario**: order processing, notification push, report export, etc. — each with its own load characteristics, each its own pool; one slow call should not drag down all tasks.
 2. **Integrate `onResize` with the config center**: in a Nacos/Etcd config listener, build a `PoolResizeEvent` and call `onResize` for "tune without stopping". `PoolResizeEvent.builder()` supports passing only the fields that need to change.
@@ -2035,7 +2035,7 @@ Per-pool (`PoolProperties`) configurable items:
 4. **Don't call `onResize` too frequently**: over-adjustment causes the `ThreadPoolExecutor` to repeatedly rebuild Workers; recommend at least 1 minute between adjustments.
 5. **Keep the default queue capacity to avoid producer-consumer imbalance**: frequent queue-size adjustments amplify system jitter; queue capacity is configured at startup via `platform.concurrency.thread-pools.<poolName>.queue-capacity` and is not part of `onResize` at runtime.
 
-### Error Handling Philosophy
+### `Error` `Handling` `Philosophy`
 
 | Component | Recommended Error Handling |
 |-----------|----------------------------|
@@ -2048,7 +2048,7 @@ Per-pool (`PoolProperties`) configurable items:
 | `CircuitBreaker` | Critical business uses `execute(task, fallback)`; monitoring scenarios use `executeOrThrow` |
 | `Debouncer` | Internal `action` exceptions are swallowed (by debouncer design); critical operations should bring their own try/catch |
 
-### Testing Recommendations
+### `Testing` `Recommendations`
 
 | Component | Testing Recommendation |
 |-----------|------------------------|
@@ -2060,7 +2060,7 @@ Per-pool (`PoolProperties`) configurable items:
 | `CircuitBreaker` | Inject a fake clock with `Builder.build(LongSupplier)`; build scenarios where the failure rate exceeds the threshold |
 | `Debouncer` | Use `CountDownLatch` to wait for the action to run; verify `trigger()` resets the timer |
 
-### Monitoring and Observability
+### `Monitoring` and `Observability`
 
 1. **Virtual-thread monitoring**: JDK 25 JFR natively supports virtual-thread events (`jdk.VirtualThreadStart`, `jdk.VirtualThreadPinned`); you can observe in real time with `jfr` or JMC.
 2. **Micrometer metrics**: recommend exposing the following metrics:
@@ -2074,11 +2074,11 @@ Per-pool (`PoolProperties`) configurable items:
 
 ## FAQ
 
-### Q1: Why Not Keep Using Dynamic-TP?
+### `Q1` — `Why` `Not` `Keep` `Using` `Dynamic`-`TP`?
 
 This component's `DynamicExecutor` is a **lightweight dynamic thread-pool implementation**, aiming to cover 80% of platform thread pool scenarios (multi-pool management, runtime tuning, rejection counting, runtime snapshot) with zero extra dependencies. It does not aim for feature completeness; instead, it does the "most commonly used, would be painful to miss" capabilities right and well. dynamic-tp ([dromara/dynamic-tp](https://github.com/dromara/dynamic-tp)) is a feature-complete platform-grade thread pool management framework. The capability boundary between them is as follows.
 
-#### Feature Comparison
+#### `Feature` `Comparison`
 
 | Feature | This Component (`DynamicExecutor`) | dynamic-tp |
 |---------|-----------------------------------|------------|
@@ -2093,7 +2093,7 @@ This component's `DynamicExecutor` is a **lightweight dynamic thread-pool implem
 | Dependency footprint | 0 extra dependencies (only comes with this component) | Need to introduce `dynamic-tp-spring-boot-starter` and its transitive dependencies |
 | Auto-configuration | Zero config (just include this dependency and write `platform.concurrency.thread-pools.*` config) | Need to introduce the starter and configure the `dynamic-tp` namespace |
 
-#### Decision Guide
+#### `Decision` `Guide`
 
 - **Want only "multi-pool + tuning + basic monitoring"**: use this component; zero extra dependencies; the API in [Module 3.1](#31-dynamicexecutor-dynamic-thread-pool) gets a thread pool running in one line; tuning goes through `onResize` + config-center integration.
 - **Need alerting / web admin / task wrapping / data persistence**: introduce [dynamic-tp](https://github.com/dromara/dynamic-tp); it has already turned these capabilities into out-of-the-box features.
@@ -2101,26 +2101,26 @@ This component's `DynamicExecutor` is a **lightweight dynamic thread-pool implem
 - **Don't want to add another starter and its transitive dependencies just for thread pool management**: use this component; it only depends on Spring Boot (`provided` scope) and won't bloat the project.
 - **The two are not in conflict**: use this component for core pools; pools with special needs (MDC propagation, alerting persistence) hook into dynamic-tp separately; mixing at the pool level is fine.
 
-#### Summary
+#### `Summary`
 
 > **This component = lightweight + enough**; dynamic-tp = **feature-complete + completeness means heavier dependencies**. Start with this component, and only upgrade to dynamic-tp when you hit a real need — that's the reasonable evolution path for most projects.
 
 If you need to use dynamic-tp, please introduce the dependency in your business modules yourself; this component does not enforce the dependency, and they are not mutually exclusive.
 
-### Q2: What's the Difference Between StructuredConcurrency and TenantStructuredTaskScope?
+### `Q2` — `What`'s the `Difference` `Between` `StructuredConcurrency` and `TenantStructuredTaskScope`?
 
 - `StructuredConcurrency`: generic concurrency-semantic wrapper (gather, race, deadline, batched gather, best-effort gather), not bound to any specific context.
 - `TenantStructuredTaskScope`: a tenant-context-aware concurrency utility based on `ScopedValue`, providing factory methods like `awaitAll` / `anySuccessful`.
 
 The two are complementary, not replacements. You can call `StructuredConcurrency`'s static methods inside a `TenantStructuredTaskScope`.
 
-### Q3: How to Monitor Virtual Threads?
+### `Q3` — `How` to `Monitor` `Virtual` `Threads`?
 
 1. JDK 25 JFR: use `jcmd <pid> JFR.start name=vthreads` to start JFR recording; events `jdk.VirtualThreadStart` / `jdk.VirtualThreadPinned` let you observe virtual threads.
 2. Micrometer: use the `jvm.threads.*` metrics, which include platform and virtual thread statistics.
 3. JMX: `ThreadMXBean.getThreadInfo(long[])` supports retrieving virtual thread information.
 
-### Q4: Should RateLimiter or CircuitBreaker Be Called First?
+### `Q4` — `Should` `RateLimiter` or `CircuitBreaker` `Be` `Called` `First`?
 
 Usually, rate limit first, then circuit break:
 
@@ -2129,21 +2129,21 @@ Usually, rate limit first, then circuit break:
 
 A typical chain: `RateLimiter.tryAcquire() → CircuitBreaker.execute(task, fallback) → business logic`.
 
-### Q5: When Does the Circuit Breaker Auto-Recover After Tripping?
+### `Q5` — `When` `Does` the `Circuit` `Breaker` `Auto`-`Recover` `After` `Tripping`?
 
 After the OPEN state lasts for `openDuration` (default 10 seconds), it automatically transitions to HALF_OPEN; the next call is treated as a "probe":
 
 - Probe success → back to CLOSED (normal recovery)
 - Probe failure → back to OPEN and re-timing
 
-### Q6: What's the Difference Between Debouncer and RateLimiter?
+### `Q6` — `What`'s the `Difference` `Between` `Debouncer` and `RateLimiter`?
 
 - `Debouncer`: delays action execution; repeated triggers reset the timer; used for "stop operating X seconds, then execute Y".
 - `RateLimiter`: controls the maximum number of calls per unit time; used for "at most N calls per second".
 
 They solve different problems and should not be mixed.
 
-### Q7: When Should I Use Retryer, and When Should I Not?
+### `Q7` — `When` `Should` `I` `Use` `Retryer`, and `When` `Should` `I` `Not`?
 
 **Should use**:
 
@@ -2157,24 +2157,24 @@ They solve different problems and should not be mixed.
 - Transactional operations: retry may cause duplicate execution (e.g. payment).
 - Long-running tasks: retry cost is too high.
 
-### Q8: How to Choose Between mapParallel and forEach in BatchProcessor?
+### `Q8` — `How` to `Choose` `Between` mapParallel and forEach in `BatchProcessor`?
 
 - **`forEach`**: only care about side effects (DB writes, push, notification); no return value needed.
 - **`mapParallel`**: need each item's processing result, collected in input order.
 
 If you need both, first use `mapParallel` to get the results, then use `result.results()` for side effects.
 
-### Q9: Why Doesn't the half-open-max-successes Config Item Take Effect?
+### `Q9` — `Why` `Doesn`'t the half-open-max-successes `Config` `Item` `Take` `Effect`?
 
 The underlying `CircuitBreaker.Builder` currently uses "single-probe-success-then-close" semantics; the `half-open-max-successes` field is reserved for future extension (when upgrading to multi-probe mode, no need to break the config contract). If you need "multiple successful probes to close" semantics, consider building your own circuit breaker on the business side, or wait for this component to upgrade.
 
-### Q10: How to Replace Time-Related Behavior of RateLimiter / CircuitBreaker in Tests?
+### `Q10` — `How` to `Replace` `Time`-`Related` `Behavior` of `RateLimiter` / `CircuitBreaker` in `Tests`?
 
 - **RateLimiter**: use `RateLimiter.builder()` to create a custom instance; call `close()` in tests for quick resource release.
 - **CircuitBreaker**: use `CircuitBreaker.builder().build(LongSupplier)` to inject a fake clock, simulating the "OPEN → HALF_OPEN after 10 seconds" transition.
 - **Debouncer**: use `Duration.ofMillis(50)` short delay to ease testing; use `CountDownLatch` to wait for the action to run.
 
-### Q11: Do I Need to Restart the Application After Config Changes?
+### `Q11` — `Do` `I` `Need` to `Restart` the `Application` `After` `Config` `Changes`?
 
 Yes. All `platform.concurrency.*` config items are bound through `ConcurrencyProperties` at startup; runtime modifications will not take effect automatically. If dynamic adjustment is needed, you can:
 
@@ -2182,11 +2182,11 @@ Yes. All `platform.concurrency.*` config items are bound through `ConcurrencyPro
 2. Recreate component instances on the business side with `@RefreshScope` (not recommended; affects other Beans' dependencies).
 3. Restart the application.
 
-### Q12: Why Is ofTryAcquireTimeout Marked as Deprecated?
+### `Q12` — `Why` `Is` ofTryAcquireTimeout `Marked` as `Deprecated`?
 
 Since 2.2.0, this component has unified the `try*` prefix convention: all `try*` methods must be strictly non-blocking. `ofTryAcquireTimeout(permits, timeout)` implicitly makes `tryAcquire()` wait within `timeout`, violating this convention. Switch to `ofTokensPerDuration(permits, window)` + `tryAcquire(Duration)` to make the time-limited-blocking semantics explicit and clearer.
 
-### Q13: Which Spring Boot Versions Are Compatible?
+### `Q13` — `Which` `Spring` `Boot` `Versions` `Are` `Compatible`?
 
 | Component Version | Compatibility |
 |-------------------|---------------|
@@ -2195,7 +2195,7 @@ Since 2.2.0, this component has unified the `try*` prefix convention: all `try*`
 
 Environments below JDK 25 cannot use this component (because it depends on `StructuredTaskScope` preview API).
 
-### Q14: How to Create and Use Multiple Named Thread Pools?
+### `Q14` — `How` to `Create` and `Use` `Multiple` `Named` `Thread` `Pools`?
 
 Just declare them by name in `application.yml`:
 
@@ -2227,7 +2227,7 @@ private Map<String, DynamicExecutor> executors;
 
 No need to write `@Bean` registration methods on the business side. `AlgorithmAutoConfiguration` iterates the `platform.concurrency.thread-pools` Map during `PostConstruct` and registers each pool as a Spring singleton Bean. `shutdown()` is called automatically on container shutdown.
 
-### Q15: How to Integrate with Config Centers (Nacos/Etcd) for Dynamic Tuning?
+### `Q15` — `How` to `Integrate` with `Config` `Centers` (`Nacos`/`Etcd`) for `Dynamic` `Tuning`?
 
 `PoolResizeEvent` supports passing only the fields that need to change; `null` means "do not adjust" — the listener does not need to know the full current configuration:
 
@@ -2248,7 +2248,7 @@ public void onConfigChange(String newConfig) {
 
 The event itself is immutable and safe to pass across threads. `onResize` is idempotent: two consecutive identical events have the same effect as one. Recommend adding debounce outside the listener (e.g. two config changes less than 30s apart count as one tuning), to avoid triggering `ThreadPoolExecutor` internal Worker rebuilds in short bursts.
 
-### Q16: What's the Difference Between DynamicExecutor and a Plain `ThreadPoolExecutor`?
+### Q16 — What's the Difference Between DynamicExecutor and a Plain `ThreadPoolExecutor`?
 
 `DynamicExecutor` extends the standard `ThreadPoolExecutor`, so all native TPE APIs (`execute` / `submit` / `shutdown` / `shutdownNow` / `awaitTermination`, etc.) remain unchanged — it can be a drop-in replacement for TPE. The differences are only in extended capabilities:
 
@@ -2262,19 +2262,19 @@ The event itself is immutable and safe to pass across threads. `onResize` is ide
 
 ## Related Documentation
 
-### JDK Official
+### `JDK` `Official`
 
 - [JDK 25 `StructuredTaskScope` Javadoc](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/StructuredTaskScope.html)
 - [JEP 444: Virtual Threads](https://openjdk.org/jeps/444)
 - [JEP 446: Scoped Values (Final)](https://openjdk.org/jeps/446)
 - [JEP 480: Structured Concurrency (Third Preview)](https://openjdk.org/jeps/480)
 
-### Spring Official
+### `Spring` `Official`
 
 - [Spring Boot Virtual Threads Support](https://docs.spring.io/spring-boot/reference/features/task-execution-and-scheduling.html)
 - [Spring Boot Configuration Properties](https://docs.spring.io/spring-boot/reference/features/external-config.html)
 
-### Industry References
+### `Industry` `References`
 
 - [AWS Architect Marc Brooker: Full Jitter Algorithm](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)
 - [Resilience4j CircuitBreaker Documentation](https://resilience4j.readme.io/docs/circuitbreaker)
@@ -2282,7 +2282,7 @@ The event itself is immutable and safe to pass across threads. `onResize` is ide
 - [Token Bucket Algorithm (Wikipedia)](https://en.wikipedia.org/wiki/Token_bucket)
 - [Dynamic-TP (Dynamic Thread Pool) — dromara open-source; a feature-complete open-source alternative](https://github.com/dromara/dynamic-tp)
 
-### Project Documentation
+### `Project` `Documentation`
 
 - [atlas-richie-component Library Overview](../README.md)
 - [Richie Platform Overview](../../README.md)

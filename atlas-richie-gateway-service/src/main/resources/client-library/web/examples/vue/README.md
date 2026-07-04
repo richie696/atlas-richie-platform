@@ -1,4 +1,4 @@
-# Vue 3 使用示例
+# Atlas Richie Vue 3 Example (atlas-richie-gateway-vue-example)
 
 Vue 3 完整使用示例，使用Composition API和`<script setup>`语法。
 

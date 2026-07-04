@@ -1,4 +1,71 @@
-# Richie Component Tracing
+# Atlas Richie Tracing Component (atlas-richie-component-tracing)
+
+- [概述](#概述)
+- [核心特性](#核心特性)
+- [快速开始](#快速开始)
+  - [1. 添加依赖](#1-添加依赖)
+  - [2. 下载 OpenTelemetry Java Agent](#2-下载-opentelemetry-java-agent)
+  - [3. 配置 JVM 参数](#3-配置-jvm-参数)
+  - [4. 配置应用参数（可选）](#4-配置应用参数（可选）)
+  - [5. 配置日志输出 traceId 和 spanId](#5-配置日志输出-traceid-和-spanid)
+- [配置说明](#配置说明)
+  - [JVM 参数配置](#jvm-参数配置)
+  - [应用参数配置](#应用参数配置)
+  - [trace.exporter.host 和 otel.exporter.otlp.endpoint 的区别](#traceexporterhost-和-otelexporterotlpendpoint-的区别)
+  - [导出器配置](#导出器配置)
+- [功能特性](#功能特性)
+  - [1. 自动追踪](#1-自动追踪)
+  - [2. 日志集成](#2-日志集成)
+  - [3. 禁用特定代理](#3-禁用特定代理)
+  - [4. 支持的组件](#4-支持的组件)
+- [使用 Jaeger UI 查看追踪数据](#使用-jaeger-ui-查看追踪数据)
+- [Docker Compose 部署示例](#docker-compose-部署示例)
+  - [部署 OpenTelemetry Collector 和 Jaeger](#部署-opentelemetry-collector-和-jaeger)
+  - [OpenTelemetry Collector 配置](#opentelemetry-collector-配置)
+- [最佳实践](#最佳实践)
+- [常见问题](#常见问题)
+  - [Q: 如何禁用 OpenTelemetry Agent？](#q-如何禁用-opentelemetry-agent？)
+  - [Q: 如何禁用特定组件的追踪？](#q-如何禁用特定组件的追踪？)
+  - [Q: 如何配置采样策略？](#q-如何配置采样策略？)
+  - [Q: 如何查看追踪数据？](#q-如何查看追踪数据？)
+  - [Q: 如何配置自定义追踪？](#q-如何配置自定义追踪？)
+- [相关文档](#相关文档)
+---
+
+## 📖 Contents
+
+- [概述](#概述)
+- [核心特性](#核心特性)
+- [快速开始](#快速开始)
+  - [1. 添加依赖](#1-添加依赖)
+  - [2. 下载 OpenTelemetry Java Agent](#2-下载-opentelemetry-java-agent)
+  - [3. 配置 JVM 参数](#3-配置-jvm-参数)
+  - [4. 配置应用参数（可选）](#4-配置应用参数（可选）)
+  - [5. 配置日志输出 traceId 和 spanId](#5-配置日志输出-traceid-和-spanid)
+- [配置说明](#配置说明)
+  - [JVM 参数配置](#jvm-参数配置)
+  - [应用参数配置](#应用参数配置)
+  - [trace.exporter.host 和 otel.exporter.otlp.endpoint 的区别](#traceexporterhost-和-otelexporterotlpendpoint-的区别)
+  - [导出器配置](#导出器配置)
+- [功能特性](#功能特性)
+  - [1. 自动追踪](#1-自动追踪)
+  - [2. 日志集成](#2-日志集成)
+  - [3. 禁用特定代理](#3-禁用特定代理)
+  - [4. 支持的组件](#4-支持的组件)
+- [使用 Jaeger UI 查看追踪数据](#使用-jaeger-ui-查看追踪数据)
+- [Docker Compose 部署示例](#docker-compose-部署示例)
+  - [部署 OpenTelemetry Collector 和 Jaeger](#部署-opentelemetry-collector-和-jaeger)
+  - [OpenTelemetry Collector 配置](#opentelemetry-collector-配置)
+- [最佳实践](#最佳实践)
+- [常见问题](#常见问题)
+  - [Q: 如何禁用 OpenTelemetry Agent？](#q-如何禁用-opentelemetry-agent？)
+  - [Q: 如何禁用特定组件的追踪？](#q-如何禁用特定组件的追踪？)
+  - [Q: 如何配置采样策略？](#q-如何配置采样策略？)
+  - [Q: 如何查看追踪数据？](#q-如何查看追踪数据？)
+  - [Q: 如何配置自定义追踪？](#q-如何配置自定义追踪？)
+- [相关文档](#相关文档)
+
+---
 
 ## 概述
 
@@ -14,7 +81,7 @@
 
 ## 快速开始
 
-### 1. 添加依赖
+### 1) 添加依赖
 
 ```xml
 <dependency>
@@ -24,11 +91,11 @@
 </dependency>
 ```
 
-### 2. 下载 OpenTelemetry Java Agent
+### 2) 下载 `OpenTelemetry` `Java` `Agent`
 
 从 [OpenTelemetry Java Instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases) 下载最新的 Java Agent JAR 文件。
 
-### 3. 配置 JVM 参数
+### 3) 配置 `JVM` 参数
 
 ```bash
 -javaagent:/path/to/opentelemetry-javaagent.jar
@@ -37,14 +104,14 @@
 -Dotel.resource.attributes=service.name=my-service,username=user
 ```
 
-### 4. 配置应用参数（可选）
+### 4) 配置应用参数（可选）
 
 ```bash
 --trace.exporter.host=localhost
 --trace.exporter.port=4317
 ```
 
-### 5. 配置日志输出 traceId 和 spanId
+### 5) 配置日志输出 traceId 和 spanId
 
 在 `logback-spring.xml` 中添加：
 
@@ -55,7 +122,7 @@
 
 ## 配置说明
 
-### JVM 参数配置
+### `JVM` 参数配置
 
 | 参数 | 说明 | 示例 |
 |------|------|------|
@@ -78,21 +145,21 @@
 
 ### 导出器配置
 
-#### OTLP 导出器（推荐）
+#### `OTLP` 导出器（推荐）
 
 ```bash
 -Dotel.traces.exporter=otlp
 -Dotel.exporter.otlp.endpoint=http://localhost:4317
 ```
 
-#### Jaeger 导出器
+#### `Jaeger` 导出器
 
 ```bash
 -Dotel.traces.exporter=jaeger
 -Dotel.exporter.jaeger.endpoint=http://localhost:14250
 ```
 
-#### Zipkin 导出器
+#### `Zipkin` 导出器
 
 ```bash
 -Dotel.traces.exporter=zipkin
@@ -101,7 +168,7 @@
 
 ## 功能特性
 
-### 1. 自动追踪
+### 1) 自动追踪
 
 OpenTelemetry Java Agent 自动追踪以下组件：
 
@@ -112,7 +179,7 @@ OpenTelemetry Java Agent 自动追踪以下组件：
 - **RPC 框架** - gRPC、Dubbo
 - **其他** - Redis、MongoDB、Elasticsearch 等
 
-### 2. 日志集成
+### 2) 日志集成
 
 支持在日志中打印 traceId 和 spanId，方便日志追踪：
 
@@ -121,7 +188,7 @@ OpenTelemetry Java Agent 自动追踪以下组件：
           value="%d{HH:mm:ss} [%thread] %-5level %logger{10} [traceId=%X{trace_id} spanId=%X{span_id}] %msg%n" />
 ```
 
-### 3. 禁用特定代理
+### 3) 禁用特定代理
 
 可以使用命令行参数或环境变量禁用特定代理：
 
@@ -133,7 +200,7 @@ OpenTelemetry Java Agent 自动追踪以下组件：
 OTEL_INSTRUMENTATION_SPRING_WEB_MVC_ENABLED=false
 ```
 
-### 4. 支持的组件
+### 4) 支持的组件
 
 OpenTelemetry 官方支持的组件列表请参考：[支持的库和框架](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md#libraries--frameworks)
 
@@ -148,7 +215,7 @@ OpenTelemetry 官方支持的组件列表请参考：[支持的库和框架](htt
 
 ## Docker Compose 部署示例
 
-### 部署 OpenTelemetry Collector 和 Jaeger
+### 部署 `OpenTelemetry` `Collector` 和 `Jaeger`
 
 ```yaml
 version: '3'
@@ -178,7 +245,7 @@ services:
     command: ["--config=/etc/otel-collector-config.yaml"]
 ```
 
-### OpenTelemetry Collector 配置
+### `OpenTelemetry` `Collector` 配置
 
 `otel-collector-config.yaml`:
 
@@ -245,7 +312,7 @@ extensions:
 
 ## 常见问题
 
-### Q: 如何禁用 OpenTelemetry Agent？
+### `Q` — 如何禁用 `OpenTelemetry` `Agent`？
 
 A: 使用命令行参数或环境变量禁用：
 ```bash
@@ -254,7 +321,7 @@ A: 使用命令行参数或环境变量禁用：
 OTEL_JAVAAGENT_ENABLED=false
 ```
 
-### Q: 如何禁用特定组件的追踪？
+### `Q` — 如何禁用特定组件的追踪？
 
 A: 使用命令行参数或环境变量禁用：
 ```bash
@@ -263,7 +330,7 @@ A: 使用命令行参数或环境变量禁用：
 -Dotel.instrumentation.spring-web-mvc.enabled=false
 ```
 
-### Q: 如何配置采样策略？
+### `Q` — 如何配置采样策略？
 
 A: 使用命令行参数配置：
 ```bash
@@ -271,11 +338,11 @@ A: 使用命令行参数配置：
 -Dotel.traces.sampler.arg=0.1  # 10% 采样率
 ```
 
-### Q: 如何查看追踪数据？
+### `Q` — 如何查看追踪数据？
 
 A: 使用 Jaeger UI 或 Zipkin UI 查看追踪数据。Jaeger UI 地址：`http://localhost:16686`
 
-### Q: 如何配置自定义追踪？
+### `Q` — 如何配置自定义追踪？
 
 A: 使用 OpenTelemetry API 手动创建 Span：
 ```java

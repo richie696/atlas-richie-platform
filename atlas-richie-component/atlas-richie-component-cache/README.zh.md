@@ -1,4 +1,4 @@
-# Richie Cache Component
+# Atlas Richie Cache组件 (atlas-richie-component-cache)
 
 基于 Redis 的缓存与数据结构组件。通过 **`GlobalCache` + Ops 访问器** 提供 KV、Hash、Set/ZSet、分布式锁、有界队列/栈、限流等能力；内置 L2、布隆过滤器、性能守卫。
 
@@ -81,7 +81,7 @@
 
 ## 🚀 快速开始
 
-### 1. 添加依赖
+### 1) 添加依赖
 
 ```xml
 <dependency>
@@ -90,7 +90,7 @@
 </dependency>
 ```
 
-### 2. 配置
+### 2) 配置
 
 这是 **生产推荐配置**（带二级缓存 + 本地锁 + 性能守卫），复制后改 Redis 地址即可：
 
@@ -130,7 +130,7 @@ platform:
       false-probability: 0.001
 ```
 
-### 3. 写代码
+### 3) 写代码
 
 所有能力通过 **`GlobalCache.<ops>()`** 访问，无需注入 Bean（Spring 启动后自动绑定 `GlobalCacheManager`）：
 
@@ -168,7 +168,7 @@ GlobalCache.event().subscribeKeyEvent("__keyevent@0__:expired", listener);
 // StreamMQ.stream().publish("order-events", event);
 ```
 
-### Ops 访问器一览
+### `Ops` 访问器一览
 
 | 访问器                                 | 用途                      |
 |-------------------------------------|-------------------------|
@@ -271,7 +271,7 @@ try (var lock = GlobalCache.lock().optimisticWithRenewal("lock:order:123", 5L)) 
 
 ---
 
-### Lua / 限流 / GEO / HyperLogLog / Bitmap
+### `Lua` / 限流 / `GEO` / `HyperLogLog` / `Bitmap`
 
 ```java
 GlobalCache.script().eval(script, keys, args, Long.class);
@@ -372,7 +372,7 @@ UserInfo user = GlobalCache.struct().getWithLock("user:profile:123",
 
 ---
 
-### L2 二级缓存
+### `L2` 二级缓存
 
 读路径：`value().get()` / `struct().get()` → L1 本地 → Redis → `getWithLock` 回源 DB。
 
@@ -402,7 +402,7 @@ platform.cache.bloom-filter:
 
 ---
 
-### 性能守卫（RedisPerfGuard）
+### 性能守卫（`RedisPerfGuard`）
 
 | 维度        | 检测内容                                      | 可选阻断                                    |
 |-----------|-------------------------------------------|-----------------------------------------|
@@ -414,7 +414,7 @@ platform.cache.bloom-filter:
 
 ---
 
-### 多 Redis 实例路由
+### 多 `Redis` 实例路由
 
 ```yaml
 spring.data.redis:
@@ -467,7 +467,7 @@ spring.data.local:
 > 下方按 **配置前缀 + 功能** 双维度组织，每个配置项都标注默认值、取值范围及对功能的影响。
 > 标注 ⚠️ 的项有 @MigrationWindow 约束，到期未迁移会阻止应用启动。
 
-### 1. Redis 连接（`spring.data.redis`）
+### 1) Redis 连接（`spring.data.redis`）
 
 | 配置项           | 类型       | 默认值          | 说明                                         |
 |---------------|----------|--------------|--------------------------------------------|
@@ -654,7 +654,7 @@ Redis 6+ 强烈建议 RESP3。Redis 禁用 HELLO 命令时需用 RESP2 避免连
 
 ---
 
-### 2. L2 二级缓存（`spring.data.redis`）
+### 2) L2 二级缓存（`spring.data.redis`）
 
 | 配置项                 | 类型                | 默认值     | 关联功能    | 说明                                               |
 |---------------------|-------------------|---------|---------|--------------------------------------------------|
@@ -674,7 +674,7 @@ notify-keyspace-events KEA
 
 ---
 
-### 3. 分布式锁（`spring.data.redis`）
+### 3) 分布式锁（`spring.data.redis`）
 
 | 配置项                 | 类型      | 默认值                 | 关联功能     | 说明                                                          |
 |---------------------|---------|---------------------|----------|-------------------------------------------------------------|
@@ -684,7 +684,7 @@ notify-keyspace-events KEA
 
 ---
 
-### 4. 性能守卫（`spring.data.redis.perf`）
+### 4) 性能守卫（`spring.data.redis.perf`）
 
 > 关联功能：[性能守卫](#性能守卫redisperfguard)。⚠️ = @MigrationWindow 约束，2026-12-01 前必须设为 `true`，否则启动失败。
 
@@ -717,7 +717,7 @@ spring.data.redis.perf:
 
 ---
 
-### 5. 本地缓存（`spring.data.local`）
+### 5) 本地缓存（`spring.data.local`）
 
 > 关联功能：[本地缓存](#-本地缓存)。独立于 L2 的业务显式使用区域，基于 JSR-107。
 
@@ -771,7 +771,7 @@ spring.data.local:
 
 ---
 
-### 6. 组件级配置（`platform.cache`）
+### 6) 组件级配置（`platform.cache`）
 
 | 配置项              | 类型   | 默认值     | 关联功能  | 说明             |
 |------------------|------|---------|-------|----------------|
@@ -800,7 +800,7 @@ spring.data.local:
 
 ---
 
-### 7. Stream MQ 配置（独立模块）
+### 7) `Stream` `MQ` 配置（独立模块）
 
 消费者、幂等去重、监控、链路追踪等配置已迁移至 **`atlas-richie-component-redis-streammq`**，本模块不再绑定 `platform.cache.redis.stream.*` 或 `spring.data.redis.stream-idempotency`。
 
@@ -809,7 +809,7 @@ spring.data.local:
 
 ---
 
-### 8. 配置总览（按功能定位）
+### 8) 配置总览（按功能定位）
 
 > 不确定去哪儿查？按这个表反过来定位。
 
@@ -829,7 +829,7 @@ spring.data.local:
 
 ## 🎯 最佳实践
 
-### Key 命名规范
+### `Key` 命名规范
 
 ```
 {business}:{object}:{id}:{field}
@@ -867,7 +867,7 @@ lock:order:789
 - 预发环境灰度 `perf.enabled`，消除 `[RedisPerf]` 告警后再上生产
 - ToC 核心链路避免 `KEYS *`、全量 `HGETALL`/`SMEMBERS`
 
-### 大 Key 阈值参考
+### 大 `Key` 阈值参考
 
 大 Key 会导致 Redis 主线程阻塞、主从同步延迟、AOF 重写卡顿、集群迁移卡死等隐患。以下阈值综合了 **Redis 内部编码优化分界线**与**组件性能守卫默认值**，两者对齐、互为验证。
 
@@ -897,14 +897,14 @@ lock:order:789
 - 将任意 JavaBean 整包 JSON 塞进单 key（建议 Hash 字段建模）
 - 以 `{` 或 `[` 开头且长度 ≥ 128 字符的疑似整包 JSON（WARN）
 
-#### Key 名称
+#### `Key` 名称
 
 | 项目     | 建议                                        |
 |--------|-------------------------------------------|
 | Key 长度 | < 128 字节（Redis 限制 512MB，但长 key 增加内存与比较开销） |
 | 命名规范   | `{业务}:{实体}:{ID}`，避免空格与特殊字符                |
 
-#### 大 Key 检测手段
+#### 大 `Key` 检测手段
 
 | 方式                                                                       | 适用场景                                                                                                                   |
 |--------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
@@ -914,7 +914,7 @@ lock:order:789
 | 组件内置 `RedisPerfGuard`                                                    | 运行时自动检测：非 O(1) 调用 WARN + BIGKEY 探测建议（HLEN/LLEN/SCARD/ZCARD），受 `spring.data.redis.perf.log-big-key-probe-hints=true` 控制 |
 | 慢查询日志 `SLOWLOG GET`                                                      | 发现延迟 ≥ `toc-hard-ms`（默认 50ms）的可疑操作                                                                                     |
 
-#### 大 Key 治理建议
+#### 大 `Key` 治理建议
 
 - **删除用 UNLINK 而非 DEL**：`GlobalCache.key().removeCache()` 内部已使用 `UNLINK`（异步释放内存），避免主线程阻塞。业务代码禁止自行调用 `DEL`。
 - **分片代替单 Key**：大 Hash 拆成 `key:shard:{0..N}`，大 List 拆成多段，大 Set 按业务维度分桶。
@@ -953,7 +953,7 @@ lock:order:789
 
 本地锁池是 JVM 内的请求合并优化。同一 JVM 内多个线程抢同一把锁时，在 `ConcurrentHashMap` 层面感知到锁状态，不需要每次都打 Redisson。跨 JVM 的互斥仍然由 Redisson FencedLock 保障。对业务代码完全透明。
 
-### Stream 消息堆积了怎么办？
+### `Stream` 消息堆积了怎么办？
 
 Stream MQ 已独立为 `atlas-richie-component-redis-streammq`。增加消费者 `concurrency`、优化 `handle()`、调整 `count`，并通过 streammq 模块的 Actuator 端点监控积压（见 `docs/Redis-Stream-Actuator-结构说明.md`）。
 

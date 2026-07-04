@@ -1,4 +1,4 @@
-# atlas-richie-testing-support
+# Atlas Richie Testing Support (atlas-richie-testing-support)
 
 平台级**集成测试公共支撑库**：统一 Testcontainers（Docker）探测、中间件容器拉起、Spring 集测属性注入，以及跨组件一致的环境变量约定。
 

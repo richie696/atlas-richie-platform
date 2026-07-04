@@ -1,12 +1,26 @@
-# atlas-richie-component-tenant — 多租户组件
+# Atlas Richie Tenant组件 (atlas-richie-component-tenant)
 
-## 目录
+## 📖 目录
 
 - [这是什么样的组件](#这是什么样的组件)
-- [5 种隔离模式 — 选型决策树](#5种隔离模式--选型决策树)
+- [5种隔离模式--选型决策树](#5种隔离模式-选型决策树)
+  - [对比矩阵](#对比矩阵)
+  - [决策流程](#决策流程)
+  - [实际选型经验](#实际选型经验)
 - [快速开始](#快速开始)
+  - [1. 引入依赖](#1-引入依赖)
+  - [2. 准备 `sys_tenant` 表](#2-准备-systenant-表)
+  - [3. 实现 `TenantInfoProvider` SPI](#3-实现-tenantinfoprovider-spi)
+  - [4. 配置 application.yml](#4-配置-applicationyml)
+  - [5. 业务代码](#5-业务代码)
+  - [6. 启动验证](#6-启动验证)
 - [架构总览](#架构总览)
+  - [上下文传播全景](#上下文传播全景)
 - [核心 API](#核心-api)
+  - [TenantContext (静态门面)](#tenantcontext-静态门面)
+  - [TenantPrincipal (租户身份)](#tenantprincipal-租户身份)
+  - [IsolationMode (5 种模式枚举)](#isolationmode-5-种模式枚举)
+  - [TenantInfo (租户运行时信息)](#tenantinfo-租户运行时信息)
 - [隔离模式详解](#隔离模式详解)
   - [COLUMN 模式](#column-模式)
   - [TABLE 模式](#table-模式)
@@ -14,17 +28,54 @@
   - [DATABASE 模式](#database-模式)
   - [HYBRID 模式](#hybrid-模式)
 - [Web 集成](#web-集成)
+  - [TenantIdentityFilter](#tenantidentityfilter)
+  - [超级管理员 (无租户用户)](#超级管理员-无租户用户)
+  - [配置白名单](#配置白名单)
+  - [错误响应格式](#错误响应格式)
+  - [WebFlux / Reactive 集成](#webflux-/-reactive-集成)
 - [事务管理](#事务管理)
+  - [事务内租户冻结](#事务内租户冻结)
+  - [设计意图](#设计意图)
 - [异步与多线程](#异步与多线程)
+  - [核心问题](#核心问题)
+  - [解决方案 (按推荐度排序)](#解决方案-按推荐度排序)
+  - [覆盖 vs 失效场景](#覆盖-vs-失效场景)
 - [数据源路由与熔断](#数据源路由与熔断)
+  - [Database 模式下的数据源路由](#database-模式下的数据源路由)
+  - [熔断器](#熔断器)
+  - [灰度发布](#灰度发布)
 - [配置参考](#配置参考)
+  - [完整配置项 (MultiTenancyProperties)](#完整配置项-multitenancyproperties)
+  - [通信框架依赖](#通信框架依赖)
+  - [启动日志参考](#启动日志参考)
 - [SPI 扩展点](#spi-扩展点)
+  - [TenantInfoProvider (必实现)](#tenantinfoprovider-必实现)
 - [API 全签名参考](#api-全签名参考)
+  - [业务必用 facade](#业务必用-facade)
+  - [枚举类](#枚举类)
+  - [配置 properties](#配置-properties)
+  - [SPI 实现接口](#spi-实现接口)
+  - [异常体系](#异常体系)
+  - [框架内部组件(业务不应直接调用,列出便于查阅)](#框架内部组件业务不应直接调用,列出便于查阅)
+  - [未来扩展点 (保留)](#未来扩展点-保留)
 - [错误码参考](#错误码参考)
 - [注意事项与陷阱](#注意事项与陷阱)
+  - [🚨 高频踩坑](#🚨-高频踩坑)
+  - [🟡 性能注意事项](#🟡-性能注意事项)
+  - [🟢 最佳实践](#🟢-最佳实践)
 - [文档索引](#文档索引)
+  - [本文档](#本文档)
+  - [详细设计 (docs/ 目录)](#详细设计-docs/-目录)
+  - [测试覆盖 (src/test/)](#测试覆盖-src/test/)
 - [端到端最小可运行示例](#端到端最小可运行示例)
-
+  - [1. Maven 依赖](#1-maven-依赖)
+  - [2. 主类](#2-主类)
+  - [3. sys_tenant DDL](#3-systenant-ddl)
+  - [4. TenantInfoProvider 实现（无需手写缓存，框架内置装饰器自动叠加）](#4-tenantinfoprovider-实现（无需手写缓存，框架内置装饰器自动叠加）)
+  - [5. 业务 Entity / Mapper / Service / Controller](#5-业务-entity-/-mapper-/-service-/-controller)
+  - [6. application.yml — 4 种模式各一个](#6-applicationyml-—-4-种模式各一个)
+  - [7. 启动 & 验证](#7-启动-&-验证)
+  - [8. 常见接入问题](#8-常见接入问题)
 ---
 
 ## 这是什么样的组件
@@ -100,7 +151,7 @@
 
 ## 快速开始
 
-### 1. 引入依赖
+### 1) 引入依赖
 
 ```xml
 <dependency>
@@ -121,7 +172,7 @@ TenantContext initialized with ScopedValue (preferred for virtual threads)
 [多租户] 微服务通信框架已就绪: HTTP (Feign/RestClient)
 ```
 
-### 2. 准备 `sys_tenant` 表
+### 2) 准备 `sys_tenant` 表
 
 ```sql
 CREATE TABLE sys_tenant (
@@ -138,7 +189,7 @@ CREATE TABLE sys_tenant (
 );
 ```
 
-### 3. 实现 `TenantInfoProvider` SPI
+### 3) 实现 `TenantInfoProvider` SPI
 
 ```java
 @Component
@@ -172,7 +223,7 @@ public class MyTenantInfoProvider implements TenantInfoProvider {
 > 以 JDK `ConcurrentHashMap` 实现 `ttl=60s`、`max-size=10000` 缓存，业务方只写纯 DB 查询即可。
 > 若需关闭内置缓存：`multi-tenancy.cache.tenant-info.enabled=false`。
 
-### 4. 配置 application.yml
+### 4) 配置 application.yml
 
 ```yaml
 multi-tenancy:
@@ -184,7 +235,7 @@ multi-tenancy:
     - sys_config
 ```
 
-### 5. 业务代码
+### 5) 业务代码
 
 ```java
 // Service 层 - 完全无感
@@ -200,7 +251,7 @@ public class OrderService {
 }
 ```
 
-### 6. 启动验证
+### 6) 启动验证
 
 ```bash
 curl -H "X-ACCESS-TOKEN: $JWT" -H "X-Tenant-ID: 1001" \
@@ -286,7 +337,7 @@ curl -H "X-ACCESS-TOKEN: $JWT" -H "X-Tenant-ID: 1001" \
 
 ## 核心 API
 
-### TenantContext (静态门面)
+### `TenantContext` (静态门面)
 
 **所有外部代码统一调这个,不要直接动 `TenantContextHolder` 实现。**
 
@@ -318,7 +369,7 @@ Order order = TenantContext.runWithTenant(principal, () ->
 - 事务内 `runWithTenant(另一个租户, ...)` 会抛 `TenantSwitchInTransactionException` (由 `TransactionTenantHolder` 检测)
 - 异步任务 (新线程) 默认不继承上下文,需用 `TenantTaskDecorator` (框架已自动配)
 
-### TenantPrincipal (租户身份)
+### `TenantPrincipal` (租户身份)
 
 ```java
 // 定义在 atlas-richie-contract 模块
@@ -336,7 +387,7 @@ TenantPrincipal p = new TenantPrincipal()
     .setExpiredTime(OffsetDateTime.parse("2026-12-31T23:59:59Z"));
 ```
 
-### IsolationMode (5 种模式枚举)
+### `IsolationMode` (5 种模式枚举)
 
 ```java
 public enum IsolationMode {
@@ -348,7 +399,7 @@ public enum IsolationMode {
 }
 ```
 
-### TenantInfo (租户运行时信息)
+### `TenantInfo` (租户运行时信息)
 
 ```java
 @Data
@@ -369,7 +420,7 @@ public class TenantInfo {
 
 ## 隔离模式详解
 
-### COLUMN 模式
+### `COLUMN` 模式
 
 **最简单,默认模式**。共享整张业务表,所有租户的数据都在同一张表里,通过 `tenant_id` 列区分。
 
@@ -410,7 +461,7 @@ multi-tenancy:
     - sys_config
 ```
 
-#### DDL 约定
+#### `DDL` 约定
 
 ```sql
 -- 业务表必须有 tenant_id 列
@@ -449,7 +500,7 @@ public interface OrderMapper extends BaseMapper<Order> {
 
 ---
 
-### TABLE 模式
+### `TABLE` 模式
 
 **共享库,但每个租户一套物理表**。表名后缀默认 `_${tenant}`,可改。
 
@@ -481,7 +532,7 @@ multi-tenancy:
     - sys_dict                       # 全局共享表,不改后缀
 ```
 
-#### DDL 约定
+#### `DDL` 约定
 
 ```sql
 -- 需要为每个租户手工或脚本创建表
@@ -508,7 +559,7 @@ CREATE TABLE orders_1003 (id BIGINT PRIMARY KEY, ...);
 
 ---
 
-### SCHEMA 模式
+### `SCHEMA` 模式
 
 **共享 DB instance,每个租户独立 Schema**。仅 PostgreSQL/Oracle 支持。
 
@@ -571,7 +622,7 @@ multi-tenancy:
 
 ---
 
-### DATABASE 模式
+### `DATABASE` 模式
 
 **每个租户独立 DB instance**。最强的物理隔离,支持跨 DB 类型(如部分租户用 PG,部分用 MySQL)。
 
@@ -611,7 +662,7 @@ multi-tenancy:
         password: ${TENANT_1002_PWD}
 ```
 
-#### 注册 DynamicTenantDataSource
+#### 注册 `DynamicTenantDataSource`
 
 ```java
 @Configuration
@@ -667,7 +718,7 @@ public class MyDataSourceConfig {
 
 ---
 
-### HYBRID 模式
+### `HYBRID` 模式
 
 **按租户动态选模式**。`sys_tenant.isolation_mode` 字段决定该租户走哪种模式。
 
@@ -687,7 +738,7 @@ TenantStrategyInterceptor 按 tenantInfo.mode 从工厂取策略
 
 `HybridStrategy` 内部 `switch(mode)` 编译期派发,新增 `IsolationMode` 会编译报错。
 
-#### 改写类拦截器在 HYBRID 下的行为
+#### 改写类拦截器在 `HYBRID` 下的行为
 
 | 拦截器 | HYBRID 下的行为 |
 |--------|----------------|
@@ -726,7 +777,7 @@ UPDATE sys_tenant SET isolation_mode = 'COLUMN' WHERE id = 1003;
 
 ## Web 集成
 
-### TenantIdentityFilter
+### `TenantIdentityFilter`
 
 `OncePerRequestFilter`,在 `Ordered.HIGHEST_PRECEDENCE + 500` 排序,**最早执行**。
 
@@ -785,7 +836,7 @@ public class MyWhitelistConfig {
 
 ---
 
-### WebFlux / Reactive 集成
+### `WebFlux` / `Reactive` 集成
 
 本组件提供 **WebFlux 原生支持**。Spring WebFlux 应用的租户解析和上下文传播与 Servlet 应用一致：
 
@@ -795,7 +846,7 @@ public class MyWhitelistConfig {
 | 异常处理器 | `TenantExceptionHandler` (`@RestControllerAdvice`) | 复用 `TenantExceptionHandler` (兼容) |
 | 租户上下文 | `TenantContext.get()` (ScopedValue/ThreadLocal) | `ReactorTenantContext.get()` (Reactor Context) |
 
-#### TenantWebFilter
+#### `TenantWebFilter`
 
 `@Order(HIGHEST_PRECEDENCE + 500)` 的 `WebFilter`。解析逻辑与 Servlet 版完全相同：
 
@@ -805,7 +856,7 @@ public class MyWhitelistConfig {
 4. **校验** — tenantId 格式 + `TenantInfoProvider` 验证存在/过期/迁移中
 5. **写入 Reactor Context** — `ReactorTenantContext.write(principal)` 供下游 reactive 算子读取
 
-#### ReactorTenantContext
+#### `ReactorTenantContext`
 
 Reactive 代码中通过 `ReactorTenantContext` 读取租户上下文：
 
@@ -868,7 +919,7 @@ Java `Thread.start()` / `ExecutorService.submit()` / `@Async` 默认不继承 `S
 
 ### 解决方案 (按推荐度排序)
 
-#### 方案 1: `StructuredTaskScope` (推荐,JDK 21+)
+#### 方案 1 — `StructuredTaskScope` (推荐,JDK 21+)
 
 ```java
 try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
@@ -886,7 +937,7 @@ try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
 ✅ 子任务生命周期受父任务约束(结构化并发)
 ❌ 仅 JDK 21+ 支持
 
-#### 方案 2: `TenantTaskDecorator` (自动)
+#### 方案 2 — `TenantTaskDecorator` (自动)
 
 **框架默认已配**。`TenantTaskDecoratorBeanPostProcessor` 是 `BeanPostProcessor`,Spring 启动时自动给所有 `ThreadPoolTaskExecutor` / `ThreadPoolTaskScheduler` 注入 `TenantTaskDecorator`,**业务代码零感知**。
 
@@ -900,7 +951,7 @@ public CompletableFuture<Order> asyncQuery(Long orderId) {
 
 机制: `TenantTaskDecorator` 基于 micrometer `ContextSnapshot`,提交任务时**捕获**当前线程所有 `ThreadLocalAccessor` 值,执行时**恢复**。覆盖租户上下文、数据源路由、表名后缀等全部上下文。
 
-#### 方案 3: 手动传递 (兜底)
+#### 方案 3 — 手动传递 (兜底)
 
 ```java
 TenantPrincipal p = TenantContext.get();
@@ -930,7 +981,7 @@ executor.submit(() -> {
 
 ## 数据源路由与熔断
 
-### Database 模式下的数据源路由
+### `Database` 模式下的数据源路由
 
 ```
 请求 → TenantIdentityFilter 绑定 tenant=1001
@@ -1013,7 +1064,7 @@ multi-tenancy:
 
 ## 配置参考
 
-### 完整配置项 (MultiTenancyProperties)
+### 完整配置项 (`MultiTenancyProperties`)
 
 | 配置 | 默认值 | 说明 |
 |------|-------|------|
@@ -1075,7 +1126,7 @@ TenantContext initialized with ThreadLocal + micrometer context-propagation (for
 
 ## SPI 扩展点
 
-### TenantInfoProvider (必实现)
+### `TenantInfoProvider` (必实现)
 
 ```java
 public interface TenantInfoProvider {
@@ -1266,7 +1317,7 @@ public class MultiTenancyProperties {
 }
 ```
 
-### SPI 实现接口
+### `SPI` 实现接口
 
 #### `com.richie.component.tenant.spi.TenantInfoProvider` (必实现)
 
@@ -1433,7 +1484,7 @@ RuntimeException
 
 **解决**: 业务重构,把跨租户操作拆成两个独立事务
 
-#### 6. WebFlux/Reactive 项目用不了
+#### 6. `WebFlux`/`Reactive` 项目用不了
 
 **症状**: Mono/Flux 链中 `TenantContext.get()` 始终 null
 
@@ -1443,7 +1494,7 @@ RuntimeException
 在 reactive 代码中通过 `ReactorTenantContext.get()` 读取租户。
 若需桥接到阻塞代码，使用 `ReactorTenantContext.bridgeToBlocking()`。
 
-#### 7. Table 模式 join 了 sys_dict
+#### 7. `Table` 模式 join 了 sys_dict
 
 **症状**: SQL 报 `relation "sys_dict_1001" does not exist`
 
@@ -1459,7 +1510,7 @@ RuntimeException
 
 **解决**: 100% SQL 必须经过 `SchemaStrategy` 切换的 connection,别绕过
 
-#### 9. Database 模式共享数据源误用
+#### 9. `Database` 模式共享数据源误用
 
 **症状**: 1001 租户数据写到了 shared 库
 
@@ -1519,7 +1570,7 @@ SELECT * FROM orders WHERE user_id = 123 AND tenant_id = 1001;
 -- (MySQL 优化器可能自动调整,PostgreSQL 不一定)
 ```
 
-#### Table/Schema 模式避免跨租户 JOIN
+#### `Table`/`Schema` 模式避免跨租户 `JOIN`
 
 ```sql
 -- ❌ 跨租户 join,1001 上下文查 orders_1001 JOIN users_1002,1002 是公共表不会加后缀
@@ -1600,7 +1651,7 @@ SELECT * FROM orders o JOIN users_1002 u ON o.user_id = u.id;
 
 本节提供一个**可直接 `mvn spring-boot:run` 跑起来**的最小应用骨架。复制粘贴即可作为新业务接入多租户的起点。
 
-### 1. Maven 依赖
+### 1) `Maven` 依赖
 
 ```xml
 <dependencies>
@@ -1626,7 +1677,7 @@ SELECT * FROM orders o JOIN users_1002 u ON o.user_id = u.id;
 </dependencies>
 ```
 
-### 2. 主类
+### 2) 主类
 
 ```java
 package com.example.app;
@@ -1646,7 +1697,7 @@ public class App {
 }
 ```
 
-### 3. sys_tenant DDL
+### 3) sys_tenant `DDL`
 
 ```sql
 CREATE TABLE sys_tenant (
@@ -1667,7 +1718,7 @@ INSERT INTO sys_tenant (id, tenant_name, isolation_mode) VALUES
     (1002, 'Beta Industries', 'COLUMN');
 ```
 
-### 4. TenantInfoProvider 实现（无需手写缓存，框架内置装饰器自动叠加）
+### 4) `TenantInfoProvider` 实现（无需手写缓存，框架内置装饰器自动叠加）
 
 ```java
 package com.example.app.tenant;
@@ -1718,9 +1769,9 @@ public class SysTenantInfoProvider implements TenantInfoProvider {
 > 自动装配，以 JDK `ConcurrentHashMap` 实现 `ttl=60s`、`max-size=10000` 缓存。
 > 业务方只需实现上述纯 DB 查询逻辑，缓存层由框架透明叠加。
 
-### 5. 业务 Entity / Mapper / Service / Controller
+### 5) 业务 `Entity` / `Mapper` / `Service` / `Controller`
 
-#### Entity (含 tenantId 字段)
+#### `Entity` (含 tenantId 字段)
 
 ```java
 package com.example.app.entity;
@@ -1743,7 +1794,7 @@ public class Order {
 }
 ```
 
-#### Mapper
+#### `Mapper`
 
 ```java
 package com.example.app.mapper;
@@ -1760,7 +1811,7 @@ public interface OrderMapper extends BaseMapper<Order> {
 }
 ```
 
-#### Service
+#### `Service`
 
 ```java
 package com.example.app.service;
@@ -1793,7 +1844,7 @@ public class OrderService {
 }
 ```
 
-#### Controller
+#### `Controller`
 
 ```java
 package com.example.app.web;
@@ -1825,9 +1876,9 @@ public class OrderController {
 }
 ```
 
-### 6. application.yml — 4 种模式各一个
+### 6) application.yml — 4 种模式各一个
 
-#### COLUMN 模式(最简单,推荐起步)
+#### `COLUMN` 模式(最简单,推荐起步)
 
 ```yaml
 spring:
@@ -1856,7 +1907,7 @@ multi-tenancy:
   microservice: false            # 单体应用关闭通信框架检测
 ```
 
-#### TABLE 模式
+#### `TABLE` 模式
 
 ```yaml
 multi-tenancy:
@@ -1871,7 +1922,7 @@ multi-tenancy:
 
 > DDL 需要为每个租户建表:`CREATE TABLE orders_1001 (LIKE orders INCLUDING ALL);`
 
-#### SCHEMA 模式(仅 PG/Oracle)
+#### `SCHEMA` 模式(仅 `PG`/`Oracle`)
 
 ```yaml
 multi-tenancy:
@@ -1884,7 +1935,7 @@ multi-tenancy:
   microservice: false
 ```
 
-#### DATABASE 模式(最强物理隔离)
+#### `DATABASE` 模式(最强物理隔离)
 
 ```yaml
 spring:
@@ -1920,7 +1971,7 @@ multi-tenancy:
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 ```
 
-### 7. 启动 & 验证
+### 7) 启动 & 验证
 
 ```bash
 # 1. 准备 PG(用 docker)
@@ -1942,7 +1993,7 @@ curl -H "X-Tenant-ID: 1002" http://localhost:8080/orders
 # 返回: []  (跨租户隔离生效)
 ```
 
-### 8. 常见接入问题
+### 8) 常见接入问题
 
 | 问题 | 解决 |
 |------|------|

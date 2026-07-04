@@ -1,577 +1,264 @@
-# Richie Messaging Component
+# Atlas Richie Messaging Component (atlas-richie-component-messaging)
 
-基于 Spring Cloud Stream 的统一消息队列组件，提供抽象的消息发送和消费接口，支持多种消息队列（Kafka、RabbitMQ、RocketMQ、Kinesis、Pub/Sub 等）。
-
-## 📋 目录
-
-- [功能特性](#功能特性)
-- [快速开始](#快速开始)
-- [核心功能](#核心功能)
-- [支持的 MQ 类型](#支持的-mq-类型)
-- [配置说明](#配置说明)
-- [最佳实践](#最佳实践)
-- [常见问题](#常见问题)
+> Parent module for **unified message queue** access. Wraps Spring Cloud Stream Function and provides one `MessageService` facade across **12 providers**: Kafka, RabbitMQ, RocketMQ, Kinesis, Pub/Sub, Event Hubs, Service Bus, SQS, SNS, Pulsar, Solace, NATS.
 
 ---
 
-## ✨ 功能特性
+## 📖 Contents
 
-### 核心能力
-
-- ✅ **统一消息接口**：提供 `MessageService` 统一接口，屏蔽底层 MQ 差异
-- ✅ **多 MQ 支持**：支持 Kafka、RabbitMQ、RocketMQ、Kinesis、GCP Pub/Sub、Azure Event Hubs、AWS SQS/SNS 等
-- ✅ **消息消费**：基于 Spring Cloud Stream Function 的消费模式
-- ✅ **延迟消息**：支持延迟消息发送
-- ✅ **幂等去重**：支持消息幂等去重（基于 Memory 或 Redis）
-- ✅ **消息重试**：支持消息处理失败后的自动重试
-- ✅ **多 Binder 支持**：支持同时使用多个 MQ 服务
-
-### 高级特性
-
-- ✅ **消息事件封装**：`MessageEvent` 统一封装消息内容
-- ✅ **请求头传递**：自动传递请求头信息（语言、时区、租户等）
-- ✅ **消息冻结机制**：防止消息在处理过程中被修改
-- ✅ **类型安全**：支持类型安全的消息序列化/反序列化
-
+- [📖 Overview](#📖-overview)
+  - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
+- [✨ Features](#✨-features)
+  - [Core capabilities](#core-capabilities)
+  - [Design choices](#design-choices)
+- [🏗️ Architecture & Module Layout](#🏗️-architecture-&-module-layout)
+- [🚀 Quick Start](#🚀-quick-start)
+  - [1. Add the dependency](#1-add-the-dependency)
+  - [2. Configure](#2-configure)
+  - [3. Send a message](#3-send-a-message)
+  - [4. Consume a message](#4-consume-a-message)
+- [🔧 Core Capabilities](#🔧-core-capabilities)
+  - [1. Send: ordinary, delayed, scheduled](#1-send-ordinary,-delayed,-scheduled)
+  - [2. Consume via Function](#2-consume-via-function)
+  - [3. Idempotency / retry](#3-idempotency-/-retry)
+  - [4. Multi-binder](#4-multi-binder)
+- [⚙️ Configuration Reference](#⚙️-configuration-reference)
+- [🎯 Best Practices](#🎯-best-practices)
+- [⚠️ Known Limitations](#⚠️-known-limitations)
+- [❓ FAQ](#❓-faq)
+  - [Q1: Which provider should I choose?](#q1-which-provider-should-i-choose?)
+  - [Q2: How do I consume with custom header propagation?](#q2-how-do-i-consume-with-custom-header-propagation?)
+  - [Q3: Can I have multiple consumers for the same topic?](#q3-can-i-have-multiple-consumers-for-the-same-topic?)
+  - [Q4: Where are dead-lettered messages?](#q4-where-are-dead-lettered-messages?)
+- [📚 Further Reading](#📚-further-reading)
 ---
 
-## 🚀 快速开始
+## 📖 Overview
 
-### 1. 添加依赖
+| Item | Value |
+|------|-------|
+| **Artifact** | `com.richie.component:atlas-richie-component-messaging` (parent POM) |
+| **Category** | Messaging — async event / message bus |
+| **Hard dependencies** | Spring Cloud Stream, `atlas-richie-context` |
+| **Default provider** | `kafka` |
+
+### `What` this component is — and what it isn't
+
+| ✅ It gives you | ❌ It does not give you |
+|-----------------|------------------------|
+| One `MessageService` facade across 12 providers | Exactly-once delivery (depends on broker) |
+| Spring Cloud Stream Function integration | Kafka Connect / RabbitMQ Streams (raw) |
+| Idempotency, retry, delay, scheduled | Schema registry (use Confluent / Apicurio separately) |
+| Multi-binder routing (send to multiple brokers) | Complex event sourcing (use Atlas) |
+
+## ✨ Features
+
+### `Core` capabilities
+
+- ✅ **12 providers** — Kafka, RabbitMQ, RocketMQ, Kinesis, Pub/Sub, Event Hubs, Service Bus, SQS, SNS, Pulsar, Solace, NATS.
+- ✅ **One API** — `MessageService.send`, `sendDelay`, `sendScheduled`.
+- ✅ **Function-based consumer** — `Supplier`, `Function`, `Consumer` auto-registered.
+- ✅ **Idempotency** — memory or Redis deduplication.
+- ✅ **Retry with backoff** — built-in via Spring Cloud Stream.
+- ✅ **Multi-binder** — send to multiple brokers in one call.
+
+### `Design` choices
+
+- ✅ **Spring Cloud Stream under the hood** — leverages Spring's binder abstraction.
+- ✅ **Static + dynamic topic aliases** — both via `TopicAlias` enum and string.
+- ✅ **`MessageEvent` envelope** — wraps payload + headers + retry metadata.
+
+## 🏗️ Architecture & Module Layout
+
+```
+atlas-richie-component-messaging                    ← parent POM
+├── atlas-richie-component-messaging-core           ← MessageService / MessageEvent / BaseConsumer
+├── atlas-richie-component-messaging-kafka
+├── atlas-richie-component-messaging-rabbitmq
+├── atlas-richie-component-messaging-rocketmq
+├── atlas-richie-component-messaging-kinesis
+├── atlas-richie-component-messaging-gcp-pubsub
+├── atlas-richie-component-messaging-eventhubs
+├── atlas-richie-component-messaging-servicebus
+├── atlas-richie-component-messaging-sqs
+├── atlas-richie-component-messaging-sns
+├── atlas-richie-component-messaging-pulsar
+└── atlas-richie-component-messaging-solace
+```
+
+## 🚀 Quick Start
+
+### 1) `Add` the dependency
 
 ```xml
-<!-- 基础消息组件 -->
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-messaging-core</artifactId>
 </dependency>
-
-<!-- 选择具体的 MQ 实现（以 Kafka 为例） -->
+<!-- Pick exactly one provider -->
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-messaging-kafka</artifactId>
 </dependency>
-
-<!-- 如果需要使用 Redis 进行幂等去重 -->
-<dependency>
-    <groupId>com.richie.component</groupId>
-    <artifactId>atlas-richie-component-cache</artifactId>
-</dependency>
 ```
 
-### 2. 配置消息队列
+### 2) `Configure`
 
 ```yaml
-# application.yml
 spring:
   cloud:
     stream:
-      # 幂等去重使用的数据缓存源（memory 或 redis）
-      datasource: memory
-      # 消息处理失败后的最大重试次数
-      max-retries: 3
-      # Kafka 配置（以 Kafka 为例）
+      kafka:
+        binder:
+          brokers: localhost:9092
       bindings:
         normalProcess-in-0:
           destination: normal-topic
           group: normal-group
-        normalProcess-out-0:
-          destination: normal-topic
         delayProcess-in-0:
           destination: delay-topic
           group: delay-group
-        delayProcess-out-0:
-          destination: delay-topic
-      kafka:
-        binder:
-          brokers: localhost:9092
+
+platform:
+  component:
+    messaging:
+      datasource: redis              # memory | redis (idempotency)
+      max-retries: 3
 ```
 
-### 3. 发送消息
+### 3) `Send` a message
 
 ```java
-import service.com.richie.component.messaging.MessageService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 @Service
+@RequiredArgsConstructor
 public class OrderService {
-    
-    @Autowired
-    private MessageService messageService;
-    
-    /**
-     * 发送普通消息
-     */
-    public void sendOrderCreated(OrderCreatedEvent event) {
+    private final MessageService messageService;
+
+    public void publish(OrderCreatedEvent event) {
         messageService.sendMessage("order-created", event);
     }
-    
-    /**
-     * 发送延迟消息（5秒后）
-     */
-    public void sendDelayedNotification(NotificationEvent event) {
-        messageService.sendDelayMessage("notification", event, 5000L);
-    }
-    
-    /**
-     * 多 Binder 场景：指定 Binder 名称
-     */
-    public void sendToSpecificBinder(Event event) {
-        messageService.sendMessage("topic-alias", "binder-name", event);
-    }
 }
 ```
 
-### 4. 消费消息
-
-```java
-import consumer.com.richie.component.messaging.BaseConsumer;
-import event.com.richie.component.messaging.MessageEvent;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import java.util.function.Function;
-
-@Component
-public class OrderConsumer {
-    
-    @Autowired
-    private BaseConsumer baseConsumer;
-    
-    @PostConstruct
-    public void registerConsumer() {
-        // 注册消费者回调函数
-        baseConsumer.registerConsumer("order-created", this::handleOrderCreated);
-    }
-    
-    /**
-     * 处理订单创建消息
-     * 
-     * @param event 消息事件
-     * @return true：处理成功，false：处理失败（将触发重试）
-     */
-    private Boolean handleOrderCreated(MessageEvent event) {
-        try {
-            // 获取消息体
-            OrderCreatedEvent orderEvent = event.getBody(OrderCreatedEvent.class);
-            
-            // 处理业务逻辑
-            orderService.processOrder(orderEvent);
-            
-            return true;  // 处理成功
-        } catch (Exception e) {
-            log.error("处理订单创建消息失败", e);
-            return false;  // 处理失败，将触发重试
-        }
-    }
-}
-```
-
----
-
-## 🔧 核心功能
-
-### 1. 消息发送
-
-#### 普通消息发送
-
-```java
-// 方式一：使用 Topic 别名
-messageService.sendMessage("order-created", orderEvent);
-
-// 方式二：指定 Binder 名称（多 MQ 场景）
-messageService.sendMessage("order-created", "kafka-binder", orderEvent);
-
-// 方式三：自定义 Content-Type
-messageService.sendMessage(
-    "order-created",
-    orderEvent,
-    MimeTypeUtils.APPLICATION_JSON
-);
-```
-
-#### 延迟消息发送
-
-```java
-// 延迟 5 秒
-messageService.sendDelayMessage("notification", notificationEvent, 5000L);
-
-// 延迟消息 + 指定 Binder
-messageService.sendDelayMessage(
-    "notification",
-    "rabbitmq-binder",
-    notificationEvent,
-    5000L
-);
-```
-
-### 2. 消息消费
-
-#### 注册消费者
-
-```java
-@PostConstruct
-public void registerConsumers() {
-    // 注册普通消息消费者
-    baseConsumer.registerConsumer("order-created", this::handleOrderCreated);
-    baseConsumer.registerConsumer("order-cancelled", this::handleOrderCancelled);
-}
-```
-
-#### 消息处理函数
-
-```java
-private Boolean handleOrderCreated(MessageEvent event) {
-    try {
-        // 获取消息体
-        OrderCreatedEvent orderEvent = event.getBody(OrderCreatedEvent.class);
-        
-        // 处理业务逻辑
-        processOrder(orderEvent);
-        
-        return true;  // 处理成功
-    } catch (Exception e) {
-        log.error("处理消息失败", e);
-        return false;  // 处理失败，触发重试
-    }
-}
-```
-
-#### 消息事件属性
-
-```java
-// 获取消息ID
-String messageId = event.getMessageId();
-
-// 获取主题别名
-String topic = event.getTopic();
-
-// 获取消息体（简单对象）
-OrderEvent orderEvent = event.getBody(OrderEvent.class);
-
-// 获取消息体（复杂对象，使用 TypeReference）
-List<OrderEvent> orders = event.getBody(new TypeReference<List<OrderEvent>>(){});
-
-// 获取发送时间
-long sendTime = event.getSendTime();
-
-// 获取接收时间
-long receiveTime = event.getReceiveTime();
-
-// 获取延迟时间
-long delayTime = event.getDelayTime();
-
-// 获取重试次数
-int retryCount = event.getRetryCount();
-
-// 判断是否是延迟消息
-boolean isDelay = event.isDelay();
-```
-
-### 3. 幂等去重
-
-组件支持消息幂等去重，防止重复处理：
-
-```yaml
-spring:
-  cloud:
-    stream:
-      # 使用 Redis 进行幂等去重（推荐生产环境）
-      datasource: redis
-      # 或使用内存进行幂等去重（仅单实例场景）
-      # datasource: memory
-```
-
-**工作原理**：
-- 消息处理前检查是否已处理过（基于消息ID）
-- 如果已处理，直接跳过
-- 如果未处理，保存处理记录（2分钟过期）
-- 处理成功后，保留处理记录
-
-### 4. 消息重试
-
-组件支持消息处理失败后的自动重试：
-
-```yaml
-spring:
-  cloud:
-    stream:
-      max-retries: 3  # 最大重试次数
-```
-
-**重试机制**：
-- 消息处理函数返回 `false` 时触发重试
-- 达到最大重试次数后，消息将被丢弃
-- 重试次数记录在 `MessageEvent.retryCount` 中
-
-### 5. 请求头传递
-
-组件自动传递以下请求头信息：
-
-- `X-Time-Format-Pattern`：时间格式
-- `X-Currency-Format-Pattern`：货币格式
-- `X-Rd-Request-Timezone`：时区
-- `X-Rd-Request-Language`：语言
-- `X-Rd-Request-Shop-Code`：店铺代码
-- `X-Tenant-Code-Token`：租户代码
-
-这些请求头会在消息消费时自动设置到 `HeaderContextHolder` 中。
-
----
-
-## 📦 支持的 MQ 类型
-
-组件支持以下消息队列（需要添加对应的依赖）：
-
-| MQ 类型                 | 依赖                                      | 说明              |
-|-----------------------|-----------------------------------------|-----------------|
-| **Apache Kafka**      | `richie-component-messaging-kafka`      | 高性能分布式消息队列      |
-| **RabbitMQ**          | `richie-component-messaging-rabbitmq`   | 企业级消息队列         |
-| **Apache RocketMQ**   | `richie-component-messaging-rocketmq`   | 阿里云 RocketMQ    |
-| **Amazon Kinesis**    | `richie-component-messaging-kinesis`    | AWS Kinesis 数据流 |
-| **Google Pub/Sub**    | `richie-component-messaging-gcp-pubsub` | GCP 发布订阅        |
-| **Azure Event Hubs**  | `richie-component-messaging-eventhubs`  | Azure 事件中心      |
-| **Azure Service Bus** | `richie-component-messaging-servicebus` | Azure 服务总线      |
-| **AWS SQS**           | `richie-component-messaging-sqs`        | AWS 简单队列服务      |
-| **AWS SNS**           | `richie-component-messaging-sns`        | AWS 简单通知服务      |
-| **Apache Pulsar**     | `richie-component-messaging-pulsar`     | Apache Pulsar   |
-| **Solace PubSub+**    | `richie-component-messaging-solace`     | Solace 发布订阅     |
-
-📖 **各 MQ 的具体配置请参考对应的子组件 README**
-
----
-
-## ⚙️ 配置说明
-
-### 基础配置
-
-| 配置项                               | 类型      | 默认值      | 说明                            |
-|-----------------------------------|---------|----------|-------------------------------|
-| `spring.cloud.stream.datasource`  | String  | `memory` | 幂等去重使用的数据缓存源：`memory`、`redis` |
-| `spring.cloud.stream.max-retries` | Integer | `3`      | 消息处理失败后的最大重试次数                |
-
-### Spring Cloud Stream 配置
-
-Spring Cloud Stream 的配置取决于具体的 MQ 实现。以 Kafka 为例：
-
-```yaml
-spring:
-  cloud:
-    stream:
-      bindings:
-        normalProcess-in-0:
-          destination: normal-topic
-          group: normal-group
-        normalProcess-out-0:
-          destination: normal-topic
-      kafka:
-        binder:
-          brokers: localhost:9092
-```
-
-📖 **详细配置请参考**：[Spring Cloud Stream 文档](https://spring.io/projects/spring-cloud-stream#overview)
-
----
-
-## 🎯 最佳实践
-
-### 1. Topic 别名管理
-
-使用枚举管理 Topic 别名，避免硬编码：
-
-```java
-public enum TopicAlias {
-    ORDER_CREATED("order-created"),
-    ORDER_CANCELLED("order-cancelled"),
-    NOTIFICATION("notification");
-    
-    private final String alias;
-    
-    TopicAlias(String alias) {
-        this.alias = alias;
-    }
-    
-    public String getAlias() {
-        return alias;
-    }
-}
-
-// 使用
-messageService.sendMessage(TopicAlias.ORDER_CREATED.getAlias(), event);
-```
-
-### 2. 消息事件定义
-
-定义清晰的消息事件类：
-
-```java
-@Data
-public class OrderCreatedEvent implements Serializable {
-    private String orderId;
-    private String userId;
-    private BigDecimal amount;
-    private LocalDateTime createTime;
-}
-```
-
-### 3. 消费者注册
-
-在 `@PostConstruct` 方法中注册所有消费者：
+### 4) `Consume` a message
 
 ```java
 @Component
 public class OrderConsumer {
-    
-    @Autowired
-    private BaseConsumer baseConsumer;
-    
+    private final BaseConsumer baseConsumer;
+
     @PostConstruct
-    public void registerConsumers() {
-        baseConsumer.registerConsumer(TopicAlias.ORDER_CREATED.getAlias(), this::handleOrderCreated);
-        baseConsumer.registerConsumer(TopicAlias.ORDER_CANCELLED.getAlias(), this::handleOrderCancelled);
+    public void register() {
+        baseConsumer.registerConsumer("order-created", this::handle);
     }
-    
-    private Boolean handleOrderCreated(MessageEvent event) {
-        // ...
-    }
-}
-```
 
-### 4. 错误处理
-
-完善的错误处理和日志记录：
-
-```java
-private Boolean handleOrderCreated(MessageEvent event) {
-    try {
-        OrderCreatedEvent orderEvent = event.getBody(OrderCreatedEvent.class);
-        
-        // 参数校验
-        if (orderEvent == null || orderEvent.getOrderId() == null) {
-            log.warn("消息体无效，跳过处理: {}", event);
-            return true;  // 无效消息，不重试
-        }
-        
-        // 业务处理
-        orderService.processOrder(orderEvent);
-        
-        return true;
-    } catch (BusinessException e) {
-        // 业务异常，不重试
-        log.error("业务处理失败，不重试: {}", event, e);
-        return true;
-    } catch (Exception e) {
-        // 系统异常，触发重试
-        log.error("系统异常，将触发重试: {}", event, e);
-        return false;
+    private Boolean handle(MessageEvent event) {
+        OrderCreatedEvent order = event.getBody(OrderCreatedEvent.class);
+        return process(order);  // true = success, false = retry
     }
 }
 ```
 
-### 5. 幂等去重
+## 🔧 Core Capabilities
 
-生产环境使用 Redis 进行幂等去重：
-
-```yaml
-spring:
-  cloud:
-    stream:
-      datasource: redis  # 使用 Redis 进行幂等去重
-```
-
-### 6. 多 Binder 场景
-
-当需要同时使用多个 MQ 时，指定 Binder 名称：
-
-```yaml
-spring:
-  cloud:
-    stream:
-      binders:
-        kafka-binder:
-          type: kafka
-          environment:
-            spring:
-              kafka:
-                bootstrap-servers: localhost:9092
-        rabbitmq-binder:
-          type: rabbit
-          environment:
-            spring:
-              rabbitmq:
-                host: localhost
-                port: 5672
-```
+### 1) `Send` — ordinary, delayed, scheduled
 
 ```java
-// 发送到 Kafka
-messageService.sendMessage("topic", "kafka-binder", event);
-
-// 发送到 RabbitMQ
-messageService.sendMessage("topic", "rabbitmq-binder", event);
+messageService.sendMessage("order-created", orderEvent);                  // now
+messageService.sendDelayMessage("notification", event, 60_000L);            // +60s
+messageService.sendScheduledMessage("reminder", event, Instant.now().plus(Duration.ofDays(1)));
 ```
 
+### 2) `Consume` via `Function`
+
+```java
+@Bean
+public Consumer<OrderCreatedEvent> orderCreated() {
+    return event -> { /* process */ };
+}
+```
+
+### 3) `Idempotency` / retry
+
+Idempotency is checked via message ID. Duplicates are skipped.
+
+```yaml
+platform:
+  component:
+    messaging:
+      datasource: redis   # memory | redis
+      max-retries: 5      # then drop / DLQ
+```
+
+### 4) `Multi`-binder
+
+```java
+messageService.sendMessage("audit-event", "kafka-binder", event);
+messageService.sendMessage("audit-event", "rabbitmq-binder", event);
+```
+
+## ⚙️ Configuration Reference
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `datasource` | enum | `memory` | `memory` / `redis` (idempotency backend) |
+| `max-retries` | int | `3` | Max retry attempts before drop / DLQ |
+| `delay.message-store` | String | redis | Delay message backend |
+| `bindings.<binding>.destination` | String | – | Topic / queue name |
+| `bindings.<binding>.group` | String | – | Consumer group |
+
+## 🎯 Best Practices
+
+1. **Use enums for topic names** — avoid string typos.
+2. **Set `max-retries` per message criticality** — 3 for transient, 5+ for critical.
+3. **Always return `false` on transient failures** — let the retry kick in.
+4. **Use Redis for idempotency** in production — `memory` only for single-instance dev.
+5. **Decouple consumer error handling from business code** — use AOP or wrapper.
+
+## ⚠️ Known Limitations
+
+| Limitation | Impact | Workaround |
+|------------|--------|------------|
+| **Exactly-once not guaranteed** | May process duplicate | Use idempotency + `datasource: redis` |
+| **Delay message granularity depends on broker** | RabbitMQ: per-queue TTL; Kafka: not native | Use `scheduled` for cross-broker guarantees |
+| **Multi-binder routing complexity** | Hard to debug | Keep routing config in one place |
+
+## ❓ FAQ
+
+### `Q1` — `Which` provider should `I` choose?
+
+- **Kafka** — high throughput, log / event streaming.
+- **RabbitMQ** — enterprise, complex routing.
+- **RocketMQ** — Aliyun ecosystem, transactions.
+- **AWS SQS / SNS** — AWS only.
+- **Pub/Sub / Event Hubs / Service Bus** — GCP / Azure.
+
+### `Q2` — `How` do `I` consume with custom header propagation?
+
+```java
+@Bean
+public Consumer<Message<OrderCreatedEvent>> consumer() {
+    return msg -> {
+        String tenantId = msg.getHeaders().get("x-tenant-id");
+        // process
+    };
+}
+```
+
+### `Q3` — `Can` `I` have multiple consumers for the same topic?
+
+Yes — different `group` values create independent consumer groups.
+
+### `Q4` — `Where` are dead-lettered messages?
+
+Broker-dependent. Configure per-binder; this component doesn't own DLQ.
+
+## 📚 Further Reading
+
+- **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
+- **State machine (uses messaging)** — [`../atlas-richie-component-statemachine/README.md`](../atlas-richie-component-statemachine/README.md)
+- External: [Spring Cloud Stream](https://spring.io/projects/spring-cloud-stream)
+
 ---
 
-## ❓ 常见问题
-
-### Q1: 如何选择 MQ 类型？
-
-**A:** 
-- **Kafka**：适合高吞吐量、日志收集、流处理场景
-- **RabbitMQ**：适合企业级应用、复杂路由场景
-- **RocketMQ**：适合阿里云环境、事务消息场景
-- **AWS SQS/SNS**：适合 AWS 环境
-- **Azure Service Bus**：适合 Azure 环境
-
-### Q2: 消息处理失败会怎样？
-
-**A:** 
-- 消息处理函数返回 `false` 时，会触发重试
-- 达到最大重试次数后，消息将被丢弃
-- 建议在消息处理函数中记录失败日志，便于排查问题
-
-### Q3: 如何实现消息幂等？
-
-**A:** 
-- 组件已内置幂等去重机制（基于消息ID）
-- 生产环境建议使用 Redis 进行幂等去重
-- 业务层面也可以实现额外的幂等逻辑
-
-### Q4: 延迟消息如何实现？
-
-**A:** 
-- 使用 `sendDelayMessage` 方法发送延迟消息
-- 延迟时间以毫秒为单位
-- 具体实现取决于 MQ 类型（部分 MQ 可能不支持延迟消息）
-
-### Q5: 如何传递自定义请求头？
-
-**A:** 
-- 组件自动传递标准请求头
-- 如需传递自定义请求头，需要在发送消息前设置到 `HeaderContextHolder` 中
-
-### Q6: 消息消费是同步还是异步？
-
-**A:** 
-- Spring Cloud Stream 默认使用异步消费
-- 消息处理函数在独立的线程中执行
-- 可以通过配置调整并发数
-
----
-
-## 📝 总结
-
-Richie Messaging Component 提供了统一的消息队列抽象，支持多种 MQ 实现，简化了消息发送和消费的开发工作。通过合理使用组件提供的功能，可以构建可靠、高性能的消息驱动应用。
-
-**关键要点**：
-
-1. **统一接口**：使用 `MessageService` 统一接口，屏蔽底层 MQ 差异
-2. **类型安全**：使用枚举管理 Topic 别名，定义清晰的消息事件类
-3. **错误处理**：完善的错误处理和日志记录，区分业务异常和系统异常
-4. **幂等去重**：生产环境使用 Redis 进行幂等去重
-5. **多 Binder**：支持同时使用多个 MQ 服务
-
-📖 **各 MQ 的具体配置和特性请参考对应的子组件 README**
+**atlas-richie-component-messaging** 🚀

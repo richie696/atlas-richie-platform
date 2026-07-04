@@ -1,4 +1,4 @@
-# Go 客户端
+# Atlas Richie Go HTTP Client (atlas-richie-gateway-go-client)
 
 Go语言HTTP客户端，支持ECC+AES-GCM加密和防重复提交。
 

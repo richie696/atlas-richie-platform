@@ -1,4 +1,83 @@
-# Richie Component Storage
+# Atlas Richie Storage Component (atlas-richie-component-storage)
+
+- [Overview](#overview)
+- [Thread Safety and Client Lifecycle](#thread-safety-and-client-lifecycle)
+  - [Design Principles](#design-principles)
+  - [Thread Safety Endorsement for Each Engine Client](#thread-safety-endorsement-for-each-engine-client)
+  - [Usage Recommendations](#usage-recommendations)
+  - [Negative Examples (Do Not Use)](#negative-examples-do-not-use)
+- [Core Features](#core-features)
+- [Quick Start](#quick-start)
+  - [1. Add Dependency](#1-add-dependency)
+  - [2. Select Storage Implementation](#2-select-storage-implementation)
+  - [3. Configure Storage](#3-configure-storage)
+  - [4. Usage Example](#4-usage-example)
+- [Core Interfaces](#core-interfaces)
+  - [StorageEngine](#storageengine)
+- [Configuration Description](#configuration-description)
+  - [Local Storage Configuration](#local-storage-configuration)
+  - [Object Storage Configuration](#object-storage-configuration)
+  - [FTP/SFTP/SMB Configuration](#ftp/sftp/smb-configuration)
+- [Dual-Mode Architecture](#dual-mode-architecture)
+  - [Use Case Comparison](#use-case-comparison)
+  - [Automatic Mode (Default)](#automatic-mode-default)
+  - [Manual Mode](#manual-mode)
+  - [Supported Engine Type Enums](#supported-engine-type-enums)
+  - [Internal Architecture](#internal-architecture)
+- [Observability: HealthIndicator + Micrometer Metrics](#observability-healthindicator-+-micrometer-metrics)
+  - [HealthIndicator (Health Check)](#healthindicator-health-check)
+  - [Micrometer Metrics Binder](#micrometer-metrics-binder)
+  - [Disable Example (No Monitoring)](#disable-example-no-monitoring)
+- [Storage Engine Comparison](#storage-engine-comparison)
+- [Best Practices](#best-practices)
+- [Business-side Controller Reference Implementation](#business-side-controller-reference-implementation)
+- [FAQ](#faq)
+  - [Q: How to switch the storage backend?](#q-how-to-switch-the-storage-backend?)
+  - [Q: What image formats are supported?](#q-what-image-formats-are-supported?)
+  - [Q: How to implement file deduplication?](#q-how-to-implement-file-deduplication?)
+- [Related Documentation](#related-documentation)
+---
+
+## 📖 Contents
+
+- [Overview](#overview)
+- [Thread Safety and Client Lifecycle](#thread-safety-and-client-lifecycle)
+  - [Design Principles](#design-principles)
+  - [Thread Safety Endorsement for Each Engine Client](#thread-safety-endorsement-for-each-engine-client)
+  - [Usage Recommendations](#usage-recommendations)
+  - [Negative Examples (Do Not Use)](#negative-examples-do-not-use)
+- [Core Features](#core-features)
+- [Quick Start](#quick-start)
+  - [1. Add Dependency](#1-add-dependency)
+  - [2. Select Storage Implementation](#2-select-storage-implementation)
+  - [3. Configure Storage](#3-configure-storage)
+  - [4. Usage Example](#4-usage-example)
+- [Core Interfaces](#core-interfaces)
+  - [StorageEngine](#storageengine)
+- [Configuration Description](#configuration-description)
+  - [Local Storage Configuration](#local-storage-configuration)
+  - [Object Storage Configuration](#object-storage-configuration)
+  - [FTP/SFTP/SMB Configuration](#ftp/sftp/smb-configuration)
+- [Dual-Mode Architecture](#dual-mode-architecture)
+  - [Use Case Comparison](#use-case-comparison)
+  - [Automatic Mode (Default)](#automatic-mode-default)
+  - [Manual Mode](#manual-mode)
+  - [Supported Engine Type Enums](#supported-engine-type-enums)
+  - [Internal Architecture](#internal-architecture)
+- [Observability: HealthIndicator + Micrometer Metrics](#observability-healthindicator-+-micrometer-metrics)
+  - [HealthIndicator (Health Check)](#healthindicator-health-check)
+  - [Micrometer Metrics Binder](#micrometer-metrics-binder)
+  - [Disable Example (No Monitoring)](#disable-example-no-monitoring)
+- [Storage Engine Comparison](#storage-engine-comparison)
+- [Best Practices](#best-practices)
+- [Business-side Controller Reference Implementation](#business-side-controller-reference-implementation)
+- [FAQ](#faq)
+  - [Q: How to switch the storage backend?](#q-how-to-switch-the-storage-backend?)
+  - [Q: What image formats are supported?](#q-what-image-formats-are-supported?)
+  - [Q: How to implement file deduplication?](#q-how-to-implement-file-deduplication?)
+- [Related Documentation](#related-documentation)
+
+---
 
 ## Overview
 
@@ -8,15 +87,15 @@
 
 > **This component is thread-safe, and `StorageEngine` should be used as a singleton.**
 
-### Design Principles
+### `Design` `Principles`
 
 - `StorageEngine` implementation classes are registered as Spring `@Service` beans, which are **singletons** by default, and all threads share the same instance.
 - Each storage SDK client is registered within the component as a **Spring singleton bean**, and its lifecycle is managed uniformly by the container.
 - `StorageEngine` itself is **stateless**. All configuration required for operations is injected through the constructor, and method calls do not modify any shared mutable state. It naturally supports multi-threaded concurrency.
 
-### Thread Safety Endorsement for Each Engine Client
+### `Thread` `Safety` `Endorsement` for `Each` `Engine` `Client`
 
-#### Object Storage
+#### `Object` `Storage`
 
 | Storage Engine | Client Type           | Officially Declared Thread-Safe | Recommended Pattern                       |
 |----------------|-----------------------|:-------------------------------:|-------------------------------------------|
@@ -29,7 +108,7 @@
 | Volcano TOS    | `TOSV2`               |               Yes               | Singleton, Transport is thread-safe       |
 | Azure Blob     | `BlobContainerClient` |               Yes               | Singleton, guaranteed by Microsoft        |
 
-#### File Transfer / Network Storage
+#### `File` `Transfer` / `Network` `Storage`
 
 | Storage Engine | Client/Resource Type            | Thread-Safe Mechanism | Recommended Pattern                                                           |
 |----------------|---------------------------------|:---------------------:|-------------------------------------------------------------------------------|
@@ -38,7 +117,7 @@
 | SMB            | `CIFSContext`                   |          Yes          | Singleton context, jcifs-ng `BaseContext` is thread-safe                      |
 | Local          | No client (direct file I/O)     |          Yes          | `LocalStorageEngine` is stateless, directly operates the local file system    |
 
-### Usage Recommendations
+### `Usage` `Recommendations`
 
 1. **Do not manually create `StorageEngine` instances in automatic mode**. Obtain it directly through Spring dependency injection (for manual mode, please refer to the "Dual-Mode Architecture" section):
    ```java
@@ -51,7 +130,7 @@
 2. **Do not close/destroy clients after each operation**. Each SDK client maintains an internal HTTP connection pool. Frequent creation and destruction will lead to connection pool resource leaks (e.g., `ClientBuilderConfiguration` residue), which may cause memory inflation and file descriptor exhaustion after long-term operation.
 3. **Do not create underlying SDK clients yourself in business code** (e.g., `new OSSClientBuilder().build(...)`). They should be managed uniformly by the component to avoid conflicts with the component's internal singleton clients.
 
-### Negative Examples (Do Not Use)
+### `Negative` `Examples` (`Do` `Not` `Use`)
 
 ```java
 // Wrong: Create a new StorageEngine or SDK client for every request
@@ -83,7 +162,7 @@ public void upload(File file) {
 
 ## Quick Start
 
-### 1. Add Dependency
+### 1) `Add` `Dependency`
 
 ```xml
 <dependency>
@@ -93,7 +172,7 @@ public void upload(File file) {
 </dependency>
 ```
 
-### 2. Select Storage Implementation
+### 2) `Select` `Storage` `Implementation`
 
 Choose the corresponding storage implementation module based on your needs:
 
@@ -109,7 +188,7 @@ Choose the corresponding storage implementation module based on your needs:
 - **SFTP**: `richie-component-storage-sftp`
 - **SMB**: `richie-component-storage-smb`
 
-### 3. Configure Storage
+### 3) `Configure` `Storage`
 
 ```yaml
 platform:
@@ -129,7 +208,7 @@ platform:
         basePath: /files/
 ```
 
-### 4. Usage Example
+### 4) `Usage` `Example`
 
 ```java
 @Service
@@ -175,7 +254,7 @@ public class FileService {
 
 ## Core Interfaces
 
-### StorageEngine
+### `StorageEngine`
 
 ```java
 public interface StorageEngine {
@@ -206,7 +285,7 @@ public interface StorageEngine {
 
 ## Configuration Description
 
-### Local Storage Configuration
+### `Local` `Storage` `Configuration`
 
 ```yaml
 platform:
@@ -218,7 +297,7 @@ platform:
           contentMaxSize: 1048576  # Maximum content size (bytes)
 ```
 
-### Object Storage Configuration
+### `Object` `Storage` `Configuration`
 
 ```yaml
 platform:
@@ -235,7 +314,7 @@ platform:
         basePath: /files/  # Base path
 ```
 
-### FTP/SFTP/SMB Configuration
+### `FTP`/`SFTP`/`SMB` `Configuration`
 
 ```yaml
 platform:
@@ -273,7 +352,7 @@ This component supports two initialization modes, controlled by the `auto-init` 
 | **Automatic Mode** (default) | `auto-init: true` (or not configured) | Configuration is fixed in YAML/config file, no need to switch after startup                  | YAML + Spring Boot auto-registration to `Registry`     |
 | **Manual Mode**              | `auto-init: false`                    | Configuration comes from database/Nacos/admin console, **requires hot switching at runtime** | Business code manually calls `Registry.switchEngine()` |
 
-### Use Case Comparison
+### `Use` `Case` `Comparison`
 
 | Scenario                                                                                 | Recommended Mode   | Reason                                                                   |
 |------------------------------------------------------------------------------------------|--------------------|--------------------------------------------------------------------------|
@@ -286,7 +365,7 @@ This component supports two initialization modes, controlled by the `auto-init` 
 
 > **The two modes are mutually exclusive and cannot be used simultaneously in the same system.** In automatic mode, calling `switchEngine()` is prohibited; in manual mode, configuring engine-related YAML is prohibited.
 
-### Automatic Mode (Default)
+### `Automatic` `Mode` (`Default`)
 
 That is, the usage in the "Quick Start" section above. Engine registration is completed through YAML configuration + Spring Boot auto-configuration, no additional code required.
 
@@ -373,7 +452,7 @@ sequenceDiagram
     end
 ```
 
-### Manual Mode
+### `Manual` `Mode`
 
 Business code fully controls the engine lifecycle. `auto-init=false` disables automatic registration, and `StorageEngineRegistry` pre-creates empty Proxy placeholders. Business code creates/switches engines by calling `switchEngine` at the appropriate time (e.g., startup `@PostConstruct`, tenant login, admin operation).
 
@@ -465,7 +544,7 @@ sequenceDiagram
     Reg->>Reg: Call current delegate
 ```
 
-#### 1. Configure to Disable Auto Initialization
+#### 1. `Configure` to `Disable` `Auto` `Initialization`
 
 ```yaml
 platform:
@@ -475,7 +554,7 @@ platform:
       # Note: Do not configure engine-related properties like object / local / ftp in manual mode
 ```
 
-#### 2. Manually Initialize the Engine
+#### 2. `Manually` `Initialize` the `Engine`
 
 After the application starts, create and register engine instances by calling `StorageEngineRegistry.switchEngine()`. Configuration parameters reuse `StorageProperties`, which business code can construct itself:
 
@@ -507,7 +586,7 @@ public class StorageInitService {
 }
 ```
 
-#### 3. Hot Switching at Runtime
+#### 3. `Hot` `Switching` at `Runtime`
 
 When the admin console modifies storage configuration, call `switchEngine()` to switch the specified type of engine. The Registry automatically destroys the old engine (releasing connection pool and other resources), creates the new engine, and updates the corresponding Proxy reference, **without affecting other types of engines**:
 
@@ -527,7 +606,7 @@ public void switchStorage(@RequestBody StorageConfigRequest request) {
 }
 ```
 
-#### 3.1 File Protocol Engine Switching (FTP / SFTP / SMB)
+#### 3.1 `File` `Protocol` `Engine` `Switching` (`FTP` / `SFTP` / `SMB`)
 
 `switchEngine()` also applies to file protocol engines such as FTP/SFTP/SMB. The following example shows the admin console dynamically switching the FTP host (the connection pool will be automatically destroyed and rebuilt during switching, transparent to business calling threads):
 
@@ -586,7 +665,7 @@ public void switchSmb(String host, String domain, String user, String password) 
 }
 ```
 
-#### 3.2 Safe Refresh: Failure Rollback (refreshEngine)
+#### 3.2 `Safe` `Refresh` — `Failure` `Rollback` (refreshEngine)
 
 `switchEngine()` throws an exception when the new engine fails to initialize but **does not affect the old engine**. If you want to keep the reference to the old engine from being replaced by any transient exception, you can use `refreshEngine()`, which has the same semantics but the API name more clearly expresses the "in-place refresh" intent:
 
@@ -607,7 +686,7 @@ Rollback semantics of `refreshEngine()`:
 - `create()` + `afterPropertiesSet()` fails → automatically `destroy()` the new engine then throw exception, old delegate unchanged
 - Old engine `destroy()` fails → only log warn, new engine still takes effect
 
-#### 4. Multi-Engine Coexistence
+#### 4. `Multi`-`Engine` `Coexistence`
 
 Multiple engine types can be registered in the system at the same time. Typical scenario: object storage (business data) + FTP/SMB (inter-system data exchange). The Registry maintains independent Proxies for each engine type, which do not affect each other:
 
@@ -684,7 +763,7 @@ public class DataSyncService {
 
 > **Important Constraint**: Business code must inject the proxy object via `@Autowired StorageEngine`. **Prohibited** from directly holding or caching the instance reference returned by `StorageEngineRegistry.getEngine()`, otherwise after hot switching it will point to the destroyed old engine.
 
-### Supported Engine Type Enums
+### `Supported` `Engine` `Type` `Enums`
 
 | Enum Value | `configValue` | Description |
 |--------|--------------|------|
@@ -703,7 +782,7 @@ public class DataSyncService {
 
 > `StorageEngineEnum.fromConfigValue("aws_s3")` can convert a string configuration value to an enum.
 
-### Internal Architecture
+### `Internal` `Architecture`
 
 ```
 Business Code
@@ -742,7 +821,7 @@ Business Code
 
 The storage engine provides two optional observability beans under the Spring Boot Actuator framework. When not connected to Prometheus/Grafana/APM, they can be turned off to avoid noise logs such as "CollectorRegistry cannot find collector".
 
-### HealthIndicator (Health Check)
+### `HealthIndicator` (`Health` `Check`)
 
 Controlled through Spring Boot's standard `management.health.*` namespace:
 
@@ -759,7 +838,7 @@ management:
 - Default value: `true` (enabled when not configured)
 - Endpoint: After registration, view via `/actuator/health`. The current engine count, default engine type, and engine ID will be exposed in details
 
-### Micrometer Metrics Binder
+### `Micrometer` `Metrics` `Binder`
 
 Controlled through Spring Boot's standard `management.metrics.enable.*` namespace:
 
@@ -774,7 +853,7 @@ management:
 - Value: `ALL` (default, enabled) / `NONE` (disabled)
 - Registered metrics: default engine type (gauge), number of registered engines (gauge), switch count (counter × 12 engines), registration count (counter × 12 engines)
 
-### Disable Example (No Monitoring)
+### `Disable` `Example` (`No` `Monitoring`)
 
 ```yaml
 management:
@@ -925,17 +1004,17 @@ public class StorageUploadServiceImpl implements StorageUploadService {
 
 ## FAQ
 
-### Q: How to switch the storage backend?
+### `Q` — `How` to switch the storage backend?
 
 A: Two ways:
 - **Automatic Mode**: Modify the `engine` field in the configuration, and add the corresponding storage implementation module dependency, then restart the application.
 - **Manual Mode**: Use `StorageEngineRegistry.switchEngine(engineType, properties)` to hot switch at runtime, no restart required. See the "Dual-Mode Architecture" section for details.
 
-### Q: What image formats are supported?
+### `Q` — `What` image formats are supported?
 
 A: Configured through `ImageOptions`, supports common image format conversion and compression.
 
-### Q: How to implement file deduplication?
+### `Q` — `How` to implement file deduplication?
 
 A: The local storage implementation already supports content deduplication based on SHA-256. Cloud storage needs to be implemented based on the specific implementation.
 

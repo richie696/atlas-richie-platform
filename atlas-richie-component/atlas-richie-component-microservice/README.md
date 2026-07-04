@@ -1,456 +1,261 @@
-# Richie Microservice Component
+# Atlas Richie Microservice Component (atlas-richie-component-microservice)
 
-基于 Spring Cloud OpenFeign 和 Spring RestClient 的微服务调用组件，提供统一的 HTTP 客户端配置、请求拦截器、连接池管理等能力。
-
-## 📋 目录
-
-- [功能特性](#功能特性)
-- [快速开始](#快速开始)
-- [核心功能](#核心功能)
-- [配置说明](#配置说明)
-- [最佳实践](#最佳实践)
-- [常见问题](#常见问题)
+> **Microservice infrastructure** component. Bundles **OpenFeign** for declarative HTTP clients, **Resilience4j** / Sentinel for circuit breaker + retry, **Spring Cloud LoadBalancer** for service discovery, and **Spring Cloud Gateway** helpers. One-stop for inter-service calls.
 
 ---
 
-## ✨ 功能特性
+## 📖 Contents
 
-### 核心能力
-
-- ✅ **OpenFeign 集成**：基于 Spring Cloud OpenFeign，提供声明式 HTTP 客户端
-- ✅ **RestClient 支持**：支持 Spring 6.0+ 的 RestClient
-- ✅ **OkHttp 客户端**：使用 OkHttp 作为底层 HTTP 客户端，性能优异
-- ✅ **请求头传递**：自动传递请求头信息（语言、时区、租户等）
-- ✅ **连接池管理**：自动管理连接池，提升性能
-- ✅ **SSL/TLS 支持**：支持自定义证书、信任库配置
-
-### 高级特性
-
-- ✅ **自动配置**：开箱即用，零配置启动
-- ✅ **请求拦截器**：自动传递必要的请求头信息
-- ✅ **日志记录**：支持请求/响应日志记录
-- ✅ **缓存支持**：支持 HTTP 响应缓存（可选）
-
+- [📖 Overview](#📖-overview)
+  - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
+- [✨ Features](#✨-features)
+  - [Core capabilities](#core-capabilities)
+  - [Design choices](#design-choices)
+- [🏗️ Architecture & Module Layout](#🏗️-architecture-&-module-layout)
+- [🚀 Quick Start](#🚀-quick-start)
+  - [1. Add the dependency](#1-add-the-dependency)
+  - [2. Configure](#2-configure)
+  - [3. Declare a Feign client](#3-declare-a-feign-client)
+- [🔧 Core Capabilities](#🔧-core-capabilities)
+  - [1. OpenFeign declarative HTTP](#1-openfeign-declarative-http)
+  - [2. Sentinel circuit breaker](#2-sentinel-circuit-breaker)
+  - [3. Retry + fallback](#3-retry-+-fallback)
+  - [4. Load balancing](#4-load-balancing)
+- [⚙️ Configuration Reference](#⚙️-configuration-reference)
+- [🎯 Best Practices](#🎯-best-practices)
+- [⚠️ Known Limitations](#⚠️-known-limitations)
+- [❓ FAQ](#❓-faq)
+  - [Q1: How is this different from `spring-cloud-starter-openfeign`?](#q1-how-is-this-different-from-spring-cloud-starter-openfeign?)
+  - [Q2: Can I use Resilience4j instead of Sentinel?](#q2-can-i-use-resilience4j-instead-of-sentinel?)
+  - [Q3: How do I call a service that requires mTLS?](#q3-how-do-i-call-a-service-that-requires-mtls?)
+  - [Q4: Can I mock a Feign client in tests?](#q4-can-i-mock-a-feign-client-in-tests?)
+- [📚 Further Reading](#📚-further-reading)
 ---
 
-## 🚀 快速开始
+## 📖 Overview
 
-### 1. 添加依赖
+| Item | Value |
+|------|-------|
+| **Artifact** | `com.richie.component:atlas-richie-component-microservice` |
+| **Category** | Microservice infrastructure — inter-service calls + resilience |
+| **Hard dependencies** | Spring Cloud OpenFeign, Spring Cloud LoadBalancer |
+| **Optional** | Sentinel, Resilience4j, Eureka / Nacos / Consul discovery |
+
+### `What` this component is — and what it isn't
+
+| ✅ It gives you | ❌ It does not give you |
+|-----------------|------------------------|
+| OpenFeign declarative clients | An API gateway (use Spring Cloud Gateway separately) |
+| Sentinel circuit breaker for all Feign calls | Service mesh (use Istio / Linkerd separately) |
+| Retry with exponential backoff | Distributed tracing across services (use [`atlas-richie-component-tracing`](../atlas-richie-component-tracing/README.md)) |
+| Service discovery (Nacos / Eureka / Consul) | A service registry itself (use external Nacos) |
+
+## ✨ Features
+
+### `Core` capabilities
+
+- ✅ **OpenFeign** — declarative HTTP clients via `@FeignClient`.
+- ✅ **Resilience** — Sentinel circuit breaker (block / degrade / log).
+- ✅ **Retry** — built-in with backoff; configurable per client.
+- ✅ **Fallback** — `Hystrix`-style fallback beans.
+- ✅ **Load balancing** — Spring Cloud LoadBalancer (round-robin / random / weighted).
+- ✅ **Service discovery** — Eureka / Nacos / Consul.
+
+### `Design` choices
+
+- ✅ **One facade** — `RestClient` (Spring's) or `OpenFeign` (declarative).
+- ✅ **Sentinel first** — fail fast on dead hosts; integrates with [`atlas-richie-component-mongodb`](../atlas-richie-component-mongodb/README.md) and [`atlas-richie-component-http`](../atlas-richie-component-http/README.md).
+- ✅ **Config-driven** — switch transport / pool / breaker without code change.
+
+## 🏗️ Architecture & Module Layout
+
+```
+atlas-richie-component-microservice
+├── config/
+│   ├── MicroserviceAutoConfiguration
+│   ├── FeignClientOkhttpProperties
+│   ├── RestClientAutoConfiguration
+│   └── SentinelAutoConfiguration
+├── feign/
+│   ├── FeignClientBuilder              ← builds FeignClient with Sentinel interceptor
+│   └── FeignRequestInterceptor
+├── sentinel/
+│   ├── FeignSentinelInterceptor         ← block / degrade on circuit open
+│   └── SentinelRuleLoader
+├── loadbalancer/
+│   └── ServiceInstanceListSupplier      ← round-robin / random / weighted
+└── discovery/
+    └── (auto-detected: Eureka / Nacos / Consul)
+```
+
+## 🚀 Quick Start
+
+### 1) `Add` the dependency
 
 ```xml
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-microservice</artifactId>
 </dependency>
-
-<!-- Spring Cloud OpenFeign（如果使用 OpenFeign） -->
-<dependency>
-    <groupId>org.springframework.cloud</groupId>
-    <artifactId>spring-cloud-starter-openfeign</artifactId>
-</dependency>
 ```
 
-### 2. 配置微服务组件
+### 2) `Configure`
 
 ```yaml
-# application.yml
-spring:
-  cloud:
-    openfeign:
-      okhttp:
-        enabled: true  # 启用 OkHttp 客户端
-      httpclient:
-        # 连接池配置
-        max-connections: 200
-        max-connections-per-route: 50
-        time-to-live: 5
-        time-to-live-unit: minutes
-        # OkHttp 客户端配置
-        ok-http:
-          # HTTP协议版本
-          protocols:
-            - HTTP_2
-          # 超时配置
-          read-timeout: 20s
-          connect-timeout: 8s
-          write-timeout: 15s
-          call-timeout: 50s
-          # 日志配置
-          level: BASIC  # NONE、BASIC、HEADERS、BODY
-          # 缓存配置
-          enable-cache: false
-          cache-path: /tmp/okhttp3/cache/
-          cache-size: 100
-          # 安全配置
-          insecure-trust-all: false
-          hostname-verification: true
+platform:
+  component:
+    microservice:
+      feign:
+        client:
+          config:
+            default:
+              connect-timeout: 2000
+              read-timeout: 5000
+              logger-level: BASIC
+      sentinel:
+        enabled: true
+      retry:
+        max-attempts: 3
+        backoff: exponential
+        initial-interval: 100ms
+        multiplier: 2.0
+        max-interval: 5s
+      discovery:
+        type: nacos    # nacos | eureka | consul | none
 ```
 
-### 3. 使用 OpenFeign
+### 3) `Declare` a `Feign` client
 
 ```java
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+@FeignClient(name = "user-service", path = "/api/users")
+public interface UserClient {
+    @GetMapping("/{id}")
+    User getById(@PathVariable String id);
 
-@FeignClient(name = "user-service", url = "http://localhost:8080")
-public interface UserServiceClient {
-    
-    @GetMapping("/users/{id}")
-    User getUser(@PathVariable String id);
-    
-    @GetMapping("/users")
-    List<User> getUsers();
+    @PostMapping
+    User create(@RequestBody CreateUserRequest req);
 }
-```
 
-### 4. 使用 RestClient
+@RestController
+@RequiredArgsConstructor
+public class OrderController {
+    private final UserClient userClient;
 
-```java
-import org.springframework.web.client.RestClient;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-@Service
-public class UserService {
-    
-    @Autowired
-    private RestClient restClient;
-    
-    public User getUser(String id) {
-        return restClient.get()
-            .uri("http://localhost:8080/users/{id}", id)
-            .retrieve()
-            .body(User.class);
+    @PostMapping("/orders")
+    public Order place(@RequestBody OrderRequest req) {
+        User user = userClient.getById(req.getUserId());
+        return orderService.place(user, req);
     }
 }
 ```
 
----
+## 🔧 Core Capabilities
 
-## 🔧 核心功能
-
-### 1. OpenFeign 配置
-
-组件自动配置 OpenFeign 使用 OkHttp 客户端，并提供以下功能：
-
-#### 请求头自动传递
-
-组件通过 `FeignClientRequestInterceptor` 自动传递以下请求头：
-
-- 语言信息（`Accept-Language`）
-- 时区信息（`X-Rd-Request-Timezone`）
-- 租户代码（`X-Tenant-Code-Token`）
-- 店铺代码（`X-Rd-Request-Shop-Code`）
-- 时间格式（`X-Time-Format-Pattern`）
-- 货币格式（`X-Currency-Format-Pattern`）
-
-#### 自定义配置
+### 1) `OpenFeign` declarative `HTTP`
 
 ```java
-@FeignClient(
-    name = "user-service",
-    url = "http://localhost:8080",
-    configuration = CustomFeignConfiguration.class
-)
-public interface UserServiceClient {
-    // ...
-}
-
-@Configuration
-public class CustomFeignConfiguration {
-    @Bean
-    public RequestInterceptor customInterceptor() {
-        return requestTemplate -> {
-            requestTemplate.header("X-Custom-Header", "value");
-        };
-    }
+@FeignClient(name = "billing-service", fallback = BillingClientFallback.class)
+public interface BillingClient {
+    @PostMapping("/api/invoices")
+    Invoice create(@RequestBody InvoiceRequest req);
 }
 ```
 
-### 2. RestClient 配置
-
-组件自动配置 RestClient，并提供请求拦截器：
-
-```java
-@Service
-public class OrderService {
-    
-    @Autowired
-    private RestClient restClient;
-    
-    public Order createOrder(OrderRequest request) {
-        return restClient.post()
-            .uri("http://order-service/orders")
-            .body(request)
-            .retrieve()
-            .body(Order.class);
-    }
-}
-```
-
-**请求头自动传递**：`RestClientRequestInterceptor` 会自动传递必要的请求头信息。
-
-### 3. 连接池管理
-
-组件自动管理 OkHttp 连接池：
+### 2) `Sentinel` circuit breaker
 
 ```yaml
-spring:
-  cloud:
-    openfeign:
-      httpclient:
-        max-connections: 200              # 最大连接数
-        max-connections-per-route: 50    # 每个路由最大连接数
-        time-to-live: 5                   # 连接保持时间
-        time-to-live-unit: minutes        # 时间单位
+platform:
+  component:
+    microservice:
+      sentinel:
+        rules:
+          - resource: billing-service#create
+            grade: rt              # response time
+            threshold: 200ms
+            window-seconds: 10
 ```
 
-### 4. SSL/TLS 配置
+When tripped → `DegradeException` → fallback bean invoked.
 
-```yaml
-spring:
-  cloud:
-    openfeign:
-      httpclient:
-        ok-http:
-          # 跳过所有证书校验（仅测试用）
-          insecure-trust-all: false
-          # 主机名校验
-          hostname-verification: true
-```
-
----
-
-## ⚙️ 配置说明
-
-### 基础配置
-
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `spring.cloud.openfeign.okhttp.enabled` | boolean | `true` | 是否启用 OkHttp 客户端 |
-
-### 连接池配置
-
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `spring.cloud.openfeign.httpclient.max-connections` | int | `200` | 最大连接数 |
-| `spring.cloud.openfeign.httpclient.max-connections-per-route` | int | `50` | 每个路由最大连接数 |
-| `spring.cloud.openfeign.httpclient.time-to-live` | long | `5` | 连接保持时间 |
-| `spring.cloud.openfeign.httpclient.time-to-live-unit` | String | `minutes` | 时间单位 |
-
-### OkHttp 配置
-
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `spring.cloud.openfeign.httpclient.ok-http.protocols` | List<String> | `[HTTP_2]` | HTTP 协议版本 |
-| `spring.cloud.openfeign.httpclient.ok-http.read-timeout` | String | `20s` | 读取超时 |
-| `spring.cloud.openfeign.httpclient.ok-http.connect-timeout` | String | `8s` | 连接超时 |
-| `spring.cloud.openfeign.httpclient.ok-http.write-timeout` | String | `15s` | 写入超时 |
-| `spring.cloud.openfeign.httpclient.ok-http.call-timeout` | String | `50s` | 调用超时 |
-| `spring.cloud.openfeign.httpclient.ok-http.level` | String | `BASIC` | 日志级别：`NONE`、`BASIC`、`HEADERS`、`BODY` |
-| `spring.cloud.openfeign.httpclient.ok-http.enable-cache` | boolean | `false` | 是否启用缓存 |
-| `spring.cloud.openfeign.httpclient.ok-http.cache-path` | String | `/tmp/okhttp3/cache/` | 缓存路径 |
-| `spring.cloud.openfeign.httpclient.ok-http.cache-size` | int | `100` | 缓存大小（MB） |
-| `spring.cloud.openfeign.httpclient.ok-http.insecure-trust-all` | boolean | `false` | 是否跳过所有证书校验 |
-| `spring.cloud.openfeign.httpclient.ok-http.hostname-verification` | boolean | `true` | 是否启用主机名校验 |
-
----
-
-## 🎯 最佳实践
-
-### 1. OpenFeign 使用
-
-#### 定义 Feign 客户端
-
-```java
-@FeignClient(
-    name = "user-service",
-    url = "${services.user.url:http://localhost:8080}",
-    fallback = UserServiceFallback.class
-)
-public interface UserServiceClient {
-    
-    @GetMapping("/users/{id}")
-    ResultVO<User> getUser(@PathVariable String id);
-    
-    @PostMapping("/users")
-    ResultVO<User> createUser(@RequestBody CreateUserRequest request);
-}
-```
-
-#### 实现降级处理
+### 3) `Retry` + fallback
 
 ```java
 @Component
-public class UserServiceFallback implements UserServiceClient {
-    
+public class BillingClientFallback implements BillingClient {
     @Override
-    public ResultVO<User> getUser(String id) {
-        return ResultVO.error("服务暂时不可用");
-    }
-    
-    @Override
-    public ResultVO<User> createUser(CreateUserRequest request) {
-        return ResultVO.error("服务暂时不可用");
+    public Invoice create(InvoiceRequest req) {
+        return Invoice.queued(req.getUserId(), req.getAmount());   // queue for async processing
     }
 }
 ```
 
-### 2. RestClient 使用
+### 4) `Load` balancing
 
-```java
-@Service
-public class OrderService {
-    
-    @Autowired
-    private RestClient restClient;
-    
-    public Order getOrder(String id) {
-        try {
-            return restClient.get()
-                .uri("http://order-service/orders/{id}", id)
-                .retrieve()
-                .body(Order.class);
-        } catch (Exception e) {
-            log.error("获取订单失败", e);
-            throw new BusinessException("获取订单失败");
-        }
-    }
-}
-```
-
-### 3. 请求头管理
-
-组件会自动传递必要的请求头，如需传递自定义请求头：
-
-```java
-// OpenFeign
-@FeignClient(name = "user-service")
-public interface UserServiceClient {
-    @GetMapping("/users/{id}")
-    User getUser(
-        @PathVariable String id,
-        @RequestHeader("X-Custom-Header") String customHeader
-    );
-}
-
-// RestClient
-restClient.get()
-    .uri("http://user-service/users/{id}", id)
-    .header("X-Custom-Header", "value")
-    .retrieve()
-    .body(User.class);
-```
-
-### 4. 超时配置
-
-根据服务响应时间合理配置超时：
+Spring Cloud LoadBalancer picks an instance from the registry. Default: round-robin.
 
 ```yaml
 spring:
   cloud:
-    openfeign:
-      httpclient:
-        ok-http:
-          read-timeout: 30s      # 根据接口响应时间调整
-          connect-timeout: 10s   # 根据网络环境调整
-          write-timeout: 20s     # 根据请求体大小调整
-          call-timeout: 60s      # 整体超时时间
+    loadbalancer:
+      clients:
+        user-service:
+          loadbalancer:
+            type: random       # round_robin | random | weighted
 ```
 
-### 5. 连接池优化
+## ⚙️ Configuration Reference
 
-```yaml
-spring:
-  cloud:
-    openfeign:
-      httpclient:
-        max-connections: 200              # 根据并发需求调整
-        max-connections-per-route: 50     # 根据目标服务限制调整
-        time-to-live: 5                   # 连接保持时间
-```
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `feign.client.config.<name>.connect-timeout` | int | `2000` | Connect timeout (ms) |
+| `feign.client.config.<name>.read-timeout` | int | `5000` | Read timeout (ms) |
+| `feign.client.config.<name>.logger-level` | enum | `BASIC` | `NONE` / `BASIC` / `HEADERS` / `FULL` |
+| `sentinel.enabled` | boolean | `true` | Enable Sentinel |
+| `retry.max-attempts` | int | `3` | Max retry count |
+| `retry.backoff` | enum | `exponential` | `fixed` / `exponential` |
+| `discovery.type` | enum | `nacos` | `nacos` / `eureka` / `consul` / `none` |
+
+## 🎯 Best Practices
+
+1. **Always define a fallback** for every Feign client — fail soft, queue if needed.
+2. **Use `connect-timeout: 2000` / `read-timeout: 5000`** as sane defaults.
+3. **Configure Sentinel per Feign method** — `resource: <client>#<method>`.
+4. **Don't use retry for non-idempotent operations** — POST without idempotency key = duplicate.
+5. **Combine with tracing** — see [`atlas-richie-component-tracing`](../atlas-richie-component-tracing/README.md).
+
+## ⚠️ Known Limitations
+
+| Limitation | Impact | Workaround |
+|------------|--------|------------|
+| **Single discovery backend at a time** | Can't mix Eureka + Nacos | Run separate clusters |
+| **Feign reactive not supported** | No `Mono<User>` return types | Use Spring `WebClient` directly |
+| **No bulkhead isolation by default** | One slow service can starve threads | Configure thread pools |
+
+## ❓ FAQ
+
+### Q1 — How is this different from `spring-cloud-starter-openfeign`?
+
+Adds Sentinel integration, platform-aligned configuration, and FeignClient builders that wire `HttpClient` + breaker + retry in one place.
+
+### `Q2` — `Can` `I` use `Resilience4j` instead of `Sentinel`?
+
+Yes — install `resilience4j-spring-boot3` and configure accordingly. The component does not bind to Sentinel exclusively.
+
+### `Q3` — `How` do `I` call a service that requires mTLS?
+
+Configure `feign.client.config.<name>.ssl` or set up a custom `Client` bean.
+
+### `Q4` — `Can` `I` mock a `Feign` client in tests?
+
+Yes — Spring Cloud Contract + WireMock integrate with Feign.
+
+## 📚 Further Reading
+
+- **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
+- **HTTP client (used by Feign)** — [`../atlas-richie-component-http/README.md`](../atlas-richie-component-http/README.md)
+- **Tracing** — [`../atlas-richie-component-tracing/README.md`](../atlas-richie-component-tracing/README.md)
+- External: [OpenFeign](https://github.com/OpenFeign/feign) · [Sentinel](https://sentinelguard.io/) · [Spring Cloud LoadBalancer](https://spring.io/projects/spring-cloud-loadbalancer)
 
 ---
 
-## ❓ 常见问题
-
-### Q1: 如何选择 OpenFeign 还是 RestClient？
-
-**A:** 
-- **OpenFeign**：适合声明式 API，代码更简洁，支持降级处理
-- **RestClient**：适合程序式调用，更灵活，Spring 6.0+ 推荐使用
-
-### Q2: 请求头没有传递怎么办？
-
-**A:** 
-- 确保请求头在原始请求中存在
-- 检查 `IgnoreHeaderContent.IGNORE_HEADERS` 是否包含该请求头
-- 查看日志确认拦截器是否正常工作
-
-### Q3: 如何自定义请求拦截器？
-
-**A:** 
-
-```java
-@Configuration
-public class CustomFeignConfiguration {
-    @Bean
-    public RequestInterceptor customInterceptor() {
-        return requestTemplate -> {
-            // 自定义逻辑
-        };
-    }
-}
-```
-
-### Q4: 如何配置多个 Feign 客户端？
-
-**A:** 
-
-```java
-@FeignClient(name = "user-service", url = "http://user-service")
-public interface UserServiceClient {
-    // ...
-}
-
-@FeignClient(name = "order-service", url = "http://order-service")
-public interface OrderServiceClient {
-    // ...
-}
-```
-
-### Q5: 如何启用请求日志？
-
-**A:** 
-
-```yaml
-spring:
-  cloud:
-    openfeign:
-      httpclient:
-        ok-http:
-          level: BODY  # 开发环境使用 BODY，生产环境使用 BASIC
-```
-
-### Q6: 连接池配置如何优化？
-
-**A:** 
-- 根据并发请求数调整 `max-connections`
-- 根据目标服务限制调整 `max-connections-per-route`
-- 根据网络环境调整 `time-to-live`
-
----
-
-## 📝 总结
-
-Richie Microservice Component 提供了统一的微服务调用解决方案，支持 OpenFeign 和 RestClient 两种方式，自动管理连接池和请求头传递，简化了微服务间的调用。
-
-**关键要点**：
-
-1. **选择合适的客户端**：OpenFeign 适合声明式 API，RestClient 适合程序式调用
-2. **合理配置超时**：根据服务响应时间设置合适的超时时间
-3. **优化连接池**：根据并发需求调整连接池大小
-4. **请求头传递**：组件自动传递必要的请求头，无需手动处理
-5. **错误处理**：使用降级处理提高系统可用性
-
+**atlas-richie-component-microservice** 🚀

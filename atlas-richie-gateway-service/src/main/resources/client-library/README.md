@@ -1,4 +1,4 @@
-# Richie网关客户端库
+# Atlas Richie Gateway Client Library (atlas-richie-gateway-client-library)
 
 多语言客户端库，支持 ECC+AES-GCM 加密和防重复提交。所有客户端采用统一的接口设计，业务代码自行定义 URL 枚举。
 

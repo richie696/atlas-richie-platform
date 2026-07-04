@@ -1,4 +1,4 @@
-# Richie网关资源文件
+# Atlas Richie Gateway Service Resources (atlas-richie-gateway-service-resources)
 
 ## 📁 目录结构
 

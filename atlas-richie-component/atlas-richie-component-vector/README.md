@@ -1,271 +1,247 @@
-# Richie Component Vector
+# Atlas Richie Vector Component (atlas-richie-component-vector)
 
-## 概述
+> Parent module for **unified vector database** access. Aggregates `core` (facade) and multiple provider modules (Redis / Milvus / MongoDB Atlas / PostgreSQL pgvector / Qdrant / Neo4j / Elasticsearch / Weaviate). Selected via `platform.component.vector.provider`.
 
-`richie-component-vector` 是Richie平台向量数据库组件，提供统一的向量存储和检索能力，支持多种向量数据库后端（Redis、Milvus、MongoDB、PostgreSQL、Qdrant、Neo4j、Elasticsearch、Weaviate等），屏蔽不同向量数据库的差异，提供一致的 API。
+---
 
-## 核心特性
+## 📖 Contents
 
-- ✅ **统一向量接口** - 提供 `VectorService` 接口，屏蔽底层向量数据库差异
-- ✅ **多向量数据库支持** - 支持 Redis、Milvus、MongoDB、PostgreSQL、Qdrant、Neo4j、Elasticsearch、Weaviate
-- ✅ **灵活嵌入模型接入** - 支持自动注入或业务侧手工注入 `EmbeddingModel`
-- ✅ **向量搜索** - 支持向量相似度搜索、文本搜索
-- ✅ **自动配置** - Spring Boot 自动配置，开箱即用
+- [📖 Overview](#📖-overview)
+  - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
+- [✨ Features](#✨-features)
+  - [Core capabilities](#core-capabilities)
+  - [Design choices](#design-choices)
+- [🏗️ Architecture & Module Layout](#🏗️-architecture-&-module-layout)
+- [🚀 Quick Start](#🚀-quick-start)
+  - [1. Add the dependency](#1-add-the-dependency)
+  - [2. Configure](#2-configure)
+  - [3. Use VectorService](#3-use-vectorservice)
+- [🔧 Core Capabilities](#🔧-core-capabilities)
+  - [1. Document CRUD](#1-document-crud)
+  - [2. Similarity search](#2-similarity-search)
+  - [3. Embedding integration](#3-embedding-integration)
+- [⚙️ Configuration Reference](#⚙️-configuration-reference)
+- [🎯 Best Practices](#🎯-best-practices)
+- [⚠️ Known Limitations](#⚠️-known-limitations)
+- [❓ FAQ](#❓-faq)
+  - [Q1: Which provider should I use?](#q1-which-provider-should-i-use?)
+  - [Q2: Can I use multiple providers at once?](#q2-can-i-use-multiple-providers-at-once?)
+  - [Q3: How do I migrate from one provider to another?](#q3-how-do-i-migrate-from-one-provider-to-another?)
+  - [Q4: Are vectors stored normalized?](#q4-are-vectors-stored-normalized?)
+- [📚 Further Reading](#📚-further-reading)
+---
 
-## 快速开始
+## 📖 Overview
 
-### 1. 添加依赖
+| Item | Value |
+|------|-------|
+| **Artifact** | `com.richie.component:atlas-richie-component-vector` (parent POM) |
+| **Category** | Storage & retrieval — vector similarity search |
+| **Hard dependencies** | `atlas-richie-context` (for `JsonUtils`) |
+| **Default provider** | `redis` |
+
+### `What` this component is — and what it isn't
+
+| ✅ It gives you | ❌ It does not give you |
+|-----------------|------------------------|
+| One `VectorService` facade across 8 backends | An embedding model (use OpenAI / DashScope / local model) |
+| Provider choice via `platform.component.vector.provider` | Index auto-tuning (per-provider feature) |
+| Hybrid search (vector + metadata filter) | Vector compression / quantization |
+| Pluggable `EmbeddingProvider` SPI | Cross-provider migration tooling |
+
+## ✨ Features
+
+### `Core` capabilities
+
+- ✅ **8 providers** — Redis, Milvus, MongoDB Atlas Vector Search, PostgreSQL `pgvector`, Qdrant, Neo4j, Elasticsearch, Weaviate.
+- ✅ **Unified API** — `addDocuments`, `searchByText`, `searchByVector`, `delete`, `update`.
+- ✅ **Pluggable embedding** — plug OpenAI / DashScope / local models via `EmbeddingProvider` SPI.
+- ✅ **Hybrid search** — combine vector similarity with metadata filtering.
+- ✅ **Batch operations** — bulk insert / delete.
+
+### `Design` choices
+
+- ✅ **One facade, eight engines** — switch by config, not by code.
+- ✅ **Provider-specific optimizations surfaced** — `VectorIndexHints`, `VectorSearchOptions`.
+- ✅ **Pluggable serialization** — uses platform `JsonUtils` (Jackson 3).
+
+## 🏗️ Architecture & Module Layout
+
+```
+atlas-richie-component-vector                  ← parent POM
+├── atlas-richie-component-vector-core         ← VectorService / VectorDocument / SPI
+├── atlas-richie-component-vector-redis         ← provider: Redis
+├── atlas-richie-component-vector-milvus        ← provider: Milvus
+├── atlas-richie-component-vector-mongodb-atlas ← provider: MongoDB Atlas Vector Search
+├── atlas-richie-component-vector-postgresql    ← provider: pgvector
+├── atlas-richie-component-vector-qdrant        ← provider: Qdrant
+├── atlas-richie-component-vector-neo4j         ← provider: Neo4j
+├── atlas-richie-component-vector-elasticsearch ← provider: Elasticsearch
+└── atlas-richie-component-vector-weaviate      ← provider: Weaviate
+```
+
+## 🚀 Quick Start
+
+### 1) `Add` the dependency
 
 ```xml
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-vector-core</artifactId>
-    <version>${atlas.richie.version}</version>
+</dependency>
+<!-- Pick exactly one provider -->
+<dependency>
+    <groupId>com.richie.component</groupId>
+    <artifactId>atlas-richie-component-vector-redis</artifactId>
 </dependency>
 ```
 
-### 2. 选择向量数据库实现
-
-根据需求选择对应的向量数据库实现模块：
-
-- **Redis**: `richie-component-vector-redis`
-- **Milvus**: `richie-component-vector-milvus`
-- **MongoDB Atlas**: `richie-component-vector-mongodb-atlas`
-- **PostgreSQL**: `richie-component-vector-postgresql`
-- **Qdrant**: `richie-component-vector-qdrant`
-- **Neo4j**: `richie-component-vector-neo4j`
-- **Elasticsearch**: `richie-component-vector-elasticsearch`
-- **Weaviate**: `richie-component-vector-weaviate`
-
-### 3. 配置（向量库侧）
+### 2) `Configure`
 
 ```yaml
 platform:
   component:
     vector:
-      # 向量数据库提供商（必填）
-      provider: REDIS  # 或 MILVUS, MONGODB, POSTGRESQL, QDRANT, NEO4J, ELASTICSEARCH, WEAVIATE
-      # 默认索引名称（可选，默认：documents）
-      defaultIndex: documents
-      # 索引配置（可选）
-      indexes:
-        documents:
-          name: documents
-          dimension: 1536  # 向量维度
-          metric: cosine  # 距离度量方式（cosine, euclidean, dot）
-          indexType: hnsw  # 索引类型
-          replicas: 1
-          shards: 1
+      provider: redis                       # redis | milvus | mongodb_atlas | postgresql | qdrant | neo4j | elasticsearch | weaviate
+      embedding-provider: openai
+      openai:
+        api-key: ${OPENAI_API_KEY}
+        model: text-embedding-3-small
+      collection: documents
+      dimensions: 1536
 ```
 
-### 4. EmbeddingModel 注入方式
-
-`richie-component-vector` 只消费 `EmbeddingModel`，不再在组件内自行创建。你可以选择以下两种方式：
-
-#### 方式A：引入 `richie-component-ai`（推荐）
-
-- `richie-component-ai` 会在配置初始化模式下自动注入默认 `EmbeddingModel`
-- `VectorService` 会直接复用该 Bean，无需额外配置
-
-#### 方式B：不引入 `richie-component-ai`，业务手工声明 `EmbeddingModel`
-
-```java
-@Configuration
-public class VectorEmbeddingConfig {
-
-    @Bean
-    public EmbeddingModel embeddingModel() {
-        OpenAiApi api = OpenAiApi.builder()
-                .apiKey("your-api-key")
-                .baseUrl("https://api.openai.com")
-                .build();
-        return new OpenAiEmbeddingModel(api);
-    }
-}
-```
-
-若既未引入 `richie-component-ai`，也未手工声明 `EmbeddingModel`，`VectorService` 将无法初始化并在启动期报错。
-
-### 5. 使用示例
+### 3) `Use` `VectorService`
 
 ```java
 @Service
 @RequiredArgsConstructor
-public class VectorService {
-    
+public class RagService {
+
     private final VectorService vectorService;
-    
-    // 添加文档
-    public String addDocument(String text, Map<String, Object> metadata) {
-        VectorDocument document = new VectorDocument()
-            .setText(text)
-            .setMetadata(metadata);
-        return vectorService.addDocument(document);
+
+    public void index(String id, String content) {
+        VectorDocument doc = new VectorDocument()
+                .setId(id)
+                .setContent(content)
+                .setMetadata(Map.of("source", "kb"));
+        vectorService.addDocument(doc);
     }
-    
-    // 批量添加文档
-    public List<String> addDocuments(List<VectorDocument> documents) {
-        return vectorService.addDocuments(documents);
-    }
-    
-    // 文本搜索
-    public List<VectorSearchResult> searchByText(String query, int limit) {
-        return vectorService.searchByText(query, limit);
-    }
-    
-    // 向量搜索
-    public List<VectorSearchResult> searchByVector(float[] vector, int limit) {
-        return vectorService.searchByVector(vector, limit);
-    }
-    
-    // 带相似度阈值的搜索
-    public List<VectorSearchResult> searchByVector(float[] vector, int limit, double minScore) {
-        return vectorService.searchByVector(vector, limit, minScore);
-    }
-    
-    // 删除文档
-    public void deleteDocument(String id) {
-        vectorService.deleteDocument(id);
-    }
-    
-    // 获取文档
-    public VectorDocument getDocument(String id) {
-        return vectorService.getDocument(id);
+
+    public List<SearchResult> search(String query) {
+        return vectorService.searchByText(query, 5);
     }
 }
 ```
 
-## 核心接口
+## 🔧 Core Capabilities
 
-### VectorService
+### 1) `Document` `CRUD`
 
 ```java
-public interface VectorService {
-    // 添加文档
-    String addDocument(VectorDocument document);
-    List<String> addDocuments(List<VectorDocument> documents);
-    
-    // 更新文档
-    void updateDocument(String id, VectorDocument document);
-    
-    // 删除文档
-    void deleteDocument(String id);
-    void deleteDocuments(List<String> ids);
-    
-    // 获取文档
-    VectorDocument getDocument(String id);
-    List<VectorDocument> getDocuments(List<String> ids);
-    
-    // 搜索
-    List<VectorSearchResult> search(VectorQuery query);
-    List<VectorSearchResult> searchByVector(float[] vector, int limit);
-    List<VectorSearchResult> searchByText(String text, int limit);
-    List<VectorSearchResult> searchByVector(float[] vector, int limit, double minScore);
-    List<VectorSearchResult> searchByText(String text, int limit, double minScore);
+// Insert
+vectorService.addDocument(new VectorDocument()
+        .setId("doc-1")
+        .setContent("...")
+        .setMetadata(Map.of("type", "faq")));
+
+// Batch
+vectorService.addDocuments(List.of(...));
+
+// Update
+vectorService.updateDocument(doc);
+
+// Delete
+vectorService.deleteDocument("doc-1");
+```
+
+### 2) `Similarity` search
+
+```java
+// Text search (auto-embed)
+List<SearchResult> results = vectorService.searchByText("how to reset password", 10);
+
+// Vector search (use pre-computed embedding)
+float[] embedding = openai.embed(query);
+results = vectorService.searchByVector(embedding, 10);
+
+// Hybrid: vector + metadata filter
+results = vectorService.search(VectorSearchOptions.builder()
+        .text(query)
+        .topK(10)
+        .filter("source", "kb")
+        .minScore(0.75)
+        .build());
+```
+
+### 3) `Embedding` integration
+
+```java
+@Component
+public class OpenAiEmbeddingProvider implements EmbeddingProvider {
+    @Override public float[] embed(String text) { /* call OpenAI */ }
+    @Override public int dimensions() { return 1536; }
 }
 ```
 
-## 向量数据库对比
+## ⚙️ Configuration Reference
 
-| 向量数据库 | provider 值 | 特点 | 适用场景 |
-|-----------|------------|------|---------|
-| Redis | `REDIS` | 内存存储，检索速度快，配置简单 | 中小规模向量检索（百万级以下） |
-| Milvus | `MILVUS` | 高性能，支持大规模向量检索 | 大规模向量检索，生产环境 |
-| MongoDB Atlas | `MONGODB` | 文档友好，支持向量+标量混合查询 | 需要向量+文档混合查询 |
-| PostgreSQL | `POSTGRESQL` | 关系型数据库，ACID事务支持 | 需要事务支持的场景 |
-| Qdrant | `QDRANT` | 高性能，Rust开发，支持多种距离度量 | 高性能要求，大规模向量检索 |
-| Neo4j | `NEO4J` | 图数据库，支持向量检索与图算法结合 | 知识图谱、社交网络等复杂关系场景 |
-| Elasticsearch | `ELASTICSEARCH` | 支持全文+向量混合检索 | 需要全文+向量混合检索 |
-| Weaviate | `WEAVIATE` | 支持多种向量数据库后端 | 需要灵活的向量数据库选择 |
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `provider` | enum | `redis` | One of 8 providers |
+| `embedding-provider` | String | `noop` | Embedding SPI name |
+| `collection` | String | – | Collection / index name |
+| `dimensions` | int | `1536` | Vector dimensions |
+| `distance-metric` | enum | `cosine` | `cosine` / `euclidean` / `dot_product` |
+| `index-type` | enum | provider-specific | `flat` / `hnsw` / `ivf_flat` etc. |
 
-> **注意**: 各向量数据库的配置差异较大，请参考对应的子组件文档了解详细配置说明。
+## 🎯 Best Practices
 
-## 配置说明
+1. **Pick the right provider for your scale** — Redis < 1M vectors; Milvus / Qdrant > 1M.
+2. **Always set `dimensions` explicitly** — mismatched dims = runtime error.
+3. **Use `filter` for hybrid search** — vector-only is rarely the right answer.
+4. **Tune `topK` and `minScore`** — `topK=100, minScore=0.5` is a sane starting point.
+5. **Monitor index size + recall** — every provider has metrics; wire them to Prometheus.
 
-### 向量数据库配置
+## ⚠️ Known Limitations
 
-```yaml
-platform:
-  component:
-    vector:
-      provider: REDIS  # 向量数据库提供商
-      defaultIndex: documents  # 默认索引名称
-      indexes:
-        documents:
-          name: documents
-          dimension: 1536  # 向量维度（必须与嵌入模型一致）
-          metric: cosine  # 距离度量方式（cosine, euclidean, dot）
-          indexType: hnsw  # 索引类型（不同数据库支持不同）
-          replicas: 1  # 副本数量
-          shards: 1  # 分片数量
-```
+| Limitation | Impact | Workaround |
+|------------|--------|------------|
+| **No cross-provider migration tool** | Vendor lock-in | Use the unified API so migration is config-only |
+| **Embedding provider must match dimensions** | Mismatched = runtime error | Configure `dimensions` and validate at startup |
+| **Hybrid search syntax differs per provider** | Some operators missing | Fall back to post-filter in Java |
 
-## 最佳实践
+## ❓ FAQ
 
-1. **选择合适的向量数据库**
-   - 中小规模：Redis
-   - 大规模：Milvus、Qdrant
-   - 需要混合查询：MongoDB、Elasticsearch
-   - 需要事务支持：PostgreSQL
-   - 需要图结构：Neo4j
+### `Q1` — `Which` provider should `I` use?
 
-2. **向量维度设置**
-   - OpenAI text-embedding-ada-002: 1536 维
-   - OpenAI text-embedding-3-small: 1536 维
-   - OpenAI text-embedding-3-large: 3072 维
-   - 智谱 embedding-2: 1024 维
-   - 确保向量维度与嵌入模型一致
+- **Redis** — already using Redis, < 1M vectors, simple ANN.
+- **Milvus / Qdrant** — large-scale (10M+), HNSW, IVF, GPU indexing.
+- **MongoDB Atlas** — already on Atlas, vector + document in one query.
+- **PostgreSQL pgvector** — already on Postgres, no extra infra.
+- **Neo4j / Elasticsearch** — graph or text-search with vector.
 
-3. **距离度量方式选择**
-   - **cosine**（余弦相似度）：推荐，适合大多数场景
-   - **euclidean**（欧氏距离）：适合需要精确距离的场景
-   - **dot**（点积）：适合归一化向量的场景
+### `Q2` — `Can` `I` use multiple providers at once?
 
-4. **索引类型选择**
-   - **hnsw**（分层导航小世界图）：推荐，平衡性能和精度
-   - **ivf**（倒排文件索引）：适合大规模数据
-   - **flat**（暴力搜索）：适合小规模数据，精度最高
+Yes — declare multiple provider modules and use `@Qualifier("milvusVectorService")` etc.
 
-5. **相似度阈值设置**
-   - 高精度匹配：0.8-0.9
-   - 一般匹配：0.6-0.8
-   - 宽松匹配：0.4-0.6
-   - 根据实际业务场景调整
+### `Q3` — `How` do `I` migrate from one provider to another?
 
-## 常见问题
+1. Configure new provider
+2. Read from old, write to new (`vectorService.export` / `import`)
+3. Switch `platform.component.vector.provider`
+4. Drop old provider
 
-### Q: 如何切换向量数据库？
+### `Q4` — `Are` vectors stored normalized?
 
-A: 修改配置中的 `provider` 字段，并引入对应的向量数据库实现模块依赖。
+Provider-dependent. Cosine metric usually expects normalized vectors; check your embedding provider.
 
-### Q: 如何切换嵌入模型？
+## 📚 Further Reading
 
-A: 如果使用 `richie-component-ai`，在 AI 组件模型配置中调整默认模型即可；如果是手工声明 `EmbeddingModel`，则替换业务侧 Bean 实现。
+- **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
+- **AI** — [`../atlas-richie-component-ai/README.md`](../atlas-richie-component-ai/README.md)
+- External: [Milvus docs](https://milvus.io/docs) · [Qdrant docs](https://qdrant.tech/documentation/) · [pgvector](https://github.com/pgvector/pgvector)
 
-### Q: 向量维度如何确定？
+---
 
-A: 向量维度由嵌入模型决定，必须与嵌入模型的输出维度一致。例如，OpenAI text-embedding-ada-002 输出 1536 维向量。
-
-### Q: 如何选择合适的距离度量方式？
-
-A: 推荐使用 **cosine**（余弦相似度），适合大多数场景。如果需要精确距离，可以使用 **euclidean**（欧氏距离）。
-
-### Q: 如何优化搜索性能？
-
-A: 
-- 选择合适的索引类型（如 HNSW）
-- 设置合理的分片和副本数量
-- 使用批量操作减少网络开销
-- 根据业务场景设置合理的相似度阈值
-
-## 相关文档
-
-- [Redis 向量数据库实现](./richie-component-vector-redis/README.md)
-- [Milvus 向量数据库实现](./richie-component-vector-milvus/README.md)
-- [MongoDB Atlas 向量数据库实现](./richie-component-vector-mongodb-atlas/README.md)
-- [PostgreSQL 向量数据库实现](./richie-component-vector-postgresql/README.md)
-- [Qdrant 向量数据库实现](./richie-component-vector-qdrant/README.md)
-- [Neo4j 向量数据库实现](./richie-component-vector-neo4j/README.md)
-- [Elasticsearch 向量数据库实现](./richie-component-vector-elasticsearch/README.md)
-- [Weaviate 向量数据库实现](./richie-component-vector-weaviate/README.md)
-
+**atlas-richie-component-vector** 🚀

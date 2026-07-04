@@ -1,4 +1,4 @@
-# Richie Cache Component
+# Atlas Richie Cache Component (atlas-richie-component-cache)
 
 Redis-backed cache and data structure component. Provides KV, Hash, Set/ZSet, distributed locks, bounded queues / stacks, rate limiting, and more through the **`GlobalCache` + Ops accessor** API. L2 caching, Bloom filter, and performance guard are built in.
 
@@ -81,7 +81,7 @@ Redis-backed cache and data structure component. Provides KV, Hash, Set/ZSet, di
 
 ## 🚀 Quick Start
 
-### 1. Add the Dependency
+### 1) `Add` the `Dependency`
 
 ```xml
 <dependency>
@@ -90,7 +90,7 @@ Redis-backed cache and data structure component. Provides KV, Hash, Set/ZSet, di
 </dependency>
 ```
 
-### 2. Configuration
+### 2) `Configuration`
 
 This is the **production-recommended configuration** (with L2 cache, local lock, and performance guard enabled). Copy it, change the Redis address, and you are good to go:
 
@@ -130,7 +130,7 @@ platform:
       false-probability: 0.001
 ```
 
-### 3. Write Code
+### 3) `Write` `Code`
 
 Every capability is reached through **`GlobalCache.<ops>()`**. No bean injection needed: the framework auto-binds `GlobalCacheManager` after Spring starts.
 
@@ -168,7 +168,7 @@ GlobalCache.event().subscribeKeyEvent("__keyevent@0__:expired", listener);
 // StreamMQ.stream().publish("order-events", event);
 ```
 
-### Ops Accessor Reference
+### `Ops` `Accessor` `Reference`
 
 | Accessor                                 | Purpose                            |
 |------------------------------------------|------------------------------------|
@@ -271,7 +271,7 @@ try (var lock = GlobalCache.lock().optimisticWithRenewal("lock:order:123", 5L)) 
 
 ---
 
-### Lua / Rate Limit / GEO / HyperLogLog / Bitmap
+### `Lua` / `Rate` `Limit` / `GEO` / `HyperLogLog` / `Bitmap`
 
 ```java
 GlobalCache.script().eval(script, keys, args, Long.class);
@@ -372,7 +372,7 @@ UserInfo user = GlobalCache.struct().getWithLock("user:profile:123",
 
 ---
 
-### L2 Secondary Cache
+### `L2` `Secondary` `Cache`
 
 Read path: `value().get()` / `struct().get()` -> L1 local -> Redis -> `getWithLock` falls through to DB.
 
@@ -388,7 +388,7 @@ For the deep design see [Redis-L2与性能守卫设计说明.md](docs/zh/Redis-L
 
 ---
 
-### Bloom Filter
+### `Bloom` `Filter`
 
 When enabled, `value().getWithLock` automatically consults the Bloom filter to short-circuit "definitely absent" keys and reduce cache penetration.
 
@@ -402,7 +402,7 @@ platform.cache.bloom-filter:
 
 ---
 
-### Performance Guard (RedisPerfGuard)
+### `Performance` `Guard` (`RedisPerfGuard`)
 
 | Dimension     | Detection                                                              | Optional blocking                            |
 |---------------|------------------------------------------------------------------------|----------------------------------------------|
@@ -414,7 +414,7 @@ platform.cache.bloom-filter:
 
 ---
 
-### Multi-Redis Instance Routing
+### `Multi`-`Redis` `Instance` `Routing`
 
 ```yaml
 spring.data.redis:
@@ -467,7 +467,7 @@ spring.data.local:
 > Below is organized along two dimensions, **config prefix** and **feature**. Every option lists its default, accepted range, and impact on functionality.
 > Items marked with ⚠️ are subject to a `@MigrationWindow` constraint. Failing to migrate by the deadline prevents the application from starting.
 
-### 1. Redis Connection (`spring.data.redis`)
+### 1) Redis Connection (`spring.data.redis`)
 
 | Config         | Type      | Default     | Description                                                                 |
 |----------------|-----------|-------------|-----------------------------------------------------------------------------|
@@ -655,7 +655,7 @@ Redis 6+ strongly recommends RESP3. If Redis has the `HELLO` command disabled, f
 
 ---
 
-### 2. L2 Secondary Cache (`spring.data.redis`)
+### 2) L2 Secondary Cache (`spring.data.redis`)
 
 | Config                | Type                | Default | Related feature   | Description                                                                                  |
 |-----------------------|---------------------|---------|-------------------|----------------------------------------------------------------------------------------------|
@@ -675,7 +675,7 @@ There is a short dirty-read window: between the Redis write and the moment the n
 
 ---
 
-### 3. Distributed Lock (`spring.data.redis`)
+### 3) Distributed Lock (`spring.data.redis`)
 
 | Config                | Type      | Default                 | Related feature | Description                                                                                            |
 |-----------------------|-----------|-------------------------|-----------------|--------------------------------------------------------------------------------------------------------|
@@ -685,7 +685,7 @@ There is a short dirty-read window: between the Redis write and the moment the n
 
 ---
 
-### 4. Performance Guard (`spring.data.redis.perf`)
+### 4) Performance Guard (`spring.data.redis.perf`)
 
 > Related feature: [Performance Guard](#performance-guardredisperfguard). ⚠️ = `@MigrationWindow` constraint. The marked flags must be set to `true` before 2026-12-01, or the application fails to start.
 
@@ -718,11 +718,11 @@ spring.data.redis.perf:
 
 ---
 
-### 5. Local Cache (`spring.data.local`)
+### 5) Local Cache (`spring.data.local`)
 
 > Related feature: [Local Cache](#-local-cache). A business-explicit region, independent from L2, built on JSR-107.
 
-#### 6.1 Top-Level Configuration
+#### 6.1 `Top`-`Level` `Configuration`
 
 | Config               | Type                   | Default   | Description                                                                |
 |----------------------|------------------------|-----------|----------------------------------------------------------------------------|
@@ -772,7 +772,7 @@ spring.data.local:
 
 ---
 
-### 6. Component-Level Configuration (`platform.cache`)
+### 6) Component-Level Configuration (`platform.cache`)
 
 | Config           | Type   | Default | Related feature | Description                          |
 |------------------|--------|---------|-----------------|--------------------------------------|
@@ -801,7 +801,7 @@ spring.data.local:
 
 ---
 
-### 7. Stream MQ Configuration (Standalone Module)
+### 7) `Stream` `MQ` `Configuration` (`Standalone` `Module`)
 
 Consumer, idempotent dedup, monitoring, and tracing config have all moved to **`atlas-richie-component-redis-streammq`**. This module no longer binds `platform.cache.redis.stream.*` or `spring.data.redis.stream-idempotency`.
 
@@ -810,7 +810,7 @@ Consumer, idempotent dedup, monitoring, and tracing config have all moved to **`
 
 ---
 
-### 8. Configuration Overview (By Function)
+### 8) `Configuration` `Overview` (`By` `Function`)
 
 > Not sure where to look? Use this table to navigate in reverse.
 
@@ -830,7 +830,7 @@ Consumer, idempotent dedup, monitoring, and tracing config have all moved to **`
 
 ## 🎯 Best Practices
 
-### Key Naming Conventions
+### `Key` `Naming` `Conventions`
 
 ```
 {业务}:{object}:{id}:{field}
@@ -839,7 +839,7 @@ order:status:456
 lock:order:789
 ```
 
-### Cache Strategy Selection
+### `Cache` `Strategy` `Selection`
 
 | Scenario                       | Recommended approach                  | Configuration                                       |
 |--------------------------------|---------------------------------------|-----------------------------------------------------|
@@ -855,24 +855,24 @@ lock:order:789
 | Traffic shaping                | `queue()` / `stack()`                 | Bounded list, not MQ                                |
 | Reliable MQ                    | `StreamMQ` (standalone module)        | Consumer group / ACK / DLQ                          |
 
-### Expiration Strategy
+### `Expiration` `Strategy`
 
 - **Hot data**: short TTL (seconds), paired with L2 read amplification.
 - **Config data**: medium TTL (minutes).
 - **Base data**: long TTL (hours), with a random offset to prevent avalanche.
 
-### Performance Tuning
+### `Performance` `Tuning`
 
 - Hot reads must turn on L2 + `*WithLock` to keep Redis from becoming a bottleneck.
 - Use batch operations instead of looping per-key reads and writes; this cuts down on network RTT.
 - Roll out `perf.enabled` in pre-production until all `[RedisPerf]` warnings are gone, then promote to production.
 - Avoid `KEYS *` and full `HGETALL` / `SMEMBERS` on ToC core paths.
 
-### Big Key Threshold Reference
+### `Big` `Key` `Threshold` `Reference`
 
 Big keys cause Redis main-thread blocking, replication lag, AOF rewrite stalls, cluster migration hangs, and similar issues. The thresholds below combine **Redis internal encoding switch-over points** with **the component's performance guard defaults**, aligned and cross-validated.
 
-#### Collection Type Thresholds
+#### `Collection` `Type` `Thresholds`
 
 | Type   | Encoding threshold                                 | Recommended upper bound | Impact of crossing the line                          | Typical dangerous commands                                                                                                                                       |
 |--------|----------------------------------------------------|-------------------------|------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -898,14 +898,14 @@ In addition, `RedisStringPayloadInspector` also detects the following anti-patte
 - Stuffing an arbitrary JavaBean as a whole-JSON blob into a single key (prefer Hash field modeling).
 - Strings starting with `{` or `[` and longer than or equal to 128 characters, which look like JSON blobs (WARN).
 
-#### Key Names
+#### `Key` `Names`
 
 | Item               | Recommendation                                                                |
 |--------------------|-------------------------------------------------------------------------------|
 | Key length         | < 128 bytes (Redis limit is 512MB, but long keys add memory and comparison overhead) |
 | Naming convention  | `{business}:{entity}:{id}`, avoid spaces and special characters                |
 
-#### Big Key Detection Methods
+#### `Big` `Key` `Detection` `Methods`
 
 | Method                                                                              | Use case                                                                                                                                                                                                                                |
 |-------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -915,7 +915,7 @@ In addition, `RedisStringPayloadInspector` also detects the following anti-patte
 | Component-built-in `RedisPerfGuard`                                                  | Runtime auto-detection: non-O(1) calls log WARN + BIGKEY probe hints (HLEN / LLEN / SCARD / ZCARD); controlled by `spring.data.redis.perf.log-big-key-probe-hints=true`                                                                  |
 | Slow query log `SLOWLOG GET`                                                         | Find suspicious operations with latency ≥ `toc-hard-ms` (default 50ms)                                                                                                                                                                   |
 
-#### Big Key Remediation
+#### `Big` `Key` `Remediation`
 
 - **Use `UNLINK` rather than `DEL`**: `GlobalCache.key().removeCache()` already uses `UNLINK` internally (asynchronous memory release), avoiding main-thread blocking. Business code must not call `DEL` directly.
 - **Sharding instead of a single key**: split a large Hash into `key:shard:{0..N}`; large Lists into multiple segments; large Sets by business dimension into buckets.
@@ -936,7 +936,7 @@ The native unbounded List API has been removed. List scenarios now go through th
 
 **How to pick**: use `collection()` (Set) for "set / dedup" semantics, `ranking()` (ZSet) for "leaderboard", `queue()` for "FIFO traffic shaping", and `stack()` for "latest N, LIFO". For consumer group / ACK / DLQ, use **StreamMQ**.
 
-### Migration Window
+### `Migration` `Window`
 
 `perf.enabled`, `blockForbiddenTiers`, and `blockStringPayloadViolations` must be set to `true` before `2026-12-01`. Failing to migrate by the deadline prevents the application from starting. Complete the canary validation before the cutoff.
 
@@ -944,21 +944,21 @@ The native unbounded List API has been removed. List scenarios now go through th
 
 ## ❓ FAQ
 
-### How do I prevent cache penetration / avalanche / stampede?
+### `How` do `I` prevent cache penetration / avalanche / stampede?
 
 - **Penetration** (non-existent keys repeatedly hit the DB): Bloom filter + `*WithLock` + null-value caching.
 - **Avalanche** (many keys expire at once): TTL random offset + L2 local cache.
 - **Stampede** (high concurrency on a hot key at the moment it expires): the `*WithLock` methods automatically take a distributed lock.
 
-### How does the local lock pool relate to the distributed lock?
+### `How` does the local lock pool relate to the distributed lock?
 
 The local lock pool is a JVM-internal request-coalescing optimization. When multiple threads within the same JVM compete for the same lock, they observe the lock state at the `ConcurrentHashMap` level and do not have to go through Redisson every time. Cross-JVM mutual exclusion is still guaranteed by Redisson FencedLock. Completely transparent to business code.
 
-### What do I do when Stream messages pile up?
+### `What` do `I` do when `Stream` messages pile up?
 
 Stream MQ has been split out into `atlas-richie-component-redis-streammq`. Increase the consumer `concurrency`, optimize `handle()`, tune `count`, and monitor backlog via the streammq module's Actuator endpoint (see `docs/Redis-Stream-Actuator-结构说明.md`).
 
-### Startup fails with a migration window error. What now?
+### `Startup` fails with a migration window error. `What` now?
 
 ```
 [MigrationWindow] violation(s) detected

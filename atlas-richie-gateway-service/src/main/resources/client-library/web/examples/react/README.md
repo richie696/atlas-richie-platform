@@ -1,4 +1,4 @@
-# React 使用示例
+# Atlas Richie React Example (atlas-richie-gateway-react-example)
 
 React 18+ 完整使用示例，展示如何使用统一HTTP客户端。
 

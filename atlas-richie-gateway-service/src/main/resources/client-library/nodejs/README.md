@@ -1,4 +1,4 @@
-# Node.js HTTP客户端库
+# Atlas Richie Node.js HTTP Client (atlas-richie-gateway-nodejs-client)
 
 Node.js版本的HTTP客户端库，支持ECC+AES-GCM加密和防重复提交功能。
 

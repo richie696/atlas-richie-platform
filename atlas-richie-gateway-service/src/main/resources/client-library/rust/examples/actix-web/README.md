@@ -1,4 +1,4 @@
-# Actix-web 框架集成示例
+# Atlas Richie Actix-web Integration Example (atlas-richie-gateway-actix-example)
 
 展示如何在Actix-web框架应用中使用HTTP客户端库。
 

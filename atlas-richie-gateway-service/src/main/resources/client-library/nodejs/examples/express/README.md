@@ -1,4 +1,4 @@
-# Express.js 集成示例
+# Atlas Richie Express.js Integration Example (atlas-richie-gateway-express-example)
 
 展示如何在Express.js应用中使用HTTP客户端库。
 

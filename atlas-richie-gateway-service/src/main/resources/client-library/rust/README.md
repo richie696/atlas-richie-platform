@@ -1,4 +1,4 @@
-# Rust 客户端（高性能场景）
+# Atlas Richie Rust HTTP Client (High Performance) (atlas-richie-gateway-rust-client)
 
 Rust原生enum实现，完美适配URL配置场景，无需额外的struct！
 

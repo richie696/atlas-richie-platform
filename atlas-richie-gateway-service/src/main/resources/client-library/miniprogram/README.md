@@ -1,4 +1,4 @@
-# 统一HTTP客户端库 - 微信小程序版本
+# Atlas Richie WeChat MiniProgram HTTP Client (atlas-richie-gateway-miniprogram-client)
 
 ## 📚 概述
 

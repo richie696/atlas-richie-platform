@@ -1,4 +1,45 @@
-# Richie Component Storage
+# Atlas Richie Storage组件 (atlas-richie-component-storage)
+
+## 📖 目录
+
+- [概述](#概述)
+- [线程安全与客户端生命周期](#线程安全与客户端生命周期)
+  - [设计原则](#设计原则)
+  - [各引擎客户端线程安全背书](#各引擎客户端线程安全背书)
+  - [使用建议](#使用建议)
+  - [反面示例（请勿使用）](#反面示例（请勿使用）)
+- [核心特性](#核心特性)
+- [快速开始](#快速开始)
+  - [1. 添加依赖](#1-添加依赖)
+  - [2. 选择存储实现](#2-选择存储实现)
+  - [3. 配置存储](#3-配置存储)
+  - [4. 使用示例](#4-使用示例)
+- [核心接口](#核心接口)
+  - [StorageEngine](#storageengine)
+- [配置说明](#配置说明)
+  - [本地存储配置](#本地存储配置)
+  - [对象存储配置](#对象存储配置)
+  - [FTP/SFTP/SMB 配置](#ftp/sftp/smb-配置)
+- [双模式架构](#双模式架构)
+  - [使用场景对照](#使用场景对照)
+  - [自动模式（默认）](#自动模式（默认）)
+  - [手动模式](#手动模式)
+  - [支持的引擎类型枚举](#支持的引擎类型枚举)
+  - [内部架构](#内部架构)
+- [可观测性：HealthIndicator + Micrometer 指标](#可观测性：healthindicator-+-micrometer-指标)
+  - [HealthIndicator（健康检查）](#healthindicator（健康检查）)
+  - [Micrometer 指标绑定器](#micrometer-指标绑定器)
+  - [关闭示例（不接监控）](#关闭示例（不接监控）)
+- [存储引擎对比](#存储引擎对比)
+- [最佳实践](#最佳实践)
+- [业务侧 Controller 参考实现](#业务侧-controller-参考实现)
+- [常见问题](#常见问题)
+  - [Q: 如何切换存储后端？](#q-如何切换存储后端？)
+  - [Q: 支持哪些图片格式？](#q-支持哪些图片格式？)
+  - [Q: 如何实现文件去重？](#q-如何实现文件去重？)
+- [相关文档](#相关文档)
+
+---
 
 ## 概述
 
@@ -83,7 +124,7 @@ public void upload(File file) {
 
 ## 快速开始
 
-### 1. 添加依赖
+### 1) 添加依赖
 
 ```xml
 <dependency>
@@ -93,7 +134,7 @@ public void upload(File file) {
 </dependency>
 ```
 
-### 2. 选择存储实现
+### 2) 选择存储实现
 
 根据需求选择对应的存储实现模块：
 
@@ -109,7 +150,7 @@ public void upload(File file) {
 - **SFTP**: `richie-component-storage-sftp`
 - **SMB**: `richie-component-storage-smb`
 
-### 3. 配置存储
+### 3) 配置存储
 
 ```yaml
 platform:
@@ -129,7 +170,7 @@ platform:
         basePath: /files/
 ```
 
-### 4. 使用示例
+### 4) 使用示例
 
 ```java
 @Service
@@ -175,7 +216,7 @@ public class FileService {
 
 ## 核心接口
 
-### StorageEngine
+### `StorageEngine`
 
 ```java
 public interface StorageEngine {
@@ -235,7 +276,7 @@ platform:
         basePath: /files/  # 基础路径
 ```
 
-### FTP/SFTP/SMB 配置
+### `FTP`/`SFTP`/`SMB` 配置
 
 ```yaml
 platform:
@@ -527,7 +568,7 @@ public void switchStorage(@RequestBody StorageConfigRequest request) {
 }
 ```
 
-#### 3.1 文件协议引擎切换（FTP / SFTP / SMB）
+#### 3.1 文件协议引擎切换（`FTP` / `SFTP` / `SMB`）
 
 `switchEngine()` 同样适用于 FTP/SFTP/SMB 等文件协议引擎。下例展示管理后台动态切换 FTP 主机（连接池会在切换时自动销毁并重建，业务调用线程无感知）：
 
@@ -637,7 +678,7 @@ public class StorageInitService {
 }
 ```
 
-#### 5. 业务代码通过 @Qualifier 精确选择引擎
+#### 5. 业务代码通过 @`Qualifier` 精确选择引擎
 
 无论自动模式还是手动模式，业务代码都可以通过 `@Qualifier` 注入特定类型的引擎：
 
@@ -742,7 +783,7 @@ public class DataSyncService {
 
 存储引擎在 Spring Boot Actuator 框架下提供两个可选的观测 Bean。未对接 Prometheus/Grafana/APM 时可关闭，避免 CollectorRegistry 找不到收集器等噪音日志。
 
-### HealthIndicator（健康检查）
+### `HealthIndicator`（健康检查）
 
 通过 Spring Boot 标准的 `management.health.*` 命名空间控制：
 
@@ -759,7 +800,7 @@ management:
 - 默认值：`true`（未配置时启用）
 - 端点：注册后可通过 `/actuator/health` 查看，当前引擎数量、默认引擎类型、引擎 ID 均会暴露在 details
 
-### Micrometer 指标绑定器
+### `Micrometer` 指标绑定器
 
 通过 Spring Boot 标准的 `management.metrics.enable.*` 命名空间控制：
 
@@ -925,31 +966,31 @@ public class StorageUploadServiceImpl implements StorageUploadService {
 
 ## 常见问题
 
-### Q: 如何切换存储后端？
+### `Q` — 如何切换存储后端？
 
 A: 两种方式：
 - **自动模式**：修改配置中的 `engine` 字段，并引入对应的存储实现模块依赖，重启应用。
 - **手动模式**：通过 `StorageEngineRegistry.switchEngine(engineType, properties)` 运行时热切换，无需重启。详见“双模式架构”章节。
 
-### Q: 支持哪些图片格式？
+### `Q` — 支持哪些图片格式？
 
 A: 通过 `ImageOptions` 配置，支持常见的图片格式转换和压缩。
 
-### Q: 如何实现文件去重？
+### `Q` — 如何实现文件去重？
 
 A: 本地存储实现已支持基于 SHA-256 的内容去重，云存储需要根据具体实现。
 
 ## 相关文档
 
-- [本地存储实现](./atlas-richie-component-storage-local/README.md)
-- [AWS S3 实现](./atlas-richie-component-storage-s3/README.md)
-- [阿里云 OSS 实现](./atlas-richie-component-storage-oss/README.md)
-- [腾讯云 COS 实现](./atlas-richie-component-storage-cos/README.md)
-- [华为云 OBS 实现](./atlas-richie-component-storage-obs/README.md)
-- [MinIO 实现](./atlas-richie-component-storage-minio/README.md)
-- [金山云 KS3 实现](./atlas-richie-component-storage-ks3/README.md)
-- [火山引擎 TOS 实现](./atlas-richie-component-storage-tos/README.md)
-- [Azure Blob 实现](./atlas-richie-component-storage-azure/README.md)
-- [SFTP 实现](./atlas-richie-component-storage-sftp/README.md)
-- [SMB 实现](./atlas-richie-component-storage-smb/README.md)
+- 本地存储实现
+- AWS S3 实现
+- 阿里云 OSS 实现
+- 腾讯云 COS 实现
+- 华为云 OBS 实现
+- MinIO 实现
+- 金山云 KS3 实现
+- 火山引擎 TOS 实现
+- Azure Blob 实现
+- SFTP 实现
+- SMB 实现
 

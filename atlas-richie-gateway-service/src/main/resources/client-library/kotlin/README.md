@@ -1,4 +1,4 @@
-# Kotlin HTTP客户端库（Android）
+# Atlas Richie Kotlin HTTP Client (Android) (atlas-richie-gateway-kotlin-client)
 
 Kotlin版本的HTTP客户端库，支持ECC+AES-GCM加密和防重复提交功能，适用于Android应用。
 
