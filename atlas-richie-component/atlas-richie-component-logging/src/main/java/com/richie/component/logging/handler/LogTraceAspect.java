@@ -1,6 +1,6 @@
 package com.richie.component.logging.handler;
 
-import com.richie.context.utils.time.Timer;
+import com.richie.component.concurrency.measurement.Stopwatch;
 import com.richie.component.logging.annotations.LogMethodTrace;
 import com.richie.component.logging.annotations.LogTrace;
 import com.richie.component.logging.domain.LogTraceInfo;
@@ -20,7 +20,10 @@ import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 链路日志追踪切面
@@ -86,18 +89,18 @@ public class LogTraceAspect {
         logBuilder
                 .threadId(Thread.currentThread().threadId())
                 .threadName(Thread.currentThread().getName());
-        // 创建计时器
-        Timer timer = Timer.start();
+        // 计时
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        Instant startInstant = Instant.now();
         // 执行结果
         Object result;
-        // 记录
         try {
             result = joinPoint.proceed();
             // 记录执行时间
             logBuilder
-                    .costTimeMillis(timer.end() + "ms")
-                    .execStartTime(timer.getStartTime().toString())
-                    .execEndTime(timer.getEndTime().toString());
+                    .costTimeMillis(stopwatch.stop().elapsed(TimeUnit.MILLISECONDS) + "ms")
+                    .execStartTime(startInstant.atZone(ZoneId.systemDefault()).toString())
+                    .execEndTime(Instant.now().atZone(ZoneId.systemDefault()).toString());
             if (!methodAnnotation.ignoreResult()) {
                 logBuilder.result(result.toString());
             }
@@ -114,9 +117,9 @@ public class LogTraceAspect {
         } catch (Throwable e) {
             // 记录执行时间
             logBuilder
-                    .costTimeMillis(timer.end() + "ms")
-                    .execStartTime(timer.getStartTime().toString())
-                    .execEndTime(timer.getEndTime().toString());
+                    .costTimeMillis(stopwatch.stop().elapsed(TimeUnit.MILLISECONDS) + "ms")
+                    .execStartTime(startInstant.atZone(ZoneId.systemDefault()).toString())
+                    .execEndTime(Instant.now().atZone(ZoneId.systemDefault()).toString());
             // 获取执行异常的代码行数
             var stackTrace = e.getStackTrace();
             // 记录异常堆栈

@@ -213,64 +213,53 @@ public class ApiResult<T> implements Serializable {
 
     /**
      * 将当前对象转换为JSON字符串
+     * <p>
+     * 序列化规则：
+     * <ul>
+     *     <li>{@code success} 为 boolean 基本类型，永远非 null，永远输出</li>
+     *     <li>其他引用类型字段（{@code data} / {@code code} / {@code msg} / {@code i18nDict}）为 null 时跳过该字段，不输出键也不输出值</li>
+     *     <li>空 Map / 空集合 仍会输出（如 {@code "i18nDict":{}}），仅 null 才省略</li>
+     * </ul>
      *
      * @return JSON格式的字符串
      */
     public String toJson() {
         StringBuilder json = new StringBuilder("{");
 
-        // 处理data字段
+        // success 永远输出（boolean 基本类型）
         json.append("\"success\":");
         appendJsonValue(json, this.success);
 
-        // 处理data字段
-        json.append("\"data\":");
-        appendJsonValue(json, this.data);
-
-        // 处理code字段
-        json.append(",\"code\":");
-        appendJsonValue(json, this.code);
-
-        // 处理msg字段
-        json.append(",\"msg\":");
-        appendJsonValue(json, this.msg);
-
-        // 处理i18nDict字段
-        json.append(",\"i18nDict\":");
-        if (this.i18nDict == null || this.i18nDict.isEmpty()) {
-            json.append("{}");
-        } else {
-            json.append("{");
-            boolean firstEntry = true;
-            for (Map.Entry<String, Map<String, String>> entry : this.i18nDict.entrySet()) {
-                if (!firstEntry) {
-                    json.append(",");
-                }
-                firstEntry = false;
-
-                // 添加键
-                appendJsonValue(json, entry.getKey());
-                json.append(":{");
-
-                // 添加值（嵌套Map）
-                boolean firstInner = true;
-                for (Map.Entry<String, String> innerEntry : entry.getValue().entrySet()) {
-                    if (!firstInner) {
-                        json.append(",");
-                    }
-                    firstInner = false;
-
-                    appendJsonValue(json, innerEntry.getKey());
-                    json.append(":");
-                    appendJsonValue(json, innerEntry.getValue());
-                }
-                json.append("}");
-            }
-            json.append("}");
-        }
+        appendOptionalField(json, "data", this.data);
+        appendOptionalField(json, "code", this.code);
+        appendOptionalField(json, "msg", this.msg);
+        appendOptionalField(json, "i18nDict", this.i18nDict);
 
         json.append("}");
         return json.toString();
+    }
+
+    /**
+     * 可选字段序列化：值为 null 时整体跳过；非 null 时自动补逗号前缀并按字段名输出。
+     *
+     * @param json      目标 StringBuilder
+     * @param fieldName JSON 字段名
+     * @param value     字段值（null 则跳过）
+     */
+    private void appendOptionalField(StringBuilder json, String fieldName, Object value) {
+        if (value == null) {
+            return;
+        }
+        json.append(",\"").append(fieldName).append("\":");
+        if (value instanceof Map<?, ?>) {
+            appendJsonMap(json, (Map<?, ?>) value);
+        } else if (value instanceof Collection<?>) {
+            appendJsonArray(json, (Collection<?>) value);
+        } else if (value.getClass().isArray()) {
+            appendJsonArray(json, Arrays.asList((Object[]) value));
+        } else {
+            appendJsonValue(json, value);
+        }
     }
 
     /**

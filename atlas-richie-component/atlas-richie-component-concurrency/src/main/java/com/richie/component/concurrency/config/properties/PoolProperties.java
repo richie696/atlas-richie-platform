@@ -2,16 +2,22 @@ package com.richie.component.concurrency.config.properties;
 
 
 import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 
 /**
- * 单个命名线程池的参数配置
+ * 单个命名线程池的参数配置。
+ *
+ * <p>标注 {@link ConfigurationProperties} 让 Spring Boot 在
+ * {@code @ConfigurationProperties} 嵌套 {@code Map<String, PoolProperties>}
+ * 场景下能正确识别 value 类型。</p>
  *
  * @author richie696
  * @since 1.0.0
  */
 @Data
+@ConfigurationProperties("thread-pool")
 public class PoolProperties {
 
     /** 核心线程数。即使没有任务执行也会保留这么多线程。 */

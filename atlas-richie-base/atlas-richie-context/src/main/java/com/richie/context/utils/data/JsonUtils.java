@@ -139,11 +139,6 @@ public class JsonUtils {
         private Boolean allowUnescapedControlChars;
 
         /**
-         * 是否序列化null值
-         */
-        private Boolean allowNullValue;
-
-        /**
          * 是否序列化空值
          */
         private Boolean allowEmptyValue;
@@ -270,7 +265,6 @@ public class JsonUtils {
                 .allowSingleQuotes(true)
                 .allowLeadingZerosForNumbers(true)
                 .allowUnescapedControlChars(true)
-                .allowNullValue(false)
                 .dateFormat(StdDateFormat.DATE_FORMAT_STR_ISO8601)
                 .defaultTimeZone(LocaleContextHolder.getTimeZone())
                 .defaultLocale(LocaleContextHolder.getLocale())
@@ -318,6 +312,10 @@ public class JsonUtils {
         if (config.allowUnescapedControlChars != null) {
             jsonBuilder.configure(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS, config.allowUnescapedControlChars);
         }
+
+        // 强制：null 字段不参与序列化（不可被任何配置覆盖，与 ApiResult 行为对齐）
+        jsonBuilder.changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL));
+
         if (config.dateFormat != null) {
             jsonBuilder.defaultDateFormat(new SimpleDateFormat(config.dateFormat));
         }
@@ -328,10 +326,7 @@ public class JsonUtils {
             jsonBuilder.defaultLocale(LocaleContextHolder.getLocale());
         }
 
-        if (config.allowNullValue != null) {
-            JsonInclude.Include include = config.allowNullValue ? JsonInclude.Include.ALWAYS : JsonInclude.Include.NON_NULL;
-            jsonBuilder.changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(include));
-        } else if (config.allowEmptyValue != null) {
+        if (config.allowEmptyValue != null) {
             jsonBuilder.changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_EMPTY));
         }
 

@@ -1,7 +1,7 @@
 package com.richie.component.cache.redis.manage;
 
 import com.richie.context.utils.data.JsonUtils;
-import com.richie.component.cache.bloom.BloomFilterFacade;
+import com.richie.context.bloom.BloomFilter;
 import com.richie.component.cache.commons.CacheKeyUtils;
 import com.richie.component.cache.config.CacheProperties;
 import com.richie.component.cache.enums.L2CachingRegion;
@@ -56,7 +56,7 @@ public class RedisStringManager implements StringFunction {
     private final CacheProperties cacheProperties;
 
     /** 布隆过滤器门面 */
-    private final BloomFilterFacade bloomFilter;
+    private final BloomFilter bloomFilter;
 
     /** 分布式锁管理器 */
     private final RedisLockManager lockManager;
@@ -75,7 +75,7 @@ public class RedisStringManager implements StringFunction {
         // 注意：本地缓存检查已由 GlobalCache 统一处理，此处不再检查
         var config = cacheProperties.getBloomFilter();
         // 1. 查布隆过滤器
-        if (!config.isEnable() || bloomFilter.contains(key)) {
+        if (!config.isEnable() || bloomFilter.mightContain(key)) {
             // 2. 查Redis
             String value = getFromString(key, String.class);
             if (value != null) {
@@ -113,7 +113,7 @@ public class RedisStringManager implements StringFunction {
                 if (value != null) {
                     addValue(key, value, timeout);
                     if (config.isEnable()) {
-                        bloomFilter.add(key);
+                        bloomFilter.put(key);
                     }
                 }
                 return value;
@@ -126,7 +126,7 @@ public class RedisStringManager implements StringFunction {
             String value = dbLoader.get();
             if (value != null) {
                 addValue(key, value, timeout);
-                bloomFilter.add(key);
+                bloomFilter.put(key);
             }
             return value;
         }
@@ -155,7 +155,7 @@ public class RedisStringManager implements StringFunction {
         });
         // 刷新布隆过滤器
         if (cacheProperties.getBloomFilter().isEnable()) {
-            bloomFilter.addAll(map.keySet());
+            bloomFilter.putAll(map.keySet());
         }
     }
 
@@ -184,7 +184,7 @@ public class RedisStringManager implements StringFunction {
         });
         // 刷新布隆过滤器
         if (cacheProperties.getBloomFilter().isEnable()) {
-            bloomFilter.addAll(map.keySet());
+            bloomFilter.putAll(map.keySet());
         }
     }
 
@@ -201,7 +201,7 @@ public class RedisStringManager implements StringFunction {
         long realTimeout = timeout + CacheFunction.getRandomExtraMillis();
         redisTemplate.opsForValue().set(key, value, realTimeout, TimeUnit.MILLISECONDS);
         if (cacheProperties.getBloomFilter().isEnable()) {
-            bloomFilter.add(key);
+            bloomFilter.put(key);
         }
     }
 
@@ -216,7 +216,7 @@ public class RedisStringManager implements StringFunction {
         guardStringPayload("addValue", key, value);
         redisTemplate.opsForValue().set(key, value);
         if (cacheProperties.getBloomFilter().isEnable()) {
-            bloomFilter.add(key);
+            bloomFilter.put(key);
         }
     }
 
@@ -234,7 +234,7 @@ public class RedisStringManager implements StringFunction {
         long realTimeout = timeout + CacheFunction.getRandomExtraMillis();
         boolean result = Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, value, realTimeout, TimeUnit.MILLISECONDS));
         if (result && cacheProperties.getBloomFilter().isEnable()) {
-            bloomFilter.add(key);
+            bloomFilter.put(key);
         }
         return result;
     }
@@ -251,7 +251,7 @@ public class RedisStringManager implements StringFunction {
         guardStringPayload("addValueIfAbsent", key, value);
         boolean result = Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, value));
         if (result && cacheProperties.getBloomFilter().isEnable()) {
-            bloomFilter.add(key);
+            bloomFilter.put(key);
         }
         return result;
     }
@@ -392,7 +392,7 @@ public class RedisStringManager implements StringFunction {
                 // 过滤掉布隆过滤器判定不存在的key
                 List<String> filteredKeys = new ArrayList<>();
                 for (String key : workingKeys) {
-                    if (bloomFilter.contains(key)) {
+                    if (bloomFilter.mightContain(key)) {
                         filteredKeys.add(key);
                     }
                 }
@@ -439,7 +439,7 @@ public class RedisStringManager implements StringFunction {
                 // 过滤掉布隆过滤器判定不存在的key
                 List<String> filteredKeys = new ArrayList<>();
                 for (String key : workingKeys) {
-                    if (bloomFilter.contains(key)) {
+                    if (bloomFilter.mightContain(key)) {
                         filteredKeys.add(key);
                     }
                 }
@@ -475,7 +475,7 @@ public class RedisStringManager implements StringFunction {
     @Override
     public <T> T getFromString(String key, Class<T> clazz) {
         var config = cacheProperties.getBloomFilter();
-        if (config.isEnable() && !bloomFilter.contains(key)) {
+        if (config.isEnable() && !bloomFilter.mightContain(key)) {
             return null;
         }
         try {
@@ -504,7 +504,7 @@ public class RedisStringManager implements StringFunction {
     @Override
     public <T> T getFromString(String key, TypeReference<T> reference) {
         var config = cacheProperties.getBloomFilter();
-        if (config.isEnable() && !bloomFilter.contains(key)) {
+        if (config.isEnable() && !bloomFilter.mightContain(key)) {
             return null;
         }
         try {

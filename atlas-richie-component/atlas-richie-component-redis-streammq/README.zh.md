@@ -225,21 +225,21 @@ span: "order-events.consume"
 
 ## ⚙️ 配置参考
 
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `name` | String | – | 流名 |
-| `consumer-group` | String | – | Consumer group（负载均衡） |
-| `consumer-name` | String | auto | 每实例唯一 |
-| `target-type` | Class | – | 事件反序列化目标类 |
-| `count` | int | `10` | 每次拉取批量大小 |
-| `concurrency` | int | `1` | 并发 consumer 线程数 |
-| `auto-ack` | boolean | `true` | 成功时自动 ack |
-| `error-strategy` | enum | `RETRY` | `SKIP` / `RETRY` / `DEAD_LETTER` / `FAIL_FAST` |
-| `max-retries` | int | `3` | 进入 DLQ 前的最大尝试次数 |
-| `idempotency.enabled` | boolean | `true` | 启用去重 |
-| `idempotency.ttl-seconds` | long | `86400` | 去重窗口 |
-| `auto-start` | boolean | `true` | 应用启动时自动启动 consumer |
-| `max-len` | long | `unlimited` | 流长度上限（XADD MAXLEN） |
+| 属性                        | 类型      | 默认值         | 说明                                             |
+|---------------------------|---------|-------------|------------------------------------------------|
+| `name`                    | String  | –           | 流名                                             |
+| `consumer-group`          | String  | –           | Consumer group（负载均衡）                           |
+| `consumer-name`           | String  | auto        | 每实例唯一                                          |
+| `target-type`             | Class   | –           | 事件反序列化目标类                                      |
+| `count`                   | int     | `10`        | 每次拉取批量大小                                       |
+| `concurrency`             | int     | `1`         | 并发 consumer 线程数                                |
+| `auto-ack`                | boolean | `true`      | 成功时自动 ack                                      |
+| `error-strategy`          | enum    | `RETRY`     | `SKIP` / `RETRY` / `DEAD_LETTER` / `FAIL_FAST` |
+| `max-retries`             | int     | `3`         | 进入 DLQ 前的最大尝试次数                                |
+| `idempotency.enabled`     | boolean | `true`      | 启用去重                                           |
+| `idempotency.ttl-seconds` | long    | `86400`     | 去重窗口                                           |
+| `auto-start`              | boolean | `true`      | 应用启动时自动启动 consumer                             |
+| `max-len`                 | long    | `unlimited` | 流长度上限（XADD MAXLEN）                             |
 
 ## 🎯 最佳实践
 

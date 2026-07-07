@@ -1,0 +1,4 @@
+com.richie.component.web.core.config.WebAutoConfiguration
+com.richie.component.web.core.config.ratelimit.WebKeyResolverAutoConfiguration
+com.richie.component.web.core.config.mvc.WebMvcInterceptorsAutoConfiguration
+com.richie.component.web.core.config.protection.PlatformProtectionAutoConfiguration

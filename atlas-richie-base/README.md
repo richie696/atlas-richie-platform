@@ -176,8 +176,7 @@ It depends on `atlas-richie-contract` and **re-exports** it transitively so both
 | `com.richie.context.utils.data.config` | `JsonUtilsModuleAutoConfiguration` (Boot auto-config) |
 | `com.richie.context.utils.security` | `HashUtils`, `RSAUtils`, `SignatureUtils` |
 | `com.richie.context.utils.spring` | `JwtUtils`, `SpringBeanUtils`, `CommonUtils` |
-| `com.richie.context.utils.web` | `ServletUtils` |
-| `com.richie.context.utils.time` | `Timer` |
+| `com.richie.context.utils.web`         | `ServletUtils`                                                                        |
 
 ### Auto-configuration
 

@@ -1,362 +1,427 @@
 # Atlas Richie Tracing Component (atlas-richie-component-tracing)
 
-- [概述](#概述)
-- [核心特性](#核心特性)
-- [快速开始](#快速开始)
-  - [1. 添加依赖](#1-添加依赖)
-  - [2. 下载 OpenTelemetry Java Agent](#2-下载-opentelemetry-java-agent)
-  - [3. 配置 JVM 参数](#3-配置-jvm-参数)
-  - [4. 配置应用参数（可选）](#4-配置应用参数（可选）)
-  - [5. 配置日志输出 traceId 和 spanId](#5-配置日志输出-traceid-和-spanid)
-- [配置说明](#配置说明)
-  - [JVM 参数配置](#jvm-参数配置)
-  - [应用参数配置](#应用参数配置)
-  - [trace.exporter.host 和 otel.exporter.otlp.endpoint 的区别](#traceexporterhost-和-otelexporterotlpendpoint-的区别)
-  - [导出器配置](#导出器配置)
-- [功能特性](#功能特性)
-  - [1. 自动追踪](#1-自动追踪)
-  - [2. 日志集成](#2-日志集成)
-  - [3. 禁用特定代理](#3-禁用特定代理)
-  - [4. 支持的组件](#4-支持的组件)
-- [使用 Jaeger UI 查看追踪数据](#使用-jaeger-ui-查看追踪数据)
-- [Docker Compose 部署示例](#docker-compose-部署示例)
-  - [部署 OpenTelemetry Collector 和 Jaeger](#部署-opentelemetry-collector-和-jaeger)
-  - [OpenTelemetry Collector 配置](#opentelemetry-collector-配置)
-- [最佳实践](#最佳实践)
-- [常见问题](#常见问题)
-  - [Q: 如何禁用 OpenTelemetry Agent？](#q-如何禁用-opentelemetry-agent？)
-  - [Q: 如何禁用特定组件的追踪？](#q-如何禁用特定组件的追踪？)
-  - [Q: 如何配置采样策略？](#q-如何配置采样策略？)
-  - [Q: 如何查看追踪数据？](#q-如何查看追踪数据？)
-  - [Q: 如何配置自定义追踪？](#q-如何配置自定义追踪？)
-- [相关文档](#相关文档)
----
+> **Dependency Management Module** — centrally manages OpenTelemetry SDK, Spring Boot Starter, and exporter versions, providing a distributed tracing dependency set ready for production use.
 
-## 📖 Contents
-
-- [概述](#概述)
-- [核心特性](#核心特性)
-- [快速开始](#快速开始)
-  - [1. 添加依赖](#1-添加依赖)
-  - [2. 下载 OpenTelemetry Java Agent](#2-下载-opentelemetry-java-agent)
-  - [3. 配置 JVM 参数](#3-配置-jvm-参数)
-  - [4. 配置应用参数（可选）](#4-配置应用参数（可选）)
-  - [5. 配置日志输出 traceId 和 spanId](#5-配置日志输出-traceid-和-spanid)
-- [配置说明](#配置说明)
-  - [JVM 参数配置](#jvm-参数配置)
-  - [应用参数配置](#应用参数配置)
-  - [trace.exporter.host 和 otel.exporter.otlp.endpoint 的区别](#traceexporterhost-和-otelexporterotlpendpoint-的区别)
-  - [导出器配置](#导出器配置)
-- [功能特性](#功能特性)
-  - [1. 自动追踪](#1-自动追踪)
-  - [2. 日志集成](#2-日志集成)
-  - [3. 禁用特定代理](#3-禁用特定代理)
-  - [4. 支持的组件](#4-支持的组件)
-- [使用 Jaeger UI 查看追踪数据](#使用-jaeger-ui-查看追踪数据)
-- [Docker Compose 部署示例](#docker-compose-部署示例)
-  - [部署 OpenTelemetry Collector 和 Jaeger](#部署-opentelemetry-collector-和-jaeger)
-  - [OpenTelemetry Collector 配置](#opentelemetry-collector-配置)
-- [最佳实践](#最佳实践)
-- [常见问题](#常见问题)
-  - [Q: 如何禁用 OpenTelemetry Agent？](#q-如何禁用-opentelemetry-agent？)
-  - [Q: 如何禁用特定组件的追踪？](#q-如何禁用特定组件的追踪？)
-  - [Q: 如何配置采样策略？](#q-如何配置采样策略？)
-  - [Q: 如何查看追踪数据？](#q-如何查看追踪数据？)
-  - [Q: 如何配置自定义追踪？](#q-如何配置自定义追踪？)
-- [相关文档](#相关文档)
+This module **contains no custom Java code**. It is a dependency aggregator that bundles the core OpenTelemetry ecosystem dependencies with locked versions. Teams only need to import this single module to obtain the full OTel SDK + Spring Boot auto-configuration + multiple exporter support.
 
 ---
 
-## 概述
+## 📖 Table of Contents
 
-`richie-component-tracing` 是Richie平台分布式追踪组件，基于 OpenTelemetry 提供分布式追踪能力，支持多种追踪数据导出器（OTLP、Jaeger、Zipkin等），帮助开发人员排查问题和了解系统性能。
+- [📖 Overview](#📖-overview)
+  - [Design Purpose](#design-purpose)
+  - [What This Module Is and Is Not](#what-this-module-is-and-is-not)
+- [📦 Managed Dependencies Overview](#📦-managed-dependencies-overview)
+  - [Core Dependencies](#core-dependencies)
+  - [Exporter Dependencies](#exporter-dependencies)
+  - [Spring Boot Integration](#spring-boot-integration)
+  - [Optional Dependencies](#optional-dependencies)
+- [🔧 Usage Scenarios](#🔧-usage-scenarios)
+  - [Scenario A: Java Agent — Zero-Code Full Instrumentation](#scenario-a-java-agent--zero-code-full-instrumentation)
+  - [Scenario B: Spring Boot Starter — Code-First Integration (Recommended)](#scenario-b-spring-boot-starter--code-first-integration-recommended)
+  - [Scenario C: Manual API / Annotations — Fine-Grained Control](#scenario-c-manual-api--annotations--fine-grained-control)
+  - [Scenario D: Trace ID Propagation Only — Use `web-core`](#scenario-d-trace-id-propagation-only--use-web-core)
+- [⚙️ Configuration Reference](#⚙️-configuration-reference)
+- [🎯 Best Practices](#🎯-best-practices)
+- [⚠️ Known Limitations](#⚠️-known-limitations)
+- [❓ Frequently Asked Questions](#❓-frequently-asked-questions)
+- [📚 Related Documentation](#📚-related-documentation)
 
-## 核心特性
+---
 
-- ✅ **OpenTelemetry 集成** - 基于 OpenTelemetry Java Agent 自动追踪
-- ✅ **多导出器支持** - 支持 OTLP、Jaeger、Zipkin 等导出器
-- ✅ **自动追踪** - 自动追踪 Spring、HTTP、数据库等组件
-- ✅ **日志集成** - 支持在日志中打印 traceId 和 spanId
-- ✅ **零代码侵入** - 通过 Java Agent 实现，无需修改代码
+## 📖 Overview
 
-## 快速开始
+| Item                 | Value                                                 |
+|----------------------|-------------------------------------------------------|
+| **Coordinates**      | `com.richie.component:atlas-richie-component-tracing` |
+| **Category**         | Dependency Management — Distributed Tracing           |
+| **Scope**            | Spring Boot 3.x / 4.x                                 |
+| **Managed Versions** | OpenTelemetry SDK 1.40+ / Instrumentation BOM 2.x     |
 
-### 1) 添加依赖
+### Design Purpose
+
+**Why this module?** Adopting OpenTelemetry in a microservice architecture involves 8-12 dependencies (API, SDK, Spring Boot integration, exporters, annotations...). Version alignment is error-prone — `opentelemetry-api` v1.40 mixed with `opentelemetry-sdk-trace` v1.38 can introduce incompatible API changes.
+
+This module serves as a **controlled dependency set**, allowing teams to add a single dependency and get:
+
+- ✅ **Version locking** — all OTel dependency versions are governed by the `atlas-richie-component-dependencies` BOM, eliminating version fragmentation
+- ✅ **Protocol coverage** — standard OTLP exporter + Zipkin exporter (legacy) bundled, no need to decide which exporter version to add
+- ✅ **Annotations ready** — `@WithSpan` / `@SpanAttribute` usable out of the box without adding `opentelemetry-instrumentation-annotations` separately
+- ✅ **Auto-configuration ready** — `opentelemetry-spring-boot-starter` activates upon being on the classpath, auto-registering `TracerProvider` / `OtlpHttpSpanExporter`
+- ✅ **Optional Metrics** — `micrometer-registry-otlp` marked as optional, teams enable OTLP Metrics on demand
+
+### What This Module Is and Is Not
+
+| ✅ Provides                                                              | ❌ Does Not Provide                                                    |
+|-------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| OpenTelemetry core dependency version management                        | Custom Java auto-configuration or Beans                               |
+| Spring Boot auto-configuration (from OTel Starter)                      | Custom Sampler / SpanProcessor / Exporter                             |
+| OTLP / Zipkin / Logging exporters                                       | Application-layer instrumentation (requires Java Agent or manual API) |
+| `@WithSpan` / `@SpanAttribute` annotations                              | Console UI / rule push center                                         |
+| Micrometer OTLP Metrics (optional)                                      | Log aggregation (use `atlas-richie-component-logging`)                |
+| Configuration properties for service name, sampling, exporter endpoints | Profiling / Continuous Profiling                                      |
+
+---
+
+## 📦 Managed Dependencies Overview
+
+All dependencies are declared in `pom.xml`. Below is a breakdown by functional group with purpose and typical usage.
+
+### Core Dependencies
+
+| Dependency                                  | Purpose                                                                                     | When It Is Used                                                                 |
+|---------------------------------------------|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `opentelemetry-api`                         | OTel interface definitions — `Tracer`, `Span`, `OpenTelemetry`                              | Any code using OTel API (manual spans, instrumentation)                         |
+| `opentelemetry-sdk`                         | Full SDK (trace + metrics + logs)                                                           | Required for production operation                                               |
+| `opentelemetry-sdk-trace`                   | Trace-specific SDK (`SdkTracerProvider`, `SpanProcessor`)                                   | Used when SDK auto-configuration is active                                      |
+| `opentelemetry-sdk-extension-autoconfigure` | Initializes SDK from env vars / `otel.*` configuration                                      | Foundation for `OTEL_SERVICE_NAME`, `OTEL_TRACES_EXPORTER` etc. to take effect  |
+| `opentelemetry-semconv`                     | Semantic convention constants — `SemanticAttributes.*` (e.g. `HTTP_METHOD`, `DB_STATEMENT`) | Setting standardized attribute names in manual spans                            |
+| `opentelemetry-instrumentation-annotations` | `@WithSpan`, `@SpanAttribute` annotations                                                   | When annotation-based instrumentation is needed (with Java Agent or Spring AOP) |
+
+### Exporter Dependencies
+
+| Dependency                       | Protocol                    | Scenario                                                                            |
+|----------------------------------|-----------------------------|-------------------------------------------------------------------------------------|
+| `opentelemetry-exporter-otlp`    | OTLP (gRPC + HTTP/protobuf) | **Preferred** — send to OTel Collector / Jaeger / Tempo / Uptrace etc.              |
+| `opentelemetry-exporter-zipkin`  | Zipkin JSON (HTTP)          | **Legacy** — use when the backend only supports Zipkin (deprecated by OTel project) |
+| `opentelemetry-exporter-logging` | Console output              | **Dev/Test** — spans printed to logs, not sent to any backend                       |
+
+### Spring Boot Integration
+
+| Dependency                          | Purpose                        | Notes                                                                                     |
+|-------------------------------------|--------------------------------|-------------------------------------------------------------------------------------------|
+| `opentelemetry-spring-boot-starter` | Spring Boot auto-configuration | Provides `OpenTelemetry` Bean, auto-registers `SdkTracerProvider`, `OtlpHttpSpanExporter` |
+
+**What the Starter auto-configures** (from `io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter`):
+
+- Automatically creates `OpenTelemetry` / `SdkTracerProvider` Beans
+- Reads configuration from `otel.*` env vars / `application.yml` (service name, sampling rate, exporter endpoint)
+- Auto-registers `OtlpHttpSpanExporter` (or gRPC variant)
+- AOP instrumentation for `spring-web` / `spring-webmvc` / `spring-webflux`
+- Supports programmatic SDK customization (`AutoConfigurationCustomizerProvider`)
+
+### Optional Dependencies
+
+| Dependency                 | Purpose                            | Activation                                  |
+|----------------------------|------------------------------------|---------------------------------------------|
+| `micrometer-registry-otlp` | Export Micrometer metrics via OTLP | Declare explicitly in the project `pom.xml` |
+
+---
+
+## 🔧 Usage Scenarios
+
+OpenTelemetry integration in Spring Boot follows three routes. **Choose based on the level of automatic instrumentation you need:**
+
+```
+                    ┌────────────────────────────────────────┐
+                    │  Java Agent                             │
+                    │  Zero-code · 150+ libraries · Fully auto│
+                    │  ❌ No Native Image support             │
+                    └────────────────────────────────────────┘
+
+                    ┌────────────────────────────────────────┐
+                    │  Spring Boot Starter                    │
+                    │  Code dependency · AOP instrumentation  │
+                    │  ✅ Native Image support                │
+                    └────────────────────────────────────────┘
+
+                    ┌────────────────────────────────────────┐
+                    │  Manual API / @WithSpan                 │
+                    │  Fine-grained control · No auto-inst    │
+                    └────────────────────────────────────────┘
+
+                    ┌────────────────────────────────────────┐
+                    │  web-core Trace ID Propagation         │
+                    │  Lightweight — trace ID only            │
+                    └────────────────────────────────────────┘
+```
+
+### Scenario A: Java Agent — Zero-Code Full Instrumentation
+
+**Suitable for**: Existing Spring Boot applications where you want zero code changes and full automatic instrumentation for HTTP / JDBC / messaging / gRPC / etc.
+
+```
+# Start with javaagent (download required separately)
+java -javaagent:opentelemetry-javaagent.jar \
+     -Dotel.service.name=my-app \
+     -Dotel.traces.exporter=otlp \
+     -Dotel.exporter.otlp.endpoint=http://otel-collector:4317 \
+     -jar my-app.jar
+```
+
+**Pros**: Bytecode instrumentation for 150+ libraries (Spring MVC, WebFlux, JDBC, JPA, Kafka, gRPC, HTTP clients...), completely non-intrusive.
+
+**Cons**:
+- ❌ No GraalVM Native Image support
+- ❌ Agent startup adds overhead (typically 50-200ms)
+- ❌ Cannot configure via `application.yml` (use env vars / system properties)
+- ❌ Potential conflicts with multiple agents
+
+**What this module provides**: Even with the Java Agent, this module supplies API + SDK + annotations for adding custom spans in code (`@WithSpan` / `tracer.spanBuilder()`).
+
+### Scenario B: Spring Boot Starter — Code-First Integration (Recommended)
+
+**Suitable for**: Newer Spring Boot (3.x+) applications that need type-safe configuration, GraalVM Native support, or environments where the Agent approach is restricted.
+
+**Steps**:
+
+1. **Add dependency** (just this module + BOM)
 
 ```xml
+<!-- Includes opentelemetry-spring-boot-starter and all transitive deps -->
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-tracing</artifactId>
-    <version>${atlas.richie.version}</version>
 </dependency>
 ```
 
-### 2) 下载 `OpenTelemetry` `Java` `Agent`
-
-从 [OpenTelemetry Java Instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases) 下载最新的 Java Agent JAR 文件。
-
-### 3) 配置 `JVM` 参数
-
-```bash
--javaagent:/path/to/opentelemetry-javaagent.jar
--Dotel.traces.exporter=otlp
--Dotel.exporter.otlp.endpoint=http://localhost:4317
--Dotel.resource.attributes=service.name=my-service,username=user
-```
-
-### 4) 配置应用参数（可选）
-
-```bash
---trace.exporter.host=localhost
---trace.exporter.port=4317
-```
-
-### 5) 配置日志输出 traceId 和 spanId
-
-在 `logback-spring.xml` 中添加：
-
-```xml
-<property name="FILE_LOG_PATTERN" 
-          value="%d{HH:mm:ss} [%thread] %-5level %logger{10} [traceId=%X{trace_id} spanId=%X{span_id}] %msg%n" />
-```
-
-## 配置说明
-
-### `JVM` 参数配置
-
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `-javaagent` | OpenTelemetry Java Agent 路径 | `-javaagent:/path/to/opentelemetry-javaagent.jar` |
-| `-Dotel.traces.exporter` | 追踪数据导出器 | `otlp`, `jaeger`, `zipkin`, `none` |
-| `-Dotel.exporter.otlp.endpoint` | OTLP 导出器端点 | `http://localhost:4317` |
-| `-Dotel.resource.attributes` | 资源属性 | `service.name=my-service,username=user` |
-
-### 应用参数配置
-
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `--trace.exporter.host` | 追踪数据导出主机地址 | `localhost` |
-| `--trace.exporter.port` | 追踪数据导出端口 | `4317` |
-
-### trace.exporter.host 和 otel.exporter.otlp.endpoint 的区别
-
-- **trace.exporter.host**: 用于配置追踪数据的导出目标主机地址，例如指定远程的追踪数据接收端的主机地址。
-- **otel.exporter.otlp.endpoint**: 用于配置 OpenTelemetry Protocol (OTLP) 导出器的端点地址，用于指定追踪数据的发送目标地址，通常包括主机名和端口号。
-
-### 导出器配置
-
-#### `OTLP` 导出器（推荐）
-
-```bash
--Dotel.traces.exporter=otlp
--Dotel.exporter.otlp.endpoint=http://localhost:4317
-```
-
-#### `Jaeger` 导出器
-
-```bash
--Dotel.traces.exporter=jaeger
--Dotel.exporter.jaeger.endpoint=http://localhost:14250
-```
-
-#### `Zipkin` 导出器
-
-```bash
--Dotel.traces.exporter=zipkin
--Dotel.exporter.zipkin.endpoint=http://localhost:9411/api/v2/spans
-```
-
-## 功能特性
-
-### 1) 自动追踪
-
-OpenTelemetry Java Agent 自动追踪以下组件：
-
-- **Spring Framework** - Spring MVC、Spring Boot、Spring Cloud
-- **HTTP 客户端** - OkHttp、Apache HttpClient、Java HTTP Client
-- **数据库** - JDBC、Hibernate、MyBatis
-- **消息队列** - Kafka、RabbitMQ、JMS
-- **RPC 框架** - gRPC、Dubbo
-- **其他** - Redis、MongoDB、Elasticsearch 等
-
-### 2) 日志集成
-
-支持在日志中打印 traceId 和 spanId，方便日志追踪：
-
-```xml
-<property name="FILE_LOG_PATTERN" 
-          value="%d{HH:mm:ss} [%thread] %-5level %logger{10} [traceId=%X{trace_id} spanId=%X{span_id}] %msg%n" />
-```
-
-### 3) 禁用特定代理
-
-可以使用命令行参数或环境变量禁用特定代理：
-
-```bash
-# 禁用 Spring Web MVC 代理
--Dotel.instrumentation.spring-web-mvc.enabled=false
-
-# 或使用环境变量
-OTEL_INSTRUMENTATION_SPRING_WEB_MVC_ENABLED=false
-```
-
-### 4) 支持的组件
-
-OpenTelemetry 官方支持的组件列表请参考：[支持的库和框架](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md#libraries--frameworks)
-
-## 使用 Jaeger UI 查看追踪数据
-
-1. 启动 Jaeger 服务（参考下面的 Docker Compose 配置）
-2. 在浏览器中访问 `http://localhost:16686`
-3. 选择服务名称和时间范围
-4. 查看追踪数据
-
-![Jaeger UI](img.png)
-
-## Docker Compose 部署示例
-
-### 部署 `OpenTelemetry` `Collector` 和 `Jaeger`
+2. **Configure `application.yml`**
 
 ```yaml
-version: '3'
-services:
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    container_name: otel_collector_jaeger
-    ports:
-      - 16686:16686  # Jaeger UI
-      - 14250:14250  # gRPC
-      - 14268:14268  # HTTP
+# OTel environment variable approach (recommended — decoupled from deployment)
+otel:
+  service.name: my-app
+  traces.exporter: otlp
+  exporter:
+    otlp:
+      endpoint: http://otel-collector:4317
+      protocol: grpc
 
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    container_name: otel_collector
-    volumes:
-      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
-    ports:
-      - "8888:8888"   # Prometheus metrics
-      - "8889:8889"   # Prometheus exporter metrics
-      - "4317:4317"   # OTLP gRPC receiver
-      - "1888:1888"   # pprof extension
-      - "13133:13133" # health_check extension
-      - "55679:55679" # zpages extension
-    depends_on:
-      - jaeger
-    command: ["--config=/etc/otel-collector-config.yaml"]
+# Or Spring Boot managed properties approach
+management:
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: http://otel-collector:4318/v1/traces
+  tracing:
+    sampling:
+      probability: 0.1
 ```
 
-### `OpenTelemetry` `Collector` 配置
+3. **Done — traces appear automatically**
 
-`otel-collector-config.yaml`:
+Auto-configuration from the Spring Boot Starter covers:
+- **HTTP server** — `@RestController` / `@Controller` auto-generate spans
+- **HTTP client** — `RestTemplate`, `RestClient`, `WebClient`
+- **JDBC** — datasource operations auto-generate spans
+- **Logging** — `trace_id` / `span_id` injected automatically
 
-```yaml
-receivers:
-  otlp:
-    protocols:
-      grpc:
-        endpoint: 0.0.0.0:4317
-      http:
-        endpoint: 0.0.0.0:4318
+**Value of this module**: Teams don't manage 8+ OTel dependency versions — they import one module, and all versions are locked by the `dependencies` BOM.
 
-exporters:
-  logging:
-    loglevel: debug
-  jaeger:
-    endpoint: jaeger:14250
-    tls:
-      insecure: true
+### Scenario C: Manual API / Annotations — Fine-Grained Control
 
-processors:
-  batch:
-    timeout: 1s
-    send_batch_size: 1024
+**Suitable for**: Instrumenting only specific business methods without full auto-instrumentation, or adding custom spans on top of the Java Agent.
 
-service:
-  extensions: [pprof, zpages, health_check]
-  pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [logging, jaeger]
+**Approach 1: Annotations**
 
-extensions:
-  health_check:
-    endpoint: :13133
-  pprof:
-    endpoint: :1888
-  zpages:
-    endpoint: :55679
-```
-
-## 最佳实践
-
-1. **服务命名**
-   - 使用有意义的服务名称，如 `user-service`、`order-service`
-   - 避免使用默认的服务名称
-
-2. **资源属性**
-   - 添加必要的资源属性，如 `service.name`、`service.version`
-   - 添加环境信息，如 `deployment.environment`
-
-3. **采样策略**
-   - 生产环境建议使用采样策略，避免追踪数据过多
-   - 开发环境可以使用全量采样
-
-4. **性能影响**
-   - OpenTelemetry Agent 对性能影响很小（通常 < 1%）
-   - 如果性能敏感，可以禁用不必要的代理
-
-5. **日志集成**
-   - 在日志中打印 traceId 和 spanId，方便日志追踪
-   - 使用统一的日志格式
-
-## 常见问题
-
-### `Q` — 如何禁用 `OpenTelemetry` `Agent`？
-
-A: 使用命令行参数或环境变量禁用：
-```bash
--Dotel.javaagent.enabled=false
-# 或
-OTEL_JAVAAGENT_ENABLED=false
-```
-
-### `Q` — 如何禁用特定组件的追踪？
-
-A: 使用命令行参数或环境变量禁用：
-```bash
--Dotel.instrumentation.[name].enabled=false
-# 例如
--Dotel.instrumentation.spring-web-mvc.enabled=false
-```
-
-### `Q` — 如何配置采样策略？
-
-A: 使用命令行参数配置：
-```bash
--Dotel.traces.sampler=traceidratio
--Dotel.traces.sampler.arg=0.1  # 10% 采样率
-```
-
-### `Q` — 如何查看追踪数据？
-
-A: 使用 Jaeger UI 或 Zipkin UI 查看追踪数据。Jaeger UI 地址：`http://localhost:16686`
-
-### `Q` — 如何配置自定义追踪？
-
-A: 使用 OpenTelemetry API 手动创建 Span：
 ```java
-Span span = tracer.spanBuilder("my-operation").startSpan();
-try (Scope scope = span.makeCurrent()) {
-    // 业务逻辑
-} finally {
-    span.end();
+import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+
+@Service
+public class OrderService {
+
+    @WithSpan("OrderService.placeOrder")
+    public Order placeOrder(@SpanAttribute("order.id") String orderId,
+                            @SpanAttribute("order.amount") BigDecimal amount) {
+        // Span auto-created, auto-closed on return
+        return doPlace(orderId, amount);
+    }
 }
 ```
 
-## 相关文档
+**Approach 2: Manual spans**
 
-- [OpenTelemetry 官方文档](https://opentelemetry.io/docs/)
-- [OpenTelemetry Java Instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation)
-- [Jaeger 官方文档](https://www.jaegertracing.io/docs/)
-- [支持的库和框架](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md)
+```java
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+
+@Service
+@RequiredArgsConstructor
+public class PaymentService {
+
+    private final Tracer tracer;
+
+    public Payment charge(PaymentRequest req) {
+        Span span = tracer.spanBuilder("PaymentService.charge")
+                .setSpanKind(SpanKind.CLIENT)
+                .setAttribute("payment.amount", req.getAmount())
+                .startSpan();
+        try (var scope = span.makeCurrent()) {
+            return paymentGateway.charge(req);
+        } catch (Exception e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR);
+            throw e;
+        } finally {
+            span.end();
+        }
+    }
+}
+```
+
+**Dependencies this module provides**:
+- `opentelemetry-api` — `Tracer`, `Span`, `StatusCode`, etc.
+- `opentelemetry-instrumentation-annotations` — `@WithSpan`, `@SpanAttribute`
+- `opentelemetry-semconv` — `SemanticAttributes.*` constants ensuring standard attribute names
+
+### Scenario D: Trace ID Propagation Only — Use `web-core`
+
+**Suitable for**: Cases where you don't need full traces (no OTel Collector), only need `traceId` in response headers and MDC for log correlation.
+
+Use [`atlas-richie-component-web-core`](../atlas-richie-component-web/README.md) **§3 Trace ID Propagation**:
+
+```yaml
+platform.component.web.tracing.enabled=true
+```
+
+This mode requires **no OTel Collector**, does not start an exporter, and produces **no spans**. It does one thing: generates a `traceId` at the front of the servlet interceptor chain, writing it to the `X-Trace-Id` response header + SLF4J MDC. Combined with `atlas-richie-component-logging`, logs automatically contain `trace_id` for correlation.
+
+**When to choose this**:
+- No need for call-chain topology (flame graphs, span details)
+- Only need traceId for log indexing
+- Simple request chains (1-2 hops), no cross-service cross-referencing needed
+
+**Relationship**: The `web-core` trace propagation and this `tracing` module **can coexist**. `web-core` injects traceId at the servlet container layer (ORDER=50, frontmost), while `tracing` provides the full OTel SDK + export capability. When both are enabled, the traceId generated by `web-core` is naturally inherited by the OTel SDK as span context — complementary, not conflicting.
+
+---
+
+## ⚙️ Configuration Reference
+
+This module defines no configuration properties itself (zero custom code). All configuration comes from `opentelemetry-spring-boot-starter` and Spring Boot's native OTel support.
+
+### OTel Environment Variables (Recommended — Deployment Decoupled)
+
+| Property                      | Example Value                             | Description             |
+|-------------------------------|-------------------------------------------|-------------------------|
+| `OTEL_SERVICE_NAME`           | `my-app`                                  | Service name, required  |
+| `OTEL_TRACES_EXPORTER`        | `otlp` / `zipkin` / `none`                | Trace exporter          |
+| `OTEL_METRICS_EXPORTER`       | `otlp` / `none`                           | Metrics exporter        |
+| `OTEL_LOGS_EXPORTER`          | `otlp` / `none`                           | Logs exporter           |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://otel-collector:4317`              | OTLP backend address    |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `grpc` / `http/protobuf`                  | OTLP transport protocol |
+| `OTEL_EXPORTER_OTLP_HEADERS`  | `api-key=xxx`                             | OTLP request headers    |
+| `OTEL_TRACES_SAMPLER`         | `parent_based_always_on` / `traceidratio` | Sampler type            |
+| `OTEL_TRACES_SAMPLER_ARG`     | `0.1`                                     | Sampling ratio          |
+
+### Spring Boot `application.yml` Approach
+
+```yaml
+spring:
+  application:
+    name: my-app
+
+management:
+  tracing:
+    sampling:
+      probability: 0.1
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: http://localhost:4318/v1/traces
+    logging:
+      export:
+        otlp:
+          endpoint: http://localhost:4318/v1/logs
+  otlp:
+    metrics:
+      export:
+        url: http://localhost:4318/v1/metrics
+```
+
+### Sampling Strategy Quick Reference
+
+| Scenario                             | Recommended Configuration                     | Notes                                                         |
+|--------------------------------------|-----------------------------------------------|---------------------------------------------------------------|
+| Development / Debug                  | `always_on` or `probability: 1.0`             | 100% sampling, no traces missed                               |
+| Production (low traffic, <100 req/s) | `parent_based_always_on`                      | Inherits parent's sampling decision, root span always sampled |
+| Production (high traffic)            | `traceidratio: 0.1` or `probability: 0.1`     | 10% random sampling, sufficient for statistics                |
+| Production (critical path 100%)      | `parent_based_ratio: 1.0` + `@WithSpan` marks | Critical methods always sampled, others inherit               |
+| Fully disabled                       | `none`                                        | Trace export disabled (SDK still loads but does not send)     |
+
+---
+
+## 🎯 Best Practices
+
+1. **Use Scenario B as your primary route** — Spring Boot Starter + `application.yml` for maintainability and flexibility
+2. **Java Agent is for legacy app retrofitting** — use Agent when you can't change code; use Starter for new projects
+3. **Set 10% sampling in production** — `probability: 0.1` is sufficient for statistical observability and greatly reduces storage cost
+4. **Add `@WithSpan` at cross-service boundaries** — mark key interfaces (e.g. `@WithSpan("PaymentService.charge")`) so the call chain has semantic names at critical nodes
+5. **Use OTel semantic attributes** — use `SemanticAttributes.HTTP_METHOD` instead of `"http_method"` to ensure backend compatibility
+6. **Correlate logs with traces** — combine with `atlas-richie-component-logging` for JSON logs containing `trace_id`, `span_id`
+7. **Do not put PII in span names/attributes** — emails, phone numbers and other sensitive data should not appear in spans
+8. **Coexisting with `web-core` trace propagation** — `web-core` injects traceId first, OTel SDK inherits it; spans automatically include `http.method`, `http.target` etc.
+9. **Zipkin exporter is deprecated** — new projects should use the OTLP exporter (`otlp`), compatible with Jaeger / Tempo / Uptrace / Grafana and all major backends
+
+---
+
+## ⚠️ Known Limitations
+
+| Limitation                                         | Impact                                                                       | Notes                                                                 |
+|----------------------------------------------------|------------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| **This module does not include the Java Agent**    | No bytecode-level auto-instrumentation                                       | Download `opentelemetry-javaagent.jar` separately                     |
+| **Starter's instrumentation scope is limited**     | Only Spring Web / JDBC etc.                                                  | Deep instrumentation (Kafka / gRPC / Redis) needs Agent or manual API |
+| **OTLP gRPC exporter**                             | More dependencies, slightly slower startup                                   | Use `http/protobuf` by default to avoid this                          |
+| **Zipkin exporter deprecated**                     | May be removed in future OTel versions                                       | Use OTLP for new projects                                             |
+| **Micrometer integration requires Spring Boot 4+** | `management.opentelemetry.*` properties may be incomplete in Spring Boot 3.x | Check the official docs for your specific version                     |
+
+---
+
+## ❓ Frequently Asked Questions
+
+### Q1: Java Agent or Spring Boot Starter — which should I choose?
+
+| Factor                   | Agent                         | Starter                                               |
+|--------------------------|-------------------------------|-------------------------------------------------------|
+| Code changes             | Zero                          | Add dependency + configure                            |
+| Instrumentation coverage | 150+ libraries auto           | Spring Web / JDBC / Logging                           |
+| GraalVM Native           | ❌                             | ✅                                                     |
+| Configuration            | Env vars / system props       | `application.yml`                                     |
+| Startup overhead         | 50-200ms                      | None                                                  |
+| Fine control             | Weak (needs programmatic API) | Strong (custom `AutoConfigurationCustomizerProvider`) |
+
+**Bottom line**: Agent = "fully automatic data, env-only configuration". Starter = "basic auto-instrumentation with type-safe control". **New projects should choose Starter; existing projects should try the Agent first**.
+
+### Q2: Does OTel SDK activate automatically when I import this module?
+
+Yes. `opentelemetry-spring-boot-starter` activates upon being on the classpath (condition: Spring Boot 3.x+, no manually defined `OpenTelemetry` Bean detected). You must also set `OTEL_SERVICE_NAME` or `otel.service.name` — otherwise traces have no service name.
+
+### Q3: What if I need more instrumentation (Kafka / Redis / gRPC)?
+
+Option 1: Java Agent (covers Kafka, Redis, gRPC automatically);
+Option 2: Manually add the corresponding instrumentation library (e.g. `opentelemetry-instrumentation-kafka-clients`);
+Option 3: Mark key methods manually with `@WithSpan`.
+
+### Q4: How do I get trace ID into logs?
+
+Use `atlas-richie-component-logging`: the JSON log layout automatically injects `trace_id` / `span_id`. See that component's README for details.
+
+### Q5: How do I use Jaeger instead of OTel Collector?
+
+Set `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317` — Jaeger natively accepts OTLP gRPC. No separate Zipkin bridge is needed.
+
+### Q6: Can I trace only a subset of requests?
+
+Yes, control this via `Sampler`:
+- Env var: `OTEL_TRACES_SAMPLER=traceidratio` + `OTEL_TRACES_SAMPLER_ARG=0.1`
+- Spring Boot property: `management.tracing.sampling.probability=0.1`
+- Programmatic: implement `AutoConfigurationCustomizerProvider` with a custom `Sampler`
+
+---
+
+## 📚 Related Documentation
+
+- **Parent module** — [`../README.md`](../README.md)
+- **Web-Core Trace Propagation** — [`../atlas-richie-component-web/README.md`](../atlas-richie-component-web/README.md) §3
+- **Logging** — [`../atlas-richie-component-logging/README.md`](../atlas-richie-component-logging/README.md)
+- **OpenTelemetry Official**:
+  - [Spring Boot Starter](https://opentelemetry.io/docs/zero-code/java/spring-boot-starter/)
+  - [Java Agent](https://opentelemetry.io/docs/zero-code/java/agent/)
+  - [Java API / SDK](https://opentelemetry.io/docs/languages/java/)
+  - [Spring Boot 4 OTel Support](https://docs.spring.io/spring-boot/reference/actuator/observability.html)
+
+---
+
+**atlas-richie-component-tracing** — Dependency managed, version consistent, tracing out of the box.

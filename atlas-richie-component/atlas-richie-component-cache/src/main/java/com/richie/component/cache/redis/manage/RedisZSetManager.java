@@ -1,7 +1,7 @@
 package com.richie.component.cache.redis.manage;
 
 import com.richie.context.utils.data.JsonUtils;
-import com.richie.component.cache.bloom.BloomFilterFacade;
+import com.richie.context.bloom.BloomFilter;
 import com.richie.component.cache.config.CacheProperties;
 import com.richie.component.cache.function.ZSetFunction;
 import com.richie.component.cache.redis.bean.MultiRedisTemplate;
@@ -46,7 +46,7 @@ public class RedisZSetManager implements ZSetFunction {
     private final CacheProperties cacheProperties;
 
     /** 布隆过滤器门面 */
-    private final BloomFilterFacade bloomFilter;
+    private final BloomFilter bloomFilter;
 
     /** Redis 性能守卫（可选启用） */
     private final RedisPerfGuard redisPerfGuard;
@@ -75,7 +75,7 @@ public class RedisZSetManager implements ZSetFunction {
             if (cacheProperties.getBloomFilter().isEnable()) {
                 for (String key : map.keySet()) {
                     String bloomZSetKey = "bloom:%s:zset".formatted(key);
-                    bloomFilter.add(bloomZSetKey);
+                    bloomFilter.put(bloomZSetKey);
                 }
             }
         });
@@ -127,7 +127,7 @@ public class RedisZSetManager implements ZSetFunction {
         // 布隆过滤器同步
         if (cacheProperties.getBloomFilter().isEnable()) {
             String bloomZSetKey = "bloom:%s:zset".formatted(key);
-            bloomFilter.add(bloomZSetKey);
+            bloomFilter.put(bloomZSetKey);
         }
     }
 
@@ -144,7 +144,7 @@ public class RedisZSetManager implements ZSetFunction {
         // 布隆过滤器同步
         if (cacheProperties.getBloomFilter().isEnable()) {
             String bloomZSetKey = "bloom:%s:zset".formatted(key);
-            bloomFilter.add(bloomZSetKey);
+            bloomFilter.put(bloomZSetKey);
         }
     }
 

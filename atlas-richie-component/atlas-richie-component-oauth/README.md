@@ -1,6 +1,8 @@
 # Atlas Richie OAuth 2.1 Component (atlas-richie-component-oauth)
 
 > **OAuth 2.1 authorization server** component. Provides token endpoint, client management, scope management, dynamic client registration (DCR), PKCE, and standard grant types (`authorization_code`, `client_credentials`, `refresh_token`, `device_code`). Compliant with [RFC 6749](https://datatracker.ietf.org/doc/html/rfc6749) / [RFC 8252](https://datatracker.ietf.org/doc/html/rfc8252) / [RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414).
+>
+> **Deep dive**: Full design document — [docs/en/oauth-component-design.md](docs/en/oauth-component-design.md)（[中文](docs/zh/oauth-component-design.md)）
 
 ---
 
@@ -268,6 +270,7 @@ Partial — ID token is issued per OIDC spec. Userinfo endpoint requires a custo
 
 ## 📚 Further Reading
 
+- **Design Document** — [`docs/en/oauth-component-design.md`](docs/en/oauth-component-design.md) ([中文](docs/zh/oauth-component-design.md))
 - **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
 - **MFA** — [`../atlas-richie-component-mfa/README.md`](../atlas-richie-component-mfa/README.md)
 - **Tenant** — [`../atlas-richie-component-tenant/README.md`](../atlas-richie-component-tenant/README.md)

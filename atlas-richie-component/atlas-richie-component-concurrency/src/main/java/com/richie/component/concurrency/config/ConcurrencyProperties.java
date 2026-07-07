@@ -73,6 +73,11 @@ public class ConcurrencyProperties {
      * <p>Key 为线程池名称（同时也是 Spring Bean 名称），Value 为具体参数。
      * 有配置就创建对应 {@link DynamicExecutor} Bean，
      * 不配置就没有。每个 Key 可作为 {@code @Qualifier} 的引用值。</p>
+     *
+     * <p>Spring Boot 4.x 在 {@code @ConfigurationProperties} 嵌套
+     * {@code Map<String, POJO>} 场景下不会自动识别 value 类型,
+     * {@link PoolProperties} 上已显式标注 {@code @ConfigurationProperties}
+     * 修复该问题。</p>
      */
     private Map<String, PoolProperties> threadPools = new LinkedHashMap<>();
 

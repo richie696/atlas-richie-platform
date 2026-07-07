@@ -155,10 +155,20 @@
                 <artifactId>atlas-richie-component-i18n</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
-            <!-- Web MVC 组件 -->
+            <!-- Web 父 POM（包含 web-core + web-tomcat 子模块） -->
             <dependency>
                 <groupId>com.richie.component</groupId>
-                <artifactId>atlas-richie-component-web</artifactId>
+                <artifactId>atlas-richie-component-web-core</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-web-tomcat</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-web-jetty</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- 操作日志组件 -->

@@ -1,7 +1,7 @@
 package com.richie.component.cache.redis.manage;
 
 import com.richie.context.utils.data.JsonUtils;
-import com.richie.component.cache.bloom.BloomFilterFacade;
+import com.richie.context.bloom.BloomFilter;
 import com.richie.component.cache.commons.CacheKeyUtils;
 import com.richie.component.cache.config.CacheProperties;
 import com.richie.component.cache.enums.L2CachingRegion;
@@ -52,7 +52,7 @@ public class RedisHashManager implements HashFunction {
     private final CacheProperties cacheProperties;
 
     /** 布隆过滤器门面 */
-    private final BloomFilterFacade bloomFilter;
+    private final BloomFilter bloomFilter;
 
     /** 分布式锁管理器 */
     private final RedisLockManager lockManager;
@@ -78,7 +78,7 @@ public class RedisHashManager implements HashFunction {
         // 1. 查布隆过滤器，判定是否有必要继续查Redis
         var config = cacheProperties.getBloomFilter();
         // 如果布隆过滤器未启用 或者 布隆过滤器已启用，且判定"可能存在" 则进入
-        if (!config.isEnable() || bloomFilter.contains(key)) {
+        if (!config.isEnable() || bloomFilter.mightContain(key)) {
             // 2. 查Redis，防止本地缓存失效但Redis中已有数据
             T value = getObjectFromHash(key, reference);
             if (value != null) {
@@ -118,7 +118,7 @@ public class RedisHashManager implements HashFunction {
                 if (value != null) {
                     addObject(key, value, timeout);
                     if (config.isEnable()) {
-                        bloomFilter.add(key);
+                        bloomFilter.put(key);
                     }
                 }
                 return value;
@@ -131,7 +131,7 @@ public class RedisHashManager implements HashFunction {
             T value = dbLoader.get();
             if (value != null) {
                 addObject(key, value, timeout);
-                bloomFilter.add(key);
+                bloomFilter.put(key);
             }
             return value;
         }
@@ -154,7 +154,7 @@ public class RedisHashManager implements HashFunction {
         var config = cacheProperties.getBloomFilter();
         String bloomHashKey = "bloom:%s:%s".formatted(key, hashKey);
         // 1. 查布隆过滤器，判定是否有必要继续查Redis
-        if (!config.isEnable() || bloomFilter.contains(bloomHashKey)) {
+        if (!config.isEnable() || bloomFilter.mightContain(bloomHashKey)) {
             // 2. 查Redis，防止本地缓存失效但Redis中已有数据
             T value = getFromHash(key, hashKey, clazz);
             if (value != null) {
@@ -199,7 +199,7 @@ public class RedisHashManager implements HashFunction {
                     long realTimeout = timeout + CacheFunction.getRandomExtraMillis();
                     redisTemplate.expire(key, realTimeout, TimeUnit.MILLISECONDS);
                     if (config.isEnable()) {
-                        bloomFilter.add(bloomHashKey);
+                        bloomFilter.put(bloomHashKey);
                     }
                 }
                 return value;
@@ -214,7 +214,7 @@ public class RedisHashManager implements HashFunction {
                 addHash(key, hashKey, value);
                 long realTimeout = timeout + CacheFunction.getRandomExtraMillis();
                 redisTemplate.expire(key, realTimeout, TimeUnit.MILLISECONDS);
-                bloomFilter.add(bloomHashKey);
+                bloomFilter.put(bloomHashKey);
             }
             return value;
         }
@@ -237,7 +237,7 @@ public class RedisHashManager implements HashFunction {
         var config = cacheProperties.getBloomFilter();
         String bloomHashKey = "bloom:%s:%s".formatted(key, hashKey);
         // 1. 查布隆过滤器，判定是否有必要继续查Redis
-        if (!config.isEnable() || bloomFilter.contains(bloomHashKey)) {
+        if (!config.isEnable() || bloomFilter.mightContain(bloomHashKey)) {
             // 2. 查Redis，防止本地缓存失效但Redis中已有数据
             T value = getFromHash(key, hashKey, reference);
             if (value != null) {
@@ -282,7 +282,7 @@ public class RedisHashManager implements HashFunction {
                     long realTimeout = timeout + CacheFunction.getRandomExtraMillis();
                     redisTemplate.expire(key, realTimeout, TimeUnit.MILLISECONDS);
                     if (config.isEnable()) {
-                        bloomFilter.add(bloomHashKey);
+                        bloomFilter.put(bloomHashKey);
                     }
                 }
                 return value;
@@ -297,7 +297,7 @@ public class RedisHashManager implements HashFunction {
                 addHash(key, hashKey, value);
                 long realTimeout = timeout + CacheFunction.getRandomExtraMillis();
                 redisTemplate.expire(key, realTimeout, TimeUnit.MILLISECONDS);
-                bloomFilter.add(bloomHashKey);
+                bloomFilter.put(bloomHashKey);
             }
             return value;
         }
@@ -317,7 +317,7 @@ public class RedisHashManager implements HashFunction {
         // 注意：本地缓存检查已由 GlobalCache 统一处理，此处不再检查
         // 1. 查布隆过滤器，判定是否有必要继续查Redis
         var config = cacheProperties.getBloomFilter();
-        if (!config.isEnable() || bloomFilter.contains(key)) {
+        if (!config.isEnable() || bloomFilter.mightContain(key)) {
             // 2. 查Redis，防止本地缓存失效但Redis中已有数据
             T value = getObjectFromHash(key, clazz);
             if (value != null) {
@@ -357,7 +357,7 @@ public class RedisHashManager implements HashFunction {
                 if (value != null) {
                     addObject(key, value, timeout);
                     if (config.isEnable()) {
-                        bloomFilter.add(key);
+                        bloomFilter.put(key);
                     }
                 }
                 return value;
@@ -370,7 +370,7 @@ public class RedisHashManager implements HashFunction {
             T value = dbLoader.get();
             if (value != null) {
                 addObject(key, value, timeout);
-                bloomFilter.add(key);
+                bloomFilter.put(key);
             }
             return value;
         }
@@ -414,7 +414,7 @@ public class RedisHashManager implements HashFunction {
         return redisPerfGuard.<T>execute("RedisHashManager", "getObjectFromHash", RedisOperationCatalog.HASH_FULL, () -> {
             var bloomConfig = cacheProperties.getBloomFilter();
             // 1. 先用布隆过滤器判定
-            if (!bloomConfig.isEnable() || bloomFilter.contains(key)) {
+            if (!bloomConfig.isEnable() || bloomFilter.mightContain(key)) {
                 // 2. 布隆过滤器判定可能存在，查询Redis
                 var map = redisTemplate.opsForHash().entries(key);
                 if (map.isEmpty()) {
@@ -439,7 +439,7 @@ public class RedisHashManager implements HashFunction {
         return redisPerfGuard.<T>execute("RedisHashManager", "getObjectFromHash", RedisOperationCatalog.HASH_FULL, () -> {
             var config = cacheProperties.getBloomFilter();
             // 1. 布隆过滤器判定
-            if (config.isEnable() && !bloomFilter.contains(key)) {
+            if (config.isEnable() && !bloomFilter.mightContain(key)) {
                 return null;
             }
             // 2. 查询Redis
@@ -464,7 +464,7 @@ public class RedisHashManager implements HashFunction {
     public <T> T getFromHash(String key, String hashKey, Class<T> clazz) {
         var config = cacheProperties.getBloomFilter();
         String bloomHashKey = "bloom:%s:%s".formatted(key, hashKey);
-        if (config.isEnable() && !bloomFilter.contains(bloomHashKey)) {
+        if (config.isEnable() && !bloomFilter.mightContain(bloomHashKey)) {
             return null;
         }
         try {
@@ -489,7 +489,7 @@ public class RedisHashManager implements HashFunction {
     public <T> T getFromHash(String key, String hashKey, TypeReference<T> reference) {
         var config = cacheProperties.getBloomFilter();
         String bloomHashKey = "bloom:%s:%s".formatted(key, hashKey);
-        if (config.isEnable() && !bloomFilter.contains(bloomHashKey)) {
+        if (config.isEnable() && !bloomFilter.mightContain(bloomHashKey)) {
             return null;
         }
         try {
@@ -514,7 +514,7 @@ public class RedisHashManager implements HashFunction {
     public <T> List<T> getFromHash(String key, Collection<String> hashKeys, TypeReference<T> reference) {
         var config = cacheProperties.getBloomFilter();
         if (config.isEnable()) {
-            List<String> filteredKeys = hashKeys.stream().filter(hk -> bloomFilter.contains("bloom:%s:%s".formatted(key, hk))).collect(Collectors.toList());
+            List<String> filteredKeys = hashKeys.stream().filter(hk -> bloomFilter.mightContain("bloom:%s:%s".formatted(key, hk))).collect(Collectors.toList());
             if (filteredKeys.isEmpty()) {
                 return Collections.emptyList();
             }
@@ -550,7 +550,7 @@ public class RedisHashManager implements HashFunction {
     public <T> Map<String, T> getAllMapFromHash(String key, Class<T> clazz) {
         return redisPerfGuard.<Map<String, T>>execute("RedisHashManager", "getAllMapFromHash", RedisOperationCatalog.HASH_FULL, () -> {
             var config = cacheProperties.getBloomFilter();
-            if (config.isEnable() && !bloomFilter.contains(key)) {
+            if (config.isEnable() && !bloomFilter.mightContain(key)) {
                 return Collections.emptyMap();
             }
             try {
@@ -580,7 +580,7 @@ public class RedisHashManager implements HashFunction {
         // 布隆过滤器同步
         var config = cacheProperties.getBloomFilter();
         if (config.isEnable()) {
-            bloomFilter.add(key);
+            bloomFilter.put(key);
         }
     }
 
@@ -600,7 +600,7 @@ public class RedisHashManager implements HashFunction {
         // 布隆过滤器同步
         var config = cacheProperties.getBloomFilter();
         if (config.isEnable()) {
-            bloomFilter.add(key);
+            bloomFilter.put(key);
         }
     }
 
@@ -627,7 +627,7 @@ public class RedisHashManager implements HashFunction {
             // 布隆过滤器同步（刷新时确保布隆过滤器中有记录）
             var config = cacheProperties.getBloomFilter();
             if (config.isEnable()) {
-                bloomFilter.add(key);
+                bloomFilter.put(key);
             }
             return newObject;
         }
@@ -654,7 +654,7 @@ public class RedisHashManager implements HashFunction {
         var config = cacheProperties.getBloomFilter();
         if (config.isEnable()) {
             for (String key : map.keySet()) {
-                bloomFilter.add(key);
+                bloomFilter.put(key);
             }
         }
     }
@@ -671,7 +671,7 @@ public class RedisHashManager implements HashFunction {
         // 布隆过滤器同步
         var config = cacheProperties.getBloomFilter();
         if (config.isEnable()) {
-            bloomFilter.add(key);
+            bloomFilter.put(key);
         }
     }
 
@@ -689,7 +689,7 @@ public class RedisHashManager implements HashFunction {
         var config = cacheProperties.getBloomFilter();
         if (config.isEnable()) {
             String bloomHashKey = "bloom:%s:%s".formatted(key, hashKey);
-            bloomFilter.add(bloomHashKey);
+            bloomFilter.put(bloomHashKey);
         }
     }
 

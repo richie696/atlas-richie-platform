@@ -5,10 +5,11 @@ import com.richie.contract.model.LoginUserPrincipal;
 import com.richie.contract.model.ApiResult;
 import com.richie.contract.constant.GlobalConstants;
 import com.richie.context.utils.data.JsonUtils;
-import com.richie.context.utils.spring.JwtUtils;
 import com.richie.context.utils.web.ServletUtils;
+import com.richie.context.utils.spring.JwtUtils;
 import com.richie.context.utils.spring.SpringBeanUtils;
 import com.richie.component.cache.GlobalCache;
+import com.richie.component.concurrency.measurement.Stopwatch;
 import com.richie.component.dao.snowflake.IdBuilder;
 import com.richie.component.logging.annotations.AccessLog;
 import com.richie.component.logging.callback.LogLifecycleCallback;
@@ -102,7 +103,7 @@ public class AccessLogAspect {
         var requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         assert requestAttributes != null;
         var request = requestAttributes.getRequest();
-        var startTime = System.currentTimeMillis();
+        Stopwatch stopwatch = Stopwatch.createStarted();
         // 获取切点方法
         var signature = (MethodSignature) joinPoint.getSignature();
         // 获取方法
@@ -141,10 +142,10 @@ public class AccessLogAspect {
             }
             ex = throwable;
         }
-        var endTime = System.currentTimeMillis();
+        long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
         if (properties.isEnable()) {
             generatePointCutLog(request, requestData, originResult, operateTime,
-                    (endTime - startTime), accessLog, ex, joinPoint);
+                    elapsedMillis, accessLog, ex, joinPoint);
         }
         return originResult;
     }

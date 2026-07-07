@@ -11,77 +11,12 @@
 
     <artifactId>atlas-richie-component-web</artifactId>
     <name>atlas-richie-component-web</name>
-    <packaging>jar</packaging>
+    <description>Web 父 POM：聚合 web-core（容器无关）和 web-tomcat（生产调优）；未来扩展 web-jetty / web-undertow</description>
+    <packaging>pom</packaging>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.websocket</groupId>
-            <artifactId>jakarta.websocket-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>jacoco-check</id>
-                        <configuration>
-                            <includes>
-                                <include>com/richie/component/web/exception/**</include>
-                                <include>com/richie/component/web/sse/SseManager</include>
-                                <include>com/richie/component/web/i18n/AcceptLanguageHeaderLocaleResolver</include>
-                                <include>com/richie/component/web/utils/WebUtils</include>
-                            </includes>
-                            <excludes>
-                                <exclude>com.richie.component.**.*AutoConfiguration</exclude>
-                                <exclude>com.richie.component.**.config.**</exclude>
-                                <exclude>com.richie.component.**.enums.**</exclude>
-                            </excludes>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-
+    <modules>
+        <module>atlas-richie-component-web-core</module>
+        <module>atlas-richie-component-web-tomcat</module>
+        <module>atlas-richie-component-web-jetty</module>
+    </modules>
 </project>

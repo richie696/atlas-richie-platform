@@ -177,7 +177,6 @@ atlas-richie-base/
 | `com.richie.context.utils.security`    | `HashUtils`、`RSAUtils`、`SignatureUtils`                                               |
 | `com.richie.context.utils.spring`      | `JwtUtils`、`SpringBeanUtils`、`CommonUtils`                                            |
 | `com.richie.context.utils.web`         | `ServletUtils`                                                                        |
-| `com.richie.context.utils.time`        | `Timer`                                                                               |
 
 ### 自动配置
 

@@ -139,25 +139,6 @@ atlas-richie-platform/
 - ✅ Technology / business separation
 - ✅ Documentation and samples
 
-### atlas-richie-component-template
-
-**Sample projects** — examples and best practices per component.
-
-**Samples:**
-
-- `sample-cache`, `sample-messaging`, `sample-storage`, `sample-vector`
-- `sample-mqtt-client` / `sample-mqtt-server`, `sample-ai`, `sample-http`
-- `sample-threadpool`, `sample-mongodb`, …
-
-**Docs:** [atlas-richie-component-template/README.md](atlas-richie-component-template/README.md)
-
-**Purpose:**
-
-- 📚 Learning reference
-- 🎯 Best practices
-- 🧪 Feature demos
-- ✅ Validation & testing
-
 ### atlas-richie-gateway-service
 
 **API gateway** — unified edge capabilities.

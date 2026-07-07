@@ -3,13 +3,15 @@
 OAuth 2.1 鉴权组件，提供 Token 端点、客户端管理、Scope 解析等能力，支持 OAuth 2.1 标准（RFC 9000 系列），满足 MCP Server/Client 鉴权需求。
 
 > **目标读者**：业务服务开发者、网关服务维护者。如果你想知道"这个组件能帮我解决什么问题、怎么用"，这是你要的文档。
-> **深度设计**：OAuth 组件的完整设计思路见 [docs/oauth-component-design.md](./docs/oauth-component-design.md)。
+> **深度设计**：OAuth 组件的完整设计思路见 [docs/zh/oauth-component-design.md](docs/zh/oauth-component-design.md)（[English](docs/en/oauth-component-design.md)）。
 
 ---
 
 ## 📖 目录
 
 - [🎯 模块概览](#🎯-模块概览)
+  - [它能做什么和不能做什么](#它能做什么和不能做什么)
+  - [设计选择](#设计选择)
 - [🚀 快速开始（oauth-core）](#🚀-快速开始（oauth-core）)
   - [1. 添加依赖](#1-添加依赖)
   - [2. 配置](#2-配置)
@@ -27,6 +29,7 @@ OAuth 2.1 鉴权组件，提供 Token 端点、客户端管理、Scope 解析等
   - [2. IP 白名单](#2-ip-白名单)
   - [3. Scope 精细化控制](#3-scope-精细化控制)
   - [4. 异常处理](#4-异常处理)
+- [⚠️ 已知限制](#⚠️-已知限制)
 - [❓ 常见问题](#❓-常见问题)
   - [1. Token 签发失败，提示"客户端不存在"](#1-token-签发失败，提示客户端不存在)
   - [2. refresh_token 刷新提示"刷新令牌绑定 IP 不匹配"](#2-refreshtoken-刷新提示刷新令牌绑定-ip-不匹配)
@@ -34,7 +37,6 @@ OAuth 2.1 鉴权组件，提供 Token 端点、客户端管理、Scope 解析等
   - [4. access_token 和 refresh_token 的区别？](#4-accesstoken-和-refreshtoken-的区别？)
   - [5. oauth-authz 和 oauth-dcr 什么时候可用？](#5-oauth-authz-和-oauth-dcr-什么时候可用？)
 - [📚 相关文档](#📚-相关文档)
-- [📎 🗺️ Roadmap](#📎-🗺️-roadmap)
 ---
 
 ## 🎯 模块概览
@@ -51,6 +53,23 @@ atlas-richie-component-oauth/
 | `oauth-core` | **已实现** | Token 端点、客户端注册表、Scope 解析、Token 存储（Redis） |
 | `oauth-authz` | 规划中 | Authorization Code、PKCE、AS Metadata |
 | `oauth-dcr` | 规划中 | Dynamic Client Registration (RFC 7591) |
+
+### 它能做什么和不能做什么
+
+| ✅ 能做什么 | ❌ 不能做什么 |
+|------------|-------------|
+| 完整的 OAuth 2.1 授权服务器（签发 Token + 内省 + 撤销） | OIDC userinfo（部分支持，详见 FAQ） |
+| Token 端点、内省端点、撤销端点 | SAML 2.0 / WS-Federation（暂不计划） |
+| 动态客户端注册（DCR） | LDAP / Active Directory 集成 |
+| PKCE（公钥客户端，手机/SPA） | 带外设备配对 |
+| 多租户（与 `atlas-richie-component-tenant` 兼容） | 内置身份提供商（IdP）——由业务方提供用户存储 |
+
+### 设计选择
+
+- ✅ **基于 Spring Authorization Server** — 利用 `spring-security-oauth2-authorization-server` starter
+- ✅ **DB 无关** — 可插拔的 `OAuth2AuthorizationService`（JDBC 默认，Redis 可用）
+- ✅ **无状态 access token** — JWT 模式，每次请求无需查询 DB
+- ✅ **无状态 refresh token** — 不透明令牌 + JWK 轮换
 
 ---
 
@@ -397,6 +416,16 @@ try {
 
 ---
 
+## ⚠️ 已知限制
+
+| 限制 | 影响 | 解决方式 |
+|------|------|---------|
+| **OIDC userinfo 部分支持** | 仅提供 ID-token claims | 实现自定义 `OIDCUserInfoMapper` |
+| **无内置 IdP** | 需要自行接入用户存储 | 实现 `UserDetailsService` |
+| **不支持 SAML 2.0** | 不支持 SAML 联合认证 | 使用独立 SAML IdP |
+| **Refresh token 旋转不可关闭** | 遵循 RFC 6749 §10.4 | 实现自定义 `OAuth2TokenGenerator` |
+| **oauth-authz / oauth-dcr 规划中** | 授权码模式和 DCR 尚未发布 | 关注版本更新，当前使用 client_credentials 模式 |
+
 ## ❓ 常见问题
 
 ### 1) `Token` 签发失败，提示"客户端不存在"
@@ -414,7 +443,7 @@ ClientConfig testClient = clientRegistry.registerTestClient("my-app");
 
 ### 3) 如何自定义 `Token` 存储？
 
-实现 `TokenStore` SPI 接口，并通过 `@Bean` 覆盖默认实现。详见 [TokenStore SPI 扩展设计](./docs/oauth-component-design.md#25-tokenstore-spi-扩展设计)。
+实现 `TokenStore` SPI 接口，并通过 `@Bean` 覆盖默认实现。详见 [TokenStore SPI 扩展设计](docs/zh/oauth-component-design.md#25-tokenstore-spi-扩展设计)。
 
 ### 4) access_token 和 refresh_token 的区别？
 
@@ -438,19 +467,9 @@ ClientConfig testClient = clientRegistry.registerTestClient("my-app");
 
 ## 📚 相关文档
 
-| 文档 | 说明 |
-|------|------|
-| [系统设计文档](./docs/oauth-component-design.md) | 完整架构设计、模块划分、时序图 |
-| atlas-richie-gateway-service | 网关服务（组件消费者） |
-| atlas-richie-component | 组件库总览 |
-
----
-
-## 📎 🗺️ Roadmap
-
-| 版本 | 模块 | 功能 |
-|------|------|------|
-| 1.0 | oauth-core | client_credentials + refresh_token + JWT Token |
-| 规划中 | oauth-authz | Authorization Code Grant + PKCE + AS Metadata |
-| 规划中 | oauth-dcr | Dynamic Client Registration (RFC 7591) |
-| 规划中 | oauth-core（扩展） | authorization_code grant type 支持、Resource Parameter (RFC 8707) |
+| 文档                                          | 说明              |
+|---------------------------------------------|-----------------|
+| [系统设计文档 (zh)](docs/zh/oauth-component-design.md) | 完整架构设计、模块划分、时序图（中文） |
+| [System Design (en)](docs/en/oauth-component-design.md) | Full architecture, module breakdown, sequence diagrams |
+| atlas-richie-gateway-service                            | 网关服务（组件消费者）     |
+| atlas-richie-component                                  | 组件库总览           |

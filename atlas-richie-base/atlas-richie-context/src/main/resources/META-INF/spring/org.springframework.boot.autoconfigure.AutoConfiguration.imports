@@ -1,2 +1,3 @@
 com.richie.context.common.api.SpringContextHolder
 com.richie.context.utils.data.config.JsonUtilsModuleAutoConfiguration
+com.richie.context.bloom.BloomFilterAutoConfiguration

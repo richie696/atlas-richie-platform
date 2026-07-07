@@ -125,7 +125,7 @@ atlas-richie-platform/
 - **AI 组件**：统一 AI 模型调用接口
 - **更多组件**：OCR、搜索、MongoDB、MQTT、微服务、日志、追踪等
 
-**文档**：[atlas-richie-component/README.md](atlas-richie-component/README.md)
+**文档**：[atlas-richie-component/README.zh.md](atlas-richie-component/README.zh.md)
 
 **核心特性**：
 - ✅ 统一接口抽象，屏蔽技术差异
@@ -148,29 +148,6 @@ atlas-richie-platform/
 - `sample-http` - HTTP 客户端示例
 - `sample-threadpool` - 线程池示例
 - `sample-mongodb` - MongoDB 示例
-
-**文档**：[atlas-richie-component-template/README.md](atlas-richie-component-template/README.md)
-
-**用途**：
-- 📚 学习参考：快速理解组件使用方法
-- 🎯 最佳实践：展示推荐的使用方式
-- 🧪 功能演示：演示组件核心功能
-- ✅ 测试验证：验证组件功能和性能
-
-### atlas-richie-gateway-service
-
-**通用网关服务**，提供统一的 API 网关能力。
-
-**核心功能**：
-- ✅ 统一鉴权认证
-- ✅ Token 令牌管理
-- ✅ 请求路由和转发
-- ✅ 限流、熔断、降级
-- ✅ 防重复提交
-- ✅ ECC+AES-GCM 加密通信
-- ✅ 多租户支持
-- ✅ SSO 单点登录
-- ✅ 国际化支持
 
 **文档**：[atlas-richie-gateway-service/README.zh.md](atlas-richie-gateway-service/README.zh.md)
 
@@ -299,7 +276,7 @@ mvn spring-boot:run
 
 ### 组件文档
 
-- [atlas-richie-component/README.md](atlas-richie-component/README.md) - 组件库总览
+- [atlas-richie-component/README.zh.md](atlas-richie-component/README.zh.md) - 组件库总览
     - [缓存组件](atlas-richie-component/atlas-richie-component-cache/README.md)
     - [数据访问组件](atlas-richie-component/atlas-richie-component-dao/README.md)
     - [HTTP 客户端组件](atlas-richie-component/atlas-richie-component-http/README.md)

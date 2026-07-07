@@ -1,8 +1,8 @@
 package com.richie.component.cache.bloom;
 
-import com.richie.component.cache.config.CacheProperties;
-import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
+import com.richie.component.cache.config.CacheProperties;
+import com.richie.context.bloom.BloomFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
@@ -11,44 +11,44 @@ import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 /**
- * Guava实现的本地布隆过滤器（仅用于本地测试或单机应用）
+ * Guava 实现的本地布隆过滤器，作为 {@link com.richie.context.bloom.BloomFilter} SPI 的备选实现。
+ * <p>
+ * <strong>激活条件</strong>：{@code platform.cache.bloom-filter.enable=true} 且
+ * {@code platform.cache.bloom-filter.type=GUAVA}。
+ * <p>
+ * <strong>注意</strong>：当本 bean 与 {@code atlas-richie-context} 的默认 GuavaBloomFilter 同时存在时，
+ * 本类通过 {@code @Primary} 优先被注入。若业务希望直接复用 context 的默认实现，把
+ * {@code platform.cache.bloom-filter.enable} 设为 {@code false} 即可。
  *
  * @author richie696
- * @version 1.0
- * @since 2025-06-25 14:33:01
+ * @since 2025-06
  */
 @SuppressWarnings("UnstableApiUsage")
 @Primary
 @Component
-@ConditionalOnExpression("${platform.cache.bloom-filter.enable:false} && '${platform.cache.bloom-filter.type:REDISSON}'=='GUAVA'")
-public class GuavaBloomFilter implements BloomFilterFacade {
+@ConditionalOnExpression("'${platform.cache.bloom-filter.enable:false}'=='true' && '${platform.cache.bloom-filter.type:REDISSON}'=='GUAVA'")
+public class GuavaBloomFilter implements BloomFilter {
 
-    /** Guava 布隆过滤器委托实例 */
-    private final BloomFilter<String> delegate;
+    private final com.google.common.hash.BloomFilter<String> delegate;
 
-    /**
-     * 使用缓存配置创建 Guava 布隆过滤器实例。
-     *
-     * @param properties 缓存配置（含布隆过滤器预期插入量与误判率）
-     */
     public GuavaBloomFilter(CacheProperties properties) {
-        this.delegate = BloomFilter.create(Funnels.stringFunnel(StandardCharsets.UTF_8),
+        this.delegate = com.google.common.hash.BloomFilter.create(Funnels.stringFunnel(StandardCharsets.UTF_8),
                 properties.getBloomFilter().getExpectedInsertions(),
                 properties.getBloomFilter().getFalseProbability());
     }
 
     @Override
-    public boolean contains(String key) {
+    public boolean mightContain(String key) {
         return delegate.mightContain(key);
     }
 
     @Override
-    public void add(String key) {
+    public void put(String key) {
         delegate.put(key);
     }
 
     @Override
-    public void addAll(Set<String> keys) {
+    public void putAll(Set<String> keys) {
         for (String key : keys) {
             delegate.put(key);
         }

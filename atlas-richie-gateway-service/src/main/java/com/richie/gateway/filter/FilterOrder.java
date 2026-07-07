@@ -132,6 +132,19 @@ public enum FilterOrder {
      * 在接口权限验证之后、灰度负载均衡之前执行
      */
     CANARY_ID_EXTRACTOR_FILTER(450, "灰度ID提取过滤器"),
+
+    /**
+     * 网关身份透传过滤器 - 路由转发层，低优先级
+     * <p>
+     * 给每个转发请求加 {@code X-Forwarded-From-Gateway: <env>:<cluster>:<instance>} header，
+     * 让 web 端（{@code atlas-richie-component-web-core}）识别"已通过 gateway"以跳过 §4.8 B 组防护。
+     * <p>
+     * 必须在 CanaryIdExtractorFilter 之后执行（order=451），避免被后续 filter 覆盖。
+     * gateway-id 在 filter 实例化时计算一次（性能 + id 不变）。
+     *
+     * @see com.richie.gateway.filter.internal.routing.GatewayIdentityHeaderFilter
+     */
+    GATEWAY_IDENTITY_HEADER_FILTER(451, "网关身份透传过滤器"),
     
     /**
      * 灰度负载均衡过滤器 - 路由转发层，最低优先级
@@ -243,6 +256,7 @@ public enum FilterOrder {
                 return "业务逻辑层";
             case CANARY_ID_EXTRACTOR_FILTER:
             case CANARY_LOAD_BALANCER_FILTER:
+            case GATEWAY_IDENTITY_HEADER_FILTER:
                 return "路由转发层";
             default:
                 return "未知层级";
@@ -292,8 +306,10 @@ public enum FilterOrder {
                 return 5;
             case CANARY_ID_EXTRACTOR_FILTER:
                 return 1;
-            case CANARY_LOAD_BALANCER_FILTER:
+            case GATEWAY_IDENTITY_HEADER_FILTER:
                 return 2;
+            case CANARY_LOAD_BALANCER_FILTER:
+                return 3;
             default:
                 return 0;
         }

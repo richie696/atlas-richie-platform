@@ -1,7 +1,7 @@
 package com.richie.component.cache.redis.manage;
 
 import com.richie.context.utils.data.JsonUtils;
-import com.richie.component.cache.bloom.BloomFilterFacade;
+import com.richie.context.bloom.BloomFilter;
 import com.richie.component.cache.config.CacheProperties;
 import com.richie.component.cache.enums.L2CachingRegion;
 import com.richie.component.cache.function.CacheFunction;
@@ -50,7 +50,7 @@ public class RedisSetManager implements SetFunction {
     private final CacheProperties cacheProperties;
 
     /** 布隆过滤器门面 */
-    private final BloomFilterFacade bloomFilter;
+    private final BloomFilter bloomFilter;
 
     /** 分布式锁管理器 */
     private final RedisLockManager lockManager;
@@ -70,7 +70,7 @@ public class RedisSetManager implements SetFunction {
         var config = cacheProperties.getBloomFilter();
         String bloomSetKey = "bloom:%s:set".formatted(key);
         // 1. 查布隆过滤器
-        if (!config.isEnable() || bloomFilter.contains(bloomSetKey)) {
+        if (!config.isEnable() || bloomFilter.mightContain(bloomSetKey)) {
             Set<T> value = getFromSet(key, clazz);
             if (value != null && !value.isEmpty()) {
                 return value;
@@ -107,7 +107,7 @@ public class RedisSetManager implements SetFunction {
                     long realTimeout = timeout + CacheFunction.getRandomExtraMillis();
                     redisTemplate.expire(key, realTimeout, TimeUnit.MILLISECONDS);
                     if (config.isEnable()) {
-                        bloomFilter.add(bloomSetKey);
+                        bloomFilter.put(bloomSetKey);
                     }
                 }
                 return value;
@@ -122,7 +122,7 @@ public class RedisSetManager implements SetFunction {
                 addSet(key, value);
                 long realTimeout = timeout + CacheFunction.getRandomExtraMillis();
                 redisTemplate.expire(key, realTimeout, TimeUnit.MILLISECONDS);
-                bloomFilter.add(bloomSetKey);
+                bloomFilter.put(bloomSetKey);
             }
             return value == null ? Set.of() : value;
         }
@@ -141,7 +141,7 @@ public class RedisSetManager implements SetFunction {
         return redisPerfGuard.<Set<T>>execute("RedisSetManager", "getFromSet", RedisOperationCatalog.SET_MEMBERS, () -> {
             var config = cacheProperties.getBloomFilter();
             String bloomSetKey = "bloom:%s:set".formatted(key);
-            if (config.isEnable() && !bloomFilter.contains(bloomSetKey)) {
+            if (config.isEnable() && !bloomFilter.mightContain(bloomSetKey)) {
                 return Set.of();
             }
             var members = redisTemplate.opsForSet().members(key);
@@ -275,7 +275,7 @@ public class RedisSetManager implements SetFunction {
             if (config.isEnable()) {
                 for (String key : map.keySet()) {
                     String bloomSetKey = "bloom:%s:set".formatted(key);
-                    bloomFilter.add(bloomSetKey);
+                    bloomFilter.put(bloomSetKey);
                 }
             }
         });
@@ -294,7 +294,7 @@ public class RedisSetManager implements SetFunction {
         var config = cacheProperties.getBloomFilter();
         if (config.isEnable()) {
             String bloomSetKey = "bloom:%s:set".formatted(key);
-            bloomFilter.add(bloomSetKey);
+            bloomFilter.put(bloomSetKey);
         }
     }
 
@@ -311,7 +311,7 @@ public class RedisSetManager implements SetFunction {
         var config = cacheProperties.getBloomFilter();
         if (config.isEnable()) {
             String bloomSetKey = "bloom:%s:set".formatted(key);
-            bloomFilter.add(bloomSetKey);
+            bloomFilter.put(bloomSetKey);
         }
     }
 
