@@ -182,8 +182,7 @@ public final class UrlFetcher {
             if (b0 == 127) return true;                   // 127.0.0.0/8
             if (b0 == 172 && b1 >= 16 && b1 <= 31) return true;  // 172.16.0.0/12
             if (b0 == 192 && b1 == 168) return true;      // 192.168.0.0/16
-            if (b0 == 169 && b1 == 254) return true;      // 169.254.0.0/16
-            return false;
+            return b0 == 169 && b1 == 254;      // 169.254.0.0/16
         }
         if (bytes.length == 16) {
             // IPv6: ::1 / fc00::/7 (unique local) / fe80::/10 (link-local)

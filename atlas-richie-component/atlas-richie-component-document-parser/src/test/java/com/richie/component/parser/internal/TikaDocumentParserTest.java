@@ -18,6 +18,7 @@ package com.richie.component.parser.internal;
 import com.richie.component.parser.testutil.ParseSyncHelper;
 
 import com.richie.component.parser.DocumentSegment;
+import com.richie.component.parser.ImageSegment;
 import com.richie.component.parser.ParseEvent;
 import com.richie.component.parser.ParsedDocument;
 import com.richie.component.parser.ParserContext;

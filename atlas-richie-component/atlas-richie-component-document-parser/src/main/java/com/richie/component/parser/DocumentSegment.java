@@ -23,6 +23,15 @@ import java.util.Map;
  * <p>
  * 段落级粒度,携带页码、章节路径等检索增强所需的元数据。
  * RAG 场景中,每个段落可作为一个 embedding 单元送入向量库。
+ * <p>
+ * <b>字段契约 (业务方按此断言)</b>:
+ * <ul>
+ *   <li>{@code text} — 必填, 非 null, 已 trim</li>
+ *   <li>{@code pageNumber} — 可空; 多页文档 (PDF/PPT) 必填, 其它可空</li>
+ *   <li>{@code sectionPath} — 以 {@code /} 起头的层级路径, e.g. {@code "/file.pdf/Page[1]"} 或 {@code "/file.xlsx/Sheet[1]/Row[1]"}</li>
+ *   <li>{@code meta} — 永不 null, 至少含 {@code "format"} key 标识来源 (例如 {@code "tika"}, {@code "fesod"}, {@code "text"})。
+ *       可选 key: {@code tag} (HTML 标签), {@code sheet}/{@code row} (Excel), {@code order} (TextFastPath 顺序号)</li>
+ * </ul>
  *
  * @author richie696
  * @version 1.0

@@ -19,7 +19,7 @@ package com.richie.component.parser;
 /**
  * 文档解析器 SPI — 流式异步接口。
  * <p>
- * 业务方调用 {@link DocumentReader#parseStream} 时,内部根据格式路由到对应实现。
+ * 业务方调用 {@link DocumentReader#readStreaming} 时,内部根据格式路由到对应实现。
  * 各实现按以下模式工作:
  * <ol>
  *   <li>解析过程中每发现一段文本 → emit {@code ParseEvent.Streaming}</li>

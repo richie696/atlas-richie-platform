@@ -30,6 +30,19 @@ import java.util.Map;
  *   <li>忽略 → 不影响文本解析流程</li>
  * </ul>
  *
+ * <p>
+ * <b>字段契约 (业务方按此断言)</b>:
+ * <ul>
+ *   <li>{@code format} — MIME 类型, 必填且以 {@code "image/"} 起头, 例如 {@code "image/png"}, {@code "image/jpeg"}, {@code "image/unknown"}</li>
+ *   <li>{@code data} — 图片原始字节, 永不 null (空时为 {@code new byte[0]});
+ *       当前实现: Tika/Fesod 返回真字节 (Phase B 后), TextFastPath 不产出图片</li>
+ *   <li>{@code name} — 可空; PDF 文档可能为空 (源文档无标题)</li>
+ *   <li>{@code pageNumber} — 可空; PDF 场景有, 其它可空</li>
+ *   <li>{@code slideNumber} — 可空; PPT 场景有, 其它可空</li>
+ *   <li>{@code sectionPath} — 以 {@code /} 起头的层级路径, e.g. {@code "/file.docx/Page[3]/Image[1]"}</li>
+ *   <li>{@code meta} — 永不 null, 至少含 {@code "format"} key 标识来源 parser</li>
+ * </ul>
+ *
  * @param format        MIME 类型, 如 {@code "image/png"}, {@code "image/jpeg"}
  * @param data          图片原始字节
  * @param name          图片名称 (可选, 来自 docx/pptx 嵌入信息)

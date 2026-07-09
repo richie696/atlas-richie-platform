@@ -28,6 +28,7 @@ import com.richie.component.parser.config.ParserProperties;
 import com.richie.component.parser.exception.DocumentParseException;
 import com.richie.component.parser.exception.ImageOnlyPdfException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -39,6 +40,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
@@ -93,6 +95,13 @@ public final class TikaDocumentParser implements DocumentParser {
             BodyContentHandler handler = new BodyContentHandler(DEFAULT_WRITE_LIMIT);
             Parser parser = new AutoDetectParser();
             ParseContext parseContext = new ParseContext();
+
+            Format format = FormatDetector.detectFormat(
+                    new ByteArrayInputStream(bytes), nameHint);
+            if (format != Format.PDF) {
+                parseContext.set(EmbeddedDocumentExtractor.class,
+                        new EmbeddedImageByteExtractor(listener, totalImages, nameHint));
+            }
 
             String xhtml;
             try (TikaInputStream tikaStream = TikaInputStream.get(
@@ -293,6 +302,65 @@ public final class TikaDocumentParser implements DocumentParser {
         if ((tooFewText && imageRich) || almostEmpty) {
             throw new ImageOnlyPdfException(
                     imageCount, textChars, -1, source.nameHint());
+        }
+    }
+
+    private static final class EmbeddedImageByteExtractor implements EmbeddedDocumentExtractor {
+
+        private final ParseListener listener;
+        private final int[] totalImages;
+        private final String nameHint;
+        private int index = 0;
+
+        EmbeddedImageByteExtractor(ParseListener listener, int[] totalImages, String nameHint) {
+            this.listener = listener;
+            this.totalImages = totalImages;
+            this.nameHint = nameHint != null ? nameHint : "doc";
+        }
+
+        @Override
+        public boolean shouldParseEmbedded(Metadata metadata) {
+            String mime = metadata.get(Metadata.CONTENT_TYPE);
+            return mime != null && mime.toLowerCase().startsWith("image/");
+        }
+
+        @Override
+        public void parseEmbedded(InputStream stream, ContentHandler handler,
+                                  Metadata metadata, boolean outputHtml) {
+            try {
+                byte[] bytes;
+                if (stream instanceof TikaInputStream tis) {
+                    bytes = tis.readAllBytes();
+                } else {
+                    bytes = stream.readAllBytes();
+                }
+                if (bytes.length == 0) {
+                    return;
+                }
+                String mime = metadata.get(Metadata.CONTENT_TYPE);
+                String embeddedName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+                int idx = index++;
+                String sectionPath = "/embedded/" + nameHint + "/Image-" + idx;
+
+                Map<String, Object> meta = new HashMap<>();
+                meta.put("source", "tika-embedded-extractor");
+                meta.put("mimeType", mime != null ? mime : "image/unknown");
+                meta.put("size", bytes.length);
+
+                ImageSegment imageSegment = new ImageSegment(
+                        mime != null ? mime : "image/unknown",
+                        bytes,
+                        embeddedName != null ? embeddedName : "Image-" + idx,
+                        null,
+                        null,
+                        sectionPath,
+                        meta
+                );
+                listener.onEvent(new ParseEvent.ImageStreaming(imageSegment));
+                totalImages[0]++;
+            } catch (IOException | RuntimeException e) {
+                // Swallow extractor failures — never break the outer Tika parsing pipeline.
+            }
         }
     }
 }

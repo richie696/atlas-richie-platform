@@ -28,6 +28,21 @@ import com.richie.component.parser.exception.DocumentParseException;
  *   <li>支持多 PDF 并发: 每个 source 独立 emit, 互不干扰</li>
  * </ul>
  *
+ * <p>
+ * <b>Schema 契约 (业务方按此断言 — 跨 3 个 parser 一致)</b>:
+ * <ul>
+ *   <li><b>Streaming</b> — 每段文本, 必有有效 {@code segment.sectionPath()} + {@code segment.meta().get("format")}</li>
+ *   <li><b>ImageStreaming</b> — 每张图片, 必有 {@code image.format()} 以 {@code image/} 起头, {@code image.data()} 永不 null</li>
+ *   <li><b>Finished</b> — 必有 {@code summary.metadata().get("format")} 标识来源 parser (Office → {@code tika/fesod}, 纯文本 → {@code text/plain})</li>
+ *   <li><b>Failed</b> — 每个解析失败都 emit (NOT 抛异常), 业务方可统一捕获</li>
+ * </ul>
+ * 实现差异 (已知 trade-off):
+ * <ul>
+ *   <li>Tika 当前 TBD: 是否抽取真图字节 (Phase B 计划)</li>
+ *   <li>Fesod {@code image.name()} 可能为空</li>
+ *   <li>TextFastPath 无图片路径</li>
+ * </ul>
+ *
  * @author richie696
  * @version 1.0
  * @since 2026-07-08

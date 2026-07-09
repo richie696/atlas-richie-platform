@@ -59,7 +59,14 @@ public final class TextFastPathParser implements DocumentParser {
     @SuppressWarnings("unused")
     @Override
     public void parseStream(ParserSource source, ParserContext ctx, ParseListener listener) {
-        parseInternal(source, listener);
+        try {
+            parseInternal(source, listener);
+        } catch (DocumentParseException dpe) {
+            listener.onEvent(new ParseEvent.Failed(dpe));
+        } catch (RuntimeException e) {
+            listener.onEvent(new ParseEvent.Failed(
+                    new DocumentParseException("TextFastPath parse failed: " + source.nameHint(), e)));
+        }
     }
 
     /**

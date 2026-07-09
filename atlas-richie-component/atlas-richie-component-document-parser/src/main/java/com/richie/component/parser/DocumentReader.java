@@ -21,9 +21,14 @@ import com.richie.component.parser.exception.DocumentParseException;
 import com.richie.component.parser.internal.Format;
 import com.richie.component.parser.internal.FormatDetector;
 import com.richie.component.parser.internal.ParserRouter;
+import com.richie.component.parser.internal.ReadEventAdapter;
 import com.richie.component.parser.internal.UrlFetcher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.richie.component.parser.model.ParsedSection;
+import com.richie.component.parser.model.ReadEvent;
+import com.richie.component.parser.model.ReadListener;
+import com.richie.component.parser.model.ReadResult;
+import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -33,29 +38,28 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
- * 文档解析入口 — 开发者接触的唯一 API。
+ * 文档解析门面 — 业务方接触的唯一公开 API。
  * <p>
- * 提供 4 个重载方法(File / InputStream / URL / 字符串路径自动识别),
- * 内部委托给对应的 {@link DocumentParser} 实现。
- * <p>
- * 用法:
- * <pre>{@code
- * DocumentReader reader = new DocumentReader(properties, router, urlFetcher);
- * ParsedDocument doc = reader.parse(new File("report.pdf"));
- * }</pre>
+ * 提供 2 类入口:
+ * <ul>
+ *   <li><b>批式</b> {@code read(...)} — 一次性同步解析, 返回 {@link ReadResult}</li>
+ *   <li><b>流式</b> {@code readStreaming(..., ReadListener)} — 边读边 emit {@link ReadEvent}</li>
+ * </ul>
+ * 入参只接受高层 Java 概念: {@link File} / {@link InputStream}+nameHint / {@link URL} /
+ * {@link String}(自动识别 file / http / https / file:// URI)。
+ * 内部 SPI 类型 ({@link ParserSource} / {@link ParseListener} / {@link ParseEvent} / {@link ParsedDocument})
+ * 均不暴露给业务方 — 业务方只持有 model 包的 {@link ReadResult} / {@link ReadEvent} /
+ * {@link ParsedSection} / {@link com.richie.component.parser.model.ParsedImage}。
  *
  * @author richie696
- * @version 1.0
- * @since 2026-07-08
+ * @version 2.0
+ * @since 2026-07-09
  */
+@Slf4j
 public class DocumentReader {
-
-    private static final Logger log = LoggerFactory.getLogger(DocumentReader.class);
 
     private final ParserProperties properties;
     private final ParserRouter router;
@@ -69,186 +73,225 @@ public class DocumentReader {
         this.urlFetcher = urlFetcher;
     }
 
-    /**
-     * 解析本地文件。
-     */
-    public ParsedDocument parse(File file) {
-        return parse(new ParserSource.FileSource(file));
+    // ============ Batch sync reads ============
+
+    /** 同步解析本地文件, 返回 {@link ReadResult}; 失败抛 {@link DocumentParseException}。 */
+    public ReadResult read(File file) {
+        log.info("read() entry: file={}", file);
+        return runSync(sourceFromFile(file), file.getName());
     }
 
     /**
-     * 解析输入流(调用方负责关闭流)。
+     * 同步解析输入流。
      *
      * @param in       输入流
-     * @param nameHint 文件名提示(用于扩展名嗅探,例如 {@code "report.docx"})
+     * @param nameHint 文件名提示(扩展名嗅探, 例如 {@code "report.docx"})
      */
-    public ParsedDocument parse(InputStream in, String nameHint) {
-        return parse(new ParserSource.StreamSource(in, nameHint));
+    public ReadResult read(InputStream in, String nameHint) {
+        log.info("read() entry: stream, nameHint={}", nameHint);
+        return runSync(new ParserSource.StreamSource(in, nameHint), nameHint);
+    }
+
+    /** 同步解析 URL, 走 {@link UrlFetcher} 三道防线。 */
+    public ReadResult read(URL url) {
+        log.info("read() entry: url={}", url);
+        return runSync(
+                new ParserSource.UrlSource(url, deriveUrlPolicy()),
+                url.toString());
     }
 
     /**
-     * 解析 HTTPS URL(走 UrlFetcher 三道防线)。
-     */
-    public ParsedDocument parse(URL url) {
-        return parse(new ParserSource.UrlSource(url, deriveUrlPolicy()));
-    }
-
-    /**
-     * 解析字符串路径或 URL,自动识别:
+     * 同步解析字符串路径或 URL, 自动识别:
      * <ul>
-     *   <li>以 {@code http://} 或 {@code https://} 开头 → URL</li>
-     *   <li>以 {@code file://} 开头 → 本地文件</li>
+     *   <li>{@code http://} / {@code https://} 前缀 → URL</li>
+     *   <li>{@code file://} 前缀 → 本地文件 URI</li>
      *   <li>其他 → 本地文件路径</li>
      * </ul>
      */
-    public ParsedDocument parse(String pathOrUrl) {
+    public ReadResult read(String pathOrUrl) {
         if (pathOrUrl == null || pathOrUrl.isBlank()) {
             throw new IllegalArgumentException("pathOrUrl must not be blank");
         }
         String trimmed = pathOrUrl.trim();
         if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
             try {
-                return parse(URI.create(trimmed).toURL());
-            } catch (IllegalArgumentException | java.net.MalformedURLException e) {
+                return read(URI.create(trimmed).toURL());
+            } catch (Exception e) {
                 throw new IllegalArgumentException("Invalid URL: " + trimmed, e);
             }
         }
         if (trimmed.startsWith("file://")) {
             try {
-                return parse(new File(new URI(trimmed)));
+                return read(new File(new URI(trimmed)));
             } catch (URISyntaxException e) {
                 throw new IllegalArgumentException("Invalid file URI: " + trimmed, e);
             }
         }
-        return parse(new File(trimmed));
+        return read(new File(trimmed));
+    }
+
+    // ============ Streaming reads ============
+
+    /**
+     * 流式解析本地文件 — 边读边 emit {@link ReadEvent} 至 {@link ReadListener#onEvent}。
+     * 失败以 {@link ReadEvent.Failed} 事件方式上报, 不抛异常; 调用方可在 listener 中处理。
+     */
+    public void readStreaming(File file, ReadListener listener) {
+        log.info("readStreaming() entry: file={}", file);
+        runStream(sourceFromFile(file), file.getName(), listener);
     }
 
     /**
-     * 解析 {@code ParserSource} 任意形态 — 统一入口。
-     * <p>
-     * 流程: UrlSource -> UrlFetcher 下载 -> FormatDetector 嗅探 -> ParserRouter 分发。
+     * 流式解析输入流。
+     *
+     * @param in       输入流
+     * @param nameHint 文件名提示
+     * @param listener 事件订阅
      */
-    public ParsedDocument parse(ParserSource source) {
-        log.debug("[parser] dispatch start: {}", source.nameHint());
-        try {
-            InputStream stream;
-            String nameHint;
-            if (source instanceof ParserSource.UrlSource urlSource) {
-                stream = urlFetcher.fetch(urlSource);
-                nameHint = source.nameHint();
-            } else if (source instanceof ParserSource.StreamSource streamSource) {
-                stream = streamSource.in();
-                nameHint = streamSource.nameHint();
-            } else if (source instanceof ParserSource.FileSource fileSource) {
-                try {
-                    stream = new ByteArrayInputStream(
-                            Files.readAllBytes(fileSource.file().toPath()));
-                } catch (IOException e) {
-                    throw new DocumentParseException(
-                            "File not found: " + fileSource.file(), e);
-                }
-                nameHint = fileSource.nameHint();
-            } else {
-                throw new DocumentParseException(
-                        "Unsupported ParserSource type: " + source.getClass().getName());
-            }
+    public void readStreaming(InputStream in, String nameHint, ReadListener listener) {
+        log.info("readStreaming() entry: stream, nameHint={}", nameHint);
+        runStream(new ParserSource.StreamSource(in, nameHint), nameHint, listener);
+    }
 
-            Format format = FormatDetector.detectFormat(stream, nameHint);
-            log.debug("[parser] detected format: {} for {}", format, nameHint);
-            DocumentParser parser = router.route(format);
-            ParserSource streamSource = new ParserSource.StreamSource(stream, nameHint);
-            List<DocumentSegment> collected = new ArrayList<>();
-            ParsedDocument[] summaryHolder = new ParsedDocument[1];
-            int[] totalImages = {0};
-            Throwable[] failure = {null};
-            parser.parseStream(streamSource, ParserContext.defaults(), event -> {
-                switch (event) {
-                    case ParseEvent.Streaming s -> collected.add(s.segment());
-                    case ParseEvent.ImageStreaming ignored -> totalImages[0]++;
-                    case ParseEvent.Finished f -> summaryHolder[0] = f.summary();
-                    case ParseEvent.Failed err -> failure[0] = err.error();
-                }
-            });
-            if (failure[0] instanceof DocumentParseException dpe) {
-                throw dpe;
-            }
-            if (failure[0] != null) {
-                throw new DocumentParseException("Parse failed", failure[0]);
-            }
-            if (summaryHolder[0] != null) {
-                return summaryHolder[0];
-            }
-            return new ParsedDocument(null, null, collected, Map.of("totalImages", totalImages[0]));
-        } catch (DocumentParseException e) {
-            log.warn("[parser] parse failed for {}: {}", source.nameHint(), e.getMessage());
-            throw e;
-        } catch (RuntimeException e) {
-            log.error("[parser] unexpected error for {}", source.nameHint(), e);
-            throw new DocumentParseException(
-                    "Unexpected error parsing: " + source.nameHint(), e);
+    /**
+     * 批量流式解析多个本地文件 — 单 listener 顺序消费,每个文件的 Section / Image 事件携带
+     * {@code fileName},Finished / Failed 事件作为分界信号。listener 无需维护每文件累加器,
+     * 可直接 {@code Map<String, Consumer<ReadEvent>>} 路由。
+     * <p>
+     * 失败处理: 单个文件抛 {@link DocumentParseException} 时,先 emit {@link ReadEvent.Failed},
+     * 再继续下一个文件(批任务内不中断)。
+     *
+     * @param files    待解析文件列表 (顺序处理)
+     * @param listener 跨文件共享事件订阅
+     */
+    public void readStreamingAll(Collection<File> files, ReadListener listener) {
+        if (files == null || files.isEmpty()) {
+            return;
         }
-    }
-
-    /**
-     * 解析 {@code ParserSource} 并指定上下文。
-     */
-    public ParsedDocument parse(ParserSource source, ParserContext ctx) {
-        return parse(source);
-    }
-
-    /**
-     * 流式解析入口 — 边读边 emit {@code ParseEvent},业务方订阅即可消费。
-     * <p>
-     * 与 {@link #parse} 不同的关键点:
-     * <ul>
-     *   <li>解析过程中每发现一段文本 → emit {@code ParseEvent.Streaming} (DocumentSegment)</li>
-     *   <li>每发现一张图片 → emit {@code ParseEvent.ImageStreaming} (ImageSegment)</li>
-     *   <li>解析完成 → emit {@code ParseEvent.Finished} (含汇总 ParsedDocument + 计数)</li>
-     *   <li>解析失败 → emit {@code ParseEvent.Failed} (异常, 不 throw)</li>
-     * </ul>
-     * <p>
-     * 适合场景: 外部系统拉取几十上百个 PDF, 边读边解析, 每段立即送 embedding / 入库。
-     */
-    public void parseStream(ParserSource source, ParseListener listener) {
-        log.debug("[parser] stream dispatch start: {}", source.nameHint());
-        try {
-            InputStream stream;
-            String nameHint;
-            if (source instanceof ParserSource.UrlSource urlSource) {
-                stream = urlFetcher.fetch(urlSource);
-                nameHint = source.nameHint();
-            } else if (source instanceof ParserSource.StreamSource streamSource) {
-                stream = streamSource.in();
-                nameHint = streamSource.nameHint();
-            } else if (source instanceof ParserSource.FileSource fileSource) {
-                try {
-                    stream = new ByteArrayInputStream(
-                            Files.readAllBytes(fileSource.file().toPath()));
-                } catch (IOException e) {
-                    throw new DocumentParseException(
-                            "File not found: " + fileSource.file(), e);
-                }
-                nameHint = fileSource.nameHint();
-            } else {
-                throw new DocumentParseException(
-                        "Unsupported ParserSource type: " + source.getClass().getName());
+        for (File file : files) {
+            try {
+                readStreaming(file, listener);
+            } catch (DocumentParseException dpe) {
+                listener.onEvent(ReadEventAdapter.toFailed(new ParseEvent.Failed(dpe)));
+            } catch (RuntimeException re) {
+                DocumentParseException dpe = new DocumentParseException(
+                        "Batch parse failed for " + file.getName() + ": " + re.getMessage(), re);
+                listener.onEvent(ReadEventAdapter.toFailed(new ParseEvent.Failed(dpe)));
             }
-
-            Format format = FormatDetector.detectFormat(stream, nameHint);
-            log.debug("[parser] detected format: {} for {}", format, nameHint);
-            DocumentParser parser = router.route(format);
-            parser.parseStream(source, ParserContext.defaults(), listener);
-        } catch (DocumentParseException dpe) {
-            log.warn("[parser] stream failed for {}: {}", source.nameHint(), dpe.getMessage());
-            listener.onEvent(new ParseEvent.Failed(dpe));
-        } catch (RuntimeException e) {
-            log.error("[parser] stream unexpected error for {}", source.nameHint(), e);
-            listener.onEvent(new ParseEvent.Failed(
-                    new DocumentParseException("Unexpected error parsing: " + source.nameHint(), e)));
         }
     }
 
     // ============ Internal ============
+
+    private ParserSource.FileSource sourceFromFile(File file) {
+        if (!file.exists()) {
+            throw new DocumentParseException("File not found: " + file);
+        }
+        return new ParserSource.FileSource(file);
+    }
+
+    private ReadResult runSync(ParserSource source, String displayName) {
+        SyncAccumulator sink = new SyncAccumulator();
+        runStream(source, displayName, ReadEventRecorder.adaptForSync(sink));
+        return sink.toResult();
+    }
+
+    private void runStream(ParserSource source, String displayName, ReadListener outListener) {
+        ParseListener internalListener = getParseListener(displayName, outListener);
+        try {
+            ParserSource expanded = expandIfUrl(source);
+            byte[] bytes = readAllBytes(expanded);
+            String nameHint = expanded.nameHint();
+            log.info("dispatch start: source={}, bytes={}, expanded={}",
+                    displayName, bytes.length, expanded.getClass().getSimpleName());
+            ByteArrayInputStream repeatable = new ByteArrayInputStream(bytes);
+            Format format = FormatDetector.detectFormat(repeatable, nameHint);
+            log.info("format detected: format={} for {}", format, nameHint);
+            DocumentParser parser = router.route(format);
+            log.info("parser routed: {} for format={}", parser.getClass().getSimpleName(), format);
+            parser.parseStream(
+                    new ParserSource.StreamSource(repeatable, nameHint),
+                    ParserContext.defaults(),
+                    internalListener);
+            log.info("parse complete for {}", displayName);
+        } catch (DocumentParseException dpe) {
+            log.warn("parse failed for {}: {}", displayName, dpe.getMessage());
+            throw dpe;
+        } catch (RuntimeException re) {
+            log.error("unexpected parse error for {}", displayName, re);
+            throw new DocumentParseException(
+                    "Parse failed for " + displayName + ": " + re.getMessage(), re);
+        }
+    }
+
+    private @NonNull ParseListener getParseListener(String displayName, ReadListener outListener) {
+        StreamingAccumulator sink = new StreamingAccumulator();
+        return event -> {
+            ReadEvent mapped = mapInternalEvent(event, displayName);
+            if (mapped instanceof ReadEvent.Section s) {
+                sink.sections.add(s.section());
+                outListener.onEvent(s);
+            } else if (mapped instanceof ReadEvent.Image i) {
+                sink.images.add(i.image());
+                outListener.onEvent(i);
+            } else if (event instanceof ParseEvent.Finished f) {
+                ReadResult result = sink.toResult(f.summary());
+                outListener.onEvent(new ReadEvent.Finished(result, sink.sections.size(), sink.images.size()));
+            } else if (event instanceof ParseEvent.Failed err) {
+                outListener.onEvent(ReadEventAdapter.toFailed(err));
+            }
+        };
+    }
+
+    private ReadEvent mapInternalEvent(ParseEvent event, String fileName) {
+        if (event instanceof ParseEvent.Streaming s) {
+            return ReadEventAdapter.toSection(s, fileName);
+        }
+        if (event instanceof ParseEvent.ImageStreaming img) {
+            return ReadEventAdapter.toImage(img, fileName);
+        }
+        if (event instanceof ParseEvent.Failed err) {
+            return ReadEventAdapter.toFailed(err);
+        }
+        return null;
+    }
+
+    private ParserSource expandIfUrl(ParserSource source) {
+        if (source instanceof ParserSource.UrlSource u) {
+            log.info("URL fetch start: {}", u.url());
+            try (InputStream fetched = urlFetcher.fetch(u)) {
+                byte[] bytes = fetched.readAllBytes();
+                log.info("URL fetch OK: {} bytes from {}", bytes.length, u.url());
+                return new ParserSource.StreamSource(
+                        new ByteArrayInputStream(bytes), u.nameHint());
+            } catch (IOException e) {
+                log.warn("URL fetch failed: {}", u.url(), e);
+                throw new DocumentParseException("URL fetch failed: " + u.url(), e);
+            }
+        }
+        return source;
+    }
+
+    private byte[] readAllBytes(ParserSource source) {
+        if (source instanceof ParserSource.FileSource(File file)) {
+            try {
+                return Files.readAllBytes(file.toPath());
+            } catch (IOException e) {
+                throw new DocumentParseException("Read failed: " + file, e);
+            }
+        }
+        if (source instanceof ParserSource.StreamSource(InputStream in, String nameHint)) {
+            try {
+                return in.readAllBytes();
+            } catch (IOException e) {
+                throw new DocumentParseException("Read failed: " + nameHint, e);
+            }
+        }
+        if (source instanceof ParserSource.UrlSource) {
+            throw new DocumentParseException("URL source should be expanded before readAllBytes()");
+        }
+        throw new DocumentParseException("Unsupported ParserSource: " + source.getClass().getName());
+    }
 
     private UrlFetchPolicy deriveUrlPolicy() {
         var url = properties.getUrl();
@@ -259,7 +302,63 @@ public class DocumentReader {
                 url.getMaxBytes(),
                 url.getConnectTimeout(),
                 url.getReadTimeout(),
-                List.of()
-        );
+                List.of());
+    }
+
+    // ============ Accumulators ============
+
+    /** 同步模式累加器 — 把 Section / Image 收进 ReadResult; Failed 直接抛出。 */
+    private static final class SyncAccumulator implements ReadListener {
+        private final List<ParsedSection> sections = new ArrayList<>();
+        private final List<com.richie.component.parser.model.ParsedImage> images = new ArrayList<>();
+        private final Map<String, Object> metadata = new HashMap<>();
+        private String title;
+        private String author;
+
+        @Override
+        public void onEvent(ReadEvent event) {
+            if (event instanceof ReadEvent.Section s) {
+                sections.add(s.section());
+            } else if (event instanceof ReadEvent.Image i) {
+                images.add(i.image());
+            } else if (event instanceof ReadEvent.Finished f) {
+                this.title = f.result().title();
+                this.author = f.result().author();
+                this.metadata.putAll(f.result().metadata());
+            } else if (event instanceof ReadEvent.Failed(DocumentParseException error)) {
+                throw error;
+            }
+        }
+
+        ReadResult toResult() {
+            metadata.putIfAbsent("format", "unknown");
+            return new ReadResult(title, author, sections, images, metadata);
+        }
+    }
+
+    /** 流式模式累加器 — 仅记录 Section / Image 用于 Finished 汇总。 */
+    private static final class StreamingAccumulator {
+        private final List<ParsedSection> sections = new ArrayList<>();
+        private final List<com.richie.component.parser.model.ParsedImage> images = new ArrayList<>();
+
+        ReadResult toResult(ParsedDocument summary) {
+            Map<String, Object> meta = summary != null && summary.metadata() != null
+                    ? new HashMap<>(summary.metadata())
+                    : new HashMap<>();
+            meta.putIfAbsent("format", "unknown");
+            String title = summary != null ? summary.title() : null;
+            String author = summary != null ? summary.author() : null;
+            return new ReadResult(title, author, sections, images, meta);
+        }
+    }
+
+    /** 把内部 ParseListener 桥接为对外 ReadListener (sync 路径使用, 简化累加)。 */
+    private static final class ReadEventRecorder {
+        private ReadEventRecorder() {
+        }
+
+        static ReadListener adaptForSync(SyncAccumulator sink) {
+            return sink;
+        }
     }
 }

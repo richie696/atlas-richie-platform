@@ -78,7 +78,7 @@ logging:
 # =====================================================================
 # Phase 8+: 流式异步 + 图片处理
 # =====================================================================
-# parseStream() 边读边 emit 事件, 业务方按需订阅 (OCR / 存图 / 入库)
+# readStreaming() 边读边 emit 事件, 业务方按需订阅 (OCR / 存图 / 入库)
 # 默认 image-only PDF 不抛异常, 改为 emit ImageStreaming 事件让调用方处理
 #
 # 严格模式 (可选, 默认关闭) — 触发 ImageOnlyPdfException 强制 fail-fast:
@@ -94,7 +94,7 @@ logging:
 #     SseEmitter emitter = new SseEmitter(0L);
 #     CompletableFuture.runAsync(() -> {
 #         for (String url : urls) {
-#             parser.parseStream(
+#             parser.readStreaming(
 #                 new ParserSource.UrlSource(new URL(url), UrlFetchPolicy.defaults()),
 #                 event -> {
 #                     switch (event) {

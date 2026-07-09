@@ -193,8 +193,9 @@ public final class FesodDocumentParser implements DocumentParser {
                     meta.put("pictureIndex", count);
                     meta.put("sheet", sheet.getSheetName());
                     meta.put("mimeType", mime);
+                    String imageName = "Image-" + sheet.getSheetName() + "-" + (count + 1);
                     listener.onEvent(new ParseEvent.ImageStreaming(
-                            new ImageSegment(mime, data.getData(), null,
+                            new ImageSegment(mime, data.getData(), imageName,
                                     null, null, sectionPath, meta)));
                     count++;
                 }

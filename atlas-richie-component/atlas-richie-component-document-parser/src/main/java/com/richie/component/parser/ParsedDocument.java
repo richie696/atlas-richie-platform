@@ -23,6 +23,15 @@ import java.util.Map;
  * 文档解析结果模型。
  * <p>
  * 包含文档元数据(title / author)与段落列表,每个段落携带页码、章节路径等检索增强所需的上下文。
+ * <p>
+ * <b>字段契约 (业务方按此断言)</b>:
+ * <ul>
+ *   <li>{@code title} — 可空; 仅 PDF / DOCX / PPT 等格式 (Tika 抽取的 Metadata.TITLE)</li>
+ *   <li>{@code author} — 可空; 来源同上</li>
+ *   <li>{@code segments} — 永不 null, 永不 null 元素 (空时为空列表)</li>
+ *   <li>{@code metadata} — 永不 null, 至少含 {@code "format"} key 标识来源 parser
+ *       ({@code "tika"} / {@code "fesod"} / {@code "text/plain"})</li>
+ * </ul>
  *
  * @author richie696
  * @version 1.0

@@ -70,7 +70,7 @@
 
 ## ✨ 核心能力
 
-- **单一门面**: `DocumentReader.parse(...)` 4 重载入口 — `File` / `InputStream` / `URL` / 字符串自动识别
+- **单一门面**: `DocumentReader.read(...)` 4 重载入口 — `File` / `InputStream` / `URL` / 字符串自动识别
 - **格式自动识别**: 基于 Tika magic bytes 内容嗅探,失败时回退到扩展名
 - **结构化段落**: 每个 `DocumentSegment` 含 `pageNumber`、`sectionPath`、metadata Map,直接服务 RAG 切片检索
 - **SSRF 防御**: `UrlFetcher` 在拉取 URL 前执行三道防线(IP 黑名单 → HEAD 校验 → 内容嗅探)
@@ -187,7 +187,7 @@ public class DocumentIngestService {
     }
 
     public ParsedDocument ingest(File file) {
-        return reader.parse(file);
+        return reader.read(file);
     }
 }
 ```
@@ -196,18 +196,18 @@ public class DocumentIngestService {
 
 ```java
 // 1) 本地文件
-ParsedDocument doc = reader.parse(new File("contract.pdf"));
+// ParsedDocument doc = reader.read(new File("contract.pdf"));
 
 // 2) 输入流(调用方负责流的生命周期 — 需要 nameHint)
-ParsedDocument doc = reader.parse(inputStream, "report.docx");
+// ParsedDocument doc = reader.read(inputStream, "report.docx");
 
 // 3) HTTPS URL(自动跑三道防线)
-ParsedDocument doc = reader.parse(new URL("https://example.com/manual.pdf"));
+// ParsedDocument doc = reader.read(new URL("https://example.com/manual.pdf"));
 
 // 4) 字符串自动识别: HTTP / HTTPS / file:// / 纯路径
-ParsedDocument doc = reader.parse("https://example.com/manual.pdf");
-ParsedDocument doc = reader.parse("/data/contracts/q3.pdf");
-ParsedDocument doc = reader.parse("file:///tmp/notes.md");
+// ParsedDocument doc = reader.read("https://example.com/manual.pdf");
+// ParsedDocument doc = reader.read("/data/contracts/q3.pdf");
+// ParsedDocument doc = reader.read("file:///tmp/notes.md");
 ```
 
 非 Spring 上下文(测试、脚本)手动构造:
@@ -224,7 +224,7 @@ DocumentReader reader = new DocumentReader(properties, router, urlFetcher);
 ### 3. 访问解析段落
 
 ```java
-ParsedDocument doc = reader.parse(new File("contract.pdf"));
+// ParsedDocument doc = reader.read(new File("contract.pdf"));
 
 doc.title();         // String 或 null
 doc.author();        // String 或 null
@@ -260,7 +260,7 @@ doc.segments().forEach(seg -> {
 四种事件统一走 `ParseListener.onEvent(ParseEvent event)` 方法。switch 模式消费:
 
 ```java
-reader.parseStream(
+reader.readStreaming(
     new ParserSource.FileSource(pdfFile),
     event -> switch (event) {
         case ParseEvent.Streaming s ->
@@ -451,7 +451,7 @@ public class ImageOnlyPdfException extends DocumentParseException {
 
 ```java
 try {
-    ParsedDocument doc = reader.parse(new File("scan.pdf"));
+    // ParsedDocument doc = reader.read(new File("scan.pdf"));
 } catch (ImageOnlyPdfException e) {
     log.warn("PDF 是全图片扫描件,跳过: {}", e.getMessage());
 } catch (DocumentParseException e) {
@@ -469,10 +469,10 @@ try {
 
 | 场景                 | 推荐                                           |
 |--------------------|----------------------------------------------|
-| 本地已知文件             | `reader.parse(File)`                         |
-| 下载 / 上传流水线的流       | `reader.parse(InputStream, name)`            |
-| 远程 HTTPS / HTTP 文件 | `reader.parse(URL)` 或 `reader.parse(String)` |
-| 批量、需要细粒度控制         | `reader.parseStream(...)`                    |
+| 本地已知文件             | `reader.read(File)`                         |
+| 下载 / 上传流水线的流       | `reader.read(InputStream, name)`            |
+| 远程 HTTPS / HTTP 文件 | `reader.read(URL)` 或 `reader.read(String)` |
+| 批量、需要细粒度控制         | `reader.readStreaming(...)`                    |
 
 ### RAG 段落粒度
 
@@ -511,7 +511,7 @@ OCR / VLM 是业务特定选择 — 有的用 Tesseract 本地跑、有的用阿
 
 ### 能不下载就解析远程 Excel 吗?
 
-可以 — `reader.parse(URL)` 走 `UrlFetcher`,把响应字节直接喂给 Fesod。三道防线生效(HEAD 验证 Excel `Content-Type` 白名单、max-bytes 限大小、嗅探确认是真 Excel)。
+可以 — `reader.read(URL)` 走 `UrlFetcher`,把响应字节直接喂给 Fesod。三道防线生效(HEAD 验证 Excel `Content-Type` 白名单、max-bytes 限大小、嗅探确认是真 Excel)。
 
 ### 同一文件并发解析 100 次?
 
@@ -520,7 +520,7 @@ OCR / VLM 是业务特定选择 — 有的用 Tesseract 本地跑、有的用阿
 ```java
 ExecutorService pool = Executors.newFixedThreadPool(8);
 List<File> files = ...;
-files.forEach(f -> pool.submit(() -> reader.parse(f)));
+files.forEach(f -> pool.submit(() -> reader.read(f)));
 pool.shutdown();
 pool.awaitTermination(1, TimeUnit.HOURS);
 ```

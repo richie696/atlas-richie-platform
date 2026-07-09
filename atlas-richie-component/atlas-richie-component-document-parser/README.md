@@ -70,7 +70,7 @@
 
 ## ✨ Core Capabilities
 
-- **Single facade** — `DocumentReader.parse(...)` with 4 overloads: `File` / `InputStream` / `URL` / `String` (auto-detect).
+- **Single facade** — `DocumentReader.read(...)` with 4 overloads: `File` / `InputStream` / `URL` / `String` (auto-detect).
 - **Format auto-detection** — content sniffing via Tika magic bytes, with extension-name fallback when sniffing fails.
 - **Structured segments** — each `DocumentSegment` carries `pageNumber`, `sectionPath`, and a metadata map, optimized for RAG chunk retrieval.
 - **SSRF defense** — `UrlFetcher` enforces three layers (IP blocklist → HEAD validation → content sniffing) before any byte is read.
@@ -187,7 +187,7 @@ public class DocumentIngestService {
     }
 
     public ParsedDocument ingest(File file) {
-        return reader.parse(file);
+        return reader.read(file);
     }
 }
 ```
@@ -196,18 +196,18 @@ The four entry points:
 
 ```java
 // 1) Local file
-ParsedDocument doc = reader.parse(new File("contract.pdf"));
+// ParsedDocument doc = reader.read(new File("contract.pdf"));
 
 // 2) InputStream (caller manages stream lifecycle — resource hint required)
-ParsedDocument doc = reader.parse(inputStream, "report.docx");
+// ParsedDocument doc = reader.read(inputStream, "report.docx");
 
 // 3) HTTPS URL — auto-runs three lines of defense
-ParsedDocument doc = reader.parse(new URL("https://example.com/manual.pdf"));
+// ParsedDocument doc = reader.read(new URL("https://example.com/manual.pdf"));
 
 // 4) String auto-detect: HTTP / HTTPS / file:// / plain path
-ParsedDocument doc = reader.parse("https://example.com/manual.pdf");
-ParsedDocument doc = reader.parse("/data/contracts/q3.pdf");
-ParsedDocument doc = reader.parse("file:///tmp/notes.md");
+// ParsedDocument doc = reader.read("https://example.com/manual.pdf");
+// ParsedDocument doc = reader.read("/data/contracts/q3.pdf");
+// ParsedDocument doc = reader.read("file:///tmp/notes.md");
 ```
 
 In non-Spring contexts (tests, scripts), construct the facade manually:
@@ -224,7 +224,7 @@ DocumentReader reader = new DocumentReader(properties, router, urlFetcher);
 ### 3. Access Parsed Segments
 
 ```java
-ParsedDocument doc = reader.parse(new File("contract.pdf"));
+// ParsedDocument doc = reader.read(new File("contract.pdf"));
 
 doc.title();         // String or null
 doc.author();        // String or null
@@ -260,7 +260,7 @@ For batch ingestion — say, "external system pushes 100 PDFs, embed each segmen
 All four types are emitted through a single `ParseListener.onEvent(ParseEvent event)` method. Switch-pattern consumption:
 
 ```java
-reader.parseStream(
+reader.readStreaming(
     new ParserSource.FileSource(pdfFile),
     event -> switch (event) {
         case ParseEvent.Streaming s ->
@@ -451,7 +451,7 @@ These let the caller decide whether to OCR the file, run VLM, or skip.
 
 ```java
 try {
-    ParsedDocument doc = reader.parse(new File("scan.pdf"));
+    // ParsedDocument doc = reader.read(new File("scan.pdf"));
 } catch (ImageOnlyPdfException e) {
     log.warn("PDF is image-only, skipping: {}", e.getMessage());
 } catch (DocumentParseException e) {
@@ -469,10 +469,10 @@ try {
 
 | Scenario                                         | Recommended                                   |
 |--------------------------------------------------|-----------------------------------------------|
-| Local known file                                 | `reader.parse(File)`                          |
-| Stream from a download / upload pipeline         | `reader.parse(InputStream, name)`             |
-| Remote HTTPS / HTTP file                         | `reader.parse(URL)` or `reader.parse(String)` |
-| Batch / pipeline that needs fine-grained control | `reader.parseStream(...)`                     |
+| Local known file                                 | `reader.read(File)`                          |
+| Stream from a download / upload pipeline         | `reader.read(InputStream, name)`             |
+| Remote HTTPS / HTTP file                         | `reader.read(URL)` or `reader.read(String)` |
+| Batch / pipeline that needs fine-grained control | `reader.readStreaming(...)`                     |
 
 ### Segment Granularity for RAG
 
@@ -511,7 +511,7 @@ Yes — `TextFastPathParser` (in `internal/`) reads plain TXT / Markdown directl
 
 ### Can I parse a remote Excel without downloading it first?
 
-Yes — `reader.parse(URL)` runs through `UrlFetcher` and pipes the response bytes straight into Fesod. The three lines of defense apply (Head validation gates Excel by `Content-Type` whitelist, max-bytes caps the body, content sniffing verifies it is genuinely an Excel file).
+Yes — `reader.read(URL)` runs through `UrlFetcher` and pipes the response bytes straight into Fesod. The three lines of defense apply (Head validation gates Excel by `Content-Type` whitelist, max-bytes caps the body, content sniffing verifies it is genuinely an Excel file).
 
 ### How do I parse the same file 100 times in parallel?
 
@@ -520,7 +520,7 @@ Yes — `reader.parse(URL)` runs through `UrlFetcher` and pipes the response byt
 ```java
 ExecutorService pool = Executors.newFixedThreadPool(8);
 List<File> files = ...;
-files.forEach(f -> pool.submit(() -> reader.parse(f)));
+files.forEach(f -> pool.submit(() -> reader.read(f)));
 pool.shutdown();
 pool.awaitTermination(1, TimeUnit.HOURS);
 ```
