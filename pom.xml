@@ -70,7 +70,7 @@
         <!-- 这个插件用于创建包含项目源代码的jar文件 -->
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <!-- 这个插件用于运行项目的单元测试 -->
-        <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>3.6.0-M1</maven-surefire-plugin.version>
         <!-- jib-maven-plugin 是一个由 Google 提供的 Maven 插件，用于构建 Docker 和 OCI 镜像 -->
         <jib-maven-plugin.version>3.5.1</jib-maven-plugin.version>
         <!-- 版本管理插件 -->
@@ -804,6 +804,37 @@
 
                 <!-- Maven 测试插件 - 启用 JDK 预览特性 -->
                 <plugin>
+                    <groupId>com.mycila</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>5.0.0</version>
+                    <configuration>
+                        <header>${maven.multiModuleProjectDirectory}/src/header.txt</header>
+                        <includes>
+                            <include>src/main/java/**/*.java</include>
+                            <include>src/test/java/**/*.java</include>
+                            <include>src/main/resources/**/*.yml</include>
+                            <include>src/main/resources/**/*.properties</include>
+                        </includes>
+                        <excludes>
+                            <exclude>**/target/**</exclude>
+                            <exclude>**/*.md</exclude>
+                        </excludes>
+                        <strictCheck>true</strictCheck>
+                        <aggregate>true</aggregate>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>validate-license</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- Maven 测试插件 - 启用 JDK 预览特性 -->
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
@@ -1066,8 +1097,8 @@
                 <version>${license-maven-plugin.version}</version>
                 <configuration>
                     <licenseName>apache_v2</licenseName>
-                    <organizationName>Richie Technology Co., Ltd.</organizationName>
-                    <inceptionYear>2024</inceptionYear>
+                    <organizationName>Richie Wang (https://www.github.com/richie696)</organizationName>
+                    <inceptionYear>2026</inceptionYear>
                 </configuration>
                 <reportSets>
                     <reportSet>

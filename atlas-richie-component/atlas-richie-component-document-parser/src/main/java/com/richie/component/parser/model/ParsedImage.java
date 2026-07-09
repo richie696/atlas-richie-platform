@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Richie (https://www.richie696.cn)
+ * Copyright (c) 2026 Richie Wang (https://www.github.com/richie696)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

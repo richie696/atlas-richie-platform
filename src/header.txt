@@ -13,14 +13,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.richie.component.parser.model;
-
-/**
- * 公开流式事件订阅接口 — 业务方通过 {@link com.richie.component.parser.DocumentReader#readStreaming} 接收 {@link ReadEvent} 流。
- */
-@FunctionalInterface
-public interface ReadListener {
-
-    void onEvent(ReadEvent event);
-}
