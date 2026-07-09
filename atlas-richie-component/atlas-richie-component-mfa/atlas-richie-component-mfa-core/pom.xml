@@ -18,11 +18,6 @@
     <description>MFA核心模块 - 公共实体、枚举、工具类、配置类</description>
 
     <dependencies>
-        <!-- 跨服务共享契约：GatewayContract / TenantFilterConfig -->
-        <dependency>
-            <groupId>com.richie.base</groupId>
-            <artifactId>atlas-richie-contract</artifactId>
-        </dependency>
         <!-- 基础依赖 -->
         <dependency>
             <groupId>com.richie.component</groupId>

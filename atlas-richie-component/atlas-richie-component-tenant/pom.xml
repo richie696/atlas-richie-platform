@@ -15,12 +15,6 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- 跨服务共享契约（GlobalConstants header 常量等） -->
-        <dependency>
-            <groupId>com.richie.base</groupId>
-            <artifactId>atlas-richie-contract</artifactId>
-        </dependency>
-
         <!-- 跨线程上下文传递（micrometer context-propagation，替代已停更的 TTL） -->
         <dependency>
             <groupId>io.micrometer</groupId>

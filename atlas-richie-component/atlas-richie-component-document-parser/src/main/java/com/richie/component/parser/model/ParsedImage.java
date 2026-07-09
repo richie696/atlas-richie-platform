@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Richie Wang (https://www.github.com/richie696)
+ * Copyright (c) 2026 Richie (https://www.github.com/richie696)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.richie.component.parser.model;
 
 import java.util.Map;

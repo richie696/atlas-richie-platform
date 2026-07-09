@@ -20,11 +20,6 @@
 
 
     <dependencies>
-        <!-- 跨服务共享契约：DeployConfig（灰度标识跨服务传递） -->
-        <dependency>
-            <groupId>com.richie.base</groupId>
-            <artifactId>atlas-richie-contract</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.richie.component</groupId>
             <artifactId>atlas-richie-component-cache</artifactId>

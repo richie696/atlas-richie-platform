@@ -16,12 +16,6 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- 内部依赖 -->
-        <dependency>
-            <groupId>com.richie.base</groupId>
-            <artifactId>atlas-richie-contract</artifactId>
-        </dependency>
-
         <!-- NATS Java Client -->
         <dependency>
             <groupId>io.nats</groupId>

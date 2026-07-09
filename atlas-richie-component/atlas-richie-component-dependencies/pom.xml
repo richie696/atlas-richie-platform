@@ -427,9 +427,16 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- 通用上下文组件 -->
         <dependency>
             <groupId>com.richie.base</groupId>
             <artifactId>atlas-richie-context</artifactId>
+        </dependency>
+
+        <!-- 跨服务共享契约（GlobalConstants header 常量等） -->
+        <dependency>
+            <groupId>com.richie.base</groupId>
+            <artifactId>atlas-richie-contract</artifactId>
         </dependency>
 
         <!-- Spring Boot 配置文件处理器（全局） -->

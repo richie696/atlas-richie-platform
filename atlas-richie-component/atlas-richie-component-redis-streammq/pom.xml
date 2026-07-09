@@ -17,10 +17,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.richie.base</groupId>
-            <artifactId>atlas-richie-contract</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.richie.component</groupId>
             <artifactId>atlas-richie-component-cache</artifactId>
         </dependency>
