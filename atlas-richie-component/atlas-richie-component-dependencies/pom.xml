@@ -363,6 +363,12 @@
                 <artifactId>atlas-richie-component-vector-milvus</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
+            <!-- 通用文档解析组件 (PDF / Word / Excel / PPT / ODF / TXT / Markdown) -->
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-document-parser</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
             <!-- Redis Stream 消息队列组件 -->
             <dependency>
                 <groupId>com.richie.component</groupId>

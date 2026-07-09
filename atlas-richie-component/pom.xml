@@ -72,6 +72,8 @@
         <module>atlas-richie-component-grpc</module>
         <!-- NATS 组件 -->
         <module>atlas-richie-component-nats</module>
+        <!-- 通用文档解析组件 (PDF / Word / Excel / PPT / ODF / TXT / Markdown) -->
+        <module>atlas-richie-component-document-parser</module>
     </modules>
 
 </project>

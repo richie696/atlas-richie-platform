@@ -1,0 +1,117 @@
+# =====================================================================
+# Atlas Richie Parser Component — application.yml 示例
+# =====================================================================
+# 把本文件内容合并到你应用的 application.yml 中 (platform.component.parser 节点)。
+# 所有配置项均有默认值,省略 = 使用默认值。
+# =====================================================================
+
+platform:
+  component:
+    parser:
+      # ---- 总开关 ----
+      enabled: true
+
+      # ---- URL 三道防线 ----
+      url:
+        # 防线 1 (SSRF): 是否允许明文 HTTP
+        allow-http: false
+
+        # 防线 1 (SSRF): 是否允许内网 IP (127.x / 10.x / 172.16-31 / 192.168 / 169.254 / ::1 / fc00::/7)
+        allow-private-ip: false
+
+        # 防线 2 (HEAD): 是否跟随重定向 (跨主机重定向会被拦截,最多 5 次)
+        follow-redirects: true
+
+        # 防线 2 (HEAD): 字节上限 (默认 200MB)
+        max-bytes: 209715200
+
+        # HTTP 客户端超时
+        connect-timeout: 5s
+        read-timeout: 60s
+
+      # ---- PDF 全图片检测 ----
+      pdf:
+        image-only-detection:
+          # 默认 false — image-only PDF 改为 emit ImageStreaming 事件让调用方处理 (OCR / VLM)
+          # 严格模式 (抛 ImageOnlyPdfException) 需要显式 enabled: true
+          enabled: false
+          min-text-chars: 200          # 文本字符数阈值
+          min-image-count: 5           # 图片标签数阈值
+
+      # ---- Excel 流式解析 (Fesod) ----
+      excel:
+        streaming-threshold-bytes: 10485760  # 10MB, 目前 Fesod 始终流式解析
+
+# =====================================================================
+# 路由与 SSRF 白名单 - 当前 Format 枚举支持的 13 种格式
+# =====================================================================
+#
+# FormatDetector 识别的 MIME / 扩展名:
+#
+#   PDF  : application/pdf                              (.pdf)
+#   DOCX : application/vnd.openxmlformats-officedocument.wordprocessingml.document    (.docx)
+#   DOC  : application/msword                          (.doc)
+#   PPTX : application/vnd.openxmlformats-officedocument.presentationml.presentation (.pptx)
+#   PPT  : application/vnd.ms-powerpoint               (.ppt)
+#   XLSX : application/vnd.openxmlformats-officedocument.spreadsheetml.sheet         (.xlsx)
+#   XLS  : application/vnd.ms-excel                    (.xls)
+#   ODT  : application/vnd.oasis.opendocument.text     (.odt)          -> TikaDocumentParser
+#   ODS  : application/vnd.oasis.opendocument.spreadsheet (.ods)       -> FesodDocumentParser  (经 POI WorkbookFactory 自动识别)
+#   ODP  : application/vnd.oasis.opendocument.presentation (.odp)      -> TikaDocumentParser
+#   RTF  : application/rtf                             (.rtf)
+#   TXT  : text/plain                                  (.txt)
+#   MD   : text/markdown                               (.md, .markdown)
+#   HTML : text/html                                   (.html, .htm)
+#   XML  : application/xml, text/xml                   (.xml)
+#
+# 注意 ODS 走 Fesod,其余 ODF (ODT / ODP) 走 Tika,与 .xlsx / .xls 同属"电子表格 → Fesod"惯例。
+#
+# =====================================================================
+# 日志级别建议 (调试期可调高)
+# =====================================================================
+logging:
+  level:
+    com.richie.component.parser: DEBUG   # 输出 [parser] dispatch start/detected format 日志
+    # org.apache.fesod: INFO             # Fesod 内部日志
+    # org.apache.tika: INFO              # Tika 内部日志
+
+# =====================================================================
+# Phase 8+: 流式异步 + 图片处理
+# =====================================================================
+# parseStream() 边读边 emit 事件, 业务方按需订阅 (OCR / 存图 / 入库)
+# 默认 image-only PDF 不抛异常, 改为 emit ImageStreaming 事件让调用方处理
+#
+# 严格模式 (可选, 默认关闭) — 触发 ImageOnlyPdfException 强制 fail-fast:
+# platform.component.parser.pdf.image-only-detection:
+#   enabled: true
+#   min-text-chars: 200
+#   min-image-count: 5
+#
+# 流式调用示例 (SSE / WebFlux / RAG 实时入库):
+#
+# @GetMapping("/ingest")
+# public SseEmitter ingest(@RequestBody List<String> urls) {
+#     SseEmitter emitter = new SseEmitter(0L);
+#     CompletableFuture.runAsync(() -> {
+#         for (String url : urls) {
+#             parser.parseStream(
+#                 new ParserSource.UrlSource(new URL(url), UrlFetchPolicy.defaults()),
+#                 event -> {
+#                     switch (event) {
+#                         case ParseEvent.Streaming s ->
+#                             embeddingService.embed(s.segment().text());
+#                         case ParseEvent.ImageStreaming i ->
+#                             ocrService.extract(i.image().data());
+#                         case ParseEvent.Finished f ->
+#                             emitter.send(SseEmitter.event().name("done").data(f.totalSegments()));
+#                         case ParseEvent.Failed err ->
+#                             emitter.send(SseEmitter.event().name("error").data(err.error()));
+#                     }
+#                 }
+#             );
+#         }
+#         emitter.complete();
+#     });
+#     return emitter;
+# }
+

@@ -77,10 +77,11 @@
 
         <!-- ==================== Spring Boot 集成 ==================== -->
 
-        <!-- Spring Boot OpenTelemetry 自动配置 -->
+        <!-- Spring Boot OpenTelemetry 自动配置（可选——防止无 collector 时控制台出现 Connection refused 错误） -->
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-spring-boot-starter</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <!-- ==================== Micrometer 集成（可选）==================== -->

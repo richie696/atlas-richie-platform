@@ -234,7 +234,7 @@ public class WebProperties {
      *   </li>
      *   <li><strong>为什么不在这里做反压？</strong>本组件的拦截器运行在 Servlet 容器线程池<strong>之后</strong>——
      *       大流量进入时容器已经先挂了，运行在后面的限流没机会救场。</li>
-     *   <li><strong>本子域的正确用法</strong>：按 {@link #routes} path 维度配置业务规则
+     *   <li><strong>本子域的正确用法</strong>：按 {@link RateLimitProperties.RouteConfig#getRoutes()} path 维度配置业务规则
      *       （VIP 客户不限流 / 普通用户 5 req/s / 敏感接口 1 req/s），与反压防护正交、各管一段。</li>
      * </ul>
      */
@@ -254,7 +254,7 @@ public class WebProperties {
      *   </li>
      *   <li><strong>为什么不在这里做反压？</strong>运行在 Servlet 容器线程池<strong>之后</strong>——大流量进入时
      *       容器已经先挂，运行在后面的熔断器没机会救场。</li>
-     *   <li><strong>本子域的正确用法</strong>：按 {@link #routes} path 维度隔离独立 CB 状态机
+     *   <li><strong>本子域的正确用法</strong>：按 {@link RateLimitProperties.RouteConfig#getRoutes()} path 维度隔离独立 CB 状态机
      *       （"订单查询"失败率 30% 熔断保护下游 DB，"用户查询"不受影响），属于<strong>业务资源保护</strong>。</li>
      * </ul>
      */
@@ -295,7 +295,7 @@ public class WebProperties {
      *   </li>
      *   <li><strong>为什么不在这里做上游兜底？</strong>运行在 Servlet 容器线程池<strong>之后</strong>——上游不可达时
      *       容器已经先报错/超时，运行在后面的降级拿不到完整上下文。</li>
-     *   <li><strong>本子域的正确用法</strong>：按 {@link #routes} path 维度返回业务特定的 code/msg
+     *   <li><strong>本子域的正确用法</strong>：按 {@link RateLimitProperties.RouteConfig#getRoutes()} path 维度返回业务特定的 code/msg
      *       （"订单查询"返回 {@code ORDER_DEGRADED}，"用户查询"返回 {@code USER_DEGRADED}，
      *       或引用 {@code fallbackBean} 动态生成响应），属于<strong>业务响应差异化</strong>。</li>
      * </ul>

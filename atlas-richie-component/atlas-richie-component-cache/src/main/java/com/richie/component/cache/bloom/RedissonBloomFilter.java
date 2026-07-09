@@ -23,7 +23,7 @@ import java.util.Set;
  * 自动回落到 {@code atlas-richie-context} 的 GuavaBloomFilter。
  *
  * <h2>存储</h2>
- * <p>底层走 Redisson 客户端，bloom 数据持久化到 Redis（key 由 {@link CacheProperties.BloomFilterConfig#getKey()} 控制）。
+ * <p>底层走 Redisson 客户端，bloom 数据持久化到 Redis（key 由 {@link com.richie.component.cache.config.BloomFilterConfig#getKey()} 控制）。
  * 多实例间共享同一份 bloom 状态，避免单点 Guava 内存 bloom 在分布式部署下失效。
  *
  * @author richie696

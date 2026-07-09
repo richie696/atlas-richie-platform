@@ -36,7 +36,7 @@ import org.springframework.context.annotation.Bean;
 public class WebKeyResolverAutoConfiguration {
 
     /**
-     * 注册 {@link HeaderBasedKeyResolver}，header 名取自 {@link WebFilterProperties#getKeyResolverHeader()}
+     * 注册 {@link HeaderBasedKeyResolver}，header 名取自 {@link WebFilterProperties#getKeyHeader()}
      * （默认 {@code X-Client-Id}）。
      */
     @Bean

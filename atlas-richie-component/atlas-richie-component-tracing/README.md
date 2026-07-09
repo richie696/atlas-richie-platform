@@ -2,7 +2,7 @@
 
 > **Dependency Management Module** — centrally manages OpenTelemetry SDK, Spring Boot Starter, and exporter versions, providing a distributed tracing dependency set ready for production use.
 
-This module **contains no custom Java code**. It is a dependency aggregator that bundles the core OpenTelemetry ecosystem dependencies with locked versions. Teams only need to import this single module to obtain the full OTel SDK + Spring Boot auto-configuration + multiple exporter support.
+This module **contains no custom Java code**. It is a dependency aggregator that bundles the core OpenTelemetry ecosystem dependencies with locked versions. Teams only need to import this single module to obtain the full OTel SDK + annotations + multiple exporter support. The Spring Boot auto-configuration starter (`opentelemetry-spring-boot-starter`) is **optional** — declare it explicitly when you need auto-configuration (see Scenario B).
 
 ---
 
@@ -47,7 +47,7 @@ This module serves as a **controlled dependency set**, allowing teams to add a s
 - ✅ **Version locking** — all OTel dependency versions are governed by the `atlas-richie-component-dependencies` BOM, eliminating version fragmentation
 - ✅ **Protocol coverage** — standard OTLP exporter + Zipkin exporter (legacy) bundled, no need to decide which exporter version to add
 - ✅ **Annotations ready** — `@WithSpan` / `@SpanAttribute` usable out of the box without adding `opentelemetry-instrumentation-annotations` separately
-- ✅ **Auto-configuration ready** — `opentelemetry-spring-boot-starter` activates upon being on the classpath, auto-registering `TracerProvider` / `OtlpHttpSpanExporter`
+- ✅ **Auto-configuration (optional)** — `opentelemetry-spring-boot-starter` is marked as optional; add it explicitly when you need Spring Boot auto-configuration. This avoids unwanted Connection refused errors when no OTel Collector is running
 - ✅ **Optional Metrics** — `micrometer-registry-otlp` marked as optional, teams enable OTLP Metrics on demand
 
 ### What This Module Is and Is Not
@@ -88,9 +88,9 @@ All dependencies are declared in `pom.xml`. Below is a breakdown by functional g
 
 ### Spring Boot Integration
 
-| Dependency                          | Purpose                        | Notes                                                                                     |
-|-------------------------------------|--------------------------------|-------------------------------------------------------------------------------------------|
-| `opentelemetry-spring-boot-starter` | Spring Boot auto-configuration | Provides `OpenTelemetry` Bean, auto-registers `SdkTracerProvider`, `OtlpHttpSpanExporter` |
+| Dependency                          | Purpose                        | Scope    | Notes                                                                                     |
+|-------------------------------------|--------------------------------|----------|-------------------------------------------------------------------------------------------|
+| `opentelemetry-spring-boot-starter` | Spring Boot auto-configuration | optional | Provides `OpenTelemetry` Bean, auto-registers `SdkTracerProvider`, `OtlpHttpSpanExporter`. Not included transitively — declare explicitly to enable |
 
 **What the Starter auto-configures** (from `io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter`):
 
@@ -102,9 +102,10 @@ All dependencies are declared in `pom.xml`. Below is a breakdown by functional g
 
 ### Optional Dependencies
 
-| Dependency                 | Purpose                            | Activation                                  |
-|----------------------------|------------------------------------|---------------------------------------------|
-| `micrometer-registry-otlp` | Export Micrometer metrics via OTLP | Declare explicitly in the project `pom.xml` |
+| Dependency                          | Purpose                            | Activation                                  |
+|-------------------------------------|------------------------------------|---------------------------------------------|
+| `opentelemetry-spring-boot-starter` | Spring Boot auto-configuration     | Declare explicitly in the project `pom.xml` |
+| `micrometer-registry-otlp`          | Export Micrometer metrics via OTLP | Declare explicitly in the project `pom.xml` |
 
 ---
 
@@ -165,13 +166,18 @@ java -javaagent:opentelemetry-javaagent.jar \
 
 **Steps**:
 
-1. **Add dependency** (just this module + BOM)
+1. **Dependencies**
+
+The starter is now optional — add both the tracing module and the starter explicitly:
 
 ```xml
-<!-- Includes opentelemetry-spring-boot-starter and all transitive deps -->
 <dependency>
     <groupId>com.richie.component</groupId>
     <artifactId>atlas-richie-component-tracing</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.opentelemetry.instrumentation</groupId>
+    <artifactId>opentelemetry-spring-boot-starter</artifactId>
 </dependency>
 ```
 

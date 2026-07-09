@@ -38,7 +38,7 @@ import java.util.function.Supplier;
  * </ul>
  *
  * <p><strong>异步任务必须显式传递租户上下文</strong>，否则业务方法会因上下文丢失而
- * 抛出 {@link com.richie.component.tenant.exception.BusinessException}。
+ * 抛出 {@link BusinessException}。
  * 推荐两种方式：</p>
  * <ol>
  *   <li>使用 {@link java.util.concurrent.StructuredTaskScope} 派生子任务 — ScopedValue 自动继承，
