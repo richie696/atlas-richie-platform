@@ -17,7 +17,9 @@
 
     <properties>
         <spring-cloud-stream-binder-kinesis.version>4.0.6</spring-cloud-stream-binder-kinesis.version>
-        <avro.version>1.11.4</avro.version>
+        <avro.version>1.12.1</avro.version>
+        <wire-runtime.version>6.3.0</wire-runtime.version>
+        <wire-runtime-jvm.version>6.4.5</wire-runtime-jvm.version>
     </properties>
 
     <dependencyManagement>
@@ -47,6 +49,10 @@
                     <groupId>com.google.protobuf</groupId>
                     <artifactId>protobuf-java</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.squareup.wire</groupId>
+                    <artifactId>wire-runtime</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -59,6 +65,16 @@
                     <artifactId>commons-compress</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.wire</groupId>
+            <artifactId>wire-runtime</artifactId>
+            <version>${wire-runtime.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.wire</groupId>
+            <artifactId>wire-runtime-jvm</artifactId>
+            <version>${wire-runtime-jvm.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
