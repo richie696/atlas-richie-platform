@@ -65,7 +65,7 @@ public class DataSourceHealthProbe {
         if (dynamicDataSource == null) {
             return;
         }
-        probeDataSource("shared", () -> dynamicDataSource.getSharedDataSource());
+        probeDataSource("shared", dynamicDataSource::getSharedDataSource);
         for (Map.Entry<String, DataSource> entry : dynamicDataSource.getTenantDataSources().entrySet()) {
             probeDataSource(entry.getKey(), entry::getValue);
         }
