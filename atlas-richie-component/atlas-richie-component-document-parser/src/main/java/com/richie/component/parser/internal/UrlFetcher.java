@@ -18,7 +18,6 @@ package com.richie.component.parser.internal;
 import com.richie.component.parser.ParserSource;
 import com.richie.component.parser.UrlFetchPolicy;
 import com.richie.component.parser.exception.DocumentParseException;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -161,34 +160,77 @@ public final class UrlFetcher {
     }
 
     /**
-     * 简易内网 IP 判断 — 覆盖 127 / 10 / 172.16-31 / 192.168 / 169.254 / ::1 / fc00::/7。
+     * 内网/保留 IP 判断 — 覆盖 RFC 1918 私网、RFC 4193 唯一本地地址、链路本地、回环及通配地址。
      * <p>
-     * 未实现完整 CIDR 校验,后续 phase 可基于 Guava InetAddresses 增强。
+     * 基于 CIDR 位掩码完成精确匹配,相比逐字节比较更易读且扩展性更好。
+     * 同时显式处理 IPv4-mapped IPv6(例如 {@code ::ffff:127.0.0.1}),
+     * 这类地址经 DNS 解析后以 16 字节 {@link java.net.Inet6Address} 形态返回,
+     * 旧版仅检查 {@code fc00::/7} 会漏判导致 SSRF 旁路。
+     * <p>
+     * 防御纵深建议:调用方 {@link UrlFetcher#resolveAndValidate(URI, UrlFetchPolicy)} 若启用严格字面量校验,
+     * 可前置 {@link com.google.common.net.InetAddresses#isInetAddress(String)} 阻断八进制/十六进制/前导零 SSRF 变形
+     * (如 {@code 0177.0.0.1} / {@code 0x7f.0.0.1} / {@code 127.000.000.001}),本方法不重复此校验。
+     *
+     * @author richie696
+     * @since 2026-07-09
      */
     static boolean isPrivateIp(InetAddress addr) {
         if (addr.isLoopbackAddress() || addr.isAnyLocalAddress() || addr.isLinkLocalAddress()) {
             return true;
         }
-        if (addr.isSiteLocalAddress()) {
-            return true;
-        }
         byte[] bytes = addr.getAddress();
         if (bytes.length == 4) {
-            // IPv4
-            int b0 = bytes[0] & 0xFF;
-            int b1 = bytes[1] & 0xFF;
-            if (b0 == 10) return true;                    // 10.0.0.0/8
-            if (b0 == 127) return true;                   // 127.0.0.0/8
-            if (b0 == 172 && b1 >= 16 && b1 <= 31) return true;  // 172.16.0.0/12
-            if (b0 == 192 && b1 == 168) return true;      // 192.168.0.0/16
-            return b0 == 169 && b1 == 254;      // 169.254.0.0/16
+            return isPrivateIpv4Int(ipv4BytesToInt(bytes, 0));
         }
         if (bytes.length == 16) {
-            // IPv6: ::1 / fc00::/7 (unique local) / fe80::/10 (link-local)
-            return (bytes[0] & 0xFE) == 0xFC;   // fc00::/7
-            // ::1 已由 isLoopbackAddress 覆盖,fe80::/10 已由 isLinkLocalAddress 覆盖
+            // fc00::/7 — RFC 4193 唯一本地地址(覆盖 fc00..fdff)
+            if ((bytes[0] & 0xFE) == 0xFC) {
+                return true;
+            }
+            // IPv4-mapped IPv6(::ffff:a.b.c.d) — 提取 IPv4 部分复用 RFC 1918 判定
+            if (isIpv4MappedIpv6(bytes)) {
+                return isPrivateIpv4Int(ipv4BytesToInt(bytes, 12));
+            }
+            return false;
         }
         return false;
+    }
+
+    private static boolean isPrivateIpv4Int(int addr) {
+        // 10.0.0.0/8
+        if ((addr & 0xFF000000) == 0x0A000000) {
+            return true;
+        }
+        // 127.0.0.0/8
+        if ((addr & 0xFF000000) == 0x7F000000) {
+            return true;
+        }
+        // 172.16.0.0/12
+        if ((addr & 0xFFF00000) == 0xAC100000) {
+            return true;
+        }
+        // 192.168.0.0/16
+        if ((addr & 0xFFFF0000) == 0xC0A80000) {
+            return true;
+        }
+        // 169.254.0.0/16
+        return (addr & 0xFFFF0000) == 0xA9FE0000;
+    }
+
+    private static int ipv4BytesToInt(byte[] b, int offset) {
+        return ((b[offset] & 0xFF) << 24)
+                | ((b[offset + 1] & 0xFF) << 16)
+                | ((b[offset + 2] & 0xFF) << 8)
+                |  (b[offset + 3] & 0xFF);
+    }
+
+    private static boolean isIpv4MappedIpv6(byte[] ipv6) {
+        for (int i = 0; i < 10; i++) {
+            if (ipv6[i] != 0) {
+                return false;
+            }
+        }
+        return (ipv6[10] & 0xFF) == 0xFF && (ipv6[11] & 0xFF) == 0xFF;
     }
 
     // ============ HEAD 协议层防线 2 ============
