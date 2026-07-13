@@ -26,9 +26,11 @@ import com.richie.component.http.core.SseListener;
 import tools.jackson.core.type.TypeReference;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -128,11 +130,27 @@ public class JdkHttpAdapter implements HttpClient {
 
         var headers = request.headers();
         if (headers != null) headers.forEach(builder::header);
-        var mime = request.contentTypeMime();
-        if (mime != null) builder.header("Content-Type", mime);
 
         var timeout = request.timeout();
         if (timeout != null) builder.timeout(timeout);
+
+        var multipartData = request.multipartData();
+        if (multipartData != null) {
+            String boundary = "----JdkHttpAdapter" + System.nanoTime();
+            builder.header("Content-Type", "multipart/form-data; boundary=" + boundary);
+            byte[] multipartBody = buildMultipartBody(boundary,
+                    request.multipartFieldName(), request.multipartFileName(), multipartData);
+            switch (request.method()) {
+                case POST:   builder.POST(BodyPublishers.ofByteArray(multipartBody)); break;
+                case PUT:    builder.PUT(BodyPublishers.ofByteArray(multipartBody)); break;
+                case DELETE: builder.method("DELETE", BodyPublishers.ofByteArray(multipartBody)); break;
+                default:     builder.method(request.method().name(), BodyPublishers.ofByteArray(multipartBody)); break;
+            }
+            return builder.build();
+        }
+
+        var mime = request.contentTypeMime();
+        if (mime != null) builder.header("Content-Type", mime);
 
         byte[] bodyBytes = bodyBytes(request);
         // DELETE 保留 body 能力，与其它 Provider 保持一致行为。
@@ -157,6 +175,30 @@ public class JdkHttpAdapter implements HttpClient {
 
     private HttpResponse toHttpResponse(java.net.http.HttpResponse<byte[]> raw) {
         return HttpResponse.of(raw.statusCode(), raw.headers().map(), raw.body());
+    }
+
+    /**
+     * 构建 multipart/form-data 请求体字节数组。
+     * <p>按 RFC 7578 组装单文件 multipart body，Content-Type 头已在调用方设置。
+     */
+    private static byte[] buildMultipartBody(String boundary, String fieldName, String fileName, InputStream data) {
+        try {
+            byte[] fileBytes = data.readAllBytes();
+            String header = "--" + boundary + "\r\n"
+                    + "Content-Disposition: form-data; name=\"" + fieldName
+                    + "\"; filename=\"" + fileName + "\"\r\n"
+                    + "Content-Type: application/octet-stream\r\n\r\n";
+            String footer = "\r\n--" + boundary + "--\r\n";
+            byte[] pre = header.getBytes(StandardCharsets.UTF_8);
+            byte[] post = footer.getBytes(StandardCharsets.UTF_8);
+            byte[] result = new byte[pre.length + fileBytes.length + post.length];
+            System.arraycopy(pre, 0, result, 0, pre.length);
+            System.arraycopy(fileBytes, 0, result, pre.length, fileBytes.length);
+            System.arraycopy(post, 0, result, pre.length + fileBytes.length, post.length);
+            return result;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to build multipart body", e);
+        }
     }
 
 }

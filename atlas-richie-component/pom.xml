@@ -74,6 +74,8 @@
         <module>atlas-richie-component-nats</module>
         <!-- 通用文档解析组件 (PDF / Word / Excel / PPT / ODF / TXT / Markdown) -->
         <module>atlas-richie-component-document-parser</module>
+        <!-- OCR 图像文字识别组件 -->
+        <module>atlas-richie-component-ocr</module>
     </modules>
 
 </project>

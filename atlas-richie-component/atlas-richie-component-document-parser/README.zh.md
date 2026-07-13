@@ -56,13 +56,13 @@
 
 **底层引擎**:
 
-| 引擎                                                 | 职责                                                   |
-|----------------------------------------------------|------------------------------------------------------|
-| Apache Tika 3.3.1(`tika-parsers-standard-package`) | PDF / Word / PPT / ODF / TXT / Markdown / HTML / XML |
+| 引擎                                               | 职责                                                        |
+|----------------------------------------------------|-------------------------------------------------------------|
+| Apache Tika 3.3.1(`tika-parsers-standard-package`) | PDF / Word / PPT / ODF / TXT / Markdown / HTML / XML        |
 | Apache Fesod `2.0.2-incubating`                    | Excel (`.xlsx` / `.xls` / `.ods`)、流式、单 sheet O(1) 内存 |
-| Apache PDFBox 3.0.7                                | PDF 文本抽取(经 Tika)                                     |
-| Apache POI 5.5.1                                   | Word / PPT / xlsx 图片                                 |
-| Jsoup 1.18.1                                       | Tika XHTML 输出中的 `<img>` 扫描                           |
+| Apache PDFBox 3.0.7                                | PDF 文本抽取(经 Tika)                                       |
+| Apache POI 5.5.1                                   | Word / PPT / xlsx 图片                                      |
+| Jsoup 1.18.1                                       | Tika XHTML 输出中的 `<img>` 扫描                            |
 
 **设计契约**: 所有实现细节位于 `internal/`。替换 Tika 或 Fesod 只触碰 `internal/`,对外 API 与 Spring 配置零变化。
 
@@ -123,24 +123,24 @@ com.richie.component.parser/
 
 ### 格式 → Parser 路由
 
-| 扩展名                            | Format 枚于                  | 路由到                                    | 原因                                                                                                                                               |
-|--------------------------------|----------------------------|----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| `.pdf`                         | `PDF`                      | `TikaDocumentParser`                   | 二进制 PDF，Tika + PDFBox                                                                                                                            |
-| `.docx`                        | `DOCX`                     | `TikaDocumentParser`                   | Word 2007+，Tika + POI                                                                                                                            |
-| `.doc`                         | `DOC`                      | `TikaDocumentParser`                   | 老版 Word，Tika + POI                                                                                                                               |
-| `.pptx`                        | `PPTX`                     | `TikaDocumentParser`                   | PPT 2007+，Tika + POI                                                                                                                             |
-| `.ppt`                         | `PPT`                      | `TikaDocumentParser`                   | 老版 PPT，Tika + POI                                                                                                                                |
-| `.xlsx`                        | `XLSX`                     | `FesodDocumentParser`                  | 现代 Excel，项目硬性要求走 Fesod                                                                                                                           |
-| `.xls`                         | `XLS`                      | `FesodDocumentParser`                  | 老版 Excel，项目硬性要求走 Fesod                                                                                                                           |
-| `.ods`                         | `ODS`                      | `FesodDocumentParser`                  | OpenDocument 表格，经 POI `WorkbookFactory` 自动识别                                                                                                     |
-| `.odt`                         | `ODT`                      | `TikaDocumentParser`                   | OpenDocument 文本，Tika 解析                                                                                                                          |
-| `.odp`                         | `ODP`                      | `TikaDocumentParser`                   | OpenDocument 演示，Tika 解析                                                                                                                          |
-| `.rtf`                         | `RTF`                      | `TikaDocumentParser`                   | 富文本格式，Tika                                                                                                                                       |
-| `.txt`                         | `TXT`                      | `TikaDocumentParser`                   | 纯文本，UTF-8 / BOM / 编码自动检测                                                                                                                         |
-| `.md` / `.markdown`            | `MD`                       | `TikaDocumentParser`                   | Markdown，优先走内置 fast-path                                                                                                                         |
-| `.html` / `.htm`               | `HTML`                     | `TikaDocumentParser`                   | HTML，以 XHTML 解析（Tika + Jsoup）                                                                                                                    |
-| `.xml`                         | `XML`                      | `TikaDocumentParser`                   | XML，Tika 解析                                                                                                                                      |
-| UNKNOWN                        | `UNKNOWN`                  | (抛 `FormatNotSupportedException`)      | 业务应提供有可识别扩展名的文件                                                                                                                                  |
+| 扩展名              | Format 枚于 | 路由到                             | 原因                                                 |
+|---------------------|-------------|------------------------------------|------------------------------------------------------|
+| `.pdf`              | `PDF`       | `TikaDocumentParser`               | 二进制 PDF，Tika + PDFBox                            |
+| `.docx`             | `DOCX`      | `TikaDocumentParser`               | Word 2007+，Tika + POI                               |
+| `.doc`              | `DOC`       | `TikaDocumentParser`               | 老版 Word，Tika + POI                                |
+| `.pptx`             | `PPTX`      | `TikaDocumentParser`               | PPT 2007+，Tika + POI                                |
+| `.ppt`              | `PPT`       | `TikaDocumentParser`               | 老版 PPT，Tika + POI                                 |
+| `.xlsx`             | `XLSX`      | `FesodDocumentParser`              | 现代 Excel，走 Fesod                                 |
+| `.xls`              | `XLS`       | `FesodDocumentParser`              | 老版 Excel，走 Fesod                                 |
+| `.ods`              | `ODS`       | `FesodDocumentParser`              | OpenDocument 表格，经 POI `WorkbookFactory` 自动识别 |
+| `.odt`              | `ODT`       | `TikaDocumentParser`               | OpenDocument 文本，Tika 解析                         |
+| `.odp`              | `ODP`       | `TikaDocumentParser`               | OpenDocument 演示，Tika 解析                         |
+| `.rtf`              | `RTF`       | `TikaDocumentParser`               | 富文本格式，Tika                                     |
+| `.txt`              | `TXT`       | `TikaDocumentParser`               | 纯文本，UTF-8 / BOM / 编码自动检测                   |
+| `.md` / `.markdown` | `MD`        | `TikaDocumentParser`               | Markdown，优先走内置 fast-path                       |
+| `.html` / `.htm`    | `HTML`      | `TikaDocumentParser`               | HTML，以 XHTML 解析（Tika + Jsoup）                  |
+| `.xml`              | `XML`       | `TikaDocumentParser`               | XML，Tika 解析                                       |
+| UNKNOWN             | `UNKNOWN`   | (抛 `FormatNotSupportedException`) | 业务应提供有可识别扩展名的文件                       |
 
 > **ODS 是 OpenDocument 中的例外**: `.ods` 走 `FesodDocumentParser`（流式、单 sheet O(1) 内存、Apache 治理），`.odt` / `.odp` 走 Tika。这条规则延续自"所有电子表格统一走 Fesod"的项目硬性要求，适用于 .xlsx / .xls / .ods 三种扩展。
 >

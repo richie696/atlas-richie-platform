@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.richie.component</groupId>
+        <artifactId>atlas-richie-component-dependencies</artifactId>
+        <version>${revision}</version>
+        <relativePath>../atlas-richie-component-dependencies/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>atlas-richie-component-ocr</artifactId>
+    <name>atlas-richie-component-ocr</name>
+    <description>OCR 通用组件 — 统一图像文字识别门面，屏蔽多 Provider 厂商差异</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>atlas-richie-component-ocr-core</module>
+        <module>atlas-richie-component-ocr-aliyun</module>
+        <module>atlas-richie-component-ocr-baidu</module>
+        <module>atlas-richie-component-ocr-paddle</module>
+        <module>atlas-richie-component-ocr-tesseract</module>
+        <module>atlas-richie-component-ocr-paddle-vl</module>
+        <module>atlas-richie-component-ocr-mineru</module>
+        <module>atlas-richie-component-ocr-tencent</module>
+        <module>atlas-richie-component-ocr-volcano</module>
+    </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

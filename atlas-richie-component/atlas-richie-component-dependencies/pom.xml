@@ -369,6 +369,58 @@
                 <artifactId>atlas-richie-component-document-parser</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
+            <!-- OCR 组件 -->
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-ocr</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-ocr-core</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-ocr-aliyun</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-ocr-baidu</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-ocr-paddle</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-ocr-tesseract</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-ocr-paddle-vl</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-ocr-mineru</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-ocr-extension</artifactId>
+                <version>${middle.platform.version}</version>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>com.richie.component</groupId>
+                <artifactId>atlas-richie-component-ocr-extension-redis</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
             <!-- Redis Stream 消息队列组件 -->
             <dependency>
                 <groupId>com.richie.component</groupId>

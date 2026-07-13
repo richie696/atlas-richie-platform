@@ -1,0 +1,142 @@
+# =============================================================
+# Atlas Richie OCR Component — application.yml 配置示例
+# =============================================================
+# 使用方式: 拷贝需要的片段到业务应用的 application.yml, 按需调整。
+# 设计原则: 单 vendor 模式 —— 同一部署只允许激活一个 OCR 引擎
+# (选型跟数据合规/成本/SLA 强相关, 是上线前一次性确定的事)。
+# =============================================================
+
+platform:
+  component:
+    ocr:
+      # -------------------------------------------------------------
+      # 主开关: 关闭后整个 OCR 组件不装配任何 Bean (默认 true)
+      # -------------------------------------------------------------
+      enabled: true
+
+      # -------------------------------------------------------------
+      # 当前激活的 vendor —— 决定哪个 vendor 模块的 AutoConfiguration 被激活
+      # 可选值: aliyun | baidu | paddle | tesseract | paddle-vl | mineru
+      # 未设置时 Registry 为空, 调用 OcrEngine.recognize() 抛 ProviderNotFound
+      # -------------------------------------------------------------
+      vendor: aliyun
+
+      # -------------------------------------------------------------
+      # 全局默认识别语言
+      # 业务侧 OcrOptions 不传 languages() 或传 Languages.AUTO 时使用本字段
+      # 可选值: AUTO / CHINESE_SIMPLIFIED_AND_ENGLISH / CHINESE_SIMPLIFIED /
+      #         ENGLISH / CHINESE_TRADITIONAL / JAPANESE / KOREAN /
+      #         DIGITS_ONLY / LATIN / ARABIC / RUSSIAN / HINDI / THAI /
+      #         VIETNAMESE / GREEK / TURKISH
+      # 多语言 vendor (Tesseract) 会拼接为 "jpn+eng" 等组合, 单语言 vendor
+      # (Baidu / Aliyun / Paddle / PaddleVl) 取首个语言.
+      # -------------------------------------------------------------
+      default-languages:
+        - CHINESE_SIMPLIFIED_AND_ENGLISH
+        # - ENGLISH
+        # - JAPANESE
+        # - ARABIC
+
+      # =============================================================
+      # 各 vendor 私有配置 (按需启用, vendor 必须已 import 对应实现包)
+      # =============================================================
+
+      # -------------------------------------------------------------
+      # 阿里云读光 (cloud / remote / synchronous)
+      # 依赖: com.atlas-richie.component:atlas-richie-component-ocr-aliyun
+      # -------------------------------------------------------------
+      aliyun:
+        endpoint: https://ocr-api.cn-shanghai.aliyuncs.com
+        timeout-ms: 30000
+        credentials:
+          app-code: ${ALIYUN_APP_CODE:}         # 阿里云市场版 APPCODE
+        vendor:
+          model: standard-form                  # standard-form | standard-ocr | advanced-ocr
+          feature: false                        # 是否启用 advanced 特性
+
+      # -------------------------------------------------------------
+      # 百度 OCR (cloud / remote / synchronous) — Phase B
+      # 依赖: com.atlas-richie.component:atlas-richie-component-ocr-baidu
+      # -------------------------------------------------------------
+      # baidu:
+      #   api-key: ${BAIDU_API_KEY:}
+      #   secret-key: ${BAIDU_SECRET_KEY:}
+      #   endpoint: https://aip.baidubce.com      # 默认
+      #   timeout-ms: 30000                       # 默认
+
+      # -------------------------------------------------------------
+      # PaddleOCR (local CPU / in-process / synchronous) — Phase B
+      # 依赖: com.atlas-richie.component:atlas-richie-component-ocr-paddle
+      # -------------------------------------------------------------
+      # paddle:
+      #   model-dir: /opt/paddle-ocr/models       # 必填
+      #   python-path: python3                    # 默认
+      #   timeout-ms: 60000                       # 默认
+
+      # -------------------------------------------------------------
+      # Tesseract (local CPU / in-process / synchronous) — Phase B
+      # 依赖: com.atlas-richie.component:atlas-richie-component-ocr-tesseract
+      # -------------------------------------------------------------
+      # tesseract:
+      #   tessdata-path: /usr/share/tesseract-ocr/4.00/tessdata   # 必填
+      #   languages: [chi_sim, eng]               # 默认
+      #   timeout-ms: 30000                       # 默认
+
+      # -------------------------------------------------------------
+      # PaddleOCR-VL (local GPU / sidecar / async) — Phase B-2
+      # 依赖: com.atlas-richie.component:atlas-richie-component-ocr-paddle-vl
+      # -------------------------------------------------------------
+      # paddle-vl:
+      #   grpc-endpoint: localhost:50051          # 默认
+      #   gpu-pool: 1                             # 默认 (VLM 显存贵)
+      #   timeout-ms: 120000                      # 默认 (VLM 慢)
+
+      # -------------------------------------------------------------
+      # MinerU (local GPU / remote-service / async) — Phase B-2
+      # 依赖: com.atlas-richie.component:atlas-richie-component-ocr-mineru
+      # -------------------------------------------------------------
+      # mineru:
+      #   endpoint: http://mineru.internal:8000   # 默认
+      #   api-key: ${MINERU_API_KEY:}
+      #   timeout-ms: 180000                      # 默认 (PDF 大)
+
+# =============================================================
+# 业务侧注入示例（L2 单 vendor 模式）
+# 业务侧直接 @Autowired 具体 vendor Bean，不走 OcrEngine/Registry。
+# =============================================================
+# @Service
+# @RequiredArgsConstructor
+# public class OcrBizService {
+#     private final AliyunOcrProvider ocrProvider;
+#
+#     public OcrResult recognize(byte[] imageData) {
+#         OcrOptions opts = OcrOptions.builder()
+#             .languages(Languages.CHINESE_SIMPLIFIED)              // 单语言
+#             .tableRecognition(true)
+#             .build();
+#         return ocrProvider.recognize(new OcrImage.Bytes(imageData), opts);
+#     }
+#
+#     public OcrResult recognizeMultiLang(byte[] imageData) {
+#         // 多语言 (Tesseract: jpn+eng; Baidu/Paddle 取首个)
+#         OcrOptions opts = OcrOptions.builder()
+#             .languages(Languages.JAPANESE, Languages.ENGLISH)
+#             .build();
+#         return ocrProvider.recognize(new OcrImage.Bytes(imageData), opts);
+#     }
+#
+#     public OcrResult recognizeUseGlobalDefault(byte[] imageData) {
+#         // 显式声明用 yml 的 default-languages 配置
+#         OcrOptions opts = OcrOptions.builder()
+#             .languages(Languages.AUTO)
+#             .build();
+#         return ocrProvider.recognize(new OcrImage.Bytes(imageData), opts);
+#     }
+# }
+#
+# --- 切换 vendor 的步骤 ---
+# 1. 替换 maven 依赖 (移除 aliyun 包, 引入新 vendor 包)
+# 2. 改 platform.component.ocr.vendor: <新 vendor 名>
+# 3. 替换 vendor 私有配置段 (aliyun: → baidu: / paddle: / ...)
+# 4. 重启应用
+# =============================================================

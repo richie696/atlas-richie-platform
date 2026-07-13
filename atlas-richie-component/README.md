@@ -32,16 +32,17 @@
 
 ## 🎯 Use Cases
 
-| Scenario                       | Problem                                                                                                 | Component Solution                                                                                                                        |
-|--------------------------------|---------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-| **Multi-environment storage**  | dev uses MinIO, prod uses Aliyun OSS, code is full of SDK calls                                         | `StorageEngine` unified interface, config-driven switching                                                                                |
-| **Message queue migration**    | migrating from Kafka to RocketMQ requires rewriting all producer/consumer code                          | `MessageService` unified interface, config-driven switching                                                                               |
-| **Vector store selection**     | unsure whether to choose Redis/Milvus/Qdrant, fear of vendor lock-in                                    | `VectorService` unified interface, switch anytime                                                                                         |
-| **Container-layer protection** | how to do rate limiting / circuit breaking / replay protection without deploying a gateway              | `web` component with 9 major interceptors, opt-in via pure config                                                                         |
-| **Multi-tenant onboarding**    | every business unit implements their own tenant isolation, reinventing the wheel                        | `tenant` component with 5 isolation modes, choose on demand                                                                               |
-| **OAuth authentication**       | build custom auth system vs. integrate Spring Authorization Server                                      | `oauth` component with OAuth 2.1 three modules (core/authz/dcr)                                                                           |
-| **Distributed tracing**        | OTel SDK version conflicts, cumbersome exporter configuration                                           | `tracing` component with unified version management + 4-scenario onboarding guide                                                         |
-| **Document ingestion (RAG)**   | PDF / DOCX / XLSX / PPTX / ODF mixed formats, brittle Tika / Fesod SDK calls, SSRF risk for remote URLs | `document-parser` component with single `DocumentReader` facade, three SSRF defenses, streaming `ParseEvent`, per-page / per-row segments |
+| Scenario                       | Problem                                                                                                 | Component Solution                                                                                                                                                                         |
+|--------------------------------|---------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Multi-environment storage**  | dev uses MinIO, prod uses Aliyun OSS, code is full of SDK calls                                         | `StorageEngine` unified interface, config-driven switching                                                                                                                                 |
+| **Message queue migration**    | migrating from Kafka to RocketMQ requires rewriting all producer/consumer code                          | `MessageService` unified interface, config-driven switching                                                                                                                                |
+| **Vector store selection**     | unsure whether to choose Redis/Milvus/Qdrant, fear of vendor lock-in                                    | `VectorService` unified interface, switch anytime                                                                                                                                          |
+| **Container-layer protection** | how to do rate limiting / circuit breaking / replay protection without deploying a gateway              | `web` component with 9 major interceptors, opt-in via pure config                                                                                                                          |
+| **Multi-tenant onboarding**    | every business unit implements their own tenant isolation, reinventing the wheel                        | `tenant` component with 5 isolation modes, choose on demand                                                                                                                                |
+| **OAuth authentication**       | build custom auth system vs. integrate Spring Authorization Server                                      | `oauth` component with OAuth 2.1 three modules (core/authz/dcr)                                                                                                                            |
+| **Distributed tracing**        | OTel SDK version conflicts, cumbersome exporter configuration                                           | `tracing` component with unified version management + 4-scenario onboarding guide                                                                                                          |
+| **Document ingestion (RAG)**   | PDF / DOCX / XLSX / PPTX / ODF mixed formats, brittle Tika / Fesod SDK calls, SSRF risk for remote URLs | `document-parser` component with single `DocumentReader` facade, three SSRF defenses, streaming `ParseEvent`, per-page / per-row segments                                                  |
+| **OCR vendor selection**       | need OCR but unsure whether to use Aliyun / Baidu / Paddle / Tesseract / VLM, vendor lock-in            | `ocr` component with single `OcrEngine` facade, 6 pluggable vendors (Aliyun/Baidu/Paddle/Tesseract/PaddleOCR-VL/MinerU), yaml-only switching, 16-language support, business event callback |
 
 ---
 
@@ -51,22 +52,23 @@
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'fontSize': '12px'}}}%%
-classDef biz_o fill:#f8bbd0,stroke:#c62828,color:#880e4f,stroke-width:2px
-classDef biz_s fill:#fce4ec,stroke:#c62828,color:#880e4f
-classDef biz_n fill:#ffffff,stroke:#c62828,color:#000
-classDef com_o fill:#90caf9,stroke:#1565c0,color:#0d47a1,stroke-width:2px
-classDef com_s fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
-classDef com_n fill:#ffffff,stroke:#1565c0,color:#000
-classDef dat_o fill:#a5d6a7,stroke:#2e7d32,color:#1b5e20,stroke-width:2px
-classDef dat_n fill:#ffffff,stroke:#2e7d32,color:#000
-classDef inf_o fill:#b39ddb,stroke:#5e35b1,color:#311b92,stroke-width:2px
-classDef inf_s fill:#ede7f6,stroke:#5e35b1,color:#311b92
-classDef inf_n fill:#ffffff,stroke:#5e35b1,color:#000
 
 graph TB
+  classDef biz_o fill:#f8bbd0,stroke:#c62828,color:#880e4f,stroke-width:2px
+  classDef biz_s fill:#fce4ec,stroke:#c62828,color:#880e4f
+  classDef biz_n fill:#ffffff,stroke:#c62828,color:#000
+  classDef com_o fill:#90caf9,stroke:#1565c0,color:#0d47a1,stroke-width:2px
+  classDef com_s fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
+  classDef com_n fill:#ffffff,stroke:#1565c0,color:#000
+  classDef dat_o fill:#a5d6a7,stroke:#2e7d32,color:#1b5e20,stroke-width:2px
+  classDef dat_n fill:#ffffff,stroke:#2e7d32,color:#000
+  classDef inf_o fill:#b39ddb,stroke:#5e35b1,color:#311b92,stroke-width:2px
+  classDef inf_s fill:#ede7f6,stroke:#5e35b1,color:#311b92
+  classDef inf_n fill:#ffffff,stroke:#5e35b1,color:#000
+
   class B biz_o
   class Bg1,Bg2 biz_s
-  class B1,B2,B3,B4,B5,B6 biz_n
+  class B1,B2,B3,B4,B5,B6,B7 biz_n
   class C com_o
   class Cg1,Cg2,Cg3 com_s
   class C1,C2,C3,C4,C5,C6,C7 com_n
@@ -89,6 +91,7 @@ graph TB
       direction LR
       B5[mongodb]
       B6[document-parser]
+      B7[ocr]
     end
   end
 
@@ -151,33 +154,34 @@ graph TB
 
 ### Component Landscape Table
 
-| Layer                    | Component           | One-line Positioning                                                                                               | Documentation                                              |
-|--------------------------|---------------------|--------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
-| 🛠️ Infrastructure       | **cache**           | Redis cache + data structures + distributed locks + L2 + performance guard                                         | [📖](./atlas-richie-component-cache/README.zh.md)          |
-|                          | **web**             | 9 cross-cutting value points in Servlet container layer (rate limit/circuit break/Hang detection/protection, etc.) | [📖](./atlas-richie-component-web/README.zh.md)            |
-|                          | **logging**         | AOP access logging + method tracing, multi-storage backends                                                        | [📖](./atlas-richie-component-logging/README.zh.md)        |
-|                          | **http**            | Unified HTTP client facade (OkHttp/Apache5/JDK/RestClient)                                                         | [📖](./atlas-richie-component-http/README.zh.md)           |
-|                          | **concurrency**     | JDK 25 structured concurrency + virtual thread high-frequency patterns                                             | [📖](./atlas-richie-component-concurrency/README.zh.md)    |
-|                          | **tracing**         | OpenTelemetry dependency management + 4-scenario onboarding guide                                                  | [📖](./atlas-richie-component-tracing/README.zh.md)        |
-|                          | **i18n**            | Resource file i18n + dictionary management + auto-injection                                                        | [📖](./atlas-richie-component-i18n/README.zh.md)           |
-|                          | **desensitize**     | Unified desensitization for API/log/audit/exception exits                                                          | [📖](./atlas-richie-component-desensitize/README.zh.md)    |
-|                          | **liquibase**       | Database migration management, multi-database + runtime validation                                                 | [📖](./atlas-richie-component-liquibase/README.zh.md)      |
-|                          | **dao**             | MyBatis Plus enhancements (pagination/multi-tenant/distributed ID/SQL monitoring)                                  | [📖](./atlas-richie-component-dao/README.zh.md)            |
-| 💾 Data Storage          | **storage**         | Unified object storage interface (S3/OSS/COS/MinIO etc. pluggable)                                                 | [📖](./atlas-richie-component-storage/README.zh.md)        |
-|                          | **vector**          | Unified vector storage and search (Redis/Milvus/Qdrant etc. pluggable)                                             | [📖](./atlas-richie-component-vector/README.zh.md)         |
-|                          | **mongodb**         | MongoDB Fluent API + cross-cutting annotations + observability + circuit-breaking fallback                         | [📖](./atlas-richie-component-mongodb/README.zh.md)        |
-| 📡 Service Communication | **messaging**       | Spring Cloud Stream unified messaging (Kafka/RabbitMQ/RocketMQ etc.)                                               | [📖](./atlas-richie-component-messaging/README.zh.md)      |
-|                          | **redis-streammq**  | Redis Stream reliable MQ (consumer group/retry/dead-letter/idempotency)                                            | [📖](./atlas-richie-component-redis-streammq/README.zh.md) |
-|                          | **mqtt**            | MQTT client (event-driven architecture + distributed tracing)                                                      | [📖](./atlas-richie-component-mqtt/README.zh.md)           |
-|                          | **nats**            | NATS message bus + JetStream + KV/Object Store + RPC                                                               | [📖](./atlas-richie-component-nats/README.zh.md)           |
-|                          | **grpc**            | Production-grade gRPC interceptor stack (auth/rate limit/tracing/metrics)                                          | [📖](./atlas-richie-component-grpc/README.zh.md)           |
-|                          | **microservice**    | OpenFeign/RestClient microservice call unified configuration                                                       | [📖](./atlas-richie-component-microservice/README.zh.md)   |
-|                          | **oauth**           | OAuth 2.1 authentication (core + authz + DCR three modules)                                                        | [📖](./atlas-richie-component-oauth/README.zh.md)          |
-| 🎯 Business Capability   | **statemachine**    | Lightweight state machine (Easy Rules + Redis persistence + Stream async sync)                                     | [📖](./atlas-richie-component-statemachine/README.zh.md)   |
-|                          | **ai**              | Unified AI model invocation (multi-provider pluggable)                                                             | [📖](./atlas-richie-component-ai/README.zh.md)             |
-|                          | **mfa**             | Multi-factor authentication (TOTP/SMS/email etc.)                                                                  | [📖](./atlas-richie-component-mfa/README.zh.md)            |
-|                          | **tenant**          | 5 multi-tenant isolation modes (SCHEMA/DATABASE/REDIS/...)                                                         | [📖](./atlas-richie-component-tenant/README.zh.md)         |
-|                          | **document-parser** | Unified document parsing (PDF / Word / Excel / PPT / ODF / TXT / Markdown), SSRF defense + streaming ParseEvent    | [📖](./atlas-richie-component-document-parser/README.md)   |
+| Layer                    | Component           | One-line Positioning                                                                                                                               | Documentation                                              |
+|--------------------------|---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
+| 🛠️ Infrastructure        | **cache**           | Redis cache + data structures + distributed locks + L2 + performance guard                                                                         | [📖](./atlas-richie-component-cache/README.zh.md)          |
+|                          | **web**             | 9 cross-cutting value points in Servlet container layer (rate limit/circuit break/Hang detection/protection, etc.)                                 | [📖](./atlas-richie-component-web/README.zh.md)            |
+|                          | **logging**         | AOP access logging + method tracing, multi-storage backends                                                                                        | [📖](./atlas-richie-component-logging/README.zh.md)        |
+|                          | **http**            | Unified HTTP client facade (OkHttp/Apache5/JDK/RestClient)                                                                                         | [📖](./atlas-richie-component-http/README.zh.md)           |
+|                          | **concurrency**     | JDK 25 structured concurrency + virtual thread high-frequency patterns                                                                             | [📖](./atlas-richie-component-concurrency/README.zh.md)    |
+|                          | **tracing**         | OpenTelemetry dependency management + 4-scenario onboarding guide                                                                                  | [📖](./atlas-richie-component-tracing/README.zh.md)        |
+|                          | **i18n**            | Resource file i18n + dictionary management + auto-injection                                                                                        | [📖](./atlas-richie-component-i18n/README.zh.md)           |
+|                          | **desensitize**     | Unified desensitization for API/log/audit/exception exits                                                                                          | [📖](./atlas-richie-component-desensitize/README.zh.md)    |
+|                          | **liquibase**       | Database migration management, multi-database + runtime validation                                                                                 | [📖](./atlas-richie-component-liquibase/README.zh.md)      |
+|                          | **dao**             | MyBatis Plus enhancements (pagination/multi-tenant/distributed ID/SQL monitoring)                                                                  | [📖](./atlas-richie-component-dao/README.zh.md)            |
+| 💾 Data Storage          | **storage**         | Unified object storage interface (S3/OSS/COS/MinIO etc. pluggable)                                                                                 | [📖](./atlas-richie-component-storage/README.zh.md)        |
+|                          | **vector**          | Unified vector storage and search (Redis/Milvus/Qdrant etc. pluggable)                                                                             | [📖](./atlas-richie-component-vector/README.zh.md)         |
+|                          | **mongodb**         | MongoDB Fluent API + cross-cutting annotations + observability + circuit-breaking fallback                                                         | [📖](./atlas-richie-component-mongodb/README.zh.md)        |
+| 📡 Service Communication | **messaging**       | Spring Cloud Stream unified messaging (Kafka/RabbitMQ/RocketMQ etc.)                                                                               | [📖](./atlas-richie-component-messaging/README.zh.md)      |
+|                          | **redis-streammq**  | Redis Stream reliable MQ (consumer group/retry/dead-letter/idempotency)                                                                            | [📖](./atlas-richie-component-redis-streammq/README.zh.md) |
+|                          | **mqtt**            | MQTT client (event-driven architecture + distributed tracing)                                                                                      | [📖](./atlas-richie-component-mqtt/README.zh.md)           |
+|                          | **nats**            | NATS message bus + JetStream + KV/Object Store + RPC                                                                                               | [📖](./atlas-richie-component-nats/README.zh.md)           |
+|                          | **grpc**            | Production-grade gRPC interceptor stack (auth/rate limit/tracing/metrics)                                                                          | [📖](./atlas-richie-component-grpc/README.zh.md)           |
+|                          | **microservice**    | OpenFeign/RestClient microservice call unified configuration                                                                                       | [📖](./atlas-richie-component-microservice/README.zh.md)   |
+|                          | **oauth**           | OAuth 2.1 authentication (core + authz + DCR three modules)                                                                                        | [📖](./atlas-richie-component-oauth/README.zh.md)          |
+| 🎯 Business Capability   | **statemachine**    | Lightweight state machine (Easy Rules + Redis persistence + Stream async sync)                                                                     | [📖](./atlas-richie-component-statemachine/README.zh.md)   |
+|                          | **ai**              | Unified AI model invocation (multi-provider pluggable)                                                                                             | [📖](./atlas-richie-component-ai/README.zh.md)             |
+|                          | **mfa**             | Multi-factor authentication (TOTP/SMS/email etc.)                                                                                                  | [📖](./atlas-richie-component-mfa/README.zh.md)            |
+|                          | **tenant**          | 5 multi-tenant isolation modes (SCHEMA/DATABASE/REDIS/...)                                                                                         | [📖](./atlas-richie-component-tenant/README.zh.md)         |
+|                          | **document-parser** | Unified document parsing (PDF / Word / Excel / PPT / ODF / TXT / Markdown), SSRF defense + streaming ParseEvent                                    | [📖](./atlas-richie-component-document-parser/README.md)   |
+|                          | **ocr**             | Unified OCR facade (6 vendors pluggable: Aliyun / Baidu / Paddle / Tesseract / PaddleOCR-VL / MinerU), multi-language    + business event listener | [📖](./atlas-richie-component-ocr/README.md)               |
 
 ---
 
