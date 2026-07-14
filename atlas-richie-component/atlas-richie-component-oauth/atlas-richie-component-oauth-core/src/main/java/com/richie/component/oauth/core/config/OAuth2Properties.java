@@ -74,7 +74,14 @@ public class OAuth2Properties {
      * 配置后，OAuth2.0 错误响应中将包含 {@code error_uri} 字段指向具体的错误文档页面。
      * 未配置时，错误响应中不包含 {@code error_uri} 字段。
      * <p>
-     * 格式示例：{@code https://docs.example.com/oauth2/errors#}
+     * <p>
+     * 示例配置：
+     * <pre>{@code
+     * platform:
+     *   component:
+     *     oauth:
+     *       error-doc-base-uri: "https://docs.example.com/oauth2/errors#"
+     * }</pre>
      */
     private String errorDocsBaseUri;
 }
