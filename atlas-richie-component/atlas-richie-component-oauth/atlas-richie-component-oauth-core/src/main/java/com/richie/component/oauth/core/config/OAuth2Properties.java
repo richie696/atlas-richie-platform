@@ -67,4 +67,14 @@ public class OAuth2Properties {
      * 计算公式：base = max(24 / tokenValidDuration, 1)，maxIssuesPerDay = base + 2
      */
     private boolean enableDailyIssueLimit = true;
+
+    /**
+     * OAuth2.0 错误文档基础 URI（可选）
+     * <p>
+     * 配置后，OAuth2.0 错误响应中将包含 {@code error_uri} 字段指向具体的错误文档页面。
+     * 未配置时，错误响应中不包含 {@code error_uri} 字段。
+     * <p>
+     * 格式示例：{@code https://docs.example.com/oauth2/errors#}
+     */
+    private String errorDocsBaseUri;
 }

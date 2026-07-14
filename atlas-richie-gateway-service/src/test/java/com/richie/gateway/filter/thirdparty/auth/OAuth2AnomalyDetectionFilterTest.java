@@ -16,11 +16,11 @@
 package com.richie.gateway.filter.thirdparty.auth;
 
 import com.richie.component.oauth.core.ClientRegistry;
+import com.richie.component.oauth.core.config.OAuth2Properties;
 import com.richie.gateway.config.GatewayConfig;
 import com.richie.gateway.config.OAuth2AnomalyDetectionConfig;
 import com.richie.component.i18n.resolver.I18nResolver;
 import com.richie.gateway.filter.common.security.AnomalyDetectionFilter;
-import com.richie.gateway.filter.thirdparty.auth.OAuth2AnomalyDetectionFilter;
 import com.richie.gateway.service.AuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -47,6 +47,9 @@ class OAuth2AnomalyDetectionFilterTest {
     private GatewayConfig gatewayConfig;
 
     @Mock
+    private OAuth2Properties oAuth2Properties;
+
+    @Mock
     private I18nResolver i18nResolver;
 
     @Mock
@@ -69,7 +72,8 @@ class OAuth2AnomalyDetectionFilterTest {
     @BeforeEach
     void setUp() {
         oauth2AnomalyDetectionFilter = new OAuth2AnomalyDetectionFilter(
-                gatewayConfig, i18nResolver, clientRegistry, auditService, detectionConfig, commonAnomalyDetectionFilter);
+                gatewayConfig, i18nResolver, clientRegistry, auditService, detectionConfig,
+                commonAnomalyDetectionFilter, oAuth2Properties);
         lenient().when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
     }
 

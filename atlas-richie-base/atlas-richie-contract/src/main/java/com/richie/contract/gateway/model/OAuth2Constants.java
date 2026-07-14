@@ -188,10 +188,4 @@ public interface OAuth2Constants {
      */
     long DEFAULT_REFRESH_TOKEN_EXPIRES_IN = 2592000L;
 
-    // ==================== 错误文档 URI ====================
-
-    /**
-     * OAuth2.0 错误文档基础 URI
-     */
-    String ERROR_DOCS_BASE_URI = "https://docs.richie696.cn/oauth2/errors#";
 }

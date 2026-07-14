@@ -56,6 +56,9 @@ class InterfaceAuthFilterTest {
     private TokenEndpoint tokenEndpoint;
 
     @Mock
+    private OAuth2Properties oAuth2Properties;
+
+    @Mock
     private AuditService auditService;
 
     @Mock
@@ -68,7 +71,7 @@ class InterfaceAuthFilterTest {
 
     @BeforeEach
     void setUp() {
-        interfaceAuthFilter = new InterfaceAuthFilter(gatewayConfig, i18nResolver, tokenEndpoint, auditService, scopeResolver);
+        interfaceAuthFilter = new InterfaceAuthFilter(gatewayConfig, i18nResolver, tokenEndpoint, auditService, scopeResolver, oAuth2Properties);
         lenient().when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
     }
 

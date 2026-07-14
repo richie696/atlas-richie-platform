@@ -19,6 +19,7 @@ import com.richie.component.cache.GlobalCache;
 import com.richie.component.i18n.resolver.I18nResolver;
 import com.richie.component.oauth.core.ScopeResolver;
 import com.richie.component.oauth.core.TokenEndpoint;
+import com.richie.component.oauth.core.config.OAuth2Properties;
 import com.richie.component.oauth.core.config.OAuth2RedisKey;
 import com.richie.contract.constant.GlobalConstants;
 import com.richie.contract.gateway.model.OAuth2Constants;
@@ -40,6 +41,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -69,21 +71,24 @@ public class InterfaceAuthFilter extends AbstractBaseFilter {
     private final TokenEndpoint tokenEndpoint;
     private final AuditService auditService;
     private final ScopeResolver scopeResolver;
+    private final OAuth2Properties oauth2Properties;
 
     /**
      * 构造函数
      *
-     * @param config         网关配置
-     * @param i18n           国际化解析器
-     * @param tokenEndpoint   Token 端点
-     * @param auditService   审计服务
-     * @param scopeResolver   Scope 权限解析器
+     * @param config           网关配置
+     * @param i18n             国际化解析器
+     * @param tokenEndpoint     Token 端点
+     * @param auditService     审计服务
+     * @param scopeResolver     Scope 权限解析器
+     * @param oauth2Properties  OAuth2 组件配置
      */
-    public InterfaceAuthFilter(GatewayConfig config, I18nResolver i18n, TokenEndpoint tokenEndpoint, AuditService auditService, ScopeResolver scopeResolver) {
+    public InterfaceAuthFilter(GatewayConfig config, I18nResolver i18n, TokenEndpoint tokenEndpoint, AuditService auditService, ScopeResolver scopeResolver, OAuth2Properties oauth2Properties) {
         super(config, i18n);
         this.tokenEndpoint = tokenEndpoint;
         this.auditService = auditService;
         this.scopeResolver = scopeResolver;
+        this.oauth2Properties = oauth2Properties;
     }
 
     /**
@@ -298,11 +303,19 @@ public class InterfaceAuthFilter extends AbstractBaseFilter {
         response.setStatusCode(HttpStatus.UNAUTHORIZED);
         response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
 
-        String errorJson = String.format(
-                "{\"error\":\"%s\",\"error_description\":\"%s\",\"error_uri\":\"%s%s\"}",
-                error, errorDescription, OAuth2Constants.ERROR_DOCS_BASE_URI, error);
+        String errorDocsBaseUri = oauth2Properties.getErrorDocsBaseUri();
+        String errorJson;
+        if (StringUtils.isNotBlank(errorDocsBaseUri)) {
+            errorJson = String.format(
+                    "{\"error\":\"%s\",\"error_description\":\"%s\",\"error_uri\":\"%s%s\"}",
+                    error, errorDescription, errorDocsBaseUri, error);
+        } else {
+            errorJson = String.format(
+                    "{\"error\":\"%s\",\"error_description\":\"%s\"}",
+                    error, errorDescription);
+        }
 
-        byte[] bytes = errorJson.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] bytes = errorJson.getBytes(StandardCharsets.UTF_8);
         return response.writeWith(Mono.just(response.bufferFactory().wrap(bytes)));
     }
 

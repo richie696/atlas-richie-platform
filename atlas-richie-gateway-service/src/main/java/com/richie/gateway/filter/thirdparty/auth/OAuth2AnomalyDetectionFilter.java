@@ -18,6 +18,7 @@ package com.richie.gateway.filter.thirdparty.auth;
 import com.richie.component.cache.GlobalCache;
 import com.richie.component.i18n.resolver.I18nResolver;
 import com.richie.component.oauth.core.ClientRegistry;
+import com.richie.component.oauth.core.config.OAuth2Properties;
 import com.richie.component.oauth.core.config.OAuth2RedisKey;
 import com.richie.component.oauth.core.model.ClientConfig;
 import com.richie.context.utils.spring.JwtUtils;
@@ -83,6 +84,7 @@ public class OAuth2AnomalyDetectionFilter extends AbstractBaseFilter {
     private final AuditService auditService;
     private final OAuth2AnomalyDetectionConfig detectionConfig;
     private final AnomalyDetectionFilter commonAnomalyDetectionFilter;
+    private final OAuth2Properties oauth2Properties;
 
     /**
      * 构造函数
@@ -93,17 +95,20 @@ public class OAuth2AnomalyDetectionFilter extends AbstractBaseFilter {
      * @param auditService                 审计服务
      * @param detectionConfig              OAuth2.0 专属异常检测配置
      * @param commonAnomalyDetectionFilter  通用异常检测过滤器
+     * @param oauth2Properties             OAuth2 组件配置
      */
     public OAuth2AnomalyDetectionFilter(GatewayConfig config, I18nResolver i18n,
                                         ClientRegistry clientRegistry,
                                         AuditService auditService,
                                         OAuth2AnomalyDetectionConfig detectionConfig,
-                                        AnomalyDetectionFilter commonAnomalyDetectionFilter) {
+                                        AnomalyDetectionFilter commonAnomalyDetectionFilter,
+                                        OAuth2Properties oauth2Properties) {
         super(config, i18n);
         this.clientRegistry = clientRegistry;
         this.auditService = auditService;
         this.detectionConfig = detectionConfig;
         this.commonAnomalyDetectionFilter = commonAnomalyDetectionFilter;
+        this.oauth2Properties = oauth2Properties;
     }
 
     @Override
@@ -523,9 +528,17 @@ public class OAuth2AnomalyDetectionFilter extends AbstractBaseFilter {
         response.setStatusCode(HttpStatus.TOO_MANY_REQUESTS); // 429
         response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
 
-        String errorJson = String.format(
-                "{\"error\":\"%s\",\"error_description\":\"%s\",\"error_uri\":\"%s%s\"}",
-                error, errorDescription, OAuth2Constants.ERROR_DOCS_BASE_URI, error);
+        String errorDocsBaseUri = oauth2Properties.getErrorDocsBaseUri();
+        String errorJson;
+        if (StringUtils.isNotBlank(errorDocsBaseUri)) {
+            errorJson = String.format(
+                    "{\"error\":\"%s\",\"error_description\":\"%s\",\"error_uri\":\"%s%s\"}",
+                    error, errorDescription, errorDocsBaseUri, error);
+        } else {
+            errorJson = String.format(
+                    "{\"error\":\"%s\",\"error_description\":\"%s\"}",
+                    error, errorDescription);
+        }
 
         byte[] bytes = errorJson.getBytes(StandardCharsets.UTF_8);
         return response.writeWith(Mono.just(response.bufferFactory().wrap(bytes)));
