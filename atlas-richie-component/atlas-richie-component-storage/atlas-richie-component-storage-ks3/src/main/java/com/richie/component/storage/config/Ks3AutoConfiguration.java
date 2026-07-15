@@ -24,7 +24,7 @@ import com.ksyun.ks3.service.Ks3ClientConfig;
 import com.ksyun.ks3.service.request.GetObjectRequest;
 import com.ksyun.ks3.service.request.PutObjectRequest;
 import com.richie.component.storage.bean.ObjectConfig;
-import com.richie.component.storage.core.StorageEngineProvider;
+import com.richie.component.storage.config.StorageEngineProvider;
 import com.richie.component.storage.exception.StorageException;
 import com.richie.component.storage.support.ObjectStorageStartupProbe;
 import lombok.extern.slf4j.Slf4j;

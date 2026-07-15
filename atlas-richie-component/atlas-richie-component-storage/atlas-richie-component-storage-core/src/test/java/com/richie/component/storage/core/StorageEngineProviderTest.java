@@ -15,6 +15,7 @@
  */
 package com.richie.component.storage.core;
 
+import com.richie.component.storage.config.StorageEngineProvider;
 import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.enums.StorageEngineEnum;
 import org.junit.jupiter.api.Test;

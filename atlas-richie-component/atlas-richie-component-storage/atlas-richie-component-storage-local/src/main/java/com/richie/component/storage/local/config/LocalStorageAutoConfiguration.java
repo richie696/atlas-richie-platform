@@ -17,7 +17,7 @@ package com.richie.component.storage.local.config;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.richie.component.liquibase.migration.ChangeLogRegistry;
-import com.richie.component.storage.core.StorageEngineProvider;
+import com.richie.component.storage.config.StorageEngineProvider;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

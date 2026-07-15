@@ -20,7 +20,7 @@ import com.obs.services.exception.ObsException;
 import com.obs.services.model.DeleteObjectRequest;
 import com.obs.services.model.PutObjectRequest;
 import com.richie.component.storage.bean.ObjectConfig;
-import com.richie.component.storage.core.StorageEngineProvider;
+import com.richie.component.storage.config.StorageEngineProvider;
 import com.richie.component.storage.exception.StorageException;
 import com.richie.component.storage.support.ObjectStorageStartupProbe;
 import lombok.extern.slf4j.Slf4j;

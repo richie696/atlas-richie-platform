@@ -15,7 +15,7 @@
  */
 package com.richie.component.storage.config;
 
-import com.richie.component.storage.core.StorageEngineProvider;
+import com.richie.component.storage.config.StorageEngineProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.codelibs.jcifs.smb.CIFSContext;
 import org.codelibs.jcifs.smb.CIFSException;

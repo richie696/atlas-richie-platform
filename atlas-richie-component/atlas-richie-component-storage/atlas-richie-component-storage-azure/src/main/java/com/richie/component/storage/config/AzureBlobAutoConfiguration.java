@@ -18,7 +18,7 @@ package com.richie.component.storage.config;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.richie.component.storage.bean.ObjectConfig;
-import com.richie.component.storage.core.StorageEngineProvider;
+import com.richie.component.storage.config.StorageEngineProvider;
 import com.richie.component.storage.exception.StorageException;
 import com.richie.component.storage.support.ObjectStorageStartupProbe;
 import lombok.NoArgsConstructor;

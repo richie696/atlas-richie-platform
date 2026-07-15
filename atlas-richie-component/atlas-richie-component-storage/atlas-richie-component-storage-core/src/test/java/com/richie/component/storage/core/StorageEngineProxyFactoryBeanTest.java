@@ -20,6 +20,7 @@ import com.richie.component.storage.bean.DirectUploadPolicy;
 import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.UploadResponse;
 import com.richie.component.storage.bean.image.ImageOptions;
+import com.richie.component.storage.config.StorageEngineProxyFactoryBean;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.FactoryBean;
 

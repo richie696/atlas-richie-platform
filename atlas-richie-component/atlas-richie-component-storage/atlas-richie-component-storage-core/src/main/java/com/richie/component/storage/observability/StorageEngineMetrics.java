@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *   <li>{@link #switchCount(StorageEngineEnum)} — 运行时切换累计次数</li>
  *   <li>{@link #registerCount(StorageEngineEnum)} — 启动时注册累计次数</li>
  * </ul>
- * 由 {@link com.richie.component.storage.core.StorageEngineRegistry} 在切换/注册时递增。
+ * 由 {@link com.richie.component.storage.config.StorageEngineRegistry} 在切换/注册时递增。
  * 监控侧通过 {@link StorageMetricsBinder} 将这些原子计数器绑定到 Micrometer。
  *
  * @author richie696

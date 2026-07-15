@@ -18,7 +18,7 @@ package com.richie.component.storage.config;
 import com.richie.component.storage.bean.SftpConfig;
 import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.core.StorageEngine;
-import com.richie.component.storage.core.StorageEngineProvider;
+import com.richie.component.storage.config.StorageEngineProvider;
 import com.richie.component.storage.core.impl.SftpStorageEngine;
 import com.richie.component.storage.enums.StorageEngineEnum;
 import com.richie.component.storage.pool.SftpSessionPool;

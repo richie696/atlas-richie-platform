@@ -18,7 +18,7 @@ package com.richie.component.storage.config;
 import com.richie.component.storage.bean.ObjectConfig;
 import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.core.StorageEngine;
-import com.richie.component.storage.core.StorageEngineProvider;
+import com.richie.component.storage.config.StorageEngineProvider;
 import com.richie.component.storage.core.impl.TosStorageEngine;
 import com.richie.component.storage.enums.StorageEngineEnum;
 import com.volcengine.tos.TOSClientConfiguration;

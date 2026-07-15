@@ -15,7 +15,7 @@
  */
 package com.richie.component.storage.observability;
 
-import com.richie.component.storage.core.StorageEngineRegistry;
+import com.richie.component.storage.config.StorageEngineRegistry;
 import com.richie.component.storage.enums.StorageEngineEnum;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;

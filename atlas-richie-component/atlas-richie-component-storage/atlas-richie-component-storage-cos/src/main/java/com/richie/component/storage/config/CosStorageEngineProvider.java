@@ -23,7 +23,7 @@ import com.qcloud.cos.region.Region;
 import com.richie.component.storage.bean.ObjectConfig;
 import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.core.StorageEngine;
-import com.richie.component.storage.core.StorageEngineProvider;
+import com.richie.component.storage.config.StorageEngineProvider;
 import com.richie.component.storage.core.impl.CosStorageEngine;
 import com.richie.component.storage.enums.StorageEngineEnum;
 import lombok.extern.slf4j.Slf4j;

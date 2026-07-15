@@ -16,7 +16,7 @@
 package com.richie.component.storage.observability;
 
 import com.richie.component.storage.core.StorageEngine;
-import com.richie.component.storage.core.StorageEngineRegistry;
+import com.richie.component.storage.config.StorageEngineRegistry;
 import com.richie.component.storage.enums.StorageEngineEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

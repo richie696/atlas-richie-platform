@@ -19,7 +19,7 @@ import com.richie.component.storage.bean.LocalConfig;
 import com.richie.component.storage.config.ConfigValidation;
 import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.core.StorageEngine;
-import com.richie.component.storage.core.StorageEngineProvider;
+import com.richie.component.storage.config.StorageEngineProvider;
 import com.richie.component.storage.local.core.impl.LocalStorageEngine;
 import com.richie.component.storage.enums.StorageEngineEnum;
 import com.richie.component.storage.local.repository.mapper.FileMetadataMapper;

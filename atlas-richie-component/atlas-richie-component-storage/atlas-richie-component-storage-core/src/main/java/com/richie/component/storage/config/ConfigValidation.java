@@ -20,7 +20,7 @@ import java.util.Objects;
 /**
  * 配置参数校验工具
  * <p>
- * 各引擎 {@link com.richie.component.storage.core.StorageEngineProvider} 实现
+ * 各引擎 {@link com.richie.component.storage.config.StorageEngineProvider} 实现
  * {@code validate(StorageProperties)} 时重复检查"字段非空"。
  * 本工具统一这些样板代码，错误信息保持原格式（含字段名）以兼容现有测试断言。
  *
