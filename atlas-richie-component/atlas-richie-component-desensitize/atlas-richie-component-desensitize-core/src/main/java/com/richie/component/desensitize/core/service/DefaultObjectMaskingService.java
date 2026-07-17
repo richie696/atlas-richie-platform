@@ -52,14 +52,11 @@ public class DefaultObjectMaskingService implements ObjectMaskingService {
 
     /**
      * {@inheritDoc}
+     *
+     * @param map 原始 Map
+     * @return 返回脱敏后的字符串
      */
     @Override
-    /**
-     * toSafeString。
-     * @param Map<String 参数
-     * @param map 参数
-     * @return 处理结果
-     */
     public String toSafeString(Map<String, ?> map) {
         return safeLogSerializer.toSafeString(map);
     }

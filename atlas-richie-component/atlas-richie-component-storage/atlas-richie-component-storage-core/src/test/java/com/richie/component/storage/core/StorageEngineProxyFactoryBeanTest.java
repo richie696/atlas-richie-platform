@@ -21,12 +21,12 @@ import com.richie.component.storage.bean.DownloadResponse;
 import com.richie.component.storage.bean.UploadResponse;
 import com.richie.component.storage.bean.image.ImageOptions;
 import com.richie.component.storage.config.StorageEngineProxyFactoryBean;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.FactoryBean;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.Collection;
 import java.util.Map;
 import tools.jackson.core.type.TypeReference;
@@ -213,57 +213,57 @@ class StorageEngineProxyFactoryBeanTest {
         int existsCount;
 
         @Override
-        public UploadResponse putData(String key, Map<?, ?> collection) {
+        public UploadResponse putData(@NonNull String key, @NonNull Map<?, ?> collection) {
             return null;
         }
 
         @Override
-        public UploadResponse putData(String key, Collection<?> collection) {
+        public UploadResponse putData(@NonNull String key, @NonNull Collection<?> collection) {
             return null;
         }
 
         @Override
-        public UploadResponse putData(String key, Object object) {
+        public UploadResponse putData(@NonNull String key, @NonNull Object object) {
             return null;
         }
 
         @Override
-        public UploadResponse putObject(String key, File file) {
+        public UploadResponse putObject(@NonNull String key, @NonNull File file) {
             return null;
         }
 
         @Override
-        public UploadResponse putObject(String key, InputStream inputStream) {
+        public UploadResponse putObject(@NonNull String key, @NonNull InputStream inputStream) {
             return null;
         }
 
         @Override
-        public UploadResponse putImage(String key, File file, ImageOptions options) {
+        public UploadResponse putImage(@NonNull String key, @NonNull File file, ImageOptions options) {
             return null;
         }
 
         @Override
-        public UploadResponse putImage(String key, InputStream inputStream, ImageOptions options) {
+        public UploadResponse putImage(@NonNull String key, @NonNull InputStream inputStream, ImageOptions options) {
             return null;
         }
 
         @Override
-        public <T> DownloadResponse<T> getData(String key, TypeReference<T> typeReference) {
+        public <T> DownloadResponse<T> getData(@NonNull String key, @NonNull TypeReference<T> typeReference) {
             return null;
         }
 
         @Override
-        public DownloadResponse<byte[]> getObject(String key, File targetPath, boolean returnData) {
+        public DownloadResponse<byte[]> getObject(@NonNull String key, @NonNull File targetPath, boolean returnData) {
             return null;
         }
 
         @Override
-        public DownloadResponse<byte[]> getResumableObject(String key, String targetPath, boolean returnData) {
+        public DownloadResponse<byte[]> getResumableObject(@NonNull String key, @NonNull String targetPath, boolean returnData) {
             return null;
         }
 
         @Override
-        public boolean existsObject(String key) {
+        public boolean existsObject(@NonNull String key) {
             this.lastExistsKey = key;
             this.existsCount++;
             return true;
@@ -281,57 +281,57 @@ class StorageEngineProxyFactoryBeanTest {
         }
 
         @Override
-        public UploadResponse putData(String key, Map<?, ?> collection) {
+        public UploadResponse putData(@NonNull String key, @NonNull Map<?, ?> collection) {
             throw toThrow;
         }
 
         @Override
-        public UploadResponse putData(String key, Collection<?> collection) {
+        public UploadResponse putData(@NonNull String key, @NonNull Collection<?> collection) {
             throw toThrow;
         }
 
         @Override
-        public UploadResponse putData(String key, Object object) {
+        public UploadResponse putData(@NonNull String key, @NonNull Object object) {
             throw toThrow;
         }
 
         @Override
-        public UploadResponse putObject(String key, File file) {
+        public UploadResponse putObject(@NonNull String key, @NonNull File file) {
             throw toThrow;
         }
 
         @Override
-        public UploadResponse putObject(String key, InputStream inputStream) {
+        public UploadResponse putObject(@NonNull String key, @NonNull InputStream inputStream) {
             throw toThrow;
         }
 
         @Override
-        public UploadResponse putImage(String key, File file, ImageOptions options) {
+        public UploadResponse putImage(@NonNull String key, @NonNull File file, ImageOptions options) {
             throw toThrow;
         }
 
         @Override
-        public UploadResponse putImage(String key, InputStream inputStream, ImageOptions options) {
+        public UploadResponse putImage(@NonNull String key, @NonNull InputStream inputStream, ImageOptions options) {
             throw toThrow;
         }
 
         @Override
-        public <T> DownloadResponse<T> getData(String key, TypeReference<T> typeReference) {
+        public <T> DownloadResponse<T> getData(@NonNull String key, @NonNull TypeReference<T> typeReference) {
             throw toThrow;
         }
 
         @Override
-        public DownloadResponse<byte[]> getObject(String key, File targetPath, boolean returnData) {
+        public DownloadResponse<byte[]> getObject(@NonNull String key, @NonNull File targetPath, boolean returnData) {
             throw toThrow;
         }
 
         @Override
-        public DownloadResponse<byte[]> getResumableObject(String key, String targetPath, boolean returnData) {
+        public DownloadResponse<byte[]> getResumableObject(@NonNull String key, @NonNull String targetPath, boolean returnData) {
             throw toThrow;
         }
 
         @Override
-        public boolean existsObject(String key) {
+        public boolean existsObject(@NonNull String key) {
             throw toThrow;
         }
     }

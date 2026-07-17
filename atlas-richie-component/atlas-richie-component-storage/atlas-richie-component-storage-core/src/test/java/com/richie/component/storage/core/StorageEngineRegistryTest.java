@@ -20,6 +20,7 @@ import com.richie.component.storage.config.StorageEngineRegistry;
 import com.richie.component.storage.config.StorageProperties;
 import com.richie.component.storage.enums.StorageEngineEnum;
 import com.richie.context.common.api.SpringContextHolder;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -471,7 +471,7 @@ class StorageEngineRegistryTest {
     void getProxy_invocationTargetException_shouldUnwrapCause() {
         StubEngine throwing = new StubEngine("t") {
             @Override
-            public boolean existsObject(String key) {
+            public boolean existsObject(@NonNull String key) {
                 throw new IllegalStateException("inner cause");
             }
         };
@@ -510,62 +510,62 @@ class StorageEngineRegistryTest {
         }
 
         @Override
-        public com.richie.component.storage.bean.UploadResponse putData(String key, Map<?, ?> collection) {
+        public com.richie.component.storage.bean.UploadResponse putData(@NonNull String key, @NonNull Map<?, ?> collection) {
             return null;
         }
 
         @Override
-        public com.richie.component.storage.bean.UploadResponse putData(String key, java.util.Collection<?> collection) {
+        public com.richie.component.storage.bean.UploadResponse putData(@NonNull String key, java.util.@NonNull Collection<?> collection) {
             return null;
         }
 
         @Override
-        public com.richie.component.storage.bean.UploadResponse putData(String key, Object object) {
+        public com.richie.component.storage.bean.UploadResponse putData(@NonNull String key, @NonNull Object object) {
             return null;
         }
 
         @Override
-        public com.richie.component.storage.bean.UploadResponse putObject(String key, java.io.File file) {
+        public com.richie.component.storage.bean.UploadResponse putObject(@NonNull String key, java.io.@NonNull File file) {
             return null;
         }
 
         @Override
-        public com.richie.component.storage.bean.UploadResponse putObject(String key, java.io.InputStream inputStream) {
+        public com.richie.component.storage.bean.UploadResponse putObject(@NonNull String key, java.io.@NonNull InputStream inputStream) {
             return null;
         }
 
         @Override
-        public com.richie.component.storage.bean.UploadResponse putImage(String key, java.io.File file,
-                                                                          com.richie.component.storage.bean.image.ImageOptions options) {
+        public com.richie.component.storage.bean.UploadResponse putImage(@NonNull String key, java.io.@NonNull File file,
+                                                                         com.richie.component.storage.bean.image.ImageOptions options) {
             return null;
         }
 
         @Override
-        public com.richie.component.storage.bean.UploadResponse putImage(String key, java.io.InputStream inputStream,
-                                                                          com.richie.component.storage.bean.image.ImageOptions options) {
+        public com.richie.component.storage.bean.UploadResponse putImage(@NonNull String key, java.io.@NonNull InputStream inputStream,
+                                                                         com.richie.component.storage.bean.image.ImageOptions options) {
             return null;
         }
 
         @Override
-        public <T> com.richie.component.storage.bean.DownloadResponse<T> getData(String key,
-                                                                                 tools.jackson.core.type.TypeReference<T> typeReference) {
+        public <T> com.richie.component.storage.bean.DownloadResponse<T> getData(@NonNull String key,
+                                                                                 tools.jackson.core.type.@NonNull TypeReference<T> typeReference) {
             return null;
         }
 
         @Override
-        public com.richie.component.storage.bean.DownloadResponse<byte[]> getObject(String key, java.io.File targetPath,
-                                                                                   boolean returnData) {
+        public com.richie.component.storage.bean.DownloadResponse<byte[]> getObject(@NonNull String key, java.io.@NonNull File targetPath,
+                                                                                    boolean returnData) {
             return null;
         }
 
         @Override
-        public com.richie.component.storage.bean.DownloadResponse<byte[]> getResumableObject(String key, String targetPath,
-                                                                                              boolean returnData) {
+        public com.richie.component.storage.bean.DownloadResponse<byte[]> getResumableObject(@NonNull String key, @NonNull String targetPath,
+                                                                                             boolean returnData) {
             return null;
         }
 
         @Override
-        public boolean existsObject(String key) {
+        public boolean existsObject(@NonNull String key) {
             this.lastExistsKey = key;
             return true;
         }

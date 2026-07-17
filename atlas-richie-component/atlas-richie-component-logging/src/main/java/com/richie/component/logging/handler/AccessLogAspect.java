@@ -26,12 +26,14 @@ import com.richie.context.utils.spring.SpringBeanUtils;
 import com.richie.component.cache.GlobalCache;
 import com.richie.component.concurrency.measurement.Stopwatch;
 import com.richie.component.dao.snowflake.IdBuilder;
+import com.richie.component.desensitize.core.service.ObjectMaskingService;
 import com.richie.component.logging.annotations.AccessLog;
 import com.richie.component.logging.callback.LogLifecycleCallback;
 import com.richie.component.logging.config.OperateLogProperties;
 import com.richie.component.logging.domain.AccessLogInfo;
 import com.richie.component.logging.service.AccessLogService;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import tools.jackson.databind.JsonNode;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -94,6 +96,12 @@ public class AccessLogAspect {
      * 日志ID生成器
      */
     private final IdBuilder idBuilder;
+
+    /**
+     * 脱敏服务（可选）：classpath 存在时自动对请求/响应体进行敏感字段脱敏。
+     * 通过 ObjectProvider 注入，避免强制依赖 atlas-richie-component-desensitize-core。
+     */
+    private final ObjectProvider<ObjectMaskingService> objectMaskingServiceProvider;
 
     /**
      * 切点：带 @AccessLog 的方法或所有 Controller 的 public 方法（当启用全局切点时）。
@@ -362,7 +370,7 @@ public class AccessLogAspect {
             return "";
         }
 
-        var requestBody = JsonUtils.getInstance().serialize(requestData);
+        var requestBody = serializeWithMasking(requestData);
         if (Objects.isNull(requestBody)) {
             requestBody = "";
         }
@@ -393,13 +401,13 @@ public class AccessLogAspect {
         // 对于非 ResultVO 类型，尝试序列化
         String responseBody;
         if (responseData instanceof ApiResult<?> apiResult) {
-            responseBody = JsonUtils.getInstance().serialize(apiResult);
+            responseBody = serializeWithMasking(apiResult);
         } else {
             // 非 ResultVO 类型，构建一个包含类型信息的响应体
             var responseType = responseData.getClass().getSimpleName();
             try {
                 // 尝试序列化响应数据
-                var serialized = JsonUtils.getInstance().serialize(responseData);
+                var serialized = serializeWithMasking(responseData);
                 if (StringUtils.isNotBlank(serialized)) {
                     responseBody = serialized;
                 } else {
@@ -421,6 +429,24 @@ public class AccessLogAspect {
         }
 
         return responseBody;
+    }
+
+    /**
+     * 安全序列化：优先使用脱敏服务进行敏感字段脱敏，脱敏服务不可用时回退到 JsonUtils。
+     *
+     * @param obj 待序列化对象
+     * @return 序列化后的字符串（可能为 null）
+     */
+    private String serializeWithMasking(Object obj) {
+        var maskingService = objectMaskingServiceProvider.getIfAvailable();
+        if (maskingService != null) {
+            try {
+                return maskingService.toSafeJson(obj);
+            } catch (Exception e) {
+                log.trace("ObjectMaskingService.toSafeJson failed, falling back to JsonUtils", e);
+            }
+        }
+        return JsonUtils.getInstance().serialize(obj);
     }
 
     /**

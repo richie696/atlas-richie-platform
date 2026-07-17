@@ -105,6 +105,11 @@ public class GatewayConfig implements Serializable {
     private HardwareFingerprintConfig hardwareFingerprint = new HardwareFingerprintConfig();
 
     /**
+     * CSP（Content-Security-Policy）过滤器配置
+     */
+    private CspFilterConfig csp = new CspFilterConfig();
+
+    /**
      * 跨服务共享契约（令牌 / 租户 / 灰度 / 审计）。
      * <p>
      * 通过 {@link Autowired} 注入，{@code transient} + {@link JsonIgnore} 避免序列化时

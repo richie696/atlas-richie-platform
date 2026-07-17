@@ -96,6 +96,13 @@
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-tree</artifactId>
         </dependency>
+
+        <!-- 可选脱敏：classpath 存在时自动对请求/响应体进行敏感字段脱敏 -->
+        <dependency>
+            <groupId>com.richie.component</groupId>
+            <artifactId>atlas-richie-component-desensitize-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>

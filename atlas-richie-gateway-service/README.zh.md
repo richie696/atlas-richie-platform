@@ -32,7 +32,7 @@
 
 > **互斥约束：** `platform.gateway.token.enable` 与 `platform.gateway.interface-auth.enable` **不能同时为 `true`**。启动时 `GatewayAuthConfigValidator` 会校验并失败，避免认证链冲突。
 
-跨服务共享配置（`token`、`tenant`、`deploy`、`audit-enabled`）在 **`atlas-richie-contract`** 的 `GatewayContract` 中，前缀 `platform.gateway`。网关专属配置（ECC、SSO、异常检测、防重复提交、硬件指纹、降级文案等）由 **`GatewayConfig`** 承载，前缀相同，字段各取所需。
+跨服务共享配置（`token`、`tenant`、`deploy`、`audit-enabled`）在 **`atlas-richie-contract`** 的 `GatewayContract` 中，前缀 `platform.gateway`。网关专属配置（CSP、ECC、SSO、异常检测、防重复提交、硬件指纹、降级文案等）由 **`GatewayConfig`** 承载，前缀相同，字段各取所需。
 
 网关采用**配置化设计**：同一制品通过 Nacos 配置切换微服务 / OpenAPI / 内网形态，无需改代码。
 
@@ -47,6 +47,7 @@
 | [灰度发布最佳实践-按门店维度](docs/zh/canary-store-dimension.md) | `CanaryIdExtractorFilter` 门店 ID 自动提取 |
 | [K8s 灰度部署方案](docs/zh/k8s-canary-deployment.md) | Gateway Pod 灰度 |
 | [降级响应配置说明](docs/zh/degraded-response-configuration.md) | `GlobalFallbackController` 按路径文案 |
+| [CSP 安全响应头配置说明](docs/zh/csp-security-header.md) | CSP 策略配置、全链路防护方案（网关 + Nginx/ALB）、指令参考 |
 | [第三方 OAuth2.0 认证架构](docs/zh/oauth2-authentication-architecture.md) | Client Credentials、Scope、审计 |
 | [k8s-deployment-example.yaml](docs/zh/k8s-deployment-example.yaml) | K8s 部署样例 |
 
@@ -120,10 +121,11 @@ flowchart TB
     end
 
     subgraph GW["atlas-richie-gateway-service"]
-        subgraph Infra["基础设施层"]
-            I18n[I18nFilter]
-            ECC[EccCryptoFilter]
-        end
+    subgraph Infra["基础设施层"]
+        I18n[I18nFilter]
+        Csp[CspFilter]
+        ECC[EccCryptoFilter]
+    end
         subgraph Sec["安全防护层"]
             SecF[SecurityFilter]
             Anom[AnomalyDetectionFilter]
@@ -171,7 +173,7 @@ flowchart TB
     style Platform fill:#e0f2f1,stroke:#00695c,color:#004d40
     style Sentinel fill:#ffebee,stroke:#c62828,color:#b71c1c
     style Web,Partner,Internal fill:#cfd8dc,stroke:#546e7a,color:#37474f
-    style I18n,ECC fill:#b3e5fc,stroke:#0288d1,color:#01579b
+    style I18n,Csp,ECC fill:#b3e5fc,stroke:#0288d1,color:#01579b
     style SecF,Anom fill:#ffe0b2,stroke:#fb8c00,color:#e65100
     style Issue,JWT,SSO,OAuth,OAnom,OAud fill:#e1bee7,stroke:#8e24aa,color:#4a148c
     style Dup,Ten fill:#c8e6c9,stroke:#43a047,color:#1b5e20
@@ -186,7 +188,7 @@ flowchart TB
 | 色块 | 功能域 |
 |------|--------|
 | 灰蓝 | 客户端 / 请求入口 |
-| 浅蓝 | 基础设施层（I18n、ECC） |
+| 浅蓝 | 基础设施层（I18n、Csp、ECC） |
 | 橙 | 安全防护层（IP 安全、异常检测） |
 | 紫 | 认证授权层（JWT、SSO、OAuth2 鉴权） |
 | 绿 | 业务逻辑层（防重、租户） |
@@ -234,6 +236,7 @@ atlas-richie-gateway-service/
 |------|--------|------|----------|
 | -1000 | `I18nFilter` | 基础设施 | 始终（按请求头解析语言） |
 | -900 | `EccCryptoFilter` | 基础设施 | `ecc-crypto.enabled` |
+| -850 | `CspFilter` | 基础设施 | `csp.enable` |
 | -800 | `SecurityFilter` | 安全 | `security.enable` |
 | -799 | `AnomalyDetectionFilter` | 安全 | 异常检测配置开启 |
 | -700 | `IssueTokensFilter` | 认证 | 命中 `login-uri-list` |
@@ -250,7 +253,8 @@ atlas-richie-gateway-service/
 ```mermaid
 flowchart LR
     REQ[请求] --> I18n
-    I18n --> ECC
+    I18n --> Csp
+    Csp --> ECC
     ECC --> Sec
     Sec --> Anom
     Anom --> Issue
@@ -392,9 +396,62 @@ Nacos 数据源（示例见 `application-gateway.yml`）：
 
 - **SecurityFilter**：时间窗口内访问次数超 `security-threshold` 触发 `banned_ip` / `custom_http_status` / `redirect`
 - **AnomalyDetectionFilter**：暴力破解、异常 IP、通用限流（不限于 OAuth2）
+- **CSP 响应头（Content-Security-Policy）**：防御 XSS 和数据注入攻击的最外层防线。详见下方 [CSP 全链路防护说明](#csp-全链路防护说明)。
 - **ECC + AES-GCM**：应用层混合加密（见 [功能设计细节 · ECC](#ecc-加密通信)）
 - **防重复提交**：客户端 + 网关 Redis 双道防线（见 [功能设计细节 · 防重复提交](#防重复提交)）
 - **CORS**：`spring.cloud.gateway.server.webflux.globalcors`
+
+#### CSP 全链路防护说明
+
+CSP（Content-Security-Policy）是一个 HTTP 响应头安全机制，告诉浏览器**允许加载和执行的资源来源**。它能有效防御以下攻击类型：
+
+| 攻击类型 | CSP 的防御方式 |
+|----------|---------------|
+| **XSS（跨站脚本攻击）** | 限制 `script-src`，浏览器拒绝加载白名单外的任何脚本 |
+| **数据注入攻击** | 限制 `default-src`，阻止未知来源的资源执行 |
+| **点击劫持（Clickjacking）** | 通过 `frame-ancestors 'none'` 禁止页面被嵌入第三方 iframe |
+| **数据外泄** | 通过 `connect-src 'self'` 限制 XHR/fetch 只能发向同源 |
+| **Base-URI 注入** | 通过 `base-uri 'self'` 限制 `<base>` 标签为目标同源 |
+
+##### 两层架构：网关 + Nginx/ALB 全链路覆盖
+
+CSP 防护需要**两层同时部署**才能覆盖全部响应：
+
+| 部署层 | 保护目标 | 配置方式 |
+|--------|----------|----------|
+| **网关层（CspFilter）** | 所有经过网关转发的 API 响应（`/api/**`） | `platform.gateway.csp` Nacos 配置（见下文） |
+| **代理层（Nginx/ALB）** | SPA HTML 页面和静态资源（不经过网关） | Nginx `add_header Content-Security-Policy "..." always;` |
+
+> ⚠️ 网关只保护 API 响应。SPA HTML 页面由 Nginx/ALB 直接响应，必须在代理层额外配置。部署后请通过 `proxyCspConfigured: true` 确认，或由 `CspFilter` 启动时 WARN 日志提醒。
+
+##### 快速启用
+
+**步骤一：网关层** — 在 Nacos `platform-gateway.yaml` 中添加：
+
+```yaml
+platform:
+  gateway:
+    csp:
+      enable: true
+      policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; base-uri 'self'"
+      # 确认 Nginx/ALB 已配置 CSP 后设为 true（关闭启动告警）
+      proxy-csp-configured: false
+```
+
+**步骤二：代理层** — Nginx 配置：
+
+```nginx
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; base-uri 'self'" always;
+```
+
+**验证生效**：浏览器 DevTools → Network → 查看 API 和 HTML 响应头均包含 `content-security-policy`。
+
+##### 部署注意事项
+
+- **Grafana 嵌入**：如管理端需嵌入 Grafana 仪表盘，`frame-src` 需放宽为 `frame-src 'self' https://grafana.example.com`
+- **灰度上线**：首次上线建议使用 `Content-Security-Policy-Report-Only` 模式（修改 CspFilter 的 header name 为该值），观察一周无违规后再切换到强制模式
+- **`unsafe-inline`**：Angular/PrimeNG 需要内联脚本和样式，生产环境如需更严格安全策略可考虑 nonce 或 hash 方案
+- **详细设计文档**：[CSP 安全响应头配置说明](docs/zh/csp-security-header.md) 包含完整的指令参考、放宽场景、report-uri 配置和部署检查清单
 
 ### 6. 多租户
 
@@ -518,9 +575,10 @@ X-Canary-Id: 22123            # CATEGORY=ID 时；若已配置自动提取，通
 ```mermaid
 flowchart TD
     REQ[请求] --> L1
-    subgraph L1["基础设施 -1000 ~ -900"]
+    subgraph L1["基础设施 -1000 ~ -800"]
         F1[I18n -1000]
         F2[ECC -900]
+        F3[Csp -850]
     end
     subgraph L2["安全 -800 ~ -799"]
         F3[Security -800]
@@ -603,6 +661,7 @@ spring:
 | `duplicate-submit` | 防重复提交 |
 | `fallback` | 降级文案 |
 | `hardware-fingerprint` | 设备指纹 |
+| `csp` | CSP 安全响应头（防御 XSS/注入，需网关 + Nginx/ALB 两层部署） |
 
 本地示例：`application-gateway.yml`、`application-gateway-openapi.yml`。
 
@@ -677,6 +736,10 @@ platform:
       enabled: true
       time-window: 3000
       cache-expire: 10000
+    csp:
+      enable: true
+      policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; base-uri 'self'"
+      proxy-csp-configured: false
 ```
 
 ### 配置项说明

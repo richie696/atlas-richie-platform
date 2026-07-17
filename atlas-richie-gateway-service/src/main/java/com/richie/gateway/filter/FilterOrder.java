@@ -66,6 +66,13 @@ public enum FilterOrder {
      * 在安全防护之前执行，确保加密解密的安全性
      */
     ECC_CRYPTO_FILTER(-900, "ECC加密解密过滤器"),
+
+    /**
+     * CSP 安全头过滤器 - 基础设施层
+     * 给所有响应注入 Content-Security-Policy 头，防御 XSS 和数据注入攻击
+     * 必须早于安全/认证过滤器，确保错误响应也带上 CSP 头
+     */
+    CSP_FILTER(-850, "CSP 安全头过滤器"),
     
     /**
      * 安全过滤器 - 安全防护层，高优先级
@@ -222,6 +229,7 @@ public enum FilterOrder {
         sb.append("\n【基础设施层】\n");
         sb.append(String.format("  %s: %s (%d)\n", I18N_FILTER.name(), I18N_FILTER.description, I18N_FILTER.order));
         sb.append(String.format("  %s: %s (%d)\n", ECC_CRYPTO_FILTER.name(), ECC_CRYPTO_FILTER.description, ECC_CRYPTO_FILTER.order));
+        sb.append(String.format("  %s: %s (%d)\n", CSP_FILTER.name(), CSP_FILTER.description, CSP_FILTER.order));
         
         sb.append("\n【安全防护层】\n");
         sb.append(String.format("  %s: %s (%d)\n", SECURITY_FILTER.name(), SECURITY_FILTER.description, SECURITY_FILTER.order));
@@ -255,6 +263,7 @@ public enum FilterOrder {
         switch (this) {
             case I18N_FILTER:
             case ECC_CRYPTO_FILTER:
+            case CSP_FILTER:
                 return "基础设施层";
             case SECURITY_FILTER:
             case ANOMALY_DETECTION_FILTER:
@@ -299,6 +308,8 @@ public enum FilterOrder {
                 return 1;
             case ECC_CRYPTO_FILTER:
                 return 2;
+            case CSP_FILTER:
+                return 3;
             case SECURITY_FILTER:
                 return 1;
             case ANOMALY_DETECTION_FILTER:

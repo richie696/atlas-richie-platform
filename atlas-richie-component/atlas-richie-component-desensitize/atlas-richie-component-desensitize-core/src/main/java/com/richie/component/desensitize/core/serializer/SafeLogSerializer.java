@@ -92,19 +92,26 @@ public class SafeLogSerializer {
         if (depth > MAX_DEPTH) {
             return quote("[max-depth]");
         }
-        if (value instanceof String str) {
-            return quote(str);
-        }
-        if (value instanceof Number || value instanceof Boolean) {
-            return String.valueOf(value);
-        }
-        if (value instanceof Map<?, ?> map) {
-            @SuppressWarnings("unchecked")
-            Map<String, ?> stringMap = (Map<String, ?>) map;
-            return writeMap(maskingService.maskMap(stringMap, scene), depth);
-        }
-        if (value instanceof Collection<?> collection) {
-            return writeArray(collection.toArray(), scene, depth);
+        switch (value) {
+            case String str -> {
+                return quote(str);
+            }
+            case Number number -> {
+                return String.valueOf(number);
+            }
+            case Boolean b -> {
+                return String.valueOf(b);
+            }
+            case Map<?, ?> map -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ?> stringMap = (Map<String, ?>) map;
+                return writeMap(maskingService.maskMap(stringMap, scene), depth);
+            }
+            case Collection<?> collection -> {
+                return writeArray(collection.toArray(), scene, depth);
+            }
+            default -> {
+            }
         }
         if (value.getClass().isArray()) {
             return writeArray(value, scene, depth);

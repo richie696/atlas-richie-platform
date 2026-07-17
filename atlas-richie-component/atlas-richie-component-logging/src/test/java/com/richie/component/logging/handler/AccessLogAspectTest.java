@@ -53,8 +53,6 @@ class AccessLogAspectTest {
     private AccessLogAspect aspect;
     private OperateLogProperties properties;
     private QueueHandler queueHandler;
-    private AccessLogService accessLogService;
-    private IdBuilder idBuilder;
 
     @BeforeEach
     void setUp() {
@@ -67,11 +65,11 @@ class AccessLogAspectTest {
         properties.setPrintException(false);
 
         queueHandler = mock(QueueHandler.class);
-        accessLogService = mock(AccessLogService.class);
-        idBuilder = mock(IdBuilder.class);
+        AccessLogService accessLogService = mock(AccessLogService.class);
+        IdBuilder idBuilder = mock(IdBuilder.class);
         when(idBuilder.nextId()).thenReturn(12345L);
 
-        aspect = new AccessLogAspect(properties, queueHandler, accessLogService, idBuilder);
+        aspect = new AccessLogAspect(properties, queueHandler, accessLogService, idBuilder, mock());
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/test");
         ServletRequestAttributes attrs = new ServletRequestAttributes(request);

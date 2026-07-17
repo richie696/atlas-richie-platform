@@ -32,7 +32,7 @@
 
 > **Mutual exclusion:** `platform.gateway.token.enable` and `platform.gateway.interface-auth.enable` **cannot both be `true`**. `GatewayAuthConfigValidator` fails fast at startup if they conflict.
 
-Shared cross-service settings (`token`, `tenant`, `deploy`, `audit-enabled`) live in **`atlas-richie-contract`** as `GatewayContract` under prefix `platform.gateway`. Gateway-only settings (ECC, SSO, anomaly detection, duplicate submit, hardware fingerprint, fallback) are in **`GatewayConfig`** with the same prefix.
+Shared cross-service settings (`token`, `tenant`, `deploy`, `audit-enabled`) live in **`atlas-richie-contract`** as `GatewayContract` under prefix `platform.gateway`. Gateway-only settings (CSP, ECC, SSO, anomaly detection, duplicate submit, hardware fingerprint, fallback) are in **`GatewayConfig`** with the same prefix.
 
 The gateway is **configuration-driven**: one artifact switches microservice / OpenAPI / internal personalities via Nacos without code changes.
 
@@ -47,6 +47,7 @@ The gateway is **configuration-driven**: one artifact switches microservice / Op
 | [Canary Release — Store Dimension](docs/en/canary-store-dimension.md) | Store-level canary ID extraction |
 | [K8s Canary Deployment](docs/en/k8s-canary-deployment.md) | Gateway Pod canary |
 | [Degraded Response Configuration](docs/en/degraded-response-configuration.md) | Path-specific fallback messages |
+| [CSP Security Header Configuration](docs/en/csp-security-header.md) | CSP policy configuration, full-chain protection guide (gateway + Nginx/ALB), directive reference |
 | [OAuth2 Authentication Architecture](docs/en/oauth2-authentication-architecture.md) | Client credentials, scope, audit |
 | [k8s-deployment-example.yaml](docs/en/k8s-deployment-example.yaml) | Sample K8s manifests |
 
@@ -122,6 +123,7 @@ flowchart TB
     subgraph GW["atlas-richie-gateway-service"]
         subgraph Infra["Infrastructure"]
             I18n[I18nFilter]
+            Csp[CspFilter]
             ECC[EccCryptoFilter]
         end
         subgraph Sec["Security"]
@@ -171,7 +173,7 @@ flowchart TB
     style Platform fill:#e0f2f1,stroke:#00695c,color:#004d40
     style Sentinel fill:#ffebee,stroke:#c62828,color:#b71c1c
     style Web,Partner,Internal fill:#cfd8dc,stroke:#546e7a,color:#37474f
-    style I18n,ECC fill:#b3e5fc,stroke:#0288d1,color:#01579b
+    style I18n,Csp,ECC fill:#b3e5fc,stroke:#0288d1,color:#01579b
     style SecF,Anom fill:#ffe0b2,stroke:#fb8c00,color:#e65100
     style Issue,JWT,SSO,OAuth,OAnom,OAud fill:#e1bee7,stroke:#8e24aa,color:#4a148c
     style Dup,Ten fill:#c8e6c9,stroke:#43a047,color:#1b5e20
@@ -186,7 +188,7 @@ flowchart TB
 | Color | Domain |
 |-------|--------|
 | Grey-blue | Clients / ingress |
-| Light blue | Infrastructure (I18n, ECC) |
+| Light blue | Infrastructure (I18n, Csp, ECC) |
 | Orange | Security (IP policy, anomaly detection) |
 | Purple | Authentication (JWT, SSO, OAuth2) |
 | Green | Business (duplicate submit, tenant) |
@@ -234,6 +236,7 @@ Lower order values run first. All filters extend `AbstractBaseFilter` and skip l
 |------:|--------|-------|-------------|
 | -1000 | `I18nFilter` | Infrastructure | Always (locale from headers) |
 | -900 | `EccCryptoFilter` | Infrastructure | `platform.gateway.ecc-crypto.enabled` |
+| -850 | `CspFilter` | Infrastructure | `platform.gateway.csp.enable` |
 | -800 | `SecurityFilter` | Security | `platform.gateway.security.enable` |
 | -799 | `AnomalyDetectionFilter` | Security | Anomaly config enabled |
 | -700 | `IssueTokensFilter` | Auth | Login URI matched (`token` flow) |
@@ -250,7 +253,8 @@ Lower order values run first. All filters extend `AbstractBaseFilter` and skip l
 ```mermaid
 flowchart LR
     REQ[Request] --> I18n
-    I18n --> ECC
+    I18n --> Csp
+    Csp --> ECC
     ECC --> Sec
     Sec --> Anom
     Anom --> Issue
@@ -384,6 +388,52 @@ Nacos rules: `flow`, `degrade`, `param-flow`, `system`, `authority`. Fallback: [
 
 `SecurityFilter`, `AnomalyDetectionFilter`, ECC, duplicate submit ([deep dives](#design-deep-dives)), global CORS.
 
+#### CSP (Content-Security-Policy) Protection
+
+CSP is an HTTP response header that tells the browser which resource origins are allowed to load and execute. It defends against:
+
+| Attack Type | How CSP Defends |
+|-------------|-----------------|
+| **XSS** | `script-src` restricts script sources; browser refuses any script outside the whitelist |
+| **Data injection** | `default-src` limits resource loading to trusted origins |
+| **Clickjacking** | `frame-ancestors 'none'` prevents your page from being embedded in third-party iframes |
+| **Data exfiltration** | `connect-src 'self'` restricts XHR/fetch to same-origin only |
+| **Base-URI injection** | `base-uri 'self'` locks `<base>` tag to the page's origin |
+
+**Full-chain coverage** requires **two layers**:
+
+| Layer | Protects | How to configure |
+|-------|----------|-----------------|
+| **Gateway (CspFilter)** | All API responses proxied through the gateway (`/api/**`) | `platform.gateway.csp` in Nacos (see below) |
+| **Proxy (Nginx/ALB)** | SPA HTML pages and static assets (served directly by Nginx) | Nginx `add_header Content-Security-Policy "..." always;` |
+
+> ⚠️ The gateway only covers API responses. SPA HTML pages are served by Nginx/ALB directly and need a separate `add_header` directive. Confirm proxy config by setting `proxy-csp-configured: true` to silence the startup warning from `CspFilter`.
+
+**Quick start — Gateway layer** (in Nacos `platform-gateway.yaml`):
+
+```yaml
+platform:
+  gateway:
+    csp:
+      enable: true
+      policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; base-uri 'self'"
+      proxy-csp-configured: false   # set true after Nginx/ALB is configured
+```
+
+**Quick start — Proxy layer** (Nginx):
+
+```nginx
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; base-uri 'self'" always;
+```
+
+**Verification**: Browser DevTools → Network → verify both API and HTML responses include `content-security-policy` header.
+
+**Deployment notes**:
+- **Grafana embedding**: relax `frame-src` to `frame-src 'self' https://grafana.example.com`
+- **Gradual rollout**: use `Content-Security-Policy-Report-Only` mode first (change header name in CspFilter), observe for one week, then switch to enforcement
+- **`unsafe-inline`**: required by Angular/PrimeNG; consider nonce or hash strategies for stricter environments
+- **Full design doc**: [CSP Security Header Configuration](docs/en/csp-security-header.md) covers directive reference, relaxation scenarios, report-uri setup, and deployment checklist
+
 ### 6. Multi-tenant
 
 `TenantFilter` + `GatewayContract.tenant`.
@@ -440,10 +490,11 @@ flowchart TD
     subgraph L1[Infrastructure]
         F1[I18n]
         F2[ECC]
+        F3[Csp]
     end
     subgraph L2[Security]
-        F3[Security]
-        F4[Anomaly]
+        F4[Security]
+        F5[Anomaly]
     end
     subgraph L3[Auth]
         F5[IssueTokens]
@@ -520,6 +571,7 @@ Business services can depend on `atlas-richie-contract` only to read the same YA
 | `duplicate-submit` | Anti double-submit |
 | `fallback` | Degrade response messages |
 | `hardware-fingerprint` | Device binding |
+| `csp` | CSP security header (XSS/injection defense; requires gateway + Nginx/ALB two-layer deployment) |
 
 Local samples: `application-gateway.yml`, `application-gateway-openapi.yml`.
 
@@ -543,6 +595,10 @@ platform.gateway:
   tenant.enabled: true
   deploy.enabled: true
   security.enable: true
+  csp:
+    enable: true
+    policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; base-uri 'self'"
+    proxy-csp-configured: false
 ```
 
 Field reference: `token-valid-duration`, `expiration-renewal-time`, `security.rule`, `deploy.canary-category` — see [README.zh.md](README.zh.md#配置项说明) (Chinese table, same property names).
