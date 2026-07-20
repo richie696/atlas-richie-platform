@@ -23,6 +23,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import java.util.Map.Entry;
 import java.util.Map;
@@ -69,8 +70,13 @@ public class AiModelAutoConfiguration {
 
     /**
      * 创建默认 EmbeddingModel（跟随默认模型策略：取配置中的首个模型）。
+     *
+     * <p>{@code @Primary} 仲裁：Spring AI starter（OpenAI / Ollama）会同时注册各自的
+     * {@code EmbeddingModel} bean，业务侧依赖本中台组件时应由本 bean 胜出。
+     * {@code @ConditionalOnMissingBean(EmbeddingModel.class)} 兜底：业务已自定义 EmbeddingModel 时不再覆盖。
      */
     @Bean("aiEmbeddingModel")
+    @Primary
     @ConditionalOnMissingBean(EmbeddingModel.class)
     public EmbeddingModel aiEmbeddingModel(AiModelProperties properties, AiChatClientFactory aiChatClientFactory) {
         if (!properties.isConfigInitializationEnabled()) {

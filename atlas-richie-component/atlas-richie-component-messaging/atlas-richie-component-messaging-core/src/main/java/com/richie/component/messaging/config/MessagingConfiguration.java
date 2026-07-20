@@ -17,10 +17,12 @@ package com.richie.component.messaging.config;
 
 import com.richie.contract.gateway.config.DeployConfig;
 import com.richie.component.messaging.filter.CanaryMessageFilter;
+import jakarta.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Bean;
@@ -63,8 +65,7 @@ public class MessagingConfiguration {
      * @return 灰度实例管理器
      */
     @Bean
-    @ConditionalOnBean({DiscoveryClient.class, DeployConfig.class})
-    @ConditionalOnClass({DiscoveryClient.class, DeployConfig.class})
+    @ConditionalOnProperty(prefix = "platform.gateway.contract.deploy", name = "enable", havingValue = "true")
     public CanaryInstanceManager canaryInstanceManager(
             DiscoveryClient discoveryClient,
             @Value("${spring.application.name:unknown}") String applicationName,
@@ -87,13 +88,12 @@ public class MessagingConfiguration {
      * @return 灰度消息过滤器
      */
     @Bean
-    @ConditionalOnBean({DeployConfig.class, DiscoveryClient.class})
-    @ConditionalOnClass({DeployConfig.class, DiscoveryClient.class})
+    @ConditionalOnProperty(prefix = "platform.gateway.contract.deploy", name = "enable", havingValue = "true")
     public CanaryMessageFilter canaryMessageFilter(
             DeployConfig deployConfig,
             DiscoveryClient discoveryClient,
             @Value("${spring.application.name:unknown}") String applicationName,
-            CanaryInstanceManager canaryInstanceManager) {
+            @Nullable CanaryInstanceManager canaryInstanceManager) {
         log.info("Canary message filter enabled for application: {}", applicationName);
         return new CanaryMessageFilter(deployConfig, discoveryClient, applicationName, canaryInstanceManager);
     }
