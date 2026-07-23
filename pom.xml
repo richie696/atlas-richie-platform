@@ -108,7 +108,7 @@
         <!-- Maven 发布插件 -->
         <maven-release-plugin.version>3.2.0</maven-release-plugin.version>
         <!-- Maven 帮助插件 - 用于查看项目信息、有效 POM、依赖树等 -->
-        <maven-help-plugin.version>3.5.1</maven-help-plugin.version>
+        <maven-help-plugin.version>3.5.2</maven-help-plugin.version>
         <!-- Maven 站点插件 - 用于生成项目站点文档 -->
         <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
         <maven-fluido-skin.version>2.1.0</maven-fluido-skin.version>
