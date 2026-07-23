@@ -102,7 +102,7 @@
         <!-- JAR 打包插件 -->
         <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
         <!-- Fat JAR 打包插件 -->
-        <maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
+        <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
         <!-- PMD 代码质量检查插件 -->
         <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
         <!-- Maven 发布插件 -->
