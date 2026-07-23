@@ -325,11 +325,6 @@
             </dependency>
             <dependency>
                 <groupId>com.richie.component</groupId>
-                <artifactId>atlas-richie-component-vector-elasticsearch</artifactId>
-                <version>${middle.platform.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.richie.component</groupId>
                 <artifactId>atlas-richie-component-vector-mongodb-atlas</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>

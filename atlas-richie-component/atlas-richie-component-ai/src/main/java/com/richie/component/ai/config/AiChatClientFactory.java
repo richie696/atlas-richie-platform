@@ -15,8 +15,17 @@
  */
 package com.richie.component.ai.config;
 
+import com.richie.component.ai.config.chat.AiChatModel;
+import com.richie.component.ai.config.chat.AiChatModelOptions;
+import com.richie.component.ai.config.chat.LlmProvider;
 import com.richie.component.ai.model.ModelOptions;
 import com.richie.component.ai.support.AiChatOptionsResolver;
+import com.richie.component.ai.support.keypool.ApiKeyPool;
+import com.richie.component.ai.support.keypool.ApiKeyPoolManager;
+import com.richie.component.ai.support.keypool.ApiKeyUtils;
+import com.richie.component.ai.support.keypool.ApiKeyValidator;
+import com.richie.component.ai.support.keypool.DefaultApiKeyValidator;
+import com.richie.component.ai.support.keypool.PooledChatModel;
 import com.openai.client.OpenAIClient;
 import com.openai.client.OpenAIClientAsync;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -65,24 +74,33 @@ public class AiChatClientFactory {
     private final ObservationRegistry observationRegistry;
     private final MeterRegistry meterRegistry;
     private final RetryTemplate retryTemplate;
+    private final ApiKeyPoolManager apiKeyPoolManager;
+    private final ApiKeyValidator apiKeyValidator;
+    private final int apiKeyRetryRounds;
 
     public AiChatClientFactory(AiChatOptionsResolver optionsResolver,
                                ObjectProvider<ObservationRegistry> observationRegistryProvider,
                                ObjectProvider<MeterRegistry> meterRegistryProvider,
-                               RetryTemplate retryTemplate) {
+                               RetryTemplate retryTemplate,
+                               ApiKeyPoolManager apiKeyPoolManager) {
         this.optionsResolver = optionsResolver;
         this.observationRegistry = observationRegistryProvider.getIfAvailable(() -> ObservationRegistry.NOOP);
         this.meterRegistry = meterRegistryProvider.getIfAvailable(SimpleMeterRegistry::new);
         this.retryTemplate = retryTemplate;
+        this.apiKeyPoolManager = apiKeyPoolManager;
+        this.apiKeyValidator = new DefaultApiKeyValidator();
+        this.apiKeyRetryRounds = apiKeyPoolManager != null
+                ? 2
+                : 1;
     }
 
     public Map<String, ChatClient> createChatClients(AiModelProperties properties) {
         Map<String, ChatClient> chatClients = new HashMap<>();
-        if (properties.getModels() == null || properties.getModels().isEmpty()) {
+        if (properties.getChat() == null || properties.getChat().isEmpty()) {
             return chatClients;
         }
 
-        for (Map.Entry<String, AiModelProperties.AiModel> entry : properties.getModels().entrySet()) {
+        for (Map.Entry<String, AiChatModel> entry : properties.getChat().entrySet()) {
             chatClients.put(entry.getKey(), createChatClient(entry.getKey(), entry.getValue()));
         }
         return chatClients;
@@ -95,15 +113,15 @@ public class AiChatClientFactory {
         }
 
         for (ModelOptions modelOptions : modelOptionsList) {
-            AiModelProperties.AiModel aiModel = toAiModel(modelOptions);
+            AiChatModel aiModel = toAiModel(modelOptions);
             chatClients.put(modelOptions.getModelName(), createChatClient(modelOptions.getModelName(), aiModel));
         }
         return chatClients;
     }
 
-    public AiModelProperties.AiModel toAiModel(ModelOptions modelOptions) {
-        AiModelProperties.AiProviderType providerType = resolveProvider(modelOptions.getProvider());
-        AiModelProperties.AiModel aiModel = new AiModelProperties.AiModel();
+    public AiChatModel toAiModel(ModelOptions modelOptions) {
+        LlmProvider providerType = resolveProvider(modelOptions.getProvider());
+        AiChatModel aiModel = new AiChatModel();
         aiModel.setProvider(providerType);
         aiModel.setBaseUrl(modelOptions.getBaseUrl());
         aiModel.setApiKey(modelOptions.getApiKey());
@@ -111,27 +129,56 @@ public class AiChatClientFactory {
         return aiModel;
     }
 
-    public ChatClient createChatClient(String modelName, AiModelProperties.AiModel aiModel) {
-        ChatModel chatModel = switch (aiModel.getProvider()) {
-            case OPENAI, ZHIPUAI, MOONSHOT, MINIMAX -> buildOpenAiChatModel(aiModel);
+    public ChatClient createChatClient(String modelName, AiChatModel aiModel) {
+        java.util.Set<String> keys = ApiKeyUtils.resolveKeys(aiModel);
+        if (keys.isEmpty()) {
+            throw new IllegalStateException(
+                    "AiChatModel[" + modelName + "] 缺少 API Key — 请配置 api-keys 或 api-key");
+        }
+
+        // OLLAMA 等本地模型不需要 key — 走 NoOp pool (单 client)
+        if (aiModel.getProvider() == LlmProvider.OLLAMA || keys.size() == 1) {
+            ChatModel chatModel = buildChatModelForKey(aiModel, keys.iterator().next());
+            return ChatClient.builder(chatModel).build();
+        }
+
+        // 多 key 场景:为每个 key 预建一个 ChatModel,用 PooledChatModel 装饰
+        ApiKeyPool pool = apiKeyPoolManager.getPool(modelName, keys);
+        java.util.List<ChatModel> perKeyModels = new java.util.ArrayList<>(keys.size());
+        for (String keyValue : keys) {
+            perKeyModels.add(buildChatModelForKey(aiModel, keyValue));
+        }
+        PooledChatModel pooled = new PooledChatModel(modelName, perKeyModels, pool, apiKeyValidator, apiKeyRetryRounds);
+        log.info("AiChatModel[{}] 已启用 KeyPool: totalKeys={}, retryRounds={}",
+                modelName, keys.size(), apiKeyRetryRounds);
+        return ChatClient.builder(pooled).build();
+    }
+
+    /**
+     * 为单个 key 构建 ChatModel(per-key 预建,N 个 key = N 个实例)。
+     */
+    private ChatModel buildChatModelForKey(AiChatModel aiModel, String apiKeyValue) {
+        AiChatModel single = cloneWithApiKey(aiModel, apiKeyValue);
+        return switch (single.getProvider()) {
+            case OPENAI, ZHIPUAI, MOONSHOT, MINIMAX -> buildOpenAiChatModel(single);
             case DEEPSEEK -> {
                 DeepSeekApi deepSeekApi = DeepSeekApi.builder()
-                        .apiKey(aiModel.getApiKey())
-                        .baseUrl(aiModel.getBaseUrl())
+                        .apiKey(apiKeyValue)
+                        .baseUrl(single.getBaseUrl())
                         .build();
                 yield new DeepSeekChatModel(
                         deepSeekApi,
-                        optionsResolver.toDeepSeekChatOptions(aiModel.getOptions()),
+                        optionsResolver.toDeepSeekChatOptions(single.getOptions()),
                         ToolCallingManager.builder().build(),
                         retryTemplate,
                         observationRegistry
                 );
             }
             case ANTHROPIC -> {
-                AnthropicChatOptions chatOptions = optionsResolver.toAnthropicChatOptions(aiModel.getOptions())
+                AnthropicChatOptions chatOptions = optionsResolver.toAnthropicChatOptions(single.getOptions())
                         .mutate()
-                        .apiKey(aiModel.getApiKey())
-                        .baseUrl(aiModel.getBaseUrl())
+                        .apiKey(apiKeyValue)
+                        .baseUrl(single.getBaseUrl())
                         .build();
                 yield AnthropicChatModel.builder()
                         .options(chatOptions)
@@ -139,18 +186,28 @@ public class AiChatClientFactory {
                         .build();
             }
             default -> OllamaChatModel.builder()
-                    .options(optionsResolver.toOllamaChatOptions(aiModel.getOptions()))
+                    .options(optionsResolver.toOllamaChatOptions(single.getOptions()))
                     .ollamaApi(OllamaApi.builder()
-                            .baseUrl(aiModel.getBaseUrl())
+                            .baseUrl(single.getBaseUrl())
                             .build())
                     .observationRegistry(observationRegistry)
                     .build();
         };
-
-        return ChatClient.builder(chatModel).build();
     }
 
-    public EmbeddingModel createEmbeddingModel(String modelName, AiModelProperties.AiModel aiModel) {
+    /**
+     * 浅拷贝 AiChatModel 并把 apiKey 覆盖成指定值(其他字段共享引用,适合 per-key 实例化)。
+     */
+    private static AiChatModel cloneWithApiKey(AiChatModel src, String apiKey) {
+        AiChatModel copy = new AiChatModel();
+        copy.setProvider(src.getProvider());
+        copy.setBaseUrl(src.getBaseUrl());
+        copy.setApiKey(apiKey);
+        copy.setOptions(src.getOptions());
+        return copy;
+    }
+
+    public EmbeddingModel createEmbeddingModel(String modelName, AiChatModel aiModel) {
         return switch (aiModel.getProvider()) {
             case OPENAI, ZHIPUAI, MOONSHOT, DEEPSEEK, ANTHROPIC, MINIMAX ->
                     buildOpenAiEmbeddingModel(aiModel);
@@ -164,7 +221,7 @@ public class AiChatClientFactory {
         };
     }
 
-    private OpenAiChatModel buildOpenAiChatModel(AiModelProperties.AiModel aiModel) {
+    private OpenAiChatModel buildOpenAiChatModel(AiChatModel aiModel) {
         OpenAiChatOptions chatOptions = optionsResolver.toOpenAiChatOptions(aiModel.getOptions());
         String modelName = resolveConfiguredModel(aiModel);
         Duration timeout = chatOptions.getTimeout();
@@ -215,7 +272,7 @@ public class AiChatClientFactory {
                 .build();
     }
 
-    private OpenAiEmbeddingModel buildOpenAiEmbeddingModel(AiModelProperties.AiModel aiModel) {
+    private OpenAiEmbeddingModel buildOpenAiEmbeddingModel(AiChatModel aiModel) {
         String modelName = resolveConfiguredModel(aiModel);
         OpenAIClient client = OpenAiSetup.setupSyncClient(
                 aiModel.getBaseUrl(),
@@ -248,26 +305,26 @@ public class AiChatClientFactory {
                 .build();
     }
 
-    private String resolveConfiguredModel(AiModelProperties.AiModel aiModel) {
+    private String resolveConfiguredModel(AiChatModel aiModel) {
         if (aiModel.getOptions() == null || aiModel.getOptions().getModel() == null) {
             return null;
         }
         return aiModel.getOptions().getModel();
     }
 
-    private AiModelProperties.AiProviderType resolveProvider(String provider) {
+    private LlmProvider resolveProvider(String provider) {
         if (provider == null || provider.isBlank()) {
-            return AiModelProperties.AiProviderType.OPENAI;
+            return LlmProvider.OPENAI;
         }
         try {
-            return AiModelProperties.AiProviderType.valueOf(provider.trim().toUpperCase());
+            return LlmProvider.valueOf(provider.trim().toUpperCase());
         } catch (IllegalArgumentException ex) {
             log.warn("未知provider: {}，已自动降级为OPENAI兼容协议", provider);
-            return AiModelProperties.AiProviderType.OPENAI;
+            return LlmProvider.OPENAI;
         }
     }
 
-    private OllamaEmbeddingOptions getOllamaEmbeddingOptions(AiModelProperties.AiModelOptions options) {
+    private OllamaEmbeddingOptions getOllamaEmbeddingOptions(AiChatModelOptions options) {
         if (options == null) {
             return OllamaEmbeddingOptions.builder().build();
         }

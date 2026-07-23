@@ -4,6 +4,8 @@
 
 - [📋 Overview](#-overview)
 - [✨ Core Capabilities](#-core-capabilities)
+- [🎙 Real-Time Voice Chat (WebSocket + STS)](#-real-time-voice-chat-websocket--sts)
+- [🔑 API Key Pool](#-api-key-pool)
 - [🤖 Currently Supported Models](#-currently-supported-models)
   - [1) Built-in Providers (Configuration File Mode)](#1-built-in-providers-configuration-file-mode)
   - [2) Unknown Provider Fallback in Dynamic Mode](#2-unknown-provider-fallback-in-dynamic-mode)
@@ -15,7 +17,7 @@
   - [1) Construct Model Configuration List](#1-construct-model-configuration-list)
   - [2) Invoke Dynamic Initialization](#2-invoke-dynamic-initialization)
 - [💡 Unified Call Examples](#-unified-call-examples)
-- [🔌 AiModelService Interface](#-aimodelservice-interface)
+- [🔌 AiChatService Interface](#-aichatservice-interface)
 - [📊 Key Data Structures](#-key-data-structures)
   - [1) `AiRequest`](#1-airequest)
   - [2) `ModelOptions` (Dynamic Initialization Input)](#2-modeloptions-dynamic-initialization-input)
@@ -68,11 +70,264 @@ Both modes can coexist; runtime dynamic initialization can override models with 
 
 ## Core Capabilities
 
-- Unified invocation interface: Call different vendor models through the same `AiModelService`
+- Unified invocation interface: Call different vendor models through the same `AiChatService`
 - Multi-model management: List available models, switch default model, invoke by model name
 - Dynamic model registration: Support `initializeModels(List<ModelOptions>)` for runtime loading
 - Compatibility fallback: Unknown providers during dynamic registration automatically degrade to OpenAI-compatible protocol
 - Unified response structure: Includes content, duration, model info, token usage statistics
+- **Real-Time Voice Chat (WebSocket + STS)** — Business code uses `VoiceChatService` only, no vendor strings in business branches. See [Real-Time Voice Chat (WebSocket + STS)](#-real-time-voice-chat-websocket--sts) section.
+- **API Key Pool** — Token Plan rotation via Commons Pool2. Per-business-name pool with auto-failover on rate limit. See [API Key Pool](#-api-key-pool-rn5) section.
+
+## Real-Time Voice Chat (WebSocket + STS)
+
+Unified SPI for real-time voice conversations across vendors. See design in section below; for production use, vendors require real API keys and end-to-end IT against their WS endpoints before going live.
+
+A unified SPI for real-time voice conversations across vendors (Zhipu / DashScope / Doubao / Hunyuan) that hides all vendor-specific auth and protocol details behind two interfaces:
+
+- `VoiceChatService` — business entry point (`open(businessName, config)`)
+- `StsTicket` — opaque short-lived credential (business calls `asBearerHeaders()` / `asTc3Headers()` / `asHeaderMap()` without knowing the vendor)
+
+### Implementation Matrix (5 vendors, all ✅)
+
+| Vendor | Capability | Auth Domain | Impl Class | Status |
+|---|---|---|---|---|
+| Zhipu | VoiceChat (Realtime) | Bearer | `ZhipuRealtimeVoiceChatModel` | ✅ Unit + IT pending |
+| DashScope | VoiceChat (Realtime) | Bearer | `DashScopeQwenOmniVoiceChatModel` | ✅ Unit + IT pending |
+| Doubao | TTS bidirection | X-Api-Key | `DoubaoBidirectionTtsVoiceChatModel` | ✅ Unit + IT pending |
+| Doubao | STT streaming | X-Api-Key | `DoubaoStreamingAsrVoiceChatModel` | ✅ Unit + IT pending |
+| Hunyuan | STT streaming | TC3 | `HunyuanStreamingAsrVoiceChatModel` | ✅ Unit + IT pending |
+
+### Quick Start
+
+```java
+@Resource
+private VoiceChatService voiceChatService;
+
+VoiceChatConfig config = VoiceChatConfig.builder()
+        .model("glm-4-voice")
+        .voice("tongtong")
+        .language("zh-CN")
+        .build();
+
+try (VoiceConversation conv = voiceChatService.open("customer-service", config)) {
+    conv.events().subscribe(event -> {
+        switch (event.type()) {
+            case AUDIO_CHUNK -> playAudio(event.audio());
+            case TRANSCRIPT_FINAL -> onTranscript(event.text());
+            case SESSION_END, ERROR -> conv.close();
+            default -> { }
+        }
+    });
+}
+```
+
+### Switch Vendors via YAML Only
+
+```yaml
+platform:
+  component:
+    ai:
+      tts:
+        zhipu:
+          api-key: "your-zhipu-key"     # ← existing config
+      voice-chat:                       # ← realtime voice chat config
+        customer-service:
+          vendor: zhipu                 # switch to dashscope / doubao / hunyuan without code changes
+          model: glm-4-voice
+          sts:
+            ttl-seconds: 3600
+```
+
+### Architecture (Principle J — Vendor-Agnostic Business Code)
+
+```
+┌──────────────────┐
+│ BFF Controller   │  uses only api/voicechat/* (VoiceChatService, VoiceChatConfig, VoiceChatEvent)
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐    ┌─────────────────────┐
+│ VoiceChatService │───▶│ VoiceStsService     │──▶ StsSigner impl (Bearer/TC3/AppCode/AK-SK/X-Api-Key)
+└────────┬─────────┘    └─────────────────────┘
+         │
+         ▼
+┌──────────────────┐
+│ VoiceChatModel   │  per vendor (ZhipuRealtimeVoiceChatModel, etc.)
+└──────────────────┘
+```
+
+**Rules** (enforced by ArchUnit):
+- `api/voicechat/*` and `service/voicechat/*` MUST NOT depend on `provider/*`
+- Business code uses interfaces only; vendor is configured, not coded
+- Switching vendor = one YAML line, no code changes
+
+### Caveat: Real-Vendor WebSocket IT
+
+Unit tests cover the SPI behavior, but real-vendor WebSocket handshakes must be validated before production use. To run end-to-end IT with real vendor endpoints, prepare the following environment variables and run `mvn verify -Pit`:
+
+| Vendor | Endpoint | Auth | Env Vars |
+|--------|----------|------|----------|
+| Zhipu | `wss://open.bigmodel.cn/api/paas/v4/realtime` | Bearer | `ZHIPU_REALTIME_API_KEY` |
+| DashScope | `wss://dashscope.aliyuncs.com/api-ws/v1/realtime` | Bearer | `DASHSCOPE_API_KEY` |
+| Doubao TTS bidirection | `wss://openspeech.bytedance.com/api/v3/tts/bidirection` | X-Api-Key | `DOUBAO_APP_ID`, `DOUBAO_TOKEN`, `DOUBAO_RESOURCE_ID` |
+| Doubao STT stream | `wss://openspeech.bytedance.com/api/v2/asr` | X-Api-Key | same as above |
+| Hunyuan STT stream | TC3 over WS (`asr.tencentcloudapi.com:443`) | TC3-HMAC-SHA256 | `HUNYUAN_SECRET_ID`, `HUNYUAN_SECRET_KEY` |
+
+### BFF Controller Example
+
+The AI component does **not** depend on `spring-boot-starter-webflux` (it's an atomic capability). The BFF controller lives in your **business project**. Full copy-paste-ready code is in [`R-N-DESIGN.md` §14.13](./R-N-DESIGN.md) — includes:
+
+- `pom.xml` dependencies
+- Full `application.yml` with 5 vendor configs
+- `BffVoiceController` (SSE streaming + audio upload + interrupt + close)
+- Frontend SDK pseudocode
+
+### Switch Vendors via YAML Only
+
+```yaml
+platform:
+  component:
+    ai:
+      tts:
+        zhipu:
+          api-key: "your-zhipu-key"          # ← existing config
+        dashscope:
+          api-key: "your-dashscope-key"      # ← existing config
+        doubao:
+          api-key: "your-doubao-token"
+          app-id: "your-app-id"
+          resource-id: "your-resource-id"
+        hunyuan:
+          api-key: "your-hunyuan-token"
+          secret-id: "your-secret-id"
+          secret-key: "your-secret-key"
+      voice-chat:                            # ← voice chat business name
+        customer-service:
+-         vendor: zhipu                      # ← switch by changing this ONE line
++         vendor: dashscope
+-         model: glm-4-voice
++         model: qwen-omni-turbo-realtime
+```
+
+Restart, and `VoiceChatService` automatically routes to `aiDashscopeVoiceChatModel` bean. Business controller code: zero changes.
+
+### Detailed Design
+
+## 🔑 API Key Pool
+
+Many vendors (Zhipu, DashScope, Doubao, Hunyuan, etc.) sell **Token Plan** API keys in batches because each key is rate-limited to ~1–4 concurrent calls. During peak traffic a single key can be throttled to just 1 concurrent call. This component provides an out-of-the-box **commons-pool2-backed key pool** that rotates keys automatically on rate-limit and falls back across the pool.
+
+### Why a Key Pool
+
+- **Self-hosted cost is high** for large LLMs — users buy batches of Token Plan keys instead
+- **Per-key concurrency is limited** — a single key can saturate during peak
+- **Manual rotation is error-prone** — a key pool centralizes the policy
+- **Failover must be automatic** — when one key hits 429/403/503, switch to next
+
+### Configuration
+
+```yaml
+platform:
+  component:
+    ai:
+      # Global key-pool policy (applies to ALL business names)
+      key-pool:
+        enabled: true                  # set false → NoOp pool (legacy single-key behavior)
+        retry-rounds: 2                # max rounds to try a different key before giving up
+        cooldown-seconds: 60           # invalid key goes into cooldown for this long
+        max-wait-millis: 3000          # borrow() blocks up to this long when pool empty
+        block-when-exhausted: true     # true=block / false=immediate KeyPoolExhaustedException
+
+      # Per-business config: Set<String> apiKeys (RECOMMENDED)
+      models:
+        product-search:
+          provider: zhipu
+          api-keys:                    # ← Set (deduplicated)
+            - sk-zhipu-key-1
+            - sk-zhipu-key-2
+            - sk-zhipu-key-3
+          base-url: https://open.bigmodel.cn/api/paas/v4
+          options:
+            model: glm-4
+        customer-service:
+          provider: doubao
+          api-keys:
+            - sk-doubao-key-1
+            - sk-doubao-key-2
+
+      # Legacy: `api-key: String` still works (auto-wrapped to a Set of size 1)
+      models:
+        legacy-bot:
+          provider: zhipu
+          api-key: sk-zhipu-legacy      # backward compatible
+```
+
+Same `api-keys` Set applies to `rerank` / `image` / `tts` / `stt` / `voice-chat` blocks.
+
+### How It Works
+
+```
+┌────────────────────┐
+│ Business call      │  (e.g., product-search)
+└─────────┬──────────┘
+          │
+          ▼
+┌────────────────────┐    ┌─────────────────────┐
+│ AiChatClientFactory│───▶│ ApiKeyPool          │── borrow() ──▶ key[0] (default Zhipu)
+└────────────────────┘    │ (per business name) │
+                          └─────────────────────┘
+                                  │
+                                  ▼
+                          ┌─────────────────────┐
+                          │ PooledChatModel     │  N pre-built ChatModels (one per key)
+                          │  - perKeyModels[0..N-1]
+                          │  - retry-rounds = 2
+                          └─────────────────────┘
+                                  │
+                          call() throws 429/403/503?
+                          ─── invalidate(key) + continue ──▶ borrow() next key
+                          (cooldown 60s)
+```
+
+1. `ApiKeyPoolManager.getPool(businessName, keys)` lazily creates a `GenericObjectPool<ApiKey>`
+2. For multi-key business, `AiChatClientFactory` pre-builds N `ChatModel` instances (one per key, each carries its own API key) and wraps them in `PooledChatModel`
+3. On every call: borrow → invoke per-key model → on rate-limit `invalidate(key)` and try next → after `retry-rounds` give up, throw `KeyPoolExhaustedException(businessName, retryRounds, totalKeys, numCooldown, lastError)`
+
+### Rate-Limit Detection
+
+`DefaultApiKeyValidator` flags a key as failed (and invalidates it) when the exception or response:
+
+- HTTP status code **429 / 403 / 503** (Too Many Requests / Forbidden / Service Unavailable)
+- Error message contains any of: `rate limit`, `quota`, `too many requests`, `throttled`, `exceeded`
+- Status code reflected via common field names (`statusCode` / `status` / `code`)
+
+**401 Unauthorized is NOT invalidated** — it's a config error, the call should fail-fast so the operator notices.
+
+### Failure Model
+
+| Scenario | Behavior |
+|---|---|
+| Single key + call succeeds | borrow → return |
+| Multi-key + first call rate-limited | invalidate + retry on next key (round 2) |
+| Multi-key + ALL keys rate-limited | throw `KeyPoolExhaustedException` (full context: `retryRounds`, `totalKeys`, `numCooldown`) |
+| All keys in cooldown | borrow() blocks up to `max-wait-millis`, then throws |
+| `enabled: false` | NoOp pool — every call gets the first key, no rotation |
+
+### Monitoring
+
+```java
+@Autowired ApiKeyPoolManager poolManager;
+
+@GetMapping("/admin/key-pools")
+public Map<String, PoolStats> stats() {
+    return poolManager.stats();
+    // { "product-search": PoolStats(totalKeys=3, numActive=2, numCooldown=1), ... }
+}
+```
+
+### Detailed Design
+
+See the [API Key Pool](#-api-key-pool) section above for configuration syntax, working principles, rate-limit detection rules, and failure models. The pool SPI is implemented in `com.richie.component.ai.support.keypool` with `ApiKeyPool` (interface) + `ApiKeyPoolImpl` (GenericObjectPool wrapper) + `ApiKeyPoolManager` (per-business-name factory).
 
 ## Currently Supported Models
 
@@ -198,7 +453,7 @@ Behavior:
 
 - No `ChatClient` instances are created at component startup
 - `initializeModels(List<ModelOptions>)` must be called before any AI invocation
-- If `AiModelService.call/callAsync/callWithModel` is called before initialization, it returns:
+- If `AiChatService.call/callAsync/callWithModel` is called before initialization, it returns:
   - `errorCode = MODEL_NOT_INITIALIZED`
   - `errorMessage = AI model not initialized. Please initialize via configuration file or initializeModels first.`
 
@@ -264,7 +519,7 @@ aiModelService.callAsync(AiRequest.ofUserMessage("Generate a Spring Boot Control
         });
 ```
 
-## AiModelService Interface
+## AiChatService Interface
 
 ```java
 AiResponse call(AiRequest request);
@@ -541,14 +796,14 @@ Tool calling works with both synchronous `call()` and streaming `stream()`. Miss
 
 ## 📐 API Implementation Documentation
 
-> This section documents the **business flow**, **sequence diagram**, and **implementation logic** for each of the 13 public API methods in `AiModelService`.
+> This section documents the **business flow**, **sequence diagram**, and **implementation logic** for each of the 13 public API methods in `AiChatService`.
 > Implementation version: M8 (2.0.0-M8), with Observation, Spring 7 built-in Retry, and Tool Calling integrated.
 
 ### Overall Component Architecture
 
 ```mermaid
 graph LR
-    Caller[Caller] --> Service[AiModelServiceImpl]
+    Caller[Caller] --> Service[AiChatServiceImpl]
     Service --> Router[AiModelRouter]
     Service --> CB[AiModelCircuitBreaker]
     Service --> ToolReg[ToolRegistry]
@@ -592,7 +847,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Caller
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     participant R as AiModelRouter
     participant CB as AiModelCircuitBreaker
     participant CC as ChatClient
@@ -656,7 +911,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Caller
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     participant P as ForkJoinPool
     U->>S: callAsync(request)
     S->>P: supplyAsync(call)
@@ -698,7 +953,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Caller
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     participant CC as ChatClient
     participant L as LLM Provider
     U->>S: stream(request)
@@ -739,7 +994,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Caller
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: callWithModel("gpt-4o", req)
     S->>S: req.setModelName("gpt-4o")
     S->>S: call(req)
@@ -777,7 +1032,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Caller
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     participant F as AiChatClientFactory
     U->>S: initializeModels(options)
     S->>F: createChatClients(options)
@@ -823,7 +1078,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Caller
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: removeModel("gpt-4")
     S->>S: chatClients.remove
     S->>S: runtimeModels.remove
@@ -861,7 +1116,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Caller
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     participant CC as ChatClient
     U->>S: probe("gpt-4")
     S->>S: Validate params
@@ -902,7 +1157,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Caller
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: probeAll()
     loop Each model (serial)
         S->>S: probe(model)
@@ -937,7 +1192,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Caller
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: getAvailableModels()
     S->>S: Merge config + runtime
     loop Each model
@@ -978,7 +1233,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Caller
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: getModelInfo("gpt-4")
     alt Cache hit
         S-->>U: cached AiModelInfo
@@ -1018,7 +1273,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Caller
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     participant CB as AiModelCircuitBreaker
     U->>S: isModelAvailable("gpt-4")
     S->>CB: isOpen("gpt-4")
@@ -1048,7 +1303,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Caller
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: getDefaultModel()
     S->>S: Lazy load defaultModel
     S-->>U: String modelName or null
@@ -1076,7 +1331,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as Caller
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: setDefaultModel("gpt-4")
     S->>S: Validate
     alt Validation failed

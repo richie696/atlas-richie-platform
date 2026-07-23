@@ -32,6 +32,18 @@
             <artifactId>grpc-netty-shaded</artifactId>
         </dependency>
 
+        <!-- IT 集成测试 (Testcontainers BOM 由父级 atlas-richie-dependencies 统一管理版本) -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -56,8 +56,9 @@ public class MilvusVectorAutoConfiguration {
 
     @Bean
     public MilvusServiceClient milvusClient(MilvusConfig config) {
+        // 用 withHost 而非 withUri：host 字段是裸主机名，ConnectParam.verify() 对 withUri 要求带 scheme 的完整 URL。
         ConnectParam.Builder builder = ConnectParam.newBuilder()
-                .withUri(config.getHost())
+                .withHost(config.getHost())
                 .withPort(config.getPort())
                 .withConnectTimeout(config.getConnectTimeoutMs(), java.util.concurrent.TimeUnit.MILLISECONDS)
                 .withKeepAliveTime(config.getKeepAliveTimeMs(), java.util.concurrent.TimeUnit.MILLISECONDS)

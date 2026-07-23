@@ -27,6 +27,32 @@
             <artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
         </dependency>
 
+        <!-- IT 集成测试 (Testcontainers BOM 由父级 atlas-richie-dependencies 统一管理版本) -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- PostgreSQL JDBC 驱动:运行时由 Spring AI/Hikari 加载,显式声明便于 IT 测试类路径 -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Spring AI OpenAI autoconfig (Moderation/Audio/Image 等) 启动期构造 bean 需要 okhttp3,
+             父 BOM 未统一管理版本,显式锁定 4.12.0 (与 spring-ai-openai 内部依赖一致)。 -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.12.0</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -26,6 +26,13 @@
             <groupId>com.richie.component</groupId>
             <artifactId>atlas-richie-component-ai</artifactId>
         </dependency>
+
+        <!-- Reactor Test (StepVerifier 等) — 由组件依赖 BOM 统一管理版本 -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -44,6 +51,7 @@
                 <configuration>
                     <includes>
                         <include>com/richie/component/vector/service/impl/**</include>
+                        <include>com/richie/component/vector/service/AbstractVectorService*</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -52,6 +60,7 @@
                         <configuration>
                             <includes>
                                 <include>com/richie/component/vector/service/impl/**</include>
+                                <include>com/richie/component/vector/service/AbstractVectorService*</include>
                             </includes>
                             <rules>
                                 <rule>

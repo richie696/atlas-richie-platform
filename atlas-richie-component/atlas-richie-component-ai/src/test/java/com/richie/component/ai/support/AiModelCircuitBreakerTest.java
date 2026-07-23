@@ -15,6 +15,8 @@
  */
 package com.richie.component.ai.support;
 
+import com.richie.component.ai.config.resilience.ResilienceConfig;
+
 import com.richie.component.ai.config.AiModelProperties;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +28,7 @@ class AiModelCircuitBreakerTest {
 
     @Test
     void shouldOpenAfterThresholdFailures() {
-        AiModelProperties.ResilienceConfig config = new AiModelProperties.ResilienceConfig();
+        ResilienceConfig config = new ResilienceConfig();
         config.setFailureThreshold(2);
         config.setOpenDurationMs(60_000);
 
@@ -39,7 +41,7 @@ class AiModelCircuitBreakerTest {
 
     @Test
     void recordSuccessShouldResetBreaker() {
-        AiModelProperties.ResilienceConfig config = new AiModelProperties.ResilienceConfig();
+        ResilienceConfig config = new ResilienceConfig();
         config.setFailureThreshold(1);
 
         circuitBreaker.recordFailure("gpt-4o", config);

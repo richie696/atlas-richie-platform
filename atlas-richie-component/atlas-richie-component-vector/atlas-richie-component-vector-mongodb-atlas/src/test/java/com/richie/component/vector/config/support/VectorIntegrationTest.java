@@ -30,4 +30,11 @@ import java.lang.annotation.Target;
 @SpringBootTest(classes = VectorIntegrationTestConfiguration.class)
 @EnabledIf("com.richie.component.vector.config.support.VectorIntegrationTestSupport#isEnabled")
 public @interface VectorIntegrationTest {
+
+    /**
+     * 附加的测试属性配置，会合并到 {@link SpringBootTest} 环境中。
+     *
+     * @return 属性键值对数组 {@code "key=value"}
+     */
+    String[] properties() default {};
 }

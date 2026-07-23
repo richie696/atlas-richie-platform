@@ -16,7 +16,8 @@
 package com.richie.component.vector.service.impl;
 
 import com.richie.component.vector.config.VectorProperties;
-import com.richie.component.vector.model.VectorDocument;
+import com.richie.component.vector.model.VectorContent;
+import com.richie.component.vector.model.VectorRecord;
 import com.richie.component.vector.model.VectorSearchResult;
 import io.weaviate.client.WeaviateClient;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -24,6 +25,9 @@ import org.springframework.ai.vectorstore.VectorStore;
 import io.weaviate.client.base.Result;
 import io.weaviate.client.base.WeaviateError;
 import io.weaviate.client.base.WeaviateErrorMessage;
+import io.weaviate.client.v1.batch.Batch;
+import io.weaviate.client.v1.batch.api.ObjectsBatchDeleter;
+import io.weaviate.client.v1.batch.model.BatchDeleteResponse;
 import io.weaviate.client.v1.graphql.model.GraphQLResponse;
 import io.weaviate.client.v1.graphql.query.Raw;
 import io.weaviate.client.v1.schema.Schema;
@@ -58,6 +62,8 @@ class WeaviateVectorServiceImplTest {
     private ClassGetter classGetter;
     private GraphQL graphQL;
     private Raw raw;
+    private Batch batch;
+    private ObjectsBatchDeleter objectsBatchDeleter;
 
     private WeaviateVectorServiceImpl vectorService;
 
@@ -72,8 +78,10 @@ class WeaviateVectorServiceImplTest {
         classGetter = mock(ClassGetter.class);
         graphQL = mock(GraphQL.class);
         raw = mock(Raw.class);
+        batch = mock(Batch.class);
+        objectsBatchDeleter = mock(ObjectsBatchDeleter.class);
 
-        vectorService = new WeaviateVectorServiceImpl(vectorStore, embeddingModel, weaviateClient);
+        vectorService = new WeaviateVectorServiceImpl(null, vectorStore, embeddingModel, weaviateClient);
     }
 
     private WeaviateError createError(String message) {
@@ -435,13 +443,13 @@ class WeaviateVectorServiceImplTest {
             stubGraphQL(response);
             mockGraphQLResult(response, false, null);
 
-            List<VectorDocument> docs = vectorService.listDocuments(indexName, 0, 10);
+            List<VectorRecord> docs = vectorService.listDocuments(indexName, 0, 10);
 
             assertThat(docs).hasSize(2);
             assertThat(docs.get(0).getId()).isEqualTo("doc-1");
-            assertThat(docs.get(0).getContent()).isEqualTo("Hello world");
+            assertThat(docs.get(0).getContent()).isEqualTo(new VectorContent.TextContent("Hello world", "text/plain"));
             assertThat(docs.get(1).getId()).isEqualTo("doc-2");
-            assertThat(docs.get(1).getContent()).isEqualTo("Another document");
+            assertThat(docs.get(1).getContent()).isEqualTo(new VectorContent.TextContent("Another document", "text/plain"));
         }
 
         @Test
@@ -459,7 +467,7 @@ class WeaviateVectorServiceImplTest {
             stubGraphQL(response);
             mockGraphQLResult(response, false, null);
 
-            List<VectorDocument> docs = vectorService.listDocuments(indexName, 0, 10);
+            List<VectorRecord> docs = vectorService.listDocuments(indexName, 0, 10);
 
             assertThat(docs).isEmpty();
         }
@@ -478,7 +486,7 @@ class WeaviateVectorServiceImplTest {
             stubGraphQL(response);
             mockGraphQLResult(response, false, null);
 
-            List<VectorDocument> docs = vectorService.listDocuments(indexName, 0, 10);
+            List<VectorRecord> docs = vectorService.listDocuments(indexName, 0, 10);
 
             assertThat(docs).isEmpty();
         }
@@ -509,7 +517,7 @@ class WeaviateVectorServiceImplTest {
             stubGraphQL(response);
             mockGraphQLResult(response, false, null);
 
-            List<VectorDocument> docs = vectorService.listDocuments(indexName, 0, 10);
+            List<VectorRecord> docs = vectorService.listDocuments(indexName, 0, 10);
 
             assertThat(docs).hasSize(1);
             assertThat(docs.get(0).getId()).isEqualTo("doc-1");
@@ -533,239 +541,26 @@ class WeaviateVectorServiceImplTest {
     }
 
     @Nested
-    @DisplayName("searchByVector")
-    class SearchByVectorTests {
-
-        @Test
-        @DisplayName("should throw IllegalArgumentException when vector is null")
-        void searchByVector_withNullVector_shouldThrowException() {
-            assertThatThrownBy(() -> vectorService.searchByVector("idx", null, 10))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("查询向量不能为空");
-        }
-
-        @Test
-        @DisplayName("should throw IllegalArgumentException when vector is empty")
-        void searchByVector_withEmptyVector_shouldThrowException() {
-            float[] emptyVector = new float[0];
-            assertThatThrownBy(() -> vectorService.searchByVector("idx", emptyVector, 10))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("查询向量不能为空");
-        }
-
-        @Test
-        @DisplayName("should throw IllegalArgumentException when limit is zero")
-        void searchByVector_withZeroLimit_shouldThrowException() {
-            float[] vector = new float[]{0.1f, 0.2f, 0.3f};
-            assertThatThrownBy(() -> vectorService.searchByVector("idx", vector, 0))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("limit 必须大于 0");
-        }
-
-        @Test
-        @DisplayName("should throw IllegalArgumentException when limit is negative")
-        void searchByVector_withNegativeLimit_shouldThrowException() {
-            float[] vector = new float[]{0.1f, 0.2f, 0.3f};
-            assertThatThrownBy(() -> vectorService.searchByVector("idx", vector, -5))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("limit 必须大于 0");
-        }
-
-        @Test
-        @DisplayName("should return results from nearVector GraphQL query")
-        void searchByVector_withValidParams_shouldReturnResults() {
-            String indexName = "test_class";
-            float[] vector = new float[]{0.1f, 0.2f, 0.3f};
-
-            Map<String, Object> additional1 = Map.of(
-                    "id", "doc-1",
-                    "certainty", 0.95
-            );
-            Map<String, Object> item1 = Map.of(
-                    "content", "Matching content",
-                    "_additional", additional1
-            );
-
-            Map<String, Object> getMap = new HashMap<>();
-            getMap.put(indexName, List.of(item1));
-            Map<String, Object> dataMap = Map.of("Get", getMap);
-
-            GraphQLResponse response = mock(GraphQLResponse.class);
-            when(response.getData()).thenReturn(dataMap);
-
-            stubGraphQL(response);
-            mockGraphQLResult(response, false, null);
-
-            List<VectorSearchResult> results = vectorService.searchByVector(indexName, vector, 5);
-
-            assertThat(results).hasSize(1);
-            assertThat(results.get(0).getId()).isEqualTo("doc-1");
-            assertThat(results.get(0).getContent()).isEqualTo("Matching content");
-            assertThat(results.get(0).getScore()).isEqualTo(0.95);
-        }
-
-        @Test
-        @DisplayName("should return empty list when no results")
-        void searchByVector_whenNoResults_shouldReturnEmpty() {
-            String indexName = "empty_class";
-            float[] vector = new float[]{0.1f, 0.2f, 0.3f};
-
-            Map<String, Object> getMap = new HashMap<>();
-            getMap.put(indexName, List.of());
-            Map<String, Object> dataMap = Map.of("Get", getMap);
-
-            GraphQLResponse response = mock(GraphQLResponse.class);
-            when(response.getData()).thenReturn(dataMap);
-
-            stubGraphQL(response);
-            mockGraphQLResult(response, false, null);
-
-            List<VectorSearchResult> results = vectorService.searchByVector(indexName, vector, 10);
-
-            assertThat(results).isEmpty();
-        }
-
-        @Test
-        @DisplayName("should return empty list when Get is null")
-        void searchByVector_whenGetNull_shouldReturnEmpty() {
-            String indexName = "null_class";
-            float[] vector = new float[]{0.1f, 0.2f, 0.3f};
-
-            Map<String, Object> dataMap = new HashMap<>();
-            dataMap.put("Get", null);
-
-            GraphQLResponse response = mock(GraphQLResponse.class);
-            when(response.getData()).thenReturn(dataMap);
-
-            stubGraphQL(response);
-            mockGraphQLResult(response, false, null);
-
-            List<VectorSearchResult> results = vectorService.searchByVector(indexName, vector, 10);
-
-            assertThat(results).isEmpty();
-        }
-
-        @Test
-        @DisplayName("should skip items without id even if content exists")
-        void searchByVector_shouldSkipItemsWithoutId() {
-            String indexName = "partial_class";
-            float[] vector = new float[]{0.1f, 0.2f, 0.3f};
-
-            Map<String, Object> additional1 = Map.of("certainty", 0.9);
-            Map<String, Object> item1 = Map.of("content", "No id", "_additional", additional1);
-
-            Map<String, Object> additional2 = Map.of("id", "doc-2", "certainty", 0.8);
-            Map<String, Object> item2 = Map.of("content", "Has id", "_additional", additional2);
-
-            Map<String, Object> getMap = new HashMap<>();
-            getMap.put(indexName, List.of(item1, item2));
-            Map<String, Object> dataMap = Map.of("Get", getMap);
-
-            GraphQLResponse response = mock(GraphQLResponse.class);
-            when(response.getData()).thenReturn(dataMap);
-
-            stubGraphQL(response);
-            mockGraphQLResult(response, false, null);
-
-            List<VectorSearchResult> results = vectorService.searchByVector(indexName, vector, 10);
-
-            assertThat(results).hasSize(1);
-            assertThat(results.get(0).getId()).isEqualTo("doc-2");
-        }
-
-        @Test
-        @DisplayName("should throw RuntimeException when GraphQL returns errors")
-        void searchByVector_whenGraphQLErrors_shouldThrowRuntimeException() {
-            String indexName = "error_class";
-            float[] vector = new float[]{0.1f, 0.2f, 0.3f};
-
-            GraphQLResponse response = mock(GraphQLResponse.class);
-            when(response.getData()).thenReturn(null);
-
-            stubGraphQL(response);
-            mockGraphQLResult(response, true, createError("search failed"));
-
-            assertThatThrownBy(() -> vectorService.searchByVector(indexName, vector, 10))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("Weaviate searchByVector failed");
-        }
-    }
-
-    @Nested
-    @DisplayName("vectorToString")
-    class VectorToStringTests {
-
-        @Test
-        @DisplayName("should convert vector to bracket string format via searchByVector")
-        void vectorToString_shouldFormatCorrectly() {
-            String indexName = "test_class";
-            float[] vector = new float[]{0.1f, -0.2f, 0.3f};
-
-            Map<String, Object> dataMap = new HashMap<>();
-            dataMap.put("Get", Map.of(indexName, List.of()));
-
-            GraphQLResponse response = mock(GraphQLResponse.class);
-            when(response.getData()).thenReturn(dataMap);
-
-            stubGraphQL(response);
-            mockGraphQLResult(response, false, null);
-
-            ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
-            verify(raw, never()).withQuery(queryCaptor.capture());
-
-            vectorService.searchByVector(indexName, vector, 5);
-
-            verify(raw).withQuery(queryCaptor.capture());
-            String graphqlQuery = queryCaptor.getValue();
-            assertThat(graphqlQuery).contains("[0.1,-0.2,0.3]");
-        }
-
-        @Test
-        @DisplayName("should handle single element vector")
-        void vectorToString_singleElement() {
-            String indexName = "test_class";
-            float[] vector = new float[]{1.0f};
-
-            Map<String, Object> dataMap = new HashMap<>();
-            dataMap.put("Get", Map.of(indexName, List.of()));
-
-            GraphQLResponse response = mock(GraphQLResponse.class);
-            when(response.getData()).thenReturn(dataMap);
-
-            stubGraphQL(response);
-            mockGraphQLResult(response, false, null);
-
-            ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
-            vectorService.searchByVector(indexName, vector, 5);
-
-            verify(raw).withQuery(queryCaptor.capture());
-            String graphqlQuery = queryCaptor.getValue();
-            assertThat(graphqlQuery).contains("[1.0]");
-        }
-    }
-
-    @Nested
     @DisplayName("Base class operations")
     class BaseClassOperationTests {
 
         @Test
-        @DisplayName("addDocument should delegate to vectorStore")
-        void addDocument_shouldDelegateToVectorStore() {
-            VectorDocument doc = new VectorDocument();
-            doc.setContent("test content");
+        @DisplayName("add should delegate to vectorStore")
+        void add_shouldDelegateToVectorStore() {
+            VectorRecord doc = VectorRecord.text("test_idx", "test content");
             doc.setMetadata(new HashMap<>());
 
-            vectorService.addDocument(doc);
+            vectorService.add(doc);
 
             verify(vectorStore).add(any());
         }
 
         @Test
-        @DisplayName("deleteDocument should delegate to vectorStore")
-        void deleteDocument_shouldDelegateToVectorStore() {
-            vectorService.deleteDocument("doc-1");
+        @DisplayName("delete should delegate to vectorStore")
+        void delete_shouldDelegateToVectorStore() {
+            vectorService.delete("test_idx", "doc-1");
 
-            verify(vectorStore).delete("doc-1");
+            verify(vectorStore).delete(List.of("doc-1"));
         }
 
         @Test
@@ -774,9 +569,192 @@ class WeaviateVectorServiceImplTest {
             when(vectorStore.similaritySearch(any(org.springframework.ai.vectorstore.SearchRequest.class)))
                     .thenReturn(List.of());
 
-            vectorService.searchByText("test query", 10);
+            vectorService.searchByText("test_idx", "test query", 10);
 
             verify(vectorStore).similaritySearch(any(org.springframework.ai.vectorstore.SearchRequest.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("truncateIndex")
+    class TruncateIndexTests {
+
+        @Test
+        @DisplayName("should issue batch delete with NotEqual _id match-all filter")
+        void truncateIndex_executesBatchDelete() {
+            String indexName = "test_class";
+
+            GraphQLResponse countResponse = mock(GraphQLResponse.class);
+            Map<String, Object> dataMap = Map.of("Get",
+                    Map.of(indexName, List.of(Map.of("id", "doc-1"), Map.of("id", "doc-2"))));
+            when(countResponse.getData()).thenReturn(dataMap);
+            stubGraphQL(countResponse);
+            Result<GraphQLResponse> countResult = mock(Result.class);
+            when(countResult.getResult()).thenReturn(countResponse);
+            when(countResult.hasErrors()).thenReturn(false);
+            doReturn(countResult).when(raw).run();
+
+            BatchDeleteResponse.Results batchResults = new BatchDeleteResponse.Results();
+            batchResults.setSuccessful(2L);
+            BatchDeleteResponse batchResponse = new BatchDeleteResponse();
+            batchResponse.setResults(batchResults);
+
+            Result<BatchDeleteResponse> deleteResult = mock(Result.class);
+            when(deleteResult.hasErrors()).thenReturn(false);
+            when(deleteResult.getResult()).thenReturn(batchResponse);
+
+            when(weaviateClient.batch()).thenReturn(batch);
+            when(batch.objectsBatchDeleter()).thenReturn(objectsBatchDeleter);
+            when(objectsBatchDeleter.withClassName(indexName)).thenReturn(objectsBatchDeleter);
+            when(objectsBatchDeleter.withWhere(any(io.weaviate.client.v1.filters.WhereFilter.class)))
+                    .thenReturn(objectsBatchDeleter);
+            when(objectsBatchDeleter.withOutput("minimal")).thenReturn(objectsBatchDeleter);
+            when(objectsBatchDeleter.run()).thenReturn(deleteResult);
+
+            long deleted = vectorService.truncateIndex(indexName);
+
+            assertThat(deleted).isEqualTo(2L);
+            verify(batch).objectsBatchDeleter();
+            verify(objectsBatchDeleter).withClassName(indexName);
+            verify(objectsBatchDeleter).run();
+        }
+
+        @Test
+        @DisplayName("should throw RuntimeException when Weaviate batch delete fails")
+        void truncateIndex_whenWeaviateErrors_shouldThrow() {
+            String indexName = "error_class";
+
+            GraphQLResponse countResponse = mock(GraphQLResponse.class);
+            when(countResponse.getData()).thenReturn(Map.of("Get", Map.of(indexName, List.of())));
+            stubGraphQL(countResponse);
+            Result<GraphQLResponse> countResult = mock(Result.class);
+            when(countResult.getResult()).thenReturn(countResponse);
+            when(countResult.hasErrors()).thenReturn(false);
+            doReturn(countResult).when(raw).run();
+
+            Result<BatchDeleteResponse> errorResult = mock(Result.class);
+            when(errorResult.hasErrors()).thenReturn(true);
+            when(errorResult.getError()).thenReturn(createError("batch delete failed"));
+
+            when(weaviateClient.batch()).thenReturn(batch);
+            when(batch.objectsBatchDeleter()).thenReturn(objectsBatchDeleter);
+            when(objectsBatchDeleter.withClassName(indexName)).thenReturn(objectsBatchDeleter);
+            when(objectsBatchDeleter.withWhere(any(io.weaviate.client.v1.filters.WhereFilter.class)))
+                    .thenReturn(objectsBatchDeleter);
+            when(objectsBatchDeleter.withOutput("minimal")).thenReturn(objectsBatchDeleter);
+            when(objectsBatchDeleter.run()).thenReturn(errorResult);
+
+            assertThatThrownBy(() -> vectorService.truncateIndex(indexName))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Weaviate truncateIndex failed");
+        }
+    }
+
+    @Nested
+    @DisplayName("healthCheck (inherited 3-step probe)")
+    class HealthCheckTests {
+
+        @Test
+        @DisplayName("should return false when schema exists returns false")
+        void healthCheck_whenClassMissing_shouldReturnFalse() {
+            String indexName = "missing_class";
+
+            when(weaviateClient.schema()).thenReturn(schema);
+            when(schema.exists()).thenReturn(classExists);
+            when(classExists.withClassName(indexName)).thenReturn(classExists);
+            Result<Boolean> existsResult = mock(Result.class);
+            when(existsResult.getResult()).thenReturn(false);
+            when(existsResult.hasErrors()).thenReturn(false);
+            when(classExists.run()).thenReturn(existsResult);
+
+            assertThat(vectorService.healthCheck(indexName)).isFalse();
+        }
+
+        @Test
+        @DisplayName("should return true when schema exists and count is non-negative")
+        void healthCheck_whenClassExists_shouldReturnTrue() {
+            String indexName = "test_class";
+
+            when(weaviateClient.schema()).thenReturn(schema);
+            when(schema.exists()).thenReturn(classExists);
+            when(classExists.withClassName(indexName)).thenReturn(classExists);
+            Result<Boolean> existsResult = mock(Result.class);
+            when(existsResult.getResult()).thenReturn(true);
+            when(existsResult.hasErrors()).thenReturn(false);
+            when(classExists.run()).thenReturn(existsResult);
+
+            GraphQLResponse countResponse = mock(GraphQLResponse.class);
+            Map<String, Object> dataMap = Map.of("Get",
+                    Map.of(indexName, List.of(Map.of("id", "doc-1"))));
+            when(countResponse.getData()).thenReturn(dataMap);
+            stubGraphQL(countResponse);
+            Result<GraphQLResponse> countResult = mock(Result.class);
+            when(countResult.getResult()).thenReturn(countResponse);
+            when(countResult.hasErrors()).thenReturn(false);
+            doReturn(countResult).when(raw).run();
+
+            assertThat(vectorService.healthCheck(indexName)).isTrue();
+        }
+
+        @Test
+        @DisplayName("should return false when countDocuments throws")
+        void healthCheck_whenCountThrows_shouldReturnFalse() {
+            String indexName = "broken_class";
+
+            when(weaviateClient.schema()).thenReturn(schema);
+            when(schema.exists()).thenReturn(classExists);
+            when(classExists.withClassName(indexName)).thenReturn(classExists);
+            Result<Boolean> existsResult = mock(Result.class);
+            when(existsResult.getResult()).thenReturn(true);
+            when(existsResult.hasErrors()).thenReturn(false);
+            when(classExists.run()).thenReturn(existsResult);
+
+            when(weaviateClient.graphQL()).thenReturn(graphQL);
+            when(graphQL.raw()).thenReturn(raw);
+            when(raw.withQuery(any(String.class))).thenReturn(raw);
+            when(raw.run()).thenThrow(new RuntimeException("graphql failed"));
+
+            assertThat(vectorService.healthCheck(indexName)).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("Ops API")
+    class OpsApiTests {
+
+        @Test
+        void optimize_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.optimize("idx"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("weaviate");
+        }
+
+        @Test
+        void createAlias_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.createAlias("idx", "alias"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("weaviate");
+        }
+
+        @Test
+        void switchAlias_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.switchAlias("old-idx", "new-idx", "alias"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("weaviate");
+        }
+
+        @Test
+        void backup_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.backup("idx", "/tmp/backup"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("weaviate");
+        }
+
+        @Test
+        void restore_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.restore("/tmp/backup", "idx"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("weaviate");
         }
     }
 }

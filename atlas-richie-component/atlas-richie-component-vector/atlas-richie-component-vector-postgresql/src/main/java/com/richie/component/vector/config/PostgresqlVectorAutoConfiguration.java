@@ -43,8 +43,11 @@ public class PostgresqlVectorAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.vector", name="provider", havingValue = "postgresql")
-    public VectorStore postgresVectorStore(@Qualifier("postgresqlJdbcTemplate") JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel) {
-        return PgVectorStore.builder(jdbcTemplate, embeddingModel).build();
+    public VectorStore postgresVectorStore(@Qualifier("postgresqlJdbcTemplate") JdbcTemplate jdbcTemplate,
+                                           EmbeddingModel embeddingModel, PostgresqlConfig config) {
+        return PgVectorStore.builder(jdbcTemplate, embeddingModel)
+                .dimensions(config.getEmbeddingDimension() != null ? config.getEmbeddingDimension() : 1536)
+                .build();
     }
 
     @Bean("postgresqlJdbcTemplate")

@@ -15,6 +15,8 @@
  */
 package com.richie.component.ai.support;
 
+import com.richie.component.ai.config.chat.AiChatModelOptions;
+
 import com.richie.component.ai.config.AiModelProperties;
 import com.richie.component.ai.model.AiRequest;
 import org.junit.jupiter.api.Test;
@@ -30,7 +32,7 @@ class AiChatOptionsResolverTest {
 
     @Test
     void mergeOptions_shouldOverrideNonNullRequestFields() {
-        AiModelProperties.AiModelOptions base = new AiModelProperties.AiModelOptions()
+        AiChatModelOptions base = new AiChatModelOptions()
                 .setTemperature(0.7)
                 .setMaxTokens(2000);
 
@@ -38,7 +40,7 @@ class AiChatOptionsResolverTest {
                 .setTemperature(0.2)
                 .setTopP(0.9);
 
-        AiModelProperties.AiModelOptions merged = resolver.mergeOptions(base, request);
+        AiChatModelOptions merged = resolver.mergeOptions(base, request);
 
         assertEquals(0.2, merged.getTemperature());
         assertEquals(2000, merged.getMaxTokens());
@@ -47,7 +49,7 @@ class AiChatOptionsResolverTest {
 
     @Test
     void toChatOptions_shouldBuildOpenAiOptions() {
-        AiModelProperties.AiModelOptions options = new AiModelProperties.AiModelOptions()
+        AiChatModelOptions options = new AiChatModelOptions()
                 .setModel("gpt-4o")
                 .setTemperature(0.5);
 

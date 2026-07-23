@@ -15,7 +15,10 @@
  */
 package com.richie.component.ai.config;
 
+import com.richie.component.ai.config.AiModelProperties;
+
 import com.richie.component.ai.support.AiChatOptionsResolver;
+import com.richie.component.ai.support.keypool.ApiKeyPoolManager;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
@@ -72,7 +75,8 @@ class AiChatClientFactoryTest {
                 new AiChatOptionsResolver(),
                 stubObservationProvider(),
                 stubMeterRegistryProvider(),
-                retryTemplate
+                retryTemplate,
+                new ApiKeyPoolManager(new AiModelProperties())
         );
         assertNotNull(factory);
     }

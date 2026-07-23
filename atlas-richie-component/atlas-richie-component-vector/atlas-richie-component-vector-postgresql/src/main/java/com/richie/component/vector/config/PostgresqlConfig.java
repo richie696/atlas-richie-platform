@@ -90,4 +90,9 @@ public class PostgresqlConfig {
      */
     private String connectionTestQuery = "SELECT 1";
 
+    /**
+     * Embedding 向量维度（默认 1536）。PgVectorStore builder 在建表时透传给 vector(N) 列。
+     */
+    private Integer embeddingDimension = 1536;
+
 }

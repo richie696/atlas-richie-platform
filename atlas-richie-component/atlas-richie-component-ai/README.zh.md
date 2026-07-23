@@ -4,6 +4,8 @@
 
 - [📋 概述](#-概述)
 - [✨ 核心能力](#-核心能力)
+- [🎙 实时语音对话 (WebSocket + STS)](#-实时语音对话-websocket--sts)
+- [🔑 API Key 池](#-api-key-池)
 - [🤖 当前支持模型](#-当前支持模型)
   - [1) 组件内置 Provider(配置文件模式)](#1-组件内置-provider配置文件模式)
   - [2) 动态模式的未知 Provider 兜底](#2-动态模式的未知-provider-兜底)
@@ -15,7 +17,7 @@
   - [1) 业务系统构造模型配置列表](#1-业务系统构造模型配置列表)
   - [2) 调用组件动态初始化](#2-调用组件动态初始化)
 - [💡 统一调用示例](#-统一调用示例)
-- [🔌 AiModelService 接口](#-aimodelservice-接口)
+- [🔌 AiChatService 接口](#-aichatservice-接口)
 - [📊 关键数据结构](#-关键数据结构)
   - [1) `AiRequest`](#1-airequest)
   - [2) `ModelOptions`(动态初始化输入)](#2-modeloptions动态初始化输入)
@@ -68,11 +70,251 @@
 
 ## 核心能力
 
-- 统一调用接口：同一个 `AiModelService` 调用不同厂商模型
+- 统一调用接口：同一个 `AiChatService` 调用不同厂商模型
 - 多模型管理：支持查看可用模型、切换默认模型、按模型名调用
 - 动态模型注册：支持 `initializeModels(List<ModelOptions>)` 运行时装载
 - 兼容协议兜底：动态注册遇到未知 provider 时，自动降级为 OpenAI 协议
 - 统一响应结构：包含内容、耗时、模型信息、token 使用统计
+- **实时语音对话 (WebSocket + STS)** — 业务侧只依赖 `VoiceChatService`,无需感知任何 vendor 字符串。详见 [实时语音对话 (WebSocket + STS)](#-实时语音对话-websocket--sts) 章节。
+- **API Key 池** — Token Plan 场景下通过 Commons Pool2 自动轮换 key,限流时切换到下一个。详见 [API Key 池](#-api-key-池) 章节。
+
+## 实时语音对话 (WebSocket + STS)
+
+为多家厂商(Zhipu / DashScope / Doubao / Hunyuan)实时语音对话设计的统一 SPI,将所有 vendor 特定的鉴权和协议细节收敛到两个接口后面:
+
+- `VoiceChatService` — 业务侧入口(`open(businessName, config)`)
+- `StsTicket` — 不透明短时凭证(业务侧调 `asBearerHeaders()` / `asTc3Headers()` / `asHeaderMap()` 不感知 vendor)
+
+### 
+
+### 快速开始
+
+```java
+@Resource
+private VoiceChatService voiceChatService;
+
+VoiceChatConfig config = VoiceChatConfig.builder()
+        .model("glm-4-voice")
+        .voice("tongtong")
+        .language("zh-CN")
+        .build();
+
+try (VoiceConversation conv = voiceChatService.open("customer-service", config)) {
+    conv.events().subscribe(event -> {
+        switch (event.type()) {
+            case AUDIO_CHUNK -> playAudio(event.audio());
+            case TRANSCRIPT_FINAL -> onTranscript(event.text());
+            case SESSION_END, ERROR -> conv.close();
+            default -> { }
+        }
+    });
+}
+```
+
+### 仅通过 YAML 切换 vendor
+
+```yaml
+platform:
+  component:
+    ai:
+      tts:
+        zhipu:
+          api-key: "your-zhipu-key"     # ← 既有配置
+      voice-chat:                       # ← 实时语音配置
+        customer-service:
+          vendor: zhipu                 # 改这一行就能切到 dashscope / doubao / hunyuan
+          model: glm-4-voice
+          sts:
+            ttl-seconds: 3600
+```
+
+### 架构 (原则 J — 业务侧不感知 vendor)
+
+```
+┌──────────────────┐
+│ BFF Controller   │  仅依赖 api/voicechat/* (VoiceChatService, VoiceChatConfig, VoiceChatEvent)
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐    ┌─────────────────────┐
+│ VoiceChatService │───▶│ VoiceStsService     │──▶ StsSigner impl (Bearer/TC3/AppCode/AK-SK/X-Api-Key)
+└────────┬─────────┘    └─────────────────────┘
+         │
+         ▼
+┌──────────────────┐
+│ VoiceChatModel   │  按 vendor 一一对应 (ZhipuRealtimeVoiceChatModel 等)
+└──────────────────┘
+```
+
+**强制规则**(由 ArchUnit 静态守护):
+- `api/voicechat/*` 与 `service/voicechat/*` **禁止**依赖 `provider/*`
+- 业务侧只引用接口,vendor 由配置决定,不写死在代码里
+- 切换 vendor = 改一行 YAML,业务代码零改动
+
+### Caveat: 真机 WebSocket IT
+
+单测覆盖了 SPI 行为,但生产前必须用真实厂商端点和凭证验证 WebSocket 握手机制。需准备以下环境变量后执行 `mvn verify -Pit`:
+
+| 厂商 | 端点 | 鉴权 | 环境变量 |
+|------|------|------|----------|
+| Zhipu | `wss://open.bigmodel.cn/api/paas/v4/realtime` | Bearer | `ZHIPU_REALTIME_API_KEY` |
+| DashScope | `wss://dashscope.aliyuncs.com/api-ws/v1/realtime` | Bearer | `DASHSCOPE_API_KEY` |
+| Doubao TTS 双向 | `wss://openspeech.bytedance.com/api/v3/tts/bidirection` | X-Api-Key | `DOUBAO_APP_ID` / `DOUBAO_TOKEN` / `DOUBAO_RESOURCE_ID` |
+| Doubao STT 流式 | `wss://openspeech.bytedance.com/api/v2/asr` | X-Api-Key | 同上 |
+| Hunyuan STT 流式 | TC3 over WS (`asr.tencentcloudapi.com:443`) | TC3-HMAC-SHA256 | `HUNYUAN_SECRET_ID` / `HUNYUAN_SECRET_KEY` |
+
+### BFF Controller 完整代码
+
+AI 组件**不依赖** `spring-boot-starter-webflux`(作为原子能力组件),BFF controller 放在**业务项目**。
+
+### 仅通过 YAML 切换 vendor
+
+```yaml
+platform:
+  component:
+    ai:
+      tts:
+        zhipu:
+          api-key: "your-zhipu-key"          # ← 既有配置
+        dashscope:
+          api-key: "your-dashscope-key"      # ← 既有配置
+        doubao:
+          api-key: "your-doubao-token"
+          app-id: "your-app-id"
+          resource-id: "your-resource-id"
+        hunyuan:
+          api-key: "your-hunyuan-token"
+          secret-id: "your-secret-id"
+          secret-key: "your-secret-key"
+      voice-chat:                            # ← 语音业务名
+        customer-service:
+-         vendor: zhipu                      # ← 改这一行就能切换 vendor
++         vendor: dashscope
+-         model: glm-4-voice
++         model: qwen-omni-turbo-realtime
+```
+
+重启后 `VoiceChatService` 自动按 vendor 路由到 `aiDashscopeVoiceChatModel` bean,业务 controller 代码:零改动。
+
+### 详细设计
+
+完整 SPI 设计、配置树、实装状态表及 BFF controller 代码见 `R-N-DESIGN.md` §14。
+
+## 🔑 API Key 池
+
+智谱、DashScope、豆包、腾讯混元等厂商普遍售卖 **Token Plan** 批量 API key —— 因为单 key 厂商限制 1~4 并发,高峰期甚至会被压缩到 1 并发。本组件内置 **commons-pool2 key 池**,触发限流时自动切换 key,无需业务方手工实现轮换。
+
+### 为什么需要 Key 池
+
+- **自部署成本高** —— 大模型场景下用户普遍购买 Token Plan 批量 key
+- **单 key 并发受限** —— 高峰期单 key 易被打到 1 并发
+- **手工轮换易出错** —— key 池统一管理策略
+- **必须自动 failover** —— 某 key 触发 429/403/503 时无缝切到下一个
+
+### 配置
+
+```yaml
+platform:
+  component:
+    ai:
+      # 全局 key 池策略(对所有业务名生效)
+      key-pool:
+        enabled: true                  # false → NoOp 池(老单 key 行为)
+        retry-rounds: 2                # 换 key 的最大轮数
+        cooldown-seconds: 60           # 失效 key 进入冷却的时长
+        max-wait-millis: 3000          # 池空时 borrow 阻塞上限
+        block-when-exhausted: true     # true=阻塞 / false=立即抛 KeyPoolExhaustedException
+
+      # 每个业务: Set<String> apiKeys(推荐写法)
+      models:
+        product-search:
+          provider: zhipu
+          api-keys:                    # ← Set(自动去重)
+            - sk-zhipu-key-1
+            - sk-zhipu-key-2
+            - sk-zhipu-key-3
+          base-url: https://open.bigmodel.cn/api/paas/v4
+          options:
+            model: glm-4
+        customer-service:
+          provider: doubao
+          api-keys:
+            - sk-doubao-key-1
+            - sk-doubao-key-2
+
+      # 向后兼容:老写法 `api-key: String` 仍可用(自动包装为 size=1 的 Set)
+      models:
+        legacy-bot:
+          provider: zhipu
+          api-key: sk-zhipu-legacy      # 单数字段
+```
+
+`rerank` / `image` / `tts` / `stt` / `voice-chat` 配置块同样支持 `api-keys` Set。
+
+### 工作原理
+
+```
+┌────────────────────┐
+│ 业务调用           │  (如 product-search)
+└─────────┬──────────┘
+          │
+          ▼
+┌────────────────────┐    ┌─────────────────────┐
+│ AiChatClientFactory│───▶│ ApiKeyPool          │── borrow() ──▶ key[0]
+└────────────────────┘    │ (按业务名懒加载)     │
+                          └─────────────────────┘
+                                  │
+                                  ▼
+                          ┌─────────────────────┐
+                          │ PooledChatModel     │  N 个预建 ChatModel(每个 key 一份)
+                          │  - perKeyModels[0..N-1]
+                          │  - retry-rounds = 2
+                          └─────────────────────┘
+                                  │
+                          call() 抛 429/403/503?
+                          ─── invalidate(key) + 继续 ──▶ borrow() 下一个 key
+                          (冷却 60s)
+```
+
+1. `ApiKeyPoolManager.getPool(businessName, keys)` 懒加载创建 `GenericObjectPool<ApiKey>`
+2. 多 key 业务:`AiChatClientFactory` 预建 N 个 `ChatModel`(每个烧入自己的 API key),用 `PooledChatModel` 包装
+3. 每次调用:borrow → 调 per-key model → 限流时 `invalidate(key)` 试下一个 → `retry-rounds` 轮后抛 `KeyPoolExhaustedException(businessName, retryRounds, totalKeys, numCooldown, lastError)`
+
+### 限流检测
+
+`DefaultApiKeyValidator` 在以下情况标记 key 失效(从池移除 + 进入冷却):
+
+- HTTP 状态码 **429 / 403 / 503**(Too Many Requests / Forbidden / Service Unavailable)
+- 错误信息含以下关键词:`rate limit` / `quota` / `too many requests` / `throttled` / `exceeded`
+- 通过常用字段名(`statusCode` / `status` / `code`)反射读出状态码
+
+**401 Unauthorized 不会触发 invalidate** —— 这是配置错误,应该 fail-fast 让运维立刻发现。
+
+### 失败模式
+
+| 场景 | 行为 |
+|---|---|
+| 单 key + 调用成功 | borrow → return |
+| 多 key + 第一个 key 限流 | invalidate + 轮询下一个 key(第 2 轮) |
+| 多 key + 全部 key 限流 | 抛 `KeyPoolExhaustedException`(完整上下文:`retryRounds` / `totalKeys` / `numCooldown`) |
+| 所有 key 都在冷却 | borrow() 阻塞到 `max-wait-millis`,超时后抛 |
+| `enabled: false` | NoOp 池 —— 每次拿到第一个 key,不做轮换 |
+
+### 监控
+
+```java
+@Autowired ApiKeyPoolManager poolManager;
+
+@GetMapping("/admin/key-pools")
+public Map<String, PoolStats> stats() {
+    return poolManager.stats();
+    // { "product-search": PoolStats(totalKeys=3, numActive=2, numCooldown=1), ... }
+}
+```
+
+### 详细设计
+
+完整 SPI、配置树、实装状态、测试矩阵(13 单测 + 9 集成)、已知技术债(LIFO 借出顺序)见 [`R-N-DESIGN.md` §15](./R-N-DESIGN.md#15-api-key-池token-plan-场景-rn5)。
 
 ## 当前支持模型
 
@@ -198,7 +440,7 @@ platform:
 
 - 组件启动时不会构造任何 `ChatClient`
 - 必须先调用 `initializeModels(List<ModelOptions>)` 才可执行 AI 调用
-- 若在初始化前调用 `AiModelService.call/callAsync/callWithModel`，将返回：
+- 若在初始化前调用 `AiChatService.call/callAsync/callWithModel`，将返回：
   - `errorCode = MODEL_NOT_INITIALIZED`
   - `errorMessage = AI模型尚未初始化，无法执行调用，请先通过配置文件或 initializeModels 完成初始化`
 
@@ -266,7 +508,7 @@ aiModelService.callAsync(AiRequest.ofUserMessage("生成一个Spring Boot Contro
         });
 ```
 
-## AiModelService 接口
+## AiChatService 接口
 
 ```java
 AiResponse call(AiRequest request);
@@ -409,6 +651,114 @@ void initializeModels(List<ModelOptions> modelOptionsList);
 - 业务可按租户、业务线、场景维护模型路由策略（模型名映射）
 - 对调用失败增加熔断/降级策略，避免外部模型波动影响主链路
 
+## 多模态向量模型（CLIP 等效）
+
+通过阿里百炼（DashScope）`multimodal-embedding-v1` 把文本与图像投影到同一 **1024 维**向量空间，业务侧可借此实现"以文搜图 / 以图搜图 / 文-图混合检索"等跨模态语义检索场景。
+
+### 与文生图（`image`）的差异
+
+| 能力 | 配置键 | 工厂方法 | 输出 |
+|---|---|---|---|
+| 文生图 | `platform.component.ai.image.<key>` | `createImageModel` | 像素图 |
+| 多模态向量 | `platform.component.ai.image-embedding.<key>` | `createImageEmbeddingModel` | 1024 维向量 |
+
+两者配置键不同避免误用；vendor 枚举也不同（`ImageProvider` vs `ImageEmbeddingProvider`）。
+
+### 配置示例
+
+```yaml
+platform:
+  component:
+    ai:
+      image-embedding:
+        # 单 key 形态
+        default-mm:
+          provider: bailian
+          api-key: ${DASHSCOPE_API_KEY}
+          model: multimodal-embedding-v1     # 默认 1024 维
+
+        # 多 key 形态（自动启用 KeyPool 轮询 + 限流切换）
+        search-pool:
+          provider: bailian
+          api-keys:
+            - sk-key-1
+            - sk-key-2
+            - sk-key-3
+          model: multimodal-embedding-v1
+```
+
+### Java 调用示例
+
+```java
+@Autowired
+private AiMultimodalService multimodalService;
+
+EmbeddingModel model = multimodalService.getImageEmbeddingModel("default-mm");
+
+// 文本分支（Spring AI 标准 EmbeddingModel 接口）
+float[] textVec = model.embed("a cute cat");
+assert textVec.length == 1024;
+
+// 文本批量
+EmbeddingResponse resp = model.call(new EmbeddingRequest(
+        List.of("a cat", "a dog", "a car"), null));
+
+// 文档分支（CLIP 文本分支；纯图像走 embedImage 扩展方法）
+float[] docVec = model.embed(new Document("hello world"));
+
+// 图像分支（Bailian 扩展方法，需 cast 或包装 ImageEmbedder 接口）
+if (model instanceof BailianImageEmbeddingAdapter bailian) {
+    float[] imgVec = bailian.embedImage("data:image/jpeg;base64,/9j/AAAA");
+    assert imgVec.length == 1024;
+}
+```
+
+### 维度
+
+- `multimodal-embedding-v1` 输出固定 **1024** 维（DashScope 官方硬编码）
+- `EmbeddingModel.dimensions()` 直接返回常量 1024，不发起远程 probe —— 避免维度探测带来的额外计费调用
+
+### Vendor
+
+**Phase C (patch15, 2026-07-22) 已扩展为 3 个 vendor**：
+
+| Vendor (枚举) | 适配器 | 协议 | 维度 | 是否真 CLIP | 推荐场景 |
+|---|---|---|---|---|---|
+| **BAILIAN** (DashScope) | `BailianImageEmbeddingAdapter` | DashScope multimodal-embedding-v1 | **1024**(硬编码) | ✅ 是 | **生产推荐** — 文本+图像共享空间 |
+| **OLLAMA** | `OllamaImageEmbeddingAdapter` | Ollama `/api/embed` | **768**(`nomic-embed-text` 默认) | ❌ 否(挂名) | **本地开发** — Ollama 原生无 CLIP 协议,仅承担挂名 image-embedding 入口的文本向量化 |
+| **TEI** (HuggingFace) | `TeiImageEmbeddingAdapter` | TEI OpenAI 兼容 `/v1/embeddings` | 由部署模型决定(`dimensions()` 返回 0) | ⚠️ 取决于部署模型(加载 CLIP 类模型则支持) | **自托管推荐** — 当前仅文本分支,image 端点待后续 sprint |
+
+**配置示例(3 vendor 全形态)**:
+
+```yaml
+platform:
+  component:
+    ai:
+      image-embedding:
+        # BAILIAN — 生产推荐
+        default-mm:
+          provider: bailian
+          api-key: ${DASHSCOPE_API_KEY}
+          model: multimodal-embedding-v1     # 1024-dim
+
+        # OLLAMA — 本地开发
+        local-ollama:
+          provider: ollama
+          base-url: http://localhost:11434
+          model: nomic-embed-text             # 768-dim
+
+        # TEI — 自托管 CLIP
+        tei-clip:
+          provider: tei
+          base-url: http://localhost:8080
+          model: BAAI/bge-large-en-v1.5      # 1024-dim;或 sentence-transformers/clip-ViT-B-32 (512-dim)
+          api-key: ${TEI_BEARER_KEY}          # 可选 — 反代鉴权
+```
+
+**业务侧维度约束**: vector store 创建索引时,`vector.dimensions` 必须与所选 vendor 的实际维度对齐 — Bailian 1024 / Ollama 768 / TEI 由部署模型决定;否则写入时 Qdrant/Milvus 等会报 dimension mismatch。
+
+**完整设计与协议细节**: 见 [`R-N-DESIGN.md` §附录 G](./R-N-DESIGN.md#附录-g-phase-c-ai-模块扩展与测试-vector_service_v2_design-113-落地)。
+
 ## 完整配置参考
 
 ### platform.component.ai 配置树
@@ -537,14 +887,14 @@ AiResponse response = aiModelService.call(
 
 ## 📐 接口实现文档
 
-> 本节按 `AiModelService` 接口的 13 个 public API 逐个说明**业务流程**、**时序关系**和**实现逻辑**。
+> 本节按 `AiChatService` 接口的 13 个 public API 逐个说明**业务流程**、**时序关系**和**实现逻辑**。
 > 实现版本：M8（2.0.0-M8），已集成 Observation、Spring 7 内建 Retry、Tool Calling 三大扩展点。
 
 ### 整体组件关系
 
 ```mermaid
 graph LR
-    Caller[业务调用方] --> Service[AiModelServiceImpl]
+    Caller[业务调用方] --> Service[AiChatServiceImpl]
     Service --> Router[AiModelRouter]
     Service --> CB[AiModelCircuitBreaker]
     Service --> ToolReg[ToolRegistry]
@@ -588,7 +938,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as 调用方
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     participant R as AiModelRouter
     participant CB as AiModelCircuitBreaker
     participant CC as ChatClient
@@ -652,7 +1002,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as 调用方
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     participant P as ForkJoinPool
     U->>S: callAsync(request)
     S->>P: supplyAsync(call)
@@ -694,7 +1044,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as 调用方
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     participant CC as ChatClient
     participant L as LLM Provider
     U->>S: stream(request)
@@ -735,7 +1085,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as 调用方
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: callWithModel("gpt-4o", req)
     S->>S: req.setModelName("gpt-4o")
     S->>S: call(req)
@@ -773,7 +1123,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as 业务方
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     participant F as AiChatClientFactory
     U->>S: initializeModels(options)
     S->>F: createChatClients(options)
@@ -819,7 +1169,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as 业务方
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: removeModel("gpt-4")
     S->>S: chatClients.remove
     S->>S: runtimeModels.remove
@@ -857,7 +1207,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as 业务方
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     participant CC as ChatClient
     U->>S: probe("gpt-4")
     S->>S: 校验参数
@@ -898,7 +1248,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as 业务方
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: probeAll()
     loop 每个模型（串行）
         S->>S: probe(model)
@@ -933,7 +1283,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as 业务方
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: getAvailableModels()
     S->>S: 合并 config + runtime
     loop 每个模型
@@ -974,7 +1324,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as 业务方
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: getModelInfo("gpt-4")
     alt cache hit
         S-->>U: cached AiModelInfo
@@ -1014,7 +1364,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as 业务方
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     participant CB as AiModelCircuitBreaker
     U->>S: isModelAvailable("gpt-4")
     S->>CB: isOpen("gpt-4")
@@ -1044,7 +1394,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as 业务方
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: getDefaultModel()
     S->>S: 懒加载 defaultModel
     S-->>U: String modelName 或 null
@@ -1072,7 +1422,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant U as 业务方
-    participant S as AiModelServiceImpl
+    participant S as AiChatServiceImpl
     U->>S: setDefaultModel("gpt-4")
     S->>S: 校验
     alt 校验失败

@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  * 工具回调注册中心
  * <p>
  * 在 Spring 启动时按 {@link ToolDefinition#name()} 索引所有 {@link ToolCallback} Bean，
- * 供 {@code AiModelServiceImpl} 按请求中的 {@code toolNames} 解析为可调用列表。
+ * 供 {@code AiChatServiceImpl} 按请求中的 {@code toolNames} 解析为可调用列表。
  * <p>
  * 重名工具：先注册者获胜，重复条目静默丢弃（避免业务侧无意引入的 Bean 冲突放大成运行时错误）。
  */

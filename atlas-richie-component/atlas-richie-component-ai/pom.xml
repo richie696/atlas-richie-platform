@@ -16,6 +16,18 @@
     <packaging>jar</packaging>
 
     <dependencies>
+        <!-- HTTP facade used by Rerank/Image adapters to call external providers (DashScope, etc.) -->
+        <dependency>
+            <groupId>com.richie.component</groupId>
+            <artifactId>atlas-richie-component-http-core</artifactId>
+        </dependency>
+
+        <!-- R-N.5 API Key Pool — Token Plan 多 key 轮询 / 限流后冷却 (commons-pool2) -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-ollama</artifactId>
@@ -55,6 +67,14 @@
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- ArchUnit: 静态守护 R-N §14 原则 J (api/service 不依赖 provider 包) -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>1.4.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

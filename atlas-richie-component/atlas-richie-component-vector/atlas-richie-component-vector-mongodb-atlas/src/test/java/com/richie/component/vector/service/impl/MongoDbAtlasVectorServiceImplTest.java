@@ -16,8 +16,8 @@
 package com.richie.component.vector.service.impl;
 
 import com.richie.component.vector.config.VectorProperties;
-import com.richie.component.vector.model.VectorDocument;
-import com.richie.component.vector.model.VectorSearchResult;
+import com.richie.component.vector.model.VectorRecord;
+import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -33,8 +33,6 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.index.Index;
-import org.springframework.data.mongodb.core.index.IndexOperations;
 import org.springframework.data.mongodb.core.query.Query;
 
 import java.util.List;
@@ -69,44 +67,117 @@ class MongoDbAtlasVectorServiceImplTest {
     private MongoTemplate mongoTemplate;
 
     @Mock
-    private IndexOperations indexOperations;
+    private MongoDatabase mongoDatabase;
 
     @Captor
     private ArgumentCaptor<Query> queryCaptor;
 
     @Captor
-    private ArgumentCaptor<Index> indexCaptor;
+    private ArgumentCaptor<Document> commandCaptor;
 
     private MongoDbAtlasVectorServiceImpl vectorService;
 
     @BeforeEach
     void setUp() {
         // Inject mock dependencies via constructor (same as production)
-        vectorService = new MongoDbAtlasVectorServiceImpl(vectorStore, embeddingModel, mongoTemplate);
+        vectorService = new MongoDbAtlasVectorServiceImpl(null, vectorStore, embeddingModel, mongoTemplate);
     }
 
     @Nested
-    @DisplayName("createIndex")
+    @DisplayName("createIndex (Atlas Vector Search Index)")
     class CreateIndexTests {
 
         @Test
-        @DisplayName("should create index with vector field ascending")
-        void createIndex_shouldCreateVectorFieldIndex() {
+        @DisplayName("should issue createSearchIndexes command with vectorSearch type + knnVector")
+        void createIndex_issuesAtlasSearchIndexCommand() {
             String indexName = "test_collection";
             VectorProperties.IndexConfig config = new VectorProperties.IndexConfig();
+            config.setDimension(1536);
+            config.setMetric("cosine");
 
-            when(mongoTemplate.indexOps(indexName)).thenReturn(indexOperations);
-            when(indexOperations.createIndex(any(Index.class))).thenReturn("index_name");
+            when(mongoTemplate.getDb()).thenReturn(mongoDatabase);
+            when(mongoDatabase.runCommand(any(Document.class))).thenReturn(new Document("ok", 1.0));
 
             vectorService.createIndex(indexName, config);
 
-            // Verify indexOps was called with correct collection name
-            verify(mongoTemplate).indexOps(indexName);
-            // Verify createIndex was called with an Index containing vector field
-            verify(indexOperations).createIndex(indexCaptor.capture());
-            // The index should be on "vector" field in ascending order
-            Index capturedIndex = indexCaptor.getValue();
-            assertThat(capturedIndex).isNotNull();
+            verify(mongoDatabase).runCommand(commandCaptor.capture());
+            Document cmd = commandCaptor.getValue();
+            assertThat(cmd.getString("createSearchIndexes")).isEqualTo(indexName);
+            @SuppressWarnings("unchecked")
+            List<Document> indexes = (List<Document>) cmd.get("indexes");
+            assertThat(indexes).hasSize(1);
+            Document idx = indexes.get(0);
+            assertThat(idx.getString("type")).isEqualTo("vectorSearch");
+            assertThat(idx.getString("name")).isEqualTo("vector_index");
+            Document definition = (Document) idx.get("definition");
+            @SuppressWarnings("unchecked")
+            List<Document> fields = (List<Document>) definition.get("fields");
+            assertThat(fields).hasSize(1);
+            Document knn = fields.get(0);
+            assertThat(knn.getString("type")).isEqualTo("knnVector");
+            assertThat(knn.getString("path")).isEqualTo("vector");
+            assertThat(knn.getInteger("numDimensions")).isEqualTo(1536);
+            assertThat(knn.getString("similarity")).isEqualTo("cosine");
+        }
+
+        @Test
+        @DisplayName("should map metric euclidean to similarity=euclidean")
+        void createIndex_mapsEuclideanMetric() {
+            String indexName = "c_euclid";
+            VectorProperties.IndexConfig config = new VectorProperties.IndexConfig();
+            config.setDimension(768);
+            config.setMetric("euclidean");
+
+            when(mongoTemplate.getDb()).thenReturn(mongoDatabase);
+            when(mongoDatabase.runCommand(any(Document.class))).thenReturn(new Document("ok", 1.0));
+
+            vectorService.createIndex(indexName, config);
+
+            verify(mongoDatabase).runCommand(commandCaptor.capture());
+            Document cmd = commandCaptor.getValue();
+            @SuppressWarnings("unchecked")
+            List<Document> indexes = (List<Document>) cmd.get("indexes");
+            Document definition = (Document) indexes.get(0).get("definition");
+            @SuppressWarnings("unchecked")
+            List<Document> fields = (List<Document>) definition.get("fields");
+            assertThat(fields.get(0).getString("similarity")).isEqualTo("euclidean");
+        }
+
+        @Test
+        @DisplayName("should default dimension to 1536 when null")
+        void createIndex_defaultsDimensionTo1536() {
+            String indexName = "c_default";
+            VectorProperties.IndexConfig config = new VectorProperties.IndexConfig();
+
+            when(mongoTemplate.getDb()).thenReturn(mongoDatabase);
+            when(mongoDatabase.runCommand(any(Document.class))).thenReturn(new Document("ok", 1.0));
+
+            vectorService.createIndex(indexName, config);
+
+            verify(mongoDatabase).runCommand(commandCaptor.capture());
+            Document cmd = commandCaptor.getValue();
+            @SuppressWarnings("unchecked")
+            List<Document> indexes = (List<Document>) cmd.get("indexes");
+            Document definition = (Document) indexes.get(0).get("definition");
+            @SuppressWarnings("unchecked")
+            List<Document> fields = (List<Document>) definition.get("fields");
+            assertThat(fields.get(0).getInteger("numDimensions")).isEqualTo(1536);
+            assertThat(fields.get(0).getString("similarity")).isEqualTo("cosine");
+        }
+
+        @Test
+        @DisplayName("should swallow error when index already exists")
+        void createIndex_swallowsAlreadyExistsError() {
+            String indexName = "c_existing";
+            VectorProperties.IndexConfig config = new VectorProperties.IndexConfig();
+
+            when(mongoTemplate.getDb()).thenReturn(mongoDatabase);
+            when(mongoDatabase.runCommand(any(Document.class)))
+                    .thenThrow(new RuntimeException("Index already exists with a different definition"));
+
+            // should not throw
+            vectorService.createIndex(indexName, config);
+            verify(mongoDatabase).runCommand(any(Document.class));
         }
     }
 
@@ -231,12 +302,12 @@ class MongoDbAtlasVectorServiceImplTest {
             int offset = 10;
             int limit = 20;
 
-            when(mongoTemplate.find(any(Query.class), eq(VectorDocument.class), eq(indexName)))
+            when(mongoTemplate.find(any(Query.class), eq(VectorRecord.class), eq(indexName)))
                     .thenReturn(List.of());
 
             vectorService.listDocuments(indexName, offset, limit);
 
-            verify(mongoTemplate).find(queryCaptor.capture(), eq(VectorDocument.class), eq(indexName));
+            verify(mongoTemplate).find(queryCaptor.capture(), eq(VectorRecord.class), eq(indexName));
             Query capturedQuery = queryCaptor.getValue();
             // Verify skip was set - offset becomes skip value
             assertThat(capturedQuery).isNotNull();
@@ -247,10 +318,10 @@ class MongoDbAtlasVectorServiceImplTest {
         void listDocuments_whenNoDocuments_shouldReturnEmptyList() {
             String indexName = "empty_collection";
 
-            when(mongoTemplate.find(any(Query.class), eq(VectorDocument.class), eq(indexName)))
+            when(mongoTemplate.find(any(Query.class), eq(VectorRecord.class), eq(indexName)))
                     .thenReturn(List.of());
 
-            List<VectorDocument> result = vectorService.listDocuments(indexName, 0, 10);
+            List<VectorRecord> result = vectorService.listDocuments(indexName, 0, 10);
 
             assertThat(result).isEmpty();
         }
@@ -258,71 +329,71 @@ class MongoDbAtlasVectorServiceImplTest {
         @Test
         @DisplayName("should cap limit at MAX_LIST_LIMIT from base class")
         void listDocuments_shouldCapLimitAtMax() {
-            // The base class VectorServiceImpl.MAX_LIST_LIMIT is 1000
+            // The base class AbstractVectorService.MAX_LIST_LIMIT is 1000
             // listDocuments with limit > 1000 should be capped
             String indexName = "test_collection";
 
-            when(mongoTemplate.find(any(Query.class), eq(VectorDocument.class), eq(indexName)))
+            when(mongoTemplate.find(any(Query.class), eq(VectorRecord.class), eq(indexName)))
                     .thenReturn(List.of());
 
             // This will be capped by base class to MAX_LIST_LIMIT (1000)
             vectorService.listDocuments(indexName, 0, 5000);
 
             // Verify find was called (capped internally)
-            verify(mongoTemplate).find(any(Query.class), eq(VectorDocument.class), eq(indexName));
+            verify(mongoTemplate).find(any(Query.class), eq(VectorRecord.class), eq(indexName));
         }
 
         @Test
         @DisplayName("should return empty for zero limit")
         void listDocuments_withZeroLimit_shouldReturnEmpty() {
-            List<VectorDocument> result = vectorService.listDocuments("idx", 0, 0);
+            List<VectorRecord> result = vectorService.listDocuments("idx", 0, 0);
             // Base class returns empty list for limit <= 0
             assertThat(result).isEmpty();
         }
     }
 
     @Nested
-    @DisplayName("searchByVector")
-    class SearchByVectorTests {
+    @DisplayName("similaritySearchByVector")
+    class SimilaritySearchByVectorTests {
 
         @Test
         @DisplayName("should throw IllegalArgumentException when vector is null")
-        void searchByVector_withNullVector_shouldThrowException() {
-            assertThatThrownBy(() -> vectorService.searchByVector("idx", null, 10))
+        void similaritySearchByVector_withNullVector_shouldThrowException() {
+            assertThatThrownBy(() -> vectorService.similaritySearchByVector("idx", null, 10, 0.0))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("查询向量不能为空");
         }
 
         @Test
         @DisplayName("should throw IllegalArgumentException when vector is empty")
-        void searchByVector_withEmptyVector_shouldThrowException() {
+        void similaritySearchByVector_withEmptyVector_shouldThrowException() {
             float[] emptyVector = new float[0];
-            assertThatThrownBy(() -> vectorService.searchByVector("idx", emptyVector, 10))
+            assertThatThrownBy(() -> vectorService.similaritySearchByVector("idx", emptyVector, 10, 0.0))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("查询向量不能为空");
         }
 
         @Test
         @DisplayName("should throw IllegalArgumentException when limit is zero")
-        void searchByVector_withZeroLimit_shouldThrowException() {
+        void similaritySearchByVector_withZeroLimit_shouldThrowException() {
             float[] vector = new float[]{0.1f, 0.2f, 0.3f};
-            assertThatThrownBy(() -> vectorService.searchByVector("idx", vector, 0))
+            assertThatThrownBy(() -> vectorService.similaritySearchByVector("idx", vector, 0, 0.0))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("limit 必须大于 0");
         }
 
         @Test
         @DisplayName("should throw IllegalArgumentException when limit is negative")
-        void searchByVector_withNegativeLimit_shouldThrowException() {
+        void similaritySearchByVector_withNegativeLimit_shouldThrowException() {
             float[] vector = new float[]{0.1f, 0.2f, 0.3f};
-            assertThatThrownBy(() -> vectorService.searchByVector("idx", vector, -5))
+            assertThatThrownBy(() -> vectorService.similaritySearchByVector("idx", vector, -5, 0.0))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("limit 必须大于 0");
         }
 
         @Test
         @DisplayName("should execute aggregation with vectorSearch and project stages")
-        void searchByVector_withValidParams_shouldExecuteAggregation() {
+        void similaritySearchByVector_withValidParams_shouldExecuteAggregation() {
             String indexName = "test_collection";
             float[] vector = new float[]{0.1f, 0.2f, 0.3f};
             int limit = 5;
@@ -332,7 +403,8 @@ class MongoDbAtlasVectorServiceImplTest {
             when(mongoTemplate.aggregate(any(Aggregation.class), eq(indexName), eq(Document.class)))
                     .thenReturn(mockResults);
 
-            List<VectorSearchResult> results = vectorService.searchByVector(indexName, vector, limit);
+            List<org.springframework.ai.document.Document> results =
+                    vectorService.similaritySearchByVector(indexName, vector, limit, 0.0);
 
             // Verify aggregation was executed
             verify(mongoTemplate).aggregate(any(Aggregation.class), eq(indexName), eq(Document.class));
@@ -341,7 +413,7 @@ class MongoDbAtlasVectorServiceImplTest {
 
         @Test
         @DisplayName("should return empty list when no search results")
-        void searchByVector_whenNoResults_shouldReturnEmptyList() {
+        void similaritySearchByVector_whenNoResults_shouldReturnEmptyList() {
             String indexName = "test_collection";
             float[] vector = new float[]{0.1f, 0.2f, 0.3f};
 
@@ -350,14 +422,15 @@ class MongoDbAtlasVectorServiceImplTest {
             when(mongoTemplate.aggregate(any(Aggregation.class), eq(indexName), eq(Document.class)))
                     .thenReturn(mockResults);
 
-            List<VectorSearchResult> results = vectorService.searchByVector(indexName, vector, 10);
+            List<org.springframework.ai.document.Document> results =
+                    vectorService.similaritySearchByVector(indexName, vector, 10, 0.0);
 
             assertThat(results).isEmpty();
         }
 
         @Test
-        @DisplayName("should map aggregation results to VectorSearchResult")
-        void searchByVector_shouldMapResultsCorrectly() {
+        @DisplayName("should map aggregation results to Spring AI Document")
+        void similaritySearchByVector_shouldMapResultsCorrectly() {
             String indexName = "test_collection";
             float[] vector = new float[]{0.1f, 0.2f, 0.3f};
 
@@ -372,18 +445,18 @@ class MongoDbAtlasVectorServiceImplTest {
             when(mongoTemplate.aggregate(any(Aggregation.class), eq(indexName), eq(Document.class)))
                     .thenReturn(mockResults);
 
-            List<VectorSearchResult> results = vectorService.searchByVector(indexName, vector, 10);
+            List<org.springframework.ai.document.Document> results =
+                    vectorService.similaritySearchByVector(indexName, vector, 10, 0.0);
 
             assertThat(results).hasSize(1);
-            VectorSearchResult result = results.get(0);
+            org.springframework.ai.document.Document result = results.get(0);
             assertThat(result.getId()).isEqualTo("doc-1");
-            assertThat(result.getContent()).isEqualTo("test content");
             assertThat(result.getScore()).isEqualTo(0.95);
         }
 
         @Test
         @DisplayName("should use numCandidates as max(limit*10, 100)")
-        void searchByVector_shouldCalculateNumCandidatesCorrectly() {
+        void similaritySearchByVector_shouldCalculateNumCandidatesCorrectly() {
             String indexName = "test_collection";
             float[] vector = new float[]{0.1f, 0.2f, 0.3f};
             int limit = 5; // 5 * 10 = 50, which is less than 100
@@ -394,14 +467,14 @@ class MongoDbAtlasVectorServiceImplTest {
                     .thenReturn(mockResults);
 
             // This should use 100 as numCandidates (max(50, 100))
-            vectorService.searchByVector(indexName, vector, limit);
+            vectorService.similaritySearchByVector(indexName, vector, limit, 0.0);
 
             verify(mongoTemplate).aggregate(any(Aggregation.class), eq(indexName), eq(Document.class));
         }
 
         @Test
         @DisplayName("should use correct vector index name")
-        void searchByVector_shouldUseCorrectVectorIndex() {
+        void similaritySearchByVector_shouldUseCorrectVectorIndex() {
             String indexName = "custom_collection";
             float[] vector = new float[]{0.1f, 0.2f, 0.3f};
 
@@ -410,7 +483,7 @@ class MongoDbAtlasVectorServiceImplTest {
             when(mongoTemplate.aggregate(any(Aggregation.class), eq(indexName), eq(Document.class)))
                     .thenReturn(mockResults);
 
-            vectorService.searchByVector(indexName, vector, 10);
+            vectorService.similaritySearchByVector(indexName, vector, 10, 0.0);
 
             verify(mongoTemplate).aggregate(any(Aggregation.class), eq(indexName), eq(Document.class));
         }
@@ -421,23 +494,21 @@ class MongoDbAtlasVectorServiceImplTest {
     class BaseClassOperationTests {
 
         @Test
-        @DisplayName("addDocument should delegate to vectorStore")
-        void addDocument_shouldDelegateToVectorStore() {
-            VectorDocument doc = new VectorDocument();
-            doc.setContent("test content");
-            doc.setMetadata(new java.util.HashMap<>());
+        @DisplayName("add should delegate to vectorStore.add via addEmbeddings")
+        void add_shouldDelegateToVectorStore() {
+            when(embeddingModel.embed(any(String.class))).thenReturn(new float[]{0.1f, 0.2f, 0.3f});
 
-            vectorService.addDocument(doc);
+            vectorService.add(VectorRecord.text("test_index", "test content"));
 
             verify(vectorStore).add(any());
         }
 
         @Test
-        @DisplayName("deleteDocument should delegate to vectorStore")
-        void deleteDocument_shouldDelegateToVectorStore() {
-            vectorService.deleteDocument("doc-1");
+        @DisplayName("delete should delegate to mongoTemplate.remove via deleteByIds")
+        void delete_shouldDelegateToMongoTemplate() {
+            vectorService.delete("test_index", "doc-1");
 
-            verify(vectorStore).delete("doc-1");
+            verify(mongoTemplate).remove(any(Query.class), eq("test_index"));
         }
 
         @Test
@@ -446,9 +517,127 @@ class MongoDbAtlasVectorServiceImplTest {
             when(vectorStore.similaritySearch(any(org.springframework.ai.vectorstore.SearchRequest.class)))
                     .thenReturn(List.of());
 
-            vectorService.searchByText("test query", 10);
+            vectorService.searchByText("test_index", "test query", 10);
 
             verify(vectorStore).similaritySearch(any(org.springframework.ai.vectorstore.SearchRequest.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("truncateIndex")
+    class TruncateIndexTests {
+
+        @Test
+        @DisplayName("should issue deleteMany on collection and return deleted count")
+        void truncateIndex_executesDeleteManyAndReturnsCount() {
+            com.mongodb.client.MongoCollection<Document> collection =
+                    mock(com.mongodb.client.MongoCollection.class);
+            when(mongoTemplate.getCollection("test_collection"))
+                    .thenReturn((com.mongodb.client.MongoCollection<Document>) collection);
+            com.mongodb.client.result.DeleteResult result =
+                    com.mongodb.client.result.DeleteResult.acknowledged(15L);
+            when(collection.deleteMany(any(Document.class))).thenReturn(result);
+
+            long deleted = vectorService.truncateIndex("test_collection");
+
+            assertThat(deleted).isEqualTo(15L);
+            verify(collection).deleteMany(any(Document.class));
+        }
+
+        @Test
+        @DisplayName("should return zero when collection is already empty")
+        void truncateIndex_whenEmpty_shouldReturnZero() {
+            com.mongodb.client.MongoCollection<Document> collection =
+                    mock(com.mongodb.client.MongoCollection.class);
+            when(mongoTemplate.getCollection("empty_collection"))
+                    .thenReturn((com.mongodb.client.MongoCollection<Document>) collection);
+            com.mongodb.client.result.DeleteResult result =
+                    com.mongodb.client.result.DeleteResult.acknowledged(0L);
+            when(collection.deleteMany(any(Document.class))).thenReturn(result);
+
+            long deleted = vectorService.truncateIndex("empty_collection");
+
+            assertThat(deleted).isZero();
+        }
+    }
+
+    @Nested
+    @DisplayName("healthCheck (三步探针：indexExists → countDocuments → 异常兜底)")
+    class HealthCheckTests {
+
+        @Test
+        @DisplayName("should return false when collection does not exist")
+        void healthCheck_whenCollectionMissing_shouldReturnFalse() {
+            when(mongoTemplate.collectionExists("missing")).thenReturn(false);
+
+            assertThat(vectorService.healthCheck("missing")).isFalse();
+        }
+
+        @Test
+        @DisplayName("should return true when collection exists and countDocuments works")
+        void healthCheck_whenOk_shouldReturnTrue() {
+            var collection = mock(com.mongodb.client.MongoCollection.class);
+            when(mongoTemplate.collectionExists("test_collection")).thenReturn(true);
+            when(mongoTemplate.getCollection("test_collection")).thenReturn((com.mongodb.client.MongoCollection<Document>) collection);
+            when(collection.countDocuments()).thenReturn(42L);
+
+            assertThat(vectorService.healthCheck("test_collection")).isTrue();
+        }
+
+        @Test
+        @DisplayName("should return false when countDocuments throws")
+        void healthCheck_whenCountThrows_shouldReturnFalse() {
+            var collection = mock(com.mongodb.client.MongoCollection.class);
+            when(mongoTemplate.collectionExists("test_collection")).thenReturn(true);
+            when(mongoTemplate.getCollection("test_collection")).thenReturn((com.mongodb.client.MongoCollection<Document>) collection);
+            when(collection.countDocuments()).thenThrow(new RuntimeException("timeout"));
+
+            assertThat(vectorService.healthCheck("test_collection")).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("ops API (optimize / createAlias / switchAlias / backup / restore) — Atlas 托管语义")
+    class OpsApiTests {
+
+        @Test
+        @DisplayName("optimize should throw UnsupportedOperationException (Atlas 无 SDK 级 optimize)")
+        void optimize_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.optimize("idx"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("mongodb");
+        }
+
+        @Test
+        @DisplayName("createAlias should throw UnsupportedOperationException (Atlas 无 vector index alias)")
+        void createAlias_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.createAlias("idx", "alias"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("mongodb");
+        }
+
+        @Test
+        @DisplayName("switchAlias should throw UnsupportedOperationException (Atlas 无 vector index alias)")
+        void switchAlias_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.switchAlias("old", "new", "alias"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("mongodb");
+        }
+
+        @Test
+        @DisplayName("backup should throw UnsupportedOperationException (Atlas backup 为 managed service)")
+        void backup_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.backup("idx", "/tmp/backup"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("mongodb");
+        }
+
+        @Test
+        @DisplayName("restore should throw UnsupportedOperationException (Atlas restore 为 managed service)")
+        void restore_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.restore("/tmp/backup", "idx"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("mongodb");
         }
     }
 }

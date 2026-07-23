@@ -18,8 +18,12 @@ package com.richie.component.vector.service.impl;
 import com.richie.context.utils.data.JsonUtils;
 import com.richie.component.vector.config.MilvusConfig;
 import com.richie.component.vector.config.VectorProperties;
-import com.richie.component.vector.model.VectorDocument;
-import com.richie.component.vector.model.VectorSearchResult;
+import com.richie.component.vector.model.IndexInfo;
+import com.richie.component.vector.model.IndexStatus;
+import com.richie.component.vector.model.Modality;
+import com.richie.component.vector.model.VectorRecord;
+import org.springframework.ai.document.Document;
+import com.richie.component.ai.service.RerankService;
 import com.richie.component.vector.service.VectorService;
 import io.milvus.client.MilvusServiceClient;
 import io.milvus.grpc.*;
@@ -28,7 +32,14 @@ import io.milvus.param.MetricType;
 import io.milvus.param.R;
 import io.milvus.param.RpcStatus;
 import io.milvus.param.collection.*;
+import io.milvus.param.control.ManualCompactParam;
+import io.milvus.param.alias.AlterAliasParam;
+import io.milvus.param.alias.CreateAliasParam;
+import io.milvus.param.dml.DeleteParam;
+import io.milvus.param.dml.InsertParam;
+import io.milvus.param.dml.QueryParam;
 import io.milvus.param.dml.SearchParam;
+import io.milvus.response.QueryResultsWrapper;
 import io.milvus.param.index.CreateIndexParam;
 import io.milvus.response.SearchResultsWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +51,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Milvus向量数据库服务实现类
@@ -62,11 +74,12 @@ import java.util.*;
 @Slf4j
 @Service
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "milvus")
-public class MilvusVectorServiceImpl extends VectorServiceImpl implements VectorService {
+public class MilvusVectorServiceImpl extends AbstractVectorService implements VectorService {
 
     private final MilvusConfig milvusConfig;
     private final MilvusServiceClient milvusClient;
 
+    private static final int DEFAULT_DIMENSION = 1536;
     private static final List<String> SEARCH_OUTPUT_FIELDS = List.of("id", "content");
 
     /**
@@ -74,16 +87,18 @@ public class MilvusVectorServiceImpl extends VectorServiceImpl implements Vector
      *
      * <p>使用@Qualifier注解指定EmbeddingModel bean，确保注入正确的嵌入模型实例。</p>
      *
+     * @param rerankService 重排序服务（可选）
      * @param vectorStore    Spring AI VectorStore，用于文档存储和检索
      * @param embeddingModel 嵌入模型，用于将文本转换为向量
      * @param milvusConfig   Milvus配置，包含连接信息和默认参数
      * @param milvusClient   Milvus客户端，提供与Milvus服务的通信能力
      */
     @Autowired
-    public MilvusVectorServiceImpl(VectorStore vectorStore,
+    public MilvusVectorServiceImpl(@Autowired(required = false) RerankService rerankService,
+                                   VectorStore vectorStore,
                                    @Qualifier("aiEmbeddingModel") EmbeddingModel embeddingModel,
                                    MilvusConfig milvusConfig, MilvusServiceClient milvusClient) {
-        super(vectorStore, embeddingModel);
+        super(rerankService, vectorStore, embeddingModel);
         this.milvusConfig = milvusConfig;
         this.milvusClient = milvusClient;
     }
@@ -91,8 +106,10 @@ public class MilvusVectorServiceImpl extends VectorServiceImpl implements Vector
     /**
      * 创建Milvus集合（Collection），支持动态字段配置
      *
-     * <p>该方法会创建一个新的Milvus Collection，包含主键字段和向量字段。
-     * 集合创建后会自动创建相应的索引以加速向量搜索。</p>
+     * <p>Phase B 重构：复用 {@link #buildFieldTypes(VectorProperties.IndexConfig)}
+     * 构建完整字段定义（id + vector + content + metadata + additionalFields），
+     * 替代 Phase A 中仅 id + vector 两个字段的最小 Schema。这样后续
+     * addEmbeddings / searchByVector 才能直接复用 content / metadata 字段。</p>
      *
      * <p><b>注意：</b>如果Collection已存在，该方法会抛出异常。
      * 调用前建议先使用{@link #indexExists(String)}检查Collection是否存在。</p>
@@ -103,30 +120,9 @@ public class MilvusVectorServiceImpl extends VectorServiceImpl implements Vector
      * @see #indexExists(String)
      */
     @Override
-    public void createIndex(String indexName, VectorProperties.IndexConfig config) {
-        // 构建字段列表：主键字段 + 向量字段
-        // Milvus要求每个Collection至少包含主键字段和向量字段
-        List<FieldType> fields = new ArrayList<>();
-
-        // 主键字段：使用Int64类型，支持自增ID
-        // 主键用于唯一标识每条记录，是Milvus的必需字段
-        fields.add(FieldType.newBuilder()
-                .withName("id")
-                .withDescription("Primary key")
-                .withDataType(DataType.Int64)
-                .withPrimaryKey(true)
-                .withAutoID(false)
-                .build());
-
-        // 向量字段：存储文档的向量表示
-        // 维度从配置中获取，如果未指定则使用milvusConfig中的默认值
-        // 维度必须与嵌入模型输出的向量维度一致
-        fields.add(FieldType.newBuilder()
-                .withName("vector")
-                .withDescription("Vector field")
-                .withDataType(DataType.FloatVector)
-                .withDimension(config.getDimension() != null ? config.getDimension() : milvusConfig.getEmbeddingDimension())
-                .build());
+    protected void createIndexImpl(String indexName, VectorProperties.IndexConfig config) {
+        // 复用完整字段构造逻辑：id + vector + content + metadata + additionalFields
+        List<FieldType> fields = buildFieldTypes(config);
 
         // 构建Collection创建参数
         // enableDynamicField=true允许Collection接受未定义的额外字段
@@ -160,10 +156,11 @@ public class MilvusVectorServiceImpl extends VectorServiceImpl implements Vector
         CreateIndexParam indexParam = CreateIndexParam.newBuilder()
                 .withCollectionName(indexName)
                 .withFieldName("vector")
-                // 索引类型决定向量搜索的算法：HNSW（推荐）、IVF、FLAT等
-                .withIndexType(config.getIndexType() != null ? IndexType.valueOf(config.getIndexType()) : milvusConfig.getIndexType())
+                // Milvus enum 是大写 HNSW/IVF_FLAT/COSINE/IP，但 VectorProperties.IndexConfig 默认值是 "hnsw"/"cosine" 小写（Qdrant 等其他 provider 的约定）
+                // 在这里归一化确保两个 provider 共享同一 IndexConfig 不撕裂
+                .withIndexType(IndexType.valueOf((config.getIndexType() != null ? config.getIndexType() : milvusConfig.getIndexType().name()).toUpperCase()))
                 // 度量类型决定如何计算向量之间的距离
-                .withMetricType(config.getMetric() != null ? MetricType.valueOf(config.getMetric()) : milvusConfig.getMetricType())
+                .withMetricType(MetricType.valueOf((config.getMetric() != null ? config.getMetric() : milvusConfig.getMetricType().name()).toUpperCase()))
                 .withExtraParam(Objects.requireNonNull(JsonUtils.getInstance().serialize(extraParams)))
                 // 同步模式：索引构建完成后才返回，确保索引立即可用
                 .withSyncMode(true)
@@ -174,6 +171,11 @@ public class MilvusVectorServiceImpl extends VectorServiceImpl implements Vector
         if (indexResp.getStatus() != R.Status.Success.getCode()) {
             throw new RuntimeException("Milvus createIndex failed: %s".formatted(indexResp.getMessage()));
         }
+
+        // 加载 Collection 到内存 — 否则后续 query/search 会报 "collection not loaded"
+        milvusClient.loadCollection(LoadCollectionParam.newBuilder()
+                .withCollectionName(indexName)
+                .build());
     }
 
     /**
@@ -186,7 +188,7 @@ public class MilvusVectorServiceImpl extends VectorServiceImpl implements Vector
      * @throws RuntimeException 如果查询Collection列表失败
      */
     @Override
-    public boolean indexExists(String indexName) {
+    protected boolean indexExistsImpl(String indexName) {
         // hasCollection() 是 O(1) 操作，直接查询目标 Collection 是否存在
         // 优于 showCollections() 再 contains() 的 O(n) 方案
         HasCollectionParam param = HasCollectionParam.newBuilder()
@@ -211,7 +213,7 @@ public class MilvusVectorServiceImpl extends VectorServiceImpl implements Vector
      * @throws RuntimeException 如果描述Collection失败
      */
     @Override
-    public VectorProperties.IndexConfig getIndexConfig(String indexName) {
+    protected VectorProperties.IndexConfig getIndexConfigImpl(String indexName) {
         DescribeCollectionParam param = DescribeCollectionParam.newBuilder().withCollectionName(indexName).build();
         R<DescribeCollectionResponse> resp = milvusClient.describeCollection(param);
         if (resp.getStatus() != R.Status.Success.getCode()) {
@@ -222,14 +224,15 @@ public class MilvusVectorServiceImpl extends VectorServiceImpl implements Vector
         config.setName(indexName);
         config.setShards(resp.getData().getShardsNum());
 
-        // 遍历所有字段，提取向量字段的维度信息
-        // 找到后立即break，避免冗余迭代
-        DescribeCollectionResponse data = resp.getData();
-        for (Object obj : data.getAllFields().values()) {
-            FieldType field = (FieldType) obj;
+        // 遍历 schema 中的字段，提取向量字段的维度（从 type_params.dim 取）
+        for (io.milvus.grpc.FieldSchema field : resp.getData().getSchema().getFieldsList()) {
             if ("vector".equals(field.getName())) {
-                // 提取向量维度，这是搜索配置的关键参数
-                config.setDimension(field.getDimension());
+                for (io.milvus.grpc.KeyValuePair kv : field.getTypeParamsList()) {
+                    if ("dim".equals(kv.getKey())) {
+                        config.setDimension(Integer.parseInt(kv.getValue()));
+                        break;
+                    }
+                }
                 break;
             }
         }
@@ -247,23 +250,157 @@ public class MilvusVectorServiceImpl extends VectorServiceImpl implements Vector
      * @throws RuntimeException 如果获取统计信息失败
      */
     @Override
-    public long countDocuments(String indexName) {
+    protected long countDocumentsImpl(String indexName) {
+        // 先用 getCollectionStatistics —— 对 unloaded collection 也工作（query 在 unloaded 时报 "collection not loaded"）
+        // 当 row_count > 0 但实际已被 delete 完时（Milvus row_count 在 delete 后不更新），回退到 query API 实时数
+        long statCount = countViaStatistics(indexName);
+        if (statCount == 0L) {
+            return 0L;
+        }
+        return countViaQuery(indexName, statCount);
+    }
+
+    private long countViaQuery(String indexName, long fallbackCount) {
+        QueryParam qp = QueryParam.newBuilder()
+                .withCollectionName(indexName)
+                .withExpr("id != \"\"")
+                .withOutFields(List.of("id"))
+                .withLimit(10000L)
+                .build();
+        try {
+            R<QueryResults> resp = milvusClient.query(qp);
+            if (resp.getStatus() != R.Status.Success.getCode()) {
+                if (resp.getMessage() != null && resp.getMessage().toLowerCase().contains("not found")) {
+                    return 0L;
+                }
+                throw new RuntimeException("Milvus countDocuments failed: " + resp.getMessage());
+            }
+            return new QueryResultsWrapper(resp.getData()).getRowRecords().size();
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("not loaded")) {
+                return fallbackCount;
+            }
+            throw e;
+        }
+    }
+
+    private long countViaStatistics(String indexName) {
         GetCollectionStatisticsParam param = GetCollectionStatisticsParam.newBuilder()
                 .withCollectionName(indexName)
                 .build();
         R<GetCollectionStatisticsResponse> resp = milvusClient.getCollectionStatistics(param);
         if (resp.getStatus() != R.Status.Success.getCode()) {
-            throw new RuntimeException("Milvus getCollectionStatistics failed: %s".formatted(resp.getMessage()));
+            if (resp.getMessage() != null && resp.getMessage().toLowerCase().contains("not found")) {
+                return 0L;
+            }
+            throw new RuntimeException("Milvus getCollectionStatistics failed: " + resp.getMessage());
         }
-
-        // 遍历统计信息列表，查找row_count字段
-        // row_count表示Collection中的文档数量
         for (KeyValuePair stat : resp.getData().getStatsList()) {
             if ("row_count".equals(stat.getKey())) {
                 return Long.parseLong(stat.getValue());
             }
         }
         return 0L;
+    }
+
+    /**
+     * 删除指定的 Milvus Collection。
+     *
+     * @param indexName Collection 名称
+     * @throws RuntimeException 删除 Collection 失败时抛出
+     */
+    @Override
+    protected void deleteIndexImpl(String indexName) {
+        DropCollectionParam param = DropCollectionParam.newBuilder()
+                .withCollectionName(indexName)
+                .build();
+        R<RpcStatus> resp = milvusClient.dropCollection(param);
+        if (resp.getStatus() != R.Status.Success.getCode()) {
+            throw new RuntimeException("Milvus dropCollection failed: %s".formatted(resp.getMessage()));
+        }
+        log.info("Milvus Collection [{}] 删除完成", indexName);
+    }
+
+    /**
+     * 列出 Milvus 中的全部 Collection。
+     *
+     * @return Collection 索引信息列表
+     * @throws RuntimeException 查询 Collection 列表失败时抛出
+     */
+    @Override
+    protected List<IndexInfo> listIndexesImpl() {
+        ShowCollectionsParam param = ShowCollectionsParam.newBuilder().build();
+        R<ShowCollectionsResponse> resp = milvusClient.showCollections(param);
+        if (resp.getStatus() != R.Status.Success.getCode()) {
+            throw new RuntimeException("Milvus showCollections failed: %s".formatted(resp.getMessage()));
+        }
+        List<IndexInfo> indexes = resp.getData().getCollectionNamesList().stream()
+                .map(this::describeIndexImpl)
+                .toList();
+        log.debug("Milvus Collection 列表查询完成，数量={}", indexes.size());
+        return indexes;
+    }
+
+    /**
+     * 获取指定 Collection 的配置与文档统计信息。
+     *
+     * @param indexName Collection 名称
+     * @return Collection 描述信息
+     * @throws RuntimeException 查询 Collection 配置或统计信息失败时抛出
+     */
+    @Override
+    protected IndexInfo describeIndexImpl(String indexName) {
+        VectorProperties.IndexConfig config = getIndexConfigImpl(indexName);
+        long count = countDocumentsImpl(indexName);
+        int shardsNum = config.getShards() != null ? config.getShards() : 1;
+        int dimension = config.getDimension() != null ? config.getDimension() : DEFAULT_DIMENSION;
+        String metric = config.getMetric() != null
+                ? config.getMetric()
+                : milvusConfig.getMetricType().name().toLowerCase(Locale.ROOT);
+        String indexType = config.getIndexType() != null
+                ? config.getIndexType()
+                : milvusConfig.getIndexType().name().toLowerCase(Locale.ROOT);
+        return new IndexInfo(indexName, Modality.TEXT, dimension, metric, indexType,
+                IndexStatus.READY, count, null, null, Map.of("shardsNum", shardsNum));
+    }
+
+    /**
+     * 尝试在线更新 Collection 索引配置。
+     *
+     * <p>Milvus 不支持在线修改向量索引参数，需删除并重建 Collection。</p>
+     *
+     * @param indexName Collection 名称
+     * @param config    新索引配置
+     * @return 始终返回 false，表示未执行在线更新
+     */
+    @Override
+    protected boolean updateIndexConfigImpl(String indexName, VectorProperties.IndexConfig config) {
+        log.warn("Milvus Collection [{}] 不支持在线修改索引配置，需删除后重建", indexName);
+        return false;
+    }
+
+    /**
+     * 获取指定 Collection 的运行统计信息。
+     *
+     * @param indexName Collection 名称
+     * @return 包含文档数、分片数、维度和度量方式的统计信息
+     * @throws RuntimeException 查询 Collection 配置或统计信息失败时抛出
+     */
+    @Override
+    protected IndexInfo getIndexStatsImpl(String indexName) {
+        VectorProperties.IndexConfig config = getIndexConfigImpl(indexName);
+        long count = countDocumentsImpl(indexName);
+        int shardsNum = config.getShards() != null ? config.getShards() : 1;
+        int dimension = config.getDimension() != null ? config.getDimension() : DEFAULT_DIMENSION;
+        String metric = config.getMetric() != null
+                ? config.getMetric()
+                : milvusConfig.getMetricType().name().toLowerCase(Locale.ROOT);
+        String indexType = config.getIndexType() != null
+                ? config.getIndexType()
+                : milvusConfig.getIndexType().name().toLowerCase(Locale.ROOT);
+        log.debug("Milvus Collection [{}] 统计完成，文档数={}，分片数={}", indexName, count, shardsNum);
+        return new IndexInfo(indexName, Modality.TEXT, dimension, metric, indexType,
+                IndexStatus.READY, count, null, null, Map.of("shardsNum", shardsNum));
     }
 
     // ========== 私有辅助方法 ==========
@@ -330,12 +467,12 @@ public class MilvusVectorServiceImpl extends VectorServiceImpl implements Vector
                 .build();
         fieldTypes.add(contentField);
 
-        // 4. 元数据字段（必需）
-        // 使用JSON类型存储灵活的元数据，如来源、创建时间等
+        // 4. 元数据字段（必需）—— JSON 序列化后存为 VarChar，与 content 字段同形
         FieldType metadataField = FieldType.newBuilder()
                 .withName("metadata")
-                .withDescription("Document metadata")
-                .withDataType(DataType.JSON)
+                .withDescription("Document metadata as JSON string")
+                .withDataType(DataType.VarChar)
+                .withMaxLength(65535)
                 .build();
         fieldTypes.add(metadataField);
 
@@ -422,14 +559,32 @@ public class MilvusVectorServiceImpl extends VectorServiceImpl implements Vector
      * 分数会被裁剪到[0, 1]范围内。</p>
      *
      * @param indexName   索引名称
-     * @param queryVector 查询向量，不能为空且维度必须与索引配置一致
-     * @param limit       返回结果数量，必须大于0
      * @return 搜索结果列表，按相似度降序排列
      * @throws IllegalArgumentException 如果queryVector为空或limit小于等于0
      * @throws RuntimeException 如果搜索执行失败
      */
     @Override
-    public List<VectorSearchResult> searchByVector(String indexName, float[] queryVector, int limit) {
+    protected long truncateIndexImpl(String indexName) {
+        long previousCount = countDocuments(indexName);
+        DeleteParam deleteParam = DeleteParam.newBuilder()
+                .withCollectionName(indexName)
+                .withExpr("id != \"\"")
+                .build();
+        R<MutationResult> resp = milvusClient.delete(deleteParam);
+        if (resp.getStatus() != R.Status.Success.getCode()) {
+            throw new RuntimeException("Milvus truncateIndex failed: " + resp.getMessage());
+        }
+
+        // flush 后 row_count 才会反映删除结果，与 addEmbeddings 后的 flush 对称
+        milvusClient.flush(FlushParam.newBuilder().withCollectionNames(List.of(indexName)).build());
+        long deleted = resp.getData() != null ? resp.getData().getDeleteCnt() : previousCount;
+        log.info("Milvus 清空 collection [{}] 完成，预估={}, 删除={}", indexName, previousCount, deleted);
+        return Math.max(deleted, previousCount);
+    }
+
+    @Override
+    protected List<org.springframework.ai.document.Document> similaritySearchByVector(String indexName, float[] queryVector,
+                                                                                        int limit, double minScore) {
         if (queryVector == null || queryVector.length == 0) {
             throw new IllegalArgumentException("查询向量不能为空");
         }
@@ -469,7 +624,7 @@ public class MilvusVectorServiceImpl extends VectorServiceImpl implements Vector
         SearchResults results = response.getData();
         // SearchResultsWrapper是Milvus SDK提供的结果解析工具类，封装了protobuf数据的读取逻辑
         SearchResultsWrapper wrapper = new SearchResultsWrapper(results.getResults());
-        List<VectorSearchResult> searchResults = new ArrayList<>();
+        List<Document> searchResults = new ArrayList<>();
 
         // getIDScore(0)获取第一批（index=0）的ID-分数对列表
         // IDScore是Milvus SDK的内部类，包含：longID、strID（主键的两种类型）、score（距离值）
@@ -505,15 +660,264 @@ public class MilvusVectorServiceImpl extends VectorServiceImpl implements Vector
             // 转换规则取决于度量类型：COSINE/IP时similarity=distance；L2时similarity=1/(1+distance)
             double score = distanceToSimilarity(idScore.getScore(), milvusConfig.getMetricType());
 
-            searchResults.add(VectorSearchResult.of(id, content, score, null));
+            if (score >= minScore) {
+                searchResults.add(new Document(id, content, Map.of("score", score)));
+            }
         }
 
         return searchResults;
     }
 
     @Override
-    protected List<VectorDocument> listDocumentsHandler(String indexName, int offset, int limit) {
-        throw new UnsupportedOperationException("Milvus listDocuments未实现");
+    protected void addEmbeddings(String indexName, List<Document> docs) {
+        if (docs == null || docs.isEmpty()) {
+            return;
+        }
+
+        List<String> ids = docs.stream().map(Document::getId).toList();
+        List<String> contents = docs.stream().map(d -> d.getText() != null ? d.getText() : "").toList();
+        List<List<Float>> vectors = new ArrayList<>();
+        List<String> metadataList = new ArrayList<>();
+
+        for (Document doc : docs) {
+            float[] embedding = (float[]) doc.getMetadata().get("embedding");
+            List<Float> vectorList = new ArrayList<>(embedding.length);
+            for (float v : embedding) vectorList.add(v);
+            vectors.add(vectorList);
+
+            try {
+                metadataList.add(JsonUtils.getInstance().serialize(doc.getMetadata()));
+            } catch (Exception e) {
+                metadataList.add("{}");
+            }
+        }
+
+        List<InsertParam.Field> fields = Arrays.asList(
+                new InsertParam.Field("id", ids),
+                new InsertParam.Field("vector", vectors),
+                new InsertParam.Field("content", contents),
+                new InsertParam.Field("metadata", metadataList)
+        );
+
+        InsertParam insertParam = InsertParam.newBuilder()
+                .withCollectionName(indexName)
+                .withFields(fields)
+                .build();
+
+        R<MutationResult> resp = milvusClient.insert(insertParam);
+        if (resp.getStatus() != R.Status.Success.getCode()) {
+            throw new RuntimeException("Milvus insert failed: " + resp.getMessage());
+        }
+
+        // flush 强制将 buffer 数据写入 sealed segment，否则后续 countDocuments/getByIds 读不到 row_count/数据
+        milvusClient.flush(FlushParam.newBuilder().withCollectionNames(List.of(indexName)).build());
+        log.info("Milvus 批量写入 Collection [{}] 完成，文档数={}", indexName, docs.size());
+    }
+
+    @Override
+    protected void deleteByIds(String indexName, List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+
+        String expr = "id in [" + ids.stream()
+                .map(id -> "\"" + id + "\"")
+                .collect(Collectors.joining(",")) + "]";
+
+        DeleteParam deleteParam = DeleteParam.newBuilder()
+                .withCollectionName(indexName)
+                .withExpr(expr)
+                .build();
+
+        R<MutationResult> resp = milvusClient.delete(deleteParam);
+        if (resp.getStatus() != R.Status.Success.getCode()) {
+            throw new RuntimeException("Milvus deleteByIds failed: " + resp.getMessage());
+        }
+
+        milvusClient.flush(FlushParam.newBuilder().withCollectionNames(List.of(indexName)).build());
+        log.debug("Milvus 删除 Collection [{}] 文档，ID数={}", indexName, ids.size());
+    }
+
+    @Override
+    protected List<VectorRecord> getByIds(String indexName, List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
+        String expr = "id in [" + ids.stream()
+                .map(id -> "\"" + id + "\"")
+                .collect(Collectors.joining(",")) + "]";
+
+        QueryParam queryParam = QueryParam.newBuilder()
+                .withCollectionName(indexName)
+                .withExpr(expr)
+                .withOutFields(List.of("id", "content"))
+                .build();
+
+        R<QueryResults> resp = milvusClient.query(queryParam);
+        if (resp.getStatus() != R.Status.Success.getCode()) {
+            throw new RuntimeException("Milvus query failed: " + resp.getMessage());
+        }
+
+        QueryResultsWrapper wrapper = new QueryResultsWrapper(resp.getData());
+        List<QueryResultsWrapper.RowRecord> records = wrapper.getRowRecords();
+        List<VectorRecord> result = new ArrayList<>(records.size());
+        for (QueryResultsWrapper.RowRecord record : records) {
+            String id = (String) record.get("id");
+            Object contentObj = record.get("content");
+            String content = contentObj != null ? contentObj.toString() : "";
+            if (content.isBlank()) {
+                log.warn("Milvus getByIds: record id={} content 为空，跳过（可能是 dynamic field 路径或 schema 偏差）", id);
+                continue;
+            }
+            // 显式 setId(id) —— 不能用 VectorRecord.text(idx,id,content) 形式（与 text(idx,text,metadata) 重载歧义）
+            result.add(VectorRecord.text(indexName, content).setId(id));
+        }
+        return result;
+    }
+
+    @Override
+    protected List<VectorRecord> listDocumentsImpl(String indexName, int offset, int limit) {
+        return listDocumentsHandler(indexName, offset, limit);
+    }
+
+    protected List<VectorRecord> listDocumentsHandler(String indexName, int offset, int limit) {
+        QueryParam queryParam = QueryParam.newBuilder()
+                .withCollectionName(indexName)
+                .withExpr("")
+                .withOutFields(List.of("id", "content"))
+                .withOffset((long) offset)
+                .withLimit((long) limit)
+                .build();
+
+        R<QueryResults> resp = milvusClient.query(queryParam);
+        if (resp.getStatus() != R.Status.Success.getCode()) {
+            throw new RuntimeException("Milvus listDocuments failed: " + resp.getMessage());
+        }
+
+        QueryResultsWrapper wrapper = new QueryResultsWrapper(resp.getData());
+        List<QueryResultsWrapper.RowRecord> records = wrapper.getRowRecords();
+        List<VectorRecord> docs = new ArrayList<>(records.size());
+        for (QueryResultsWrapper.RowRecord record : records) {
+            String id = (String) record.get("id");
+            Object contentObj = record.get("content");
+            String content = contentObj != null ? contentObj.toString() : "";
+            docs.add(VectorRecord.text(indexName, content).setId(id));
+        }
+        return docs;
+    }
+
+    // ====================================================================
+    // §14.4 运维 / 别名 / 备份 — Milvus 实现
+    // Milvus SDK V1 client (MilvusServiceClient) 提供 manualCompact / createAlias / alterAlias 原生能力；
+    // backup / restore 通过 milvus-backup 工具（out-of-process）提供，SDK 不直接暴露。
+    // ====================================================================
+
+    /**
+     * 触发 Milvus Collection 数据压缩（manualCompact），合并已删除/过期的小 Segment 以释放磁盘并提升查询性能。
+     *
+     * <p>对应 Milvus gRPC {@code ManualCompaction} 命令，返回 {@link ManualCompactionResponse}。
+     * Status 成功表示压缩任务已下发（异步执行），不代表已结束，调用方可继续以
+     * {@code resp.getData().getCompactionID()} 轮询进度。</p>
+     *
+     * @param indexName Collection 名称
+     * @return true 表示 SDK 调用成功接收任务；false 表示 Status 非 Success 或抛出异常
+     */
+    @Override
+    protected boolean optimizeImpl(String indexName) {
+        try {
+            R<ManualCompactionResponse> resp = milvusClient.manualCompact(
+                    ManualCompactParam.newBuilder()
+                            .withCollectionName(indexName)
+                            .build());
+            return resp.getStatus() == R.Status.Success.getCode();
+        } catch (Exception e) {
+            log.warn("Milvus optimize failed for [{}]: {}", indexName, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 为 Collection 创建别名（alias）。一个 Collection 可拥有多个 alias，alias 用于 zero-downtime 切换。
+     *
+     * <p>对应 Milvus gRPC {@code CreateAlias} 命令，返回 {@link RpcStatus}。</p>
+     *
+     * @param indexName Collection 名称
+     * @param alias     别名
+     * @return true 表示创建成功；false 表示 Status 非 Success 或抛出异常
+     */
+    @Override
+    protected boolean createAliasImpl(String indexName, String alias) {
+        try {
+            R<RpcStatus> resp = milvusClient.createAlias(
+                    CreateAliasParam.newBuilder()
+                            .withCollectionName(indexName)
+                            .withAlias(alias)
+                            .build());
+            return resp.getStatus() == R.Status.Success.getCode();
+        } catch (Exception e) {
+            log.warn("Milvus createAlias failed: collection={}, alias={}, error={}",
+                    indexName, alias, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 原子地将 alias 从旧 Collection 切换到新 Collection。
+     *
+     * <p>Milvus SDK 使用 {@code alterAlias(AlterAliasParam)} 实现切换：传入新的 Collection 名
+     * 和 alias，Milvus 会保证操作的原子性。返回 {@link RpcStatus}。</p>
+     *
+     * <p>注意：{@code oldIndexName} 参数在 SDK 的 {@code AlterAliasParam} 中不被使用，
+     * 因为 alterAlias 本身就是「将该 alias 重定向到新 Collection」的语义；但本方法签名
+     * 仍保留以匹配抽象层契约，参数校验在调用方完成。</p>
+     *
+     * @param oldIndexName 原 Collection 名称（SDK 不使用）
+     * @param newIndexName 新 Collection 名称
+     * @param alias        别名
+     * @return true 表示切换成功；false 表示 Status 非 Success 或抛出异常
+     */
+    @Override
+    protected boolean switchAliasImpl(String oldIndexName, String newIndexName, String alias) {
+        try {
+            R<RpcStatus> resp = milvusClient.alterAlias(
+                    AlterAliasParam.newBuilder()
+                            .withCollectionName(newIndexName)
+                            .withAlias(alias)
+                            .build());
+            return resp.getStatus() == R.Status.Success.getCode();
+        } catch (Exception e) {
+            log.warn("Milvus switchAlias failed: old={}, new={}, alias={}, error={}",
+                    oldIndexName, newIndexName, alias, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 备份 Collection — Milvus SDK 不提供原生 backup API，备份由 milvus-backup 工具 out-of-process 完成。
+     *
+     * <p>VectorService 抽象层对所有 provider 提供统一的 backup 契约；Milvus 实现层不直接支持，
+     * 应由运维侧通过 {@code milvus-backup} CLI / REST 接口完成。</p>
+     *
+     * @param indexName  Collection 名称
+     * @param targetPath 备份目标路径（MinIO / S3 等），SDK 不使用
+     * @throws UnsupportedOperationException 始终抛出，明确告知调用方使用 milvus-backup 工具
+     */
+    @Override
+    protected boolean backupImpl(String indexName, String targetPath) {
+        return throwUnsupportedOps("backup", indexName, "milvus");
+    }
+
+    /**
+     * 从备份恢复 Collection — Milvus SDK 不提供原生 restore API，同 backup 一致由 milvus-backup 工具承担。
+     *
+     * @param sourcePath 备份源路径（SDK 不使用）
+     * @param indexName  目标 Collection 名称
+     * @throws UnsupportedOperationException 始终抛出，明确告知调用方使用 milvus-backup 工具
+     */
+    @Override
+    protected boolean restoreImpl(String sourcePath, String indexName) {
+        return throwUnsupportedOps("restore", indexName, "milvus");
     }
 
 }

@@ -17,7 +17,6 @@
 
     <modules>
         <module>atlas-richie-component-vector-core</module>
-        <module>atlas-richie-component-vector-elasticsearch</module>
         <module>atlas-richie-component-vector-mongodb-atlas</module>
         <module>atlas-richie-component-vector-neo4j</module>
         <module>atlas-richie-component-vector-postgresql</module>

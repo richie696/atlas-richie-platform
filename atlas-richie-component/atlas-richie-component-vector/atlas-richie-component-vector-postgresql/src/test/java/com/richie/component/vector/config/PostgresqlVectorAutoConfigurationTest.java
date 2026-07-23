@@ -74,8 +74,9 @@ class PostgresqlVectorAutoConfigurationTest {
 
             JdbcTemplate mockJdbcTemplate = new JdbcTemplate();
             EmbeddingModel mockEmbeddingModel = org.mockito.Mockito.mock(EmbeddingModel.class);
+            PostgresqlConfig config = new PostgresqlConfig();
 
-            VectorStore vectorStore = configuration.postgresVectorStore(mockJdbcTemplate, mockEmbeddingModel);
+            VectorStore vectorStore = configuration.postgresVectorStore(mockJdbcTemplate, mockEmbeddingModel, config);
 
             assertThat(vectorStore).isNotNull();
         }

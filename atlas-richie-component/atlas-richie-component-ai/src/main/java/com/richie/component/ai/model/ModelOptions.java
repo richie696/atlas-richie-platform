@@ -15,7 +15,8 @@
  */
 package com.richie.component.ai.model;
 
-import com.richie.component.ai.config.AiModelProperties;
+import com.richie.component.ai.config.chat.AiChatModelOptions;
+import com.richie.component.ai.config.chat.LlmProvider;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -55,6 +56,6 @@ public class ModelOptions {
     /**
      * 模型参数
      */
-    private AiModelProperties.AiModelOptions options;
+    private AiChatModelOptions options;
 }
 

@@ -16,16 +16,18 @@
 package com.richie.component.vector.service.impl;
 
 import com.richie.component.vector.config.VectorProperties;
-import com.richie.component.vector.model.VectorDocument;
-import com.richie.component.vector.model.VectorSearchResult;
+import com.richie.component.vector.model.VectorRecord;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
@@ -44,6 +46,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -51,11 +54,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -77,7 +83,7 @@ class RedisVectorServiceImplTest {
     @BeforeEach
     void setUp() {
         when(redisVectorStore.getNativeClient()).thenReturn(Optional.of(jedisPooled));
-        vectorService = new RedisVectorServiceImpl(redisVectorStore, embeddingModel);
+        vectorService = new RedisVectorServiceImpl(null, redisVectorStore, embeddingModel);
     }
 
     // ==================== afterPropertiesSet / checkRedisStackAvailability ====================
@@ -91,14 +97,14 @@ class RedisVectorServiceImplTest {
     @Test
     void afterPropertiesSet_whenNotRedisVectorStore_shouldReturnEarly() {
         VectorStore nonRedisStore = mock(VectorStore.class);
-        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(nonRedisStore, embeddingModel);
+        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(null, nonRedisStore, embeddingModel);
         assertDoesNotThrow(otherService::afterPropertiesSet);
     }
 
     @Test
     void afterPropertiesSet_whenNativeClientEmpty_shouldThrow() {
         when(redisVectorStore.getNativeClient()).thenReturn(Optional.empty());
-        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(redisVectorStore, embeddingModel);
+        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(null, redisVectorStore, embeddingModel);
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 otherService::afterPropertiesSet);
         assertTrue(ex.getMessage().contains("无法获取Jedis客户端"));
@@ -112,27 +118,27 @@ class RedisVectorServiceImplTest {
         assertTrue(ex.getMessage().contains("RediSearch模块未检测到"));
     }
 
-    // ==================== searchByVector ====================
+    // ==================== similaritySearchByVector ====================
 
     @Test
-    void searchByVector_whenNotRedisVectorStore_shouldThrow() {
+    void similaritySearchByVector_whenNotRedisVectorStore_shouldThrow() {
         VectorStore nonRedisStore = mock(VectorStore.class);
-        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(nonRedisStore, embeddingModel);
+        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(null, nonRedisStore, embeddingModel);
         assertThrows(UnsupportedOperationException.class,
-                () -> otherService.searchByVector("idx", new float[]{0.1f, 0.2f}, 10));
+                () -> otherService.similaritySearchByVector("idx", new float[]{0.1f, 0.2f}, 10, 0.0));
     }
 
     @Test
-    void searchByVector_whenNativeClientEmpty_shouldThrow() {
+    void similaritySearchByVector_whenNativeClientEmpty_shouldThrow() {
         when(redisVectorStore.getNativeClient()).thenReturn(Optional.empty());
         assertThrows(IllegalStateException.class,
-                () -> vectorService.searchByVector("idx", new float[]{0.1f, 0.2f}, 10));
+                () -> vectorService.similaritySearchByVector("idx", new float[]{0.1f, 0.2f}, 10, 0.0));
     }
 
     @Test
-    void searchByVector_shouldReturnKnnResultsWithDistanceConvertedToSimilarity() {
+    void similaritySearchByVector_shouldReturnKnnResultsWithDistanceConvertedToSimilarity() {
         redis.clients.jedis.search.Document doc1 = mock(redis.clients.jedis.search.Document.class);
-        when(doc1.getId()).thenReturn("doc:1");
+        when(doc1.getId()).thenReturn("test-index:doc1");
         when(doc1.getString("score")).thenReturn("0.25");
         when(doc1.getString("content")).thenReturn("hello world");
         when(doc1.hasProperty("score")).thenReturn(true);
@@ -143,18 +149,18 @@ class RedisVectorServiceImplTest {
         when(jedisPooled.ftSearch(eq("test-index"), any(Query.class))).thenReturn(searchResult);
 
         float[] queryVector = new float[]{0.1f, 0.2f, 0.3f, 0.4f};
-        List<VectorSearchResult> results = vectorService.searchByVector("test-index", queryVector, 10);
+        List<Document> results = vectorService.similaritySearchByVector("test-index", queryVector, 10, 0.0);
 
         assertThat(results).hasSize(1);
-        assertThat(results.getFirst().getId()).isEqualTo("doc:1");
-        assertThat(results.getFirst().getContent()).isEqualTo("hello world");
-        assertThat(results.getFirst().getScore()).isEqualTo(0.75);
+        assertThat(results.get(0).getId()).isEqualTo("doc1");
+        assertThat(results.get(0).getText()).isEqualTo("hello world");
+        assertThat(results.get(0).getScore()).isEqualTo(0.75);
     }
 
     @Test
-    void searchByVector_withInvalidScore_shouldTreatAsZeroDistance() {
+    void similaritySearchByVector_withInvalidScore_shouldTreatAsZeroDistance() {
         redis.clients.jedis.search.Document doc = mock(redis.clients.jedis.search.Document.class);
-        when(doc.getId()).thenReturn("doc:x");
+        when(doc.getId()).thenReturn("idx:doc-x");
         when(doc.getString("score")).thenReturn("not-a-number");
         when(doc.hasProperty("score")).thenReturn(true);
         when(doc.hasProperty("content")).thenReturn(false);
@@ -163,20 +169,113 @@ class RedisVectorServiceImplTest {
         when(searchResult.getDocuments()).thenReturn(List.of(doc));
         when(jedisPooled.ftSearch(eq("idx"), any(Query.class))).thenReturn(searchResult);
 
-        List<VectorSearchResult> results = vectorService.searchByVector("idx", new float[]{0.1f}, 5);
+        List<Document> results = vectorService.similaritySearchByVector("idx", new float[]{0.1f}, 5, 0.0);
 
-        assertThat(results.getFirst().getScore()).isEqualTo(1.0);
+        assertThat(results.get(0).getScore()).isEqualTo(1.0);
     }
 
     @Test
-    void searchByVector_whenFtSearchThrows_shouldWrapInRuntimeException() {
+    void similaritySearchByVector_whenBelowMinScore_shouldFilterOut() {
+        redis.clients.jedis.search.Document doc = mock(redis.clients.jedis.search.Document.class);
+        when(doc.getId()).thenReturn("idx:doc-x");
+        // distance=0.9 → similarity=0.1, less than minScore=0.5 → filter out
+        when(doc.getString("score")).thenReturn("0.9");
+        when(doc.hasProperty("score")).thenReturn(true);
+        when(doc.hasProperty("content")).thenReturn(true);
+        when(doc.getString("content")).thenReturn("noise");
+
+        SearchResult searchResult = mock(SearchResult.class);
+        when(searchResult.getDocuments()).thenReturn(List.of(doc));
+        when(jedisPooled.ftSearch(eq("idx"), any(Query.class))).thenReturn(searchResult);
+
+        List<Document> results = vectorService.similaritySearchByVector("idx", new float[]{0.1f}, 5, 0.5);
+
+        assertThat(results).isEmpty();
+    }
+
+    @Test
+    void similaritySearchByVector_whenFtSearchThrows_shouldWrapInRuntimeException() {
         when(jedisPooled.ftSearch(anyString(), any(Query.class)))
                 .thenThrow(new RuntimeException("FT.SEARCH failed"));
         assertThrows(RuntimeException.class,
-                () -> vectorService.searchByVector("idx", new float[]{0.1f}, 5));
+                () -> vectorService.similaritySearchByVector("idx", new float[]{0.1f}, 5, 0.0));
     }
 
-    // ==================== createIndex ====================
+    // ==================== addEmbeddings ====================
+
+    @Test
+    void addEmbeddings_whenNotRedisVectorStore_shouldThrow() {
+        VectorStore nonRedisStore = mock(VectorStore.class);
+        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(null, nonRedisStore, embeddingModel);
+        assertThrows(UnsupportedOperationException.class,
+                () -> otherService.addEmbeddings("idx", List.of()));
+    }
+
+    @Test
+    void addEmbeddings_shouldCallRedisAdd() {
+        List<Document> docs = List.of(Document.builder().id("x").text("y").build());
+        assertDoesNotThrow(() -> vectorService.addEmbeddings("idx", docs));
+        verify(redisVectorStore).add(docs);
+    }
+
+    // ==================== deleteByIds ====================
+
+    @Test
+    void deleteByIds_whenNotRedisVectorStore_shouldThrow() {
+        VectorStore nonRedisStore = mock(VectorStore.class);
+        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(null, nonRedisStore, embeddingModel);
+        assertThrows(UnsupportedOperationException.class,
+                () -> otherService.deleteByIds("idx", List.of("a")));
+    }
+
+    @Test
+    void deleteByIds_shouldCallRedisDelete() {
+        List<String> ids = List.of("a", "b");
+        assertDoesNotThrow(() -> vectorService.deleteByIds("idx", ids));
+        verify(redisVectorStore).delete(eq(ids));
+    }
+
+    // ==================== getByIds ====================
+
+    @Test
+    void getByIds_whenNotRedisVectorStore_shouldThrow() {
+        VectorStore nonRedisStore = mock(VectorStore.class);
+        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(null, nonRedisStore, embeddingModel);
+        assertThrows(UnsupportedOperationException.class,
+                () -> otherService.getByIds("idx", List.of("a")));
+    }
+
+    @Test
+    void getByIds_shouldReturnRecordsForFoundIds() {
+        JSONArray jsonObj1 = new JSONArray().put(new JSONObject().put("content", "alpha"));
+        Path2 path = redis.clients.jedis.json.Path2.of("$");
+        // varargs 数组参数用 any(String[].class) 让所有键都被匹配,后续 thenReturn 按调用顺序返回
+        doReturn(List.of(jsonObj1))
+                .doReturn(List.of(new JSONArray().put(new JSONObject().put("content", "beta"))))
+                .when(jedisPooled).jsonMGet(eq(path), any(String[].class));
+
+        List<VectorRecord> records = vectorService.getByIds("idx", List.of("a", "b"));
+
+        assertThat(records).hasSize(2);
+        assertThat(records.get(0).getId()).isEqualTo("a");
+        assertThat(records.get(0).getIndexName()).isEqualTo("idx");
+        assertThat(records.get(0).getContent().modality().name()).isEqualTo("TEXT");
+        assertThat(records.get(1).getId()).isEqualTo("b");
+    }
+
+    @Test
+    void getByIds_shouldSkipEntriesWithEmptyContent() {
+        JSONArray emptyArray = new JSONArray();
+        Path2 path = redis.clients.jedis.json.Path2.of("$");
+        doReturn(List.of(emptyArray))
+                .when(jedisPooled).jsonMGet(eq(path), any(String[].class));
+
+        List<VectorRecord> records = vectorService.getByIds("idx", List.of("a"));
+
+        assertThat(records).isEmpty();
+    }
+
+    // ==================== createIndexImpl ====================
 
     @Test
     void createIndex_withHnswAndCosineMetric_shouldCreateSuccessfully() {
@@ -276,7 +375,7 @@ class RedisVectorServiceImplTest {
     @Test
     void createIndex_whenNotRedisVectorStore_shouldThrow() {
         VectorStore nonRedisStore = mock(VectorStore.class);
-        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(nonRedisStore, embeddingModel);
+        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(null, nonRedisStore, embeddingModel);
 
         assertThrows(UnsupportedOperationException.class,
                 () -> otherService.createIndex("idx", new VectorProperties.IndexConfig()));
@@ -295,7 +394,7 @@ class RedisVectorServiceImplTest {
     @Test
     void deleteIndex_whenNotRedisVectorStore_shouldThrow() {
         VectorStore nonRedisStore = mock(VectorStore.class);
-        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(nonRedisStore, embeddingModel);
+        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(null, nonRedisStore, embeddingModel);
 
         assertThrows(UnsupportedOperationException.class,
                 () -> otherService.deleteIndex("idx"));
@@ -341,7 +440,7 @@ class RedisVectorServiceImplTest {
     @Test
     void indexExists_whenNotRedisVectorStore_shouldReturnFalse() {
         VectorStore nonRedisStore = mock(VectorStore.class);
-        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(nonRedisStore, embeddingModel);
+        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(null, nonRedisStore, embeddingModel);
 
         assertFalse(otherService.indexExists("any-index"));
     }
@@ -379,7 +478,7 @@ class RedisVectorServiceImplTest {
     @Test
     void getIndexConfig_whenNotRedisVectorStore_shouldThrow() {
         VectorStore nonRedisStore = mock(VectorStore.class);
-        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(nonRedisStore, embeddingModel);
+        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(null, nonRedisStore, embeddingModel);
 
         assertThrows(UnsupportedOperationException.class,
                 () -> otherService.getIndexConfig("idx"));
@@ -434,7 +533,7 @@ class RedisVectorServiceImplTest {
     @Test
     void countDocuments_whenNotRedisVectorStore_shouldThrow() {
         VectorStore nonRedisStore = mock(VectorStore.class);
-        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(nonRedisStore, embeddingModel);
+        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(null, nonRedisStore, embeddingModel);
 
         assertThrows(UnsupportedOperationException.class,
                 () -> otherService.countDocuments("idx"));
@@ -457,23 +556,23 @@ class RedisVectorServiceImplTest {
         assertEquals(0L, count);
     }
 
-    // ==================== listDocumentsHandler / parseJsonToDocument ====================
+    // ==================== listDocuments (public final, delegates to listDocumentsImpl) ====================
 
     @Test
-    void listDocumentsHandler_withEmptyScan_shouldReturnEmptyList() {
+    void listDocuments_withEmptyScan_shouldReturnEmptyList() {
         ScanResult<String> scanResult = mock(ScanResult.class);
         when(scanResult.getResult()).thenReturn(List.of());
         when(scanResult.isCompleteIteration()).thenReturn(true);
         when(jedisPooled.scan(anyString(), any(ScanParams.class)))
                 .thenReturn(scanResult);
 
-        List<VectorDocument> docs = vectorService.listDocuments("empty-index", 0, 10);
+        List<VectorRecord> docs = vectorService.listDocuments("empty-index", 0, 10);
 
         assertThat(docs).isEmpty();
     }
 
     @Test
-    void listDocumentsHandler_withPagination_shouldSliceCorrectly() {
+    void listDocuments_withPagination_shouldSliceCorrectly() {
         String prefix = "paged:";
         ScanResult<String> scanResult = mock(ScanResult.class);
         List<String> allKeys = java.util.stream.IntStream.range(0, 10)
@@ -484,14 +583,14 @@ class RedisVectorServiceImplTest {
         when(jedisPooled.scan(anyString(), any(ScanParams.class)))
                 .thenReturn(scanResult);
 
-        // jsonMGet must return 3 results matching the batch size (doc5, doc6, doc7)
+        // 每个返回的 JSON 都带 content（VectorRecord 拒绝空文本）
         List<JSONArray> jsonResults = new ArrayList<>();
-        jsonResults.add(new JSONArray());
-        jsonResults.add(new JSONArray());
-        jsonResults.add(new JSONArray());
+        jsonResults.add(jsonWithContent("doc5"));
+        jsonResults.add(jsonWithContent("doc6"));
+        jsonResults.add(jsonWithContent("doc7"));
         doReturn(jsonResults).when(jedisPooled).jsonMGet(any(Path2.class), any(String[].class));
 
-        List<VectorDocument> docs = vectorService.listDocuments("paged", 5, 3);
+        List<VectorRecord> docs = vectorService.listDocuments("paged", 5, 3);
 
         // Slice should return 3 docs with IDs doc5, doc6, doc7
         assertThat(docs).hasSize(3);
@@ -501,7 +600,7 @@ class RedisVectorServiceImplTest {
     }
 
     @Test
-    void listDocumentsHandler_withNullJsonResult_shouldSkipNullEntries() {
+    void listDocuments_withNullJsonResult_shouldSkipNullEntries() {
         String prefix = "partial:";
         ScanResult<String> scanResult = mock(ScanResult.class);
         when(scanResult.getResult()).thenReturn(List.of(prefix + "a", prefix + "b", prefix + "c"));
@@ -516,14 +615,14 @@ class RedisVectorServiceImplTest {
         jsonResults.add(null);
         doReturn(jsonResults).when(jedisPooled).jsonMGet(any(Path2.class), any(String[].class));
 
-        List<VectorDocument> docs = vectorService.listDocuments("partial", 0, 10);
+        List<VectorRecord> docs = vectorService.listDocuments("partial", 0, 10);
 
         // All null entries should be skipped
         assertThat(docs).isEmpty();
     }
 
     @Test
-    void listDocumentsHandler_withEmptyJsonArray_shouldReturnEmpty() {
+    void listDocuments_withEmptyJsonArray_shouldSkipEntry() {
         String prefix = "empty:";
         ScanResult<String> scanResult = mock(ScanResult.class);
         when(scanResult.getResult()).thenReturn(List.of(prefix + "doc1"));
@@ -531,29 +630,26 @@ class RedisVectorServiceImplTest {
         when(jedisPooled.scan(anyString(), any(ScanParams.class)))
                 .thenReturn(scanResult);
 
-        // Empty JSONArray (no elements)
+        // Empty JSONArray (no elements) — VectorRecord 拒绝空文本，整条记录被跳过
         JSONArray emptyArray = new JSONArray();
         doReturn(List.of(emptyArray)).when(jedisPooled).jsonMGet(any(Path2.class), any(String[].class));
 
-        List<VectorDocument> docs = vectorService.listDocuments("empty", 0, 10);
+        List<VectorRecord> docs = vectorService.listDocuments("empty", 0, 10);
 
-        // Empty array means no content extracted, but ID should still be set
-        assertThat(docs).hasSize(1);
-        assertThat(docs.getFirst().getId()).isEqualTo("doc1");
-        assertThat(docs.getFirst().getContent()).isNull();
+        assertThat(docs).isEmpty();
     }
 
     @Test
-    void listDocumentsHandler_whenNotRedisVectorStore_shouldThrow() {
+    void listDocuments_whenNotRedisVectorStore_shouldThrow() {
         VectorStore nonRedisStore = mock(VectorStore.class);
-        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(nonRedisStore, embeddingModel);
+        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(null, nonRedisStore, embeddingModel);
 
         assertThrows(UnsupportedOperationException.class,
                 () -> otherService.listDocuments("idx", 0, 10));
     }
 
     @Test
-    void listDocumentsHandler_whenNativeClientEmpty_shouldThrow() {
+    void listDocuments_whenNativeClientEmpty_shouldThrow() {
         when(redisVectorStore.getNativeClient()).thenReturn(Optional.empty());
 
         assertThrows(IllegalStateException.class,
@@ -561,7 +657,7 @@ class RedisVectorServiceImplTest {
     }
 
     @Test
-    void listDocumentsHandler_whenScanThrows_shouldWrapInRuntimeException() {
+    void listDocuments_whenScanThrows_shouldWrapInRuntimeException() {
         when(jedisPooled.scan(anyString(), any(ScanParams.class)))
                 .thenThrow(new RuntimeException("SCAN failed"));
 
@@ -570,7 +666,7 @@ class RedisVectorServiceImplTest {
     }
 
     @Test
-    void listDocumentsHandler_withOffsetBeyondSize_shouldReturnEmpty() {
+    void listDocuments_withOffsetBeyondSize_shouldReturnEmpty() {
         String prefix = "small:";
         ScanResult<String> scanResult = mock(ScanResult.class);
         when(scanResult.getResult()).thenReturn(List.of(prefix + "a", prefix + "b"));
@@ -578,12 +674,10 @@ class RedisVectorServiceImplTest {
         when(jedisPooled.scan(anyString(), any(ScanParams.class)))
                 .thenReturn(scanResult);
 
-        List<VectorDocument> docs = vectorService.listDocuments("small", 10, 5);
+        List<VectorRecord> docs = vectorService.listDocuments("small", 10, 5);
 
         assertThat(docs).isEmpty();
     }
-
-    // ==================== listDocuments (public final, delegates to handler) ====================
 
     @Test
     void listDocuments_zeroLimit_shouldReturnEmpty() {
@@ -599,11 +693,153 @@ class RedisVectorServiceImplTest {
         when(jedisPooled.scan(anyString(), any(ScanParams.class)))
                 .thenReturn(scanResult);
         // Return a non-empty list so we can verify cap works
-        doReturn(List.of(new JSONArray())).when(jedisPooled).jsonMGet(any(Path2.class), any(String[].class));
+        doReturn(List.of(jsonWithContent("a"))).when(jedisPooled).jsonMGet(any(Path2.class), any(String[].class));
 
-        List<VectorDocument> docs = vectorService.listDocuments("caps", 0, 5000);
+        List<VectorRecord> docs = vectorService.listDocuments("caps", 0, 5000);
 
         // Should still return result (limit capped but query executed)
         assertThat(docs).isNotEmpty();
+    }
+
+    // ==================== helpers ====================
+
+    /** 构造带 content 字段的 JSONArray，模拟 Redis 中真实记录。 */
+    private static JSONArray jsonWithContent(String content) {
+        return new JSONArray().put(new JSONObject().put("content", content));
+    }
+
+    // ==================== truncateIndex ====================
+
+    @Test
+    void truncateIndex_singlePage_shouldUnlinkAllKeys() {
+        ScanResult<String> first = mock(ScanResult.class);
+        when(first.getResult()).thenReturn(List.of("test:doc1", "test:doc2", "test:doc3"));
+        when(first.isCompleteIteration()).thenReturn(true);
+        when(jedisPooled.scan(anyString(), any(ScanParams.class))).thenReturn(first);
+        when(jedisPooled.unlink(any(String[].class))).thenReturn(3L);
+
+        long deleted = vectorService.truncateIndex("test");
+
+        assertThat(deleted).isEqualTo(3L);
+        verify(jedisPooled).unlink(any(String[].class));
+    }
+
+    @Test
+    void truncateIndex_multiPage_shouldAggregateUnlinkCounts() {
+        ScanResult<String> page1 = mock(ScanResult.class);
+        when(page1.getResult()).thenReturn(List.of("multi:doc1", "multi:doc2"));
+        when(page1.isCompleteIteration()).thenReturn(false);
+        when(page1.getCursor()).thenReturn("cursor-1");
+
+        ScanResult<String> page2 = mock(ScanResult.class);
+        when(page2.getResult()).thenReturn(List.of("multi:doc3"));
+        when(page2.isCompleteIteration()).thenReturn(true);
+
+        when(jedisPooled.scan(anyString(), any(ScanParams.class)))
+                .thenReturn(page1)
+                .thenReturn(page2);
+        when(jedisPooled.unlink(any(String[].class))).thenReturn(2L, 1L);
+
+        long deleted = vectorService.truncateIndex("multi");
+
+        assertThat(deleted).isEqualTo(3L);
+        verify(jedisPooled, times(2)).scan(anyString(), any(ScanParams.class));
+        verify(jedisPooled, times(2)).unlink(any(String[].class));
+    }
+
+    @Test
+    void truncateIndex_emptyScan_shouldReturnZero() {
+        ScanResult<String> empty = mock(ScanResult.class);
+        when(empty.getResult()).thenReturn(List.of());
+        when(empty.isCompleteIteration()).thenReturn(true);
+        when(jedisPooled.scan(anyString(), any(ScanParams.class))).thenReturn(empty);
+
+        long deleted = vectorService.truncateIndex("empty");
+
+        assertThat(deleted).isZero();
+        verify(jedisPooled, never()).unlink(any(String[].class));
+    }
+
+    @Test
+    void truncateIndex_whenNotRedisVectorStore_shouldThrow() {
+        VectorStore nonRedisStore = mock(VectorStore.class);
+        RedisVectorServiceImpl otherService = new RedisVectorServiceImpl(null, nonRedisStore, embeddingModel);
+
+        assertThrows(UnsupportedOperationException.class,
+                () -> otherService.truncateIndex("idx"));
+    }
+
+    @Test
+    void truncateIndex_whenNativeClientEmpty_shouldThrow() {
+        when(redisVectorStore.getNativeClient()).thenReturn(Optional.empty());
+
+        assertThrows(IllegalStateException.class,
+                () -> vectorService.truncateIndex("idx"));
+    }
+
+    // ==================== healthCheck (inherited 3-step probe) ====================
+
+    @Test
+    void healthCheck_whenIndexMissing_shouldReturnFalse() {
+        when(jedisPooled.ftList()).thenReturn(Set.of("idx1"));
+
+        assertThat(vectorService.healthCheck("missing")).isFalse();
+    }
+
+    @Test
+    void healthCheck_whenIndexExists_shouldReturnTrue() {
+        when(jedisPooled.ftList()).thenReturn(Set.of("idx1", "ok-idx"));
+        when(jedisPooled.ftInfo("ok-idx")).thenReturn(Map.of("num_docs", 7L));
+
+        assertThat(vectorService.healthCheck("ok-idx")).isTrue();
+    }
+
+    @Test
+    void healthCheck_whenFtInfoThrows_shouldReturnTrue() {
+        when(jedisPooled.ftList()).thenReturn(Set.of("ok-idx"));
+        when(jedisPooled.ftInfo(anyString())).thenThrow(new RuntimeException("FT.INFO failed"));
+        // Redis countDocumentsImpl catches exceptions and returns 0L, so healthCheck
+        // sees count (0) >= 0 and returns true.
+
+        assertThat(vectorService.healthCheck("ok-idx")).isTrue();
+    }
+
+    @Nested
+    class OpsApiTests {
+
+        @Test
+        void optimize_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.optimize("idx"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("redis");
+        }
+
+        @Test
+        void createAlias_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.createAlias("idx", "alias"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("redis");
+        }
+
+        @Test
+        void switchAlias_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.switchAlias("old-idx", "new-idx", "alias"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("redis");
+        }
+
+        @Test
+        void backup_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.backup("idx", "/backup"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("redis");
+        }
+
+        @Test
+        void restore_shouldThrowUnsupportedOperationException() {
+            assertThatThrownBy(() -> vectorService.restore("/backup", "idx"))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessageContaining("redis");
+        }
     }
 }

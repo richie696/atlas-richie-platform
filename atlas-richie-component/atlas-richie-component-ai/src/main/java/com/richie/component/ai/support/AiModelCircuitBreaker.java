@@ -15,6 +15,10 @@
  */
 package com.richie.component.ai.support;
 
+import com.richie.component.ai.config.resilience.ResilienceConfig;
+
+import com.richie.component.ai.config.chat.AiChatModel;
+
 import com.richie.component.ai.config.AiModelProperties;
 import org.springframework.stereotype.Component;
 
@@ -29,7 +33,7 @@ public class AiModelCircuitBreaker {
 
     private final Map<String, State> states = new ConcurrentHashMap<>();
 
-    public boolean allow(String modelName, AiModelProperties.ResilienceConfig config) {
+    public boolean allow(String modelName, ResilienceConfig config) {
         if (!config.isCircuitBreakerEnabled()) {
             return true;
         }
@@ -48,7 +52,7 @@ public class AiModelCircuitBreaker {
         states.remove(modelName);
     }
 
-    public void recordFailure(String modelName, AiModelProperties.ResilienceConfig config) {
+    public void recordFailure(String modelName, ResilienceConfig config) {
         if (!config.isCircuitBreakerEnabled()) {
             return;
         }

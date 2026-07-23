@@ -15,6 +15,10 @@
  */
 package com.richie.component.ai.support;
 
+import com.richie.component.ai.config.routing.RoutingConfig;
+
+import com.richie.component.ai.config.chat.AiChatModel;
+
 import com.richie.component.ai.config.AiModelProperties;
 import com.richie.component.ai.model.AiRequest;
 import org.springframework.stereotype.Component;
@@ -36,7 +40,7 @@ public class AiModelRouter {
                                           Map<String, ?> availableClients,
                                           AiModelProperties properties) {
         List<String> chain = new ArrayList<>();
-        AiModelProperties.RoutingConfig routing = properties.getRouting();
+        RoutingConfig routing = properties.getRouting();
 
         if (request != null && request.getModelName() != null && !request.getModelName().isBlank()) {
             chain.add(request.getModelName());
@@ -55,7 +59,7 @@ public class AiModelRouter {
         return filterAvailable(distinct(chain), availableClients);
     }
 
-    private void appendSceneModels(List<String> chain, AiRequest request, AiModelProperties.RoutingConfig routing) {
+    private void appendSceneModels(List<String> chain, AiRequest request, RoutingConfig routing) {
         if (request == null || request.getScene() == null || request.getScene().isBlank()) {
             return;
         }
@@ -65,7 +69,7 @@ public class AiModelRouter {
         }
     }
 
-    private void appendFallbacks(List<String> chain, AiRequest request, AiModelProperties.RoutingConfig routing) {
+    private void appendFallbacks(List<String> chain, AiRequest request, RoutingConfig routing) {
         if (request != null && request.getFallbackModelNames() != null) {
             chain.addAll(request.getFallbackModelNames());
         }

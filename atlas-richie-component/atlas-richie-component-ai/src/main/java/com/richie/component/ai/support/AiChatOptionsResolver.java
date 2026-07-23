@@ -16,7 +16,8 @@
 package com.richie.component.ai.support;
 
 import com.anthropic.models.messages.Model;
-import com.richie.component.ai.config.AiModelProperties;
+import com.richie.component.ai.config.chat.AiChatModelOptions;
+import com.richie.component.ai.config.chat.LlmProvider;
 import com.richie.component.ai.model.AiRequest;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
 import org.springframework.ai.chat.prompt.ChatOptions;
@@ -38,12 +39,12 @@ public class AiChatOptionsResolver {
     /**
      * 将请求级参数覆盖到模型默认参数之上（请求中非 null 字段优先）。
      */
-    public AiModelProperties.AiModelOptions mergeOptions(AiModelProperties.AiModelOptions base,
+    public AiChatModelOptions mergeOptions(AiChatModelOptions base,
                                                          AiRequest.ModelOptions requestOverride) {
         if (requestOverride == null) {
             return base;
         }
-        AiModelProperties.AiModelOptions merged = copyOptions(base);
+        AiChatModelOptions merged = copyOptions(base);
         if (requestOverride.getModel() != null) {
             merged.setModel(requestOverride.getModel());
         }
@@ -90,8 +91,8 @@ public class AiChatOptionsResolver {
         return request != null && request.getOptions() != null;
     }
 
-    public ChatOptions toChatOptions(AiModelProperties.AiProviderType provider,
-                                     AiModelProperties.AiModelOptions options) {
+    public ChatOptions toChatOptions(LlmProvider provider,
+                                     AiChatModelOptions options) {
         return switch (provider) {
             case OPENAI, ZHIPUAI, MOONSHOT, MINIMAX -> toOpenAiChatOptions(options);
             case DEEPSEEK -> toDeepSeekChatOptions(options);
@@ -100,24 +101,24 @@ public class AiChatOptionsResolver {
         };
     }
 
-    public OpenAiChatOptions toOpenAiChatOptions(AiModelProperties.AiModelOptions options) {
+    public OpenAiChatOptions toOpenAiChatOptions(AiChatModelOptions options) {
         return buildOpenAi(options);
     }
 
-    public DeepSeekChatOptions toDeepSeekChatOptions(AiModelProperties.AiModelOptions options) {
+    public DeepSeekChatOptions toDeepSeekChatOptions(AiChatModelOptions options) {
         return buildDeepSeek(options);
     }
 
-    public AnthropicChatOptions toAnthropicChatOptions(AiModelProperties.AiModelOptions options) {
+    public AnthropicChatOptions toAnthropicChatOptions(AiChatModelOptions options) {
         return buildAnthropic(options);
     }
 
-    public OllamaChatOptions toOllamaChatOptions(AiModelProperties.AiModelOptions options) {
+    public OllamaChatOptions toOllamaChatOptions(AiChatModelOptions options) {
         return buildOllama(options);
     }
 
-    private AiModelProperties.AiModelOptions copyOptions(AiModelProperties.AiModelOptions base) {
-        AiModelProperties.AiModelOptions copy = new AiModelProperties.AiModelOptions();
+    private AiChatModelOptions copyOptions(AiChatModelOptions base) {
+        AiChatModelOptions copy = new AiChatModelOptions();
         if (base == null) {
             return copy;
         }
@@ -138,7 +139,7 @@ public class AiChatOptionsResolver {
         return copy;
     }
 
-    private OpenAiChatOptions buildOpenAi(AiModelProperties.AiModelOptions options) {
+    private OpenAiChatOptions buildOpenAi(AiChatModelOptions options) {
         if (options == null) {
             return OpenAiChatOptions.builder().build();
         }
@@ -171,7 +172,7 @@ public class AiChatOptionsResolver {
         return builder.build();
     }
 
-    private DeepSeekChatOptions buildDeepSeek(AiModelProperties.AiModelOptions options) {
+    private DeepSeekChatOptions buildDeepSeek(AiChatModelOptions options) {
         if (options == null) {
             return DeepSeekChatOptions.builder().build();
         }
@@ -204,7 +205,7 @@ public class AiChatOptionsResolver {
         return builder.build();
     }
 
-    private AnthropicChatOptions buildAnthropic(AiModelProperties.AiModelOptions options) {
+    private AnthropicChatOptions buildAnthropic(AiChatModelOptions options) {
         if (options == null) {
             return AnthropicChatOptions.builder().build();
         }
@@ -227,7 +228,7 @@ public class AiChatOptionsResolver {
         return builder.build();
     }
 
-    private OllamaChatOptions buildOllama(AiModelProperties.AiModelOptions options) {
+    private OllamaChatOptions buildOllama(AiChatModelOptions options) {
         if (options == null) {
             return OllamaChatOptions.builder().build();
         }

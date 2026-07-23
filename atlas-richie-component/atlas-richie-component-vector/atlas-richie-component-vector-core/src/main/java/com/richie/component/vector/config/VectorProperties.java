@@ -63,6 +63,14 @@ public class VectorProperties {
      */
     private OllamaConfig ollama = new OllamaConfig();
 
+    /**
+     * 批量管线配置 — 按 §6.1 设计文档定义
+     * <p>
+     * 控制 {@code AbstractVectorService.runBatchPipeline} 的并发度、批量大小、背压与容错策略。
+     * 详见 <a href="https://github.com/richie696/atlas-richie-platform/blob/main/atlas-richie-component/atlas-richie-component-vector/VECTOR_SERVICE_V2_DESIGN.md#61-配置项">VECTOR_SERVICE_V2_DESIGN §6.1</a>。
+     */
+    private Batch batch = new Batch();
+
 
     /**
      * 索引配置类
@@ -130,5 +138,73 @@ public class VectorProperties {
          */
         private String model = "llama2";
 
+    }
+
+    /**
+     * 批量管线配置 — 对应 {@code platform.component.vector.batch.*}。
+     * <p>
+     * 字段定义严格遵循 §6.1 配置表；任何字段缺失时使用本类字段初始化器作为兜底，
+     * 确保 {@code new VectorProperties().getBatch()} 即可获得完整默认值。
+     * <p>
+     * <b>继承关系</b>：未启用 Spring Boot 配置绑定（{@code @ConfigurationProperties}）时，
+     * 本类仍可通过 {@code new VectorProperties.Batch()} 单独构造并直接传入
+     * {@code AbstractVectorService} 的新构造器。
+     */
+    @Data
+    @Accessors(chain = true)
+    public static class Batch {
+
+        /**
+         * 一次 {@code EmbeddingModel.embed(List)} 传入的记录数。
+         */
+        private int embeddingBatchSize = 32;
+
+        /**
+         * 同时进行的嵌入调用数（按 provider 容量调）。
+         */
+        private int embeddingConcurrency = 8;
+
+        /**
+         * 一次 {@code VectorStore.add(List)} 传入的记录数。
+         */
+        private int writeBatchSize = 100;
+
+        /**
+         * 同时进行的写入调用数。
+         */
+        private int writeConcurrency = 4;
+
+        /**
+         * {@code Sinks.Many} 背压缓冲上限（Phase A 暂未启用 Sinks 重写，留作占位）。
+         */
+        private int backpressureBuffer = 1024;
+
+        /**
+         * 单条失败是否中断批次；{@code false} 时保持现有 continue 行为。
+         */
+        private boolean failFast = false;
+
+        /**
+         * 内容哈希去重 LRU 大小（{@code 0} 禁用）。
+         * <p>
+         * Phase A 简化：使用 {@code ConcurrentHashMap.newKeySet()} 而非完整 LRU —
+         * 命中即可去重，不淘汰冷数据（业务侧可结合外部缓存自行管理生命周期）。
+         */
+        private int dedupCacheSize = 10_000;
+
+        /**
+         * itemId 取值来源：{@link ItemIdSource#METADATA} / {@link ItemIdSource#ID} / {@link ItemIdSource#HASH}。
+         */
+        private ItemIdSource itemIdSource = ItemIdSource.METADATA;
+
+        /**
+         * itemId 来源枚举 — 与 §6.1 配置表三种模式一一对应。
+         * <ul>
+         *   <li>{@link #METADATA}：{@code record.getMetadata().__itemId}（默认，兼容旧行为）</li>
+         *   <li>{@link #ID}：{@code record.getId()}（用于 metadata 不携带业务 ID 的场景）</li>
+         *   <li>{@link #HASH}：内容 SHA-256 摘要（用于完全以内容寻址的去重场景）</li>
+         * </ul>
+         */
+        public enum ItemIdSource { METADATA, ID, HASH }
     }
 }
