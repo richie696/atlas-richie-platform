@@ -69,12 +69,12 @@ Before the engine is created, the `ConfigValidation` utility class validates req
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-smb</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>

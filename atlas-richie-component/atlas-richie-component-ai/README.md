@@ -327,7 +327,7 @@ public Map<String, PoolStats> stats() {
 
 ### Detailed Design
 
-See the [API Key Pool](#-api-key-pool) section above for configuration syntax, working principles, rate-limit detection rules, and failure models. The pool SPI is implemented in `com.richie.component.ai.support.keypool` with `ApiKeyPool` (interface) + `ApiKeyPoolImpl` (GenericObjectPool wrapper) + `ApiKeyPoolManager` (per-business-name factory).
+See the [API Key Pool](#-api-key-pool) section above for configuration syntax, working principles, rate-limit detection rules, and failure models. The pool SPI is implemented in `cn.richie696.component.ai.support.keypool` with `ApiKeyPool` (interface) + `ApiKeyPoolImpl` (GenericObjectPool wrapper) + `ApiKeyPoolManager` (per-business-name factory).
 
 ## Currently Supported Models
 
@@ -354,7 +354,7 @@ When calling `initializeModels(List<ModelOptions>)`, `ModelOptions.provider` is 
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-ai</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 </dependency>
@@ -460,8 +460,8 @@ Behavior:
 ### 1) Construct Model Configuration List
 
 ```java
-import com.richie.component.ai.config.AiModelProperties;
-import com.richie.component.ai.model.ModelOptions;
+import config.cn.richie696.component.ai.AiModelProperties;
+import model.cn.richie696.component.ai.ModelOptions;
 
 List<ModelOptions> options = List.of(
         new ModelOptions()
@@ -498,24 +498,32 @@ After execution:
 ## Unified Call Examples
 
 ```java
-import com.richie.component.ai.model.AiRequest;
-import com.richie.component.ai.model.AiResponse;
+import model.cn.richie696.component.ai.AiRequest;
+import model.cn.richie696.component.ai.AiResponse;
 
 // 1. Default model call
 AiResponse r1 = aiModelService.call(AiRequest.ofUserMessage("Please briefly introduce yourself"));
 
-// 2. Specify model call
-AiResponse r2 = aiModelService.callWithModel(
-        "tenant-a-openai",
-        AiRequest.ofSystemAndUser("You are a Java architect", "Please explain DDD layering")
-);
+        // 2. Specify model call
+        AiResponse r2 = aiModelService.callWithModel(
+                "tenant-a-openai",
+                AiRequest.ofSystemAndUser("You are a Java architect", "Please explain DDD layering")
+        );
 
 // 3. Async call
-aiModelService.callAsync(AiRequest.ofUserMessage("Generate a Spring Boot Controller example"))
-        .thenAccept(resp -> {
-            if (resp.isSuccess()) {
-                System.out.println(resp.getContent());
-            }
+aiModelService.
+
+        callAsync(AiRequest.ofUserMessage("Generate a Spring Boot Controller example"))
+        .
+
+        thenAccept(resp ->{
+        if(resp.
+
+        isSuccess()){
+        System.out.
+
+        println(resp.getContent());
+        }
         });
 ```
 

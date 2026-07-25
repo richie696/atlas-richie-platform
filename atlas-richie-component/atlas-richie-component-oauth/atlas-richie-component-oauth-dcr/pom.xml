@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-oauth</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -19,12 +19,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.richie.component</groupId>
+            <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-oauth-core</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.richie.component</groupId>
+            <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-cache</artifactId>
             <scope>provided</scope>
         </dependency>
@@ -61,9 +61,9 @@
                         <include>com/richie/component/oauth/dcr/**</include>
                     </includes>
                     <excludes>
-                        <exclude>com.richie.component.**.*AutoConfiguration</exclude>
-                        <exclude>com.richie.component.**.config.**</exclude>
-                        <exclude>com.richie.component.**.enums.**</exclude>
+                        <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>
+                        <exclude>cn.richie696.component.**.config.**</exclude>
+                        <exclude>cn.richie696.component.**.enums.**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -75,9 +75,9 @@
                                 <include>com/richie/component/oauth/dcr/**</include>
                             </includes>
                             <excludes>
-                                <exclude>com.richie.component.**.*AutoConfiguration</exclude>
-                                <exclude>com.richie.component.**.config.**</exclude>
-                                <exclude>com.richie.component.**.enums.**</exclude>
+                                <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>
+                                <exclude>cn.richie696.component.**.config.**</exclude>
+                                <exclude>cn.richie696.component.**.enums.**</exclude>
                             </excludes>
                             <rules>
                                 <rule>

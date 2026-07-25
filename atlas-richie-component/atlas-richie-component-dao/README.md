@@ -78,7 +78,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-dao</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>

@@ -30,7 +30,7 @@ http 组件的 **JDK 原生 Provider**。基于 [`java.net.http.HttpClient`](htt
 
 | 项 | 值 |
 |---|---|
-| **坐标** | `com.richie.component:atlas-richie-component-http-jdk` |
+| **坐标** | `cn.richie696.component:atlas-richie-component-http-jdk` |
 | **激活配置** | `platform.component.http.provider=<provider>` |
 
 ### 本模块提供 vs 不提供
@@ -60,11 +60,11 @@ atlas-richie-component-http-jdk
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-core</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-jdk</artifactId>
 </dependency>
 ```
@@ -79,7 +79,7 @@ platform:
 通过门面调用：
 
 ```java
-import com.richie.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpClient;
 
 @Service
 @RequiredArgsConstructor

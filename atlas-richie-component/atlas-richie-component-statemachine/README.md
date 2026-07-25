@@ -39,7 +39,7 @@
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-statemachine` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-statemachine` |
 | **Category** | Domain logic — state machine |
 | **Hard dependencies** | `easy-rules` 4.1.0, `atlas-richie-component-cache` (Redis), `atlas-richie-component-dao` |
 | **Compatible with** | JDK 17+, Spring Boot 4.x |
@@ -108,15 +108,15 @@ atlas-richie-component-statemachine
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-statemachine</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-cache</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-dao</artifactId>
 </dependency>
 ```

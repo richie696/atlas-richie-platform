@@ -1,6 +1,6 @@
-com.richie.component.messaging.consumer.BaseConsumer
-com.richie.component.messaging.service.impl.MessageServiceImpl
-com.richie.component.messaging.filter.handler.impl.MessageHandlerServiceImpl
-com.richie.component.messaging.filter.datasource.impl.MemoryDatasourceHandlerImpl
-com.richie.component.messaging.filter.datasource.impl.RedisDatasourceHandlerImpl
-com.richie.component.messaging.config.MessagingConfiguration
+cn.richie696.component.messaging.consumer.BaseConsumer
+cn.richie696.component.messaging.service.impl.MessageServiceImpl
+cn.richie696.component.messaging.filter.handler.impl.MessageHandlerServiceImpl
+cn.richie696.component.messaging.filter.datasource.impl.MemoryDatasourceHandlerImpl
+cn.richie696.component.messaging.filter.datasource.impl.RedisDatasourceHandlerImpl
+cn.richie696.component.messaging.config.MessagingConfiguration

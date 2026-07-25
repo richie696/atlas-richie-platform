@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2026 Richie (https://www.github.com/richie696)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package cn.richie696.component.ai.support;
+
+import cn.richie696.component.ai.config.resilience.ResilienceConfig;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class AiModelCircuitBreakerTest {
+
+    private final AiModelCircuitBreaker circuitBreaker = new AiModelCircuitBreaker();
+
+    @Test
+    void shouldOpenAfterThresholdFailures() {
+        ResilienceConfig config = new ResilienceConfig();
+        config.setFailureThreshold(2);
+        config.setOpenDurationMs(60_000);
+
+        assertTrue(circuitBreaker.allow("gpt-4o", config));
+        circuitBreaker.recordFailure("gpt-4o", config);
+        assertTrue(circuitBreaker.allow("gpt-4o", config));
+        circuitBreaker.recordFailure("gpt-4o", config);
+        assertFalse(circuitBreaker.allow("gpt-4o", config));
+    }
+
+    @Test
+    void recordSuccessShouldResetBreaker() {
+        ResilienceConfig config = new ResilienceConfig();
+        config.setFailureThreshold(1);
+
+        circuitBreaker.recordFailure("gpt-4o", config);
+        assertFalse(circuitBreaker.allow("gpt-4o", config));
+
+        circuitBreaker.recordSuccess("gpt-4o");
+        assertTrue(circuitBreaker.allow("gpt-4o", config));
+    }
+}

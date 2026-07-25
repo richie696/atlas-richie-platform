@@ -40,7 +40,7 @@ This module is the **only thing your business code depends on**. It defines the 
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-http-core` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-http-core` |
 | **Category** | Facade / contract layer |
 | **Hard dependencies** | `tools.jackson.core:jackson-databind`, `atlas-richie-context` (for `JsonUtils`) |
 | **Third-party HTTP** | **None** — every Provider contributes its own library |
@@ -69,7 +69,7 @@ This module is the **only thing your business code depends on**. It defines the 
 ## 🏗️ Architecture & Module Layout
 
 ```
-com.richie.component.http.core
+cn.richie696.component.http.core
 ├── HttpClient              ← interface; Provider implementers
 ├── HttpRequest             ← chainable Builder (URL, method, body, headers, timeout, content-type, multipart)
 ├── HttpResponse            ← status, headers, body (byte[] / String / deserialized)
@@ -112,13 +112,13 @@ graph LR
 ```xml
 <!-- Always required: the facade -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-core</artifactId>
 </dependency>
 
 <!-- Pick exactly one Provider -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-okhttp</artifactId>
 </dependency>
 ```
@@ -126,7 +126,7 @@ graph LR
 ### 2. Use the API
 
 ```java
-import com.richie.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpClient;
 
 @Service
 @RequiredArgsConstructor

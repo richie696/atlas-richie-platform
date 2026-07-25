@@ -41,7 +41,7 @@ public struct HardwareFingerprint: Codable {
 public class DeviceFingerprint {
     
     /// 存储键名（Keychain）
-    private static let keychainService = "com.richie.device.fingerprint"
+    private static let keychainService = "cn.richie696.device.fingerprint"
     private static let keychainKey = "device_fingerprint"
     
     /// UserDefaults 键名（备用）

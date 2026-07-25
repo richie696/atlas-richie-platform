@@ -38,7 +38,7 @@
 
 | 项 | 值 |
 |---|---|
-| **坐标** | `com.richie.component:atlas-richie-component-nats` |
+| **坐标** | `cn.richie696.component:atlas-richie-component-nats` |
 | **类别** | 消息——NATS pub/sub + JetStream |
 | **强依赖** | `io.nats:jnats`（JetStream 客户端） |
 | **兼容** | NATS Server 2.10+，启用 JetStream |
@@ -108,7 +108,7 @@ atlas-richie-component-nats
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-nats</artifactId>
 </dependency>
 ```

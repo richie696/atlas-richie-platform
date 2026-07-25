@@ -41,7 +41,7 @@
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-oauth` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-oauth` |
 | **Category** | Identity & access — OAuth 2.1 authorization server |
 | **Hard dependencies** | `atlas-richie-context`, DB (clients / tokens / grants), Redis (rate-limit, cache) |
 | **Standards** | RFC 6749, RFC 7636 (PKCE), RFC 8252 (device), RFC 8414, RFC 8628 (device), RFC 9068 (JWT access tokens), RFC 7009 (revocation) |
@@ -107,7 +107,7 @@ atlas-richie-component-oauth
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-oauth</artifactId>
 </dependency>
 ```

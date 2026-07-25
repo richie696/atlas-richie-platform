@@ -16,7 +16,7 @@
 ## 模块内容
 
 ```
-com.richie.component.storage
+cn.richie696.component.storage
 ├── core/        # SPI 接口 + 注册中心 + 自动配置
 │   ├── StorageEngine                       # 统一存储接口
 │   ├── StorageEngineProvider               # 引擎扩展点 SPI
@@ -540,7 +540,7 @@ management:
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
@@ -615,7 +615,7 @@ public class CephAutoConfiguration {
 注册 `AutoConfiguration` 到 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`：
 
 ```
-com.richie.component.storage.ceph.CephAutoConfiguration
+cn.richie696.component.storage.ceph.CephAutoConfiguration
 ```
 
 ### 第 5 步：在 core 模块的 AutoConfiguration 中添加条件分支
@@ -640,7 +640,7 @@ public enum StorageEngineEnum {
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
@@ -650,7 +650,7 @@ public enum StorageEngineEnum {
 
 | 依赖                                                            | 作用                                                                 |
 |---------------------------------------------------------------|--------------------------------------------------------------------|
-| `com.richie.base:atlas-richie-context`                        | `SpringContextHolder`（Registry 通过它动态查找 Provider）                   |
+| `cn.richie696.base:atlas-richie-context`                        | `SpringContextHolder`（Registry 通过它动态查找 Provider）                   |
 | `org.springframework.boot:spring-boot-autoconfigure`          | `@AutoConfiguration` 与条件注解                                         |
 | `org.springframework.boot:spring-boot-actuator-autoconfigure` | HealthIndicator 与 Micrometer 集成（可选，运行时通过 `@ConditionalOnClass` 判断） |
 | `io.micrometer:micrometer-core`                               | MeterBinder 接口（可选）                                                 |

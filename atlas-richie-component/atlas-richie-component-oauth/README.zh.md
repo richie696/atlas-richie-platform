@@ -79,7 +79,7 @@ atlas-richie-component-oauth/
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-oauth-core</artifactId>
 </dependency>
 ```
@@ -108,9 +108,9 @@ platform:
 组件自动装配后，直接注入即可：
 
 ```java
-import com.richie.component.oauth.core.TokenEndpoint;
-import com.richie.component.oauth.core.ClientRegistry;
-import com.richie.component.oauth.core.model.TokenResponse;
+import cn.richie696.component.oauth.core.TokenEndpoint;
+import cn.richie696.component.oauth.core.ClientRegistry;
+import model.cn.richie696.component.oauth.core.TokenResponse;
 
 // 注入 TokenEndpoint
 @Autowired
@@ -399,19 +399,24 @@ gateway:
 组件使用统一异常类型：
 
 ```java
-import com.richie.contract.gateway.model.OAuth2Constants;
-import com.richie.contract.exception.BusinessException;
 
-try {
-    tokenEndpoint.generateToken(clientId, clientSecret, ip);
-} catch (BusinessException e) {
-    String errorCode = e.getCode();
-    if (OAuth2Constants.ERROR_INVALID_CLIENT.equals(errorCode)) {
+import exception.cn.richie696.contract.BusinessException;
+
+try{
+        tokenEndpoint.generateToken(clientId, clientSecret, ip);
+}catch(
+BusinessException e){
+String errorCode = e.getCode();
+    if(OAuth2Constants.ERROR_INVALID_CLIENT.
+
+equals(errorCode)){
         // 客户端认证失败
-    } else if (OAuth2Constants.ERROR_RATE_LIMIT_EXCEEDED.equals(errorCode)) {
+        }else if(OAuth2Constants.ERROR_RATE_LIMIT_EXCEEDED.
+
+equals(errorCode)){
         // 超过每日签发限制
-    }
-}
+        }
+        }
 ```
 
 ---

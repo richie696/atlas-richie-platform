@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-vector</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -23,7 +23,7 @@
 
         <!-- EmbeddingModel aiEmbeddingModel Bean 由 richie-component-ai 提供 -->
         <dependency>
-            <groupId>com.richie.component</groupId>
+            <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-ai</artifactId>
         </dependency>
 

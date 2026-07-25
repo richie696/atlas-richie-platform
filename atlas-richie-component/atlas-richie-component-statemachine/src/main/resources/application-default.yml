@@ -87,7 +87,7 @@ platform:
                             # 消费者名称（每个实例应该不同，建议使用实例ID或主机名）
                             consumer: statemachine-db-sync-consumer
                             # 消息类型
-                            target-type: com.richie.component.statemachine.event.StateSyncMessage
+                            target-type: cn.richie696.component.statemachine.event.StateSyncMessage
                             # 单次拉取消息数量（批量拉取多条消息）
                             count: 50
                             # 并发处理数（建议设置为CPU核心数，框架默认值为CPU核心数的一半）

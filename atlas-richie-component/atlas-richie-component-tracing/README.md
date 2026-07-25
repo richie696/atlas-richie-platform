@@ -33,7 +33,7 @@ This module **contains no custom Java code**. It is a dependency aggregator that
 
 | Item                 | Value                                                 |
 |----------------------|-------------------------------------------------------|
-| **Coordinates**      | `com.richie.component:atlas-richie-component-tracing` |
+| **Coordinates**      | `cn.richie696.component:atlas-richie-component-tracing` |
 | **Category**         | Dependency Management — Distributed Tracing           |
 | **Scope**            | Spring Boot 3.x / 4.x                                 |
 | **Managed Versions** | OpenTelemetry SDK 1.40+ / Instrumentation BOM 2.x     |
@@ -172,7 +172,7 @@ The starter is now optional — add both the tracing module and the starter expl
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-tracing</artifactId>
 </dependency>
 <dependency>

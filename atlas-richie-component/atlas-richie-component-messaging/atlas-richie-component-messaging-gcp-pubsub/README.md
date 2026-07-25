@@ -16,12 +16,12 @@ Google Cloud Pub/Sub 消息队列依赖管理组件，基于 Spring Cloud GCP Pu
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-messaging-core</artifactId>
 </dependency>
 
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-messaging-gcp-pubsub</artifactId>
 </dependency>
 ```

@@ -108,7 +108,7 @@ atlas-richie-component-ocr/                              (aggregator POM)
 `ocr-core` organizes code into three semantic sub-packages:
 
 ```
-com.richie.component.ocr/
+cn.richie696.component.ocr/
 ├── engine/             # Business-facing types
 │   ├── OcrImage                # sealed (Bytes / Url / Stream)
 │   ├── OcrOptions              # Builder, dpi / languages / confidenceThreshold
@@ -136,11 +136,11 @@ Each vendor module (`ocr-aliyun`, `ocr-baidu`, …) ships one concrete `XxxOcrPr
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-ocr-core</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-ocr-aliyun</artifactId>  <!-- or any vendor -->
 </dependency>
 ```
@@ -203,7 +203,7 @@ public class OcrBizService {
 ```xml
 <!-- pom.xml: remove ocr-aliyun, add ocr-tencent -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-ocr-tencent</artifactId>
 </dependency>
 ```
@@ -245,42 +245,42 @@ A single end-to-end scenario: invoice OCR service with multi-language, table rec
 <dependencies>
     <!-- ===== Core (always required) ===== -->
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-core</artifactId>
     </dependency>
 
     <!-- ===== Pick ONE vendor ===== -->
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-aliyun</artifactId>
     </dependency>
     <!-- Alternatives (uncomment to switch):
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-baidu</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-tencent</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-volcano</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-paddle</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-tesseract</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-paddle-vl</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-mineru</artifactId>
     </dependency>
     -->
@@ -288,12 +288,12 @@ A single end-to-end scenario: invoice OCR service with multi-language, table rec
     <!-- ===== Optional extensions ===== -->
     <!-- Micrometer health metrics (auto-detects existing MeterRegistry) -->
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-extension-micrometer</artifactId>
     </dependency>
     <!-- OpenTelemetry tracing (auto-detects existing Tracer, GraalVM friendly) -->
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-extension-otel</artifactId>
     </dependency>
 </dependencies>
@@ -660,7 +660,7 @@ Extensions live under `ocr-extension/` aggregator. Each is **optional** — if y
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-ocr-extension-micrometer</artifactId>
 </dependency>
 <dependency>
@@ -680,7 +680,7 @@ Extensions live under `ocr-extension/` aggregator. Each is **optional** — if y
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-ocr-extension-otel</artifactId>
 </dependency>
 <dependency>

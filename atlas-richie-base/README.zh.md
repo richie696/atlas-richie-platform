@@ -100,7 +100,7 @@ atlas-richie-base/
 
 ```xml
 <parent>
-    <groupId>com.richie.base</groupId>
+    <groupId>cn.richie696.base</groupId>
     <artifactId>atlas-richie-dependencies</artifactId>
     <version>${revision}</version>
     <relativePath>../atlas-richie-base/atlas-richie-dependencies/pom.xml</relativePath>
@@ -119,11 +119,11 @@ atlas-richie-base/
 
 | 包路径                                  | 主要内容                                                                                                | 典型使用方                         |
 |--------------------------------------|-----------------------------------------------------------------------------------------------------|-------------------------------|
-| `com.richie.contract.model`          | `ApiResult` 统一 API 响应；`LoginUserPrincipal` 登录用户主体；`SearchRequest` 分页查询；`BaseStreamMessage` 流消息标记    | 所有 REST 服务、网关                 |
-| `com.richie.contract.gateway.config` | `GatewayContract`（`platform.gateway` 前缀）；`TokenFilterConfig`；`TenantFilterConfig`；`DeployConfig` 灰度 | 网关、业务服务拦截器、Messaging/MQTT/MFA |
-| `com.richie.contract.gateway.model`  | `OAuth2AuditEvent` / `OAuth2AuditEventType`；`OAuth2Constants`                                       | 网关审计发布、general-service 消费     |
-| `com.richie.contract.exception`      | `BaseException`、`BusinessException`、`PlatformRuntimeException`、`PlatformDataAccessException`        | 全局异常处理                        |
-| `com.richie.contract.constant`       | `GlobalConstants` 平台级常量                                                                             | 全平台                           |
+| `cn.richie696.contract.model`          | `ApiResult` 统一 API 响应；`LoginUserPrincipal` 登录用户主体；`SearchRequest` 分页查询；`BaseStreamMessage` 流消息标记    | 所有 REST 服务、网关                 |
+| `cn.richie696.contract.gateway.config` | `GatewayContract`（`platform.gateway` 前缀）；`TokenFilterConfig`；`TenantFilterConfig`；`DeployConfig` 灰度 | 网关、业务服务拦截器、Messaging/MQTT/MFA |
+| `cn.richie696.contract.gateway.model`  | `OAuth2AuditEvent` / `OAuth2AuditEventType`；`OAuth2Constants`                                       | 网关审计发布、general-service 消费     |
+| `cn.richie696.contract.exception`      | `BaseException`、`BusinessException`、`PlatformRuntimeException`、`PlatformDataAccessException`        | 全局异常处理                        |
+| `cn.richie696.contract.constant`       | `GlobalConstants` 平台级常量                                                                             | 全平台                           |
 
 ### GatewayContract（核心）
 
@@ -153,7 +153,7 @@ atlas-richie-base/
 
 ```xml
 <dependency>
-    <groupId>com.richie.base</groupId>
+    <groupId>cn.richie696.base</groupId>
     <artifactId>atlas-richie-contract</artifactId>
 </dependency>
 ```
@@ -164,19 +164,19 @@ atlas-richie-base/
 
 **定位**：应用运行时基础能力——上下文传递、实体基类、通用工具与 JSON 扩展点。
 
-依赖 `atlas-richie-contract` 并**传递暴露**，保证升级后 `com.richie.contract.*` 与 `com.richie.context.*` 可同时使用（兼容历史 import 路径）。
+依赖 `atlas-richie-contract` 并**传递暴露**，保证升级后 `cn.richie696.contract.*` 与 `cn.richie696.context.*` 可同时使用（兼容历史 import 路径）。
 
 ### 包与能力说明
 
 | 包路径                                    | 能力                                                                                    |
 |----------------------------------------|---------------------------------------------------------------------------------------|
-| `com.richie.context.common.api`        | `LoginUserContextHolder`、`HeaderContextHolder`、`SpringContextHolder`（基于 TTL / Spring） |
-| `com.richie.context.common.api.domain` | 领域基类体系（见下文）                                                                           |
-| `com.richie.context.utils.data`        | `JsonUtils`、`XmlUtils`、集合工具；`JsonUtilsModuleCustomizer` 扩展点                           |
-| `com.richie.context.utils.data.config` | `JsonUtilsModuleAutoConfiguration`（Boot 自动配置）                                         |
-| `com.richie.context.utils.security`    | `HashUtils`、`RSAUtils`、`SignatureUtils`                                               |
-| `com.richie.context.utils.spring`      | `JwtUtils`、`SpringBeanUtils`、`CommonUtils`                                            |
-| `com.richie.context.utils.web`         | `ServletUtils`                                                                        |
+| `cn.richie696.context.common.api`        | `LoginUserContextHolder`、`HeaderContextHolder`、`SpringContextHolder`（基于 TTL / Spring） |
+| `cn.richie696.context.common.api.domain` | 领域基类体系（见下文）                                                                           |
+| `cn.richie696.context.utils.data`        | `JsonUtils`、`XmlUtils`、集合工具；`JsonUtilsModuleCustomizer` 扩展点                           |
+| `cn.richie696.context.utils.data.config` | `JsonUtilsModuleAutoConfiguration`（Boot 自动配置）                                         |
+| `cn.richie696.context.utils.security`    | `HashUtils`、`RSAUtils`、`SignatureUtils`                                               |
+| `cn.richie696.context.utils.spring`      | `JwtUtils`、`SpringBeanUtils`、`CommonUtils`                                            |
+| `cn.richie696.context.utils.web`         | `ServletUtils`                                                                        |
 
 ### 自动配置
 
@@ -252,16 +252,16 @@ try {
 
 | 包路径                                   | 类                           | 用途                                    |
 |---------------------------------------|-----------------------------|---------------------------------------|
-| `com.richie.testing.container`        | `ContainerMode`             | 容器复用模式枚举（本地/CI）                        |
-| `com.richie.testing.docker`           | `TestcontainersEnvironment` | Docker 环境探测与资源限制                        |
-| `com.richie.testing.env`              | `IntegrationTestPolicy`     | 测试执行策略——判断是否应运行集成测试（基于环境条件）               |
-| `com.richie.testing.env`              | `TestEnv`                   | 测试环境常量 Key                            |
-| `com.richie.testing.redis`            | `RedisContainerSupport`     | 管理全局单例 Redis Testcontainer，跨组件集测复用        |
-| `com.richie.testing.redis`            | `AbstractRedisIntegrationTestBase` | Redis 集成测试基类——自动启动并配置 Redis 容器         |
-| `com.richie.testing.redis`            | `GenericRedisIntegrationTestSupport` | 通用支撑 Bean，提供 Redis 连接坐标（host、port、password） |
-| `com.richie.testing.redis`            | `RedisIntegrationTestAccess` | 获取 Redis 配置参数的访问器接口                   |
-| `com.richie.testing.spring`           | `SpringPropertyInitializer` | 将动态属性（如容器端口）注入 `ConfigurableApplicationContext` |
-| `com.richie.testing.spring`           | `PropertyContributor`       | 函数式回调接口，提供属性键值对                        |
+| `cn.richie696.testing.container`        | `ContainerMode`             | 容器复用模式枚举（本地/CI）                        |
+| `cn.richie696.testing.docker`           | `TestcontainersEnvironment` | Docker 环境探测与资源限制                        |
+| `cn.richie696.testing.env`              | `IntegrationTestPolicy`     | 测试执行策略——判断是否应运行集成测试（基于环境条件）               |
+| `cn.richie696.testing.env`              | `TestEnv`                   | 测试环境常量 Key                            |
+| `cn.richie696.testing.redis`            | `RedisContainerSupport`     | 管理全局单例 Redis Testcontainer，跨组件集测复用        |
+| `cn.richie696.testing.redis`            | `AbstractRedisIntegrationTestBase` | Redis 集成测试基类——自动启动并配置 Redis 容器         |
+| `cn.richie696.testing.redis`            | `GenericRedisIntegrationTestSupport` | 通用支撑 Bean，提供 Redis 连接坐标（host、port、password） |
+| `cn.richie696.testing.redis`            | `RedisIntegrationTestAccess` | 获取 Redis 配置参数的访问器接口                   |
+| `cn.richie696.testing.spring`           | `SpringPropertyInitializer` | 将动态属性（如容器端口）注入 `ConfigurableApplicationContext` |
+| `cn.richie696.testing.spring`           | `PropertyContributor`       | 函数式回调接口，提供属性键值对                        |
 
 ### 设计要点
 
@@ -284,7 +284,7 @@ public class MyComponentRedisIntegrationTest extends AbstractRedisIntegrationTes
 
 ```xml
 <dependency>
-    <groupId>com.richie.base</groupId>
+    <groupId>cn.richie696.base</groupId>
     <artifactId>atlas-richie-testing-support</artifactId>
     <scope>test</scope>
 </dependency>
@@ -298,7 +298,7 @@ public class MyComponentRedisIntegrationTest extends AbstractRedisIntegrationTes
 
 ```xml
 <parent>
-    <groupId>com.richie.base</groupId>
+    <groupId>cn.richie696.base</groupId>
     <artifactId>atlas-richie-dependencies</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <relativePath>../atlas-richie-base/atlas-richie-dependencies/pom.xml</relativePath>
@@ -309,7 +309,7 @@ public class MyComponentRedisIntegrationTest extends AbstractRedisIntegrationTes
 
 ```xml
 <dependency>
-    <groupId>com.richie.base</groupId>
+    <groupId>cn.richie696.base</groupId>
     <artifactId>atlas-richie-context</artifactId>
 </dependency>
 ```

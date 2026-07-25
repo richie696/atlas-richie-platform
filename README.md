@@ -194,22 +194,22 @@ mvn clean install -DskipTests
 
 ```xml
 <parent>
-    <groupId>com.richie.base</groupId>
+    <groupId>cn.richie696.base</groupId>
     <artifactId>atlas-richie-base</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 </parent>
 
 <dependencies>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-cache</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-storage-core</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-storage-oss</artifactId>
     </dependency>
 </dependencies>
@@ -264,7 +264,7 @@ mvn spring-boot:run
 
 ## 📚 Documentation Index
 
-> Some module READMEs are still Chinese-only; prefer `README.md` (English) and `README.zh.md` (简体中文) where both exist.
+> Some module READMEs are still Chinese-only; prefer `atlas-richie-component/atlas-richie-component-document-parser/src/main/java/cn/richie696/component/parser/internal/README.md` (English) and `README.zh.md` (简体中文) where both exist.
 
 ### Base
 

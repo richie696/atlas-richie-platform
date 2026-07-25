@@ -285,7 +285,7 @@ platform:
             user-events:
               stream-key: "user-events"
               group: "user-processors"
-              target-type: "domain.com.richie.component.cache.UserInfo"
+              target-type: "domain.cn.richie696.component.cache.UserInfo"
               auto-ack: true
               concurrency: 2
               error-strategy: retry
@@ -539,7 +539,7 @@ Note: The above capabilities correspond to `RedisStreamManager#publish`, `acknow
 | **Health Check & Endpoints** | Actuator endpoints (`/actuator/redisstream` etc.) | No corresponding endpoints |
 | **Observability Tags** | `stream.key`, `consumer.group`, `message.type`, processing duration and success flags | No unified tag system |
 
-Note: The above capabilities correspond to the implementations of `AbstractStreamConsumer`, `RedisStreamReactor`, `RedisStreamEventBus`, `EventContext` and other classes in the package `com.richie.component.cache.redis.stream`.
+Note: The above capabilities correspond to the implementations of `AbstractStreamConsumer`, `RedisStreamReactor`, `RedisStreamEventBus`, `EventContext` and other classes in the package `cn.richie696.component.cache.redis.stream`.
 
 ## New Architecture Features in Detail
 
@@ -653,14 +653,14 @@ platform:
             user-events:
               stream-key: "user-events"
               group: "user-processors"
-              target-type: "domain.com.richie.component.cache.UserInfo"
+              target-type: "domain.cn.richie696.component.cache.UserInfo"
               auto-ack: true
               concurrency: 2
               error-strategy: retry
             order-events:
               stream-key: "order-events"
               group: "order-processors"
-              target-type: "domain.com.richie.component.cache.OrderInfo"
+              target-type: "domain.cn.richie696.component.cache.OrderInfo"
               auto-ack: false
               concurrency: 4
               error-strategy: no_ack
@@ -787,7 +787,7 @@ platform:
 **Step 1: Add the dependency**
 ```xml
 <dependency>
-    <groupId>com.richie</groupId>
+    <groupId>cn.richie696</groupId>
     <artifactId>atlas-richie-component-cache</artifactId>
     <version>latest</version>
 </dependency>

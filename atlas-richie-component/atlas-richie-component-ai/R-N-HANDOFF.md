@@ -262,11 +262,11 @@ private String defaultVoiceChatModel; // e.g. "qwen-omni-turbo"
 
 | 路径 | 用途 |
 |------|------|
-| `atlas-richie-component/atlas-richie-component-ai/src/main/java/com/richie/component/ai/config/AiModelAutoConfiguration.kt` | **主要改造点**：加 7 个 `@Bean` |
-| `atlas-richie-component/atlas-richie-component-ai/src/main/java/com/richie/component/ai/config/AiModelProperties.kt` | 加 7 个 default model 字段 |
-| `atlas-richie-component/atlas-richie-component-ai/src/main/java/com/richie/component/ai/config/AiChatClientFactory.kt` | 现有 ChatClient/EmbeddingModel 工厂；R-N 加 7 个 `create*Model` 方法 |
-| `atlas-richie-component/atlas-richie-component-vector/atlas-richie-component-vector-core/src/main/java/com/richie/component/vector/service/VectorService.java` | 加 `rerank(query, docs)` 方法 |
-| `atlas-richie-component/atlas-richie-component-vector/atlas-richie-component-vector-milvus/src/main/java/com/richie/component/vector/service/impl/MilvusVectorServiceImpl.java` | line 90-97 已有 `@Qualifier("aiEmbeddingModel")` 镜像写法 |
+| `src/main/java/cn/richie696/component/ai/config/AiModelAutoConfiguration.kt` | **主要改造点**：加 7 个 `@Bean` |
+| `src/main/java/cn/richie696/component/ai/config/AiModelProperties.kt` | 加 7 个 default model 字段 |
+| `src/main/java/cn/richie696/component/ai/config/AiChatClientFactory.kt` | 现有 ChatClient/EmbeddingModel 工厂；R-N 加 7 个 `create*Model` 方法 |
+| `../atlas-richie-component-vector/atlas-richie-component-vector-core/src/main/java/cn/richie696/component/vector/service/VectorService.java` | 加 `rerank(query, docs)` 方法 |
+| `../atlas-richie-component-vector/atlas-richie-component-vector-milvus/src/main/java/cn/richie696/component/vector/service/impl/MilvusVectorServiceImpl.java` | line 90-97 已有 `@Qualifier("aiEmbeddingModel")` 镜像写法 |
 | `atlas-richie-component/atlas-richie-component-vector/pom.xml` | 加 `<modules>` 引入 vector-rerank-core |
 
 ### 5.2 R-N 必新建文件清单

@@ -32,7 +32,7 @@ Spring `RestClient` provider for the http component. Implements `HttpClient` on 
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-http-restclient` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-http-restclient` |
 | **Selected by** | `platform.component.http.provider=<provider>` |
 
 ### What this module gives you
@@ -59,11 +59,11 @@ atlas-richie-component-http-restclient
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-core</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-restclient</artifactId>
 </dependency>
 ```
@@ -78,7 +78,7 @@ platform:
 Use the facade:
 
 ```java
-import com.richie.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpClient;
 
 @Service
 @RequiredArgsConstructor

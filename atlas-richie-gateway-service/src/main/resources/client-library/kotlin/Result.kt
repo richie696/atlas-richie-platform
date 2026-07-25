@@ -7,7 +7,7 @@
  * @since 2025-11-11
  */
 
-package com.richie.httpclient
+package cn.richie696.httpclient
 
 import org.json.JSONObject
 

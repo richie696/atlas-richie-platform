@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -18,11 +18,11 @@
     <dependencies>
         <!-- 内部依赖 -->
         <dependency>
-            <groupId>com.richie.base</groupId>
+            <groupId>cn.richie696.base</groupId>
             <artifactId>atlas-richie-context</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.richie.base</groupId>
+            <groupId>cn.richie696.base</groupId>
             <artifactId>atlas-richie-contract</artifactId>
         </dependency>
 

@@ -290,7 +290,7 @@ messaging（发送"文档已索引"事件给下游）
 <dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>com.richie.component</groupId>
+            <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-dependencies</artifactId>
             <version>${richie-component.version}</version>
             <scope>import</scope>
@@ -307,35 +307,35 @@ messaging（发送"文档已索引"事件给下游）
 ```xml
 <!-- 基础设施：缓存 + 容器防护 + 日志 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-cache</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-web</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-logging</artifactId>
 </dependency>
 
 <!-- 数据存储：对象存储 + 向量检索 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-vector</artifactId>
 </dependency>
 
 <!-- 服务通信：消息队列 + OAuth -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-messaging</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-oauth</artifactId>
 </dependency>
 ```

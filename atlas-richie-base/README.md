@@ -100,7 +100,7 @@ Applications and component modules typically **inherit** this POM (not a JAR dep
 
 ```xml
 <parent>
-    <groupId>com.richie.base</groupId>
+    <groupId>cn.richie696.base</groupId>
     <artifactId>atlas-richie-dependencies</artifactId>
     <version>${revision}</version>
     <relativePath>../atlas-richie-base/atlas-richie-dependencies/pom.xml</relativePath>
@@ -119,11 +119,11 @@ Omit versions on managed dependencies; the BOM applies them.
 
 | Package | Contents | Typical consumers |
 |---------|----------|-------------------|
-| `com.richie.contract.model` | `ApiResult` unified API response; `LoginUserPrincipal`; `SearchRequest` pagination; `BaseStreamMessage` stream marker | All REST services, gateway |
-| `com.richie.contract.gateway.config` | `GatewayContract` (`platform.gateway` prefix); `TokenFilterConfig`; `TenantFilterConfig`; `DeployConfig` canary | Gateway, service interceptors, Messaging/MQTT/MFA |
-| `com.richie.contract.gateway.model` | `OAuth2AuditEvent` / `OAuth2AuditEventType`; `OAuth2Constants` | Gateway audit publish, general-service consume |
-| `com.richie.contract.exception` | `BaseException`, `BusinessException`, `PlatformRuntimeException`, `PlatformDataAccessException` | Global exception handlers |
-| `com.richie.contract.constant` | `GlobalConstants` | Platform-wide |
+| `cn.richie696.contract.model` | `ApiResult` unified API response; `LoginUserPrincipal`; `SearchRequest` pagination; `BaseStreamMessage` stream marker | All REST services, gateway |
+| `cn.richie696.contract.gateway.config` | `GatewayContract` (`platform.gateway` prefix); `TokenFilterConfig`; `TenantFilterConfig`; `DeployConfig` canary | Gateway, service interceptors, Messaging/MQTT/MFA |
+| `cn.richie696.contract.gateway.model` | `OAuth2AuditEvent` / `OAuth2AuditEventType`; `OAuth2Constants` | Gateway audit publish, general-service consume |
+| `cn.richie696.contract.exception` | `BaseException`, `BusinessException`, `PlatformRuntimeException`, `PlatformDataAccessException` | Global exception handlers |
+| `cn.richie696.contract.constant` | `GlobalConstants` | Platform-wide |
 
 ### GatewayContract (core)
 
@@ -153,7 +153,7 @@ Use when you need aligned contracts but **not** Servlet/JWT/full utilities, for 
 
 ```xml
 <dependency>
-    <groupId>com.richie.base</groupId>
+    <groupId>cn.richie696.base</groupId>
     <artifactId>atlas-richie-contract</artifactId>
 </dependency>
 ```
@@ -164,19 +164,19 @@ Use when you need aligned contracts but **not** Servlet/JWT/full utilities, for 
 
 **Role:** Runtime foundation — context propagation, entity base classes, common utilities, and JSON extension points.
 
-It depends on `atlas-richie-contract` and **re-exports** it transitively so both `com.richie.contract.*` and `com.richie.context.*` remain available after upgrades (backward-compatible import paths).
+It depends on `atlas-richie-contract` and **re-exports** it transitively so both `cn.richie696.contract.*` and `cn.richie696.context.*` remain available after upgrades (backward-compatible import paths).
 
 ### Packages and capabilities
 
 | Package | Capability |
 |---------|------------|
-| `com.richie.context.common.api` | `LoginUserContextHolder`, `HeaderContextHolder`, `SpringContextHolder` (TTL / Spring) |
-| `com.richie.context.common.api.domain` | Domain base class hierarchy (below) |
-| `com.richie.context.utils.data` | `JsonUtils`, `XmlUtils`, collection helpers; `JsonUtilsModuleCustomizer` extension |
-| `com.richie.context.utils.data.config` | `JsonUtilsModuleAutoConfiguration` (Boot auto-config) |
-| `com.richie.context.utils.security` | `HashUtils`, `RSAUtils`, `SignatureUtils` |
-| `com.richie.context.utils.spring` | `JwtUtils`, `SpringBeanUtils`, `CommonUtils` |
-| `com.richie.context.utils.web`         | `ServletUtils`                                                                        |
+| `cn.richie696.context.common.api` | `LoginUserContextHolder`, `HeaderContextHolder`, `SpringContextHolder` (TTL / Spring) |
+| `cn.richie696.context.common.api.domain` | Domain base class hierarchy (below) |
+| `cn.richie696.context.utils.data` | `JsonUtils`, `XmlUtils`, collection helpers; `JsonUtilsModuleCustomizer` extension |
+| `cn.richie696.context.utils.data.config` | `JsonUtilsModuleAutoConfiguration` (Boot auto-config) |
+| `cn.richie696.context.utils.security` | `HashUtils`, `RSAUtils`, `SignatureUtils` |
+| `cn.richie696.context.utils.spring` | `JwtUtils`, `SpringBeanUtils`, `CommonUtils` |
+| `cn.richie696.context.utils.web`         | `ServletUtils`                                                                        |
 
 ### Auto-configuration
 
@@ -252,16 +252,16 @@ try {
 
 | Package | Class | Purpose |
 |---------|-------|---------|
-| `com.richie.testing.container` | `ContainerMode` | Enum for container reuse mode (local vs. CI) |
-| `com.richie.testing.docker` | `TestcontainersEnvironment` | Docker environment detection and resource settings |
-| `com.richie.testing.env` | `IntegrationTestPolicy` | Test execution policy — determines whether integration tests should run based on environment conditions |
-| `com.richie.testing.env` | `TestEnv` | Environment key constants for property-driven test behaviour |
-| `com.richie.testing.redis` | `RedisContainerSupport` | Manages a singleton Redis Testcontainer, reusable across all component integration tests |
-| `com.richie.testing.redis` | `AbstractRedisIntegrationTestBase` | Base class for Redis integration tests — auto-starts and configures the Redis container |
-| `com.richie.testing.redis` | `GenericRedisIntegrationTestSupport` | Generic support bean providing Redis connection coordinates (host, port, password) |
-| `com.richie.testing.redis` | `RedisIntegrationTestAccess` | Accessor interface for retrieving configured Redis parameters in test context |
-| `com.richie.testing.spring` | `SpringPropertyInitializer` | Applies dynamic properties (from test containers, etc.) to `ConfigurableApplicationContext` |
-| `com.richie.testing.spring` | `PropertyContributor` | Lambda-based callback interface for supplying property pairs to the initializer |
+| `cn.richie696.testing.container` | `ContainerMode` | Enum for container reuse mode (local vs. CI) |
+| `cn.richie696.testing.docker` | `TestcontainersEnvironment` | Docker environment detection and resource settings |
+| `cn.richie696.testing.env` | `IntegrationTestPolicy` | Test execution policy — determines whether integration tests should run based on environment conditions |
+| `cn.richie696.testing.env` | `TestEnv` | Environment key constants for property-driven test behaviour |
+| `cn.richie696.testing.redis` | `RedisContainerSupport` | Manages a singleton Redis Testcontainer, reusable across all component integration tests |
+| `cn.richie696.testing.redis` | `AbstractRedisIntegrationTestBase` | Base class for Redis integration tests — auto-starts and configures the Redis container |
+| `cn.richie696.testing.redis` | `GenericRedisIntegrationTestSupport` | Generic support bean providing Redis connection coordinates (host, port, password) |
+| `cn.richie696.testing.redis` | `RedisIntegrationTestAccess` | Accessor interface for retrieving configured Redis parameters in test context |
+| `cn.richie696.testing.spring` | `SpringPropertyInitializer` | Applies dynamic properties (from test containers, etc.) to `ConfigurableApplicationContext` |
+| `cn.richie696.testing.spring` | `PropertyContributor` | Lambda-based callback interface for supplying property pairs to the initializer |
 
 ### Design highlights
 
@@ -284,7 +284,7 @@ public class MyComponentRedisIntegrationTest extends AbstractRedisIntegrationTes
 
 ```xml
 <dependency>
-    <groupId>com.richie.base</groupId>
+    <groupId>cn.richie696.base</groupId>
     <artifactId>atlas-richie-testing-support</artifactId>
     <scope>test</scope>
 </dependency>
@@ -298,7 +298,7 @@ public class MyComponentRedisIntegrationTest extends AbstractRedisIntegrationTes
 
 ```xml
 <parent>
-    <groupId>com.richie.base</groupId>
+    <groupId>cn.richie696.base</groupId>
     <artifactId>atlas-richie-dependencies</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <relativePath>../atlas-richie-base/atlas-richie-dependencies/pom.xml</relativePath>
@@ -309,7 +309,7 @@ public class MyComponentRedisIntegrationTest extends AbstractRedisIntegrationTes
 
 ```xml
 <dependency>
-    <groupId>com.richie.base</groupId>
+    <groupId>cn.richie696.base</groupId>
     <artifactId>atlas-richie-context</artifactId>
 </dependency>
 ```

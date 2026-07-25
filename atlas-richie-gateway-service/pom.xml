@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <parent>
-        <groupId>com.richie.base</groupId>
+        <groupId>cn.richie696.base</groupId>
         <artifactId>atlas-richie-dependencies</artifactId>
         <version>${revision}</version>
         <relativePath>../atlas-richie-base/atlas-richie-dependencies/pom.xml</relativePath>
@@ -13,7 +13,7 @@
     <modelVersion>4.0.0</modelVersion>
     <packaging>jar</packaging>
 
-    <groupId>com.richie.gateway</groupId>
+    <groupId>cn.richie696.gateway</groupId>
     <artifactId>atlas-richie-gateway-service</artifactId>
     <description>Atlas Richie Gateway Service 是面向企业级微服务体系的统一网关服务，支持 OpenAPI 接口网关、微服务接口网关、内网接口网关等多种部署模式，并可通过配置化方式快速切换；同时提供路由转发、鉴权校验、流量治理、服务发现、配置中心集成与接口文档聚合等能力，支持高可用接入与稳定演进。</description>
 
@@ -25,7 +25,7 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.richie.component</groupId>
+                <groupId>cn.richie696.component</groupId>
                 <artifactId>atlas-richie-component-dependencies</artifactId>
                 <version>${middle.platform.version}</version>
                 <scope>import</scope>
@@ -44,37 +44,37 @@
         <!-- 跨服务共享契约：GatewayContract / TokenFilterConfig / TenantFilterConfig /
              DeployConfig / OAuth2AuditEvent / OAuth2AuditEventType / BaseStreamMessage -->
         <dependency>
-            <groupId>com.richie.base</groupId>
+            <groupId>cn.richie696.base</groupId>
             <artifactId>atlas-richie-contract</artifactId>
         </dependency>
         <!-- OAuth2.1 鉴权组件 -->
         <dependency>
-            <groupId>com.richie.component</groupId>
+            <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-oauth-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.richie.base</groupId>
+            <groupId>cn.richie696.base</groupId>
             <artifactId>atlas-richie-context</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.richie.component</groupId>
+            <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-cache</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.richie.component</groupId>
+            <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-redis-streammq</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.richie.component</groupId>
+            <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-i18n</artifactId>
         </dependency>
 
         <!-- MFA验证组件（用于网关拦截MFA请求） -->
         <dependency>
-            <groupId>com.richie.component</groupId>
+            <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-mfa-validation</artifactId>
         </dependency>
 
@@ -274,7 +274,7 @@
                         </tags>
                     </to>
                     <container>
-                        <mainClass>com.richie.gateway.GatewayApplication</mainClass>
+                        <mainClass>cn.richie696.gateway.GatewayApplication</mainClass>
                         <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
                         <labels>
                             <maintainer>richie696@icloud.com</maintainer>

@@ -2,7 +2,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.richie.base</groupId>
+        <groupId>cn.richie696.base</groupId>
         <artifactId>atlas-richie-dependencies</artifactId>
         <version>${revision}</version>
         <relativePath>../atlas-richie-dependencies/pom.xml</relativePath>
@@ -17,7 +17,7 @@
              DeployConfig / OAuth2AuditEvent / BaseStreamMessage） -->
         <!-- 通过 compile 依赖 + 传递暴露，保证已上线业务服务升级后 import 路径零改动 -->
         <dependency>
-            <groupId>com.richie.base</groupId>
+            <groupId>cn.richie696.base</groupId>
             <artifactId>atlas-richie-contract</artifactId>
         </dependency>
         <dependency>

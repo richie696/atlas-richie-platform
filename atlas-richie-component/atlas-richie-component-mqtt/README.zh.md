@@ -934,7 +934,7 @@ private String buildWillMessage() {
 
 ```xml
 <dependency>
-    <groupId>com.richie</groupId>
+    <groupId>cn.richie696</groupId>
     <artifactId>atlas-richie-component-mqtt</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
@@ -3501,7 +3501,7 @@ graph TB
 ```yaml
 logging:
   level:
-    com.richie.component.mqtt: DEBUG
+    cn.richie696.component.mqtt: DEBUG
     com.hivemq.client: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

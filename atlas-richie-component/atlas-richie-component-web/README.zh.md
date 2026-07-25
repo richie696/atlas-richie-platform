@@ -268,25 +268,25 @@ flowchart LR
 ```xml
 <!-- 必选：SPI + 功能层 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-web-core</artifactId>
 </dependency>
 
 <!-- 选一个容器镜像（默认 Tomcat；二选一） -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-web-tomcat</artifactId>
 </dependency>
 <!--
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-web-jetty</artifactId>
 </dependency>
 -->
 
 <!-- 可选：限流 / 熔断 Registry -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-concurrency</artifactId>
 </dependency>
 ```
@@ -1019,7 +1019,7 @@ public class OrderQueryInterceptor implements WebInterceptor {
 
 | 域 | 切点层级 | 数据形态 | 消费方 |
 |---|---|---|---|
-| **logging 侧**（`com.richie.component.logging.*`） | Service / Controller 方法级 | 文本日志行 + DB 持久化 | 开发者排障 / 事后审计 |
+| **logging 侧**（`cn.richie696.component.logging.*`） | Service / Controller 方法级 | 文本日志行 + DB 持久化 | 开发者排障 / 事后审计 |
 | **web 侧**（本模块） | 请求级 | 指标（metric / span / event） | 监控系统 / 告警平台 / 分布式链路 |
 
 **口诀**：logging = 给人看，web metrics = 给系统看。**不要试图"统一耗时统计点"**——合并会让 logging 强依赖 web-core，污染 logging 的纯净性；web 侧被"切面"束缚（annotation 触发不是 web 域的责任）。

@@ -175,7 +175,7 @@ platform:
 ```xml
 <dependencies>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-desensitize-core</artifactId>
     </dependency>
 </dependencies>

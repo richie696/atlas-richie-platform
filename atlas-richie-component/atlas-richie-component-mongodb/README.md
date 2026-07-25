@@ -36,7 +36,7 @@
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-mongodb` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-mongodb` |
 | **Category** | Storage — document database (MongoDB) |
 | **Hard dependencies** | `spring-boot-starter-data-mongodb`, MongoDB driver |
 | **Compatible with** | MongoDB 4.4+, Atlas, DocumentDB |
@@ -94,7 +94,7 @@ atlas-richie-component-mongodb
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-mongodb</artifactId>
 </dependency>
 ```

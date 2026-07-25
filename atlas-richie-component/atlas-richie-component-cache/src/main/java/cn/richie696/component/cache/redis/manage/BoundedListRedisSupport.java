@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2026 Richie (https://www.github.com/richie696)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package cn.richie696.component.cache.redis.manage;
+
+import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
+import org.springframework.data.redis.connection.DataType;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import java.nio.charset.StandardCharsets;
+
+/**
+ * 有界队列 / 栈 Redis 管理器共用逻辑。
+ */
+final class BoundedListRedisSupport {
+
+    private BoundedListRedisSupport() {
+    }
+
+    static void assertListKeyCompatible(MultiRedisTemplate<Object> redisTemplate, String key, String kind) {
+        DataType type = redisTemplate.type(key);
+        if (type == null || type == DataType.NONE || type == DataType.LIST) {
+            return;
+        }
+        throw new IllegalStateException(
+                "Key '%s' already exists as Redis %s, cannot create %s".formatted(key, type.code(), kind));
+    }
+
+    /**
+     * 以 UTF-8 纯数字字符串写入 meta，供 Lua {@code tonumber(redis.call('GET', meta))} 读取。
+     *
+     * @return {@code true} 新建成功；{@code false} 已存在
+     */
+    static boolean setMetaIfAbsent(MultiRedisTemplate<Object> redisTemplate, String metaKey, long maxLen) {
+        byte[] valueBytes = String.valueOf(maxLen).getBytes(StandardCharsets.UTF_8);
+        Boolean set = redisTemplate.execute((RedisCallback<Boolean>) connection -> {
+            byte[] keyBytes = serializeKey(redisTemplate, metaKey);
+            return connection.stringCommands().setNX(keyBytes, valueBytes);
+        });
+        if (Boolean.TRUE.equals(set)) {
+            return true;
+        }
+        if (Boolean.FALSE.equals(set)) {
+            return false;
+        }
+        throw new IllegalStateException("Failed to initialize bounded meta for: " + metaKey);
+    }
+
+    private static byte[] serializeKey(MultiRedisTemplate<Object> redisTemplate, String metaKey) {
+        var keySerializer = redisTemplate.getKeySerializer();
+        if (keySerializer instanceof StringRedisSerializer stringRedisSerializer) {
+            return stringRedisSerializer.serialize(metaKey);
+        }
+        return metaKey.getBytes(StandardCharsets.UTF_8);
+    }
+}

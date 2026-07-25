@@ -268,25 +268,25 @@ These 4 items come from engineering practice — details that "if not written do
 ```xml
 <!-- Required: SPI + functional layer -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-web-core</artifactId>
 </dependency>
 
 <!-- Choose one container image (Tomcat by default; pick one of the two) -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-web-tomcat</artifactId>
 </dependency>
 <!--
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-web-jetty</artifactId>
 </dependency>
 -->
 
 <!-- Optional: rate limit / circuit breaker Registry -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-concurrency</artifactId>
 </dependency>
 ```
@@ -1019,7 +1019,7 @@ All properties bind to the `platform.component.web` prefix.
 
 | Domain | Join point level | Data shape | Consumer |
 |---|---|---|---|
-| **logging side** (`com.richie.component.logging.*`) | Service / Controller method level | Text log lines + DB persistence | Developer troubleshooting / post-incident audit |
+| **logging side** (`cn.richie696.component.logging.*`) | Service / Controller method level | Text log lines + DB persistence | Developer troubleshooting / post-incident audit |
 | **web side** (this module) | Request level | Metrics (metric / span / event) | Monitoring system / alerting platform / distributed tracing |
 
 **Rule of thumb**: logging = for humans, web metrics = for systems. **Do not try to "unify the timing statistics point"** — merging would force logging to depend on web-core and pollute logging's purity; the web side would be constrained by "aspects" (annotation-triggered behavior is not the web domain's responsibility).

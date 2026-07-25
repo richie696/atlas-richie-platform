@@ -75,8 +75,8 @@ spring:
 # ==================== 日志配置 ====================
 logging:
   level:
-    com.richie.component.vector.aspect: INFO
-    com.richie.component.vector.service: INFO
+    cn.richie696.component.vector.aspect: INFO
+    cn.richie696.component.vector.service: INFO
     org.aspectj: DEBUG  # 可选：查看 AOP 拦截日志
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

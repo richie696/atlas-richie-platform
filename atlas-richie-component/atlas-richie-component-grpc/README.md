@@ -61,7 +61,7 @@
  ------|
 -------|
  **Artifact** 
- `com.richie.component:atlas-richie-component-grpc` |
+ `cn.richie696.component:atlas-richie-component-grpc` |
  **Category** |
  Cross-cutting infrastructure — gRPC interceptor stack |
  **JDK / Spring Boot** |
@@ -116,7 +116,7 @@
 This component is a single Maven module (no sub-modules). Internally it is organized into three packages:
 
 ```
-com.richie.component.grpc
+cn.richie696.component.grpc
 ├── config
 │   ├── GrpcProperties                # @ConfigurationProperties("platform.grpc")
 │   └── GrpcAutoConfiguration         # 12 @Bean definitions
@@ -199,7 +199,7 @@ graph TB
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-grpc</artifactId>
 </dependency>
 
@@ -250,8 +250,8 @@ platform:
 ### 3) Wire interceptors on your `NettyServerBuilder`
 
 ```java
-import com.richie.component.grpc.interceptor.*;
-import com.richie.component.grpc.lifecycle.GrpcServerGracefulShutdown;
+import cn.richie696.component.grpc.interceptor.*;
+import lifecycle.cn.richie696.component.grpc.GrpcServerGracefulShutdown;
 import io.grpc.Server;
 import io.grpc.netty.NettyServerBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -293,7 +293,7 @@ public class GrpcServerBootstrap {
 ### 4) Your gRPC implementation can read headers via `HeaderContextHolder`
 
 ```java
-import com.richie.context.common.api.HeaderContextHolder;
+import api.common.cn.richie696.context.HeaderContextHolder;
 import io.grpc.stub.StreamObserver;
 
 public class MyGrpcServiceImpl extends MyGrpcServiceGrpc.MyGrpcServiceImplBase {
@@ -301,8 +301,8 @@ public class MyGrpcServiceImpl extends MyGrpcServiceGrpc.MyGrpcServiceImplBase {
     @Override
     public void getUser(GetUserRequest req, StreamObserver<GetUserResponse> resp) {
         // Headers propagated by GrpcServerHeaderInterceptor are already in the ThreadLocal
-        String tenantId  = HeaderContextHolder.getHeader("x-tenant-id");
-        String apiToken  = HeaderContextHolder.getHeader("x-rd-request-apitoken");
+        String tenantId = HeaderContextHolder.getHeader("x-tenant-id");
+        String apiToken = HeaderContextHolder.getHeader("x-rd-request-apitoken");
 
         // ...business logic...
         resp.onNext(GetUserResponse.newBuilder().setTenantId(tenantId).build());
@@ -691,7 +691,7 @@ Interceptors are cheap individually, but they still allocate objects per call. I
 
 Check three things:
 
-1. Your Spring Boot main class is annotated with `@SpringBootApplication` (so component scan reaches `com.richie.component.grpc`).
+1. Your Spring Boot main class is annotated with `@SpringBootApplication` (so component scan reaches `cn.richie696.component.grpc`).
 2. For `auth-enabled`, you set it to `true`; for others, the default is `true`.
 3. The properties are under `platform.grpc.*` — if you used `platform.grpc.*` only, the Bean conditions will not match (see Known Limitations).
 

@@ -2,7 +2,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.richie.base</groupId>
+        <groupId>cn.richie696.base</groupId>
         <artifactId>atlas-richie-base</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -277,17 +277,17 @@
 
             <!-- 配置base依赖 -->
             <dependency>
-                <groupId>com.richie.base</groupId>
+                <groupId>cn.richie696.base</groupId>
                 <artifactId>atlas-richie-contract</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.richie.base</groupId>
+                <groupId>cn.richie696.base</groupId>
                 <artifactId>atlas-richie-context</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.richie.base</groupId>
+                <groupId>cn.richie696.base</groupId>
                 <artifactId>atlas-richie-testing-support</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
@@ -828,7 +828,7 @@
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <!--<dependencies>
                     <dependency>
-                        <groupId>com.richie.maven.plugins</groupId>
+                        <groupId>cn.richie696.maven.plugins</groupId>
                         <artifactId>jdk-maven-plugins</artifactId>
                         <version>1.0.0</version>
                     </dependency>

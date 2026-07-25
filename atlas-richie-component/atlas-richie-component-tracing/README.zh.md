@@ -33,7 +33,7 @@
 
 | 项        | 值                                                     |
 |----------|-------------------------------------------------------|
-| **坐标**   | `com.richie.component:atlas-richie-component-tracing` |
+| **坐标**   | `cn.richie696.component:atlas-richie-component-tracing` |
 | **类别**   | 依赖托管——分布式追踪                                           |
 | **适用范围** | Spring Boot 3.x / 4.x                                 |
 | **托管版本** | OpenTelemetry SDK 1.40+ / Instrumentation BOM 2.x     |
@@ -170,7 +170,7 @@ java -javaagent:opentelemetry-javaagent.jar \
 ```xml
 <!-- 已包含 opentelemetry-spring-boot-starter 及其所有传递依赖 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-tracing</artifactId>
 </dependency>
 ```

@@ -7,12 +7,12 @@
  * @since 2025-11-01
  */
 
-package com.richie.example
+package cn.richie696.example
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.richie.httpclient.*
+import cn.richie696.httpclient.*
 import kotlinx.coroutines.launch
 
 // 注意：导入业务代码定义的Url枚举（示例中使用example目录下的Url）

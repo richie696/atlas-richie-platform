@@ -476,19 +476,19 @@ StateMachine.fire(OrderSm.logistics, LogisticsEvent.SHIP, orderId);
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-statemachine</artifactId>
 </dependency>
 
 <!-- Redis 存储支持 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-cache</artifactId>
 </dependency>
 
 <!-- 数据库持久化支持 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-dao</artifactId>
 </dependency>
 ```
@@ -539,7 +539,7 @@ cache:
             stream-key: platform:statemachine:db:sync
             group: statemachine-db-sync-group
             consumer: statemachine-db-sync-consumer
-            target-type: event.com.richie.component.statemachine.StateSyncMessage
+            target-type: event.cn.richie696.component.statemachine.StateSyncMessage
             count: 50                # 单次拉取消息数量
             concurrency: 8           # 并发处理数（建议=CPU核心数）
             auto-ack: true
@@ -645,9 +645,9 @@ public enum OrderState {
 #### 方式一：使用静态门面（推荐，无需注入）
 
 ```java
-import com.richie.component.statemachine.StateMachine;
-import engine.com.richie.component.statemachine.StateTransitionResult;
-import storage.com.richie.component.statemachine.StateHistory;
+import cn.richie696.component.statemachine.StateMachine;
+import engine.cn.richie696.component.statemachine.StateTransitionResult;
+import storage.cn.richie696.component.statemachine.StateHistory;
 
 @Service
 public class OrderService {

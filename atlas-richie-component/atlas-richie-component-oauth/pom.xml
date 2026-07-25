@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-dependencies</artifactId>
         <version>${revision}</version>
         <relativePath>../atlas-richie-component-dependencies/pom.xml</relativePath>
@@ -26,17 +26,17 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.richie.component</groupId>
+                <groupId>cn.richie696.component</groupId>
                 <artifactId>atlas-richie-component-oauth-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.richie.component</groupId>
+                <groupId>cn.richie696.component</groupId>
                 <artifactId>atlas-richie-component-oauth-authz</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.richie.component</groupId>
+                <groupId>cn.richie696.component</groupId>
                 <artifactId>atlas-richie-component-oauth-dcr</artifactId>
                 <version>${project.version}</version>
             </dependency>

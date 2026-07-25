@@ -178,19 +178,19 @@ graph TB
 ```xml
 <!-- 必选：门面 API -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-core</artifactId>
 </dependency>
 
 <!-- 选一个 Provider（四选一） -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-okhttp</artifactId>
 </dependency>
 <!-- 其他可选 Provider（二选一或都不加）：
-<dependency><groupId>com.richie.component</groupId><artifactId>atlas-richie-component-http-httpclient5</artifactId></dependency>
-<dependency><groupId>com.richie.component</groupId><artifactId>atlas-richie-component-http-jdk</artifactId></dependency>
-<dependency><groupId>com.richie.component</groupId><artifactId>atlas-richie-component-http-restclient</artifactId></dependency>
+<dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-component-http-httpclient5</artifactId></dependency>
+<dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-component-http-jdk</artifactId></dependency>
+<dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-component-http-restclient</artifactId></dependency>
 -->
 ```
 
@@ -209,7 +209,7 @@ platform:
 ### 3) 注入 `HttpClient`
 
 ```java
-import com.richie.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpClient;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -492,7 +492,7 @@ if (resp.isSuccessful()) {
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-okhttp</artifactId>
 </dependency>
 ```

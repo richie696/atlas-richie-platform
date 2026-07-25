@@ -37,7 +37,7 @@
 
 | 项 | 值 |
 |---|---|
-| **坐标** | `com.richie.component:atlas-richie-component-redis-streammq` |
+| **坐标** | `cn.richie696.component:atlas-richie-component-redis-streammq` |
 | **类别** | 消息——基于 Redis Stream 的可靠消息队列 |
 | **强依赖** | `spring-boot-starter-data-redis`、Redis 5.0+（启用 Streams） |
 | **兼容** | 推荐 Redis 6.0+；Redis Cluster 6.0+ |
@@ -106,7 +106,7 @@ atlas-richie-component-redis-streammq
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-redis-streammq</artifactId>
 </dependency>
 ```
@@ -127,7 +127,7 @@ platform:
         - name: order-events
           consumer-group: order-service
           consumer-name: order-service-1
-          target-type: com.richie.app.event.OrderEvent
+          target-type: cn.richie696.app.event.OrderEvent
           count: 50                          # 每次拉取批量大小
           concurrency: 8                      # 并发 consumer 线程数
           auto-ack: false

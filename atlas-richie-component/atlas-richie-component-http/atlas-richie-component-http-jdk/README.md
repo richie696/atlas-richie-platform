@@ -30,7 +30,7 @@ JDK-native provider for the http component. Implements `HttpClient` on top of [`
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-http-jdk` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-http-jdk` |
 | **Selected by** | `platform.component.http.provider=<provider>` |
 
 ### What this module gives you
@@ -59,11 +59,11 @@ atlas-richie-component-http-jdk
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-core</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-jdk</artifactId>
 </dependency>
 ```
@@ -78,7 +78,7 @@ platform:
 Use the facade:
 
 ```java
-import com.richie.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpClient;
 
 @Service
 @RequiredArgsConstructor

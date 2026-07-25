@@ -291,7 +291,7 @@ Downstream service consumes event, updates business state
 <dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>com.richie.component</groupId>
+            <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-dependencies</artifactId>
             <version>${richie-component.version}</version>
             <scope>import</scope>
@@ -308,35 +308,35 @@ Each component is an independent artifact, import on demand per business scenari
 ```xml
 <!-- Infrastructure: cache + container protection + logging -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-cache</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-web</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-logging</artifactId>
 </dependency>
 
 <!-- Data storage: object storage + vector search -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-vector</artifactId>
 </dependency>
 
 <!-- Service communication: message queue + OAuth -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-messaging</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-oauth</artifactId>
 </dependency>
 ```

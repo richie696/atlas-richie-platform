@@ -1500,4 +1500,4 @@ From the source code, there is a `principle.jpg` in the resources directory; it 
 | Latest N entries LIFO | stack() | `push` fails when full; `latest` count ≤ 20 |
 | Reliable message queue | Redis Stream | See the Stream docs, not covered in this chapter |
 
-> For a quick README reference on bounded queues / stacks and the comparison with Stream, see the `README.md` at the project root (sections "Redis Stream" and "Bounded Queue for Big Keys").
+> For a quick README reference on bounded queues / stacks and the comparison with Stream, see the `../../../atlas-richie-component-document-parser/src/main/java/cn/richie696/component/parser/internal/README.md` at the project root (sections "Redis Stream" and "Bounded Queue for Big Keys").

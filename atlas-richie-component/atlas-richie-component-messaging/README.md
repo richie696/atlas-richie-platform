@@ -37,7 +37,7 @@
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-messaging` (parent POM) |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-messaging` (parent POM) |
 | **Category** | Messaging — async event / message bus |
 | **Hard dependencies** | Spring Cloud Stream, `atlas-richie-context` |
 | **Default provider** | `kafka` |
@@ -92,12 +92,12 @@ atlas-richie-component-messaging                    ← parent POM
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-messaging-core</artifactId>
 </dependency>
 <!-- Pick exactly one provider -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-messaging-kafka</artifactId>
 </dependency>
 ```

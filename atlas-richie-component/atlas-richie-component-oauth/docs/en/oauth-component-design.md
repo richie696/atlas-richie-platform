@@ -113,17 +113,17 @@ flowchart LR
 
 | Package | Description | Source File Count |
 |---------|------|----------|
-| `com.richie.component.oauth.core` | Core components: TokenEndpoint, ClientRegistry, ScopeResolver | 3 |
-| `com.richie.component.oauth.core.spi` | SPI interface: TokenStore | 1 |
-| `com.richie.component.oauth.core.support` | SPI implementation: DefaultTokenStore | 1 |
-| `com.richie.component.oauth.core.model` | Domain models: ClientConfig, TokenResponse, etc. | 5 |
-| `com.richie.component.oauth.core.config` | Configuration classes: OAuth2Properties, OAuth2RedisKey, OAuth2AutoConfiguration | 3 |
-| `com.richie.component.oauth.core.exception` | Exception classes: InvalidClientException, InvalidGrantException, TokenExpiredException | 3 |
+| `cn.richie696.component.oauth.core` | Core components: TokenEndpoint, ClientRegistry, ScopeResolver | 3 |
+| `cn.richie696.component.oauth.core.spi` | SPI interface: TokenStore | 1 |
+| `cn.richie696.component.oauth.core.support` | SPI implementation: DefaultTokenStore | 1 |
+| `cn.richie696.component.oauth.core.model` | Domain models: ClientConfig, TokenResponse, etc. | 5 |
+| `cn.richie696.component.oauth.core.config` | Configuration classes: OAuth2Properties, OAuth2RedisKey, OAuth2AutoConfiguration | 3 |
+| `cn.richie696.component.oauth.core.exception` | Exception classes: InvalidClientException, InvalidGrantException, TokenExpiredException | 3 |
 
 ### 2.2 Package Map
 
 ```
-com.richie.component.oauth.core
+cn.richie696.component.oauth.core
 ├── TokenEndpoint.java          # OAuth Token endpoint (@Component)
 ├── ClientRegistry.java         # Client registry (@Component)
 ├── ScopeResolver.java          # Scope path resolver (@Component)
@@ -536,7 +536,7 @@ atlas-richie-component-oauth-authz
 
 **Class Responsibility**: Handles OAuth 2.1 authorization endpoint requests, including authorization requests (GET /authorize) and user authorization consent (POST /authorize).
 
-**Package**: `com.richie.component.oauth.authz`
+**Package**: `cn.richie696.component.oauth.authz`
 
 **Constructor**:
 ```java
@@ -565,7 +565,7 @@ public AuthorizationEndpoint(
 
 **Class Responsibility**: Defines the contract for authorization code storage, supporting PKCE binding.
 
-**Package**: `com.richie.component.oauth.authz.spi`
+**Package**: `cn.richie696.component.oauth.authz.spi`
 
 ```java
 public interface AuthorizationCodeStore {
@@ -610,7 +610,7 @@ public interface AuthorizationCodeStore {
 
 **Class Responsibility**: Redis implementation of AuthorizationCodeStore.
 
-**Package**: `com.richie.component.oauth.authz.support`
+**Package**: `cn.richie696.component.oauth.authz.support`
 
 ```java
 @Slf4j
@@ -664,7 +664,7 @@ public class DefaultAuthorizationCodeStore implements AuthorizationCodeStore {
 
 **Class Responsibility**: PKCE S256 challenge generation and verification.
 
-**Package**: `com.richie.component.oauth.authz`
+**Package**: `cn.richie696.component.oauth.authz`
 
 ```java
 @Slf4j
@@ -727,7 +727,7 @@ public class PKCESupport {
 
 **Class Responsibility**: Handles the code→token exchange flow in authorization code mode. Requires extending the `generateToken` method of TokenEndpoint.
 
-**Package**: `com.richie.component.oauth.authz`
+**Package**: `cn.richie696.component.oauth.authz`
 
 ```java
 @Slf4j
@@ -851,7 +851,7 @@ public class AuthorizationCodeGrant {
 
 **Class Responsibility**: RFC 8414 Authorization Server Metadata endpoint.
 
-**Package**: `com.richie.component.oauth.authz`
+**Package**: `cn.richie696.component.oauth.authz`
 
 ```java
 /**
@@ -1092,7 +1092,7 @@ atlas-richie-component-oauth-dcr
 
 **Class Responsibility**: Handles dynamic client registration requests (POST /register).
 
-**Package**: `com.richie.component.oauth.dcr`
+**Package**: `cn.richie696.component.oauth.dcr`
 
 **Constructor**:
 ```java
@@ -1112,7 +1112,7 @@ public DynamicClientRegistrationEndpoint(
 
 #### 4.3.2 ClientRegistrationRequest
 
-**Package**: `com.richie.component.oauth.dcr.dto`
+**Package**: `cn.richie696.component.oauth.dcr.dto`
 
 ```java
 @Data
@@ -1177,7 +1177,7 @@ public class ClientRegistrationRequest {
 
 #### 4.3.3 ClientRegistrationResponse
 
-**Package**: `com.richie.component.oauth.dcr.dto`
+**Package**: `cn.richie696.component.oauth.dcr.dto`
 
 ```java
 @Data
@@ -1257,7 +1257,7 @@ public class ClientRegistrationResponse {
 
 **Class Responsibility**: Resolves Client ID Metadata Document, supporting RFC 7591 extensions.
 
-**Package**: `com.richie.component.oauth.dcr.spi`
+**Package**: `cn.richie696.component.oauth.dcr.spi`
 
 ```java
 public interface ClientIdMetadataDocumentResolver {
@@ -1281,7 +1281,7 @@ public interface ClientIdMetadataDocumentResolver {
 
 #### 4.3.5 ClientIdMetadataDocument
 
-**Package**: `com.richie.component.oauth.dcr.model`
+**Package**: `cn.richie696.component.oauth.dcr.model`
 
 ```java
 @Data
@@ -1367,7 +1367,7 @@ public class ClientIdMetadataDocument {
 
 **Class Responsibility**: Prevents Server-Side Request Forgery attacks.
 
-**Package**: `com.richie.component.oauth.dcr.support`
+**Package**: `cn.richie696.component.oauth.dcr.support`
 
 ```java
 @Slf4j
@@ -1716,7 +1716,7 @@ public ClientConfig verifyAccessToken(String accessToken, String expectedAudienc
 ### 6.1 TokenStore Interface (Existing)
 
 ```java
-package com.richie.component.oauth.core.spi;
+package cn.richie696.component.oauth.core.spi;
 
 /**
  * Token storage abstraction
@@ -1810,7 +1810,7 @@ public interface TokenStore {
 ### 6.2 AuthorizationCodeStore (To Be Implemented)
 
 ```java
-package com.richie.component.oauth.authz.spi;
+package cn.richie696.component.oauth.authz.spi;
 
 /**
  * Authorization code storage abstraction
@@ -1863,7 +1863,7 @@ public interface AuthorizationCodeStore {
 ### 6.3 ClientIdMetadataDocumentResolver (To Be Implemented)
 
 ```java
-package com.richie.component.oauth.dcr.spi;
+package cn.richie696.component.oauth.dcr.spi;
 
 /**
  * Client ID Metadata Document resolver abstraction
@@ -2107,18 +2107,18 @@ platform:
 // oauth-core
 @AutoConfiguration
 @EnableConfigurationProperties(OAuth2Properties.class)
-@ComponentScan("com.richie.component.oauth.core")
+@ComponentScan("cn.richie696.component.oauth.core")
 public class OAuth2AutoConfiguration {}
 
 // oauth-authz
 @AutoConfiguration
-@ComponentScan("com.richie.component.oauth.authz")
+@ComponentScan("cn.richie696.component.oauth.authz")
 @Import(OAuth2AutoConfiguration.class)  // depends on core configuration
 public class OAuth2AuthzAutoConfiguration {}
 
 // oauth-dcr
 @AutoConfiguration
-@ComponentScan("com.richie.component.oauth.dcr")
+@ComponentScan("cn.richie696.component.oauth.dcr")
 @Import(OAuth2AutoConfiguration.class)  // depends on core configuration
 public class OAuth2DCRAutoConfiguration {}
 ```

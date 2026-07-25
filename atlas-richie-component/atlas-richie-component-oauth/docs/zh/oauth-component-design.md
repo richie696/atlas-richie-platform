@@ -113,17 +113,17 @@ flowchart LR
 
 | Package | 说明 | 源文件数 |
 |---------|------|----------|
-| `com.richie.component.oauth.core` | 核心组件：TokenEndpoint、ClientRegistry、ScopeResolver | 3 |
-| `com.richie.component.oauth.core.spi` | SPI 接口：TokenStore | 1 |
-| `com.richie.component.oauth.core.support` | SPI 实现：DefaultTokenStore | 1 |
-| `com.richie.component.oauth.core.model` | 领域模型：ClientConfig、TokenResponse 等 | 5 |
-| `com.richie.component.oauth.core.config` | 配置类：OAuth2Properties、OAuth2RedisKey、OAuth2AutoConfiguration | 3 |
-| `com.richie.component.oauth.core.exception` | 异常类：InvalidClientException、InvalidGrantException、TokenExpiredException | 3 |
+| `cn.richie696.component.oauth.core` | 核心组件：TokenEndpoint、ClientRegistry、ScopeResolver | 3 |
+| `cn.richie696.component.oauth.core.spi` | SPI 接口：TokenStore | 1 |
+| `cn.richie696.component.oauth.core.support` | SPI 实现：DefaultTokenStore | 1 |
+| `cn.richie696.component.oauth.core.model` | 领域模型：ClientConfig、TokenResponse 等 | 5 |
+| `cn.richie696.component.oauth.core.config` | 配置类：OAuth2Properties、OAuth2RedisKey、OAuth2AutoConfiguration | 3 |
+| `cn.richie696.component.oauth.core.exception` | 异常类：InvalidClientException、InvalidGrantException、TokenExpiredException | 3 |
 
 ### 2.2 Package 地图
 
 ```
-com.richie.component.oauth.core
+cn.richie696.component.oauth.core
 ├── TokenEndpoint.java          # OAuth Token 端点 (@Component)
 ├── ClientRegistry.java         # 客户端注册中心 (@Component)
 ├── ScopeResolver.java          # Scope 路径解析器 (@Component)
@@ -536,7 +536,7 @@ atlas-richie-component-oauth-authz
 
 **类职责**：处理 OAuth 2.1 授权端点请求，包括授权请求（GET /authorize）和用户授权确认（POST /authorize）。
 
-**Package**：`com.richie.component.oauth.authz`
+**Package**：`cn.richie696.component.oauth.authz`
 
 **构造函数**：
 ```java
@@ -565,7 +565,7 @@ public AuthorizationEndpoint(
 
 **类职责**：定义授权码存储的契约，支持 PKCE binding。
 
-**Package**：`com.richie.component.oauth.authz.spi`
+**Package**：`cn.richie696.component.oauth.authz.spi`
 
 ```java
 public interface AuthorizationCodeStore {
@@ -610,7 +610,7 @@ public interface AuthorizationCodeStore {
 
 **类职责**：AuthorizationCodeStore 的 Redis 实现。
 
-**Package**：`com.richie.component.oauth.authz.support`
+**Package**：`cn.richie696.component.oauth.authz.support`
 
 ```java
 @Slf4j
@@ -664,7 +664,7 @@ public class DefaultAuthorizationCodeStore implements AuthorizationCodeStore {
 
 **类职责**：PKCE S256 挑战生成与验证。
 
-**Package**：`com.richie.component.oauth.authz`
+**Package**：`cn.richie696.component.oauth.authz`
 
 ```java
 @Slf4j
@@ -727,7 +727,7 @@ public class PKCESupport {
 
 **类职责**：处理授权码模式下的 code→token 交换流程。需要扩展 TokenEndpoint 的 `generateToken` 方法。
 
-**Package**：`com.richie.component.oauth.authz`
+**Package**：`cn.richie696.component.oauth.authz`
 
 ```java
 @Slf4j
@@ -851,7 +851,7 @@ public class AuthorizationCodeGrant {
 
 **类职责**：RFC 8414 Authorization Server Metadata 端点。
 
-**Package**：`com.richie.component.oauth.authz`
+**Package**：`cn.richie696.component.oauth.authz`
 
 ```java
 /**
@@ -1092,7 +1092,7 @@ atlas-richie-component-oauth-dcr
 
 **类职责**：处理动态客户端注册请求（POST /register）。
 
-**Package**：`com.richie.component.oauth.dcr`
+**Package**：`cn.richie696.component.oauth.dcr`
 
 **构造函数**：
 ```java
@@ -1112,7 +1112,7 @@ public DynamicClientRegistrationEndpoint(
 
 #### 4.3.2 ClientRegistrationRequest
 
-**Package**：`com.richie.component.oauth.dcr.dto`
+**Package**：`cn.richie696.component.oauth.dcr.dto`
 
 ```java
 @Data
@@ -1177,7 +1177,7 @@ public class ClientRegistrationRequest {
 
 #### 4.3.3 ClientRegistrationResponse
 
-**Package**：`com.richie.component.oauth.dcr.dto`
+**Package**：`cn.richie696.component.oauth.dcr.dto`
 
 ```java
 @Data
@@ -1257,7 +1257,7 @@ public class ClientRegistrationResponse {
 
 **类职责**：解析 Client ID Metadata Document，支持 RFC 7591 扩展。
 
-**Package**：`com.richie.component.oauth.dcr.spi`
+**Package**：`cn.richie696.component.oauth.dcr.spi`
 
 ```java
 public interface ClientIdMetadataDocumentResolver {
@@ -1281,7 +1281,7 @@ public interface ClientIdMetadataDocumentResolver {
 
 #### 4.3.5 ClientIdMetadataDocument
 
-**Package**：`com.richie.component.oauth.dcr.model`
+**Package**：`cn.richie696.component.oauth.dcr.model`
 
 ```java
 @Data
@@ -1367,7 +1367,7 @@ public class ClientIdMetadataDocument {
 
 **类职责**：防止 Server-Side Request Forgery 攻击。
 
-**Package**：`com.richie.component.oauth.dcr.support`
+**Package**：`cn.richie696.component.oauth.dcr.support`
 
 ```java
 @Slf4j
@@ -1716,7 +1716,7 @@ public ClientConfig verifyAccessToken(String accessToken, String expectedAudienc
 ### 6.1 TokenStore Interface (已存在)
 
 ```java
-package com.richie.component.oauth.core.spi;
+package cn.richie696.component.oauth.core.spi;
 
 /**
  * Token 存储抽象
@@ -1810,7 +1810,7 @@ public interface TokenStore {
 ### 6.2 AuthorizationCodeStore (待实现)
 
 ```java
-package com.richie.component.oauth.authz.spi;
+package cn.richie696.component.oauth.authz.spi;
 
 /**
  * 授权码存储抽象
@@ -1863,7 +1863,7 @@ public interface AuthorizationCodeStore {
 ### 6.3 ClientIdMetadataDocumentResolver (待实现)
 
 ```java
-package com.richie.component.oauth.dcr.spi;
+package cn.richie696.component.oauth.dcr.spi;
 
 /**
  * Client ID Metadata Document 解析器抽象
@@ -2107,18 +2107,18 @@ platform:
 // oauth-core
 @AutoConfiguration
 @EnableConfigurationProperties(OAuth2Properties.class)
-@ComponentScan("com.richie.component.oauth.core")
+@ComponentScan("cn.richie696.component.oauth.core")
 public class OAuth2AutoConfiguration {}
 
 // oauth-authz
 @AutoConfiguration
-@ComponentScan("com.richie.component.oauth.authz")
+@ComponentScan("cn.richie696.component.oauth.authz")
 @Import(OAuth2AutoConfiguration.class)  // 依赖 core 配置
 public class OAuth2AuthzAutoConfiguration {}
 
 // oauth-dcr
 @AutoConfiguration
-@ComponentScan("com.richie.component.oauth.dcr")
+@ComponentScan("cn.richie696.component.oauth.dcr")
 @Import(OAuth2AutoConfiguration.class)  // 依赖 core 配置
 public class OAuth2DCRAutoConfiguration {}
 ```

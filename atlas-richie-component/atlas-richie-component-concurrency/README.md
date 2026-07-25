@@ -92,7 +92,7 @@ Additional capabilities:
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-concurrency</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
@@ -103,7 +103,7 @@ No need to separately introduce Resilience4j, Guava, or other concurrency librar
 ### 2) `Minimal` `Example`
 
 ```java
-import com.richie.component.concurrency.virtual.StructuredConcurrency;
+import cn.richie696.component.concurrency.virtual.StructuredConcurrency;
 import java.time.Duration;
 import java.util.List;
 
@@ -239,7 +239,7 @@ Solved in one line.
 ##### 1.1.6 Full Code Examples
 
 ```java
-import com.richie.component.concurrency.virtual.StructuredConcurrency;
+import cn.richie696.component.concurrency.virtual.StructuredConcurrency;
 import java.time.Duration;
 import java.util.List;
 
@@ -386,7 +386,7 @@ ThreadFactory factory = VirtualThreadFactory.builder()
 ##### 1.2.6 Full Code Examples
 
 ```java
-import com.richie.component.concurrency.virtual.VirtualThreadFactory;
+import cn.richie696.component.concurrency.virtual.VirtualThreadFactory;
 import java.lang.ScopedValue;
 import java.util.concurrent.ThreadFactory;
 
@@ -535,9 +535,9 @@ if (result.hasError()) {
 ##### 1.3.6 Full Code Examples
 
 ```java
-import com.richie.component.concurrency.virtual.BatchProcessor;
-import com.richie.component.concurrency.virtual.BatchResult;
-import com.richie.component.concurrency.virtual.BatchMappingResult;
+import cn.richie696.component.concurrency.virtual.BatchProcessor;
+import cn.richie696.component.concurrency.virtual.BatchResult;
+import cn.richie696.component.concurrency.virtual.BatchMappingResult;
 import java.time.Duration;
 import java.util.List;
 
@@ -695,8 +695,8 @@ String result = Retryer.of(Duration.ofMillis(100))
 ##### 2.1.6 Full Code Examples
 
 ```java
-import com.richie.component.concurrency.algorithm.Retryer;
-import com.richie.component.concurrency.algorithm.RetryExhaustedException;
+import cn.richie696.component.concurrency.algorithm.Retryer;
+import cn.richie696.component.concurrency.algorithm.RetryExhaustedException;
 import java.time.Duration;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
@@ -848,7 +848,7 @@ if (limiter.tryAcquire()) {
 ##### 2.2.6 Full Code Examples
 
 ```java
-import com.richie.component.concurrency.algorithm.RateLimiter;
+import cn.richie696.component.concurrency.algorithm.RateLimiter;
 import java.time.Duration;
 
 public class RateLimiterExamples {
@@ -1029,8 +1029,8 @@ String result = breaker.execute(() -> callRemoteService(), "default");
 ##### 2.3.6 Full Code Examples
 
 ```java
-import com.richie.component.concurrency.algorithm.CircuitBreaker;
-import com.richie.component.concurrency.algorithm.CircuitBreakerOpenException;
+import cn.richie696.component.concurrency.algorithm.CircuitBreaker;
+import cn.richie696.component.concurrency.algorithm.CircuitBreakerOpenException;
 import java.time.Duration;
 
 public class CircuitBreakerExamples {
@@ -1193,7 +1193,7 @@ debouncer.close();
 ##### 2.4.6 Full Code Examples
 
 ```java
-import com.richie.component.concurrency.algorithm.Debouncer;
+import cn.richie696.component.concurrency.algorithm.Debouncer;
 import java.time.Duration;
 
 public class DebouncerExamples {
@@ -1359,13 +1359,13 @@ Internally calls setCorePoolSize / setMaximumPoolSize /
         setKeepAliveTime / setRejectedExecutionHandler by field
 ```
 
-Key source structure of `ThreadPoolConfigRefresher` (located in `com.richie.component.concurrency.config.ThreadPoolConfigRefresher`):
+Key source structure of `ThreadPoolConfigRefresher` (located in `cn.richie696.component.concurrency.config.ThreadPoolConfigRefresher`):
 
 ```java
-import com.richie.component.concurrency.config.ConcurrencyProperties;
-import com.richie.component.concurrency.config.PoolProperties;
-import com.richie.component.concurrency.threadpool.DynamicExecutor;
-import com.richie.component.concurrency.threadpool.PoolResizeEvent;
+import cn.richie696.component.concurrency.config.ConcurrencyProperties;
+import cn.richie696.component.concurrency.config.PoolProperties;
+import cn.richie696.component.concurrency.threadpool.DynamicExecutor;
+import cn.richie696.component.concurrency.threadpool.PoolResizeEvent;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.event.EventListener;
@@ -1653,10 +1653,10 @@ PoolStatus status = orderExecutor.snapshot();
 ##### 3.1.6 Full Code Examples
 
 ```java
-import com.richie.component.concurrency.threadpool.DynamicExecutor;
-import com.richie.component.concurrency.threadpool.DynamicExecutorService;
-import com.richie.component.concurrency.threadpool.PoolResizeEvent;
-import com.richie.component.concurrency.threadpool.PoolStatus;
+import cn.richie696.component.concurrency.threadpool.DynamicExecutor;
+import cn.richie696.component.concurrency.threadpool.DynamicExecutorService;
+import cn.richie696.component.concurrency.threadpool.PoolResizeEvent;
+import cn.richie696.component.concurrency.threadpool.PoolStatus;
 import jakarta.annotation.PreDestroy;
 
 import java.time.Duration;

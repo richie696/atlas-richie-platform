@@ -2,15 +2,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.richie.base</groupId>
+        <groupId>cn.richie696.platform</groupId>
         <artifactId>atlas-richie-platform</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
+    <groupId>cn.richie696.base</groupId>
+    <artifactId>atlas-richie-base</artifactId>
     <name>atlas-richie-base</name>
     <description>Atlas Richie Base 是平台基础层聚合模块，提供统一依赖管理、契约模型与上下文能力等底座支撑，为上层组件库与业务应用提供一致、稳定、可演进的基础设施规范。</description>
-    <artifactId>atlas-richie-base</artifactId>
     <packaging>pom</packaging>
 
     <properties>

@@ -16,12 +16,12 @@ Solace PubSub+ 消息队列依赖管理组件，基于 Spring Cloud Stream Solac
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-messaging-core</artifactId>
 </dependency>
 
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-messaging-solace</artifactId>
 </dependency>
 ```

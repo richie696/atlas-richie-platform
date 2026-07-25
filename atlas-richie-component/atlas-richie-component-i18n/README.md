@@ -36,7 +36,7 @@
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-i18n` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-i18n` |
 | **Category** | Localization — multi-language resource bundles |
 | **Hard dependencies** | `spring-context` (already in Boot), `atlas-richie-context` |
 | **Compatible with** | Java 17+, Spring Boot 4.x |
@@ -92,7 +92,7 @@ atlas-richie-component-i18n
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-i18n</artifactId>
 </dependency>
 ```

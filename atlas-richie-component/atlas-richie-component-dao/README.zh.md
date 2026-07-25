@@ -76,7 +76,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-dao</artifactId>
 </dependency>
 ```
@@ -189,7 +189,7 @@ public class UserService extends ServiceImpl<UserMapper, User> {
 #### 使用 `BasePage`（推荐）
 
 ```java
-import com.richie.component.dao.page.BasePage;
+import cn.richie696.component.dao.page.BasePage;
 
 public class UserQuery extends BasePage {
     private String username;
@@ -422,7 +422,7 @@ CREATE TABLE tenant_datasource (
 #### 2. 注解方式切换数据源
 
 ```java
-import annotation.tenant.com.richie.component.dao.CommonDataSource;
+import annotation.tenant.cn.richie696.component.dao.CommonDataSource;
 
 @Service
 public class CommonService {

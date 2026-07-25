@@ -16,7 +16,7 @@ The core module provides:
 ## Module Contents
 
 ```
-com.richie.component.storage
+cn.richie696.component.storage
 ├── core/        # SPI interfaces + registry + auto-configuration
 │   ├── StorageEngine                       # Unified storage interface
 │   ├── StorageEngineProvider               # Engine extension point SPI
@@ -540,7 +540,7 @@ Follow the 6 steps below to add a new storage engine implementation (e.g. `stora
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
@@ -615,7 +615,7 @@ public class CephAutoConfiguration {
 Register `AutoConfiguration` in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`:
 
 ```
-com.richie.component.storage.ceph.CephAutoConfiguration
+cn.richie696.component.storage.ceph.CephAutoConfiguration
 ```
 
 ### Step 5: Add a Conditional Branch in the core Module's AutoConfiguration
@@ -640,7 +640,7 @@ public enum StorageEngineEnum {
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
@@ -650,7 +650,7 @@ public enum StorageEngineEnum {
 
 | Dependency                                                    | Description                                                                                       |
 |---------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| `com.richie.base:atlas-richie-context`                        | `SpringContextHolder` (the Registry uses it to dynamically look up Providers)                     |
+| `cn.richie696.base:atlas-richie-context`                        | `SpringContextHolder` (the Registry uses it to dynamically look up Providers)                     |
 | `org.springframework.boot:spring-boot-autoconfigure`          | `@AutoConfiguration` and conditional annotations                                                  |
 | `org.springframework.boot:spring-boot-actuator-autoconfigure` | HealthIndicator and Micrometer integration (optional, checked at runtime through `@ConditionalOnClass`) |
 | `io.micrometer:micrometer-core`                               | MeterBinder interface (optional)                                                                  |

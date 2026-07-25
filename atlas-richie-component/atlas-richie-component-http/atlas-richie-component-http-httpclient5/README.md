@@ -31,7 +31,7 @@ This module has the **most mature multipart support** of all four providers.
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-http-httpclient5` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-http-httpclient5` |
 | **Selected by** | `platform.component.http.provider=<provider>` |
 
 ### What this module gives you
@@ -60,11 +60,11 @@ atlas-richie-component-http-httpclient5
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-core</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-httpclient5</artifactId>
 </dependency>
 ```
@@ -79,7 +79,7 @@ platform:
 Use the facade:
 
 ```java
-import com.richie.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpClient;
 
 @Service
 @RequiredArgsConstructor

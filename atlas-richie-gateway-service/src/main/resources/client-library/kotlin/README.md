@@ -107,8 +107,8 @@ cp HttpClient.kt YourProject/app/src/main/java/com/your/app/
 ### 基本使用
 
 ```kotlin
-import com.richie.httpclient.*
-import com.richie.example.Url  // 业务代码定义的Url枚举
+import cn.richie696.httpclient.*
+import cn.richie696.example.Url  // 业务代码定义的Url枚举
 
 // 创建客户端
 val client = HttpClient(HttpClientConfig(
@@ -131,7 +131,7 @@ lifecycleScope.launch {
 
 ```kotlin
 // Url.kt
-import com.richie.httpclient.*
+import cn.richie696.httpclient.*
 
 enum class Url : UrlInterface {
     UserLogin {

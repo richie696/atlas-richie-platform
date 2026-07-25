@@ -42,7 +42,7 @@
 
 | 项 | 值 |
 |---|---|
-| **坐标** | `com.richie.component:atlas-richie-component-http-core` |
+| **坐标** | `cn.richie696.component:atlas-richie-component-http-core` |
 | **类别** | 门面 / 契约层 |
 | **强依赖** | `tools.jackson.core:jackson-databind`、`atlas-richie-context`（提供 `JsonUtils`） |
 | **三方 HTTP 库** | **无**——每个 Provider 自带 |
@@ -76,7 +76,7 @@
 ## 🏗️ 架构与模块布局
 
 ```
-com.richie.component.http.core
+cn.richie696.component.http.core
 ├── HttpClient              ← 接口；Provider 实现
 ├── HttpRequest             ← 链式 Builder（URL / method / body / headers / timeout / content-type / multipart）
 ├── HttpResponse            ← 状态、响应头、响应体（byte[] / String / 反序列化）
@@ -121,13 +121,13 @@ graph LR
 ```xml
 <!-- 必选：门面 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-core</artifactId>
 </dependency>
 
 <!-- 选一个 Provider（四选一） -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-okhttp</artifactId>
 </dependency>
 ```
@@ -135,7 +135,7 @@ graph LR
 ### 2. 使用 API
 
 ```java
-import com.richie.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpClient;
 
 @Service
 @RequiredArgsConstructor

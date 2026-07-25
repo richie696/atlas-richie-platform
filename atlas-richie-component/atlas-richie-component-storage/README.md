@@ -166,7 +166,7 @@ public void upload(File file) {
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
@@ -912,8 +912,8 @@ After fully disabling, `/actuator/health` no longer exposes the storage engine s
 ```java
 package com.example.storage.controller;
 
-import bean.com.richie.component.storage.DirectUploadPolicy;
-import core.com.richie.component.storage.StorageEngine;
+import bean.cn.richie696.component.storage.DirectUploadPolicy;
+import core.cn.richie696.component.storage.StorageEngine;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -965,7 +965,7 @@ public class StorageUploadController {
 ```java
 package com.example.storage.controller;
 
-import bean.com.richie.component.storage.DirectUploadPolicy;
+import bean.cn.richie696.component.storage.DirectUploadPolicy;
 
 public interface StorageUploadService {
     DirectUploadPolicy issuePolicy(StorageUploadController.IssuePolicyRequest request);
@@ -975,8 +975,8 @@ public interface StorageUploadService {
 ```java
 package com.example.storage.controller;
 
-import bean.com.richie.component.storage.DirectUploadPolicy;
-import core.com.richie.component.storage.StorageEngine;
+import bean.cn.richie696.component.storage.DirectUploadPolicy;
+import core.cn.richie696.component.storage.StorageEngine;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

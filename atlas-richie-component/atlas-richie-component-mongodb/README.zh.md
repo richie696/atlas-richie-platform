@@ -630,7 +630,7 @@ class MyServiceIT {
 
 依赖：
 - `org.testcontainers:mongodb`
-- `com.richie.testing:testing-testcontainers`（项目基础包）
+- `cn.richie696.testing:testing-testcontainers`（项目基础包）
 
 ---
 

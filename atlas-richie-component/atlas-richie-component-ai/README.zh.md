@@ -341,7 +341,7 @@ public Map<String, PoolStats> stats() {
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-ai</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 </dependency>
@@ -447,8 +447,8 @@ platform:
 ### 1) 业务系统构造模型配置列表
 
 ```java
-import config.com.richie.component.ai.AiModelProperties;
-import model.com.richie.component.ai.ModelOptions;
+import config.cn.richie696.component.ai.AiModelProperties;
+import model.cn.richie696.component.ai.ModelOptions;
 
 List<ModelOptions> options = List.of(
         new ModelOptions()
@@ -487,8 +487,8 @@ aiModelService.initializeModels(options);
 ## 统一调用示例
 
 ```java
-import model.com.richie.component.ai.AiRequest;
-import model.com.richie.component.ai.AiResponse;
+import model.cn.richie696.component.ai.AiRequest;
+import model.cn.richie696.component.ai.AiResponse;
 
 // 1. 默认模型调用
 AiResponse r1 = aiModelService.call(AiRequest.ofUserMessage("请简要介绍你自己"));

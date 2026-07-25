@@ -89,13 +89,13 @@ DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
 ```xml
 <!-- Required core library -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
 <!-- Implementation library -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-obs</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>

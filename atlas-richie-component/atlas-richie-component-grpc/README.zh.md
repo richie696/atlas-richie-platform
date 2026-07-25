@@ -61,7 +61,7 @@
  ---|
 ---|
  **坐标** 
- `com.richie.component:atlas-richie-component-grpc` |
+ `cn.richie696.component:atlas-richie-component-grpc` |
  **类别** |
  横切基础设施——gRPC 拦截器栈 |
  **JDK / Spring Boot** |
@@ -111,7 +111,7 @@
 本组件为**单 Maven 模块**（不含子模块），内部按三个包组织：
 
 ```
-com.richie.component.grpc
+cn.richie696.component.grpc
 ├── config
 │   ├── GrpcProperties                # @ConfigurationProperties("platform.grpc")
 │   └── GrpcAutoConfiguration         # 12 个 @Bean 定义
@@ -194,7 +194,7 @@ graph TB
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-grpc</artifactId>
 </dependency>
 
@@ -245,8 +245,8 @@ platform:
 ### 3) 在自己的 `NettyServerBuilder` 上挂载拦截器
 
 ```java
-import com.richie.component.grpc.interceptor.*;
-import com.richie.component.grpc.lifecycle.GrpcServerGracefulShutdown;
+import cn.richie696.component.grpc.interceptor.*;
+import lifecycle.cn.richie696.component.grpc.GrpcServerGracefulShutdown;
 import io.grpc.Server;
 import io.grpc.netty.NettyServerBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -288,7 +288,7 @@ public class GrpcServerBootstrap {
 ### 4) gRPC 实现类通过 `HeaderContextHolder` 读取头信息
 
 ```java
-import com.richie.context.common.api.HeaderContextHolder;
+import api.common.cn.richie696.context.HeaderContextHolder;
 import io.grpc.stub.StreamObserver;
 
 public class MyGrpcServiceImpl extends MyGrpcServiceGrpc.MyGrpcServiceImplBase {
@@ -296,8 +296,8 @@ public class MyGrpcServiceImpl extends MyGrpcServiceGrpc.MyGrpcServiceImplBase {
     @Override
     public void getUser(GetUserRequest req, StreamObserver<GetUserResponse> resp) {
         // 头信息已被 GrpcServerHeaderInterceptor 写入 ThreadLocal
-        String tenantId  = HeaderContextHolder.getHeader("x-tenant-id");
-        String apiToken  = HeaderContextHolder.getHeader("x-rd-request-apitoken");
+        String tenantId = HeaderContextHolder.getHeader("x-tenant-id");
+        String apiToken = HeaderContextHolder.getHeader("x-rd-request-apitoken");
 
         // ...业务逻辑...
         resp.onNext(GetUserResponse.newBuilder().setTenantId(tenantId).build());
@@ -685,7 +685,7 @@ HTTP/REST 服务由 `atlas-richie-context` 的过滤器写入 `HeaderContextHold
 
 请检查三点：
 
-1. Spring Boot 主类带 `@SpringBootApplication`（确保组件扫描覆盖 `com.richie.component.grpc`）。
+1. Spring Boot 主类带 `@SpringBootApplication`（确保组件扫描覆盖 `cn.richie696.component.grpc`）。
 2. `auth-enabled` 已显式置为 `true`（其他功能默认 `true`）。
 3. 配置项在 `platform.grpc.*` 下；若只配了 `platform.grpc.*`，Bean 条件不会命中（见已知限制）。
 

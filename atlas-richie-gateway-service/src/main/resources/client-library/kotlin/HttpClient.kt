@@ -7,7 +7,7 @@
  * @since 2025-11-01
  */
 
-package com.richie.httpclient
+package cn.richie696.httpclient
 
 import android.util.Base64
 import android.content.Context

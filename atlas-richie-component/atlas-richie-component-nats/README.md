@@ -38,7 +38,7 @@
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-nats` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-nats` |
 | **Category** | Messaging — NATS pub/sub + JetStream |
 | **Hard dependencies** | `io.nats:jnats` (JetStream client) |
 | **Compatible with** | NATS Server 2.10+, JetStream enabled |
@@ -108,7 +108,7 @@ atlas-richie-component-nats
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-nats</artifactId>
 </dependency>
 ```

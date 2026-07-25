@@ -85,7 +85,7 @@ Redis-backed cache and data structure component. Provides KV, Hash, Set/ZSet, di
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-cache</artifactId>
 </dependency>
 ```
@@ -135,7 +135,7 @@ platform:
 Every capability is reached through **`GlobalCache.<ops>()`**. No bean injection needed: the framework auto-binds `GlobalCacheManager` after Spring starts.
 
 ```java
-import com.richie.component.cache.GlobalCache;
+import cn.richie696.component.cache.GlobalCache;
 
 // KV
 GlobalCache.value().set("user:123", "Tom", 3_600_000L);
@@ -289,7 +289,7 @@ Stream MQ has been split out into **`atlas-richie-component-redis-streammq`**, w
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-redis-streammq</artifactId>
 </dependency>
 ```

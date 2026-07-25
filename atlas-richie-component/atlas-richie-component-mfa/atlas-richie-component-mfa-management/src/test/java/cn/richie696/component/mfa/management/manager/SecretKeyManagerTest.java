@@ -1,0 +1,137 @@
+/*
+ * Copyright (c) 2026 Richie (https://www.github.com/richie696)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package cn.richie696.component.mfa.management.manager;
+
+import cn.richie696.component.mfa.core.crypto.KeyManagementProvider;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class SecretKeyManagerTest {
+
+    @Mock
+    private KeyManagementProvider kmsProvider;
+
+    @InjectMocks
+    private SecretKeyManager secretKeyManager;
+
+    @Test
+    void generateSecretKey_returnsBase32WithoutPadding() {
+        String secret = secretKeyManager.generateSecretKey();
+        assertThat(secret).isNotBlank().doesNotContain("=");
+    }
+
+    @Test
+    void encryptSecretKey_fallsBackWhenKmsUnavailable() {
+        when(kmsProvider.isAvailable()).thenReturn(false);
+        assertThat(secretKeyManager.encryptSecretKey("plain")).isEqualTo("plain");
+    }
+
+    @Test
+    void encryptSecretKey_usesKmsWhenAvailable() {
+        when(kmsProvider.isAvailable()).thenReturn(true);
+        when(kmsProvider.encrypt("plain")).thenReturn("cipher");
+
+        assertThat(secretKeyManager.encryptSecretKey("plain")).isEqualTo("cipher");
+    }
+
+    @Test
+    void decryptSecretKey_fallsBackWhenKmsUnavailable() {
+        when(kmsProvider.isAvailable()).thenReturn(false);
+        assertThat(secretKeyManager.decryptSecretKey("plain")).isEqualTo("plain");
+    }
+
+    @Test
+    void encryptSecretKey_fallsBackWhenKmsThrows() {
+        when(kmsProvider.isAvailable()).thenReturn(true);
+        when(kmsProvider.encrypt("plain")).thenThrow(new RuntimeException("kms down"));
+
+        assertThat(secretKeyManager.encryptSecretKey("plain")).isEqualTo("plain");
+    }
+
+    @Test
+    void decryptSecretKey_throwsWhenKmsDecryptFails() {
+        when(kmsProvider.isAvailable()).thenReturn(true);
+        when(kmsProvider.decrypt("cipher")).thenThrow(new RuntimeException("bad cipher"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> secretKeyManager.decryptSecretKey("cipher"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("KMS解密失败");
+    }
+
+    @Test
+    void storeAndRetrieveSecret_delegatesToKms() {
+        when(kmsProvider.isAvailable()).thenReturn(true);
+        when(kmsProvider.storeSecret(null, "u1", "secret")).thenReturn("mfa/u1");
+        when(kmsProvider.retrieveSecret("mfa/u1")).thenReturn("secret");
+
+        assertThat(secretKeyManager.storeSecret(null, "u1", "secret")).isEqualTo("mfa/u1");
+        assertThat(secretKeyManager.retrieveSecret("mfa/u1")).isEqualTo("secret");
+        assertThat(secretKeyManager.retrieveSecret(null, "u1")).isEqualTo("secret");
+    }
+
+    @Test
+    void deleteSecret_delegatesToKms() {
+        secretKeyManager.deleteSecret("t1", "u1");
+
+        verify(kmsProvider).deleteSecret("mfa/t1/u1");
+    }
+
+    @Test
+    void storeSecret_throwsWhenKmsUnavailable() {
+        when(kmsProvider.isAvailable()).thenReturn(false);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> secretKeyManager.storeSecret(null, "u1", "s"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("KMS提供方不可用");
+    }
+
+    @Test
+    void storeSecret_throwsWhenKmsFails() {
+        when(kmsProvider.isAvailable()).thenReturn(true);
+        when(kmsProvider.storeSecret(null, "u1", "s")).thenThrow(new RuntimeException("store failed"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> secretKeyManager.storeSecret(null, "u1", "s"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("KMS存储密钥失败");
+    }
+
+    @Test
+    void retrieveSecret_throwsWhenKmsFails() {
+        when(kmsProvider.isAvailable()).thenReturn(true);
+        when(kmsProvider.retrieveSecret("mfa/u1")).thenThrow(new RuntimeException("missing"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> secretKeyManager.retrieveSecret("mfa/u1"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("KMS检索密钥失败");
+    }
+
+    @Test
+    void retrieveSecret_throwsWhenKmsUnavailable() {
+        when(kmsProvider.isAvailable()).thenReturn(false);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> secretKeyManager.retrieveSecret("mfa/u1"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("KMS提供方不可用");
+    }
+}

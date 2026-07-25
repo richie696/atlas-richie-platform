@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.richie.component.mfa.management.mapper.MfaTrustedDeviceMapper">
+<mapper namespace="cn.richie696.component.mfa.management.mapper.MfaTrustedDeviceMapper">
 
     <!-- 根据租户ID和用户ID查询所有可信设备 -->
-    <select id="selectByTenantAndUser" resultType="com.richie.component.mfa.core.entity.MfaTrustedDevice">
+    <select id="selectByTenantAndUser" resultType="cn.richie696.component.mfa.core.entity.MfaTrustedDevice">
         SELECT *
         FROM mfa_trusted_device
         WHERE user_id = #{userId}
@@ -20,7 +20,7 @@
     </select>
 
     <!-- 根据租户ID、用户ID和设备ID查询可信设备 -->
-    <select id="selectByDeviceId" resultType="com.richie.component.mfa.core.entity.MfaTrustedDevice">
+    <select id="selectByDeviceId" resultType="cn.richie696.component.mfa.core.entity.MfaTrustedDevice">
         SELECT *
         FROM mfa_trusted_device
         WHERE user_id = #{userId}
@@ -54,7 +54,7 @@
     </select>
 
     <!-- 查询用户的主管理设备 -->
-    <select id="selectPrimaryByTenantAndUser" resultType="com.richie.component.mfa.core.entity.MfaTrustedDevice">
+    <select id="selectPrimaryByTenantAndUser" resultType="cn.richie696.component.mfa.core.entity.MfaTrustedDevice">
         SELECT *
         FROM mfa_trusted_device
         WHERE user_id = #{userId}

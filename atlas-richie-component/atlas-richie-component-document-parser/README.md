@@ -88,7 +88,7 @@
 ### Module Structure
 
 ```
-com.richie.component.parser/
+cn.richie696.component.parser/
 ├── DocumentParser                # SPI: streaming interface
 ├── DocumentReader                # 4-overload facade — developer entry point
 ├── ParsedDocument                # Record (title / author / segments / metadata)
@@ -158,7 +158,7 @@ com.richie.component.parser/
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-document-parser</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 </dependency>

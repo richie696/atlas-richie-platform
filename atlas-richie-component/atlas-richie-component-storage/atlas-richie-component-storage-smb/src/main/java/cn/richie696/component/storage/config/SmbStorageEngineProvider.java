@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2026 Richie (https://www.github.com/richie696)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package cn.richie696.component.storage.config;
+
+import cn.richie696.component.storage.bean.Smb3Config;
+import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.impl.SmbStorageEngine;
+import cn.richie696.component.storage.enums.StorageEngineEnum;
+import lombok.extern.slf4j.Slf4j;
+import org.codelibs.jcifs.smb.CIFSContext;
+import org.codelibs.jcifs.smb.CIFSException;
+import org.codelibs.jcifs.smb.config.PropertyConfiguration;
+import org.codelibs.jcifs.smb.context.BaseContext;
+import org.codelibs.jcifs.smb.impl.NtlmPasswordAuthenticator;
+
+import java.util.Properties;
+
+@Slf4j
+public class SmbStorageEngineProvider implements StorageEngineProvider {
+
+    @Override
+    public StorageEngineEnum supportedEngineType() {
+        return StorageEngineEnum.SMB;
+    }
+
+    @Override
+    public StorageEngine create(StorageProperties properties) {
+        Smb3Config smb3 = properties.getSmb3();
+        try {
+            Properties ps = new Properties();
+            ps.setProperty("jcifs.smb.client.dfs.disabled", Boolean.toString(smb3.isDfs()));
+            ps.setProperty("jcifs.smb.client.dfs.ttl", smb3.getDfsTtl().toString());
+            ps.setProperty("jcifs.smb.client.dfs.strictView", Boolean.toString(smb3.isStrictView()));
+            ps.setProperty("jcifs.smb.client.dfs.convertToFQDN", Boolean.toString(smb3.isConvertToFQDN()));
+            BaseContext baseContext = new BaseContext(new PropertyConfiguration(ps));
+            NtlmPasswordAuthenticator auth = new NtlmPasswordAuthenticator("WORKGROUP", smb3.getUsername(), smb3.getPassword());
+            CIFSContext context = baseContext.withCredentials(auth);
+            return new SmbStorageEngine(properties, context);
+        } catch (CIFSException e) {
+            throw new IllegalStateException("SMB CIFS 上下文创建失败", e);
+        }
+    }
+
+    @Override
+    public void destroy(StorageEngine engine) {
+        log.info("SMB 引擎已销毁");
+    }
+
+    @Override
+    public void validate(StorageProperties properties) {
+        Smb3Config c = properties.getSmb3();
+        ConfigValidation.requireNonNull(c, "SMB 配置");
+        ConfigValidation.requireNonBlank(c.getUsername(), "SMB username");
+        ConfigValidation.requireNonBlank(c.getPassword(), "SMB password");
+        ConfigValidation.requireNonBlank(c.getDomain(), "SMB domain");
+    }
+}

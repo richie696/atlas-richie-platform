@@ -78,19 +78,19 @@
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-logging</artifactId>
 </dependency>
 
 <!-- 如果需要使用 Redis 存储 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-cache</artifactId>
 </dependency>
 
 <!-- 如果需要使用消息队列存储 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-messaging</artifactId>
 </dependency>
 ```
@@ -151,7 +151,7 @@ platform:
 #### 方式一：使用注解（推荐）
 
 ```java
-import annotations.com.richie.component.logging.AccessLog;
+import annotations.cn.richie696.component.logging.AccessLog;
 
 @RestController
 public class UserController {
@@ -184,8 +184,8 @@ platform:
 ### 4) 使用链路追踪
 
 ```java
-import annotations.com.richie.component.logging.LogTrace;
-import annotations.com.richie.component.logging.LogMethodTrace;
+import annotations.cn.richie696.component.logging.LogTrace;
+import annotations.cn.richie696.component.logging.LogMethodTrace;
 
 @Service
 @LogTrace("用户服务")  // 类级别注解
@@ -252,7 +252,7 @@ platform:
 - **异常信息**：异常堆栈、异常行号
 
 **默认切点规则**：
-- 默认切点：`execution(public * com.richie..*.service..*ServiceImpl.*(..))`
+- 默认切点：`execution(public * cn.richie696..*.service..*ServiceImpl.*(..))`
 - 需要同时满足以下条件才会生效：
   1. 类上有 `@LogTrace` 注解
   2. 方法上有 `@LogMethodTrace` 注解
@@ -431,9 +431,9 @@ public class CustomBeforeLogCallback implements LogLifecycleCallback.BeforeLogCa
 #### 1. 日志记录前回调（`BeforeLogCallback`）
 
 ```java
-import callback.com.richie.component.logging.LogLifecycleCallback;
-import domain.com.richie.component.logging.AccessLogInfo;
-import vo.api.common.com.richie.context.ResultVO;
+import callback.cn.richie696.component.logging.LogLifecycleCallback;
+import domain.cn.richie696.component.logging.AccessLogInfo;
+import vo.api.common.cn.richie696.context.ResultVO;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -459,8 +459,8 @@ public class CustomBeforeLogCallback implements LogLifecycleCallback.BeforeLogCa
 #### 2. 日志记录后回调（`AfterLogCallback`）
 
 ```java
-import callback.com.richie.component.logging.LogLifecycleCallback;
-import domain.com.richie.component.logging.AccessLogInfo;
+import callback.cn.richie696.component.logging.LogLifecycleCallback;
+import domain.cn.richie696.component.logging.AccessLogInfo;
 import org.springframework.stereotype.Component;
 
 /**
@@ -486,8 +486,8 @@ public class CustomAfterLogCallback implements LogLifecycleCallback.AfterLogCall
 #### 3. 持久化前回调（`BeforePersistCallback`）
 
 ```java
-import callback.com.richie.component.logging.LogLifecycleCallback;
-import domain.com.richie.component.logging.AccessLogInfo;
+import callback.cn.richie696.component.logging.LogLifecycleCallback;
+import domain.cn.richie696.component.logging.AccessLogInfo;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.springframework.stereotype.Component;
 
@@ -511,8 +511,8 @@ public class CustomBeforePersistCallback implements LogLifecycleCallback.BeforeP
 #### 4. 异常处理回调（`OnErrorCallback`）
 
 ```java
-import callback.com.richie.component.logging.LogLifecycleCallback;
-import vo.api.common.com.richie.context.ResultVO;
+import callback.cn.richie696.component.logging.LogLifecycleCallback;
+import vo.api.common.cn.richie696.context.ResultVO;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -676,7 +676,7 @@ platform:
 **错误日志示例**：
 ```
 返回值不是 ResultVO 类型，违反强制性规则，无法进行日志记录。
-违规类：com.richie.example.controller.UserController
+违规类：cn.richie696.example.controller.UserController
 违规函数：public String getUser(String id)
 ```
 
@@ -692,8 +692,8 @@ platform:
 如果需要在非 HTTP 请求场景（如定时任务、消息队列消费等）中设置操作人信息，可以使用 `OperatorContextHolder`：
 
 ```java
-import handler.com.richie.component.logging.OperatorContextHolder;
-import domain.com.richie.component.logging.OperatorInfo;
+import handler.cn.richie696.component.logging.OperatorContextHolder;
+import domain.cn.richie696.component.logging.OperatorInfo;
 
 // 设置操作人信息
 String token = "custom-token"; // 自定义 token（可以是任何唯一标识）

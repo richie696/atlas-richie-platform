@@ -65,13 +65,13 @@
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-i18n</artifactId>
 </dependency>
 
 <!-- 需要依赖 cache 组件（用于字典缓存） -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-cache</artifactId>
 </dependency>
 ```
@@ -114,7 +114,7 @@ user.notfound=User not found: {0}
 ### 4) 使用国际化
 
 ```java
-import resolver.com.richie.component.i18n.I18n;
+import resolver.cn.richie696.component.i18n.I18n;
 
 @Service
 public class UserService {
@@ -165,7 +165,7 @@ user.created=User {0} created successfully, email: {1}
 #### 使用静态工具类
 
 ```java
-import resolver.com.richie.component.i18n.I18n;
+import resolver.cn.richie696.component.i18n.I18n;
 
 // 使用默认区域
 String message = I18n.get("welcome.message");
@@ -180,7 +180,7 @@ String message = I18n.get("welcome.message");
 #### 使用 `I18nResolver`
 
 ```java
-import resolver.com.richie.component.i18n.I18nResolver;
+import resolver.cn.richie696.component.i18n.I18nResolver;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
@@ -273,7 +273,7 @@ platform:
 #### 标记需要国际化的字段
 
 ```java
-import annotation.com.richie.component.i18n.I18nDict;
+import annotation.cn.richie696.component.i18n.I18nDict;
 
 @Data
 public class UserVO {
@@ -288,7 +288,7 @@ public class UserVO {
 #### 在 `Controller` 上使用注解
 
 ```java
-import annotation.com.richie.component.i18n.I18nControl;
+import annotation.cn.richie696.component.i18n.I18nControl;
 
 @RestController
 @I18nControl  // 标记此Controller需要国际化处理

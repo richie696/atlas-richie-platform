@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2026 Richie (https://www.github.com/richie696)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package cn.richie696.gateway.config;
+
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Contact;
+import io.swagger.v3.oas.annotations.info.Info;
+import org.springdoc.core.models.GroupedOpenApi;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * Swagger文档配置类
+ *
+ * @author richie696
+ * @version 1.0
+ * @since 2023-08-29 22:12:50
+ */
+@OpenAPIDefinition(
+        info = @Info(
+                title = "通用网关接口",
+                version = "3.0",
+                description = "更多请咨询服务开发者richie696。",
+                contact = @Contact(
+                        name = "richie696",
+                        url = "https://blog.csdn.net/richie696",
+                        email = "richie696@live.com"
+                )
+        )
+)
+@Configuration
+public class SwaggerConfig {
+
+    @Bean
+    public GroupedOpenApi gatewayApi() {
+        return GroupedOpenApi.builder().group("gateway").displayName("通用网关服务")
+                .addOpenApiCustomizer(openApi -> openApi.info(new io.swagger.v3.oas.models.info.Info().title("网关服务 API").version("3.0.0")))
+                .packagesToScan("cn.richie696.gateway.feign")
+                .pathsToMatch("/token/**")
+                .build();
+    }
+}

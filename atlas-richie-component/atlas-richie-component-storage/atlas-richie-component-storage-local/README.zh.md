@@ -69,12 +69,12 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-local</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>

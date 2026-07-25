@@ -36,7 +36,7 @@ http 组件的**默认 Provider**。基于 [OkHttp 4](https://square.github.io/o
 
 | 项 | 值 |
 |---|---|
-| **坐标** | `com.richie.component:atlas-richie-component-http-okhttp` |
+| **坐标** | `cn.richie696.component:atlas-richie-component-http-okhttp` |
 | **激活配置** | `platform.component.http.provider=<provider>` |
 
 ### 本模块提供 vs 不提供
@@ -67,11 +67,11 @@ atlas-richie-component-http-okhttp
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-core</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-okhttp</artifactId>
 </dependency>
 ```
@@ -86,7 +86,7 @@ platform:
 通过门面调用：
 
 ```java
-import com.richie.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpClient;
 
 @Service
 @RequiredArgsConstructor

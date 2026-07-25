@@ -36,7 +36,7 @@
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-logging` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-logging` |
 | **Category** | Observability — structured logging + audit |
 | **Hard dependencies** | Logback, `atlas-richie-context` (for `HeaderContextHolder`) |
 | **Compatible with** | ELK, Loki, ClickHouse, Splunk, Datadog Logs |
@@ -96,7 +96,7 @@ atlas-richie-component-logging
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-logging</artifactId>
 </dependency>
 ```
@@ -140,7 +140,7 @@ public class OrderService {
 {
   "timestamp": "2026-07-04T12:34:56.789Z",
   "level": "INFO",
-  "logger": "com.richie.app.OrderService",
+  "logger": "cn.richie696.app.OrderService",
   "thread": "http-nio-8080-exec-1",
   "message": "order.placed",
   "mdc": {"tenant_id": "t1", "user_id": "u1", "trace_id": "..."},

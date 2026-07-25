@@ -283,9 +283,9 @@ platform:
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
-    com.richie.gateway.filter.EccCryptoFilter: DEBUG
-    com.richie.gateway.service.com.richie.gateway.service.EccCryptoServiceImpl: DEBUG
-    com.richie.gateway.utils.com.richie.gateway.utils.EccCryptoUtils: DEBUG
+    cn.richie696.gateway.filter.EccCryptoFilter: DEBUG
+    cn.richie696.gateway.service.cn.richie696.gateway.service.EccCryptoServiceImpl: DEBUG
+    cn.richie696.gateway.utils.cn.richie696.gateway.utils.EccCryptoUtils: DEBUG
     # 添加Sentinel相关日志，帮助诊断规则加载问题
     com.alibaba.cloud.sentinel: DEBUG
     com.alibaba.csp.sentinel: DEBUG

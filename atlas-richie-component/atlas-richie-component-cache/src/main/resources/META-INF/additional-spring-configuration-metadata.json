@@ -2,13 +2,13 @@
     "groups": [
         {
             "name": "spring.data.redis",
-            "type": "com.richie.component.cache.redis.config.base.AtlasRedisProperties",
-            "sourceType": "com.richie.component.cache.redis.config.base.AtlasRedisProperties"
+            "type": "cn.richie696.component.cache.redis.config.base.AtlasRedisProperties",
+            "sourceType": "cn.richie696.component.cache.redis.config.base.AtlasRedisProperties"
         },
         {
             "name": "spring.data.local",
-            "type": "com.richie.component.cache.local.config.LocalCacheProperties",
-            "sourceType": "com.richie.component.cache.local.config.LocalCacheProperties"
+            "type": "cn.richie696.component.cache.local.config.LocalCacheProperties",
+            "sourceType": "cn.richie696.component.cache.local.config.LocalCacheProperties"
         }
     ],
     "properties": [

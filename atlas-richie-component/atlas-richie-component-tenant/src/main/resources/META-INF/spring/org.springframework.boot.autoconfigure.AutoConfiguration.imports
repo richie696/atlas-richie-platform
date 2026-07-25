@@ -1,2 +1,2 @@
-com.richie.component.tenant.config.TenantAutoConfiguration
-com.richie.component.tenant.config.TenantFeatureConfiguration
+cn.richie696.component.tenant.config.TenantAutoConfiguration
+cn.richie696.component.tenant.config.TenantFeatureConfiguration

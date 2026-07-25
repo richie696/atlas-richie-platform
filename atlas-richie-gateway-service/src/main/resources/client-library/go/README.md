@@ -146,7 +146,7 @@ GOOS=darwin GOARCH=amd64 go build -o app
 查看 `example/gin/` 目录获取Gin框架集成示例：
 
 - `main.go` - Gin应用集成示例
-- `README.md` - Gin集成说明
+- `../../../../../../atlas-richie-component/atlas-richie-component-document-parser/src/main/java/cn/richie696/component/parser/internal/README.md` - Gin集成说明
 
 **包含内容**：
 - ✅ Gin中间件集成

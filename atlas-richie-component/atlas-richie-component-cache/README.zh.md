@@ -85,7 +85,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-cache</artifactId>
 </dependency>
 ```
@@ -135,7 +135,7 @@ platform:
 所有能力通过 **`GlobalCache.<ops>()`** 访问，无需注入 Bean（Spring 启动后自动绑定 `GlobalCacheManager`）：
 
 ```java
-import com.richie.component.cache.GlobalCache;
+import cn.richie696.component.cache.GlobalCache;
 
 // KV
 GlobalCache.value().set("user:123", "Tom", 3_600_000L);
@@ -289,7 +289,7 @@ Stream MQ 已拆至 **`atlas-richie-component-redis-streammq`**，门面 **`Stre
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-redis-streammq</artifactId>
 </dependency>
 ```

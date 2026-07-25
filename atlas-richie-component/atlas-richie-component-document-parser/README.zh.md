@@ -88,7 +88,7 @@
 ### 模块结构
 
 ```
-com.richie.component.parser/
+cn.richie696.component.parser/
 ├── DocumentParser                # SPI: 流式接口
 ├── DocumentReader                # 4 重载门面 — 开发者唯一入口
 ├── ParsedDocument                # record (title / author / segments / metadata)
@@ -158,7 +158,7 @@ com.richie.component.parser/
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-document-parser</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 </dependency>

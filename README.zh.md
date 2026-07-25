@@ -186,7 +186,7 @@ mvn clean install -DskipTests
 
 ```xml
 <parent>
-    <groupId>com.richie.base</groupId>
+    <groupId>cn.richie696.base</groupId>
     <artifactId>atlas-richie-base</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 </parent>
@@ -194,17 +194,17 @@ mvn clean install -DskipTests
 <dependencies>
 <!-- 添加需要的组件 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-cache</artifactId>
 </dependency>
 
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-core</artifactId>
 </dependency>
 
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-oss</artifactId>
 </dependency>
 </dependencies>

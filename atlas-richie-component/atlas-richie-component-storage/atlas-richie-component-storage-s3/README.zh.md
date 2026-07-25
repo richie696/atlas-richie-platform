@@ -90,13 +90,13 @@ DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
 ```xml
 <!-- 必备核心库 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
 <!-- 实现库 -->
 <dependency>
-<groupId>com.richie.component</groupId>
+<groupId>cn.richie696.component</groupId>
 <artifactId>atlas-richie-component-storage-s3</artifactId>
 <version>${atlas.richie.version}</version>
 </dependency>

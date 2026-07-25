@@ -71,7 +71,7 @@ platform:
 # =====================================================================
 logging:
   level:
-    com.richie.component.parser: DEBUG   # 输出 [parser] dispatch start/detected format 日志
+    cn.richie696.component.parser: DEBUG   # 输出 [parser] dispatch start/detected format 日志
     # org.apache.fesod: INFO             # Fesod 内部日志
     # org.apache.tika: INFO              # Tika 内部日志
 

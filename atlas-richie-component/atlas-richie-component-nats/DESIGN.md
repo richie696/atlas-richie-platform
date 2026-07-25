@@ -68,7 +68,7 @@ NATS 采用**单 TCP 连接多路复用**模型，一个连接可同时承载成
 零内部依赖的纯值类型，是组件的地基。
 
 ```
-com.richie.component.nats
+cn.richie696.component.nats
 ├── enums/
 │   ├── ConnectionState.java        // CONNECTED, RECONNECTING, DISCONNECTED, CLOSED
 │   └── AuthType.java               // NONE, TOKEN, USERPASS, NKEY, CREDENTIALS, JWT
@@ -93,7 +93,7 @@ com.richie.component.nats
 定义所有可替换能力的**接口契约**，每个接口职责单一。
 
 ```
-com.richie.component.nats.strategy
+cn.richie696.component.nats.strategy
 ├── serializer/
 │   └── NatsMessageSerializer.java
 ├── header/
@@ -156,7 +156,7 @@ public interface NatsErrorStrategy {
 L1 接口的默认实现，每个实现类可独立替换。
 
 ```
-com.richie.component.nats.impl
+cn.richie696.component.nats.impl
 ├── serializer/
 │   └── JacksonNatsMessageSerializer.java
 ├── header/
@@ -189,7 +189,7 @@ com.richie.component.nats.impl
 直接封装 `io.nats.client.*` 原生 API，提供面向组件内部使用的高层服务。
 
 ```
-com.richie.component.nats
+cn.richie696.component.nats
 ├── connection/
 │   ├── NatsConnectionManager.java
 │   ├── NatsConnectionListener.java
@@ -248,7 +248,7 @@ public class JetStreamManagementService {
 **核心设计**：使用装饰器模式将横切关注点（追踪 → 上下文恢复 → 去重）链式包装在业务 Handler 外层。
 
 ```
-com.richie.component.nats.pipeline
+cn.richie696.component.nats.pipeline
 ├── NatsMessageHandler.java                  // 函数式接口
 ├── NatsMessageHandlerPipeline.java          // 管道构建器
 ├── decorator/
@@ -310,7 +310,7 @@ public class NatsSubscriberFactory {
 三个门面按协议域完全隔离，每个门面内部 API 语义一致，用户选类即选协议。
 
 ```
-com.richie.component.nats
+cn.richie696.component.nats
 ├── bus/
 │   └── NatsBus.java             // Core NATS 门面：发布 + 订阅 + RPC 请求
 ├── stream/
@@ -430,7 +430,7 @@ public class NatsEndpoint {
 ### 4.7 L6 — 统一门面编排层
 
 ```
-com.richie.component.nats
+cn.richie696.component.nats
 └── NatsComponent.java           // 组件统一门面 + SmartLifecycle
 ```
 
@@ -453,7 +453,7 @@ public class NatsComponent implements SmartLifecycle {
 ### 4.8 L7 — 配置编配层
 
 ```
-com.richie.component.nats.config
+cn.richie696.component.nats.config
 ├── NatsProperties.java              // 全量配置属性（映射 jnats Options.Builder 全量能力）
 └── NatsAutoConfiguration.java       // 自动配置（最终编排）
 ```

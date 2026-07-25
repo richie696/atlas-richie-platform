@@ -285,7 +285,7 @@ platform:
             user-events:
               stream-key: "user-events"
               group: "user-processors"
-              target-type: "domain.com.richie.component.cache.UserInfo"
+              target-type: "domain.cn.richie696.component.cache.UserInfo"
               auto-ack: true
               concurrency: 2
               error-strategy: retry
@@ -539,7 +539,7 @@ executor.setQueueCapacity(1000);
 | **健康检查与端点** | Actuator 端点（`/actuator/redisstream` 等） | 无对应端点 |
 | **可观测性标签** | `stream.key`、`consumer.group`、`message.type`、处理耗时与成功标记 | 无统一标签体系 |
 
-注：以上能力对应 `AbstractStreamConsumer`、`RedisStreamReactor`、`RedisStreamEventBus`、`EventContext` 等类在包 `com.richie.component.cache.redis.stream` 中的实现。
+注：以上能力对应 `AbstractStreamConsumer`、`RedisStreamReactor`、`RedisStreamEventBus`、`EventContext` 等类在包 `cn.richie696.component.cache.redis.stream` 中的实现。
 
 ## 新架构特性详解
 
@@ -653,14 +653,14 @@ platform:
             user-events:
               stream-key: "user-events"
               group: "user-processors"
-              target-type: "domain.com.richie.component.cache.UserInfo"
+              target-type: "domain.cn.richie696.component.cache.UserInfo"
               auto-ack: true
               concurrency: 2
               error-strategy: retry
             order-events:
               stream-key: "order-events"
               group: "order-processors"
-              target-type: "domain.com.richie.component.cache.OrderInfo"
+              target-type: "domain.cn.richie696.component.cache.OrderInfo"
               auto-ack: false
               concurrency: 4
               error-strategy: no_ack
@@ -787,7 +787,7 @@ platform:
 **第一步：引入依赖**
 ```xml
 <dependency>
-    <groupId>com.richie</groupId>
+    <groupId>cn.richie696</groupId>
     <artifactId>atlas-richie-component-cache</artifactId>
     <version>latest</version>
 </dependency>

@@ -1,2 +1,2 @@
-com.richie.component.ocr.config.OcrHttpClientConfiguration
-com.richie.component.ocr.config.OcrAutoConfiguration
+cn.richie696.component.ocr.config.OcrHttpClientConfiguration
+cn.richie696.component.ocr.config.OcrAutoConfiguration

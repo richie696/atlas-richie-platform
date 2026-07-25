@@ -68,12 +68,12 @@ Before the engine is created, the `ConfigValidation` utility class validates req
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-ftp</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
@@ -236,7 +236,7 @@ platform:
 | `connectTimeout` | 15 seconds | Connection timeout |
 | `dataTimeout` | 30 seconds | Data transfer timeout |
 
-> See `com.richie.component.storage.bean.FtpConfig` for the detailed field definitions.
+> See `cn.richie696.component.storage.bean.FtpConfig` for the detailed field definitions.
 
 ### basePath Configuration
 

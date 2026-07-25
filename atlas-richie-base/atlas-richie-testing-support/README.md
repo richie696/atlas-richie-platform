@@ -65,7 +65,7 @@ com/richie/component/{模块}/
 
 ```xml
 <dependency>
-    <groupId>com.richie.base</groupId>
+    <groupId>cn.richie696.base</groupId>
     <artifactId>atlas-richie-testing-support</artifactId>
     <scope>test</scope>
 </dependency>
@@ -274,7 +274,7 @@ public final class RedisIntegrationTestInitializer
 @Inherited
 @SpringBootTest(classes = CacheIntegrationTestConfiguration.class)
 @ContextConfiguration(initializers = RedisIntegrationTestInitializer.class)
-@EnabledIf("com.richie.component.cache.support.RedisIntegrationTestSupport#isEnabled")
+@EnabledIf("support.cn.richie696.component.cache.RedisIntegrationTestSupport#isEnabled")
 public @interface RedisIntegrationTest {}
 ```
 
@@ -424,18 +424,18 @@ coverage-reports/
 
 | 类                                    | 包                              | 职责                                            |
 |--------------------------------------|--------------------------------|-----------------------------------------------|
-| `TestEnv`                            | `com.richie.testing.env`       | 环境变量 / 系统属性读取                                 |
-| `IntegrationTestPolicy`              | `com.richie.testing.env`       | `IT_REQUIRE_DOCKER` / `IT_USE_EXTERNAL` 策略    |
-| `TestcontainersEnvironment`          | `com.richie.testing.docker`    | Docker Desktop / socket 自动配置                  |
-| `ContainerMode`                      | `com.richie.testing.container` | `EXTERNAL` / `TESTCONTAINERS` / `UNAVAILABLE` |
-| `RedisContainerSupport`              | `com.richie.testing.redis`     | Redis 容器解析与 Spring Redis 连接属性                 |
-| `GenericRedisIntegrationTestSupport` | `com.richie.testing.redis`     | 可配置前缀 + 属性贡献的 Redis 支撑                        |
-| `AbstractRedisIntegrationTestBase`   | `com.richie.testing.redis`     | Redis 集测基类（flushDb / SCAN 清理）                 |
-| `RedisIntegrationTestAccess`         | `com.richie.testing.redis`     | 集测支撑访问接口                                      |
-| `PropertyContributor`                | `com.richie.testing.spring`    | 函数式属性贡献接口                                     |
-| `SpringPropertyInitializer`          | `com.richie.testing.spring`    | `ApplicationContextInitializer` 属性注入          |
+| `TestEnv`                            | `cn.richie696.testing.env`       | 环境变量 / 系统属性读取                                 |
+| `IntegrationTestPolicy`              | `cn.richie696.testing.env`       | `IT_REQUIRE_DOCKER` / `IT_USE_EXTERNAL` 策略    |
+| `TestcontainersEnvironment`          | `cn.richie696.testing.docker`    | Docker Desktop / socket 自动配置                  |
+| `ContainerMode`                      | `cn.richie696.testing.container` | `EXTERNAL` / `TESTCONTAINERS` / `UNAVAILABLE` |
+| `RedisContainerSupport`              | `cn.richie696.testing.redis`     | Redis 容器解析与 Spring Redis 连接属性                 |
+| `GenericRedisIntegrationTestSupport` | `cn.richie696.testing.redis`     | 可配置前缀 + 属性贡献的 Redis 支撑                        |
+| `AbstractRedisIntegrationTestBase`   | `cn.richie696.testing.redis`     | Redis 集测基类（flushDb / SCAN 清理）                 |
+| `RedisIntegrationTestAccess`         | `cn.richie696.testing.redis`     | 集测支撑访问接口                                      |
+| `PropertyContributor`                | `cn.richie696.testing.spring`    | 函数式属性贡献接口                                     |
+| `SpringPropertyInitializer`          | `cn.richie696.testing.spring`    | `ApplicationContextInitializer` 属性注入          |
 
-扩展其他中间件（PostgreSQL、Kafka 等）时，建议在 `com.richie.testing.{middleware}` 下新增 `*ContainerSupport`，复用 `TestcontainersEnvironment` 与 `IntegrationTestPolicy`。
+扩展其他中间件（PostgreSQL、Kafka 等）时，建议在 `cn.richie696.testing.{middleware}` 下新增 `*ContainerSupport`，复用 `TestcontainersEnvironment` 与 `IntegrationTestPolicy`。
 
 ---
 
@@ -449,7 +449,7 @@ coverage-reports/
 
 - test 依赖：`atlas-richie-testing-support`、`spring-boot-starter-test`
 - `pluginManagement`：surefire（排除 IT）、failsafe、jacoco 执行链
-- 默认 JaCoCo 门禁：**行覆盖率 ≥ 85%**（`com/richie/component/**`，排除 `com.richie.component.**.*AutoConfiguration` / `config` / `enums` 包）
+- 默认 JaCoCo 门禁：**行覆盖率 ≥ 85%**（`com/richie/component/**`，排除 `cn.richie696.component.**.*AutoConfiguration` / `config` / `enums` 包）
 - 覆盖率 HTML：`coverage-reports/{artifactId}/`
 
 高成熟度模块（如 cache）在自身 `pom.xml` **覆盖**更细 `includes` / `excludes` 白名单，阈值与父 POM 一致为 85%。

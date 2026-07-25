@@ -31,7 +31,7 @@ http 组件的 Apache HttpClient 5 Provider。基于 `org.apache.httpcomponents.
 
 | 项 | 值 |
 |---|---|
-| **坐标** | `com.richie.component:atlas-richie-component-http-httpclient5` |
+| **坐标** | `cn.richie696.component:atlas-richie-component-http-httpclient5` |
 | **激活配置** | `platform.component.http.provider=<provider>` |
 
 ### 本模块提供 vs 不提供
@@ -61,11 +61,11 @@ atlas-richie-component-http-httpclient5
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-core</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-httpclient5</artifactId>
 </dependency>
 ```
@@ -80,7 +80,7 @@ platform:
 通过门面调用：
 
 ```java
-import com.richie.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpClient;
 
 @Service
 @RequiredArgsConstructor

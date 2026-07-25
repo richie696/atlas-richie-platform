@@ -185,14 +185,14 @@
 - 示例代码：
 
   ```java
-  package com.richie.component.cache.subscriber;
+  package cn.richie696.component.cache.subscriber;
   
-  import domain.com.richie.component.cache.OrderInfo;
-  import stream.redis.com.richie.component.cache.AbstractStreamConsumer;
-  import stream.redis.com.richie.component.cache.EventContext;
-  import stream.redis.com.richie.component.cache.RedisStreamConsumer;
-  import utils.redis.com.richie.component.cache.DeadLetterQueueUtil;
-  import service.com.richie.component.cache.OrderService;
+  import domain.cn.richie696.component.cache.OrderInfo;
+  import stream.redis.cn.richie696.component.cache.AbstractStreamConsumer;
+  import stream.redis.cn.richie696.component.cache.EventContext;
+  import stream.redis.cn.richie696.component.cache.RedisStreamConsumer;
+  import utils.redis.cn.richie696.component.cache.DeadLetterQueueUtil;
+  import service.cn.richie696.component.cache.OrderService;
   import lombok.RequiredArgsConstructor;
   import lombok.extern.slf4j.Slf4j;
   import org.springframework.stereotype.Component;

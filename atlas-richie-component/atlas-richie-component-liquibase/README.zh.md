@@ -38,7 +38,7 @@
 
 | 项 | 值 |
 |---|---|
-| **坐标** | `com.richie.component:atlas-richie-component-liquibase` |
+| **坐标** | `cn.richie696.component:atlas-richie-component-liquibase` |
 | **类别** | 数据库——schema 迁移 |
 | **强依赖** | `liquibase-core`、Spring Boot |
 | **兼容** | MySQL、PostgreSQL、Oracle、达梦、人大金仓、MSSQL、SQLite（dev） |
@@ -96,7 +96,7 @@ atlas-richie-component-liquibase
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-liquibase</artifactId>
 </dependency>
 ```

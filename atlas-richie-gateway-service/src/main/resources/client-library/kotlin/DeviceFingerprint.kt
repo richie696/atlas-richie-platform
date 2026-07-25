@@ -7,7 +7,7 @@
  * @since 1.0.0
  */
 
-package com.richie.httpclient
+package cn.richie696.httpclient
 
 import android.content.Context
 import android.content.SharedPreferences

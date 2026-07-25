@@ -25,7 +25,7 @@
 **已否决的旧原则 A/B/D**(v0.1 草案): 原 A(统一协议+自实现兜底)被 F/G/H/I 吸收重述;原 B(模块收口单包)被 M(子模块双重划分)取代;原 D(凭证共享层)被 H(STS)取代。
 
 **原则 J 落地的硬约束清单 (实施期不可豁免)**:
-1. **业务代码不 import 任何 vendor 包**(`com.richie.component.ai.provider.zhipu.*` / `doubao.*` / `hunyuan.*` 等只在 ai 组件内部可见;`service/` 与 `api/` 包无 vendor 子包引用)
+1. **业务代码不 import 任何 vendor 包**(`cn.richie696.component.ai.provider.zhipu.*` / `doubao.*` / `hunyuan.*` 等只在 ai 组件内部可见;`service/` 与 `api/` 包无 vendor 子包引用)
 2. **`VoiceChatModel` 接口签名统一**:`open(VoiceChatConfig) → VoiceConversation`(`AutoCloseable`,`Flux<VoiceChatEvent>`,`sendAudio(AudioFrame)`,`interrupt()`)— 不允许 vendor 子接口带 vendor 专有方法
 3. **`StsSigner` 接口签名统一**:`sign(VendorStsContext) → StsTicket`(`expirationMs`,`credentials: Map<String,String>`,`endpoint`,`vendor`,`model`);业务侧永远拿 `StsTicket` 不直接接触 vendor 原始凭证
 4. **`StsTicket` 字段对齐 vendor 5 种认证域**(Bearer / TC3 / AppCode / AK-SK-HMAC / X-Api-Key)→ 内部按 `credentials` Map 透传,但**业务取用通过 `StsTicket.asBearer()` / `asTc3Headers(...)` / `asHeaderMap()` 等统一方法** — 不允许业务代码自行判断 `if (ticket.vendor().equals("hunyuan-tts"))`
@@ -152,7 +152,7 @@ platform:
 ### 3.0 抽象包 (新增) — 顶级结构
 
 ```
-com.richie.component.ai.api/
+cn.richie696.component.ai.api/
 ├── AiModelResponse.java               // 共享 success/errorCode/errorMessage/time/duration/metadata/rawResponse
 ├── MediaReference.java                // 图片/音频/视频引用的统一类型 (URL / base64 / bytes)
 ├── AudioFrame.java                    // TTS/VoiceChat 共用音频帧 (原则 Q6 ✅)
@@ -175,7 +175,7 @@ com.richie.component.ai.api/
 ### 3.1 RerankModel 自实现抽象
 
 ```java
-package com.richie.component.ai.api.rerank;
+package cn.richie696.component.ai.api.rerank;
 
 public interface RerankModel {
     RerankResponse rerank(RerankRequest request);
@@ -352,7 +352,7 @@ public record RerankModelOptions(Integer topN, Boolean returnDocuments) {}
 | vector-rerank-core | 6 | 1 |
 | **R-N 增量** | **~32** | **~8** |
 
-JaCoCo `includes` 新增 `com.richie.component.ai.api.*` / `provider.*` 监控类。
+JaCoCo `includes` 新增 `cn.richie696.component.ai.api.*` / `provider.*` 监控类。
 
 ---
 
@@ -365,7 +365,7 @@ JaCoCo `includes` 新增 `com.richie.component.ai.api.*` / `provider.*` 监控�
 | **RN.1+RN.2** | `RerankModel` 自实现 + `BailianRerankModel`(DashScope gte-rerank)+ `aiRerankModel` @Bean + `vector-rerank-core` 子模块 + `VectorService.rerank()` 接入 + `aiImageModel` @Bean + `BailianImageAdapter`(适配 Spring AI `ImageModel`) | 全模块 `mvn compile` 通过(exit 0);Chat/Embedding 路径零改动;4 个 VectorService 后端实现零改动 | ✅ **已落地** |
 
 **实施产物(已落盘,未 commit)**:
-- `ai` 模块新增 `com.richie.component.ai.api.{RerankModel, RerankRequest, RerankResult}` + `com.richie.component.ai.bailian.{BailianRerankModel, BailianImageAdapter}`;`AiModelProperties` 加 `rerank[]` / `image[]` 独立配置节点;`AiModelAutoConfiguration` 加 `aiRerankModel` / `aiImageModel` 两个 `@Bean`(均 `@ConditionalOnMissingBean` + `@ConditionalOnProperty(platform.component.ai.rerank.enabled / image.enabled, matchIfMissing=false)`,opt-in);引入 `atlas-richie-component-http-core` 编译依赖(运行时 provider 仍由消费方自选)。
+- `ai` 模块新增 `cn.richie696.component.ai.api.{RerankModel, RerankRequest, RerankResult}` + `cn.richie696.component.ai.bailian.{BailianRerankModel, BailianImageAdapter}`;`AiModelProperties` 加 `rerank[]` / `image[]` 独立配置节点;`AiModelAutoConfiguration` 加 `aiRerankModel` / `aiImageModel` 两个 `@Bean`(均 `@ConditionalOnMissingBean` + `@ConditionalOnProperty(platform.component.ai.rerank.enabled / image.enabled, matchIfMissing=false)`,opt-in);引入 `atlas-richie-component-http-core` 编译依赖(运行时 provider 仍由消费方自选)。
 - `vector` 包新建子模块 `atlas-richie-component-vector-rerank-core`(含 `RerankServiceImpl` 编排),并接入父 POM `<modules>`;`VectorService` 加 2 个非破坏性 `default rerank/rerankAsync` 方法(委托 `RerankModel`,不引入对 rerank-core 的依赖,4 后端实现零改动)。
 - **契约对齐**: `RerankModel.rerank(RerankRequest)` / `rerankAsync(...)` 返回 `List<RerankResult>`;Spring AI `ImageModel` 接口仅抽象 `ImageResponse call(ImagePrompt)` 一个方法(已按其真实签名实现,无非标准 `callAsync` 覆写)。
 
@@ -379,7 +379,7 @@ JaCoCo `includes` 新增 `com.richie.component.ai.api.*` / `provider.*` 监控�
 |------|------|------|
 | Q1 | 配置根前缀 | **`platform.component.ai`**(实测,否决 `atlas.ai.*`) |
 | Q4 | 方法动词风格 | 自实现抽象用端点动词(`rerank` / `generate` / `open`);Spring AI 复用抽象用其原生 `call` |
-| Q6 | AudioFrame 共用 | ✅ 引入 `com.richie.component.ai.api.AudioFrame` |
+| Q6 | AudioFrame 共用 | ✅ 引入 `cn.richie696.component.ai.api.AudioFrame` |
 | Q7 | spring-ai-alibaba 引入 | **不引入全量**;仅引入必要 `dashscope-sdk-java` 子模块 + Reactor Netty(实测 spring-ai-alibaba DashScope starter 不存在,aliyun-sdk-java 2.x 大量模块被删) |
 | Q8 | 新包/新模块 | 抽象层 + DashScope impl 放主包 `api/`+`provider/`;`vector-rerank-core` 为 vector 包新增子模块;其余厂商按 §4 子模块划分 |
 
@@ -500,7 +500,7 @@ JaCoCo `includes` 新增 `com.richie.component.ai.api.*` / `provider.*` 监控�
 - v0.2 +patch13 (2026-07-20): **Doubao Rerank 路径澄清评估稿 §13** — 任务 tom 派发,经 webfetch 确认**方舟 (ark.cn-volc.com) 顶层菜单无 Rerank 分类**(只有 Chat/多模态理解/向量化/TTS/STT/视频/图像等 LLM 类端点,与官方客服 m0236 一致),**唯一**暴露 Rerank endpoint 的是 VikingDB `/api/knowledge/service/rerank` (Host `api-knowledgebase.mlp.cn-beijing.volces.com`, AK/SK HMAC, 三模型 `doubao-seed-rerank` / `base-multilingual-rerank` / `m3-v2-rerank`)。§13 拆解"独立端点路径 vs VikingDB KNN+Score 路径"两层语义并比对 RerankModel 抽象同构性。**结论 — 暂缓实装**:(1) 路径 A 文本子集 (`base-multilingual-rerank` / `m3-v2-rerank`) 同构、可补,留待未来 sprint,留 issue `enhancement: Doubao Rerank (VikingDB) — 路径 A 文本子集` 标签 `r-n`/`low-priority` 由 tom 排期;(2) 路径 A 多模态子集 (`doubao-seed-rerank` + image/instruction) **不做**,需扩展 `RerankRequest` 加 `MediaReference` 字段 = 变相建 `MultimodalRerankModel` 抽象,无需求方;(3) 路径 B (VikingDB KNN+Score) **不做**,等价于新建 `atlas-richie-component-vector-volcano` 子模块,与"补 Doubao Rerank"是独立两件事。**未动任何 Java 源文件**,未碰 Zhipu/Pangu/Bailian/VectorService impl,纯文档评估 + 设计稿落盘
 - v0.2 +patch14 (2026-07-21): **WS + STS 统一接口 SPI 设计稿 §14** — 用户 m0042 锁定原则 J"WS + STS 统一接口原则",新增 §14 设计稿:`StsSigner` SPI + `StsTicket` 统一票面(5 种认证域收敛为 `asBearer/asTc3Headers/asAppCode/asSignedHeaders/asHeaderMap` 5 个方法)+ `VoiceChatModel` 业务 SPI(双工流式统一签名)+ `VoiceStsService` + `VoiceChatService` 业务门面;包结构严格隔离 (`api/voicechat/` + `service/` 不依赖 `provider/`);配置切换 vendor = YAML 一行;新增 5 个 StsSigner impl + 15 个 @Bean 自动装配 + ArchUnit 静态守护业务代码不 import vendor 包。§0 原则新增 J,§10 O5 标记已闭(原则 J 落地)。实施分 RN.4-alpha/beta/gamma/delta 四阶段,**总工作量 4.5-6 day**(P0+P1: ~2.5 day;P2 全 vendor: +1.5 day)。**未动任何 Java 源文件**,等用户评审 §14 后开 sprint
 - v0.2 +patch15 (2026-07-22): **RN.3 Phase C 落地 (VECTOR_SERVICE_V2_DESIGN §11.3) — 多模态向量模型 3 vendor 接入 + 模态路由 + Testcontainers IT** — VectorService V2 Phase C 子任务全部交付,新增跨模态向量检索能力(TEXT ↔ IMAGE 同空间),ai 模块扩展 + vector-core 模态路由 + vector-qdrant Testcontainers IT 三处落地:
-  - **C1** — ai 模块扩 `ImageEmbeddingModel` 接口:新增 `com.richie.component.ai.api.image.ImageEmbeddingModel`,**extends Spring AI `EmbeddingModel`**,增加 `embedImage(String)` **default method**(默认 `throw new UnsupportedOperationException`);与 Spring AI 标准 EmbeddingModel 100% 向后兼容;现已有 `BailianImageEmbeddingAdapter`(v0.2 patch10 阶段已存在,本轮做小修) + `OllamaImageEmbeddingAdapter`(新增) + `TeiImageEmbeddingAdapter`(新增)三个 impl
+  - **C1** — ai 模块扩 `ImageEmbeddingModel` 接口:新增 `cn.richie696.component.ai.api.image.ImageEmbeddingModel`,**extends Spring AI `EmbeddingModel`**,增加 `embedImage(String)` **default method**(默认 `throw new UnsupportedOperationException`);与 Spring AI 标准 EmbeddingModel 100% 向后兼容;现已有 `BailianImageEmbeddingAdapter`(v0.2 patch10 阶段已存在,本轮做小修) + `OllamaImageEmbeddingAdapter`(新增) + `TeiImageEmbeddingAdapter`(新增)三个 impl
   - **C2** — Ollama CLIP 适配器(`provider/ollama/OllamaImageEmbeddingAdapter.java`):走 Ollama 原生 `POST /api/embed` 端点,默认模型 `nomic-embed-text`(768-dim);**注意 — Ollama 原生协议无 CLIP 图像 embedding**,本类仅承担"挂名 image-embedding 入口的文本向量化";真实跨模态语义仍需 TEI/Bailian。`ImageEmbeddingProvider` 枚举新增 `OLLAMA` 值
   - **C3** — HuggingFace TEI CLIP 适配器(`provider/tei/TeiImageEmbeddingAdapter.java`):走 TEI **OpenAI 兼容协议** `POST /v1/embeddings`,跨部署形态(CPU/GPU/candle/tgi)稳定性最佳;支持可选 Bearer 反代鉴权(`apiKey` 非空时携带);维度由运行时部署模型决定,**编译期未知 → `dimensions()` 返回 `0`**(避免 Spring AI 默认实现的远程 probe 计费调用);**当前仅文本分支**,图像分支(`/embed_image`)协议层与 OpenAI 不兼容,留待未来 sprint。`ImageEmbeddingProvider` 枚举新增 `TEI` 值
   - **C4** — vector-core 模态路由:`ModalityAwareEmbeddingService` 已实装(`vector-core/service/ModalityAwareEmbeddingService.java`),按 `Modality.TEXT/IMAGE` 二选一分派到 `textModel` / `imageModel`(后者通过 `@Qualifier("imageEmbeddingModel")` **可选注入**,未配置时 IMAGE 模态抛 `UnsupportedModalityException` — 与 Phase A 的 `IMAGE 暂未启用` 硬 throw 等价,但文案改为配置指引);`supportsModality` / `dimensionFor` 两个 SPI 供 vector provider 写入前查询;**模态路由单测** `ModalityAwareEmbeddingServiceTest.java` 已实装并通过
@@ -536,10 +536,10 @@ JaCoCo `includes` 新增 `com.richie.component.ai.api.*` / `provider.*` 监控�
 
 | 类 | 包 | 用途 |
 |---|---|---|
-| `Tc3Signer` | `com.richie.component.ai.support.sign` | 腾讯云 TC3-HMAC-SHA256 签名(Hunyuan product 1073/1093) |
+| `Tc3Signer` | `cn.richie696.component.ai.support.sign` | 腾讯云 TC3-HMAC-SHA256 签名(Hunyuan product 1073/1093) |
 | `Aws4Signer` | 同上 | 华为云 Request-SigV4 风格(部分 SIS 端点) |
 | `AppCodeSigner` | 同上 | 华为云 Apig-AppCode 头签发(简单 X-Apig-AppCode 模式) |
-| `VoiceModelConfig` | `com.richie.component.ai.config` | TTS/STT 统一配置(name/apiKey/secretId/secretKey/appCode/baseUrl/model/region/endpoint/resourceId/appId) |
+| `VoiceModelConfig` | `cn.richie696.component.ai.config` | TTS/STT 统一配置(name/apiKey/secretId/secretKey/appCode/baseUrl/model/region/endpoint/resourceId/appId) |
 
 ### 11.3 落点
 
@@ -794,7 +794,7 @@ platform:
 
 ```java
 // provider.bailian.* 之外,新建 VikingDbRerankModel:
-package com.richie.component.ai.provider.volcano.rerank;
+package cn.richie696.component.ai.provider.volcano.rerank;
 
 public class VikingDbRerankModel implements RerankModel {
     private final String ak; private final String sk; private final String host;
@@ -829,7 +829,7 @@ case "doubao-vikingdb" -> new VikingDbRerankModel(cfg.getVendor(), httpClient);
 
 **新建类清单**:
 - `VikingDbRerankModel`(实现 `RerankModel`)
-- `VolcanoHmacSigner` 复用 §11.2 已有的 sign 包位置(`com.richie.component.ai.support.sign`),仿 `Tc3Signer` 模式
+- `VolcanoHmacSigner` 复用 §11.2 已有的 sign 包位置(`cn.richie696.component.ai.support.sign`),仿 `Tc3Signer` 模式
 - 不改 `RerankRequest` / `RerankResult` / `AiMultimodalServiceImpl` — patch12 模式天然兼容
 
 **测试**: 3 单测 + 1 IT(沿用 Caveat 14 — IT 真机校验端点);`mvn test` 应过;工作量 **~1 个 sprint day**,比 Doubao TTS/STT(patch11 1 个 sprint)轻一档,优先级可排在 Doubao TTS/STT 之后。
@@ -839,7 +839,7 @@ case "doubao-vikingdb" -> new VikingDbRerankModel(cfg.getVendor(), httpClient);
 - **触发条件(满足任一)**:(a) 业务方提需求:图文混召场景;(b) 多模态 RAG 实验 / PoC 需要;(c) 火山 Rerank 模型榜单更新出现新的非文本模态。
 - **触发的架构动作**:
   1. 扩 `RerankRequest`:新增 `String queryInstruction` + `List<MediaReference> queryMedias` + `List<DocumentRef> documents` (DocumentRef 是新 record: `{ text?: String, image?: MediaReference, video?: MediaReference }`)
-  2. 抽 `DocumentRef.java` 进 `com.richie.component.ai.api.rerank`(与 RerankRequest 同包)
+  2. 抽 `DocumentRef.java` 进 `cn.richie696.component.ai.api.rerank`(与 RerankRequest 同包)
   3. `MultimodalRerankModel` 是否独立接口?**保留 patch12 决定 — 不建独立 interface**,与 §12.4 "reduced-wrong" 一致;只扩 `RerankRequest` 字段,业务侧 `getRerankModel(name)` 拿到的是同一个接口、同一签名,字段自己可选填
   4. 火山侧 impl(`VikingDbRerankModel`)把 `DocumentRef.image` 序列化成 VikingDB `datas[i].image` 字段;query 为 object 时序列化 `{ query_text, query_images }`
   5. 评估"是否所有现有 vendor(BailianRerankModel / PanguRerankModel 等)也要承担新字段?" — **不必**,字段可选,Bailian 端无 image 时透传到 vendorOptions 即可
@@ -871,7 +871,7 @@ case "doubao-vikingdb" -> new VikingDbRerankModel(cfg.getVendor(), httpClient);
 ### 14.2 包结构 (新增 — 严格隔离 vendor)
 
 ```
-com.richie.component.ai.api/
+cn.richie696.component.ai.api/
 ├── voicechat/                          # 新增子包 (与 rerank/ 同级)
 │   ├── VoiceChatModel.java             # SPI 接口 (LOCKED)
 │   ├── VoiceChatConfig.java            # 配置 model 字段 (统一)
@@ -879,11 +879,11 @@ com.richie.component.ai.api/
 │   ├── VoiceChatEvent.java             # 事件类型 (audio/transcript/tool-call/interrupt)
 │   └── StsTicket.java                  # 统一票面 (LOCKED)
 
-com.richie.component.ai.service/        # 业务侧唯一入口包
+cn.richie696.component.ai.service/        # 业务侧唯一入口包
 ├── VoiceStsService.java                # @Service 业务门面
 └── VoiceChatService.java               # @Service 业务门面
 
-com.richie.component.ai.support.sign/   # 已存在,扩展
+cn.richie696.component.ai.support.sign/   # 已存在,扩展
 ├── StsSigner.java                      # SPI 接口 (LOCKED)
 ├── VendorStsContext.java               # 输入上下文
 └── (5 个 impl: Bearer / Tc3 / AppCode / AkSkHmac / XApiKey)
@@ -899,11 +899,14 @@ com.richie.component.ai.support.sign/   # 已存在,扩展
 #### 14.3.1 `StsSigner` — 凭证签发 SPI
 
 ```java
-package com.richie.component.ai.support.sign;
+package cn.richie696.component.ai.support.sign;
+
+import cn.richie696.component.ai.service.VoiceStsService;
+import cn.richie696.component.ai.support.sign.VendorStsContext;
 
 /**
  * SPI: 各 vendor STS 凭证签发器。业务侧永远不直接调本接口,通过
- * {@link com.richie.component.ai.service.VoiceStsService#issueTicket} 拿统一票面 {@link StsTicket}。
+ * {@link service.cn.richie696.component.ai.VoiceStsService#issueTicket} 拿统一票面 {@link StsTicket}。
  */
 public interface StsSigner {
     /** 标识 vendor(如 "dashscope" / "zhipu" / "doubao" / "hunyuan-tts" / "hunyuan-stt" / "pangu" / "huawei-sis") */
@@ -969,7 +972,10 @@ public final class StsTicket {
 #### 14.3.4 `VoiceChatModel` — 业务 SPI (LOCKED)
 
 ```java
-package com.richie.component.ai.api.voicechat;
+package cn.richie696.component.ai.api.voicechat;
+
+import cn.richie696.component.ai.api.voicechat.VoiceChatConfig;
+import cn.richie696.component.ai.api.voicechat.VoiceConversation;
 
 /**
  * SPI: 语音对话(双工流式)。所有 vendor impl 都实现此接口;
@@ -1253,7 +1259,7 @@ public class BffVoiceController {
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-ai</artifactId>
 </dependency>
 <dependency>
@@ -1261,7 +1267,7 @@ public class BffVoiceController {
     <artifactId>spring-boot-starter-webflux</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-core</artifactId>
 </dependency>
 <!-- 业务侧自己选择 HTTP client (okhttp / httpclient5 / jdk / restclient) -->
@@ -1327,10 +1333,10 @@ platform:
 ```java
 package com.example.bff.voice;
 
-import com.richie.component.ai.api.voicechat.VoiceChatConfig;
-import com.richie.component.ai.api.voicechat.VoiceChatEvent;
-import com.richie.component.ai.api.voicechat.VoiceConversation;
-import com.richie.component.ai.service.VoiceChatService;
+import voicechat.api.cn.richie696.component.ai.VoiceChatConfig;
+import voicechat.api.cn.richie696.component.ai.VoiceChatEvent;
+import voicechat.api.cn.richie696.component.ai.VoiceConversation;
+import service.cn.richie696.component.ai.VoiceChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Subscriber;
@@ -1349,7 +1355,7 @@ import java.util.UUID;
  * <p>
  * 设计原则 (R-N §14 原则 J):
  * <ul>
- *   <li>仅依赖 {@code com.richie.component.ai.api.voicechat.*} 抽象</li>
+ *   <li>仅依赖 {@code cn.richie696.component.ai.api.voicechat.*} 抽象</li>
  *   <li>不 import 任何 vendor 包 (Zhipu / DashScope / Doubao / Hunyuan SDK 全部不出现)</li>
  *   <li>切换 vendor = 改 application.yml 一行, 业务代码零改动</li>
  * </ul>
@@ -1360,142 +1366,142 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BffVoiceController {
 
-  private final VoiceChatService voiceChatService;
+    private final VoiceChatService voiceChatService;
 
-  /**
-   * 1. 打开一个实时语音会话, 订阅事件流, 返回 SSE 给前端。
-   *
-   * <p>前端用法:
-   * <pre>{@code
-   * const evtSource = new EventSource("/api/voice/stream/customer-service-zh?model=glm-4-voice");
-   * evtSource.addEventListener("AUDIO_CHUNK", e => audioPlayer.play(e.data));
-   * evtSource.addEventListener("TRANSCRIPT_PARTIAL", e => showText(e.data));
-   * }</pre>
-   */
-  @GetMapping(value = "/stream/{businessName}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-  public ResponseEntity<Flux<VoiceChatEvent>> open(
-          @PathVariable String businessName,
-          @RequestParam(defaultValue = "glm-4-voice") String model,
-          @RequestParam(required = false) String voice,
-          @RequestParam(defaultValue = "zh-CN") String language) {
+    /**
+     * 1. 打开一个实时语音会话, 订阅事件流, 返回 SSE 给前端。
+     *
+     * <p>前端用法:
+     * <pre>{@code
+     * const evtSource = new EventSource("/api/voice/stream/customer-service-zh?model=glm-4-voice");
+     * evtSource.addEventListener("AUDIO_CHUNK", e => audioPlayer.play(e.data));
+     * evtSource.addEventListener("TRANSCRIPT_PARTIAL", e => showText(e.data));
+     * }</pre>
+     */
+    @GetMapping(value = "/stream/{businessName}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<Flux<VoiceChatEvent>> open(
+            @PathVariable String businessName,
+            @RequestParam(defaultValue = "glm-4-voice") String model,
+            @RequestParam(required = false) String voice,
+            @RequestParam(defaultValue = "zh-CN") String language) {
 
-    VoiceChatConfig config = VoiceChatConfig.builder()
-            .model(model)
-            .voice(voice)
-            .language(language)
-            .vadMode(VoiceChatConfig.VadMode.SERVER)
-            .build();
+        VoiceChatConfig config = VoiceChatConfig.builder()
+                .model(model)
+                .voice(voice)
+                .language(language)
+                .vadMode(VoiceChatConfig.VadMode.SERVER)
+                .build();
 
-    VoiceConversation conv = voiceChatService.open(businessName, config);
+        VoiceConversation conv = voiceChatService.open(businessName, config);
 
-    Flux<VoiceChatEvent> eventStream = Flux.create(sink -> {
-      conv.events().subscribe(new Subscriber<VoiceChatEvent>() {
-        @Override
-        public void onSubscribe(Subscription s) {
-          s.request(Long.MAX_VALUE);
-        }
+        Flux<VoiceChatEvent> eventStream = Flux.create(sink -> {
+            conv.events().subscribe(new Subscriber<VoiceChatEvent>() {
+                @Override
+                public void onSubscribe(Subscription s) {
+                    s.request(Long.MAX_VALUE);
+                }
 
-        @Override
-        public void onNext(VoiceChatEvent e) {
-          sink.next(e);
-          if (e.type() == VoiceChatEvent.Type.SESSION_END
-                  || e.type() == VoiceChatEvent.Type.ERROR) {
-            sink.complete();
-          }
-        }
+                @Override
+                public void onNext(VoiceChatEvent e) {
+                    sink.next(e);
+                    if (e.type() == VoiceChatEvent.Type.SESSION_END
+                            || e.type() == VoiceChatEvent.Type.ERROR) {
+                        sink.complete();
+                    }
+                }
 
-        @Override
-        public void onError(Throwable t) {
-          log.error("VoiceChat 会话异常, businessName={}", businessName, t);
-          sink.error(t);
-        }
+                @Override
+                public void onError(Throwable t) {
+                    log.error("VoiceChat 会话异常, businessName={}", businessName, t);
+                    sink.error(t);
+                }
 
-        @Override
-        public void onComplete() {
-          sink.complete();
-        }
-      });
-    });
+                @Override
+                public void onComplete() {
+                    sink.complete();
+                }
+            });
+        });
 
-    return ResponseEntity.ok()
-            .header("X-Session-Id", businessName + "-" + UUID.randomUUID())
-            .body(eventStream);
-  }
-
-  /**
-   * 2. 客户端上行音频 (multipart) — 推送给 vendor WS。
-   *
-   * <p>前端用法:
-   * <pre>{@code
-   * const form = new FormData();
-   * form.append("audio", audioBlob, "chunk.pcm");
-   * fetch("/api/voice/send/customer-service-zh", { method: "POST", body: form });
-   * }</pre>
-   *
-   * <p>注: 这是简化示例, 生产应使用 WebSocket / WebRTC 双向通道保持会话 ID。
-   * 本 BFF 示例假设上游 gateway 已经把 session 标识绑到路径 / header 上。
-   */
-  @PostMapping(value = "/send/{businessName}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public Mono<Void> sendAudio(@PathVariable String businessName,
-                              @RequestPart("audio") FilePart audioPart) {
-    // 业务侧维护 sessionId → VoiceConversation 映射 (Redis / Caffeine)
-    // 这里仅展示 "拿到会话 → 推音频" 的最小闭环
-    VoiceConversation conv = voiceChatService.lookup(businessName);
-    if (conv == null) {
-      return Mono.error(new IllegalStateException(
-              "会话不存在, 请先调用 /api/voice/stream/" + businessName));
+        return ResponseEntity.ok()
+                .header("X-Session-Id", businessName + "-" + UUID.randomUUID())
+                .body(eventStream);
     }
-    return Mono.fromRunnable(() -> audioPart.content()
-            .map(dataBuffer -> VoiceChatEvent.AudioFrame.builder()
-                    .bytes(toBytes(dataBuffer))
-                    .sampleRate(16000)
-                    .bitsPerSample(16)
-                    .channels(1)
-                    .codec("pcm")
-                    .build())
-            .doOnNext(conv::sendAudio)
-            .subscribe());
-  }
 
-  /**
-   * 3. 主动打断服务端 TTS (用户开始说话)。
-   */
-  @PostMapping("/interrupt/{businessName}")
-  public Mono<Void> interrupt(@PathVariable String businessName) {
-    VoiceConversation conv = voiceChatService.lookup(businessName);
-    if (conv == null) {
-      return Mono.error(new IllegalStateException("会话不存在"));
+    /**
+     * 2. 客户端上行音频 (multipart) — 推送给 vendor WS。
+     *
+     * <p>前端用法:
+     * <pre>{@code
+     * const form = new FormData();
+     * form.append("audio", audioBlob, "chunk.pcm");
+     * fetch("/api/voice/send/customer-service-zh", { method: "POST", body: form });
+     * }</pre>
+     *
+     * <p>注: 这是简化示例, 生产应使用 WebSocket / WebRTC 双向通道保持会话 ID。
+     * 本 BFF 示例假设上游 gateway 已经把 session 标识绑到路径 / header 上。
+     */
+    @PostMapping(value = "/send/{businessName}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<Void> sendAudio(@PathVariable String businessName,
+                                @RequestPart("audio") FilePart audioPart) {
+        // 业务侧维护 sessionId → VoiceConversation 映射 (Redis / Caffeine)
+        // 这里仅展示 "拿到会话 → 推音频" 的最小闭环
+        VoiceConversation conv = voiceChatService.lookup(businessName);
+        if (conv == null) {
+            return Mono.error(new IllegalStateException(
+                    "会话不存在, 请先调用 /api/voice/stream/" + businessName));
+        }
+        return Mono.fromRunnable(() -> audioPart.content()
+                .map(dataBuffer -> VoiceChatEvent.AudioFrame.builder()
+                        .bytes(toBytes(dataBuffer))
+                        .sampleRate(16000)
+                        .bitsPerSample(16)
+                        .channels(1)
+                        .codec("pcm")
+                        .build())
+                .doOnNext(conv::sendAudio)
+                .subscribe());
     }
-    return Mono.fromRunnable(conv::interrupt);
-  }
 
-  /**
-   * 4. 关闭会话。
-   */
-  @DeleteMapping("/session/{businessName}")
-  public Mono<Void> close(@PathVariable String businessName) {
-    return Mono.fromRunnable(() -> {
-      VoiceConversation conv = voiceChatService.lookup(businessName);
-      if (conv != null) {
-        conv.close();
-        voiceChatService.evict(businessName);
-      }
-    });
-  }
+    /**
+     * 3. 主动打断服务端 TTS (用户开始说话)。
+     */
+    @PostMapping("/interrupt/{businessName}")
+    public Mono<Void> interrupt(@PathVariable String businessName) {
+        VoiceConversation conv = voiceChatService.lookup(businessName);
+        if (conv == null) {
+            return Mono.error(new IllegalStateException("会话不存在"));
+        }
+        return Mono.fromRunnable(conv::interrupt);
+    }
 
-  /**
-   * 5. 健康检查 — 列出当前可用的业务名 → vendor 映射。
-   */
-  @GetMapping("/business-names")
-  public Flux<String> listBusinessNames() {
-    return Flux.fromIterable(voiceChatService.businessNames());
-  }
+    /**
+     * 4. 关闭会话。
+     */
+    @DeleteMapping("/session/{businessName}")
+    public Mono<Void> close(@PathVariable String businessName) {
+        return Mono.fromRunnable(() -> {
+            VoiceConversation conv = voiceChatService.lookup(businessName);
+            if (conv != null) {
+                conv.close();
+                voiceChatService.evict(businessName);
+            }
+        });
+    }
 
-  private static byte[] toBytes(org.springframework.core.io.buffer.DataBuffer buffer) {
-    byte[] bytes = new byte[buffer.readableByteCount()];
-    buffer.read(bytes);
-    return bytes;
-  }
+    /**
+     * 5. 健康检查 — 列出当前可用的业务名 → vendor 映射。
+     */
+    @GetMapping("/business-names")
+    public Flux<String> listBusinessNames() {
+        return Flux.fromIterable(voiceChatService.businessNames());
+    }
+
+    private static byte[] toBytes(org.springframework.core.io.buffer.DataBuffer buffer) {
+        byte[] bytes = new byte[buffer.readableByteCount()];
+        buffer.read(bytes);
+        return bytes;
+    }
 }
 ```
 
@@ -1632,7 +1638,7 @@ platform:
 #### 15.3.1 SPI 容器
 
 ```
-com.richie.component.ai.support.keypool/
+cn.richie696.component.ai.support.keypool/
 ├── ApiKey.java                       不可变值对象 (value + createIndex + cooldownUntilEpochMs)
 ├── ApiKeyPool.java                   SPI 接口 (borrow/returnObject/invalidate + 监控)
 ├── ApiKeyPoolImpl.java               GenericObjectPool<ApiKey> 实现
@@ -1798,7 +1804,7 @@ Phase A 在 `AbstractVectorService` 中**预留**了 IMAGE 模态但未启用,Ph
 ### G.2 `ImageEmbeddingModel` 接口契约
 
 ```java
-package com.richie.component.ai.api.image;
+package cn.richie696.component.ai.api.image;
 
 import org.springframework.ai.embedding.EmbeddingModel;
 

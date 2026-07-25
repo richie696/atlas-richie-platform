@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-mfa</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -20,13 +20,13 @@
     <dependencies>
         <!-- 缓存组件（只读） -->
         <dependency>
-            <groupId>com.richie.component</groupId>
+            <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-cache</artifactId>
         </dependency>
 
         <!-- MFA核心模块（公共实体、枚举、工具类） -->
         <dependency>
-            <groupId>com.richie.component</groupId>
+            <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-mfa-core</artifactId>
         </dependency>
 

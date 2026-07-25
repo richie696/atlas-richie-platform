@@ -317,7 +317,7 @@ flowchart TD
 #### 3.3.3 标量参数：显式脱敏（主路径，最靠谱）
 
 ```java
-import static com.richie.component.desensitize.core.util.DesensitizeUtils.*;
+import static util.cn.richie696.component.desensitize.core.DesensitizeUtils.*;
 
 // 中文模板
 log.info("用户{}的手机号是{}", name, mask(phone, MaskType.PHONE));
@@ -657,13 +657,13 @@ log.info("row={}", DesensitizeUtils.toSafeString(dataMap));
 ```xml
 <!-- API 返回值脱敏 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-desensitize-jackson</artifactId>
 </dependency>
 
 <!-- 日志脱敏 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-desensitize-logging</artifactId>
 </dependency>
 ```
@@ -675,7 +675,7 @@ Logback 接入示例（已实现）：
 ```xml
 <configuration>
     <conversionRule conversionWord="desensitizeMsg"
-        converterClass="com.richie.component.desensitize.logging.logback.DesensitizeConverter"/>
+        converterClass="logback.cn.richie696.component.desensitize.logging.DesensitizeConverter"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -703,7 +703,7 @@ JSON message 场景可使用：
 
 ```xml
 <conversionRule conversionWord="desensitizeJsonMsg"
-    converterClass="com.richie.component.desensitize.logging.logback.DesensitizeJsonMessageConverter"/>
+    converterClass="logback.cn.richie696.component.desensitize.logging.DesensitizeJsonMessageConverter"/>
 <pattern>%d %-5level %logger - %desensitizeJsonMsg%n</pattern>
 ```
 

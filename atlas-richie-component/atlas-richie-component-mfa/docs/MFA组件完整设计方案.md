@@ -2679,7 +2679,7 @@ CREATE TABLE mfa_trusted_device (
 **事件对象结构**：
 
 ```java
-package com.richie.component.mfa.core.event;
+package cn.richie696.component.mfa.core.event;
 
 public class MfaAuditEvent extends ApplicationEvent {
     private String tenantId;                    // 租户ID（可选）
@@ -2700,7 +2700,7 @@ public class MfaAuditEvent extends ApplicationEvent {
 **操作类型枚举**（`MfaOperationTypeEnum`）：
 
 ```java
-package com.richie.component.mfa.core.constant;
+package cn.richie696.component.mfa.core.constant;
 
 public enum MfaOperationTypeEnum {
     BIND("BIND", "绑定设备"),
@@ -3215,7 +3215,7 @@ mfa:
 
 MFA 组件定义 `MfaAuditEvent` 事件类，继承 Spring `ApplicationEvent`：
 
-**位置**：`event.com.richie.component.mfa.core.MfaAuditEvent`
+**位置**：`event.cn.richie696.component.mfa.core.MfaAuditEvent`
 
 **完整字段说明**：
 
@@ -3291,7 +3291,7 @@ MFA 组件在以下关键操作点自动发布审计事件：
 
 MFA 组件内部使用 `MfaAuditEventPublisher` 工具类封装事件发布逻辑：
 
-**工具类位置**：`util.com.richie.component.mfa.management.MfaAuditEventPublisher`
+**工具类位置**：`util.cn.richie696.component.mfa.management.MfaAuditEventPublisher`
 
 **核心功能**：
 - 自动提取 IP 地址和 User-Agent（从 HTTP 请求上下文）
@@ -3362,7 +3362,7 @@ public class MfaBindManager {
 ```java
 package com.example.business.mfa.listener;
 
-import event.com.richie.component.mfa.core.MfaAuditEvent;
+import event.cn.richie696.component.mfa.core.MfaAuditEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
@@ -3654,7 +3654,7 @@ public class MfaAuditLogListener {
 #### 11.3.1 事件对象结构
 
 ```java
-// 事件类：event.com.richie.component.mfa.core.MfaAuditEvent
+// 事件类：event.cn.richie696.component.mfa.core.MfaAuditEvent
 public class MfaAuditEvent extends ApplicationEvent {
     private String tenantId;                    // 租户ID
     private String userId;                      // 用户ID
@@ -3790,7 +3790,7 @@ public interface MfaOperationLogMapper extends BaseMapper<MfaOperationLog> {
 ```java
 package com.example.business.mfa.listener;
 
-import event.com.richie.component.mfa.core.MfaAuditEvent;
+import event.cn.richie696.component.mfa.core.MfaAuditEvent;
 import com.example.business.mfa.entity.MfaOperationLog;
 import com.example.business.mfa.mapper.MfaOperationLogMapper;
 import lombok.RequiredArgsConstructor;
@@ -4079,7 +4079,7 @@ MFA组件拆分为两个独立的Maven模块：
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-mfa-validation</artifactId>
     <version>${revision}</version>
 </dependency>
@@ -4116,7 +4116,7 @@ MFA组件拆分为两个独立的Maven模块：
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-mfa-management</artifactId>
     <version>${revision}</version>
 </dependency>
@@ -4328,7 +4328,7 @@ platform:
 <dependencies>
     <!-- MFA验证模块 -->
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-mfa-validation</artifactId>
         <version>${revision}</version>
     </dependency>
@@ -4350,14 +4350,14 @@ mfa:
 <dependencies>
     <!-- MFA管理模块 -->
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-mfa-management</artifactId>
         <version>${revision}</version>
     </dependency>
     
     <!-- Liquibase组件 -->
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-liquibase</artifactId>
         <version>${revision}</version>
     </dependency>

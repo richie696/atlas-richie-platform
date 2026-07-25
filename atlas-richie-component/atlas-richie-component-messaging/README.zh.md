@@ -67,19 +67,19 @@
 ```xml
 <!-- 基础消息组件 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-messaging-core</artifactId>
 </dependency>
 
 <!-- 选择具体的 MQ 实现（以 Kafka 为例） -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-messaging-kafka</artifactId>
 </dependency>
 
 <!-- 如果需要使用 Redis 进行幂等去重 -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-cache</artifactId>
 </dependency>
 ```
@@ -115,7 +115,7 @@ spring:
 ### 3) 发送消息
 
 ```java
-import service.com.richie.component.messaging.MessageService;
+import service.cn.richie696.component.messaging.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -151,8 +151,8 @@ public class OrderService {
 ### 4) 消费消息
 
 ```java
-import consumer.com.richie.component.messaging.BaseConsumer;
-import event.com.richie.component.messaging.MessageEvent;
+import consumer.cn.richie696.component.messaging.BaseConsumer;
+import event.cn.richie696.component.messaging.MessageEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

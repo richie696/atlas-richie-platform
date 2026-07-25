@@ -37,7 +37,7 @@
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-redis-streammq` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-redis-streammq` |
 | **Category** | Messaging — reliable message queue on Redis Stream |
 | **Hard dependencies** | `spring-boot-starter-data-redis`, Redis 5.0+ (with Streams) |
 | **Compatible with** | Redis 6.0+ recommended; Redis Cluster 6.0+ |
@@ -106,7 +106,7 @@ atlas-richie-component-redis-streammq
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-redis-streammq</artifactId>
 </dependency>
 ```
@@ -127,7 +127,7 @@ platform:
         - name: order-events
           consumer-group: order-service
           consumer-name: order-service-1
-          target-type: com.richie.app.event.OrderEvent
+          target-type: cn.richie696.app.event.OrderEvent
           count: 50                          # batch size per poll
           concurrency: 8                      # parallel consumer threads
           auto-ack: false

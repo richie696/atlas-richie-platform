@@ -36,7 +36,7 @@
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-microservice` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-microservice` |
 | **Category** | Microservice infrastructure — inter-service calls + resilience |
 | **Hard dependencies** | Spring Cloud OpenFeign, Spring Cloud LoadBalancer |
 | **Optional** | Sentinel, Resilience4j, Eureka / Nacos / Consul discovery |
@@ -94,7 +94,7 @@ atlas-richie-component-microservice
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-microservice</artifactId>
 </dependency>
 ```

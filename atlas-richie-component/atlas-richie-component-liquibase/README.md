@@ -38,7 +38,7 @@
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-liquibase` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-liquibase` |
 | **Category** | Database — schema migration |
 | **Hard dependencies** | `liquibase-core`, Spring Boot |
 | **Compatible with** | MySQL, PostgreSQL, Oracle, DM, Kingbase, MSSQL, SQLite (dev) |
@@ -96,7 +96,7 @@ atlas-richie-component-liquibase
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-liquibase</artifactId>
 </dependency>
 ```

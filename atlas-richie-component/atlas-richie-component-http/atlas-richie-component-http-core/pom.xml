@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-http</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -41,8 +41,8 @@
                         <include>com/richie/component/http/core/**</include>
                     </includes>
                     <excludes>
-                        <exclude>com.richie.component.**.*AutoConfiguration</exclude>
-                        <exclude>com.richie.component.**.config.**</exclude>
+                        <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>
+                        <exclude>cn.richie696.component.**.config.**</exclude>
                     </excludes>
                 </configuration>
             </plugin>

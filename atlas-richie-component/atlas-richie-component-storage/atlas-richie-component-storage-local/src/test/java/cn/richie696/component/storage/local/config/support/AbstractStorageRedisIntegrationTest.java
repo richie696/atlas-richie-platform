@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2026 Richie (https://www.github.com/richie696)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package cn.richie696.component.storage.local.config.support;
+
+import cn.richie696.component.cache.GlobalCache;
+import cn.richie696.component.cache.GlobalCacheManager;
+import cn.richie696.component.cache.local.manage.LocalCache;
+import cn.richie696.component.cache.local.manage.LocalCacheManager;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+@StorageRedisIntegrationTest
+@Execution(ExecutionMode.SAME_THREAD)
+public abstract class AbstractStorageRedisIntegrationTest {
+
+    private static final String IT_KEY_PATTERN = "it:*";
+
+    @DynamicPropertySource
+    static void registerRedisIntegrationProperties(DynamicPropertyRegistry registry) {
+        StorageRedisIntegrationTestSupport.getInstance().registerProperties(registry);
+    }
+
+    @Autowired
+    private GlobalCacheManager cacheManager;
+
+    @Autowired
+    private LocalCacheManager localCacheManager;
+
+    @Autowired
+    protected StringRedisTemplate stringRedisTemplate;
+
+    @BeforeEach
+    void prepareTestContext() {
+        forceStaticDelegate(GlobalCache.class, "DELEGATE", cacheManager);
+        forceStaticDelegate(LocalCache.class, "MANAGE", localCacheManager);
+        if (StorageRedisIntegrationTestSupport.getInstance().isExternal()) {
+            deleteByScan(IT_KEY_PATTERN);
+        } else {
+            var connection = stringRedisTemplate.getConnectionFactory().getConnection();
+            try {
+                connection.serverCommands().flushDb();
+            } finally {
+                connection.close();
+            }
+        }
+    }
+
+    private static <T> void forceStaticDelegate(Class<?> holder, String fieldName, T value) {
+        try {
+            Field field = holder.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            AtomicReference<T> ref = (AtomicReference<T>) field.get(null);
+            ref.set(value);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed to wire " + holder.getSimpleName() + " for IT", e);
+        }
+    }
+
+    private void deleteByScan(String pattern) {
+        ScanOptions options = ScanOptions.scanOptions().match(pattern).count(200).build();
+        List<String> batch = new ArrayList<>();
+        try (Cursor<String> cursor = stringRedisTemplate.scan(options)) {
+            while (cursor.hasNext()) {
+                batch.add(cursor.next());
+                if (batch.size() >= 100) {
+                    stringRedisTemplate.delete(batch);
+                    batch.clear();
+                }
+            }
+        }
+        if (!batch.isEmpty()) {
+            stringRedisTemplate.delete(batch);
+        }
+    }
+}

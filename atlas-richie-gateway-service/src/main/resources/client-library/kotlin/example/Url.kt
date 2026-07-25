@@ -7,10 +7,10 @@
  * @since 2025-11-01
  */
 
-package com.richie.example
+package cn.richie696.example
 
-import com.richie.httpclient.Method
-import com.richie.httpclient.UrlInterface
+import cn.richie696.httpclient.Method
+import cn.richie696.httpclient.UrlInterface
 
 /**
  * 业务代码定义的URL枚举

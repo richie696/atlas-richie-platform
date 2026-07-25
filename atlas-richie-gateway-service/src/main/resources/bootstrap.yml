@@ -59,7 +59,7 @@ springdoc:
 logging:
     config: classpath:logback-spring.xml
     level:
-      com.richie.gateway.com.richie.gateway.GatewayApplication: info
+      cn.richie696.gateway.cn.richie696.gateway.GatewayApplication: info
 
 
 management:

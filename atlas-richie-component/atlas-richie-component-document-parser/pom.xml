@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-dependencies</artifactId>
         <version>${revision}</version>
         <relativePath>../atlas-richie-component-dependencies/pom.xml</relativePath>
@@ -18,7 +18,7 @@
     <dependencies>
         <!-- Tracing (Phase 5 集成) -->
         <dependency>
-            <groupId>com.richie.component</groupId>
+            <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-tracing</artifactId>
         </dependency>
 
@@ -89,8 +89,8 @@
                         <include>com/richie/component/parser/**</include>
                     </includes>
                     <excludes>
-                        <exclude>com.richie.component.parser.**.*AutoConfiguration</exclude>
-                        <exclude>com.richie.component.parser.**.config.**</exclude>
+                        <exclude>cn.richie696.component.parser.**.*AutoConfiguration</exclude>
+                        <exclude>cn.richie696.component.parser.**.config.**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -101,8 +101,8 @@
                                 <include>com/richie/component/parser/**</include>
                             </includes>
                             <excludes>
-                                <exclude>com.richie.component.parser.**.*AutoConfiguration</exclude>
-                                <exclude>com.richie.component.parser.**.config.**</exclude>
+                                <exclude>cn.richie696.component.parser.**.*AutoConfiguration</exclude>
+                                <exclude>cn.richie696.component.parser.**.config.**</exclude>
                             </excludes>
                             <rules>
                                 <rule>

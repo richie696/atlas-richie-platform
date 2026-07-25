@@ -68,12 +68,12 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-storage-ftp</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
@@ -236,7 +236,7 @@ platform:
 | `connectTimeout` | 15 秒 | 连接超时 |
 | `dataTimeout` | 30 秒 | 数据传输超时 |
 
-> 详细字段定义见 `com.richie.component.storage.bean.FtpConfig`。
+> 详细字段定义见 `cn.richie696.component.storage.bean.FtpConfig`。
 
 ### basePath 配置
 

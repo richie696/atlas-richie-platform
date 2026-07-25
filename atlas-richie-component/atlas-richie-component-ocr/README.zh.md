@@ -100,7 +100,7 @@ atlas-richie-component-ocr/                              (聚合 POM)
 `ocr-core` 内部按语义分包：
 
 ```
-com.richie.component.ocr/
+cn.richie696.component.ocr/
 ├── engine/             # 业务侧直接使用
 │   ├── OcrImage                            # sealed (Bytes / Url / Stream)
 │   ├── OcrOptions / Languages               # Builder + 16 语言枚举
@@ -124,11 +124,11 @@ com.richie.component.ocr/
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-ocr-core</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-ocr-aliyun</artifactId>  <!-- 或任意 vendor -->
 </dependency>
 ```
@@ -219,42 +219,42 @@ private final TencentOcrProvider ocrProvider;
 <dependencies>
     <!-- ===== Core (始终需要) ===== -->
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-core</artifactId>
     </dependency>
 
     <!-- ===== 选一个 vendor ===== -->
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-aliyun</artifactId>
     </dependency>
     <!-- 备选 (取消注释即切换):
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-baidu</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-tencent</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-volcano</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-paddle</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-tesseract</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-paddle-vl</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-mineru</artifactId>
     </dependency>
     -->
@@ -262,12 +262,12 @@ private final TencentOcrProvider ocrProvider;
     <!-- ===== 可选扩展 ===== -->
     <!-- Micrometer 健康指标 (自动检测已有 MeterRegistry) -->
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-extension-micrometer</artifactId>
     </dependency>
     <!-- OpenTelemetry tracing (自动检测已有 Tracer, GraalVM 友好) -->
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-ocr-extension-otel</artifactId>
     </dependency>
 </dependencies>
@@ -639,7 +639,7 @@ platform:
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-ocr-extension-micrometer</artifactId>
 </dependency>
 <dependency>
@@ -661,7 +661,7 @@ platform:
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-ocr-extension-otel</artifactId>
 </dependency>
 <dependency>

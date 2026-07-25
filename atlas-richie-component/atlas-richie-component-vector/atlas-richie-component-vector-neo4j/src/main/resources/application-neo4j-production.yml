@@ -169,7 +169,7 @@ platform:
 # ==================== 日志配置 ====================
 logging:
   level:
-    com.richie.component.vector: INFO
+    cn.richie696.component.vector: INFO
     org.neo4j.driver: WARN
     org.springframework.ai.vectorstore.neo4j: INFO
   

@@ -178,19 +178,19 @@ graph TB
 ```xml
 <!-- Required: facade API -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-core</artifactId>
 </dependency>
 
 <!-- Pick exactly one provider -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-okhttp</artifactId>
 </dependency>
 <!-- Alternatives:
-<dependency><groupId>com.richie.component</groupId><artifactId>atlas-richie-component-http-httpclient5</artifactId></dependency>
-<dependency><groupId>com.richie.component</groupId><artifactId>atlas-richie-component-http-jdk</artifactId></dependency>
-<dependency><groupId>com.richie.component</groupId><artifactId>atlas-richie-component-http-restclient</artifactId></dependency>
+<dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-component-http-httpclient5</artifactId></dependency>
+<dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-component-http-jdk</artifactId></dependency>
+<dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-component-http-restclient</artifactId></dependency>
 -->
 ```
 
@@ -209,7 +209,7 @@ platform:
 ### 3) Inject `HttpClient` and call
 
 ```java
-import com.richie.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpClient;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -492,7 +492,7 @@ You imported `http-core` but no provider. Add **exactly one** provider:
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-http-okhttp</artifactId>
 </dependency>
 ```

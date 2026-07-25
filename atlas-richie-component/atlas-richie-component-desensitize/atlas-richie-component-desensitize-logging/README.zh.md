@@ -108,11 +108,11 @@ flowchart LR
 ```xml
 <dependencies>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-desensitize-core</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-desensitize-logging</artifactId>
     </dependency>
     <dependency>
@@ -176,7 +176,7 @@ platform:
 ```xml
 <configuration>
     <conversionRule conversionWord="desensitizeMsg"
-        converterClass="com.richie.component.desensitize.logging.logback.DesensitizeConverter"/>
+        converterClass="logback.cn.richie696.component.desensitize.logging.DesensitizeConverter"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -194,7 +194,7 @@ platform:
 ```xml
 <configuration>
     <conversionRule conversionWord="desensitizeJsonMsg"
-        converterClass="com.richie.component.desensitize.logging.logback.DesensitizeJsonMessageConverter"/>
+        converterClass="logback.cn.richie696.component.desensitize.logging.DesensitizeJsonMessageConverter"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -212,14 +212,17 @@ platform:
 ### A. 标量用 `SensitiveLogArg`（最可靠）
 
 ```java
-import static com.richie.component.desensitize.core.support.SensitiveLogArg.*;
 
-log.info("用户 {} 的手机号是 {}", name, phone("13812348000"));
+
+log.info("用户 {} 的手机号是 {}",name, phone("13812348000"));
 // -> "用户 Alice 的手机号是 138****8000"
 
-log.info("idCard={}, bankCard={}",
-        idCard("110101199001011234"),
-        bankCard("6222021234567890"));
+        log.
+
+info("idCard={}, bankCard={}",
+     idCard("110101199001011234"),
+
+bankCard("6222021234567890"));
 // -> "idCard=110101********1234, bankCard=6222***********7890"
 ```
 

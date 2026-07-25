@@ -317,7 +317,7 @@ flowchart TD
 #### 3.3.3 `Scalar` `Parameters` — `Explicit` `Masking` (`Main` `Path`, `Most` `Reliable`)
 
 ```java
-import static com.richie.component.desensitize.core.util.DesensitizeUtils.*;
+import static util.cn.richie696.component.desensitize.core.DesensitizeUtils.*;
 
 // Chinese template
 log.info("User {}'s phone is {}", name, mask(phone, MaskType.PHONE));
@@ -658,13 +658,13 @@ log.info("row={}", DesensitizeUtils.toSafeString(dataMap));
 ```xml
 <!-- API response desensitization -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-desensitize-jackson</artifactId>
 </dependency>
 
 <!-- Log desensitization -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-desensitize-logging</artifactId>
 </dependency>
 ```
@@ -676,7 +676,7 @@ Logback Integration Example (Implemented):
 ```xml
 <configuration>
     <conversionRule conversionWord="desensitizeMsg"
-        converterClass="com.richie.component.desensitize.logging.logback.DesensitizeConverter"/>
+        converterClass="logback.cn.richie696.component.desensitize.logging.DesensitizeConverter"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -704,7 +704,7 @@ For JSON message scenarios:
 
 ```xml
 <conversionRule conversionWord="desensitizeJsonMsg"
-    converterClass="com.richie.component.desensitize.logging.logback.DesensitizeJsonMessageConverter"/>
+    converterClass="logback.cn.richie696.component.desensitize.logging.DesensitizeJsonMessageConverter"/>
 <pattern>%d %-5level %logger - %desensitizeJsonMsg%n</pattern>
 ```
 

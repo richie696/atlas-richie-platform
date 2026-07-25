@@ -37,7 +37,7 @@
 
 | Item | Value |
 |------|-------|
-| **Artifact** | `com.richie.component:atlas-richie-component-mfa` |
+| **Artifact** | `cn.richie696.component:atlas-richie-component-mfa` |
 | **Category** | Identity & access — multi-factor authentication |
 | **Hard dependencies** | `atlas-richie-context`, `atlas-richie-component-cache` (read-only for validation), Liquibase + DB (for management) |
 | **Architecture** | **Split**: `mfa-validation` (gateway-side, no DB) + `mfa-management` (general-service side, DB) |
@@ -89,13 +89,13 @@ atlas-richie-component-mfa        (parent POM)
 ```xml
 <!-- In the gateway service (validation) -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-mfa-validation</artifactId>
 </dependency>
 
 <!-- In the general service (management) -->
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-mfa-management</artifactId>
 </dependency>
 ```

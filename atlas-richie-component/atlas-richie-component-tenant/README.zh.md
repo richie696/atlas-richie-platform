@@ -155,14 +155,14 @@
 
 ```xml
 <dependency>
-    <groupId>com.richie.component</groupId>
+    <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component-tenant</artifactId>
 </dependency>
 ```
 
 **零配置即可使用 COLUMN 模式 + Web 集成**。
 
-> 🧩 **租户信息缓存默认开启**：框架自动为 {@link TenantInfoProvider} 装饰 {@link com.richie.component.tenant.spi.CachingTenantInfoProvider}，
+> 🧩 **租户信息缓存默认开启**：框架自动为 {@link TenantInfoProvider} 装饰 {@link spi.cn.richie696.component.tenant.CachingTenantInfoProvider}，
 > 以 {@code ttl=60s}、{@code max-size=10000} 缓存 {@code getTenantInfo()} 结果，避免每次 SQL 都穿透业务实现。
 > 可通过 {@code multi-tenancy.cache.tenant-info.enabled=false} 关闭。
 
@@ -1085,7 +1085,7 @@ multi-tenancy:
 | `multi-tenancy.circuit.failure-threshold` | `5` | 熔断失败阈值 |
 | `multi-tenancy.circuit.open-window-ms` | `30000` | 熔断打开后等待时间 (ms) |
 | `multi-tenancy.health.probe-interval-ms` | `30000` | 健康探测间隔 (ms) |
-| `multi-tenancy.cache.tenant-info.enabled` | `true` | 开启 {@link com.richie.component.tenant.spi.CachingTenantInfoProvider} 装饰器 |
+| `multi-tenancy.cache.tenant-info.enabled` | `true` | 开启 {@link spi.cn.richie696.component.tenant.CachingTenantInfoProvider} 装饰器 |
 | `multi-tenancy.cache.tenant-info.ttl-seconds` | `60` | 缓存 TTL（秒），过短命中率低，过长 sys_tenant 变更生效延迟 |
 | `multi-tenancy.cache.tenant-info.max-size` | `10000` | 缓存最大租户数，超出按 LRU 淘汰一半，`<=0` 不限制 |
 
@@ -1161,7 +1161,7 @@ public interface TenantInfoProvider {
 
 ### 业务必用 facade
 
-#### `com.richie.component.tenant.context.TenantContext` (静态 facade)
+#### `cn.richie696.component.tenant.context.TenantContext` (静态 facade)
 
 ```java
 public final class TenantContext {
@@ -1217,7 +1217,7 @@ public void dailyReport() {
 }
 ```
 
-#### `com.richie.contract.model.TenantPrincipal` (共享契约)
+#### `cn.richie696.contract.model.TenantPrincipal` (共享契约)
 
 ```java
 @Data
@@ -1233,7 +1233,7 @@ public class TenantPrincipal implements Serializable {
 
 ### 枚举类
 
-#### `com.richie.component.tenant.model.IsolationMode`
+#### `cn.richie696.component.tenant.model.IsolationMode`
 
 ```java
 public enum IsolationMode {
@@ -1245,7 +1245,7 @@ public enum IsolationMode {
 }
 ```
 
-#### `com.richie.component.tenant.model.TenantStatus`
+#### `cn.richie696.component.tenant.model.TenantStatus`
 
 ```java
 public enum TenantStatus {
@@ -1259,7 +1259,7 @@ public enum TenantStatus {
 
 ### 配置 properties
 
-#### `com.richie.component.tenant.config.MultiTenancyProperties`
+#### `cn.richie696.component.tenant.config.MultiTenancyProperties`
 
 ```java
 @Data
@@ -1319,7 +1319,7 @@ public class MultiTenancyProperties {
 
 ### `SPI` 实现接口
 
-#### `com.richie.component.tenant.spi.TenantInfoProvider` (必实现)
+#### `cn.richie696.component.tenant.spi.TenantInfoProvider` (必实现)
 
 ```java
 public interface TenantInfoProvider {
@@ -1365,7 +1365,7 @@ public class SysTenantInfoProvider implements TenantInfoProvider {
 > `@ConditionalOnProperty(matchIfMissing=true)` 自动装配，以 JDK `ConcurrentHashMap` 实现
 > `ttl=60s`、`max-size=10000` 缓存。业务方只需实现上述纯 DB 查询逻辑。
 
-#### `com.richie.component.tenant.context.TenantContext.TransactionTenantChecker` (内部 SPI,框架调用)
+#### `cn.richie696.component.tenant.context.TenantContext.TransactionTenantChecker` (内部 SPI,框架调用)
 
 ```java
 @FunctionalInterface
@@ -1656,7 +1656,7 @@ SELECT * FROM orders o JOIN users_1002 u ON o.user_id = u.id;
 ```xml
 <dependencies>
     <dependency>
-        <groupId>com.richie.component</groupId>
+        <groupId>cn.richie696.component</groupId>
         <artifactId>atlas-richie-component-tenant</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </dependency>
@@ -1726,10 +1726,10 @@ package com.example.app.tenant;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.app.entity.SysTenant;
 import com.example.app.mapper.SysTenantMapper;
-import com.richie.component.tenant.model.IsolationMode;
-import com.richie.component.tenant.model.TenantInfo;
-import com.richie.component.tenant.model.TenantStatus;
-import com.richie.component.tenant.spi.TenantInfoProvider;
+import model.cn.richie696.component.tenant.IsolationMode;
+import model.cn.richie696.component.tenant.TenantInfo;
+import model.cn.richie696.component.tenant.TenantStatus;
+import spi.cn.richie696.component.tenant.TenantInfoProvider;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -1818,7 +1818,7 @@ package com.example.app.service;
 
 import com.example.app.entity.Order;
 import com.example.app.mapper.OrderMapper;
-import com.richie.component.tenant.context.TenantContext;
+import context.cn.richie696.component.tenant.TenantContext;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
