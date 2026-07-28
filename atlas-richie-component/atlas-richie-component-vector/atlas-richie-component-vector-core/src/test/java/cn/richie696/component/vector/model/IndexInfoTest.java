@@ -56,7 +56,7 @@ class IndexInfoTest {
     @Test
     void record_allowsNullOptionalFields() {
         IndexInfo info = new IndexInfo(
-                "products", Modality.IMAGE, 1024, "cosine", "hnsw",
+                "products", Modality.TEXT, 1024, "cosine", "hnsw",
                 IndexStatus.CREATING, null, null, null, null);
 
         assertThat(info.documentCount()).isNull();

@@ -16,14 +16,16 @@
 package cn.richie696.component.vector.config;
 
 import cn.richie696.component.mongodb.config.MongodbConfig;
+import cn.richie696.component.vector.service.impl.MongoDbAtlasVectorServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.mongodb.atlas.MongoDBAtlasVectorStore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 /**
@@ -36,8 +38,9 @@ import org.springframework.data.mongodb.core.MongoTemplate;
  * @since 2025-07-04 16:20:52
  */
 @Slf4j
-@Configuration
+@AutoConfiguration
 @EnableConfigurationProperties({VectorProperties.class, MongodbConfig.class})
+@Import(MongoDbAtlasVectorServiceImpl.class)
 public class MongoDbAtlasVectorAutoConfiguration {
 
     /**

@@ -44,6 +44,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -168,9 +171,45 @@ class DocumentReaderTest {
                 .map(e -> (ReadEvent.Finished) e)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("expected Finished event in " + events));
-        assertNotNull(finished.result());
-        assertNotNull(finished.result().metadata().get("format"),
+        assertNotNull(finished.summary());
+        assertNotNull(finished.summary().metadata().get("format"),
                 "format key should be present per Schema contract");
+    }
+
+    @Test
+    @DisplayName("readPublisher(File) should deliver events only after demand is requested")
+    void readPublisherDeliversEventsWithDemand(@TempDir Path tempDir) throws Exception {
+        Path file = tempDir.resolve("publisher.txt");
+        Files.writeString(file, "Publisher paragraph.");
+        List<ReadEvent> events = new CopyOnWriteArrayList<>();
+        CountDownLatch completed = new CountDownLatch(1);
+
+        reader.readPublisher(file.toFile()).subscribe(new Flow.Subscriber<>() {
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                subscription.request(Long.MAX_VALUE);
+            }
+
+            @Override
+            public void onNext(ReadEvent item) {
+                events.add(item);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                fail(throwable);
+                completed.countDown();
+            }
+
+            @Override
+            public void onComplete() {
+                completed.countDown();
+            }
+        });
+
+        assertTrue(completed.await(5, TimeUnit.SECONDS), "publisher should complete");
+        assertTrue(events.stream().anyMatch(ReadEvent.Section.class::isInstance));
+        assertTrue(events.stream().anyMatch(ReadEvent.Finished.class::isInstance));
     }
 
     @Test

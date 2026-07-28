@@ -26,9 +26,7 @@ import java.util.Map;
 /**
  * 内部 ParseEvent → 公开 ReadEvent 转换 — 仅处理 Section / Image / Failed 三个 case。
  * <p>
- * Finished 不在此处理: 业务方需要的 {@code ReadEvent.Finished(result, totalSections, totalImages)}
- * 携带 {@code ReadResult} 汇总, 而 ReadResult 仅由调用方持有的累加器构造, 因此 facade
- * ({@code DocumentReader}) 在收到内部 Finished 后自行包装完成事件。
+ * Finished 不在此处理：门面在收到内部完成摘要后包装为公开的 {@code ReadEvent.Finished}。
  */
 public final class ReadEventAdapter {
 

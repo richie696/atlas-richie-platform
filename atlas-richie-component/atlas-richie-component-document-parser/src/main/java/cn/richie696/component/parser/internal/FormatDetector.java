@@ -21,7 +21,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -47,8 +46,9 @@ public final class FormatDetector {
     /**
      * 嗅探 InputStream 真实格式(读取前 8KB 即可)。
      * <p>
-     * 自动处理 mark/reset:如果流不支持 mark,会包一层 {@link BufferedInputStream};
-     * 嗅探完成后调用 {@link InputStream#reset()} 还原读取位置。
+     * 调用方必须传入支持 mark/reset 的同一个流；嗅探完成后会调用 {@link InputStream#reset()}
+     * 还原读取位置。无法在此方法内安全地为非 mark 流临时包装：包装对象无法返还给调用方，
+     * 会导致后续解析从错误位置读取。{@link DocumentReader} 已统一负责该包装。
      *
      * @param stream   待嗅探的输入流
      * @param nameHint 文件名提示(辅助嗅探,例如 "report.docx")
@@ -58,8 +58,10 @@ public final class FormatDetector {
         if (stream == null) {
             throw new IllegalArgumentException("stream must not be null");
         }
-        boolean needBuffer = !stream.markSupported();
-        InputStream sniff = needBuffer ? new BufferedInputStream(stream) : stream;
+        if (!stream.markSupported()) {
+            throw new IllegalArgumentException("stream must support mark/reset; wrap it in BufferedInputStream first");
+        }
+        InputStream sniff = stream;
         Metadata metadata = new Metadata();
         if (nameHint != null && !nameHint.isBlank()) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, nameHint);

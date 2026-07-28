@@ -22,7 +22,9 @@ import cn.richie696.component.vector.model.Modality;
 import cn.richie696.component.vector.model.VectorContent;
 import cn.richie696.component.vector.model.VectorRecord;
 import cn.richie696.component.ai.service.RerankService;
+import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorService;
+import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.*;
 import org.neo4j.driver.Record;
@@ -34,7 +36,6 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,9 +58,8 @@ import java.util.Map;
  * @see VectorService
  */
 @Slf4j
-@Service
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "neo4j")
-public class Neo4jVectorServiceImpl extends AbstractVectorService implements VectorService {
+public class Neo4jVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, VectorIndexLifecycleOperations {
 
     private static final String VECTOR_LABEL_PREFIX = "VectorDocument_";
 
@@ -273,7 +273,7 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
                 if (labels == null || labels.isEmpty()) {
                     continue;
                 }
-                String label = labels.get(0).toString();
+                String label = labels.getFirst().toString();
                 if (label == null || !label.startsWith(VECTOR_LABEL_PREFIX)) {
                     continue;
                 }
@@ -349,7 +349,7 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
                 if (labels == null || labels.isEmpty()) {
                     continue;
                 }
-                String currentLabel = labels.get(0).toString();
+                String currentLabel = labels.getFirst().toString();
                 if (!label.equals(currentLabel)) {
                     continue;
                 }
@@ -568,6 +568,14 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
             return;
         }
         vectorStore.add(docs);
+    }
+
+    @Override
+    protected boolean usesStoreManagedEmbedding() { return true; }
+
+    @Override
+    protected void writeStoreManagedRecords(String indexName, List<VectorRecord> records) {
+        vectorStore.add(records.stream().map(record -> toAiDocument(record, null)).toList());
     }
 
     /**

@@ -1,709 +1,1306 @@
-# Atlas Richie Vector Component (`atlas-richie-component-vector`)
+# Atlas Richie Vector Component (atlas-richie-component-vector)
 
-> Multi-modal vector search, batch pipeline, and operations API for seven vector database providers.
-
-`atlas-richie-component-vector` exposes one application-facing vector API over seven provider modules. The core module owns the stable contract, the multi-modal content model, the reactive batch pipeline, the operations API, and the multi-provider dispatcher. Each provider module owns its SDK calls and connection settings, and contributes one `VectorService` implementation to the Spring container.
-
-## Contents
-
-- [Overview](#overview)
-  - [What this component is](#what-this-component-is)
-  - [What this component is not](#what-this-component-is-not)
-- [Features](#features)
-- [Architecture](#architecture)
-  - [Module layout](#module-layout)
-  - [Core package layout](#core-package-layout)
-- [API Reference](#api-reference)
-  - [`VectorService` interface](#vectorservice-interface)
-  - [Single-record operations](#single-record-operations)
-  - [Search and index operations](#search-and-index-operations)
-  - [Batch operations](#batch-operations)
-  - [Core model types](#core-model-types)
-- [Batch Async Pipeline](#batch-async-pipeline)
-  - [Three-stage data path](#three-stage-data-path)
-  - [Stage A — embed producer](#stage-a--embed-producer)
-  - [Stage B — write consumer](#stage-b--write-consumer)
-  - [Stage C — terminal summary](#stage-c--terminal-summary)
-  - [Sinks backpressure](#sinks-backpressure)
-  - [`bufferTimeout` chunking](#buffertimeout-chunking)
-  - [Batch configuration](#batch-configuration)
-  - [Failure semantics](#failure-semantics)
-  - [Deduplication and counters](#deduplication-and-counters)
-- [Operations API](#operations-api)
-  - [Five operational methods](#five-operational-methods)
-  - [Per-provider support matrix](#per-provider-support-matrix)
-  - [`throwUnsupportedOps` helper](#throwunsupportedops-helper)
-- [Multi-Modal Embedding](#multi-modal-embedding)
-- [Multi-Provider Operations](#multi-provider-operations)
-  - [`VectorOperationsFacade`](#vectoroperationsfacade)
-  - [Access and execution methods](#access-and-execution-methods)
-  - [Failure aggregation and observability](#failure-aggregation-and-observability)
-- [Configuration Reference](#configuration-reference)
-  - [Common properties](#common-properties)
-  - [Batch properties](#batch-properties)
-  - [Facade properties](#facade-properties)
-  - [Provider properties](#provider-properties)
-- [Provider Comparison](#provider-comparison)
-- [Implementation Details](#implementation-details)
-  - [`AbstractVectorService` base class](#abstractvectorservice-base-class)
-  - [`BatchPipelineCoordinator` extraction](#batchpipelinecoordinator-extraction)
-  - [Provider implementation pattern](#provider-implementation-pattern)
-  - [Why sealed types](#why-sealed-types)
-  - [Why the facade is a concrete class](#why-the-facade-is-a-concrete-class)
-- [Known Limitations](#known-limitations)
-- [FAQ](#faq)
-- [Further Reading](#further-reading)
-
----
-
-## Overview
-
-The component presents a unified `VectorService` contract over seven provider modules:
-
-- Milvus
-- Qdrant
-- Redis
-- PostgreSQL with `pgvector`
-- MongoDB Atlas
-- Neo4j
-- Weaviate
-
-The split is deliberate. The core owns everything that must look the same to callers — the content model, the modality router, the reactive batch event protocol, the operations API, and the multi-provider dispatcher. Provider modules own everything that is native to a single backend — the SDK call, the connection factory, and the lifecycle hooks for index, alias, snapshot, and restore operations that the backend supports.
-
-### What this component is
-
-| Capability | Behavior |
-|---|---|
-| Storage | Stores text and image records through a unified `VectorRecord` model with `VectorContent` payload. |
-| Retrieval | Text search, image search, vector search, hybrid search, and multi-vector search contracts. |
-| Embedding | Routes `TEXT` and `IMAGE` content to the appropriate `EmbeddingModel` through `ModalityAwareEmbeddingService`. |
-| Index lifecycle | Create, delete, inspect, list, truncate, clone, await readiness, describe, statistics, and health operations. |
-| Operations | Exposes `optimize`, `createAlias`, `switchAlias`, `backup`, and `restore`. |
-| Batch ingestion | Emits a `Flux<BatchEvent>` with embedding and persistence progress across all in-flight items. |
-| Provider choice | Selects the active provider through `platform.component.vector.provider`. |
-| Provider failover | Optional `VectorOperationsFacade` adds retry, fallback chain, and metrics. |
-
-### What this component is not
-
-The component does not create an embedding model for you, normalize vectors for every provider, or make unsupported provider features appear portable. The operations API is deliberately honest: a method can be part of the common contract while a particular provider reports `UnsupportedOperationException`. The pipeline buffer is an in-memory safety bound, not a durable queue. The facade is not a multi-store merger and does not make writes atomic across providers.
-
----
-
-## Features
-
-- **Multi-modal routing** for text and image content, backed by a `ModalityAwareEmbeddingService` with text model as a required baseline and image model as an optional extension.
-- **Sealed content types** that make the supported content domain visible to the compiler.
-- **Unified `VectorRecord`** for single-record writes, search-result carries, and batch ingestion inputs.
-- **42 operational methods in the `VectorService` contract** grouped by capability, plus two convenience overloads for `addImage(Path)` and `addBatch(List)`.
-- **Reactive `BatchEvent` protocol** with six event types and an eight-value `Stage` enum, suitable for UI progress and operational dashboards.
-- **Three-stage batch pipeline** with Sinks backpressure between Stage A (embed) and Stage B (write), and `bufferTimeout` chunking on Stage B.
-- **Configurable concurrency** for embedding producers and write consumers, set independently.
-- **Configurable failure semantics** through `failFast`, `dedupCacheSize`, and `itemIdSource`.
-- **Five operations APIs** — `optimize`, `createAlias`, `switchAlias`, `backup`, `restore` — backed by a per-provider support matrix.
-- **`throwUnsupportedOps` helper** that produces a uniform, trace-friendly message for unsupported operation paths.
-- **Seven provider implementations** that share one abstract base class and one pipeline coordinator.
-- **Multi-provider facade** with primary selection, retry, ordered fallback, failure aggregation, and Micrometer metrics.
-- **Reranking for text search** when a `RerankService` is available.
-- **Provider-aware index metadata** through `IndexInfo` and `IndexStatus`.
-
-The reason for exposing these concerns from one core is composability. Applications can change a provider, a model, a batch profile, or an operational policy without rewriting business flows.
-
----
-
-## Architecture
-
-### Module layout
-
-The parent contains nine modules: one parent POM, one core module, and seven provider modules.
+> **One-line value**: The data-access foundation for commercial RAG knowledge bases. "Semantic similarity" and "is this content authorized for this caller" are resolved in a single query, with no binding to any specific vector database SDK.
+>
+> **Core positioning**: In the RAG pipeline, this component **only handles the vector data plane**—file parsing is delegated to `document-parser`, text chunking to `document-chunking`, Embedding/reranking to `component-ai`, and ACL/document facts are owned by the business system. The complete pipeline:
 
 ```text
-atlas-richie-component-vector
-├── atlas-richie-component-vector-core
-├── atlas-richie-component-vector-milvus
-├── atlas-richie-component-vector-qdrant
-├── atlas-richie-component-vector-redis
-├── atlas-richie-component-vector-postgresql
-├── atlas-richie-component-vector-mongodb-atlas
-├── atlas-richie-component-vector-neo4j
-└── atlas-richie-component-vector-weaviate
+document-parser → document-chunking → vector-chunk-adapter → vector
+                                              │
+                                              └── Optional: vector-projection-dao
 ```
 
-The parent does not select a database by classpath alone. A provider module supplies its client, its connection factory, and one `AbstractVectorService` subclass; `platform.component.vector.provider` controls conditional activation. `VectorMultiProviderGuard` refuses to start when more than one `VectorService` bean is detected, making the single-provider constraint explicit at startup.
+---
 
-### Core package layout
+## 📖 Table of Contents
 
-The core module is split into nine packages. The split keeps stable contracts separate from orchestration, and provider-independent mechanics separate from the public surface.
-
-| Package | Responsibility |
-|---|---|
-| `config` | `VectorProperties`, `VectorFacadeProperties`, `VectorAutoConfiguration`, `VectorMultiProviderGuard`. Binds to `platform.component.vector.*`. |
-| `embeddings` | `ModalityAwareEmbeddingService`. Routes `TEXT` / `IMAGE` content to the right `EmbeddingModel`; reports `supportsModality` and `dimensionFor`. |
-| `enums` | `VectorProvider` and `EmbeddingProvider` selections shared by configuration. |
-| `exceptions` | `UnsupportedModalityException` and `VectorStoreNotExistException`. |
-| `model` | `VectorRecord`, `VectorContent`, `BatchEvent`, `BatchStats`, `Stage`, `IndexInfo`, `IndexStatus`, `Modality`, `SearchOptions`, `HybridSearchOptions`, `VectorSearchResult`. |
-| `operations` | `VectorOperationsFacade`. Cross-provider dispatcher with primary selection, retry, fallback, and metrics. |
-| `pipeline` | `BatchPipelineCoordinator`. Owns the reactive Stage A / Stage B / Stage C ingestion pipeline. |
-| `service` | The public `VectorService` contract used by applications and implemented by every provider. |
-| `service.impl` | `AbstractVectorService`. Shared single-record behavior, provider hooks, and operation delegation. |
-
-A provider module only adds its connection/configuration classes and its `service.impl` implementation. It does not copy the batch pipeline or reimplement modality behavior.
+- [🎯 Component Overview](#-component-overview)
+  - [Key Features](#key-features)
+  - [Boundaries with Peer Components](#boundaries-with-peer-components)
+- [🏗️ Architecture Design](#️-architecture-design)
+  - [Overall Architecture](#overall-architecture)
+  - [Data Model Hierarchy](#data-model-hierarchy)
+  - [Ingestion Pipeline](#ingestion-pipeline)
+  - [Retrieval Pipeline](#retrieval-pipeline)
+  - [Version Projection Lifecycle](#version-projection-lifecycle)
+- [🚀 Quick Start Guide](#-quick-start-guide)
+  - [1. Add Dependencies](#1-add-dependencies)
+  - [2. Choose a Provider](#2-choose-a-provider)
+  - [3. Basic Configuration](#3-basic-configuration)
+  - [4. Write and Basic Retrieval](#4-write-and-basic-retrieval)
+  - [5. Commercial Knowledge Base Retrieval](#5-commercial-knowledge-base-retrieval)
+- [📚 Interface Reference](#-interface-reference)
+  - [Core Interfaces (Required for All Providers)](#core-interfaces-required-for-all-providers)
+  - [Optional Capability Interfaces](#optional-capability-interfaces)
+  - [Public Method Index](#public-method-index)
+- [🔧 Core Scenarios](#-core-scenarios)
+  - [Scenario 1 — Document Ingestion with Version Governance](#scenario-1--document-ingestion-with-version-governance)
+  - [Scenario 2 — Commercial RAG Retrieval with ACL Pushdown](#scenario-2--commercial-rag-retrieval-with-acl-pushdown)
+  - [Scenario 3 — Streaming Bulk Ingestion with Backpressure](#scenario-3--streaming-bulk-ingestion-with-backpressure)
+  - [Scenario 4 — Provider Switching and Multimodal Retrieval](#scenario-4--provider-switching-and-multimodal-retrieval)
+- [⚙️ Configuration Reference](#️-configuration-reference)
+  - [Core Configuration](#core-configuration)
+  - [Bulk Ingestion Tuning](#bulk-ingestion-tuning)
+  - [Provider Configuration Examples](#provider-configuration-examples)
+- [🔧 Troubleshooting](#-troubleshooting)
+  - [Common Issues and Solutions](#common-issues-and-solutions)
+  - [Retrieval Quality Tuning](#retrieval-quality-tuning)
+- [📎 📊 Provider Capability Comparison](#-📊-provider-capability-comparison)
+  - [Milvus](#milvus)
+  - [Qdrant](#qdrant)
+  - [Weaviate](#weaviate)
+  - [PostgreSQL/pgvector](#postgresqlpgvector)
+  - [Redis](#redis)
+  - [MongoDB Atlas](#mongodb-atlas)
+  - [Neo4j](#neo4j)
+  - [VikingDB](#vikingdb)
+- [⏱️ Sequence Diagram Reference](#⏱️-sequence-diagram-reference)
+  - [Vector Ingestion Sequence](#vector-ingestion-sequence)
+  - [Knowledge Base Retrieval Sequence](#knowledge-base-retrieval-sequence)
+  - [Version Projection Switch Sequence](#version-projection-switch-sequence)
+- [📐 Design Notes](#📐-design-notes)
+  - [Problems the Component Solves](#problems-the-component-solves)
+  - [Boundaries and Responsibilities](#boundaries-and-responsibilities)
+  - [Interface Segregation and Provider Capability Declaration](#interface-segregation-and-provider-capability-declaration)
+  - [Safe Retrieval and Permission Model](#safe-retrieval-and-permission-model)
+  - [Bulk Operations and Consistency](#bulk-operations-and-consistency)
+  - [Auto-Configuration and Extension Principles](#auto-configuration-and-extension-principles)
+- [✅ Production Checklist](#✅-production-checklist)
 
 ---
 
-## API Reference
+## 🎯 Component Overview
 
-### `VectorService` interface
+`atlas-richie-component-vector` is the data-access foundation for commercial RAG knowledge bases. The challenge is not "how to write text into a vector database"—any SDK can do that. The real challenge is: in a multi-tenant, strictly-permissioned, frequently-updated, quality-sensitive commercial scenario, how to keep business code free of any specific vector database's filtering DSL, how to avoid being locked into one vector database's operational characteristics, and how to guarantee permissions are enforced at the recall stage rather than as an afterthought.
 
-The public contract is grouped by capability rather than provider. The interface exposes 42 operational methods and two convenience overloads (`addImage(Path)` and `addBatch(List)`).
+This component abstracts the vector data plane into four universal capabilities: **write, delete by vectorId, read by ID, basic semantic search**. Provider-specific capabilities (delete by documentId, alias, backup, native hybrid, multi-vector) are split out into optional capability interfaces. A provider **either implements what it can truly support, or doesn't implement at all**—this prevents business code from confusing "unsupported" with "empty result".
 
-| Group | Operational methods | Convenience overloads | Purpose |
-|---|---:|---:|---|
-| Add | 4 | 1 | Add text, a complete record, image bytes, or an image URL. |
-| Update | 4 | 0 | Update text, a complete record, or image content from bytes/path. |
-| Delete | 2 | 0 | Delete by ID or by a record predicate. |
-| Get | 2 | 0 | Read one record or an ordered collection of IDs. |
-| Text search | 3 | 0 | Search by text with default, threshold, or full options. |
-| Image search | 3 | 0 | Search by image bytes with default, threshold, or path input. |
-| Index base | 6 | 0 | Create, delete, inspect, count, and page through an index. |
-| Index extension | 6 | 0 | List, truncate, update, clone, wait, and describe indexes. |
-| Stats and health | 2 | 0 | Read index statistics and run a health check. |
-| Advanced search | 2 | 0 | Hybrid search and multi-vector search. |
-| Operations | 5 | 0 | `optimize`, `createAlias`, `switchAlias`, `backup`, `restore`. |
-| Batch | 3 | 1 | Add from `Flux`, update from `Flux`, delete from `Flux`. |
-| **Total** | **42** | **2** | The two overloads let callers avoid manual byte loading or `Flux` construction. |
+### Key Features
 
-### Single-record operations
+- ✅ **Unified Facade**: `VectorService` / `KnowledgeBaseVectorService` are the shared entry points for all providers; business code only depends on abstractions
+- ✅ **10 Pluggable Providers**: Milvus, Qdrant, Weaviate, PostgreSQL/pgvector, Redis, MongoDB Atlas, Neo4j, VikingDB—declared by capability, not by brand
+- ✅ **Forced ACL Pushdown**: `KnowledgeBaseVectorService` mandates that tenant, visibility, status, and other structured filters are pushed down to the provider's native query execution—never "fetch Top-K then filter in JVM" which leaks content
+- ✅ **Capability-based Interface Segregation**: 4 core universal capabilities + 6 optional capability interfaces (hybrid / multi-vector / alias / backup / read / lifecycle); providers only declare what they truly support
+- ✅ **Streaming Backpressure Bulk**: `Flux<VectorRecord>` input + `Flux<BulkOperationEvent>` output, with controllable backpressure and concurrency; never blows up the JVM
+- ✅ **Structured Filtering**: `VectorFilter` sealed expression tree (Eq / In / Range / Exists / ContainsAny / Not / And / Or) translated to native syntax by the provider's `VectorFilterCompiler`—no string concatenation
+- ✅ **Version Projection Plugin**: The optional `vector-projection-dao` plugin provides "write new version → switch visibility → delayed cleanup of old version" so document updates never cause a whole document to temporarily disappear
+- ✅ **Embedding Decoupling**: `EmbeddingModel` is auto-injected by `component-ai`; this component holds no LLM/embedding vendor information
+- ✅ **Chunk → VectorRecord Adapter**: `vector-chunk-adapter` combines `Chunk` with document context into a vector record with stable ID, version number, and position information
+- ✅ **Multimodal Vectors**: Text and images can be routed through `ModalityAwareEmbeddingService` to the appropriate embedding model; CLIP-equivalent shared space supports cross-modal retrieval
+- ✅ **Failure Observability**: `BulkOperationEvent` stream (`Started / ItemStarted / ItemSucceeded / ItemFailed / Completed`) + `ChunkingSignal` + `OcrException` sealed exception hierarchy across the full pipeline
+- ✅ **Configuration-Driven**: `platform.component.vector.provider=milvus`—one line to switch backends, no business code changes
 
-The add family is modality-aware:
+### Boundaries with Peer Components
 
-- `addText` constructs a `TextContent` record and routes through the text model.
-- `add` accepts a `VectorRecord` and routes from `record.getContent().modality()`.
-- `addImage` accepts raw bytes or a `Path` and uses `ImageContent`.
-- `addImageUrl` downloads the remote image before entering the image path.
-
-The update family uses delete-plus-insert semantics in `AbstractVectorService`. This is intentionally explicit because provider update semantics differ. `update` requires an ID; add operations generate a UUID when the ID is absent.
-
-The delete and get families keep provider-specific retrieval behind `deleteByIds` and `getByIds`. `deleteIf` is a management-oriented predicate path that may enumerate records and should not be treated as a high-throughput delete API.
-
-### Search and index operations
-
-Text search supports a simple limit, a minimum score, or a complete `SearchOptions` object. When a `RerankService` exists and reranking is enabled, text results are reranked after vector recall. Image search does not rerank by default because a dual-encoder image model already expresses similarity in its aligned embedding space.
-
-`SearchOptions` carries:
-
-- `rerank` (Boolean, default `true`)
-- `minScore` (Double)
-- `filterExpression` (String, provider-specific DSL)
-- `namespace` (String)
-- `limit` (Integer)
-- `type` (String, document type filter)
-
-`HybridSearchOptions` carries vector and keyword weights, a keyword query, and nested `SearchOptions`. Providers that support full BM25-plus-vector semantics execute the hybrid path; other providers fall back to vector search and log the degradation.
-
-Index lifecycle methods cover schema creation, deletion, existence, configuration, counts, pagination, listing, truncation, updates, cloning, readiness, description, statistics, and health. `IndexInfo` reports name, modality, dimension, metric, index type, status, document count, timestamps, and provider metadata. `IndexStatus` exposes `CREATING`, `READY`, `UPDATING`, `DELETING`, `FAILED`, and `UNKNOWN`. A provider maps its native lifecycle to the closest state.
-
-### Batch operations
-
-The batch contract returns `Flux<BatchEvent>`:
-
-- `addBatch(String, Flux<VectorRecord>)`
-- `addBatch(String, List<VectorRecord>)` convenience overload
-- `updateBatch(String, Flux<VectorRecord>)`
-- `deleteBatch(String, Flux<String>)`
-
-The add and update paths share `BatchPipelineCoordinator`. The coordinator is optimized for add semantics; update reuses the same embedded write path and relies on the single-record update contract for delete-plus-insert behavior where needed. Delete emits per-ID progress through its own provider delete path and does not flow through the Sinks-backed pipeline.
-
-### Core model types
-
-#### `Modality`
-
-`Modality` is an enum with two values today: `TEXT` and `IMAGE`. The enum is the right shape because the routing decision is finite, exhaustive, and used in Java switch expressions. It is not a substitute for content data — the content payload is carried by `VectorContent`.
-
-#### `VectorContent`
-
-`VectorContent` is a sealed interface permitting `TextContent` and `ImageContent`.
-
-- `TextContent(text, mimeType)` validates non-blank text and defaults MIME type to `text/plain`.
-- `ImageContent(data, mimeType)` validates non-empty bytes and an `image/*` MIME type.
-- `ImageContent.ofPath` reads a `Path` and preserves the same validation rules.
-
-A sealed interface is preferable to a broad enum-plus-object map because the content payload has different invariants. Pattern matching can enforce that `TEXT` receives `TextContent` and `IMAGE` receives `ImageContent`, while future content kinds can be added deliberately through the permits list.
-
-#### `VectorRecord`
-
-`VectorRecord` is the unified mutable Java bean used at service boundaries. It carries:
-
-- `id` and `indexName`
-- `content`
-- `metadata`
-- `tags`, `source`, `namespace`, `status`
-- `score`, `createdAt`, `updatedAt`
-
-The factories `text`, `image`, and `imageUrl` make common paths readable. `imageUrl` stores the URL in reserved metadata while the pipeline or caller resolves the actual bytes. `metadata.__itemId` is reserved for batch item tracking; `itemId()` falls back to the record ID.
-
-The record is intentionally separate from Spring AI `Document`. The core converts at the provider boundary, so application code does not depend on Spring AI document metadata conventions.
-
-#### `SearchOptions` and `HybridSearchOptions`
-
-These option objects prevent overload growth and let a provider receive common filtering intent without changing the service signature. Provider-specific filter expressions remain strings because their DSLs are not interchangeable.
-
-#### `IndexInfo` and `IndexStatus`
-
-`IndexInfo` is a normalized observation, not a promise that every provider exposes identical metadata. `IndexStatus` is the lifecycle enum; a provider maps its native lifecycle to the closest state.
-
-#### `BatchStats`
-
-`BatchStats` includes `total`, `succeeded`, `failed`, elapsed duration, `embeddingApiCalls`, and `writeApiCalls`. The call counters measure provider/API invocations, not records. One write of a 100-record chunk is one write API call.
-
----
-
-## Batch Async Pipeline
-
-### Three-stage data path
-
-The batch path is coordinated by `BatchPipelineCoordinator` and has two concurrent data stages plus a terminal summary.
-
-```text
-Flux<VectorRecord>
-      │
-      ▼
-Stage A: embed producer
-  flatMap(embeddingConcurrency)
-  ├─ resolve itemId
-  ├─ optional text deduplication
-  ├─ route to text/image model
-  ├─ emit ItemStarted(LOADED)
-  ├─ emit StageChanged(LOADED → EMBEDDED)
-  └─ push EmbeddedItem to Sinks.Many
-      │
-      ▼
-Sinks.Many<EmbeddedItem>
-      │
-      ▼
-Stage B: write consumer
-  bufferTimeout(writeBatchSize, 50 ms)
-  flatMap(writeConcurrency)
-  ├─ emit ItemStarted(PERSISTING)
-  ├─ one writer.write(index, docs) per chunk
-  ├─ count one writeApiCalls per successful chunk
-  ├─ emit StageChanged(PERSISTING → PERSISTED)
-  └─ emit ItemCompleted per item
-      │
-      ▼
-Stage C: BatchCompleted(BatchStats)
-```
-
-The separation is deliberate. Embedding calls are often remote and model-limited, while writes are limited by provider throughput and payload size. Independent concurrency controls prevent one bottleneck from dictating the other.
-
-### Stage A — embed producer
-
-Stage A subscribes to the input `Flux<VectorRecord>` and processes each record through `flatMap(..., embeddingConcurrency)`:
-
-1. Resolve the per-batch item id through `resolveItemId(record, contentHash, cfg)` based on the configured `itemIdSource`.
-2. Optionally check the dedup cache; a duplicate short-circuits with `ItemCompleted` and skips both embedding and writing.
-3. Route the record to the text or image model through `ModalityAwareEmbeddingService` (delegated by `AbstractVectorService.embedForBatch`).
-4. Emit `ItemStarted(LOADED)` and `StageChanged(LOADED → EMBEDDED)` for the record.
-5. Push an `EmbeddedItem` (record + embedding + itemId + modality) into the Sinks-backed handoff.
-
-### Stage B — write consumer
-
-Stage B consumes the Sinks-backed embedded stream and groups items into provider-sized chunks:
-
-1. `bufferTimeout(writeBatchSize, 50 ms)` flushes a chunk when either `writeBatchSize` items have accumulated or the 50 ms timeout expires.
-2. `flatMap(..., writeConcurrency)` lets up to `writeConcurrency` chunks call `writer.write(index, docs)` concurrently.
-3. Per chunk: emit `ItemStarted(PERSISTING)` for each item, invoke the writer once, count `writeApiCalls += 1` on success, then emit `StageChanged(PERSISTING → PERSISTED)` and `ItemCompleted` for each item.
-4. On writer exception with `failFast=false`, emit one `ItemFailed(PERSISTING, error)` for each item in the chunk and continue with the next chunk.
-
-The producer and consumer run on `Schedulers.boundedElastic()`. Provider writes are blocking calls; the elastic scheduler keeps them off the parallel scheduler pool.
-
-### Stage C — terminal summary
-
-Stage C emits exactly one `BatchCompleted(BatchStats)` after the merged Stage A and Stage B streams complete. The summary is emitted even after non-`failFast` failures and after pipeline-level errors, so consumers can always rely on the terminal event for batch-level cleanup.
-
-### Sinks backpressure
-
-Stage A does not write directly into Stage B. It pushes embedded items into a unicast `Sinks.Many<EmbeddedItem>` backed by an `ArrayBlockingQueue` configured with `onBackpressureBuffer(backpressureBuffer)`.
-
-When the queue is full, the embedded-item push uses `Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(1))` — a short busy-loop retry. This applies backpressure at the handoff rather than allowing unbounded memory growth. The result is a bounded in-flight embedded-item set:
-
-- The embedding producer can continue while the buffer has capacity.
-- A slow provider writer eventually makes the producer wait.
-- The input `Flux` is not silently dropped because the queue is full.
-- Terminal and cancelled sinks are treated as terminal conditions rather than retried forever.
-
-The queue is not a durability mechanism. If the process terminates, the in-memory batch is lost; durable retry belongs to the application or ingestion infrastructure.
-
-### `bufferTimeout` chunking
-
-Stage B applies `bufferTimeout(writeBatchSize, Duration.ofMillis(50))`. A chunk is flushed as soon as either condition is met:
-
-1. `writeBatchSize` embedded items have accumulated.
-2. The 50 ms timeout expires after items enter the buffer.
-
-This gives large streams efficient provider calls and gives small streams bounded latency. `writeConcurrency` controls how many chunks are sent to the writer simultaneously. `writeBatchSize` is both the buffer upper bound and the document count passed to one `writer.write` call.
-
-`writeApiCalls` therefore means successful chunk-level writer calls. It is not the number of items, embeddings, or emitted events. This definition makes the metric useful for provider cost and throughput analysis.
-
-### Batch configuration
-
-`VectorProperties.Batch` is bound below `platform.component.vector.batch`. The defaults match `BatchPipelineCoordinator.DEFAULT_BATCH`, so a missing YAML block leaves behavior unchanged.
-
-| Property | Default | Meaning |
-|---|---:|---|
-| `embeddingBatchSize` | `32` | Reserved model batch size for embedding adapters that support list input. |
-| `embeddingConcurrency` | `8` | Maximum concurrent Stage A embedding tasks. |
-| `writeBatchSize` | `100` | Maximum records per provider write chunk. |
-| `writeBatchSize` also bounds the buffer upper bound for `bufferTimeout`. | | |
-| `writeConcurrency` | `4` | Maximum concurrent Stage B chunks. |
-| `backpressureBuffer` | `1024` | Maximum embedded items waiting in the Sinks handoff. |
-| `failFast` | `false` | Whether the first failure terminates the batch. |
-| `dedupCacheSize` | `10000` | Enables content deduplication when greater than zero. |
-| `itemIdSource` | `METADATA` | Selects `METADATA`, `ID`, or `HASH` item IDs. |
-
-Values are normalized to safe minimums by the coordinator (`Math.max(1, ...)`) so a misconfigured zero or negative does not deadlock the pipeline.
-
-`ConfigProvider` is a callback rather than a copied field. Construction can happen before optional Spring setter injection completes, and a callback can observe the latest `VectorProperties.Batch` when a batch starts. Setter-injected configuration is therefore visible on the next batch run without reconstructing the service.
-
-### Failure semantics
-
-With `failFast=false`:
-
-- An embedding exception creates `ItemFailed(EMBEDDING, error)` for that record. Other records continue.
-- A chunk write exception creates one `ItemFailed(PERSISTING, error)` for each item in that chunk. Other chunks continue.
-- The pipeline still emits a terminal `BatchCompleted`.
-
-With `failFast=true`:
-
-- An embedding or writer exception terminates the active pipeline. The terminal handling still attempts to emit a final `BatchCompleted` summary.
-- Already-running provider calls follow that provider's cancellation behavior; use an external idempotency key for safe retries.
-
-Consumers should use `ItemFailed.failedStage()` for per-item recovery and the terminal `BatchCompleted.stats()` for batch-level cleanup.
-
-### Deduplication and counters
-
-Text content can be hashed with SHA-256 for the optional dedup cache. A duplicate is short-circuited and emits `ItemCompleted` without another embedding or write. The image path does not compute a content hash; image deduplication should be handled by a stable application item ID or an external content-addressed store.
-
-`itemIdSource` selects:
-
-- `METADATA`: `metadata.__itemId`, then the record ID.
-- `ID`: the record ID, then the record item ID fallback.
-- `HASH`: the content SHA-256, then the record ID fallback.
-
-A batch item ID is an event correlation key. It is not necessarily the provider record ID.
-
-`embeddingApiCalls` and `writeApiCalls` are atomic counters incremented on each successful embed or chunk write. They are surfaced through `BatchStats` for monitoring and capacity planning.
-
----
-
-## Operations API
-
-### Five operational methods
-
-The five common operational methods are part of the contract. Their per-provider support varies; the support matrix describes what is implemented today, not what the contract pretends is portable.
-
-| Method | Meaning | Typical use |
+| Component | Concerns | Does NOT Cover |
 |---|---|---|
-| `optimize(indexName)` | Ask the provider to compact, merge, or rebuild internal structures. | Reclaim space or improve query performance. |
-| `createAlias(indexName, alias)` | Create an alias that resolves to an index. | Stable application names and staged releases. |
-| `switchAlias(oldIndexName, newIndexName, alias)` | Atomically move an alias to a new index when supported. | Blue-green index swap with zero downtime. |
-| `backup(indexName, targetPath)` | Export or snapshot an index to a target path. | Disaster recovery and offline retention. |
-| `restore(sourcePath, indexName)` | Restore an index from a provider-compatible backup. | Recovery or environment bootstrap. |
+| **component-vector** (this) | Vector data plane: write, delete, search, ACL pushdown, version projection | File parsing, chunking strategy, embedding model selection, ACL fact source |
+| component-document-parser | Multi-format document parsing (with SSRF protection) | Chunking, vectorization |
+| component-document-chunking | 9 chunking strategies on plain text | Vector store, ACL |
+| component-ai | Embedding / LLM / multimodal routing | Vector store, document facts |
+| component-ocr | 8 OCR vendor abstractions | Chunking, vectorization |
+| **Business application** | Document facts, permission facts, user management, task scheduling | Vector store SDK, filtering DSL |
 
-These methods return `boolean` because successful provider implementations report a success/failure result. Unsupported implementations do not return `false`; they throw `UnsupportedOperationException` through `throwUnsupportedOps`.
+---
 
-### Per-provider support matrix
+## 🏗️ Architecture Design
 
-The matrix describes what each provider implementation actually does today.
+### Overall Architecture
 
-| Provider | `optimize` | `createAlias` | `switchAlias` | `backup` | `restore` |
-|---|:---:|:---:|:---:|:---:|:---:|
-| Milvus | Real | Real | Real | UOE | UOE |
-| Qdrant | Real | UOE | UOE | UOE | UOE |
-| PostgreSQL | Real | UOE | UOE | UOE | UOE |
-| Redis | UOE | UOE | UOE | UOE | UOE |
-| MongoDB Atlas | UOE | UOE | UOE | UOE | UOE |
-| Neo4j | UOE | UOE | UOE | UOE | UOE |
-| Weaviate | UOE | UOE | UOE | UOE | UOE |
+```mermaid
+graph TB
+    classDef app fill:#E3F2FD,stroke:#1565C0,color:#0D47A1
+    classDef chunk fill:#FFF3E0,stroke:#E65100,color:#BF360C
+    classDef embed fill:#F3E5F5,stroke:#7B1FA2,color:#4A148C
+    classDef vector fill:#E8F5E9,stroke:#2E7D32,color:#1B5E20
+    classDef store fill:#FCE4EC,stroke:#C62828,color:#B71C1C
+    classDef provider fill:#E0F7FA,stroke:#00695C,color:#004D40
 
-- **Milvus** calls `manualCompact` for `optimize`, `createAlias` for `createAlias`, and `alterAlias` for `switchAlias`. Backup and restore are delegated to the `milvus-backup` out-of-process tool; the provider implementation throws UOE so callers know to use the external tool.
-- **Qdrant** implements `optimize` as a snapshot trigger (`createSnapshotAsync`) that causes the segments optimizer and index merger to run. Backup and restore go through `qdrant-backup`. Aliases are not supported.
-- **PostgreSQL** implements `optimize` as `VACUUM ANALYZE` on the underlying table. Aliases, backup, and restore rely on `CREATE VIEW`, `pg_dump`, and `pg_restore` respectively; the provider throws UOE.
-- **Redis, MongoDB Atlas, Neo4j, Weaviate** report UOE for all five operations; their primary capabilities are search and persistence, not native alias/snapshot primitives.
+    subgraph Sources["Data Sources"]
+        direction TB
+        A1["📄 Business Documents"]:::app
+        A2["🖼️ Images"]:::app
+        A3["📊 Database Text"]:::app
+    end
 
-There are 35 provider-operation slots: five real implementations and 30 `UnsupportedOperationException` paths. The matrix is the contract for what is portable.
+    subgraph Chunk["chunk-adapter (optional)"]
+        direction TB
+        B1["ChunkVectorRecordMapper<br/>Stable ID + Position Metadata"]:::chunk
+    end
 
-### `throwUnsupportedOps` helper
+    subgraph Embed["ai component"]
+        direction TB
+        C1["EmbeddingModel"]:::embed
+        C2["ModalityAwareEmbeddingService<br/>Text / Image Routing"]:::embed
+    end
 
-Provider implementations call the shared helper for unsupported boolean operations:
+    subgraph Vector["vector-core (this component)"]
+        direction TB
+        D1["VectorService<br/>4 core capabilities"]:::vector
+        D2["KnowledgeBaseVectorService<br/>ACL pre-filter + rerank + MMR"]:::vector
+        D3["VectorProjectionLifecycleService<br/>Version state machine"]:::vector
+        D4["VectorBulkOperations<br/>Flux streaming backpressure bulk"]:::vector
+    end
+
+    subgraph Provider["Provider Adapter Layer"]
+        direction TB
+        E1["Milvus"]:::provider
+        E2["Qdrant"]:::provider
+        E3["Weaviate"]:::provider
+        E4["PostgreSQL"]:::provider
+        E5["Redis / VikingDB / Neo4j / MongoDB Atlas"]:::provider
+    end
+
+    subgraph Store["Vector Database"]
+        direction TB
+        F1["Vectors + metadata"]:::store
+        F2["Index schema"]:::store
+    end
+
+    Sources -->|"Chunk"| Chunk
+    Chunk -->|"VectorRecord"| Embed
+    Embed -->|"float[]"| Vector
+    Vector -->|"filtered query"| Provider
+    Provider --> Store
+    Provider -.->|"vectorId manifest"| Vector
+```
+
+### Data Model Hierarchy
+
+```mermaid
+flowchart TD
+    T["tenantId — Tenant Hard Isolation"] --> KB["knowledgeBaseId — Knowledge Base Scope"]
+    KB --> D["documentId — Business Document ID"]
+    D --> V["version / projectionVersionId<br/>Document Version / Projection Version"]
+    V --> C["chunkNo — Chunk Ordinal"]
+    C --> ID["vectorId — Stable Primary Key for a Chunk Vector"]
+
+    style T fill:#E3F2FD
+    style KB fill:#FFF3E0
+    style D fill:#F3E5F5
+    style V fill:#E8F5E9
+    style C fill:#FCE4EC
+    style ID fill:#F0F4C3
+```
+
+Each layer has its own responsibility:
+
+| Layer | Field | Why It's Needed |
+|---|---|---|
+| Tenant | `tenantId` | First-level security boundary; must be filterable on the provider side |
+| Knowledge Base | `knowledgeBaseId` | Subdivide vector space and permission domain within a tenant |
+| Document | `documentId` | Group multiple chunks into one business document |
+| Version | `version` / `projectionVersionId` | Distinguish different content versions of the same document; enables "ready-then-switch" semantics |
+| Chunk | `chunkNo` | Return to original position; cap single-document result count |
+| Record | `vectorId` / `id` | Idempotent write, exact delete, manifest cleanup, retry |
+
+### Ingestion Pipeline
+
+```mermaid
+sequenceDiagram
+    participant App as Business Orchestrator
+    participant Parser as document-parser
+    participant Chunker as document-chunking
+    participant Adapter as chunk-adapter
+    participant AI as component-ai
+    participant VCore as vector-core
+    participant Provider as vector Provider
+    participant Store as Vector Database
+
+    App->>Parser: read(pdf)
+    Parser-->>App: Flow.Publisher<ReadEvent><br/>Section / Image / Failed
+    App->>Chunker: adaptEvents(Publisher<ReadEvent>, rule)
+    Chunker-->>App: Flow.Publisher<ChunkingEvent><br/>Section / Finished / Failed
+    App->>Adapter: toVectorRecord(chunk, ctx)
+    Adapter-->>App: VectorRecord (no embedding yet)
+    App->>AI: embed(text)
+    AI-->>App: float[]
+    App->>VCore: vectorService.upsert(record)
+    VCore->>Provider: VectorStore.add(records)
+    Provider->>Store: Write vectors + metadata
+    Store-->>Provider: vectorId
+    Provider-->>VCore: Write result
+    VCore-->>App: vectorId
+```
+
+### Retrieval Pipeline
+
+```mermaid
+sequenceDiagram
+    participant App as Business Caller
+    participant Auth as Auth / Authorization
+    participant KB as KnowledgeBaseVectorService
+    participant Filter as VectorFilterCompiler
+    participant Provider as vector Provider
+    participant Store as Vector Database
+    participant AI as component-ai
+
+    App->>Auth: Get AccessScope(tenantId, deptIds, principalIds)
+    Auth-->>App: AccessScope
+    App->>KB: search(kb, KnowledgeSearchRequest(scope))
+    KB->>KB: Build structured filter<br/>tenant + kb + status + visibility
+    KB->>Filter: compile(VectorFilter)
+    Filter->>Filter: Translate to provider native syntax
+    KB->>AI: embed(query)
+    AI-->>KB: float[]
+    KB->>Provider: hybridSearch(denseVector, filter)
+    Provider->>Store: ANN / BM25 recall
+    Store-->>Provider: candidates
+    Provider-->>KB: candidates (candidateK)
+    KB->>KB: Rerank (rerankTopK)
+    KB->>KB: MMR deduplication
+    KB->>KB: Per-document chunk cap
+    KB-->>App: RetrievalResult(citations, diagnostics)
+```
+
+### Version Projection Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> UPLOADED : Business receives file
+    UPLOADED --> PARSING : parser parses
+    PARSING --> CHUNKING : Parsing complete
+    CHUNKING --> VECTOR_WRITING : Chunking complete
+    VECTOR_WRITING --> ACTIVE : Write succeeded + DB version switch
+    VECTOR_WRITING --> FAILED : Any step failed
+    ACTIVE --> REPLACING : New version uploaded
+    REPLACING --> ACTIVE : New version write complete
+    REPLACING --> FAILED : New version failed
+    ACTIVE --> ARCHIVED : Old version archived
+    FAILED --> [*]
+    ARCHIVED --> [*]
+```
+
+The `ACTIVE` version in the database is the only version visible at query time. Even if vector write succeeds, the new version does not enter the search scope until the DB switches to the new version.
+
+---
+
+## 🚀 Quick Start Guide
+
+### 1. Add Dependencies
+
+Versions are managed by the platform BOM; business projects typically only need to import one provider module. For example, with Milvus:
+
+```xml
+<dependency>
+    <groupId>cn.richie696.component</groupId>
+    <artifactId>atlas-richie-component-vector-milvus</artifactId>
+</dependency>
+```
+
+To map chunking results directly to vector records, also add:
+
+```xml
+<dependency>
+    <groupId>cn.richie696.component</groupId>
+    <artifactId>atlas-richie-component-vector-chunk-adapter</artifactId>
+</dependency>
+```
+
+For business documents that are frequently updated or deleted, also add the version projection plugin:
+
+```xml
+<dependency>
+    <groupId>cn.richie696.component</groupId>
+    <artifactId>atlas-richie-component-vector-projection-dao</artifactId>
+</dependency>
+```
+
+> ⚠️ **Only one Provider should be active per application instance**. Vector data is NOT automatically replicated across providers, nor will the component silently switch to another database when one fails. Doing so mixes two different data planes, producing results that are neither complete nor permission-correct.
+
+### 2. Choose a Provider
+
+| Scenario | Recommended Provider | Reason |
+|---|---|---|
+| Commercial production + full capabilities (hybrid/alias/backup) | **Milvus** | Most complete capability set, best documentation |
+| Existing Qdrant deployment + small-to-medium scale | **Qdrant** | Clean API, single-binary deployment friendly |
+| Already using Weaviate for modular vector + RAG | **Weaviate** | Native hybrid is strong, integrates with GraphQL |
+| Already have a PostgreSQL cluster | **PostgreSQL/pgvector** | Reduced infrastructure, strong transactional consistency |
+| Extremely low latency + small-to-medium scale | **Redis** | Simple deployment, high performance, but limited capabilities |
+| MongoDB ecosystem | **MongoDB Atlas** | Integrates with existing document database |
+| Knowledge graph + vector hybrid | **Neo4j** | Graph-RAG dedicated |
+| ByteDance ecosystem | **VikingDB** | Adapts to Volcano Engine ecosystem |
+
+### 3. Basic Configuration
+
+This component only manages vector database and index configuration. `EmbeddingModel` is provided by `component-ai`; model vendor, API key, and model routing should NOT be configured in this component.
+
+```yaml
+platform:
+  component:
+    ai:
+      models:
+        text-embedding-v3:
+          provider: DASHSCOPE
+          api-key: ${DASHSCOPE_API_KEY}
+          options:
+            model: text-embedding-v3
+            dimension: 1024
+
+    vector:
+      provider: milvus
+      default-index: knowledge_chunks
+      bulk:
+        embedding-concurrency: 8
+        write-batch-size: 100
+        write-concurrency: 4
+        write-flush-interval-ms: 1000
+      indexes:
+        knowledge_chunks:
+          dimension: 1024
+          metric: cosine
+          index-type: hnsw
+          additional-fields:
+            tenantId: { data_type: VarChar, max_length: 64 }
+            knowledgeBaseId: { data_type: VarChar, max_length: 64 }
+            documentId: { data_type: VarChar, max_length: 64 }
+            projectionVersionId: { data_type: VarChar, max_length: 64 }
+            visibility: { data_type: VarChar, max_length: 32 }
+            status: { data_type: VarChar, max_length: 32 }
+            version: { data_type: Int64 }
+
+    ocr:
+      vendor: aliyun
+      enabled: true
+```
+
+The provider's own connection address, authentication, and database-specific parameters are still configured by the corresponding provider module.
+
+### Scalar Fields Are Not Plain Metadata
+
+For vector databases like Milvus and VikingDB, fields that can participate in database-side filtering **must be scalar fields declared in the index schema**. Simply putting values into `metadata` JSON does NOT guarantee the database can use them for filtering.
+
+Therefore, define your field conventions before building the index, and keep three places consistent:
+
+1. The `key` written in `VectorRecord.metadata`
+2. The field name used by `VectorFilter`
+3. The scalar field name in the vector database schema
+
+The component will NOT guess whether `tenant_id` and `tenantId` are equivalent, nor will it rename fields for you. Teams may use snake_case or camelCase, but must pick one and use it consistently across write, filter, and schema. Field types should also be consistent; for example, numeric IDs should always be treated as numeric from write to filter—don't write as string and query as numeric.
+
+### 4. Write and Basic Retrieval
+
+`VectorService` is the minimal entry point that all providers must implement. It only retains four truly universal capabilities: semantic search, idempotent write, delete by vector ID, and streaming bulk operations.
 
 ```java
-@Override
-protected boolean backupImpl(String indexName, String targetPath) {
-    return throwUnsupportedOps("backup", indexName, "qdrant");
+VectorRecord record = VectorRecord.text(
+        "knowledge_chunks",
+        "doc-100:v3:12",
+        "Employees should submit business trip applications three days in advance.")
+    .setDocumentId("doc-100")
+    .setChunkNo(12)
+    .setVersion(3L)
+    .setMetadata(Map.of(
+        "tenantId", "10000",
+        "knowledgeBaseId", "hr",
+        "visibility", "COMPANY",
+        "status", "ACTIVE"));
+
+String vectorId = vectorService.upsert(record);
+
+List<VectorSearchResult> hits = vectorService.searchByText(
+        "knowledge_chunks",
+        "How far in advance must a business trip be applied for?",
+        10,
+        SearchOptions.builder()
+            .filter(VectorFilter.and(
+                VectorFilter.eq("tenantId", "10000"),
+                VectorFilter.eq("knowledgeBaseId", "hr"),
+                VectorFilter.eq("status", "ACTIVE")))
+            .rerank(true)
+            .build());
+
+vectorService.deleteById("knowledge_chunks", vectorId);
+```
+
+`id` is the primary key of a vector record. It does NOT participate in similarity computation, but is indispensable for idempotent write, exact delete, failure retry, and version cleanup. We recommend using a stable ID composed of `documentId + version + chunkNo`; when the same chunk of the same version is rewritten, the result overwrites instead of accumulating duplicates.
+
+> ⚠️ **Do not use `documentId` as the ID of every vector**. A document typically contains multiple chunks; `documentId` associates them as one business document, while `id` uniquely locates one chunk vector within it.
+
+### 5. Commercial Knowledge Base Retrieval
+
+Plain `VectorService` faces "vector operations"; `KnowledgeBaseVectorService` faces "users safely find answers in the knowledge base". Business RAG should prefer the latter.
+
+```java
+AccessScope scope = new AccessScope(
+        "10000",
+        Set.of("dept-hr"),
+        Set.of("user-9527"),
+        false);
+
+KnowledgeSearchRequest request = new KnowledgeSearchRequest(
+        "How far in advance must a business trip be applied for?",
+        8,      // topK
+        50,     // candidateK
+        scope,
+        true,   // rerank
+        false,  // hybrid
+        null,   // keywordQuery
+        false,  // mmr
+        0.6,    // mmrLambda
+        2,      // maxChunksPerDocument
+        null);  // additionalFilter
+
+RetrievalResult result = knowledgeBaseVectorService.search("hr", request);
+```
+
+The knowledge base facade automatically constructs and pushes down the following base constraints:
+
+```text
+tenantId = current tenant
+AND knowledgeBaseId = current knowledge base
+AND status = ACTIVE
+AND caller satisfies document visibility rules
+```
+
+The result includes `RetrievalCitation` (with `documentId`, `chunkNo`, content, score, metadata) and `RetrievalDiagnostics` (candidate count, final return count, whether hybrid was used, whether rerank was applied, and elapsed time).
+
+---
+
+## 📚 Interface Reference
+
+### Core Interfaces (Required for All Providers)
+
+```java
+public interface VectorService extends
+        VectorSearchOperations,
+        VectorRecordWriteOperations,
+        VectorRecordDeleteOperations,
+        VectorBulkOperations {
+}
+
+public interface VectorSearchOperations {
+    List<VectorSearchResult> searchByText(String indexName, String text, int limit);
+    List<VectorSearchResult> searchByText(String indexName, String text, int limit, double minScore);
+    List<VectorSearchResult> searchByText(String indexName, String text, int limit, SearchOptions options);
+    List<VectorSearchResult> searchByImage(String indexName, byte[] image, String mimeType, int limit);
+}
+
+public interface VectorRecordWriteOperations {
+    String upsert(VectorRecord record);
+}
+
+public interface VectorRecordDeleteOperations {
+    void deleteById(String indexName, String vectorId);
+    void deleteByIds(String indexName, Collection<String> vectorIds);
+}
+
+public interface VectorBulkOperations {
+    Flux<BulkOperationEvent> upsertAll(String indexName, Flux<VectorRecord> records);
 }
 ```
 
-The helper always throws a message containing the operation, provider, and index:
+### Optional Capability Interfaces
 
-```text
-backup 未实现: provider=qdrant, index=demo
+```java
+// Exact primary-key read (for detail backtracking, troubleshooting)
+public interface VectorRecordReadOperations {
+    Optional<VectorRecord> getById(String indexName, String vectorId);
+    List<VectorRecord> getByIds(String indexName, Collection<String> vectorIds);
+}
+
+// Native hybrid search (dense + sparse/BM25)
+public interface VectorHybridSearchOperations {
+    List<VectorSearchResult> hybridSearch(String indexName, String text, String keyword,
+                                         int limit, SearchOptions options);
+}
+
+// ACL-aware hybrid (filter pushed down on hybrid recall)
+public interface VectorAclAwareHybridSearchOperations {
+    List<VectorSearchResult> hybridSearch(String indexName, String text, String keyword,
+                                         int limit, AccessScope scope, SearchOptions options);
+}
+
+// Multi-vector joint retrieval (named vectors, multimodal, multi-model)
+public interface VectorMultiVectorSearchOperations {
+    List<VectorSearchResult> searchByMultiVector(String indexName, List<float[]> vectors, int limit);
+}
+
+// Collection / index lifecycle
+public interface VectorIndexLifecycleOperations {
+    void createIndex(String indexName, VectorProperties.IndexConfig config);
+    void deleteIndex(String indexName);
+    boolean indexExists(String indexName);
+}
+
+// Index statistics
+public interface VectorIndexStatsOperations {
+    long countDocuments(String indexName);
+    IndexInfo describeIndex(String indexName);
+    Map<String, IndexInfo> listIndexes();
+    boolean healthCheck(String indexName);
+}
+
+// Blue-green rebuild alias switching
+public interface VectorIndexAliasOperations {
+    boolean createAlias(String indexName, String alias);
+    boolean switchAlias(String oldIndexName, String newIndexName, String alias);
+}
+
+// Snapshot / backup / restore
+public interface VectorBackupOperations {
+    void backup(String indexName, String targetPath);
+    void restore(String indexName, String sourcePath);
+}
 ```
 
-Its return type is `boolean` for Java's unconditional-throw pattern: callers can write `return throwUnsupportedOps(...)` in a method whose declared result is boolean without adding an unreachable return statement.
+> ⚠️ **If an interface is not implemented, that provider has NOT committed to that capability for business code**. Do not rely on a "default implementation returns empty collection" to determine lack of support; lack of support must be exposed through the type system or explicit exceptions.
 
-The helper centralizes what would otherwise be 30+ scattered `throw new UnsupportedOperationException(...)` sites across the seven provider implementations. The message is structured for log clustering and stack-trace correlation, with both the operation name and the provider identifier.
+### Public Method Index
 
-The helper is not a capability probe and never returns `false`. Applications that need capability discovery should maintain provider policy from the matrix or catch `UnsupportedOperationException` at the operational boundary.
-
----
-
-## Multi-Modal Embedding
-
-`ModalityAwareEmbeddingService` is the central router. Its `embed(modality, content)` method performs an exhaustive switch:
-
-```text
-TEXT  + TextContent  → textModel.embed(text)
-IMAGE + ImageContent → imageModel.embed(data URL)
-```
-
-`textModel` is mandatory because text is the baseline capability. `imageModel` is optional. `supportsModality(TEXT)` is always true after construction, while `supportsModality(IMAGE)` is true only when the image model exists. `dimensionFor` exposes the selected model dimension and returns zero for an unavailable image model.
-
-The service validates modality/content alignment. A `TEXT` modality with `ImageContent`, or an `IMAGE` modality with `TextContent`, is rejected rather than coerced. This keeps model input errors close to the caller.
-
-The same vector-space constraint applies to cross-modal retrieval. Text-to-image and image-to-text search are meaningful only when both model outputs are comparable, for example when both sides use a compatible CLIP/SigLIP or multimodal embedding model. Adding an image model is therefore not enough by itself; its dimension and semantic space must match the target index.
-
-For image embedding, `ImageContent` (bytes + MIME type) is converted into a `data:<mime>;base64,...` URL that Spring AI `EmbeddingModel.embed(String)` consumes. The format aligns with the multimodal embedding adapters exposed by Spring AI, including the Bailian/DashScope multimodal embedding models.
-
-Future extensions can add additional permitted `VectorContent` variants and a corresponding modality route, but the sealed type and exhaustive switch make that extension explicit.
-
----
-
-## Multi-Provider Operations
-
-### `VectorOperationsFacade`
-
-`VectorOperationsFacade` is the optional multi-provider dispatcher. It is intentionally a concrete class rather than another interface: there is one core dispatch algorithm, and a single implementation does not benefit from an abstraction indirection.
-
-The facade is created by `VectorAutoConfiguration` whenever at least one `VectorService` bean is registered in the Spring container. Each provider module contributes its bean by bean name, and the facade indexes them in a `Map<String, VectorService>`.
-
-### Access and execution methods
-
-- `primary()` returns the configured default provider (`platform.component.vector.facade.default-provider`).
-- `get(providerName)` returns a named provider.
-- `providerNames()` returns the immutable registered provider list.
-- `execute(operation, action)` runs an operation through the primary and fallback chain.
-
-The attempt sequence is:
-
-```text
-configured primary
-  → fallback-chain[0]
-  → fallback-chain[1]
-  → ...
-```
-
-Names are de-duplicated while preserving order. Each provider is retried `maxRetries` times after the initial attempt, with exponential backoff based on `retryBackoffMillis` (`base * 2^attempt`). If all attempts fail, `VectorFacadeExecutionException` contains one `ProviderFailure` per provider, preserving the provider name and root cause.
-
-### Failure aggregation and observability
-
-`ProviderFailure(provider, cause)` records a single provider's last error. `VectorFacadeExecutionException` aggregates the list and exposes it through `getFailures()` so callers can log or route per-provider failures without losing context.
-
-When a `MeterRegistry` is available, the facade records:
-
-- `vector.facade.operation` timer tagged by `provider` and `operation`.
-- `vector.facade.failure` counter tagged by `provider`, `operation`, and exception class.
-
-The metrics cover individual retry attempts, making provider degradation visible before the fallback chain is exhausted. Logs identify the failed provider and the transition to the next provider.
-
-The facade is useful when the application needs a controlled fallback policy. It does not merge results from multiple stores and does not make writes transactionally atomic across providers.
-
----
-
-## Configuration Reference
-
-### Common properties
-
-| Property | Default | Description |
+| Method | On Interface | When to Call |
 |---|---|---|
-| `platform.component.vector.provider` | `REDIS` | Active provider enum value. |
-| `platform.component.vector.embedding-provider` | `OPENAI` | Embedding configuration selection. |
-| `platform.component.vector.default-index` | `documents` | Default logical index. |
-| `platform.component.vector.indexes` | unset | Named `IndexConfig` map. |
-| `platform.component.vector.indexes.*.dimension` | `1536` | Vector dimension; must match the model. |
-| `platform.component.vector.indexes.*.metric` | `cosine` | Distance metric. |
-| `platform.component.vector.indexes.*.index-type` | `hnsw` | Provider-supported index type. |
-| `platform.component.vector.indexes.*.replicas` | `1` | Desired replica count where supported. |
-| `platform.component.vector.indexes.*.shards` | `1` | Desired shard count where supported. |
-
-### Batch properties
-
-`platform.component.vector.batch.*` controls the reactive pipeline. See [Batch configuration](#batch-configuration) for the full table.
-
-### Facade properties
-
-`platform.component.vector.facade.*` controls `VectorOperationsFacade`.
-
-| Property | Default | Description |
-|---|---|---|
-| `platform.component.vector.facade.default-provider` | `redisVectorServiceImpl` | Bean name of the primary provider. |
-| `platform.component.vector.facade.fallback-chain` | empty | Ordered list of fallback bean names. |
-| `platform.component.vector.facade.max-retries` | `2` | Retries per provider before fallback. Total attempts = `max-retries + 1`. |
-| `platform.component.vector.facade.retry-backoff-millis` | `100` | Base for exponential backoff (`base, base*2, base*4, ...`). |
-
-### Provider properties
-
-Connection properties are intentionally not flattened into the common contract. Keep host, port, database, collection, schema, credentials, and native tuning under the corresponding provider configuration class.
-
-The common index configuration is an intent. A provider may ignore a field it cannot express, preserve it in `IndexInfo.metadata`, or report an unsupported operation. This avoids pretending that Milvus shards, PostgreSQL tables, Redis indexes, and Weaviate classes have identical lifecycle semantics.
-
-### Dimension rules
-
-The configured index dimension, embedding model dimension, and provider schema dimension must agree. PostgreSQL specifically resolves the configured `IndexConfig.dimension` when creating the `vector(N)` column and uses its default only when no value is available. A pgvector table or native adapter must not be initialized with a stale hard-coded dimension while the application is configured for another model.
+| `vectorService.upsert(record)` | `VectorRecordWriteOperations` | Single idempotent write |
+| `vectorService.upsertAll(indexName, Flux)` | `VectorBulkOperations` | Streaming bulk write (backpressured) |
+| `vectorService.searchByText(...)` | `VectorSearchOperations` | Plain semantic search |
+| `vectorService.deleteById(indexName, vectorId)` | `VectorRecordDeleteOperations` | Exact delete one |
+| `vectorService.deleteByIds(indexName, ids)` | `VectorRecordDeleteOperations` | Exact delete many |
+| `knowledgeBaseVectorService.search(kb, request)` | `KnowledgeBaseVectorService` | Commercial RAG search (with ACL) |
+| `projectionService.beginRebuild(ref, spec)` | `VectorProjectionLifecycleService` | Create new projection version |
+| `projectionService.activate(versionId, cleanupDelay)` | `VectorProjectionLifecycleService` | Activate new version, old version → RETIRING |
+| `projectionService.markFailed(versionId, reason)` | `VectorProjectionLifecycleService` | Mark as failed |
+| `projectionService.findVersion(versionId)` | `VectorProjectionLifecycleService` | Query version snapshot |
+| `cleanupService.cleanupDueProjections(maxVersions)` | `VectorProjectionCleanupService` | Clean up expired RETIRING (caller schedules) |
 
 ---
 
-## Provider Comparison
+## 🔧 Core Scenarios
 
-| Provider | Provider value | Strength | Typical fit |
+### Scenario 1 — Document Ingestion with Version Governance
+
+**Business scenario**: The HR knowledge base has dozens of policy documents updated daily. Users should always see the latest version when searching, but "half-written batches visible to users" must not cause old content to flash back or disappear.
+
+**Implementation path**:
+
+```java
+@Service
+@RequiredArgsConstructor
+public class HrPolicyIngestService {
+
+    private final VectorProjectionLifecycleService lifecycle;
+    private final VectorProjectionWriter writer;
+    private final DocumentParser reader;
+    private final ChunkingService chunker;
+    private final ChunkVectorRecordMapper mapper;
+    private final EmbeddingModel embedding;
+    private final VectorRecordWriteOperations vector;
+
+    public void ingest(File pdf, String documentId, String tenantId, String sourceVersion) {
+        // 1. Create new projection version (initial state PREPARING)
+        VectorProjectionReference reference = new VectorProjectionReference(
+                tenantId, "hr", documentId);
+        VectorProjectionSpecification specification = new VectorProjectionSpecification(
+                sourceVersion, "hr_policies", "text-embedding-v3");
+        VectorProjectionVersion version = lifecycle.beginRebuild(reference, specification);
+
+        // 2. Parse → chunk → embed → write (manifest synced automatically)
+        List<Chunk> chunks = parseAndChunk(pdf);
+        Flux<VectorRecord> records = Flux.fromIterable(chunks)
+                .map(chunk -> mapper.toVectorRecord(chunk,
+                        new VectorRecordContext("hr_policies", documentId, 1L, "default",
+                                Map.of("visibility", "COMPANY", "status", "ACTIVE"))))
+                .handle((rec, sink) -> {
+                    rec.setEmbedding(embedding.embed(rec.getContent().text()));
+                    sink.next(rec);
+                });
+
+        writer.write(version.versionId(), records)
+                .doOnNext(event -> log.info("write event: {}", event.getClass().getSimpleName()))
+                .blockLast();
+
+        // 3. Activate new version (only after write completes and version is READY)
+        lifecycle.activate(version.versionId(), Duration.ofHours(24));
+
+        // 4. Old version is automatically marked RETIRING;
+        //    cleanup task removes it per manifest after 24h.
+    }
+
+    private List<Chunk> parseAndChunk(File pdf) {
+        ReadResult doc = reader.read(pdf);
+        ChunkingResult result = chunker.chunk(doc.sections().get(0).text(),
+                ChunkingRule.recursiveDefaults(1600, 160));
+        return result.chunks();
+    }
+}
+```
+
+**Key constraints**:
+- You MUST wait for `writer.write(...)`'s `Flux` to complete normally before calling `activate`
+- On failure, call `markFailed(reason)`; the old version continues to serve
+- Cleanup of old versions is scheduled by Quartz / XXL-Job / business scheduled tasks via `cleanupService.cleanupDueProjections(batchSize)`
+
+### Scenario 2 — Commercial RAG Retrieval with ACL Pushdown
+
+**Business scenario**: Employee Alice is in the HR department. She should be able to query HR department policies and public company policies, but not sensitive finance documents and not other tenants' documents.
+
+**Implementation path**:
+
+```java
+@Service
+@RequiredArgsConstructor
+public class HrQaService {
+
+    private final KnowledgeBaseVectorService kbVector;
+    private final AiChatService ai;
+
+    public String answer(String question, AccessScope scope) {
+        // 1. Retrieval (ACL pushed down automatically)
+        RetrievalResult result = kbVector.search("hr",
+                KnowledgeSearchRequest.builder()
+                        .query(question)
+                        .topK(8)
+                        .candidateK(100)
+                        .accessScope(scope)
+                        .rerankTopK(30)
+                        .mmr(true)
+                        .mmrLambda(0.6)
+                        .maxChunksPerDocument(2)
+                        .build());
+
+        // 2. Compose prompt + invoke LLM
+        String context = result.citations().stream()
+                .map(c -> "[Source: doc=" + c.documentId() + " chunk=" + c.chunkNo() + "]\n" + c.text())
+                .collect(Collectors.joining("\n\n"));
+        AiResponse resp = ai.call(AiRequest.ofSystemAndUser(
+                "You are an HR knowledge base assistant. Answer strictly based on the references below.\n\n" + context,
+                question));
+        return resp.getContent();
+    }
+}
+```
+
+**Key constraints**:
+- `AccessScope` MUST be parsed from the authentication system, NOT constructed by the frontend
+- `topK=8`, `candidateK=100`, `rerankTopK=30`: leave enough room in the candidate pool for reranking
+- `mmr=true` + `maxChunksPerDocument=2`: prevent a single document from dominating results
+- `RetrievalCitation` MUST be displayed to the user so they can trace the source of answers
+
+### Scenario 3 — Streaming Bulk Ingestion with Backpressure
+
+**Business scenario**: Import 100,000 historical records at once. Cannot blow up the JVM; cannot push the embedding model into rate limiting; write failures should be retryable per record.
+
+**Implementation path**:
+
+```java
+@Service
+@RequiredArgsConstructor
+public class BulkImportService {
+
+    private final VectorService vectorService;
+    private final EmbeddingModel embedding;
+    private final MeterRegistry meterRegistry;
+
+    public Mono<Long> bulkImport(String indexName, Flux<RawRecord> source) {
+        return source
+                .map(raw -> {
+                    VectorRecord record = VectorRecord.text(indexName, raw.id, raw.text)
+                            .setDocumentId(raw.docId)
+                            .setChunkNo(raw.chunkNo)
+                            .setVersion(raw.version)
+                            .setMetadata(raw.metadata);
+                    record.setEmbedding(embedding.embed(record.getContent().text()));
+                    return record;
+                })
+                .transform(vectorService::upsertAll)
+                .doOnNext(event -> {
+                    if (event instanceof BulkOperationEvent.ItemSucceeded s) {
+                        meterRegistry.counter("vector.bulk.success").increment();
+                    } else if (event instanceof BulkOperationEvent.ItemFailed f) {
+                        meterRegistry.counter("vector.bulk.failure", "reason", f.errorClass()).increment();
+                        log.warn("failed to write vectorId={}, reason={}", f.itemId(), f.message());
+                    }
+                })
+                .filter(event -> event instanceof BulkOperationEvent.Completed)
+                .cast(BulkOperationEvent.Completed.class)
+                .map(c -> c.summary().succeeded());
+    }
+}
+```
+
+**Configuration tuning**:
+
+```yaml
+platform:
+  component:
+    vector:
+      bulk:
+        embedding-concurrency: 8       # 1/2 ~ 2/3 of model QPS
+        write-batch-size: 100          # provider per-request batch size
+        write-concurrency: 4           # write concurrency
+        write-flush-interval-ms: 1000  # max batching wait time
+```
+
+**Key constraints**:
+- `embedding-concurrency` is bounded by model QPS; setting too high causes 429s
+- `write-batch-size` is bounded by the provider's per-request body size limit
+- `Flux<BulkOperationEvent>` provides per-record fine-grained results; do not rely solely on `Completed` for stats
+
+### Scenario 4 — Provider Switching and Multimodal Retrieval
+
+**Business scenario**: Production uses Milvus; local dev uses Redis for lightweight testing; the product needs to support "search by text, find image".
+
+**Implementation (provider switching)**:
+
+```java
+// application-prod.yml
+platform:
+  component:
+    vector:
+      provider: milvus
+
+// application-dev.yml
+platform:
+  component:
+    vector:
+      provider: redis
+      redis:
+        host: localhost
+        port: 6379
+```
+
+Business code is **completely unchanged**—just swap the yaml file.
+
+**Implementation (multimodal)**:
+
+```java
+@Service
+@RequiredArgsConstructor
+public class MultimodalSearchService {
+
+    private final ModalityAwareEmbeddingService embeddingService;
+    private final VectorService vectorService;
+    private final KnowledgeBaseVectorService kbVector;
+
+    public List<VectorSearchResult> searchByText(String question, AccessScope scope) {
+        // text → vector → search
+        return kbVector.search("products",
+                KnowledgeSearchRequest.builder()
+                        .query(question)
+                        .accessScope(scope)
+                        .build());
+    }
+
+    public List<VectorSearchResult> searchByImage(byte[] imageBytes, String mimeType,
+                                                    AccessScope scope) {
+        // image → CLIP multimodal vector → search (shares the same vector space)
+        float[] imageVec = embeddingService.embedImage(imageBytes, mimeType);
+        return kbVector.searchByVector("products", imageVec, scope, 10);
+    }
+}
+```
+
+**Key constraints**:
+- Multimodal vectors MUST be generated by embedding models in the **same vector space** (e.g., CLIP); otherwise cross-modal retrieval will fail
+- `ModalityAwareEmbeddingService` routes by `VectorContent.modality()` to the text or image model automatically
+- Switching providers (e.g., to Redis) may disable cross-modal capabilities—see [Provider Capability Comparison](#-📊-provider-capability-comparison)
+
+---
+
+## ⚙️ Configuration Reference
+
+### Core Configuration
+
+| Config | Default | Description |
+|---|---|---|
+| `provider` | (none) | Active provider: `milvus` / `qdrant` / `weaviate` / `postgresql` / `redis` / `mongodb-atlas` / `neo4j` / `vikingdb` |
+| `enabled` | `true` | Master switch; when `false`, no provider autoconfig activates |
+| `default-index` | (none) | Default index name; used when `indexName` is not explicitly specified in `upsert` |
+| `indexes.<name>.dimension` | (none) | Vector dimension; must match the embedding model output dimension |
+| `indexes.<name>.metric` | `cosine` | Distance metric: `cosine` / `l2` / `ip` |
+| `indexes.<name>.index-type` | `hnsw` | Index type: provider-specific (e.g., Milvus supports HNSW / IVF_FLAT / ANNOY) |
+| `indexes.<name>.replicas` | `1` | Replica count (effective only for distributed providers) |
+| `indexes.<name>.additional-fields` | (none) | Custom scalar fields; used for ACL filtering |
+
+### Bulk Ingestion Tuning
+
+| Config | Default | Recommended Range | Impact |
 |---|---|---|---|
-| Milvus | `milvus` | Native collections, ANN indexes, compaction, aliases. | Large-scale vector workloads. |
-| Qdrant | `qdrant` | High-performance vector search, snapshot-triggered optimization. | Dedicated vector retrieval. |
-| Redis | `redis` | Low-latency RediSearch vector fields. | Existing Redis deployments and moderate data. |
-| PostgreSQL | `postgresql` | SQL, transactions, and `pgvector` control. | Systems already centered on PostgreSQL. |
-| MongoDB Atlas | `mongodb` | Document and vector data in one platform. | Metadata-heavy document retrieval. |
-| Neo4j | `neo4j` | Graph relationships plus vector indexes. | Knowledge graphs and recommendations. |
-| Weaviate | `weaviate` | Native vector schema and hybrid-search direction. | Vector-first applications with schema APIs. |
+| `bulk.embedding-concurrency` | 8 | 4~16 | Embedding model concurrency; too high causes rate limiting |
+| `bulk.write-batch-size` | 100 | 50~500 | Per-write batch size; too large exceeds provider request body limits |
+| `bulk.write-concurrency` | 4 | 2~8 | Write concurrency; too large crushes the vector database |
+| `bulk.write-flush-interval-ms` | 1000 | 500~3000 | Max batching wait; too small reduces throughput, too large increases latency |
 
-`VectorMultiProviderGuard` refuses to start when more than one `VectorService` bean is detected. To switch providers, remove the previous provider module, add the new one, and update `platform.component.vector.provider`.
+### Provider Configuration Examples
 
----
+**Milvus**:
 
-## Implementation Details
+```yaml
+platform:
+  component:
+    vector:
+      provider: milvus
+      milvus:
+        host: localhost
+        port: 19530
+        username: root
+        password: ${MILVUS_PASSWORD}
+```
 
-### `AbstractVectorService` base class
+**Qdrant**:
 
-`AbstractVectorService` is the shared base class for all provider implementations. It owns the common Spring AI `Document` mapping and routes every call through provider hooks:
+```yaml
+platform:
+  component:
+    vector:
+      provider: qdrant
+      qdrant:
+        host: localhost
+        port: 6333
+        api-key: ${QDRANT_API_KEY}
+```
 
-- Required hooks: `similaritySearchByVector`, `addEmbeddings`, `deleteByIds`, `getByIds`, `listDocumentsImpl`.
-- Optional hooks with UOE defaults: every `createIndexImpl`, `deleteIndexImpl`, `indexExistsImpl`, `getIndexConfigImpl`, `countDocumentsImpl`, `listIndexesImpl`, `truncateIndexImpl`, `updateIndexConfigImpl`, `cloneIndexImpl`, `getIndexStatsImpl`, `describeIndexImpl`, `hybridSearchImpl`, `optimizeImpl`, `createAliasImpl`, `switchAliasImpl`, `backupImpl`, `restoreImpl`, plus `awaitIndexReadyImpl` (which polls `indexExists` on a 500 ms interval until the deadline).
+**PostgreSQL/pgvector**:
 
-The base class also owns:
+```yaml
+platform:
+  component:
+    vector:
+      provider: postgresql
+      postgresql:
+        url: jdbc:postgresql://localhost:5432/knowledge
+        username: postgres
+        password: ${POSTGRES_PASSWORD}
+```
 
-- Single-record `add` / `addText` / `addImage(byte[], Path, URL)` / `update` / `updateText` / `updateImage(byte[], Path)`.
-- Modality routing through the optional `ModalityAwareEmbeddingService` (injected through `@Autowired(required = false)`).
-- Text rerank through the optional `RerankService` (`tryRerank`).
-- Hybrid search fallback (`hybridSearchImpl` defaults to `searchByText`).
-- Three-step health probe (`healthCheckImpl`: schema exists → document count readable → count non-negative).
-- `BatchPipelineCoordinator` construction through three callbacks (`ConfigProvider`, `Embedder`, `DocumentWriter`).
-- Public batch entry points that delegate to the coordinator.
-- The shared `throwUnsupportedOps` helper.
+**Redis**:
 
-The base class is intentionally large because the cross-cutting behavior is shared. The batch pipeline, however, is not in this class — it lives in `BatchPipelineCoordinator`.
-
-### `BatchPipelineCoordinator` extraction
-
-The coordinator lives in its own `pipeline` package because the base class should contain provider-facing contracts and shared single-record semantics, not a second orchestration engine. The independent package now owns the only batch implementation.
-
-It is connected through three callbacks:
-
-- `ConfigProvider`: reads current `VectorProperties.Batch` at each run.
-- `Embedder`: turns a `VectorRecord` into an embedding (production delegates to `AbstractVectorService.embedForBatch`).
-- `DocumentWriter`: writes one provider chunk of Spring AI documents (production delegates to `AbstractVectorService.addEmbeddings`).
-
-Callbacks are preferable to copied fields here. They keep the coordinator independent from `AbstractVectorService`, support setter injection, and ensure the next run sees current configuration.
-
-### Provider implementation pattern
-
-Every provider module follows the same skeleton:
-
-1. A `service.impl` class extends `AbstractVectorService`.
-2. The constructor takes `(RerankService, VectorStore, EmbeddingModel)` and lets the base class wire the batch coordinator.
-3. The required hooks call the provider's native SDK or SQL: `MilvusClient`, `QdrantClient`, `RedisCommands`, `JdbcTemplate`, `MongoCollection`, `Neo4jSession`, or `WeaviateClient`.
-4. The optional hooks are overridden only when the provider has native support; otherwise they call `throwUnsupportedOps(op, indexName, providerName)`.
-5. The provider module contributes Spring auto-configuration with a `@ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "<name>")` so only one `VectorService` bean activates per application.
-
-The pattern keeps the core small and the providers honest. Each provider has a clear surface of "what I do natively" versus "what I delegate to an external tool".
-
-### Why sealed types
-
-An enum can label content, but it cannot guarantee that text data has a text payload or that image data has bytes and an image MIME type. `VectorContent` puts the payload and invariant together. `Modality` then remains a small routing discriminator. This separation gives readable records, exhaustive switches, and clearer validation errors.
-
-### Why the facade is a concrete class
-
-`VectorOperationsFacade` is a single cross-provider algorithm with no provider-specific implementations of its own. Introducing an interface would add a substitution point without adding a second behavior. Callers still depend on the concrete facade because its retry/fallback semantics are part of the core utility.
+```yaml
+platform:
+  component:
+    vector:
+      provider: redis
+      redis:
+        host: localhost
+        port: 6379
+        index-type: HNSW
+        distance-metric: COSINE
+```
 
 ---
 
-## Known Limitations
+## 🔧 Troubleshooting
 
-| Limitation | Effect | Guidance |
+### Common Issues and Solutions
+
+#### 1. Cannot Find Data After Write
+
+**Symptom**: `upsert` returns a `vectorId` successfully, but `searchByText` finds nothing.
+
+**Troubleshooting path**:
+- Check that `VectorRecord.metadata.tenantId` matches `VectorFilter.eq("tenantId", ...)` exactly (case-sensitive, snake_case vs camelCase)
+- Check whether the provider needs `flush()` to make data visible (some providers have write latency)
+- Check whether ACL conditions are too strict (use unfiltered `searchByText` first to verify data exists)
+
+#### 2. Empty Results When Data Exists
+
+**Symptom**: Searching via `KnowledgeBaseVectorService` returns nothing, but `VectorService.searchByText` can find data.
+
+**Troubleshooting path**:
+- Check that `AccessScope` is correct (does `tenantId` match?)
+- Check the document's `visibility` field value (`COMPANY` / `DEPARTMENT` / `CUSTOM` / `PRIVATE`) covers the current user
+- Check whether `status` field is `ACTIVE`
+- Disable visibility filtering temporarily to see if results appear (debug-only)
+
+#### 3. `MAX_CHUNKS_REACHED` Error During Chunking
+
+**Symptom**: `IllegalStateException` when chunking a huge document that exceeds 10000 chunks.
+
+**Solutions**:
+- Increase `max-chunks-per-document` (business should evaluate whether it's reasonable)
+- Decrease `max-characters` (e.g., 800 → finer-grained chunking)
+- Split the document and ingest in multiple batches
+
+#### 4. Retrieval Fails After Switching Providers
+
+**Symptom**: Redis works locally but Milvus in production finds nothing.
+
+**Troubleshooting path**:
+- Check vector space compatibility: different embedding models must have matching output dimensions
+- Check `metric` alignment (`cosine` vs `l2`)
+- Check whether `index-type` is supported by the new provider
+- Check whether ACL scalar fields are declared in the Milvus schema (Redis filters by default, Milvus requires explicit schema)
+
+#### 5. Hybrid Silently Downgrades to Dense
+
+**Symptom**: `hybrid=true` calls return only dense results from the provider.
+
+**Reason**: The current provider does not support ACL-aware hybrid (see [Provider Capability Comparison](#-📊-provider-capability-comparison)).
+
+**Solutions**:
+- Explicitly declare that the provider doesn't support hybrid; switch to other approaches (keyword preprocessing + dense) on the business side
+- Switch to a provider that supports ACL-aware hybrid (e.g., Milvus, Weaviate)
+- Do not assume hybrid is working just because it "looks fine"
+
+#### 6. OOM on Large Documents
+
+**Symptom**: OOM when importing large PDFs.
+
+**Troubleshooting path**:
+- Confirm you are using the `Flux<VectorRecord>` streaming interface, NOT `List<VectorRecord>`
+- Decrease `bulk.write-batch-size` to reduce per-batch memory footprint
+- Stream-ify the parser: `reader.readPublisher(...)` instead of `reader.read(...)`
+
+### Retrieval Quality Tuning
+
+| Symptom | Possible Cause | Tuning Direction |
 |---|---|---|
-| Operations are not uniformly native | 30 of 35 provider-operation slots currently throw UOE. | Check the matrix before using operational workflows. |
-| Image model is optional | Image add/search fails without `imageEmbeddingModel`. | Configure a compatible image model and matching dimension. |
-| Image content hashing is not enabled in the coordinator | Image duplicates are not removed by the text SHA-256 cache. | Supply stable item IDs or deduplicate upstream. |
-| Provider filter DSLs differ | A filter expression is not portable across all backends. | Keep filters simple or isolate provider-specific expressions. |
-| Batch buffering is in memory | Process loss discards buffered work. | Use an external durable ingestion queue when required. |
-| `deleteIf` may enumerate records | Predicate deletes can be expensive. | Reserve for low-frequency management tasks. |
-| Streaming batches may report unknown totals | `BatchStarted.total` is `-1` for streaming input. | Derive progress from completed/failed counts. |
-| One `VectorService` per application | Multiple providers cannot coexist at runtime. | Use `VectorOperationsFacade` for failover, not parallel providers. |
+| Irrelevant recall | Embedding model doesn't match domain | Switch to a domain-fine-tuned model |
+| Too few results | Distance metric too strict | Lower the `minScore` threshold |
+| Too many imprecise results | `candidateK` too large | Reduce `candidateK`, raise `minScore` |
+| Single document dominates | `maxChunksPerDocument` too high | Lower `maxChunksPerDocument` to 2~3 |
+| Many duplicate passages | MMR not enabled | Enable `mmr=true`, `lambda=0.6` |
+| Inaccurate ranking | Rerank not enabled | Enable `rerank=true`, choose a suitable rerank model |
 
 ---
 
-## FAQ
+## 📎 📊 Provider Capability Comparison
 
-### Which provider should I choose?
+> ⚠️ **Do not assume identical native semantics or operational characteristics just because interface names are the same**. Different providers' `createIndex` may involve completely different metadata, different replica models, and different availability guarantees.
 
-Choose Milvus or Qdrant for dedicated large-scale vector retrieval. Choose Redis when Redis is already operational and the data volume is moderate. Choose PostgreSQL when SQL and transactions are central. Choose MongoDB Atlas for document-plus-vector workloads. Choose Neo4j for graph relationships. Choose Weaviate for vector-first schema and hybrid-search workflows.
+### Milvus
 
-### How do I switch providers?
+| Capability | Support | Notes |
+|---|---|---|
+| `VectorSearchOperations` | ✅ | Fully supported |
+| `VectorRecordReadOperations` | ✅ | Efficient read by vectorId |
+| `VectorRecordDeleteOperations` | ✅ | Single + batch + byFilter |
+| `VectorDocumentOperations` | ✅ | Delete by documentId |
+| `VectorIndexLifecycleOperations` | ✅ | createIndex / dropIndex |
+| `VectorIndexStatsOperations` | ✅ | Full statistics |
+| `VectorIndexAliasOperations` | ✅ | createAlias / switchAlias |
+| `VectorHybridSearchOperations` | ✅ | dense + sparse |
+| `VectorAclAwareHybridSearchOperations` | ✅ | **ACL pushdown on hybrid** |
+| `VectorMultiVectorSearchOperations` | ✅ | named vector |
+| `VectorBackupOperations` | ⚠️ | Metadata backup only, no vectors |
+| Multimodal (CLIP) | ✅ | 1024-d shared space |
 
-Add the desired provider module, remove the previous one, configure its native connection settings, align the index dimension and metric, and change `platform.component.vector.provider`. Provider-specific schema and operational behavior needs to be reviewed; the common Java calls remain stable.
+### Qdrant
 
-### How do I switch embedding models?
+| Capability | Support | Notes |
+|---|---|---|
+| `VectorSearchOperations` | ✅ | Complete |
+| `VectorRecordReadOperations` | ✅ | Efficient |
+| `VectorRecordDeleteOperations` | ✅ | Complete |
+| `VectorDocumentOperations` | ✅ | byFilter |
+| `VectorIndexLifecycleOperations` | ✅ | Collection management |
+| `VectorIndexStatsOperations` | ✅ | Complete |
+| `VectorIndexAliasOperations` | ❌ | No alias concept |
+| `VectorHybridSearchOperations` | ⚠️ | dense + sparse, but sparse must be pre-generated |
+| `VectorAclAwareHybridSearchOperations` | ⚠️ | Filter pushdown works, but hybrid dual channels need business-side coordination |
+| `VectorMultiVectorSearchOperations` | ❌ | No named vector concept |
+| `VectorBackupOperations` | ✅ | snapshot backup |
+| Multimodal (CLIP) | ❌ | Requires external CLIP service |
 
-Change the embedding model bean or AI component configuration, then create new indexes whose dimension and vector space match the new model. Existing vectors cannot be compared safely with vectors from an incompatible model.
+### Weaviate
 
-### Why does an image call fail with `UnsupportedModalityException`?
+| Capability | Support | Notes |
+|---|---|---|
+| `VectorSearchOperations` | ✅ | Complete |
+| `VectorRecordReadOperations` | ✅ | Efficient |
+| `VectorRecordDeleteOperations` | ✅ | Complete |
+| `VectorDocumentOperations` | ✅ | byFilter |
+| `VectorIndexLifecycleOperations` | ✅ | Collection management |
+| `VectorIndexStatsOperations` | ✅ | Complete |
+| `VectorIndexAliasOperations` | ❌ | No alias concept |
+| `VectorHybridSearchOperations` | ✅ | **Native hybrid is a strength** |
+| `VectorAclAwareHybridSearchOperations` | ✅ | Filter integrated with hybrid |
+| `VectorMultiVectorSearchOperations` | ⚠️ | Implemented via named vectors |
+| `VectorBackupOperations` | ✅ | Complete |
+| Multimodal (CLIP) | ✅ | Native support |
 
-The image model is absent or the content/modality pair is invalid. Register an image embedding model under `imageEmbeddingModel`, verify that it accepts the data URL format, and use `ImageContent` for `Modality.IMAGE`.
+### PostgreSQL/pgvector
 
-### Why is `writeApiCalls` smaller than the number of records?
+| Capability | Support | Notes |
+|---|---|---|
+| `VectorSearchOperations` | ✅ | Complete |
+| `VectorRecordReadOperations` | ✅ | Primary key read |
+| `VectorRecordDeleteOperations` | ✅ | SQL-level |
+| `VectorDocumentOperations` | ✅ | SQL WHERE |
+| `VectorIndexLifecycleOperations` | ✅ | Full DDL |
+| `VectorIndexStatsOperations` | ✅ | pg_stats |
+| `VectorIndexAliasOperations` | ❌ | No alias (can simulate with views) |
+| `VectorHybridSearchOperations` | ❌ | Requires ES or tsvector combo |
+| `VectorAclAwareHybridSearchOperations` | ❌ | Not supported |
+| `VectorMultiVectorSearchOperations` | ❌ | Single form, single vector |
+| `VectorBackupOperations` | ✅ | pg_dump |
+| Multimodal (CLIP) | ❌ | Requires external integration |
+| **Strength** | — | **Strong transactional consistency, reuses existing infrastructure** |
 
-It counts successful provider chunk calls, not records. A chunk of 100 records contributes one write API call.
+### Redis
 
-### Why is an item failure reported at `PERSISTING` rather than `QUEUED`?
+| Capability | Support | Notes |
+|---|---|---|
+| `VectorSearchOperations` | ✅ | High speed |
+| `VectorRecordReadOperations` | ✅ | Efficient |
+| `VectorRecordDeleteOperations` | ✅ | Complete |
+| `VectorDocumentOperations` | ⚠️ | byFilter has average performance |
+| `VectorIndexLifecycleOperations` | ✅ | Complete |
+| `VectorIndexStatsOperations` | ✅ | Basic |
+| `VectorIndexAliasOperations` | ❌ | None |
+| `VectorHybridSearchOperations` | ❌ | Not supported |
+| `VectorAclAwareHybridSearchOperations` | ❌ | Not supported |
+| `VectorMultiVectorSearchOperations` | ❌ | Not supported |
+| `VectorBackupOperations` | ⚠️ | Requires RDB |
+| Multimodal (CLIP) | ❌ | Not supported |
+| **Best For** | — | Small-to-medium scale, low latency, existing Redis cluster |
 
-The stage identifies the operation that failed. `PERSISTING` tells a recovery consumer that loading and embedding completed and that the provider write should be retried or inspected.
+### MongoDB Atlas
 
-### Does `failFast` cancel every already-running provider call?
+| Capability | Support | Notes |
+|---|---|---|
+| `VectorSearchOperations` | ✅ | Requires MongoDB 7.0+ |
+| `VectorRecordReadOperations` | ✅ | Complete |
+| `VectorRecordDeleteOperations` | ✅ | Complete |
+| `VectorDocumentOperations` | ✅ | byFilter |
+| `VectorIndexLifecycleOperations` | ✅ | Collection |
+| `VectorIndexStatsOperations` | ✅ | Basic |
+| `VectorIndexAliasOperations` | ❌ | None |
+| `VectorHybridSearchOperations` | ❌ | Not supported |
+| `VectorAclAwareHybridSearchOperations` | ❌ | Not supported |
+| `VectorMultiVectorSearchOperations` | ❌ | Not supported |
+| `VectorBackupOperations` | ✅ | mongodump |
+| Multimodal (CLIP) | ❌ | Not supported |
+| **Best For** | — | Existing MongoDB ecosystem |
 
-It terminates the reactive batch path as soon as the failure propagates. Calls already handed to a provider may follow that provider's cancellation behavior; use an external idempotency key for safe retries.
+### Neo4j
 
-### Does `VectorOperationsFacade` merge provider results?
+| Capability | Support | Notes |
+|---|---|---|
+| `VectorSearchOperations` | ✅ | Requires Neo4j 5.x + Vector Index |
+| `VectorRecordReadOperations` | ✅ | Efficient |
+| `VectorRecordDeleteOperations` | ✅ | Complete |
+| `VectorDocumentOperations` | ✅ | byFilter |
+| `VectorIndexLifecycleOperations` | ✅ | Complete |
+| `VectorIndexStatsOperations` | ✅ | Complete |
+| `VectorIndexAliasOperations` | ❌ | None |
+| `VectorHybridSearchOperations` | ❌ | Not supported |
+| `VectorAclAwareHybridSearchOperations` | ❌ | Not supported |
+| `VectorMultiVectorSearchOperations` | ❌ | Not supported |
+| `VectorBackupOperations` | ✅ | Complete |
+| Multimodal (CLIP) | ❌ | Not supported |
+| **Best For** | — | **Graph-RAG: entity relationships + vector hybrid retrieval** |
 
-No. It executes one action against the primary and ordered fallback providers. It returns the first successful result or throws an aggregate `VectorFacadeExecutionException`.
+### VikingDB
 
-### Can every provider create aliases and run backups?
-
-No. Only the real implementations in the matrix do so today. Unsupported paths throw `UnsupportedOperationException` with provider and index context.
-
-### Why does `VectorMultiProviderGuard` refuse to start?
-
-The component uses a single-provider architecture. When more than one `VectorService` bean is detected, the guard throws `IllegalStateException` listing every detected implementation. Remove all but one provider module to satisfy the constraint.
+| Capability | Support | Notes |
+|---|---|---|
+| `VectorSearchOperations` | ✅ | Complete |
+| `VectorRecordReadOperations` | ❌ | Currently not declared |
+| `VectorRecordDeleteOperations` | ✅ | Complete |
+| `VectorDocumentOperations` | ⚠️ | Partial |
+| `VectorIndexLifecycleOperations` | ✅ | Complete |
+| `VectorIndexStatsOperations` | ✅ | Basic |
+| `VectorIndexAliasOperations` | ❌ | Currently not declared |
+| `VectorHybridSearchOperations` | ❌ | Not supported |
+| `VectorAclAwareHybridSearchOperations` | ❌ | Not supported |
+| `VectorMultiVectorSearchOperations` | ❌ | Not supported |
+| `VectorBackupOperations` | ❌ | Currently not declared |
+| Multimodal (CLIP) | ❌ | Not supported |
+| **Best For** | — | ByteDance ecosystem |
 
 ---
 
-## Further Reading
+## ⏱️ Sequence Diagram Reference
 
-- [Chinese documentation](./README.zh.md)
-- [Milvus provider module](./atlas-richie-component-vector-milvus/)
-- [Qdrant provider module](./atlas-richie-component-vector-qdrant/)
-- [Redis provider module](./atlas-richie-component-vector-redis/)
-- [PostgreSQL provider module](./atlas-richie-component-vector-postgresql/)
-- [MongoDB Atlas provider module](./atlas-richie-component-vector-mongodb-atlas/)
-- [Neo4j provider module](./atlas-richie-component-vector-neo4j/)
-- [Weaviate provider module](./atlas-richie-component-vector-weaviate/)
+### Vector Ingestion Sequence
+
+```mermaid
+sequenceDiagram
+    participant App as Business Orchestrator
+    participant Chunker as document-chunking
+    participant Adapter as chunk-adapter
+    participant Embedder as EmbeddingModel
+    participant VService as VectorService
+    participant Provider as Provider Adapter
+    participant Store as Vector Database
+
+    App->>Chunker: chunk(text, rule)
+    Chunker-->>App: ChunkingResult
+    loop For each Chunk
+        App->>Adapter: toVectorRecord(chunk, ctx)
+        Adapter-->>App: VectorRecord
+        App->>Embedder: embed(record.content)
+        Embedder-->>App: float[]
+        App->>App: record.setEmbedding(...)
+    end
+    App->>VService: upsertAll(indexName, Flux<VectorRecord>)
+    VService->>Provider: VectorStore.add(records)
+    Provider->>Store: Write vectors + metadata
+    Store-->>Provider: vectorId list
+    Provider-->>VService: BulkOperationEvent stream
+    VService-->>App: BulkOperationEvent stream
+    Note over App: Subscribe events, count<br/>succeeded / failed
+```
+
+### Knowledge Base Retrieval Sequence
+
+```mermaid
+sequenceDiagram
+    participant App as Business Caller
+    participant Auth as Auth System
+    participant KB as KnowledgeBaseVectorService
+    participant Compiler as VectorFilterCompiler
+    participant Embedder as EmbeddingModel
+    participant Provider as Provider Adapter
+    participant Store as Vector Database
+
+    App->>Auth: Get current user's AccessScope
+    Auth-->>App: AccessScope(tenantId, deptIds, principalIds)
+    App->>KB: search(kb, KnowledgeSearchRequest(scope))
+    KB->>KB: Build structured filter<br/>tenantId + kb + status + visibility
+    KB->>Compiler: compile(VectorFilter)
+    Compiler-->>KB: Provider native filter expression
+    KB->>Embedder: embed(query)
+    Embedder-->>KB: float[]
+    KB->>Provider: hybridSearch(vector, filter) or searchByVector
+    Provider->>Store: ANN / BM25 recall
+    Store-->>Provider: candidates (candidateK)
+    Provider-->>KB: candidates
+    KB->>KB: Optional rerank (only on ACL-filtered candidates)
+    KB->>KB: Optional MMR deduplication
+    KB->>KB: Per-document chunk cap
+    KB-->>App: RetrievalResult(citations, diagnostics)
+```
+
+### Version Projection Switch Sequence
+
+```mermaid
+sequenceDiagram
+    participant App as Business Orchestrator
+    participant Lifecycle as VectorProjectionLifecycleService
+    participant Writer as VectorProjectionWriter
+    participant Provider as Provider Adapter
+    participant RDB as Relational DB (projection table)
+    participant OutboxWorker as Outbox Worker
+    participant Cleanup as VectorProjectionCleanupService
+
+    App->>Lifecycle: beginRebuild(reference, spec)
+    Lifecycle->>RDB: Create PREPARING version record + Outbox event
+    RDB-->>Lifecycle: VectorProjectionVersion
+    Lifecycle-->>App: version (PREPARING)
+
+    App->>Writer: write(versionId, Flux<VectorRecord>)
+    Writer->>Provider: Embed + write vectors
+    Writer->>RDB: Sync write vectorId manifest (same transaction)
+    Writer-->>App: BulkOperationEvent stream (complete)
+    Note over App: Must wait for complete() to continue
+
+    App->>Lifecycle: activate(versionId, cleanupDelay=24h)
+    Lifecycle->>RDB: Old ACTIVE → RETIRING (cleanupAfter=now+24h)<br/>New version READY → ACTIVE<br/>Same transaction + Outbox event
+    Lifecycle-->>App: void
+
+    Note over Cleanup: Scheduled 24h later
+    Cleanup->>RDB: Query RETIRING with cleanupAfter < now
+    Cleanup->>Provider: deleteByIds(manifest.vectorIds)
+    Cleanup->>RDB: Mark CLEANED + Outbox event
+    Cleanup-->>App: Number of versions processed
+
+    Note over OutboxWorker: Async consume Outbox<br/>Notify downstream / trigger reconciliation
+```
 
 ---
 
-`atlas-richie-component-vector` — one vector contract, explicit provider capabilities, and a bounded reactive ingestion path.
+## 📐 Design Notes
+
+### Problems the Component Solves
+
+A vector database looks like "a table with an embedding column", but in commercial RAG, the real difficulty is not "writing text into it"—any SDK can do that. The real difficulty is simultaneously guaranteeing:
+
+1. When a user asks a question, semantically relevant chunks are recalled.
+2. Other tenants', other knowledge bases', and unauthorized documents are excluded at the recall stage.
+3. Document updates never cause the whole document to temporarily disappear or mix old/new content.
+4. Large-volume ingestion never blows up the JVM with accumulated chunks and embeddings, and never double-calls the model.
+5. Business code is not locked into one specific vector database's SDK, filtering DSL, or operational terminology.
+6. Capabilities a provider does not support cannot be disguised as "usable"; unsafe or incomplete results cannot be silently returned.
+
+All major design decisions in this component revolve around these problems.
+
+### Boundaries and Responsibilities
+
+**What this component IS responsible for**:
+- Routing text or image content to the already-provided `EmbeddingModel`
+- Writing, deleting, and retrieving vector records
+- Translating structured filters into provider-executable conditions
+- Force-joining ACL and version constraints for knowledge base retrieval
+- Providing a streaming, concurrency-controlled bulk ingestion channel for batch tasks
+- Providing chunk mapping and version projection governance as optional plugins
+
+**What this component DELIBERATELY does NOT do**:
+- File upload, document parsing, OCR, chunking strategy
+- LLM vendor, model instance, API key, and model pricing strategy
+- Storage and authorization decisions for users, departments, and roles
+- Cross-provider data replication, distributed transactions, or automatic failover
+- Disguising unsupported database capabilities as unified capabilities
+
+### Interface Segregation and Provider Capability Declaration
+
+The common surface of vector databases is small: write, delete, basic semantic search, and bulk streaming. Stuffing read, alias, backup, hybrid, and other capabilities into one big interface forces providers to write many "not yet supported" implementations, and callers cannot tell from the type whether they can use them.
+
+Therefore the core interface is intentionally minimal:
+
+```text
+VectorService
+  ├── VectorSearchOperations
+  ├── VectorRecordWriteOperations
+  ├── VectorRecordDeleteOperations
+  └── VectorBulkOperations
+```
+
+Exact read, native hybrid, multi-vector, index lifecycle, stats, alias, and backup are split into independent capability interfaces. Providers only implement interfaces they truly support AND for which semantics are reliable.
+
+**This is not about "making the code prettier" — it's about preventing business code from mistaking "unsupported" for "empty result"**:
+- When hybrid is not supported, the provider MUST explicitly report unsupported; it cannot silently degrade to dense and pretend it's hybrid.
+- When ACL-safe hybrid is not supported, the knowledge base facade MUST reject hybrid requests; the sparse channel cannot be allowed to bypass permissions.
+- When delete-by-document is not supported, the version projection plugin can still clean up by `vectorId` using the manifest.
+- When alias or backup is not supported, ops scripts can determine capability via interface checks before calling, instead of stepping on a landmine online.
+
+### Safe Retrieval and Permission Model
+
+**Permissions MUST be enforced BEFORE recall**: "Fetch Top-K first, then filter out unauthorized results in the app" is unsafe. It causes authorized content to fail to be recalled because the candidate pool is filled with unauthorized content; worse, downstream reranking, caching, logging, or exception branches can easily touch data that should never have appeared.
+
+Therefore `KnowledgeBaseVectorService` first constructs a `VectorFilter` from the trusted `AccessScope`, then calls the provider. Only chunks passing the tenant / knowledge base / status / visibility constraints are eligible to enter the dense, sparse, rerank, or MMR stages.
+
+**Visibility is a data attribute; organization relationships are permission facts**: Storing `COMPANY`, `DEPARTMENT`, `CUSTOM`, `PRIVATE` visibility projections in vector records lets the database filter. Which departments a user belongs to and which roles they have is still maintained by the unified auth/authorization system, and is converted into an immutable `AccessScope` at query time.
+
+**Structured filtering beats string DSL**: Direct Provider string DSL concatenation by business code brings field injection, cross-DB non-portability, hard-to-audit, and hard-to-test issues. `VectorFilter` uses a restricted expression tree to describe "equality, set, range, and logical combinations", translated to native syntax by the provider's `VectorFilterCompiler`.
+
+### Bulk Operations and Consistency
+
+**Why use streaming bulk instead of `List` one-shot processing**: After uploading a large PDF, parsing, chunking, embedding, and writing may produce thousands of records. If each segment is put into a List first and then embedded and ingested together, memory grows linearly with document size, and on failure it's hard to know which ones completed.
+
+The bulk pipeline uses `Flux`, so data can be produced, embedded, and written concurrently; its backpressure, write batch size, and concurrency protect the JVM, the model service, and the vector database respectively. The event stream lets the task center show progress, record failures, or trigger retries—but it does NOT replace reliable messaging systems.
+
+**Why "update" is NOT implemented as delete-then-write**: Deleting old content first and then writing new content means that if writing fails, the document disappears from the knowledge base entirely. The version projection plugin uses write-new → activate → cleanup-old, with the relational database persisting projection state and Outbox. This is a deliberate eventual-consistency design: it does not pretend there's a distributed transaction between the vector DB and the relational DB, but it guarantees that every visible version is complete.
+
+### Auto-Configuration and Extension Principles
+
+Core and provider modules use explicit Spring Boot auto-configuration, NOT package scanning of the entire vector package. This prevents accidentally creating multiple implementations when multiple providers are on the classpath, and makes the Bean source for each module easier to audit.
+
+When extending a new provider, follow these principles:
+
+1. Implement only the capability interfaces the database truly supports
+2. For retrieval that requires ACL, implement a trustworthy `VectorFilterCompiler` first, then expose the knowledge base facade
+3. Make the write path explicit: "component pre-embeds" vs "store self-embeds"; never duplicate
+4. Refuse unsupported advanced capabilities explicitly; never return pseudo-results
+5. Establish Provider contract tests for index schema, field types, filter translation, and permission isolation
+
+---
+
+## ✅ Production Checklist
+
+- [ ] Only one Provider is enabled per application instance
+- [ ] Confirmed embedding model, vector dimension, and distance metric match for each index used
+- [ ] ACL, tenant, knowledge base, status, and version fields are built as filterable scalar fields
+- [ ] Metadata keys, filter fields, and physical schema field names/types are completely consistent
+- [ ] Business RAG uses `KnowledgeBaseVectorService`, not in-app ACL filtering
+- [ ] Document updates use "write new version → activate → delayed cleanup", not "delete-then-write"
+- [ ] Bulk concurrency, batch size, and flush time are tuned to model and database capacity
+- [ ] When enabling hybrid, MMR, alias, or backup, the current Provider's corresponding capability and semantics are verified
+- [ ] Integration tests cover cross-tenant, cross-department, company-shared, permission change, and document version switch scenarios
+- [ ] Provider switching has a complete schema migration and vector-space compatibility verification script
+- [ ] Key metrics (write throughput, retrieval latency, hit rate, ACL rejection rate) are wired into monitoring
+- [ ] Failure mode is explicit: provider failure should either reject service or fall back safely—not degrade to JVM filtering
+
+---
+
+*Atlas Richie Vector Component — "semantic similarity" and "is this content authorized for this caller" resolved in a single query*

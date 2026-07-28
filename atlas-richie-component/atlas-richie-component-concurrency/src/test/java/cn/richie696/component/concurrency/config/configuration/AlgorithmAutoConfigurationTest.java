@@ -65,11 +65,18 @@ class AlgorithmAutoConfigurationTest {
 
     /**
      * 启动容器并加载 {@link AlgorithmAutoConfiguration} 与给定 in-memory 属性。
+     *
+     * <p>同时注册 {@link DynamicExecutorRegistrar} —— 它是 {@code BeanDefinitionRegistryPostProcessor},
+     * Spring 容器刷新时会自动调用其 {@code postProcessBeanDefinitionRegistry} 从 Environment 主动绑定
+     * {@code platform.concurrency.thread-pools.*} 并注册命名池的 {@link DynamicExecutor} BeanDefinition。
+     * 生产路径下该 Registrar 由 {@code ConcurrencyAutoConfiguration} 作为 {@code @Bean} 提供;
+     * 单测只挂 {@link AlgorithmAutoConfiguration} 时需手动注册。</p>
      */
     private void startContext(Map<String, Object> properties) {
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
         ctx.register(TestConfiguration.class);
         ctx.register(AlgorithmAutoConfiguration.class);
+        ctx.register(DynamicExecutorRegistrar.class);
         if (properties != null && !properties.isEmpty()) {
             TestPropertySourceUtils.addInlinedPropertiesToEnvironment(ctx, buildArgs(properties));
         }

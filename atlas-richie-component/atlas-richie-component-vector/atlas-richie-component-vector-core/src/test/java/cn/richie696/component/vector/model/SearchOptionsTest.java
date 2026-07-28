@@ -28,7 +28,6 @@ class SearchOptionsTest {
         // 默认开 rerank（仅文本搜索路径生效；图片搜索被忽略）
         assertThat(opts.getRerank()).isTrue();
         assertThat(opts.getMinScore()).isNull();
-        assertThat(opts.getFilterExpression()).isNull();
         assertThat(opts.getNamespace()).isNull();
         assertThat(opts.getLimit()).isNull();
         assertThat(opts.getType()).isNull();
@@ -39,7 +38,6 @@ class SearchOptionsTest {
         SearchOptions opts = SearchOptions.builder()
                 .rerank(false)
                 .minScore(0.5)
-                .filterExpression("status = 'active'")
                 .namespace("tenant-1")
                 .limit(20)
                 .type("document")
@@ -47,7 +45,6 @@ class SearchOptionsTest {
 
         assertThat(opts.getRerank()).isFalse();
         assertThat(opts.getMinScore()).isEqualTo(0.5);
-        assertThat(opts.getFilterExpression()).isEqualTo("status = 'active'");
         assertThat(opts.getNamespace()).isEqualTo("tenant-1");
         assertThat(opts.getLimit()).isEqualTo(20);
         assertThat(opts.getType()).isEqualTo("document");

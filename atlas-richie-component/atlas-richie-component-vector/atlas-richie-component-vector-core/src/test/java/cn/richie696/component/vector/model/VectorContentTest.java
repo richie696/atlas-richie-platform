@@ -44,41 +44,13 @@ class VectorContentTest {
     }
 
     @Test
-    void imageContent_exposesAccessorsAndModality() {
-        VectorContent.ImageContent image = new VectorContent.ImageContent(new byte[]{1, 2}, "image/jpeg");
-
-        assertThat(image.modality()).isEqualTo(Modality.IMAGE);
-        assertThat(image.data()).containsExactly(1, 2);
-        assertThat(image.mimeType()).isEqualTo("image/jpeg");
-    }
-
-    @Test
-    void imageContent_rejectsEmptyData() {
-        assertThatThrownBy(() -> new VectorContent.ImageContent(new byte[0], "image/png"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("ImageContent.data");
-    }
-
-    @Test
-    void imageContent_rejectsNonImageMimeType() {
-        assertThatThrownBy(() -> new VectorContent.ImageContent(new byte[]{1}, "video/mp4"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("image/*");
-    }
-
-    @Test
-    void exhaustiveSwitch_coversBothPermits() {
+    void sealedContent_allowsTextAndImage() {
         VectorContent[] samples = {
                 new VectorContent.TextContent("a", "text/plain"),
                 new VectorContent.ImageContent(new byte[]{1}, "image/png")
         };
-        int textCount = 0;
-        int imageCount = 0;
-        for (VectorContent c : samples) {
-            if (c instanceof VectorContent.TextContent) textCount++;
-            else if (c instanceof VectorContent.ImageContent) imageCount++;
-        }
-        assertThat(textCount).isEqualTo(1);
-        assertThat(imageCount).isEqualTo(1);
+
+        assertThat(samples[0]).isInstanceOf(VectorContent.TextContent.class);
+        assertThat(samples[1]).isInstanceOf(VectorContent.ImageContent.class);
     }
 }

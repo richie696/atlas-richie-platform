@@ -23,6 +23,7 @@ import cn.richie696.component.vector.model.Modality;
 import cn.richie696.component.vector.model.VectorContent;
 import cn.richie696.component.vector.model.VectorRecord;
 import cn.richie696.component.vector.service.VectorService;
+import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -32,7 +33,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
 import redis.clients.jedis.RedisClient;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.search.FTCreateParams;
@@ -58,9 +58,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Service
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "redis")
-public class RedisVectorServiceImpl extends AbstractVectorService implements VectorService, InitializingBean {
+public class RedisVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, InitializingBean {
 
     public RedisVectorServiceImpl(@Autowired(required = false) RerankService rerankService,
                                   VectorStore vectorStore,
@@ -179,7 +178,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
                 if (jsonResults == null || jsonResults.isEmpty()) {
                     continue;
                 }
-                VectorRecord record = parseJsonToRecord(id, indexName, jsonResults.get(0));
+                VectorRecord record = parseJsonToRecord(id, indexName, jsonResults.getFirst());
                 if (record != null) {
                     result.add(record);
                 }
@@ -685,7 +684,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
     private VectorRecord parseJsonToRecord(String id, String indexName, Object jsonElement) {
         try {
             String textContent = null;
-            if (jsonElement instanceof org.json.JSONArray jsonArray && jsonArray.length() > 0) {
+            if (jsonElement instanceof org.json.JSONArray jsonArray && !jsonArray.isEmpty()) {
                 Object first = jsonArray.get(0);
                 if (first instanceof org.json.JSONObject jsonObject) {
                     Object content = jsonObject.opt("content");

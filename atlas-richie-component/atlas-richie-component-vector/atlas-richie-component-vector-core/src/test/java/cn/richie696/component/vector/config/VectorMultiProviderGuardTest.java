@@ -114,66 +114,13 @@ class VectorMultiProviderGuardTest {
             return name;
         }
 
-        // ===== Add =====
-        @Override public String addText(String indexName, String text, Map<String, Object> metadata) { return null; }
-        @Override public String add(VectorRecord record) { return null; }
-        @Override public String addImage(String indexName, byte[] image, String mimeType, Map<String, Object> metadata) { return null; }
-        @Override public String addImage(String indexName, java.nio.file.Path imagePath, String mimeType, Map<String, Object> metadata) { return null; }
-        @Override public String addImageUrl(String indexName, String url, String mimeType, Map<String, Object> metadata) { return null; }
-
-        // ===== Update =====
-        @Override public void updateText(String indexName, String id, String text, Map<String, Object> metadata) {}
-        @Override public void update(VectorRecord record) {}
-        @Override public void updateImage(String indexName, String id, byte[] image, String mimeType, Map<String, Object> metadata) {}
-        @Override public void updateImage(String indexName, String id, java.nio.file.Path imagePath, String mimeType, Map<String, Object> metadata) {}
-
-        // ===== Delete =====
-        @Override public void delete(String indexName, String id) {}
-        @Override public long deleteIf(String indexName, Predicate<VectorRecord> filter) { return 0L; }
-
-        // ===== Get =====
-        @Override public Optional<VectorRecord> get(String indexName, String id) { return Optional.empty(); }
-        @Override public List<VectorRecord> getAll(String indexName, Collection<String> ids) { return List.of(); }
-
-        // ===== Search =====
-        @Override public List<VectorSearchResult> searchByText(String indexName, String text, int limit) { return List.of(); }
-        @Override public List<VectorSearchResult> searchByText(String indexName, String text, int limit, double minScore) { return List.of(); }
+        @Override public String upsert(VectorRecord record) { return null; }
+        @Override public void deleteById(String indexName, String vectorId) { }
+        @Override public void deleteByIds(String indexName, Collection<String> vectorIds) { }
         @Override public List<VectorSearchResult> searchByText(String indexName, String text, int limit, SearchOptions options) { return List.of(); }
-        @Override public List<VectorSearchResult> searchByImage(String indexName, byte[] image, String mimeType, int limit) { return List.of(); }
         @Override public List<VectorSearchResult> searchByImage(String indexName, byte[] image, String mimeType, int limit, double minScore) { return List.of(); }
         @Override public List<VectorSearchResult> searchByImage(String indexName, java.nio.file.Path imagePath, String mimeType, int limit) { return List.of(); }
-        @Override public List<VectorSearchResult> hybridSearch(String indexName, String text, String keywordQuery, int limit, HybridSearchOptions options) { return List.of(); }
-        @Override public List<VectorSearchResult> searchByMultiVector(String indexName, List<float[]> vectors, int limit) { return List.of(); }
-
-        // ===== Index Management =====
-        @Override public void createIndex(String indexName, IndexConfig config) {}
-        @Override public void deleteIndex(String indexName) {}
-        @Override public boolean indexExists(String indexName) { return false; }
-        @Override public IndexConfig getIndexConfig(String indexName) { return null; }
-        @Override public long countDocuments(String indexName) { return 0L; }
-        @Override public List<VectorRecord> listDocuments(String indexName, int offset, int limit) { return List.of(); }
-        @Override public List<IndexInfo> listIndexes() { return List.of(); }
-        @Override public long truncateIndex(String indexName) { return 0L; }
-        @Override public boolean updateIndexConfig(String indexName, IndexConfig config) { return false; }
-        @Override public boolean cloneIndex(String sourceIndexName, String targetIndexName) { return false; }
-        @Override public boolean awaitIndexReady(String indexName, java.time.Duration timeout) { return false; }
-        @Override public IndexInfo describeIndex(String indexName) { return null; }
-
-        // ===== Stats / Health =====
-        @Override public IndexInfo getIndexStats(String indexName) { return null; }
-        @Override public boolean healthCheck(String indexName) { return false; }
-
-        // ===== Maintenance / Alias / Backup =====
-        @Override public boolean optimize(String indexName) { return false; }
-        @Override public boolean createAlias(String indexName, String alias) { return false; }
-        @Override public boolean switchAlias(String oldIndexName, String newIndexName, String alias) { return false; }
-        @Override public boolean backup(String indexName, String targetPath) { return false; }
-        @Override public boolean restore(String sourcePath, String indexName) { return false; }
-
-        // ===== Batch Async Reactive =====
-        @Override public Flux<cn.richie696.component.vector.model.BatchEvent> addBatch(String indexName, Flux<VectorRecord> records) { return Flux.empty(); }
-        @Override public Flux<cn.richie696.component.vector.model.BatchEvent> addBatch(String indexName, List<VectorRecord> records) { return Flux.empty(); }
-        @Override public Flux<cn.richie696.component.vector.model.BatchEvent> updateBatch(String indexName, Flux<VectorRecord> records) { return Flux.empty(); }
-        @Override public Flux<cn.richie696.component.vector.model.BatchEvent> deleteBatch(String indexName, Flux<String> ids) { return Flux.empty(); }
+        @Override public Flux<cn.richie696.component.vector.bulk.BulkOperationEvent> upsertAll(String indexName, Flux<VectorRecord> records) { return Flux.empty(); }
+        @Override public Flux<cn.richie696.component.vector.bulk.BulkOperationEvent> deleteAll(String indexName, Flux<String> ids) { return Flux.empty(); }
     }
 }

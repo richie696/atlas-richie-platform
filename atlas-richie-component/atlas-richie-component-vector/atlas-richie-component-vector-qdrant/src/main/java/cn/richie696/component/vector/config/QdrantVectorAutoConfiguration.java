@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.vector.config;
 
+import cn.richie696.component.vector.service.impl.QdRantVectorServiceImpl;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.QdrantGrpcClient;
 import lombok.extern.slf4j.Slf4j;
@@ -22,17 +23,19 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.qdrant.QdrantVectorStore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 /**
  * 向量数据库自动配置类
  * 只注入唯一的DefaultVectorServiceImpl，自动适配所有Spring AI支持的向量数据库
  */
 @Slf4j
-@Configuration
+@AutoConfiguration
 @EnableConfigurationProperties(QdRantConfig.class)
+@Import(QdRantVectorServiceImpl.class)
 public class QdrantVectorAutoConfiguration {
 
     /**

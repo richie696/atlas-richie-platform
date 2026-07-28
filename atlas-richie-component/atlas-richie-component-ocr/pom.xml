@@ -17,6 +17,7 @@
 
     <modules>
         <module>atlas-richie-component-ocr-core</module>
+        <module>atlas-richie-component-ocr-parser-adapter</module>
         <module>atlas-richie-component-ocr-aliyun</module>
         <module>atlas-richie-component-ocr-baidu</module>
         <module>atlas-richie-component-ocr-paddle</module>

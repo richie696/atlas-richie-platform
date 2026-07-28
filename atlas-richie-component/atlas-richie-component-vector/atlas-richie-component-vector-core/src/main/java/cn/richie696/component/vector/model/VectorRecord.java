@@ -54,6 +54,15 @@ public class VectorRecord {
      */
     private String id;
 
+    /** 业务源文档 ID；用于版本化重建、按文档定位和引用回溯。 */
+    private String documentId;
+
+    /** 当前文档版本内的切片序号。 */
+    private Integer chunkNo;
+
+    /** 业务文档或投影的版本号。 */
+    private Long version;
+
     /**
      * 目标索引名称
      */
@@ -113,7 +122,7 @@ public class VectorRecord {
                 .setId(UUID.randomUUID().toString())
                 .setCreatedAt(LocalDateTime.now())
                 .setUpdatedAt(LocalDateTime.now())
-                .setStatus("active");
+                .setStatus("ACTIVE");
     }
 
     public static VectorRecord text(String indexName, String text, Map<String, Object> metadata) {
@@ -133,7 +142,7 @@ public class VectorRecord {
                 .setId(UUID.randomUUID().toString())
                 .setCreatedAt(LocalDateTime.now())
                 .setUpdatedAt(LocalDateTime.now())
-                .setStatus("active");
+                .setStatus("ACTIVE");
     }
 
     public static VectorRecord image(String indexName, Path path, String mimeType) {
@@ -161,7 +170,7 @@ public class VectorRecord {
                 .setId(UUID.randomUUID().toString())
                 .setCreatedAt(LocalDateTime.now())
                 .setUpdatedAt(LocalDateTime.now())
-                .setStatus("pending");
+                .setStatus("PENDING");
     }
 
     // ==================== 辅助方法 ====================

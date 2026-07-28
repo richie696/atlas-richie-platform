@@ -26,18 +26,21 @@ import cn.richie696.component.parser.model.ParsedSection;
 import cn.richie696.component.parser.model.ReadEvent;
 import cn.richie696.component.parser.model.ReadListener;
 import cn.richie696.component.parser.model.ReadResult;
+import cn.richie696.component.parser.model.ReadSummary;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 
-import java.io.ByteArrayInputStream;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Files;
+import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 文档解析门面 — 业务方接触的唯一公开 API。
@@ -77,7 +80,13 @@ public class DocumentReader {
     /** 同步解析本地文件, 返回 {@link ReadResult}; 失败抛 {@link DocumentParseException}。 */
     public ReadResult read(File file) {
         log.info("read() entry: file={}", file);
-        return runSync(sourceFromFile(file), file.getName());
+        return read(file, defaultContext());
+    }
+
+    /** 使用调用方指定的资源限制同步解析本地文件。 */
+    public ReadResult read(File file, ParserContext context) {
+        Objects.requireNonNull(file, "file must not be null");
+        return runSync(sourceFromFile(file), file.getName(), context);
     }
 
     /**
@@ -88,15 +97,27 @@ public class DocumentReader {
      */
     public ReadResult read(InputStream in, String nameHint) {
         log.info("read() entry: stream, nameHint={}", nameHint);
-        return runSync(new ParserSource.StreamSource(in, nameHint), nameHint);
+        return read(in, nameHint, defaultContext());
+    }
+
+    /** 使用调用方指定的资源限制同步解析输入流。 */
+    public ReadResult read(InputStream in, String nameHint, ParserContext context) {
+        Objects.requireNonNull(in, "in must not be null");
+        return runSync(new ParserSource.StreamSource(in, nameHint), nameHint, context);
     }
 
     /** 同步解析 URL, 走 {@link UrlFetcher} 三道防线。 */
     public ReadResult read(URL url) {
         log.info("read() entry: url={}", url);
+        return read(url, defaultContext());
+    }
+
+    /** 使用调用方指定的资源限制同步解析 URL。 */
+    public ReadResult read(URL url, ParserContext context) {
+        Objects.requireNonNull(url, "url must not be null");
         return runSync(
                 new ParserSource.UrlSource(url, deriveUrlPolicy()),
-                url.toString());
+                url.toString(), context);
     }
 
     /**
@@ -137,7 +158,14 @@ public class DocumentReader {
      */
     public void readStreaming(File file, ReadListener listener) {
         log.info("readStreaming() entry: file={}", file);
-        runStream(sourceFromFile(file), file.getName(), listener);
+        readStreaming(file, listener, defaultContext());
+    }
+
+    /** 使用调用方指定的资源限制流式解析本地文件。 */
+    public void readStreaming(File file, ReadListener listener, ParserContext context) {
+        Objects.requireNonNull(file, "file must not be null");
+        Objects.requireNonNull(listener, "listener must not be null");
+        runStreamForListener(sourceFromFile(file), file.getName(), listener, context);
     }
 
     /**
@@ -149,7 +177,45 @@ public class DocumentReader {
      */
     public void readStreaming(InputStream in, String nameHint, ReadListener listener) {
         log.info("readStreaming() entry: stream, nameHint={}", nameHint);
-        runStream(new ParserSource.StreamSource(in, nameHint), nameHint, listener);
+        readStreaming(in, nameHint, listener, defaultContext());
+    }
+
+    /** 使用调用方指定的资源限制流式解析输入流。 */
+    public void readStreaming(InputStream in, String nameHint, ReadListener listener, ParserContext context) {
+        Objects.requireNonNull(in, "in must not be null");
+        Objects.requireNonNull(listener, "listener must not be null");
+        runStreamForListener(new ParserSource.StreamSource(in, nameHint), nameHint, listener, context);
+    }
+
+    /**
+     * 以 JDK Reactive Streams 协议发布文件解析事件。
+     *
+     * <p>每个订阅独占一个解析线程；仅当订阅者通过 {@link Flow.Subscription#request(long)} 提供需求额度时
+     * 才会继续向其交付 Section/Image/Finished 事件。因此慢速下游会反压到解析线程，而不会形成无界内存队列。</p>
+     */
+    public Flow.Publisher<ReadEvent> readPublisher(File file) {
+        Objects.requireNonNull(file, "file must not be null");
+        return readPublisher(file, defaultContext());
+    }
+
+    /** 使用调用方指定的资源限制发布文件解析事件。 */
+    public Flow.Publisher<ReadEvent> readPublisher(File file, ParserContext context) {
+        Objects.requireNonNull(file, "file must not be null");
+        return new ReadEventPublisher(listener -> readStreaming(file, listener, context));
+    }
+
+    /**
+     * 以 JDK Reactive Streams 协议发布输入流解析事件。取消订阅时会关闭输入流。
+     */
+    public Flow.Publisher<ReadEvent> readPublisher(InputStream in, String nameHint) {
+        Objects.requireNonNull(in, "in must not be null");
+        return readPublisher(in, nameHint, defaultContext());
+    }
+
+    /** 使用调用方指定的资源限制发布输入流解析事件。取消订阅时会关闭输入流。 */
+    public Flow.Publisher<ReadEvent> readPublisher(InputStream in, String nameHint, ParserContext context) {
+        Objects.requireNonNull(in, "in must not be null");
+        return new ReadEventPublisher(listener -> readStreaming(in, nameHint, listener, context), in);
     }
 
     /**
@@ -189,30 +255,43 @@ public class DocumentReader {
         return new ParserSource.FileSource(file);
     }
 
-    private ReadResult runSync(ParserSource source, String displayName) {
+    private ReadResult runSync(ParserSource source, String displayName, ParserContext context) {
         SyncAccumulator sink = new SyncAccumulator();
-        runStream(source, displayName, ReadEventRecorder.adaptForSync(sink));
+        runStream(source, displayName, ReadEventRecorder.adaptForSync(sink), context);
         return sink.toResult();
     }
 
-    private void runStream(ParserSource source, String displayName, ReadListener outListener) {
-        ParseListener internalListener = getParseListener(displayName, outListener);
+    /** 对公开 listener API 统一把基础设施失败映射为终止事件；同步 API 则保留异常语义。 */
+    private void runStreamForListener(ParserSource source, String displayName, ReadListener listener,
+                                      ParserContext context) {
+        try {
+            runStream(source, displayName, listener, context);
+        } catch (DocumentParseException error) {
+            listener.onEvent(new ReadEvent.Failed(error));
+        }
+    }
+
+    private void runStream(ParserSource source, String displayName, ReadListener outListener,
+                           ParserContext context) {
+        ParserContext effectiveContext = context == null ? defaultContext() : context;
+        ParseListener internalListener = getParseListener(displayName, outListener, effectiveContext);
         try {
             ParserSource expanded = expandIfUrl(source);
-            byte[] bytes = readAllBytes(expanded);
-            String nameHint = expanded.nameHint();
-            log.info("dispatch start: source={}, bytes={}, expanded={}",
-                    displayName, bytes.length, expanded.getClass().getSimpleName());
-            ByteArrayInputStream repeatable = new ByteArrayInputStream(bytes);
-            Format format = FormatDetector.detectFormat(repeatable, nameHint);
-            log.info("format detected: format={} for {}", format, nameHint);
-            DocumentParser parser = router.route(format);
-            log.info("parser routed: {} for format={}", parser.getClass().getSimpleName(), format);
-            parser.parseStream(
-                    new ParserSource.StreamSource(repeatable, nameHint),
-                    ParserContext.defaults(),
-                    internalListener);
+            ParserSource.StreamSource streamSource = asBufferedStream(expanded);
+            String nameHint = streamSource.nameHint();
+            log.info("dispatch start: source={}, expanded={}",
+                    displayName, expanded.getClass().getSimpleName());
+            try (InputStream input = streamSource.in()) {
+                Format format = FormatDetector.detectFormat(input, nameHint);
+                log.info("format detected: format={} for {}", format, nameHint);
+                DocumentParser parser = router.route(format);
+                log.info("parser routed: {} for format={}", parser.getClass().getSimpleName(), format);
+                parser.parseStream(new ParserSource.StreamSource(input, nameHint), effectiveContext, internalListener);
+            }
             log.info("parse complete for {}", displayName);
+        } catch (IOException ioe) {
+            log.warn("parse stream close failed for {}: {}", displayName, ioe.getMessage());
+            throw new DocumentParseException("Parse stream close failed for " + displayName, ioe);
         } catch (DocumentParseException dpe) {
             log.warn("parse failed for {}: {}", displayName, dpe.getMessage());
             throw dpe;
@@ -223,19 +302,27 @@ public class DocumentReader {
         }
     }
 
-    private @NonNull ParseListener getParseListener(String displayName, ReadListener outListener) {
-        StreamingAccumulator sink = new StreamingAccumulator();
+    private @NonNull ParseListener getParseListener(String displayName, ReadListener outListener,
+                                                     ParserContext context) {
+        Instant deadline = Instant.now().plus(context.timeout());
         return event -> {
+            if (Instant.now().isAfter(deadline)) {
+                throw new DocumentParseException("解析超时: " + displayName);
+            }
+            if (event instanceof ParseEvent.Streaming streaming && context.maxSegmentLength() != null
+                    && streaming.segment().text().length() > context.maxSegmentLength()) {
+                throw new DocumentParseException("解析段超过上限: " + context.maxSegmentLength());
+            }
             ReadEvent mapped = mapInternalEvent(event, displayName);
             if (mapped instanceof ReadEvent.Section s) {
-                sink.sections.add(s.section());
                 outListener.onEvent(s);
             } else if (mapped instanceof ReadEvent.Image i) {
-                sink.images.add(i.image());
                 outListener.onEvent(i);
             } else if (event instanceof ParseEvent.Finished f) {
-                ReadResult result = sink.toResult(f.summary());
-                outListener.onEvent(new ReadEvent.Finished(result, sink.sections.size(), sink.images.size()));
+                DocumentSummary summary = f.summary();
+                outListener.onEvent(new ReadEvent.Finished(
+                        new ReadSummary(summary.title(), summary.author(), summary.metadata()),
+                        f.totalSegments(), f.totalImages()));
             } else if (event instanceof ParseEvent.Failed err) {
                 outListener.onEvent(ReadEventAdapter.toFailed(err));
             }
@@ -258,12 +345,9 @@ public class DocumentReader {
     private ParserSource expandIfUrl(ParserSource source) {
         if (source instanceof ParserSource.UrlSource u) {
             log.info("URL fetch start: {}", u.url());
-            try (InputStream fetched = urlFetcher.fetch(u)) {
-                byte[] bytes = fetched.readAllBytes();
-                log.info("URL fetch OK: {} bytes from {}", bytes.length, u.url());
-                return new ParserSource.StreamSource(
-                        new ByteArrayInputStream(bytes), u.nameHint());
-            } catch (IOException e) {
+            try {
+                return new ParserSource.StreamSource(urlFetcher.fetch(u), u.nameHint());
+            } catch (RuntimeException e) {
                 log.warn("URL fetch failed: {}", u.url(), e);
                 throw new DocumentParseException("URL fetch failed: " + u.url(), e);
             }
@@ -271,25 +355,19 @@ public class DocumentReader {
         return source;
     }
 
-    private byte[] readAllBytes(ParserSource source) {
-        if (source instanceof ParserSource.FileSource(File file)) {
-            try {
-                return Files.readAllBytes(file.toPath());
-            } catch (IOException e) {
-                throw new DocumentParseException("Read failed: " + file, e);
-            }
+    private ParserSource.StreamSource asBufferedStream(ParserSource source) {
+        try {
+            return switch (source) {
+                case ParserSource.FileSource(File file) -> new ParserSource.StreamSource(
+                        new BufferedInputStream(java.nio.file.Files.newInputStream(file.toPath())), source.nameHint());
+                case ParserSource.StreamSource(InputStream in, String nameHint) -> new ParserSource.StreamSource(
+                        in instanceof BufferedInputStream ? in : new BufferedInputStream(in), nameHint);
+                case ParserSource.UrlSource ignored -> throw new DocumentParseException(
+                        "URL source must be expanded before stream dispatch");
+            };
+        } catch (IOException e) {
+            throw new DocumentParseException("Read failed: " + source.nameHint(), e);
         }
-        if (source instanceof ParserSource.StreamSource(InputStream in, String nameHint)) {
-            try {
-                return in.readAllBytes();
-            } catch (IOException e) {
-                throw new DocumentParseException("Read failed: " + nameHint, e);
-            }
-        }
-        if (source instanceof ParserSource.UrlSource) {
-            throw new DocumentParseException("URL source should be expanded before readAllBytes()");
-        }
-        throw new DocumentParseException("Unsupported ParserSource: " + source.getClass().getName());
     }
 
     private UrlFetchPolicy deriveUrlPolicy() {
@@ -302,6 +380,10 @@ public class DocumentReader {
                 url.getConnectTimeout(),
                 url.getReadTimeout(),
                 List.of());
+    }
+
+    private ParserContext defaultContext() {
+        return new ParserContext(properties.getParseTimeout(), properties.getMaxSegmentCharacters(), Map.of());
     }
 
     // ============ Accumulators ============
@@ -321,9 +403,9 @@ public class DocumentReader {
             } else if (event instanceof ReadEvent.Image i) {
                 images.add(i.image());
             } else if (event instanceof ReadEvent.Finished f) {
-                this.title = f.result().title();
-                this.author = f.result().author();
-                this.metadata.putAll(f.result().metadata());
+                this.title = f.summary().title();
+                this.author = f.summary().author();
+                this.metadata.putAll(f.summary().metadata());
             } else if (event instanceof ReadEvent.Failed(DocumentParseException error)) {
                 throw error;
             }
@@ -335,22 +417,6 @@ public class DocumentReader {
         }
     }
 
-    /** 流式模式累加器 — 仅记录 Section / Image 用于 Finished 汇总。 */
-    private static final class StreamingAccumulator {
-        private final List<ParsedSection> sections = new ArrayList<>();
-        private final List<cn.richie696.component.parser.model.ParsedImage> images = new ArrayList<>();
-
-        ReadResult toResult(ParsedDocument summary) {
-            Map<String, Object> meta = summary != null && summary.metadata() != null
-                    ? new HashMap<>(summary.metadata())
-                    : new HashMap<>();
-            meta.putIfAbsent("format", "unknown");
-            String title = summary != null ? summary.title() : null;
-            String author = summary != null ? summary.author() : null;
-            return new ReadResult(title, author, sections, images, meta);
-        }
-    }
-
     /** 把内部 ParseListener 桥接为对外 ReadListener (sync 路径使用, 简化累加)。 */
     private static final class ReadEventRecorder {
         private ReadEventRecorder() {
@@ -358,6 +424,144 @@ public class DocumentReader {
 
         static ReadListener adaptForSync(SyncAccumulator sink) {
             return sink;
+        }
+    }
+
+    @FunctionalInterface
+    private interface StreamingStarter {
+        void start(ReadListener listener);
+    }
+
+    /** 单订阅、按 demand 阻塞解析线程的 Flow Publisher。 */
+    private static final class ReadEventPublisher implements Flow.Publisher<ReadEvent> {
+        private final StreamingStarter starter;
+        private final AutoCloseable closeOnCancel;
+        private final AtomicBoolean subscribed = new AtomicBoolean();
+
+        private ReadEventPublisher(StreamingStarter starter) {
+            this(starter, null);
+        }
+
+        private ReadEventPublisher(StreamingStarter starter, AutoCloseable closeOnCancel) {
+            this.starter = starter;
+            this.closeOnCancel = closeOnCancel;
+        }
+
+        @Override
+        public void subscribe(Flow.Subscriber<? super ReadEvent> subscriber) {
+            Objects.requireNonNull(subscriber, "subscriber must not be null");
+            if (!subscribed.compareAndSet(false, true)) {
+                subscriber.onSubscribe(new EmptySubscription());
+                subscriber.onError(new IllegalStateException("每个 ReadEvent Publisher 仅支持一个订阅者"));
+                return;
+            }
+            Subscription subscription = new Subscription(subscriber, starter, closeOnCancel);
+            subscriber.onSubscribe(subscription);
+        }
+
+        private static final class Subscription implements Flow.Subscription {
+            private final Flow.Subscriber<? super ReadEvent> subscriber;
+            private final StreamingStarter starter;
+            private final AutoCloseable closeOnCancel;
+            private final Object monitor = new Object();
+            private long requested;
+            private boolean started;
+            private volatile boolean cancelled;
+            private Thread worker;
+
+            private Subscription(Flow.Subscriber<? super ReadEvent> subscriber, StreamingStarter starter,
+                                 AutoCloseable closeOnCancel) {
+                this.subscriber = subscriber;
+                this.starter = starter;
+                this.closeOnCancel = closeOnCancel;
+            }
+
+            @Override
+            public void request(long n) {
+                if (n <= 0) {
+                    cancel();
+                    subscriber.onError(new IllegalArgumentException("request 数量必须大于 0"));
+                    return;
+                }
+                synchronized (monitor) {
+                    requested = requested > Long.MAX_VALUE - n ? Long.MAX_VALUE : requested + n;
+                    if (!started) {
+                        started = true;
+                        worker = new Thread(this::run, "atlas-document-parser-stream");
+                        worker.setDaemon(true);
+                        worker.start();
+                    }
+                    monitor.notifyAll();
+                }
+            }
+
+            @Override
+            public void cancel() {
+                cancelled = true;
+                closeQuietly();
+                Thread thread = worker;
+                if (thread != null) {
+                    thread.interrupt();
+                }
+                synchronized (monitor) {
+                    monitor.notifyAll();
+                }
+            }
+
+            private void run() {
+                try {
+                    starter.start(this::emit);
+                    if (!cancelled) {
+                        subscriber.onComplete();
+                    }
+                } catch (Throwable error) {
+                    if (!cancelled) {
+                        subscriber.onError(error);
+                    }
+                } finally {
+                    closeQuietly();
+                }
+            }
+
+            private void emit(ReadEvent event) {
+                synchronized (monitor) {
+                    while (!cancelled && requested == 0) {
+                        try {
+                            monitor.wait();
+                        } catch (InterruptedException interrupted) {
+                            Thread.currentThread().interrupt();
+                            cancel();
+                            return;
+                        }
+                    }
+                    if (cancelled) {
+                        return;
+                    }
+                    if (requested != Long.MAX_VALUE) {
+                        requested--;
+                    }
+                }
+                subscriber.onNext(event);
+            }
+
+            private void closeQuietly() {
+                if (closeOnCancel == null) {
+                    return;
+                }
+                try {
+                    closeOnCancel.close();
+                } catch (Exception ignored) {
+                    // cancellation cleanup is best effort
+                }
+            }
+        }
+
+        private static final class EmptySubscription implements Flow.Subscription {
+            @Override
+            public void request(long n) { }
+
+            @Override
+            public void cancel() { }
         }
     }
 }

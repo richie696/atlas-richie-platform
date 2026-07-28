@@ -1,0 +1,15 @@
+platform:
+  component:
+    vector:
+      provider: vikingdb
+      vikingdb:
+        host: api-vikingdb.vikingdb.cn-beijing.volces.com
+        control-endpoint: vikingdb.cn-beijing.volcengineapi.com
+        region: cn-beijing
+        access-key: ${VIKINGDB_ACCESS_KEY}
+        secret-key: ${VIKINGDB_SECRET_KEY}
+        collection-name: documents
+        index-name: documents
+        embedding-dimension: 1536
+        # 生产环境通常由运维预先建表；设为 true 时启动阶段创建 collection 和 index。
+        initialize-schema: false

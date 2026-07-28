@@ -21,7 +21,7 @@ import cn.richie696.component.ai.api.RerankResponse;
 import cn.richie696.component.ai.api.RerankResult;
 import cn.richie696.component.ai.service.RerankService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -48,13 +48,16 @@ public class RerankServiceImpl implements RerankService {
     /**
      * 构造 RerankService。
      *
-     * @param rerankModel 重排序模型抽象，可为 {@code null}（ai 模块未启用 / 未配置模型时）。
-     *                    注入为 {@code required = false} 以保持非破坏性：未启用重排序能力的业务方可正常启动，
-     *                    调用 {@link #rerank} / {@link #rerankAsync} 时再以 IllegalStateException 提示。
+     * @param rerankModelProvider 重排序模型抽象的 {@link ObjectProvider}。当 ai 模块未启用 / 未配置默认模型时，
+     *                            {@link ObjectProvider#getIfAvailable()} 返回 {@code null}，本服务仍可正常装配，
+     *                            调用 {@link #rerank} / {@link #rerankAsync} 时再以 IllegalStateException 提示。
+     *                            使用 {@code ObjectProvider} 而非 {@code @Autowired(required=false)} 是因为
+     *                            Spring Framework 7 对单构造器类的隐式必需语义做了强化，单参数构造器上的
+     *                            {@code required=false} 会被忽略，仍按必需装配；{@code ObjectProvider} 是
+     *                            Spring 官方推荐的优雅降级写法。
      */
-    @Autowired(required = false)
-    public RerankServiceImpl(RerankModel rerankModel) {
-        this.rerankModel = rerankModel;
+    public RerankServiceImpl(ObjectProvider<RerankModel> rerankModelProvider) {
+        this.rerankModel = rerankModelProvider.getIfAvailable();
     }
 
     /**

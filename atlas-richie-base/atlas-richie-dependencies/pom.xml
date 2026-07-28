@@ -90,7 +90,8 @@
         <opentelemetry-bom.version>1.64.0</opentelemetry-bom.version>
 
         <mcp-bom.version>2.0.0</mcp-bom.version>
-        <jackson-bom.version>3.2.0</jackson-bom.version>
+        <jackson-bom.version>3.2.1</jackson-bom.version>
+        <jackson-annotations.version>2.22</jackson-annotations.version>
         <jackson-datatype-jsr310.version>3.0.0-rc2</jackson-datatype-jsr310.version>
         <grpc-bom.version>1.82.0</grpc-bom.version>
         <jnats.version>2.25.3</jnats.version>
@@ -98,11 +99,20 @@
         <jakarta.jakartaee-bom.version>11.0.0</jakarta.jakartaee-bom.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <fesod-bom.version>2.0.2-incubating</fesod-bom.version>
+        <!-- Atlas Richie AI 扩展组件（当前包含 VikingDB VectorStore） -->
+        <atlas-richie-ai-bom.version>1.0.0-SNAPSHOT</atlas-richie-ai-bom.version>
     </properties>
 
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>cn.richie696.ai</groupId>
+                <artifactId>atlas-richie-ai-bom</artifactId>
+                <version>${atlas-richie-ai-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-bom</artifactId>
@@ -159,6 +169,15 @@
                 <version>${jackson-bom.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- Jackson 2 legacy 注解（Jackson 3 兼容所需）：显式 pin 到 2.22 覆盖 Spring Boot BOM，
+                 避免 Jackson 3.2.x 的 JacksonAnnotationIntrospector 因缺失 JsonSerializeAs 抛
+                 NoClassDefFoundError。其他 Jackson 2 组件仍由 Spring Boot BOM（jackson-2-bom 2.21.4）
+                 管理，无需重复声明。 -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson-annotations.version}</version>
             </dependency>
             <dependency>
                 <groupId>tools.jackson.datatype</groupId>
@@ -577,6 +596,17 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit-jupiter.version}</version>
+            </dependency>
+            <!-- JUnit Jupiter 6 必须与同版本 JUnit Platform 一起解析，禁止回退到 Boot BOM 的 1.x Platform。 -->
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-commons</artifactId>
+                <version>${junit-jupiter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-engine</artifactId>
                 <version>${junit-jupiter.version}</version>
             </dependency>
 

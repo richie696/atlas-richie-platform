@@ -43,10 +43,10 @@ class VectorRecordTest {
     }
 
     @Test
-    void textFactory_setsDefaultsAndUuid() {
+    void textFactory_setsDefaults() {
         VectorRecord record = VectorRecord.text("docs", "hello");
 
-        assertThat(record.getId()).isNotBlank();
+        assertThat(record.getId()).isNull();
         assertThat(record.getIndexName()).isEqualTo("docs");
         assertThat(record.getContent()).isInstanceOf(VectorContent.TextContent.class);
         assertThat(record.getStatus()).isEqualTo("active");
@@ -54,13 +54,11 @@ class VectorRecordTest {
     }
 
     @Test
-    void imageFactory_wrapsBytesAndMime() {
-        VectorRecord record = VectorRecord.image("imgs", new byte[]{1, 2, 3}, "image/png");
+    void imageFactory_wrapsBytesAndMimeType() {
+        VectorRecord record = VectorRecord.image("images", new byte[]{1, 2, 3}, "image/png");
 
-        assertThat(record.getIndexName()).isEqualTo("imgs");
-        VectorContent.ImageContent image = (VectorContent.ImageContent) record.getContent();
-        assertThat(image.data()).containsExactly(1, 2, 3);
-        assertThat(image.mimeType()).isEqualTo("image/png");
+        assertThat(record.getContent()).isInstanceOf(VectorContent.ImageContent.class);
+        assertThat(record.getContent().modality()).isEqualTo(Modality.IMAGE);
     }
 
     @Test

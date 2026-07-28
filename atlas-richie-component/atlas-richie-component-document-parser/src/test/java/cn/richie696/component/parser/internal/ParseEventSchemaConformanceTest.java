@@ -18,7 +18,7 @@ package cn.richie696.component.parser.internal;
 import cn.richie696.component.parser.DocumentSegment;
 import cn.richie696.component.parser.ParseEvent;
 import cn.richie696.component.parser.ParseListener;
-import cn.richie696.component.parser.ParsedDocument;
+import cn.richie696.component.parser.DocumentSummary;
 import cn.richie696.component.parser.ParserContext;
 import cn.richie696.component.parser.ParserSource;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -145,7 +145,7 @@ class ParseEventSchemaConformanceTest {
         assertNotNull(seg.meta(), "Streaming.meta 不可 null");
     }
 
-    private void assertFinishedSchema(ParsedDocument summary) {
+    private void assertFinishedSchema(DocumentSummary summary) {
         assertNotNull(summary.metadata(), "Finished.metadata 不可 null");
         assertTrue(summary.metadata().containsKey("format"),
                 "Finished.metadata 必含 'format' key (Step 4 契约)");

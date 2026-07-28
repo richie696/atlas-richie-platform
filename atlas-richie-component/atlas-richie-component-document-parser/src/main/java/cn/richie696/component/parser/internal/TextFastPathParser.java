@@ -17,9 +17,9 @@ package cn.richie696.component.parser.internal;
 
 import cn.richie696.component.parser.DocumentParser;
 import cn.richie696.component.parser.DocumentSegment;
+import cn.richie696.component.parser.DocumentSummary;
 import cn.richie696.component.parser.ParseEvent;
 import cn.richie696.component.parser.ParseListener;
-import cn.richie696.component.parser.ParsedDocument;
 import cn.richie696.component.parser.ParserContext;
 import cn.richie696.component.parser.ParserSource;
 import cn.richie696.component.parser.exception.DocumentParseException;
@@ -31,9 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -59,7 +57,7 @@ public final class TextFastPathParser implements DocumentParser {
     @Override
     public void parseStream(ParserSource source, ParserContext ctx, ParseListener listener) {
         try {
-            parseInternal(source, listener);
+            parseInternal(source, ctx == null ? ParserContext.defaults() : ctx, listener);
         } catch (DocumentParseException dpe) {
             listener.onEvent(new ParseEvent.Failed(dpe));
         } catch (RuntimeException e) {
@@ -74,7 +72,7 @@ public final class TextFastPathParser implements DocumentParser {
      * 真正的流式: BufferedReader 逐行读,每读完一行就检查段落边界,
      * 边界到来立刻 emit,不等全文读完。
      */
-    private void parseInternal(ParserSource source, ParseListener listener) {
+    private void parseInternal(ParserSource source, ParserContext context, ParseListener listener) {
         String nameHint = source.nameHint();
         InputStream in = null;
         BufferedReader reader = null;
@@ -82,14 +80,13 @@ public final class TextFastPathParser implements DocumentParser {
             in = openSource(source);
             reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
 
-            List<DocumentSegment> collected = new ArrayList<>();
             StringBuilder paragraph = new StringBuilder();
             int order = 0;
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.isEmpty()) {
+                if (line.isBlank()) {
                     if (!paragraph.isEmpty()) {
-                        emitSegment(listener, collected, paragraph.toString().trim(), nameHint, order++);
+                        emitSegment(listener, paragraph.toString().trim(), nameHint, order++);
                         paragraph.setLength(0);
                     }
                 } else {
@@ -97,18 +94,22 @@ public final class TextFastPathParser implements DocumentParser {
                         paragraph.append('\n');
                     }
                     paragraph.append(line);
+                    while (context.maxSegmentLength() != null
+                            && paragraph.length() >= context.maxSegmentLength()) {
+                        int end = context.maxSegmentLength();
+                        emitSegment(listener, paragraph.substring(0, end).trim(), nameHint, order++);
+                        paragraph.delete(0, end);
+                    }
                 }
             }
             if (!paragraph.isEmpty()) {
-                emitSegment(listener, collected, paragraph.toString().trim(), nameHint, order++);
+                emitSegment(listener, paragraph.toString().trim(), nameHint, order++);
             }
 
-            // Emit Finished event with summary containing all collected segments.
             Map<String, Object> meta = new HashMap<>();
             meta.put("format", "text/plain");
             meta.put("encoding", "UTF-8");
-            ParsedDocument summary = new ParsedDocument(null, null, collected, meta);
-            listener.onEvent(new ParseEvent.Finished(summary, collected.size(), 0));
+            listener.onEvent(new ParseEvent.Finished(new DocumentSummary(null, null, meta), order, 0));
         } catch (IOException e) {
             throw new DocumentParseException(
                     "Failed to read text content from " + nameHint, e);
@@ -126,17 +127,17 @@ public final class TextFastPathParser implements DocumentParser {
         }
     }
 
-    private void emitSegment(ParseListener listener, List<DocumentSegment> collected,
-                             String text, String sourceName,
+    private void emitSegment(ParseListener listener, String text, String sourceName,
                              int order) {
-        if (text == null || text.isEmpty()) {
+        String normalized = text == null ? null : text.trim();
+        if (normalized == null || normalized.isEmpty()) {
             return;
         }
         String sectionPath = "/" + sourceName + "/Paragraph[" + (order + 1) + "]";
         Map<String, Object> meta = new HashMap<>();
         meta.put("order", order);
-        DocumentSegment seg = new DocumentSegment(text, null, sectionPath, meta);
-        collected.add(seg);
+        meta.put("format", "text/plain");
+        DocumentSegment seg = new DocumentSegment(normalized, null, sectionPath, meta);
         listener.onEvent(new ParseEvent.Streaming(seg));
     }
 

@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static cn.richie696.contract.constant.GlobalConstants.*;
+
 
 /**
  * 金丝雀发布版本负载均衡器（轮训规则）

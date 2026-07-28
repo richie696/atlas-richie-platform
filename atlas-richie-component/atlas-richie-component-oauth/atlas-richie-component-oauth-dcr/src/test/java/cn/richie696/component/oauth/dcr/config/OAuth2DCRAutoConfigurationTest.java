@@ -92,7 +92,7 @@ class OAuth2DCRAutoConfigurationTest {
         assertThat(annotation).isNotNull();
         assertThat(annotation.value()).hasSize(1);
         assertThat(annotation.value()[0].getName())
-                .isEqualTo("config.cn.richie696.component.oauth.core.OAuth2AutoConfiguration");
+                .isEqualTo("cn.richie696.component.oauth.core.config.OAuth2AutoConfiguration");
     }
 
     // ============================================================================================

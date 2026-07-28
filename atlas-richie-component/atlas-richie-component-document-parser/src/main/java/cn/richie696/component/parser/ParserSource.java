@@ -56,7 +56,8 @@ public sealed interface ParserSource
     }
 
     /**
-     * 输入流源(调用方负责流的生命周期)。
+     * 输入流源。DocumentReader 与 parser 在成功、失败或取消后都会关闭该输入流；调用方不应在
+     * 调用后继续使用它。
      *
      * @param in       输入流
      * @param nameHint 文件名提示(用于扩展名嗅探,例如 "report.docx")

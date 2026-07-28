@@ -21,7 +21,9 @@ import cn.richie696.component.vector.model.IndexStatus;
 import cn.richie696.component.vector.model.Modality;
 import cn.richie696.component.vector.model.VectorRecord;
 import cn.richie696.component.ai.service.RerankService;
+import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorService;
+import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -34,7 +36,6 @@ import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.stereotype.Service;
 
 import com.mongodb.client.result.DeleteResult;
 import org.bson.Document;
@@ -59,10 +60,9 @@ import java.util.Map;
  * @version 2.0.0
  * @since 1.0.0
  */
-@Service
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "mongodb")
 @Slf4j
-public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService implements VectorService {
+public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, VectorIndexLifecycleOperations {
 
     private static final String VECTOR_FIELD = "vector";
     private static final String VECTOR_INDEX = "vector_index";
@@ -223,8 +223,6 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      * <p>使用 MongoDB 的 skip 和 limit 实现分页查询.
      *
      * @param indexName 集合名称
-     * @param offset    跳过的文档数量(从 0 开始)
-     * @param limit     返回的最大文档数量
      * @return 文档列表
      */
     @Override
@@ -255,7 +253,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
     protected List<IndexInfo> listIndexesImpl() {
         List<IndexInfo> indexes = new ArrayList<>();
         for (String name : mongoTemplate.getCollectionNames()) {
-            if (name == null || !name.startsWith(VECTOR_COLLECTION_PREFIX)) {
+            if (!name.startsWith(VECTOR_COLLECTION_PREFIX)) {
                 continue;
             }
             long count = mongoTemplate.getCollection(name).countDocuments();
@@ -275,7 +273,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      *   <li>documentCount — 当前文档数</li>
      *   <li>metadata — provider 私有元信息（engine / searchIndex 等）</li>
      * </ul>
-     * 集合不存在时返回 status=UNKNOWN 的占位对象,便于上层调用方统一处理.</p>
+     * 集合不存在时返回 status=UNKNOWN 的占位对象,便于上层调用方统一处理.
      *
      * @param indexName 集合/索引名称
      * @return 索引描述信息;集合不存在时返回 UNKNOWN 状态的占位 IndexInfo
@@ -346,7 +344,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      *   <li>status — READY / UNKNOWN</li>
      *   <li>updatedAt — 当前查询时间戳</li>
      * </ul>
-     * 集合不存在时返回 status=UNKNOWN 占位对象.</p>
+     * 集合不存在时返回 status=UNKNOWN 占位对象.
      *
      * @param indexName 集合/索引名称
      * @return 索引统计信息;集合不存在时返回 UNKNOWN 状态的占位 IndexInfo
@@ -365,6 +363,18 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
         return info;
     }
 
+    /**
+     * 在集合中按 offset / limit 分页读取 {@link VectorRecord}
+     *
+     * <p>MongoDB 投影阶段显式剔除 {@link #VECTOR_FIELD}，只回传
+     * {@code id / content / metadata} 三列，避免回程加载完整的 {@code float[]}
+     * 向量拖慢翻页；空查询或集合缺失会以空列表形式返回。</p>
+     *
+     * @param indexName 集合名称
+     * @param offset    起始偏移量，从 0 开始
+     * @param limit     最大返回数量
+     * @return 当前页的 VectorRecord 列表
+     */
     @Override
     protected List<VectorRecord> listDocumentsImpl(String indexName, int offset, int limit) {
         Query query = new Query()
@@ -424,6 +434,25 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
     protected void addEmbeddings(String indexName, List<org.springframework.ai.document.Document> docs) {
         if (docs == null || docs.isEmpty()) return;
         vectorStore.add(docs);
+    }
+
+    @Override
+    protected boolean usesStoreManagedEmbedding() { return true; }
+
+    /**
+     * 把 {@link VectorRecord} 序列化为 Spring AI {@link org.springframework.ai.document.Document}
+     * 后委托给 {@link VectorStore#add(java.util.List)} 入库，
+     * 用于 {@link #usesStoreManagedEmbedding()} 返回 true 时的批次落库路径。
+     *
+     * <p>这里把 {@code metadata} 透传为 {@code null}，让 Spring AI 仅承担
+     * embedding / 持久化、本 provider 不再二次加工。</p>
+     *
+     * @param indexName 索引（集合）名称
+     * @param records   待写入的 {@link VectorRecord} 列表
+     */
+    @Override
+    protected void writeStoreManagedRecords(String indexName, List<VectorRecord> records) {
+        vectorStore.add(records.stream().map(record -> toAiDocument(record, null)).toList());
     }
 
     /**

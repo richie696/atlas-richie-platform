@@ -25,7 +25,7 @@ import cn.richie696.component.parser.exception.DocumentParseException;
  * <ul>
  *   <li><b>Section</b> — 每段文本, 必有有效 {@code section.sectionPath()} + {@code section.meta()}</li>
  *   <li><b>Image</b> — 每张图片, 必有 {@code image.format()} 以 {@code image/} 起头, {@code image.data()} 永不 null</li>
- *   <li><b>Finished</b> — 必有 {@code result.metadata().get("format")} 标识来源 parser (Office → {@code tika/fesod}, 纯文本 → {@code text/plain})</li>
+ *   <li><b>Finished</b> — 必有 {@code summary.metadata().get("format")} 标识来源 parser，且不包含全量内容</li>
  *   <li><b>Failed</b> — 每个解析失败都 emit (NOT 抛异常), 业务方可统一捕获</li>
  * </ul>
  *
@@ -48,11 +48,11 @@ public sealed interface ReadEvent {
     /**
      * 完成事件 — 含汇总结果 + 计数。
      *
-     * @param result         完整 ReadResult 汇总
+     * @param summary        常量空间的完成摘要（不含已发出的 Section / Image）
      * @param totalSections  本次解析产出的文本段数
      * @param totalImages    本次解析产出的图片资源数
      */
-    record Finished(ReadResult result, int totalSections, int totalImages)
+    record Finished(ReadSummary summary, int totalSections, int totalImages)
             implements ReadEvent {}
 
     /** 失败事件 */

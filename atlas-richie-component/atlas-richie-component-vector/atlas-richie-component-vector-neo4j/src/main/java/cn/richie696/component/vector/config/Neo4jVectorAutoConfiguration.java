@@ -15,15 +15,17 @@
  */
 package cn.richie696.component.vector.config;
 
+import cn.richie696.component.vector.service.impl.Neo4jVectorServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.*;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.neo4j.Neo4jVectorStore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 import java.util.concurrent.TimeUnit;
 
@@ -36,8 +38,9 @@ import java.util.concurrent.TimeUnit;
  * @since 2025-07-04
  */
 @Slf4j
-@Configuration
+@AutoConfiguration
 @EnableConfigurationProperties(Neo4jConfig.class)
+@Import(Neo4jVectorServiceImpl.class)
 public class Neo4jVectorAutoConfiguration {
 
     /**
@@ -96,4 +99,3 @@ public class Neo4jVectorAutoConfiguration {
     }
 
 }
-

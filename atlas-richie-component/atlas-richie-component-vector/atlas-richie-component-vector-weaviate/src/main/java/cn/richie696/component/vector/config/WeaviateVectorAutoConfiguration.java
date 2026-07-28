@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.vector.config;
 
+import cn.richie696.component.vector.service.impl.WeaviateVectorServiceImpl;
 import io.weaviate.client.Config;
 import io.weaviate.client.WeaviateAuthClient;
 import io.weaviate.client.WeaviateClient;
@@ -26,9 +27,10 @@ import org.springframework.ai.vectorstore.weaviate.WeaviateVectorStore;
 import org.springframework.ai.vectorstore.weaviate.WeaviateVectorStoreOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 import java.util.List;
 
@@ -39,8 +41,9 @@ import java.util.List;
  * @since 2025-07-01
  */
 @Slf4j
-@Configuration
+@AutoConfiguration
 @EnableConfigurationProperties(WeaviateConfig.class)
+@Import(WeaviateVectorServiceImpl.class)
 public class WeaviateVectorAutoConfiguration {
 
     /**

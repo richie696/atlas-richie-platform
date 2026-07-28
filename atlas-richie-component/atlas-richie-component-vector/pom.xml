@@ -17,6 +17,8 @@
 
     <modules>
         <module>atlas-richie-component-vector-core</module>
+        <module>atlas-richie-component-vector-chunk-adapter</module>
+        <module>atlas-richie-component-vector-projection-dao</module>
         <module>atlas-richie-component-vector-mongodb-atlas</module>
         <module>atlas-richie-component-vector-neo4j</module>
         <module>atlas-richie-component-vector-postgresql</module>
@@ -24,6 +26,7 @@
         <module>atlas-richie-component-vector-redis</module>
         <module>atlas-richie-component-vector-weaviate</module>
         <module>atlas-richie-component-vector-milvus</module>
+        <module>atlas-richie-component-vector-vikingdb</module>
     </modules>
 
 </project>

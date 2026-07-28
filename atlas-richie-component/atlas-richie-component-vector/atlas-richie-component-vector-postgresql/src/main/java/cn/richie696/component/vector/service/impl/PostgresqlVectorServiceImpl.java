@@ -22,7 +22,9 @@ import cn.richie696.component.vector.model.IndexStatus;
 import cn.richie696.component.vector.model.Modality;
 import cn.richie696.component.vector.model.VectorContent;
 import cn.richie696.component.vector.model.VectorRecord;
+import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorService;
+import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -31,7 +33,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -58,9 +59,8 @@ import java.util.stream.Collectors;
  * @see <a href="https://github.com/pgvector/pgvector">pgvector扩展</a>
  */
 @Slf4j
-@Service
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "postgresql")
-public class PostgresqlVectorServiceImpl extends AbstractVectorService implements VectorService {
+public class PostgresqlVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, VectorIndexLifecycleOperations {
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -291,9 +291,20 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
 
     // ==================== AbstractVectorService 抽象方法实现 ====================
 
+    /**
+     * 清空 pgvector 表中的全部数据
+     *
+     * <p>用 {@code DELETE FROM <table>} 而非 {@code TRUNCATE}，避免 pgvector 端的
+     * HNSW 索引在某些版本下被 TRUNCATE 的 ACCESS EXCLUSIVE 锁与并发写入相互等待。
+     * 同时先调用一次 {@link #countDocumentsImpl(String)} 拿到预估删除数，
+     * 如果 JDBC 抛错则包装为带索引名的 {@link RuntimeException} 抛出。</p>
+     *
+     * @param indexName 索引名称（对应表名 {@code vector_<indexName>}）
+     * @return 受影响的行数（即删除的记录数）
+     * @throws RuntimeException 当底层 SQL 执行失败时抛出
+     */
     @Override
     protected long truncateIndexImpl(String indexName) {
-        long previousCount = countDocumentsImpl(indexName);
         String table = "vector_%s".formatted(indexName);
         String sql = "DELETE FROM %s".formatted(table);
         try {
@@ -546,6 +557,21 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
                 Map.of());
     }
 
+    /**
+     * 在 pgvector 表上按向量做相似度检索，使用 pgvector 的 {@code <->}（L2）运算符做精确最近邻排序
+     *
+     * <p>由于 pgvector 默认度量就是 L2，本方法与之对齐：先用 {@code vector <-> '...'}
+     * 投影出距离字段，再 ORDER BY 距离升序拿到 top-K。score 通过
+     * {@code 1 / (1 + distance)} 反推为相似度，低于 {@code minScore} 的结果被剔除。
+     * 命中文档的 {@link Document#getMetadata()} 还会回填原始向量到 {@code embedding}
+     * 字段，方便后续 {@code chain} 调用直接复用。</p>
+     *
+     * @param indexName 索引名称（对应表名 {@code vector_<indexName>}）
+     * @param vector    查询向量
+     * @param limit     返回数量上限
+     * @param minScore  最低相似度分数；低于阈值的结果会被剔除
+     * @return 按相似度降序的 Spring AI Document 列表
+     */
     @Override
     protected List<Document> similaritySearchByVector(String indexName, float[] vector, int limit, double minScore) {
         String table = "vector_%s".formatted(indexName);

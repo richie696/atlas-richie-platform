@@ -15,21 +15,59 @@
  */
 package cn.richie696.component.vector.config;
 
+import cn.richie696.component.vector.service.impl.RedisVectorServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import redis.clients.jedis.RedisClient;
 
+/**
+ * Redis 向量存储的 Spring Boot 自动配置入口。
+ *
+ * <p>当 {@code platform.component.vector.provider=redis} 时激活，负责把 Redis Stack
+ * 的向量检索能力以 Spring AI {@link VectorStore} Bean 的形式注册到容器，并通过
+ * {@link Import} 同时加载 {@link RedisVectorServiceImpl}，使上层可以直接面向统一的
+ * {@link cn.richie696.component.vector.service.VectorService} 契约编程，而无需感知底层
+ * Jedis 连接与 RediSearch 模块的存在。</p>
+ *
+ * <p>本类只负责连接装配与索引命名透传（默认索引名取自
+ * {@link VectorProperties#getDefaultIndex()}），不感知业务字段结构；向量字段 schema
+ * 的首次初始化由 Spring AI 的 {@link RedisVectorStore.Builder#initializeSchema(boolean)}
+ * 触发，运维侧只需保证 Redis 已部署 RediSearch 模块（Redis Stack）。</p>
+ */
 @Slf4j
-@Configuration
+@AutoConfiguration
+@Import(RedisVectorServiceImpl.class)
 public class RedisVectorAutoConfiguration {
 
+    /**
+     * 构造可直接用于 add/search 的 Redis Stack 向量存储。
+     *
+     * <p>前置条件：{@code redisConnectionFactory} 必须是
+     * {@link JedisConnectionFactory}。RediSearch 模块只通过 Jedis 暴露底层搜索
+     * 能力，Lettuce 等其他实现无法完成 {@code FT.SEARCH}/{@code FT.CREATE} 等命令；
+     * 若检测到非 Jedis 工厂，本方法会抛出 {@link IllegalStateException}，由运维通过
+     * {@code spring.data.redis.client-type=jedis} 或调整 {@code richie-component-cache}
+     * 的 Lettuce 定制来修正。</p>
+     *
+     * <p>副作用：调用 {@link JedisConnectionFactory#afterPropertiesSet()} 触发
+     * Jedis 客户端初始化，并以 {@code initializeSchema(true)} 让 Redis 在首次写入前
+     * 自动按 embedding 维度创建向量索引。索引名复用
+     * {@link VectorProperties#getDefaultIndex()}，与后续所有向量检索共享同一索引。</p>
+     *
+     * @param redisConnectionFactory Spring Boot 自动注入的 Redis 连接工厂，必须是 Jedis 实现
+     * @param embeddingModel AI 组件提供的 EmbeddingModel，用于把文本转换为向量
+     * @param vectorProperties 通用向量配置，仅读取其默认索引名
+     * @return 已构建完成的 Redis 向量存储
+     * @throws IllegalStateException 当前连接工厂不是 Jedis 实现时抛出，提示运维切换 client-type
+     */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "redis")
     public VectorStore redisVectorStore(RedisConnectionFactory redisConnectionFactory,

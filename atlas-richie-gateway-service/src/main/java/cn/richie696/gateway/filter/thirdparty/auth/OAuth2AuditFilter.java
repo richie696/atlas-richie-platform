@@ -55,6 +55,8 @@ import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 
+import static cn.richie696.contract.gateway.model.OAuth2Constants.*;
+
 /**
  * OAuth2.0 审计过滤器
  * <p>

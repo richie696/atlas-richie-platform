@@ -80,11 +80,11 @@ public sealed interface ParseEvent {
     /**
      * 完成事件 — 包含汇总 + 计数。
      *
-     * @param summary        完整 ParsedDocument 汇总 (含所有 Streaming 段 + 元数据)
+     * @param summary        常量空间的完成摘要（不含所有 Streaming 段）
      * @param totalSegments  本次解析产出的文本段落数
      * @param totalImages     本次解析产出的图片资源数
      */
-    record Finished(ParsedDocument summary, int totalSegments, int totalImages)
+    record Finished(DocumentSummary summary, int totalSegments, int totalImages)
             implements ParseEvent {
         @Override
         public String sourceName() {

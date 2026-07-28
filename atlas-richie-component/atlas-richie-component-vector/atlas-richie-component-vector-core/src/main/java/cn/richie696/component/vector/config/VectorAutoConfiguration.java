@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,49 +15,47 @@
  */
 package cn.richie696.component.vector.config;
 
-import cn.richie696.component.vector.operations.VectorOperationsFacade;
+import cn.richie696.component.vector.embeddings.ModalityAwareEmbeddingService;
+import cn.richie696.component.vector.filter.SpringAiVectorFilterCompiler;
+import cn.richie696.component.vector.filter.VectorFilterCompiler;
+import cn.richie696.component.vector.knowledge.ActiveProjectionVersionResolver;
+import cn.richie696.component.vector.knowledge.DefaultKnowledgeBaseVectorService;
+import cn.richie696.component.vector.knowledge.KnowledgeBaseVectorService;
 import cn.richie696.component.vector.service.VectorService;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-
-import java.util.Map;
+import org.springframework.context.annotation.Import;
 
 /**
- * 向量数据库自动配置类。
+ * 向量组件核心自动装配。
  *
- * <p>注册以下 Bean：</p>
- * <ul>
- *   <li>{@link VectorProperties} — 主配置属性</li>
- *   <li>{@link VectorFacadeProperties} — 跨 provider 调度配置</li>
- *   <li>{@link VectorOperationsFacade} — 跨 provider 调度门面（含重试/回退/指标），仅当至少 1 个 {@link VectorService} provider 就绪时创建</li>
- * </ul>
+ * <p>只装配核心协作者；各 provider 由自己的 {@code @AutoConfiguration} 显式导入。
+ * 禁止扫描整个向量包，避免多个 provider 或历史组件被意外注册。</p>
  */
-@Configuration
-@ComponentScan(basePackages = {"cn.richie696.component.vector"})
-@EnableConfigurationProperties({VectorProperties.class, VectorFacadeProperties.class})
+@AutoConfiguration
+@EnableConfigurationProperties(VectorProperties.class)
+@Import({ModalityAwareEmbeddingService.class, VectorMultiProviderGuard.class})
 public class VectorAutoConfiguration {
 
-    /**
-     * 跨 provider 调度门面。
-     * <p>
-     * Spring 自动注入所有 {@link VectorService} 实现（按 bean name 索引）；
-     * {@link MeterRegistry} 可选 — 当业务侧没有 Micrometer 时，门面仍可工作（仅跳过指标记录）。
-     * <p>
-     * <b>触发条件</b>：仅当容器中已注册至少 1 个 {@link VectorService} bean 时才创建 —
-     * 各 provider impl 的 {@code @ConditionalOnProperty(provider=xxx)} 在应用未配置
-     * {@code platform.component.vector.provider} 时不会注册任何 bean,此时避免 facade autowire 失败。
-     */
     @Bean
-    @ConditionalOnBean(VectorService.class)
-    public VectorOperationsFacade vectorOperationsFacade(Map<String, VectorService> providers,
-                                                          VectorFacadeProperties props,
-                                                          ObjectProvider<MeterRegistry> meterRegistry) {
-        return new VectorOperationsFacade(providers, props, meterRegistry);
+    @ConditionalOnProperty(prefix = "platform.component.vector", name = "spring-ai-filter-dsl-enabled", havingValue = "true")
+    @ConditionalOnMissingBean(VectorFilterCompiler.class)
+    public VectorFilterCompiler springAiVectorFilterCompiler() {
+        return new SpringAiVectorFilterCompiler();
     }
 
+    /** 没有可信的 provider-side filter compiler 时不创建知识库门面，杜绝 ACL 后过滤。 */
+    @Bean
+    @ConditionalOnBean({VectorService.class, VectorFilterCompiler.class})
+    @ConditionalOnMissingBean(KnowledgeBaseVectorService.class)
+    public KnowledgeBaseVectorService knowledgeBaseVectorService(
+            VectorService vectorService,
+            ObjectProvider<ActiveProjectionVersionResolver> resolver) {
+        return new DefaultKnowledgeBaseVectorService(vectorService, resolver.getIfAvailable());
+    }
 }

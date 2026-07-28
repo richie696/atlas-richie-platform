@@ -41,6 +41,12 @@ public class ParserProperties {
      */
     private boolean enabled = true;
 
+    /** 单次解析允许执行的最长时间。 */
+    private Duration parseTimeout = Duration.ofMinutes(2);
+
+    /** 单个公开文本段允许保留的最大字符数。 */
+    private int maxSegmentCharacters = 16 * 1024;
+
     /**
      * URL 拉取配置(三道防线之协议层)
      */
@@ -53,11 +59,8 @@ public class ParserProperties {
     @NestedConfigurationProperty
     private PdfConfig pdf = new PdfConfig();
 
-    /**
-     * Excel 解析配置
-     */
-    @NestedConfigurationProperty
-    private ExcelConfig excel = new ExcelConfig();
+    /** 单张嵌入图片允许读入内存的最大字节数，超过时跳过该图片事件。 */
+    private long maxEmbeddedImageBytes = 20L * 1024 * 1024;
 
     /**
      * URL 拉取配置。
@@ -137,15 +140,4 @@ public class ParserProperties {
         }
     }
 
-    /**
-     * Excel 解析配置。
-     */
-    @Data
-    @Accessors(chain = true)
-    public static class ExcelConfig {
-        /**
-         * 大文件流式解析阈值(默认 10MB,超过此大小使用 Fesod 流式)
-         */
-        private long streamingThresholdBytes = 10L * 1024 * 1024;
-    }
 }

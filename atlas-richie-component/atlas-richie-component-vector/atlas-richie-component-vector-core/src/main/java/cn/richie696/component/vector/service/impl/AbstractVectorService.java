@@ -18,10 +18,15 @@ package cn.richie696.component.vector.service.impl;
 import cn.richie696.component.ai.api.RerankResponse;
 import cn.richie696.component.ai.api.RerankResult;
 import cn.richie696.component.ai.service.RerankService;
+import cn.richie696.component.vector.bulk.BulkIngestionPipeline;
+import cn.richie696.component.vector.bulk.BulkOperationEvent;
+import cn.richie696.component.vector.bulk.BulkOperationSummary;
+import cn.richie696.component.vector.bulk.BulkOperationType;
+import cn.richie696.component.vector.bulk.BulkProcessingStage;
 import cn.richie696.component.vector.config.VectorProperties;
+import cn.richie696.component.vector.embeddings.ModalityAwareEmbeddingService;
 import cn.richie696.component.vector.exceptions.UnsupportedModalityException;
-import cn.richie696.component.vector.model.BatchEvent;
-import cn.richie696.component.vector.model.BatchStats;
+import cn.richie696.component.vector.filter.VectorFilterCompiler;
 import cn.richie696.component.vector.model.HybridSearchOptions;
 import cn.richie696.component.vector.model.IndexInfo;
 import cn.richie696.component.vector.model.Modality;
@@ -29,10 +34,8 @@ import cn.richie696.component.vector.model.SearchOptions;
 import cn.richie696.component.vector.model.VectorContent;
 import cn.richie696.component.vector.model.VectorRecord;
 import cn.richie696.component.vector.model.VectorSearchResult;
-import cn.richie696.component.vector.embeddings.ModalityAwareEmbeddingService;
 import cn.richie696.component.vector.service.VectorService;
 import lombok.Setter;
-import cn.richie696.component.vector.pipeline.BatchPipelineCoordinator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -43,18 +46,18 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -62,11 +65,11 @@ import java.util.stream.Collectors;
  * <p>
  * <b>职责分层</b>：
  * <ul>
- *   <li><b>本类承担</b>：模态路由、单条 CRUD、rerank、文档转换</li>
+ *   <li><b>本类承担</b>：文本嵌入、单条写入/删除、rerank、文档转换</li>
  *   <li><b>子类承担</b>：{@link #similaritySearchByVector} / {@link #addEmbeddings} / {@link #deleteByIds} / {@link #getByIds} / 索引管理</li>
  * </ul>
  * <p>
- * 批量异步管线已抽离至 {@link BatchPipelineCoordinator}，本类仅保留单条同步路径与索引/搜索委托。
+ * 批量异步编排由 {@link BulkIngestionPipeline} 承担，本类只提供 provider 数据面回调。
  *
  * @author richie696
  * @since 2.0.0
@@ -84,41 +87,26 @@ public abstract class AbstractVectorService implements VectorService {
     protected final EmbeddingModel embeddingModel;
     protected final RerankService rerankService;
 
-    /**
-     * 多模态嵌入路由服务 — 可选（仅在 Spring 容器中存在 {@link ModalityAwareEmbeddingService} Bean 时注入）。
-     * <p>
-     * <b>非侵入式装配</b>：本字段使用 {@code @Autowired(required = false)}，避免修改 7 个 provider
-     * 子类的构造器签名。当注入失败（即没有图像嵌入模型配置）时，IMAGE 写入路径仍按 Phase A
-     * 行为抛 {@link UnsupportedModalityException}。
-     * <p>
-     * <b>子类覆盖建议</b>：若子类需要在构造期立即可见 modalityService，可重写本字段或暴露 setter。
-     */
+    /** 可选的图片嵌入路由器；未配置时文本能力不受影响。 */
     @Autowired(required = false)
+    @Setter
     protected ModalityAwareEmbeddingService modalityService;
 
     /**
-     * 向量库配置属性 — 可选。携带 {@link VectorProperties.Batch} 批量管线配置；
-     * 未注入时 {@code BatchPipelineCoordinator.run} 回退至 {@link BatchPipelineCoordinator#DEFAULT_BATCH}。
-     * <p>
-     * setter 注入后下次 {@code run()} 立即生效（{@link BatchPipelineCoordinator.ConfigProvider#get()} 每批重新读取）。
+     * 向量库配置属性；批量操作每次执行时读取其中的 {@link VectorProperties.Bulk}。
      */
     @Setter
     @Autowired(required = false)
     protected VectorProperties vectorProperties;
 
+    @Autowired(required = false)
+    protected VectorFilterCompiler vectorFilterCompiler;
+
     /**
-     * 批量管线协调器 — 把 Stage A 嵌入 + Stage B 攒批写入 + 终态统计从本类抽离。
-     * <p>
-     * 通过三个回调（{@link BatchPipelineCoordinator.ConfigProvider} /
-     * {@link BatchPipelineCoordinator.Embedder} /
-     * {@link BatchPipelineCoordinator.DocumentWriter}）解耦具体实现：
-     * <ul>
-     *   <li>ConfigProvider — {@code () -> vectorProperties != null ? vectorProperties.getBatch() : null}，由 coordinator 处理 DEFAULT_BATCH 兜底</li>
-     *   <li>Embedder — 委托 {@link #embedForBatch}</li>
-     *   <li>DocumentWriter — 委托 {@link #addEmbeddings}</li>
-     * </ul>
+     * 批量文本入库编排器。其依赖仅是文本嵌入和已嵌入记录写入回调，因而不反向依赖本抽象类。
      */
-    private final BatchPipelineCoordinator batchCoordinator;
+    private final BulkIngestionPipeline bulkIngestionPipeline;
+    private final BulkIngestionPipeline storeManagedBulkIngestionPipeline;
 
     // ==================== 构造器 ====================
 
@@ -128,17 +116,15 @@ public abstract class AbstractVectorService implements VectorService {
         this.rerankService = rerankService;
         this.vectorStore = vectorStore;
         this.embeddingModel = embeddingModel;
-        this.batchCoordinator = new BatchPipelineCoordinator(
-                () -> vectorProperties != null ? vectorProperties.getBatch() : null,
-                this::embedForBatch,
-                this::addEmbeddings);
+        this.bulkIngestionPipeline = new BulkIngestionPipeline(this::embedRecord,
+                (indexName, records) -> addEmbeddings(indexName, records.stream()
+                        .map(item -> toAiDocument(item.record(), item.embedding()))
+                        .toList()));
+        this.storeManagedBulkIngestionPipeline = new BulkIngestionPipeline(this::writeStoreManagedRecords);
     }
 
     /**
-     * 注入完整配置（含 {@link VectorProperties.Batch}）的扩展构造器。
-     * <p>
-     * <b>向后兼容</b>：旧的 {@code super(rerankService, vectorStore, embeddingModel)} 链路不受影响 —
-     * 现有 7 个 provider 子类无需修改；本构造器为新接入点。
+     * 注入完整配置（含 {@link VectorProperties.Bulk}）的扩展构造器。
      *
      * @param rerankService    重排序服务（可为 {@code null}）
      * @param vectorStore      Spring AI 向量库句柄
@@ -158,31 +144,14 @@ public abstract class AbstractVectorService implements VectorService {
         this(null, vectorStore, embeddingModel);
     }
 
-    /**
-     * 显式注入 modalityService 的可选 setter — 用于非 Spring 容器场景（例如直接 {@code new} 子类做测试）。
-     * <p>
-     * 由 Spring 自动注入时也走本方法（容器会优先调用 setter 完成 {@code @Autowired} 注入），
-     * 因此子类无需额外关注。
-     *
-     * @param s 多模态嵌入路由服务；传 {@code null} 表示禁用多模态
-     */
-    @Autowired(required = false)
-    public void setModalityService(ModalityAwareEmbeddingService s) {
-        this.modalityService = s;
-    }
-
     // ====================================================================
-    // 单条同步 — Add
+    // 核心写入 — Upsert
     // ====================================================================
 
     @Override
-    public String addText(String indexName, String text, Map<String, Object> metadata) {
-        return add(VectorRecord.text(indexName, text, metadata));
-    }
-
-    @Override
-    public String add(VectorRecord record) {
+    public String upsert(VectorRecord record) {
         validateRecord(record);
+        validateIndexName(record.getIndexName());
         if (record.getId() == null) {
             record.setId(UUID.randomUUID().toString());
         }
@@ -190,126 +159,43 @@ public abstract class AbstractVectorService implements VectorService {
             throw new IllegalArgumentException("VectorRecord.content 不能为空");
         }
 
-        Modality modality = record.getContent().modality();
-        if (modality == Modality.IMAGE) {
-            if (modalityService == null || !modalityService.supportsModality(Modality.IMAGE)) {
-                throw new UnsupportedModalityException(
-                        "v2 IMAGE 模态需要在 ai 模块配置 ImageEmbeddingModel (CLIP/SigLIP) — 见 Phase C");
-            }
-            float[] embedding = modalityService.embed(Modality.IMAGE, record.getContent());
+        if (usesStoreManagedEmbedding()) {
+            writeStoreManagedRecords(record.getIndexName(), List.of(record));
+        } else {
+            float[] embedding = embedRecord(record);
             Document aiDoc = toAiDocument(record, embedding);
             addEmbeddings(record.getIndexName(), List.of(aiDoc));
-            return record.getId();
         }
-
-        // 文本路径：调 TextEmbeddingModel
-        Document aiDoc = toAiDocument(record, embedText(record));
-        addEmbeddings(record.getIndexName(), List.of(aiDoc));
         return record.getId();
     }
 
+    // ====================================================================
+    // 核心删除 — vectorId
+    // ====================================================================
+
     @Override
-    public String addImage(String indexName, byte[] image, String mimeType, Map<String, Object> metadata) {
-        return add(VectorRecord.image(indexName, image, mimeType).setMetadata(metadata));
+    public void deleteById(String indexName, String vectorId) {
+        validateIndexName(indexName);
+        deleteByIds(indexName, List.of(vectorId));
     }
 
     @Override
-    public String addImage(String indexName, Path imagePath, String mimeType, Map<String, Object> metadata) {
-        return add(VectorRecord.image(indexName, imagePath, mimeType).setMetadata(metadata));
-    }
-
-    @Override
-    public String addImageUrl(String indexName, String url, String mimeType, Map<String, Object> metadata) {
-        // Phase A 简化：远程图片同步下载后入库
-        try {
-            byte[] data = downloadImage(url);
-            return addImage(indexName, data, mimeType, metadata);
-        } catch (Exception e) {
-            throw new RuntimeException("下载远程图片失败: " + url, e);
+    public void deleteByIds(String indexName, Collection<String> vectorIds) {
+        validateIndexName(indexName);
+        if (vectorIds == null || vectorIds.isEmpty()) {
+            return;
         }
-    }
-
-    // ====================================================================
-    // 单条同步 — Update
-    // ====================================================================
-
-    @Override
-    public void updateText(String indexName, String id, String text, Map<String, Object> metadata) {
-        VectorRecord r = VectorRecord.text(indexName, text, metadata).setId(id);
-        update(r);
-    }
-
-    @Override
-    public void update(VectorRecord record) {
-        validateRecord(record);
-        if (record.getId() == null) {
-            throw new IllegalArgumentException("update 需要指定 id");
-        }
-        // delete + insert 等价语义
-        delete(record.getIndexName(), record.getId());
-        add(record);
-    }
-
-    @Override
-    public void updateImage(String indexName, String id, byte[] image, String mimeType, Map<String, Object> metadata) {
-        VectorRecord r = VectorRecord.image(indexName, image, mimeType).setId(id).setMetadata(metadata);
-        update(r);
-    }
-
-    @Override
-    public void updateImage(String indexName, String id, Path imagePath, String mimeType, Map<String, Object> metadata) {
-        VectorRecord r = VectorRecord.image(indexName, imagePath, mimeType).setId(id).setMetadata(metadata);
-        update(r);
-    }
-
-    // ====================================================================
-    // 单条同步 — Delete
-    // ====================================================================
-
-    @Override
-    public void delete(String indexName, String id) {
-        deleteByIds(indexName, List.of(id));
-    }
-
-    @Override
-    public long deleteIf(String indexName, Predicate<VectorRecord> filter) {
-        // Phase A 默认实现：拉全量 → 过滤 → 删除（性能差，仅用于低频管理操作）
-        List<VectorRecord> all = listDocuments(indexName, 0, MAX_LIST_LIMIT);
-        List<String> matched = all.stream()
-                .filter(filter)
-                .map(VectorRecord::getId)
-                .collect(Collectors.toList());
-        if (!matched.isEmpty()) {
-            deleteByIds(indexName, matched);
-        }
-        return matched.size();
-    }
-
-    // ====================================================================
-    // 单条同步 — Get
-    // ====================================================================
-
-    @Override
-    public Optional<VectorRecord> get(String indexName, String id) {
-        List<VectorRecord> result = getByIds(indexName, List.of(id));
-        return result.isEmpty() ? Optional.empty() : Optional.of(result.getFirst());
-    }
-
-    @Override
-    public List<VectorRecord> getAll(String indexName, Collection<String> ids) {
-        return getByIds(indexName, new ArrayList<>(ids));
+        deleteByIds(indexName, List.copyOf(vectorIds));
     }
 
     // ====================================================================
     // 单条同步 — Search
     // ====================================================================
 
-    @Override
     public List<VectorSearchResult> searchByText(String indexName, String text, int limit) {
         return searchByText(indexName, text, limit, SearchOptions.builder().build());
     }
 
-    @Override
     public List<VectorSearchResult> searchByText(String indexName, String text, int limit, double minScore) {
         SearchOptions opts = SearchOptions.builder().minScore(minScore).build();
         return searchByText(indexName, text, limit, opts);
@@ -317,9 +203,11 @@ public abstract class AbstractVectorService implements VectorService {
 
     @Override
     public List<VectorSearchResult> searchByText(String indexName, String text, int limit, SearchOptions options) {
+        validateIndexName(indexName);
         if (text == null || text.isBlank()) {
             throw new IllegalArgumentException("text 不能为空");
         }
+        options = options == null ? SearchOptions.builder().build() : options;
         int topK = limit > 0 ? limit : 10;
         double minScore = options.getMinScore() != null ? options.getMinScore() : 0.0;
 
@@ -327,7 +215,7 @@ public abstract class AbstractVectorService implements VectorService {
                 .query(text)
                 .topK(topK)
                 .similarityThreshold(minScore)
-                .filterExpression(options.getFilterExpression())
+                .filterExpression(compileProviderFilter(options))
                 .build();
 
         List<Document> results = vectorStore.similaritySearch(request);
@@ -340,155 +228,133 @@ public abstract class AbstractVectorService implements VectorService {
                         d.getId(),
                         d.getFormattedContent(),
                         d.getScore(),
-                        embeddingModel != null
-                                ? embeddingModel.embed(d.getText() == null ? "" : d.getText())
-                                : null))
+                        null).setMetadata(d.getMetadata()))
                 .collect(Collectors.toList());
 
         boolean rerankEnabled = Boolean.TRUE.equals(options.getRerank());
         return rerankEnabled ? tryRerank(text, mapped) : mapped;
     }
 
-    /**
-     * 按图片检索 — Phase C 最佳努力接入点。
-     * <p>
-     * 当前默认实现：检测到 {@code modalityService != null && modalityService.supportsModality(IMAGE)}
-     * 时路由到 {@link ModalityAwareEmbeddingService} 取得 query 向量后调用底层
-     * {@link #similaritySearchByVector}；否则抛 {@link UnsupportedModalityException}。
-     * <p>
-     * Provider 子类可重写本方法以提供更精确的 IMAGE 检索语义（如：metadata 过滤中携带 MIME 提示）。
-     *
-     * @param indexName 索引名
-     * @param image     原始图片字节
-     * @param mimeType  MIME 类型（{@code image/} 前缀）
-     * @param limit     topK
-     * @return 检索结果（按相似度降序）
-     */
     @Override
-    public List<VectorSearchResult> searchByImage(String indexName, byte[] image, String mimeType, int limit) {
-        if (modalityService != null && modalityService.supportsModality(Modality.IMAGE)) {
-            VectorContent.ImageContent img = new VectorContent.ImageContent(image, mimeType);
-            float[] queryVec = modalityService.embed(Modality.IMAGE, img);
-            return searchByImageViaVector(indexName, queryVec, limit);
-        }
-        throw new UnsupportedModalityException(
-                "v2 IMAGE 搜索需要在 ai 模块配置 ImageEmbeddingModel — 见 Phase C。当前 image model 不可用。");
-    }
-
-    @Override
-    public List<VectorSearchResult> searchByImage(String indexName, byte[] image, String mimeType, int limit, double minScore) {
-        if (modalityService != null && modalityService.supportsModality(Modality.IMAGE)) {
-            VectorContent.ImageContent img = new VectorContent.ImageContent(image, mimeType);
-            float[] queryVec = modalityService.embed(Modality.IMAGE, img);
-            return searchByImageViaVector(indexName, queryVec, limit, minScore);
-        }
-        throw new UnsupportedModalityException("v2 IMAGE 搜索尚未启用");
+    public List<VectorSearchResult> searchByImage(String indexName, byte[] image, String mimeType,
+                                                   int limit, double minScore) {
+        VectorContent.ImageContent content = new VectorContent.ImageContent(image, mimeType);
+        return searchByImageVector(indexName, content, limit, minScore);
     }
 
     @Override
     public List<VectorSearchResult> searchByImage(String indexName, Path imagePath, String mimeType, int limit) {
-        if (modalityService != null && modalityService.supportsModality(Modality.IMAGE)) {
-            VectorContent.ImageContent img = VectorContent.ImageContent.ofPath(imagePath, mimeType);
-            float[] queryVec = modalityService.embed(Modality.IMAGE, img);
-            return searchByImageViaVector(indexName, queryVec, limit);
-        }
-        throw new UnsupportedModalityException("v2 IMAGE 搜索尚未启用");
+        return searchByImageVector(indexName, VectorContent.ImageContent.ofPath(imagePath, mimeType), limit, 0.0);
     }
 
-    /**
-     * 用预计算的查询向量做图像检索 — 三个 {@code searchByImage} 重载的共同下层入口。
-     * <p>
-     * 默认实现：委托 {@link #similaritySearchByVector}（minScore=0.0）并把 {@link Document}
-     * 映射成 {@link VectorSearchResult}（直接走 {@link #similaritySearchByVector} 路径）。
-     */
-    private List<VectorSearchResult> searchByImageViaVector(String indexName, float[] queryVec, int limit) {
-        return searchByImageViaVector(indexName, queryVec, limit, 0.0);
+    /** 供具体 provider 或旧调用方使用的默认图片检索重载。 */
+    public List<VectorSearchResult> searchByImage(String indexName, byte[] image, String mimeType, int limit) {
+        return searchByImage(indexName, image, mimeType, limit, 0.0);
     }
 
-    private List<VectorSearchResult> searchByImageViaVector(String indexName, float[] queryVec, int limit, double minScore) {
-        if (queryVec == null) {
-            throw new IllegalArgumentException("image query vector 不能为空");
+    private List<VectorSearchResult> searchByImageVector(String indexName, VectorContent.ImageContent image,
+                                                          int limit, double minScore) {
+        validateIndexName(indexName);
+        if (modalityService == null || !modalityService.supportsModality(Modality.IMAGE)) {
+            throw new UnsupportedModalityException(Modality.IMAGE, "IMAGE 模态未配置 imageEmbeddingModel");
         }
-        List<Document> docs = similaritySearchByVector(indexName, queryVec, limit, minScore);
-        List<VectorSearchResult> results = new ArrayList<>(docs.size());
-        for (Document d : docs) {
-            Double score = d.getScore();
-            if (score == null && d.getMetadata().get("score") instanceof Number n) {
-                score = n.doubleValue();
-            }
-            results.add(VectorSearchResult.of(d.getId(), d.getText(), score, queryVec));
-        }
-        return results;
+        float[] vector = modalityService.embed(Modality.IMAGE, image);
+        return similaritySearchByVector(indexName, vector, limit, minScore).stream()
+                .map(document -> VectorSearchResult.of(document.getId(), document.getFormattedContent(),
+                        document.getScore(), vector))
+                .toList();
     }
 
     // ====================================================================
     // 索引管理 — 基础（默认抛 UnsupportedOperationException，由子类按需实现）
     // ====================================================================
 
-    @Override
     public void createIndex(String indexName, VectorProperties.IndexConfig config) {
         createIndexImpl(indexName, config);
     }
 
-    @Override
     public void deleteIndex(String indexName) {
         deleteIndexImpl(indexName);
     }
 
-    @Override
     public boolean indexExists(String indexName) {
         return indexExistsImpl(indexName);
     }
 
-    @Override
     public VectorProperties.IndexConfig getIndexConfig(String indexName) {
         return getIndexConfigImpl(indexName);
     }
 
-    @Override
     public long countDocuments(String indexName) {
         return countDocumentsImpl(indexName);
     }
 
-    @Override
     public final List<VectorRecord> listDocuments(String indexName, int offset, int limit) {
         if (limit <= 0) return List.of();
         int cappedLimit = Math.min(limit, MAX_LIST_LIMIT);
         return listDocumentsImpl(indexName, offset, cappedLimit);
     }
 
+    /**
+     * 精确读取是可选能力；只有声明 {@code VectorRecordReadOperations} 的 provider 才承诺该方法可用。
+     */
+    public Optional<VectorRecord> getById(String indexName, String vectorId) {
+        if (vectorId == null || vectorId.isBlank()) {
+            throw new IllegalArgumentException("vectorId 不能为空");
+        }
+        return getByIds(indexName, List.of(vectorId)).stream().findFirst();
+    }
+
+    /**
+     * 以 vectorId 为键返回精确读取结果；底层 provider 的返回顺序不参与 API 语义。
+     */
+    public Map<String, VectorRecord> getByIds(String indexName, Collection<String> vectorIds) {
+        validateIndexName(indexName);
+        if (vectorIds == null || vectorIds.isEmpty()) {
+            return Map.of();
+        }
+        List<String> ids = vectorIds.stream()
+                .filter(id -> id != null && !id.isBlank())
+                .distinct()
+                .toList();
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, VectorRecord> records = new LinkedHashMap<>();
+        for (VectorRecord record : getByIds(indexName, ids)) {
+            if (record != null && record.getId() != null) {
+                records.put(record.getId(), record);
+            }
+        }
+        return Map.copyOf(records);
+    }
+
     // ====================================================================
     // 索引管理 — 扩展 (§14.2 抽象方法委托)
     // ====================================================================
 
-    @Override
     public List<IndexInfo> listIndexes() {
         return listIndexesImpl();
     }
 
-    @Override
     public long truncateIndex(String indexName) {
         long deleted = truncateIndexImpl(indexName);
         log.info("truncateIndex: 索引 [{}] 清空完成, 删除文档数={}", indexName, deleted);
         return deleted;
     }
 
-    @Override
     public boolean updateIndexConfig(String indexName, VectorProperties.IndexConfig config) {
         return updateIndexConfigImpl(indexName, config);
     }
 
-    @Override
     public boolean cloneIndex(String sourceIndexName, String targetIndexName) {
         return cloneIndexImpl(sourceIndexName, targetIndexName);
     }
 
-    @Override
     public boolean awaitIndexReady(String indexName, Duration timeout) {
         return awaitIndexReadyImpl(indexName, timeout);
     }
 
-    @Override
     public IndexInfo describeIndex(String indexName) {
         return describeIndexImpl(indexName);
     }
@@ -497,7 +363,6 @@ public abstract class AbstractVectorService implements VectorService {
     // 统计健康 (§14.2 + §14.3 抽象方法委托)
     // ====================================================================
 
-    @Override
     public IndexInfo getIndexStats(String indexName) {
         return getIndexStatsImpl(indexName);
     }
@@ -511,7 +376,6 @@ public abstract class AbstractVectorService implements VectorService {
      * @param indexName 索引名称
      * @return true=索引存在且可读，false=任一检查失败或抛异常
      */
-    @Override
     public boolean healthCheck(String indexName) {
         return healthCheckImpl(indexName);
     }
@@ -520,7 +384,6 @@ public abstract class AbstractVectorService implements VectorService {
     // 高级搜索 (§14.3 抽象方法委托)
     // ====================================================================
 
-    @Override
     public List<VectorSearchResult> hybridSearch(String indexName, String text, String keywordQuery,
                                                  int limit, HybridSearchOptions options) {
         double vectorWeight = options != null && options.getVectorWeight() != null ? options.getVectorWeight() : 0.7;
@@ -531,7 +394,6 @@ public abstract class AbstractVectorService implements VectorService {
         return hybridSearchImpl(indexName, text, keywordQuery, limit, vectorWeight, keywordWeight, inner);
     }
 
-    @Override
     public List<VectorSearchResult> searchByMultiVector(String indexName, List<float[]> vectors, int limit) {
         throw new UnsupportedOperationException("searchByMultiVector 未实现 — 仅支持 named vectors 的 provider 实现");
     }
@@ -540,110 +402,83 @@ public abstract class AbstractVectorService implements VectorService {
     // 运维 / 别名 / 备份 (§14.4 抽象方法委托)
     // ====================================================================
 
-    @Override
     public boolean optimize(String indexName) {
         return optimizeImpl(indexName);
     }
 
-    @Override
     public boolean createAlias(String indexName, String alias) {
         return createAliasImpl(indexName, alias);
     }
 
-    @Override
     public boolean switchAlias(String oldIndexName, String newIndexName, String alias) {
         return switchAliasImpl(oldIndexName, newIndexName, alias);
     }
 
-    @Override
     public boolean backup(String indexName, String targetPath) {
         return backupImpl(indexName, targetPath);
     }
 
-    @Override
     public boolean restore(String sourcePath, String indexName) {
         return restoreImpl(sourcePath, indexName);
     }
 
     // ====================================================================
-    // 批量异步 — 反应式事件流（Phase A 基础管线）
+    // 批量异步 — 反应式事件流
     // ====================================================================
 
     @Override
-    public Flux<BatchEvent> addBatch(String indexName, Flux<VectorRecord> records) {
-        return batchCoordinator.run(indexName, records);
+    public Flux<BulkOperationEvent> upsertAll(String indexName, Flux<VectorRecord> records) {
+        return (usesStoreManagedEmbedding() ? storeManagedBulkIngestionPipeline : bulkIngestionPipeline).execute(indexName, records,
+                vectorProperties == null ? null : vectorProperties.getBulk());
     }
 
     @Override
-    public Flux<BatchEvent> addBatch(String indexName, List<VectorRecord> records) {
-        return addBatch(indexName, Flux.fromIterable(records));
-    }
-
-    @Override
-    public Flux<BatchEvent> updateBatch(String indexName, Flux<VectorRecord> records) {
-        return batchCoordinator.run(indexName, records);
-    }
-
-    @Override
-    public Flux<BatchEvent> deleteBatch(String indexName, Flux<String> ids) {
-        String batchId = UUID.randomUUID().toString();
+    public Flux<BulkOperationEvent> deleteAll(String indexName, Flux<String> vectorIds) {
+        if (indexName == null || indexName.isBlank()) {
+            return Flux.error(new IllegalArgumentException("indexName 不能为空"));
+        }
+        if (vectorIds == null) {
+            return Flux.error(new IllegalArgumentException("vectorIds 不能为空"));
+        }
+        String operationId = UUID.randomUUID().toString();
         Instant started = Instant.now();
         AtomicLong succeeded = new AtomicLong();
         AtomicLong failed = new AtomicLong();
-        long total = 0L;
+        AtomicLong deleteRequests = new AtomicLong();
+        VectorProperties.Bulk bulkOptions = vectorProperties == null ? null : vectorProperties.getBulk();
+        int concurrency = bulkOptions == null ? 8 : Math.max(1, bulkOptions.getWriteConcurrency());
+
+        Flux<BulkOperationEvent> work = vectorIds.flatMap(vectorId -> Flux.concat(
+                Mono.<BulkOperationEvent>just(new BulkOperationEvent.ItemStarted(operationId, vectorId,
+                        BulkProcessingStage.DELETING, Instant.now())),
+                Mono.fromRunnable(() -> {
+                            if (vectorId.isBlank()) {
+                                throw new IllegalArgumentException("vectorId 不能为空");
+                            }
+                            deleteRequests.incrementAndGet();
+                            deleteById(indexName, vectorId);
+                        })
+                        .subscribeOn(Schedulers.boundedElastic())
+                        .then(Mono.fromSupplier(() -> {
+                            succeeded.incrementAndGet();
+                            return (BulkOperationEvent) new BulkOperationEvent.ItemSucceeded(
+                                    operationId, vectorId, vectorId, Instant.now());
+                        }))
+                        .onErrorResume(error -> {
+                            failed.incrementAndGet();
+                            return Mono.just(new BulkOperationEvent.ItemFailed(operationId, vectorId,
+                                    BulkProcessingStage.DELETING, error.getClass().getSimpleName(),
+                                    error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage(),
+                                    Instant.now()));
+                        })
+        ), concurrency);
 
         return Flux.concat(
-                        Flux.<BatchEvent>create(sink -> {
-                            // 计数需要上游预先知道 total — 这里取消费中的近似值，调用方可在 BatchStarted 之后自行计算
-                            sink.next(new BatchEvent.BatchStarted(batchId, -1L, Instant.now()));
-                        }),
-                        ids.index()
-                                .flatMap(indexed -> Mono.fromRunnable(() -> {
-                                    try {
-                                        deleteByIds(indexName, List.of(indexed.getT2()));
-                                        succeeded.incrementAndGet();
-                                    } catch (Exception e) {
-                                        failed.incrementAndGet();
-                                        throw new RuntimeException(e);
-                                    }
-                                }).subscribeOn(Schedulers.boundedElastic())
-                                        .onErrorResume(e -> {
-                                            log.warn("deleteBatch 单条失败: id={}, error={}", indexed.getT2(), e.getMessage());
-                                            return Mono.empty();
-                                        })
-                                .then(Mono.fromSupplier(() -> (BatchEvent) new BatchEvent.ItemCompleted(
-                                        batchId, indexed.getT2(), indexed.getT2(), Modality.TEXT, Instant.now()))))
-                        )
-                .concatWith(Flux.defer(() -> Flux.just(new BatchEvent.BatchCompleted(
-                        batchId,
-                        new BatchStats(
-                                Math.max(succeeded.get() + failed.get(), total),
-                                succeeded.get(), failed.get(),
-                                Duration.between(started, Instant.now()), 0, succeeded.get()),
-                        Instant.now()))));
-    }
-
-    /**
-     * 批量场景下的嵌入调用 — 文本路径调 EmbeddingModel.embed()。
-     * 图片路径抛 UnsupportedModalityException（Phase A 暂未启用）。
-     * <p>
-     * 本方法作为 {@link BatchPipelineCoordinator.Embedder} 回调被 coordinator 在 Stage A 调用。
-     */
-    private float[] embedForBatch(VectorRecord record) {
-        if (embeddingModel == null) {
-            throw new IllegalStateException("EmbeddingModel 未配置 — 无法执行嵌入");
-        }
-        VectorContent content = record.getContent();
-        if (content == null) {
-            throw new IllegalArgumentException("VectorRecord.content 不能为空");
-        }
-        if (content.modality() == Modality.IMAGE) {
-            if (modalityService == null || !modalityService.supportsModality(Modality.IMAGE)) {
-                throw new UnsupportedModalityException("IMAGE 模态暂未启用 — 见 Phase C ai 模块集成");
-            }
-            return modalityService.embed(Modality.IMAGE, content);
-        }
-        return embedText(record);
+                Mono.just(new BulkOperationEvent.Started(operationId, BulkOperationType.DELETE, started)),
+                work,
+                Mono.fromSupplier(() -> new BulkOperationEvent.Completed(operationId, BulkOperationType.DELETE,
+                        new BulkOperationSummary(succeeded.get(), failed.get(), Duration.between(started, Instant.now()),
+                                0, deleteRequests.get()), Instant.now())));
     }
 
     // ====================================================================
@@ -653,17 +488,48 @@ public abstract class AbstractVectorService implements VectorService {
     /** 按向量搜索（含 minScore 过滤） */
     protected abstract List<Document> similaritySearchByVector(String indexName, float[] vector, int limit, double minScore);
 
+    /**
+     * 带 provider 侧标量过滤的向量检索钩子。
+     * 不支持原生过滤的 provider 复用无过滤实现；需要 ACL 的 provider 必须覆盖此方法。
+     */
+    protected List<Document> similaritySearchByVector(String indexName, float[] vector, int limit,
+                                                       double minScore, String providerFilter) {
+        if (providerFilter != null && !providerFilter.isBlank()) {
+            throw new UnsupportedOperationException("provider does not support native vector filter pushdown");
+        }
+        return similaritySearchByVector(indexName, vector, limit, minScore);
+    }
+
     /** 批量写入已嵌入文档 */
     protected abstract void addEmbeddings(String indexName, List<Document> docs);
+
+    /** provider 的 {@code VectorStore.add} 自行调用 EmbeddingModel 时返回 true，避免 bulk 双重嵌入。 */
+    protected boolean usesStoreManagedEmbedding() { return false; }
+
+    /** 仅供 {@link #usesStoreManagedEmbedding()} 为 true 的 provider 覆盖。 */
+    protected void writeStoreManagedRecords(String indexName, List<VectorRecord> records) {
+        throw new UnsupportedOperationException("provider does not support store-managed bulk embedding");
+    }
 
     /** 按 ID 列表删除 */
     protected abstract void deleteByIds(String indexName, List<String> ids);
 
     /** 按 ID 列表读取 */
-    protected abstract List<VectorRecord> getByIds(String indexName, List<String> ids);
+    protected List<VectorRecord> getByIds(String indexName, List<String> ids) {
+        throw new UnsupportedOperationException("provider does not support exact vector record reads");
+    }
 
     /** 分页列出索引内文档 */
-    protected abstract List<VectorRecord> listDocumentsImpl(String indexName, int offset, int limit);
+    protected List<VectorRecord> listDocumentsImpl(String indexName, int offset, int limit) {
+        throw new UnsupportedOperationException("provider does not support record listing");
+    }
+
+    /** provider 可限制一个实例实际绑定的 index，避免调用参数与数据面不一致。 */
+    protected void validateIndexName(String indexName) {
+        if (indexName == null || indexName.isBlank()) {
+            throw new IllegalArgumentException("indexName must not be blank");
+        }
+    }
 
     // ==================== 子类可选实现（默认抛 UnsupportedOperationException） ====================
 
@@ -700,6 +566,31 @@ public abstract class AbstractVectorService implements VectorService {
         }
     }
 
+    private float[] embedRecord(VectorRecord record) {
+        Modality modality = record.getContent().modality();
+        if (modality == Modality.IMAGE) {
+            if (modalityService == null || !modalityService.supportsModality(Modality.IMAGE)) {
+                throw new UnsupportedModalityException(Modality.IMAGE, "IMAGE 模态未配置 imageEmbeddingModel");
+            }
+            return modalityService.embed(Modality.IMAGE, record.getContent());
+        }
+        return embedText(record);
+    }
+
+    /**
+     * 将统一的结构化过滤树编译为当前 VectorStore 所需的底层 DSL。
+     * Spring AI 的 {@link SearchRequest} 仍以字符串承载过滤条件，但业务 API 不再接收原始 DSL。
+     */
+    protected String compileProviderFilter(SearchOptions options) {
+        if (options.getFilter() == null) {
+            return null;
+        }
+        if (vectorFilterCompiler == null) {
+            throw new UnsupportedOperationException("structured VectorFilter requires a provider VectorFilterCompiler");
+        }
+        return vectorFilterCompiler.compile(options.getFilter());
+    }
+
     private float[] embedText(VectorRecord record) {
         if (embeddingModel == null) {
             throw new IllegalStateException("EmbeddingModel 未配置 — 无法执行嵌入");
@@ -711,7 +602,7 @@ public abstract class AbstractVectorService implements VectorService {
         return embeddingModel.embed(text.text());
     }
 
-    private Document toAiDocument(VectorRecord record, float[] embedding) {
+    protected Document toAiDocument(VectorRecord record, float[] embedding) {
         // Document 构造的 text 参数此前一直是空串——Milvus 等依赖 doc.getText() 的 provider 读不到原始内容
         // 现在按 VectorContent 类型选择 text，并保留 metadata["content"] 向后兼容
         String text = "";
@@ -721,6 +612,9 @@ public abstract class AbstractVectorService implements VectorService {
         Document aiDoc = new Document(record.getId(), text, record.getMetadata() != null ? record.getMetadata() : Map.of());
         if (record.getMetadata() != null) aiDoc.getMetadata().putAll(record.getMetadata());
         if (record.getTags() != null) aiDoc.getMetadata().put("tags", String.join(",", record.getTags()));
+        if (record.getDocumentId() != null) aiDoc.getMetadata().put("documentId", record.getDocumentId());
+        if (record.getChunkNo() != null) aiDoc.getMetadata().put("chunkNo", record.getChunkNo());
+        if (record.getVersion() != null) aiDoc.getMetadata().put("version", record.getVersion());
         if (record.getSource() != null) aiDoc.getMetadata().put("source", record.getSource());
         if (record.getStatus() != null) aiDoc.getMetadata().put("status", record.getStatus());
         if (record.getNamespace() != null) aiDoc.getMetadata().put("namespace", record.getNamespace());
@@ -728,11 +622,13 @@ public abstract class AbstractVectorService implements VectorService {
             aiDoc.getMetadata().put("content", text1);
             aiDoc.getMetadata().put("mimeType", mimeType);
             aiDoc.getMetadata().put("modality", Modality.TEXT.name());
-        } else if (record.getContent() instanceof VectorContent.ImageContent img) {
-            aiDoc.getMetadata().put("mimeType", img.mimeType());
+        } else if (record.getContent() instanceof VectorContent.ImageContent image) {
+            aiDoc.getMetadata().put("mimeType", image.mimeType());
             aiDoc.getMetadata().put("modality", Modality.IMAGE.name());
         }
-        aiDoc.getMetadata().put("embedding", embedding);
+        if (embedding != null) {
+            aiDoc.getMetadata().put("embedding", embedding);
+        }
         return aiDoc;
     }
 
@@ -784,13 +680,6 @@ public abstract class AbstractVectorService implements VectorService {
         return reranked;
     }
 
-    private byte[] downloadImage(String url) throws java.io.IOException {
-        java.net.URI uri = java.net.URI.create(url);
-        try (java.io.InputStream in = uri.toURL().openStream()) {
-            return in.readAllBytes();
-        }
-    }
-
     // ====================================================================
     // §14.2 索引管理 — 子类可选实现（默认抛 UnsupportedOperationException）
     // ====================================================================
@@ -839,8 +728,7 @@ public abstract class AbstractVectorService implements VectorService {
     protected List<VectorSearchResult> hybridSearchImpl(String indexName, String text, String keywordQuery,
                                                         int limit, double vectorWeight, double keywordWeight,
                                                         SearchOptions inner) {
-        log.debug("hybridSearch: provider 不支持混合搜索，降级为 searchByText");
-        return searchByText(indexName, text, limit, inner);
+        throw new UnsupportedOperationException("provider does not support hybrid search; do not silently fall back to dense search");
     }
 
     /**

@@ -167,8 +167,11 @@ class DynamicExecutorTest {
         @Timeout(5)
         @DisplayName("更新拒绝策略：旧 handler 被替换，新 handler 生效")
         void resize_rejectedHandler() {
+            // core=1 避免 core=0 时 addWorker 与 workQueue.offer 之间的时序竞态,
+            // 确保"前 2 个任务占 worker + 入队 → 第 3 个被拒"路径是确定性的,
+            // 从而 onResize 后第 4 次 execute 必然走 DiscardPolicy 静默丢弃路径。
             var executor = new DynamicExecutor(
-                    0, 1, 10, TimeUnit.MILLISECONDS,
+                    1, 1, 10, TimeUnit.MILLISECONDS,
                     new LinkedBlockingQueue<>(1),
                     new ThreadPoolExecutor.AbortPolicy());
             try {
@@ -356,8 +359,10 @@ class DynamicExecutorTest {
         @Timeout(5)
         @DisplayName("snapshot() 在拒绝后 reflection 拒绝计数")
         void snapshot_reflectsRejectedCount() {
+            // core=1 避免 core=0 时 addWorker 与 workQueue.offer 之间的时序竞态
+            // (Task2 可能被刚启动的 worker 立即消化,导致 Task3 入队、第 2 次拒绝发生在 Task4)
             var executor = new DynamicExecutor(
-                    0, 1, 10, TimeUnit.MILLISECONDS,
+                    1, 1, 10, TimeUnit.MILLISECONDS,
                     new LinkedBlockingQueue<>(1));
             try {
                 executor.execute(() -> sleepUninterruptibly(2000));

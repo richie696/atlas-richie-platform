@@ -17,6 +17,7 @@ package cn.richie696.component.parser.testutil;
 
 import cn.richie696.component.parser.DocumentParser;
 import cn.richie696.component.parser.DocumentSegment;
+import cn.richie696.component.parser.DocumentSummary;
 import cn.richie696.component.parser.ParseEvent;
 import cn.richie696.component.parser.ParsedDocument;
 import cn.richie696.component.parser.ParserContext;
@@ -39,7 +40,7 @@ public final class ParseSyncHelper {
 
     public static ParsedDocument collect(DocumentParser parser, ParserSource source, ParserContext ctx) {
         List<DocumentSegment> collected = new ArrayList<>();
-        ParsedDocument[] summaryHolder = new ParsedDocument[1];
+        DocumentSummary[] summaryHolder = new DocumentSummary[1];
         int[] totalImages = {0};
         Throwable[] failure = {null};
         parser.parseStream(source, ctx, event -> {
@@ -57,7 +58,8 @@ public final class ParseSyncHelper {
             throw new DocumentParseException("Parse failed", failure[0]);
         }
         if (summaryHolder[0] != null) {
-            return summaryHolder[0];
+            return new ParsedDocument(summaryHolder[0].title(), summaryHolder[0].author(), collected,
+                    summaryHolder[0].metadata());
         }
         return new ParsedDocument(null, null, collected, Map.of("totalImages", totalImages[0]));
     }

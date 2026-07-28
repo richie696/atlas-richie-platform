@@ -34,8 +34,16 @@ public record ParserContext(
         if (timeout == null) {
             timeout = Duration.ofSeconds(60);
         }
+        if (timeout.isZero() || timeout.isNegative()) {
+            throw new IllegalArgumentException("timeout must be positive");
+        }
+        if (maxSegmentLength != null && maxSegmentLength <= 0) {
+            throw new IllegalArgumentException("maxSegmentLength must be positive when specified");
+        }
         if (attributes == null) {
             attributes = Map.of();
+        } else {
+            attributes = Map.copyOf(attributes);
         }
     }
 

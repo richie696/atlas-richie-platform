@@ -86,7 +86,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/parser/**</include>
+                        <include>cn/richie696/component/parser/**</include>
                     </includes>
                     <excludes>
                         <exclude>cn.richie696.component.parser.**.*AutoConfiguration</exclude>
@@ -98,7 +98,7 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/parser/**</include>
+                                <include>cn/richie696/component/parser/**</include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.parser.**.*AutoConfiguration</exclude>

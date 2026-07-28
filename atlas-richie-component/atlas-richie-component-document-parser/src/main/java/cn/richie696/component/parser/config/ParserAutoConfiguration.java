@@ -18,6 +18,7 @@ package cn.richie696.component.parser.config;
 import cn.richie696.component.parser.DocumentReader;
 import cn.richie696.component.parser.internal.FesodDocumentParser;
 import cn.richie696.component.parser.internal.ParserRouter;
+import cn.richie696.component.parser.internal.TextFastPathParser;
 import cn.richie696.component.parser.internal.TikaDocumentParser;
 import cn.richie696.component.parser.internal.UrlFetcher;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -54,14 +55,21 @@ public class ParserAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public TextFastPathParser textFastPathParser() {
+        return new TextFastPathParser();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public UrlFetcher urlFetcher() {
         return new UrlFetcher();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public ParserRouter parserRouter(TikaDocumentParser tika, FesodDocumentParser fesod) {
-        return new ParserRouter(tika, fesod);
+    public ParserRouter parserRouter(TikaDocumentParser tika, FesodDocumentParser fesod,
+                                     TextFastPathParser textFastPath) {
+        return new ParserRouter(tika, fesod, textFastPath);
     }
 
     @Bean

@@ -19,10 +19,27 @@ import lombok.Data;
 import org.springframework.ai.vectorstore.weaviate.WeaviateVectorStore;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Weaviate 向量库的连接与 schema 配置。
+ *
+ * <p>该类型是 Weaviate provider 模块的 {@code @ConfigurationProperties} 载体，绑定
+ * {@code platform.component.vector.weaviate.*} 命名空间下的配置项，供
+ * {@link WeaviateVectorAutoConfiguration} 构造 {@code WeaviateClient} 与
+ * {@code WeaviateVectorStore} 时读取。它只描述“如何连上 Weaviate”以及“把数据写到哪个
+ * class”，通用索引维度、距离度量、批量流水线等仍由 {@code core} 模块的
+ * {@code VectorProperties} 统一表达，二者通过 {@link cn.richie696.component.vector.service.VectorService}
+ * 实现类在 Spring 容器内组合。</p>
+ *
+ * @author richie696
+ * @since 2025-07-01
+ */
 @Data
 @ConfigurationProperties(prefix = "platform.component.vector.weaviate")
 public class WeaviateConfig {
 
+    /**
+     * 连接协议（{@code http} 或 {@code https}），用于构造 {@code WeaviateClient}。
+     */
     private String scheme;
     /**
      * 服务地址

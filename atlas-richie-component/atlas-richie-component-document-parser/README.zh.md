@@ -58,7 +58,7 @@
 
 | 引擎                                               | 职责                                                        |
 |----------------------------------------------------|-------------------------------------------------------------|
-| Apache Tika 3.3.1(`tika-parsers-standard-package`) | PDF / Word / PPT / ODF / TXT / Markdown / HTML / XML        |
+| Apache Tika 3.3.1(`tika-parsers-standard-package`) | PDF / Word / PPT / ODF / HTML / XML                          |
 | Apache Fesod `2.0.2-incubating`                    | Excel (`.xlsx` / `.xls` / `.ods`)、流式、单 sheet O(1) 内存 |
 | Apache PDFBox 3.0.7                                | PDF 文本抽取(经 Tika)                                       |
 | Apache POI 5.5.1                                   | Word / PPT / xlsx 图片                                      |
@@ -78,7 +78,7 @@
 - **跨主机重定向拦截**: 30x 仅当 `Location` host 与原 host 相同时才跟随,最多 5 跳
 - **全图片 PDF 检测**: 显式失败(`ImageOnlyPdfException`)而非静默返回空内容
 - **流式 Excel**: Fesod 单 sheet O(1) 内存,大 `.xlsx` 文件内存有界
-- **流式事件 API**: `parseStream(...)` 边解析边 emit `ParseEvent`,适合 "解析 → embedding → 入库" 流水线
+- **可背压流式事件 API**: `readPublisher(...)` 按订阅需求边解析边 emit `ReadEvent`,适合 "解析 → 切片 → embedding → 入库" 流水线
 - **图片提取 (Phase 8)**: `ParseEvent.ImageStreaming` 返回嵌入图片原始字节,供业务侧 OCR / 存储 / VLM
 
 ---
@@ -91,7 +91,7 @@
 cn.richie696.component.parser/
 ├── DocumentParser                # SPI: 流式接口
 ├── DocumentReader                # 4 重载门面 — 开发者唯一入口
-├── ParsedDocument                # record (title / author / segments / metadata)
+├── model/ReadResult              # 同步结果 (title / author / sections / images / metadata)
 ├── DocumentSegment               # record (text / pageNumber / sectionPath / meta)
 ├── ImageSegment                  # record (data / format / sectionPath / meta)  [Phase 8]
 ├── ParserSource                  # sealed (File / Stream / Url)
@@ -136,8 +136,8 @@ cn.richie696.component.parser/
 | `.odt`              | `ODT`       | `TikaDocumentParser`               | OpenDocument 文本，Tika 解析                         |
 | `.odp`              | `ODP`       | `TikaDocumentParser`               | OpenDocument 演示，Tika 解析                         |
 | `.rtf`              | `RTF`       | `TikaDocumentParser`               | 富文本格式，Tika                                     |
-| `.txt`              | `TXT`       | `TikaDocumentParser`               | 纯文本，UTF-8 / BOM / 编码自动检测                   |
-| `.md` / `.markdown` | `MD`        | `TikaDocumentParser`               | Markdown，优先走内置 fast-path                       |
+| `.txt`              | `TXT`       | `TextFastPathParser`               | 纯文本，按段落流式读取                               |
+| `.md` / `.markdown` | `MD`        | `TextFastPathParser`               | Markdown，按空行分段的流式读取                       |
 | `.html` / `.htm`    | `HTML`      | `TikaDocumentParser`               | HTML，以 XHTML 解析（Tika + Jsoup）                  |
 | `.xml`              | `XML`       | `TikaDocumentParser`               | XML，Tika 解析                                       |
 | UNKNOWN             | `UNKNOWN`   | (抛 `FormatNotSupportedException`) | 业务应提供有可识别扩展名的文件                       |
@@ -186,7 +186,7 @@ public class DocumentIngestService {
         this.reader = reader;
     }
 
-    public ParsedDocument ingest(File file) {
+    public ReadResult ingest(File file) {
         return reader.read(file);
     }
 }
@@ -196,18 +196,18 @@ public class DocumentIngestService {
 
 ```java
 // 1) 本地文件
-// ParsedDocument doc = reader.read(new File("contract.pdf"));
+// ReadResult doc = reader.read(new File("contract.pdf"));
 
-// 2) 输入流(调用方负责流的生命周期 — 需要 nameHint)
-// ParsedDocument doc = reader.read(inputStream, "report.docx");
+// 2) 输入流（组件在成功、失败或取消后关闭流）
+// ReadResult doc = reader.read(inputStream, "report.docx");
 
 // 3) HTTPS URL(自动跑三道防线)
-// ParsedDocument doc = reader.read(new URL("https://example.com/manual.pdf"));
+// ReadResult doc = reader.read(new URL("https://example.com/manual.pdf"));
 
 // 4) 字符串自动识别: HTTP / HTTPS / file:// / 纯路径
-// ParsedDocument doc = reader.read("https://example.com/manual.pdf");
-// ParsedDocument doc = reader.read("/data/contracts/q3.pdf");
-// ParsedDocument doc = reader.read("file:///tmp/notes.md");
+// ReadResult doc = reader.read("https://example.com/manual.pdf");
+// ReadResult doc = reader.read("/data/contracts/q3.pdf");
+// ReadResult doc = reader.read("file:///tmp/notes.md");
 ```
 
 非 Spring 上下文(测试、脚本)手动构造:
@@ -224,7 +224,7 @@ DocumentReader reader = new DocumentReader(properties, router, urlFetcher);
 ### 3. 访问解析段落
 
 ```java
-// ParsedDocument doc = reader.read(new File("contract.pdf"));
+// ReadResult doc = reader.read(new File("contract.pdf"));
 
 doc.title();         // String 或 null
 doc.author();        // String 或 null
@@ -254,7 +254,7 @@ doc.segments().forEach(seg -> {
 |------------------|---------|------------------------------------------------------------------|
 | `Streaming`      | 解析到一段文本 | `DocumentSegment segment`                                        |
 | `ImageStreaming` | 解析到嵌入图片 | `ImageSegment image`(原始字节)                                       |
-| `Finished`       | 解析成功完成  | `ParsedDocument summary`, `int totalSegments`, `int totalImages` |
+| `Finished`       | 解析成功完成  | `ReadSummary summary`, `int totalSections`, `int totalImages`（不含全量段落） |
 | `Failed`         | 解析失败    | `DocumentParseException error`(不抛出)                              |
 
 四种事件统一走 `ParseListener.onEvent(ParseEvent event)` 方法。switch 模式消费:
@@ -355,7 +355,7 @@ platform:
 
 ## 🖼️ 全图片 PDF 检测
 
-扫描件 PDF 仅含图片页、无可选文本。静默返回空 `ParsedDocument` 会让下游 RAG 流水线断链。组件对此显式检测。
+扫描件 PDF 仅含图片页、无可选文本。静默返回空 `ReadResult` 会让下游 RAG 流水线断链。组件对此显式检测。
 
 ### 启发式规则
 
@@ -421,12 +421,6 @@ public class ImageOnlyPdfException extends DocumentParseException {
 | `pdf.image-only-detection.min-text-chars`  | int     | `200`   | 触发阈值:文本字符低于此值视为"稀疏"                     |
 | `pdf.image-only-detection.min-image-count` | int     | `5`     | 触发条件:检出至少 N 张图片对象                       |
 
-### 4. Excel 处理 (`platform.component.parser.excel`)
-
-| 配置                                | 类型 | 默认值          | 说明                                                    |
-|-------------------------------------|------|----------------|--------------------------------------------------------|
-| `excel.streaming-threshold-bytes`   | long | `10_485_760`   | 文件大小阈值(默认 **10 MB**),Fesod 切到 chunked 读取   |
-
 ### 配置导航(按功能)
 
 | 你想改什么                  | 配置前缀                                                                             | 章节 |
@@ -435,7 +429,7 @@ public class ImageOnlyPdfException extends DocumentParseException {
 | 锁定 URL 访问(仅 HTTPS、禁内网) | `platform.component.parser.url.allow-http` / `.allow-private-ip`                 | §2 |
 | 收严 URL 大小 / 超时阈值       | `platform.component.parser.url.max-bytes` / `.connect-timeout` / `.read-timeout` | §2 |
 | 严格拒绝全图片 PDF            | `platform.component.parser.pdf.image-only-detection.*`                           | §3 |
-| Excel 切到 chunked 读取    | `platform.component.parser.excel.streaming-threshold-bytes`                      | §4 |
+| Excel 流式读取             | 无需配置；Fesod 始终按行流式读取                                                   | — |
 
 > 完整示例见 [`docs/application-parser-example.yml`](docs/application-parser-example.yml)。
 
@@ -451,7 +445,7 @@ public class ImageOnlyPdfException extends DocumentParseException {
 
 ```java
 try {
-    // ParsedDocument doc = reader.read(new File("scan.pdf"));
+    // ReadResult doc = reader.read(new File("scan.pdf"));
 } catch (ImageOnlyPdfException e) {
     log.warn("PDF 是全图片扫描件,跳过: {}", e.getMessage());
 } catch (DocumentParseException e) {
@@ -507,7 +501,7 @@ OCR / VLM 是业务特定选择 — 有的用 Tesseract 本地跑、有的用阿
 
 ### TXT/Markdown 也走 Tika,能绕开吗?
 
-可以 — `TextFastPathParser`(在 `internal/`)直接读 TXT / Markdown,绕开 Tika。Tika Detector 识别为纯文本时,路由器选 fast-path。默认始终开启,可配。
+可以 — `TextFastPathParser`(在 `internal/`)直接读 TXT / Markdown,绕开 Tika。Tika Detector 识别为纯文本后，路由器固定选择 fast-path；该能力始终开启，无额外配置。
 
 ### 能不下载就解析远程 Excel 吗?
 
@@ -535,4 +529,3 @@ pool.awaitTermination(1, TimeUnit.HOURS);
 - [Atlas Richie 组件库](../README.md)
 - [Apache Tika](https://tika.apache.org/)
 - [Apache Fesod (Incubating)](https://fesod.apache.org/)
-

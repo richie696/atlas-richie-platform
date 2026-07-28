@@ -62,7 +62,7 @@ public interface ParseListener {
     }
 
     /** 完成事件回调 */
-    default void onFinished(ParsedDocument summary, int totalSegments,
+    default void onFinished(DocumentSummary summary, int totalSegments,
                             int totalImages, String sourceName) {
         // 默认 no-op
     }

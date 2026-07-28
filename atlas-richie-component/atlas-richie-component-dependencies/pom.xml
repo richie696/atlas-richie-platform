@@ -358,10 +358,31 @@
                 <artifactId>atlas-richie-component-vector-milvus</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-component-vector-projection-dao</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
             <!-- 通用文档解析组件 (PDF / Word / Excel / PPT / ODF / TXT / Markdown) -->
             <dependency>
                 <groupId>cn.richie696.component</groupId>
                 <artifactId>atlas-richie-component-document-parser</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <!-- 通用文档切片组件：core 为默认依赖，两个 adapter 按需引入 -->
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-component-document-chunking-core</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-component-document-chunking-parser-adapter</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-component-document-chunking-semantic-spring-ai</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- OCR 组件 -->
@@ -373,6 +394,12 @@
             <dependency>
                 <groupId>cn.richie696.component</groupId>
                 <artifactId>atlas-richie-component-ocr-core</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <!-- document-parser 图片事件的可选 OCR 流式增强适配器 -->
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-component-ocr-parser-adapter</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>

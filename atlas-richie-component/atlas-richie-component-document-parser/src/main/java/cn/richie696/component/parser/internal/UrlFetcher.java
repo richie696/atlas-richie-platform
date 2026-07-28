@@ -18,7 +18,7 @@ package cn.richie696.component.parser.internal;
 import cn.richie696.component.parser.ParserSource;
 import cn.richie696.component.parser.UrlFetchPolicy;
 import cn.richie696.component.parser.exception.DocumentParseException;
-import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -97,26 +97,23 @@ public final class UrlFetcher {
         InetAddress resolved = resolveAndValidate(uri, policy);
 
         // 第一道 HEAD 协议层
-        performHead(uri, policy, resolved);
+        URI target = performHead(uri, policy, resolved);
 
         // GET 下载
         try {
             HttpRequest req = HttpRequest.newBuilder()
-                    .uri(uri)
+                    .uri(target)
                     .timeout(policy.readTimeout())
                     .GET()
                     .build();
-            HttpResponse<byte[]> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofByteArray());
+            HttpResponse<InputStream> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofInputStream());
             if (resp.statusCode() / 100 != 2) {
+                closeQuietly(resp.body());
                 throw new DocumentParseException(
-                        "URL fetch failed (HTTP " + resp.statusCode() + "): " + uri);
+                        "URL fetch failed (HTTP " + resp.statusCode() + "): " + target);
             }
-            int len = resp.body() == null ? 0 : resp.body().length;
-            if (len > policy.maxBytes()) {
-                throw new DocumentParseException(
-                        "URL content exceeds maxBytes limit (" + policy.maxBytes() + "): " + uri);
-            }
-            return new ByteArrayInputStream(resp.body() == null ? new byte[0] : resp.body());
+            validateContentLength(resp, policy, target);
+            return new BoundedInputStream(resp.body(), policy.maxBytes(), target);
         } catch (IOException | InterruptedException e) {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
@@ -235,10 +232,7 @@ public final class UrlFetcher {
 
     // ============ HEAD 协议层防线 2 ============
 
-    private void performHead(URI uri, UrlFetchPolicy policy, InetAddress expectedIp) {
-        if (!policy.followRedirects()) {
-            return;
-        }
+    private URI performHead(URI uri, UrlFetchPolicy policy, InetAddress expectedIp) {
 
         // SSRF 防线 1 → 2 之间 — 防 DNS rebinding / TOCTOU 攻击。
         // attacker 在 T0 解析得白名单 IP 通过校验, T1 改 DNS 指向内网,
@@ -266,11 +260,16 @@ public final class UrlFetcher {
                         throw new DocumentParseException(
                                 "Redirect without Location header: " + current);
                     }
-                    URI next = URI.create(location);
+                    if (!policy.followRedirects()) {
+                        throw new DocumentParseException("Redirects are disabled: " + current);
+                    }
+                    URI next = current.resolve(location);
                     if (next.getHost() != null && !next.getHost().equals(uri.getHost())) {
                         throw new DocumentParseException(
                                 "Cross-host redirect blocked (SSRF): " + current + " → " + next);
                     }
+                    validateScheme(next, policy);
+                    resolveAndValidate(next, policy);
                     current = next;
                     continue;
                 }
@@ -288,18 +287,8 @@ public final class UrlFetcher {
                             "URL Content-Type not allowed: " + contentType + " (URL: " + current + ")");
                 }
                 // 校验 Content-Length
-                resp.headers().firstValue("Content-Length").ifPresent(lenStr -> {
-                    try {
-                        long len = Long.parseLong(lenStr.trim());
-                        if (len > policy.maxBytes()) {
-                            throw new DocumentParseException(
-                                    "URL Content-Length " + len + " exceeds maxBytes " + policy.maxBytes());
-                        }
-                    } catch (NumberFormatException ignored) {
-                        // 非数字 Content-Length 跳过
-                    }
-                });
-                return;  // HEAD 校验通过
+                validateContentLength(resp, policy, current);
+                return current;  // HEAD 校验通过
             }
             throw new DocumentParseException(
                     "Too many redirects (> " + maxRedirects + ") from: " + uri);
@@ -309,6 +298,70 @@ public final class UrlFetcher {
             }
             throw new DocumentParseException(
                     "HEAD request failed for: " + uri, e);
+        }
+    }
+
+    private void validateContentLength(HttpResponse<?> response, UrlFetchPolicy policy, URI uri) {
+        response.headers().firstValue("Content-Length").ifPresent(lenStr -> {
+            try {
+                long len = Long.parseLong(lenStr.trim());
+                if (len < 0 || len > policy.maxBytes()) {
+                    throw new DocumentParseException(
+                            "URL Content-Length " + len + " exceeds maxBytes " + policy.maxBytes() + ": " + uri);
+                }
+            } catch (NumberFormatException ignored) {
+                // 未提供有效长度时由 BoundedInputStream 在读取期间强制限制。
+            }
+        });
+    }
+
+    private static void closeQuietly(InputStream stream) {
+        if (stream == null) {
+            return;
+        }
+        try {
+            stream.close();
+        } catch (IOException ignored) {
+            // error response cleanup is best effort
+        }
+    }
+
+    /** 在未知或伪造 Content-Length 时仍强制执行下载大小上限。 */
+    private static final class BoundedInputStream extends FilterInputStream {
+        private final long maxBytes;
+        private final URI uri;
+        private long consumed;
+
+        private BoundedInputStream(InputStream input, long maxBytes, URI uri) {
+            super(input == null ? InputStream.nullInputStream() : input);
+            this.maxBytes = maxBytes;
+            this.uri = uri;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int value = super.read();
+            if (value >= 0) {
+                count(1);
+            }
+            return value;
+        }
+
+        @Override
+        public int read(byte[] buffer, int offset, int length) throws IOException {
+            int read = super.read(buffer, offset, length);
+            if (read > 0) {
+                count(read);
+            }
+            return read;
+        }
+
+        private void count(int read) {
+            consumed += read;
+            if (consumed > maxBytes) {
+                throw new DocumentParseException(
+                        "URL content exceeds maxBytes limit (" + maxBytes + "): " + uri);
+            }
         }
     }
 

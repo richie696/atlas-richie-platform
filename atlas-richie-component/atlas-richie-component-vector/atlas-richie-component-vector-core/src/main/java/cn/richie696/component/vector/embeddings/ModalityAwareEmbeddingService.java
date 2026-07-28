@@ -22,7 +22,6 @@ import cn.richie696.component.vector.service.VectorService;
 import jakarta.annotation.Nullable;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -56,7 +55,6 @@ import java.util.Base64;
  * @author richie696
  * @since 2.0.0
  */
-@Service
 public class ModalityAwareEmbeddingService {
 
     /** 文本嵌入模型 — 必填。 */

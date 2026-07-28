@@ -17,10 +17,9 @@ package cn.richie696.component.parser.internal;
 
 import cn.richie696.component.parser.DocumentParser;
 import cn.richie696.component.parser.DocumentSegment;
-import cn.richie696.component.parser.ImageSegment;
+import cn.richie696.component.parser.DocumentSummary;
 import cn.richie696.component.parser.ParseEvent;
 import cn.richie696.component.parser.ParseListener;
-import cn.richie696.component.parser.ParsedDocument;
 import cn.richie696.component.parser.ParserContext;
 import cn.richie696.component.parser.ParserSource;
 import cn.richie696.component.parser.exception.DocumentParseException;
@@ -28,26 +27,16 @@ import org.apache.fesod.sheet.ExcelReader;
 import org.apache.fesod.sheet.FesodSheet;
 import org.apache.fesod.sheet.context.AnalysisContext;
 import org.apache.fesod.sheet.read.listener.ReadListener;
-import org.apache.poi.xssf.usermodel.XSSFDrawing;
-import org.apache.poi.xssf.usermodel.XSSFPicture;
-import org.apache.poi.xssf.usermodel.XSSFPictureData;
-import org.apache.poi.xssf.usermodel.XSSFShape;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
- * Apache Fesod Excel 解析器 — 流式 emit 文本 + POI 提取嵌入图片。
+ * Apache Fesod Excel 解析器 — 流式 emit 文本。
  * <p>
- * Fesod 解析文本流后会消费流,无法再用 POI 读图。{@link #parseStream} 入口先把流完整读入
- * 内存,然后用同一份 bytes 同时驱动 Fesod 解析 + POI 图片提取。
+ * Fesod 按行消费输入流并立即 emit，绝不为图片提取保留整份 Excel 字节。图片提取应由独立的
+ * 可重开源处理阶段完成，避免破坏文本 RAG 管道的内存上界。
  * <p>
  * 不重写 {@code invokeHead} — Fesod 默认实现为空,避免与 {@code ReadListener<Map<Integer,
  * ReadCellData<?>>>} 默认 {@code invokeHead} 签名擦除冲突。
@@ -64,12 +53,10 @@ public final class FesodDocumentParser implements DocumentParser {
     @Override
     public void parseStream(ParserSource source, ParserContext ctx, ParseListener listener) {
         try {
-            byte[] bytes = readAllBytes(source);
             String nameHint = source.nameHint();
 
             int[] sheetCount = {0};
             int[] totalRows = {0};
-            List<DocumentSegment> collected = new ArrayList<>();
 
             ReadListener<Map<Integer, String>> textListener = new ReadListener<>() {
                 @Override
@@ -86,7 +73,6 @@ public final class FesodDocumentParser implements DocumentParser {
                     String text = sb.toString().trim();
                     if (text.isEmpty()) return;
                     DocumentSegment seg = buildSegment(context, text);
-                    collected.add(seg);
                     listener.onEvent(new ParseEvent.Streaming(seg));
                 }
 
@@ -95,52 +81,46 @@ public final class FesodDocumentParser implements DocumentParser {
                     if (context != null && context.readSheetHolder() != null) {
                         sheetCount[0]++;
                     }
-                    int totalImages = extractImages(bytes, nameHint, listener);
                     Map<String, Object> meta = new HashMap<>();
                     meta.put("format", "fesod");
                     meta.put("sheetCount", sheetCount[0]);
                     meta.put("totalRows", totalRows[0]);
-                    ParsedDocument summary = new ParsedDocument(null, null, collected, meta);
-                    listener.onEvent(new ParseEvent.Finished(summary, collected.size(), totalImages));
+                    listener.onEvent(new ParseEvent.Finished(
+                            new DocumentSummary(null, null, meta), totalRows[0], 0));
                 }
             };
 
-            try (ExcelReader reader = FesodSheet.read(new ByteArrayInputStream(bytes),
+            try (InputStream in = openSource(source);
+                 ExcelReader reader = FesodSheet.read(in,
                     textListener).headRowNumber(0).build()) {
                 reader.readAll();
             }
         } catch (DocumentParseException e) {
             listener.onEvent(new ParseEvent.Failed(e));
+        } catch (java.io.IOException e) {
+            listener.onEvent(new ParseEvent.Failed(
+                    new DocumentParseException("Fesod input close failed: " + source.nameHint(), e)));
         } catch (RuntimeException e) {
             listener.onEvent(new ParseEvent.Failed(
                     new DocumentParseException("Fesod parse failed: " + source.nameHint(), e)));
         }
     }
 
-    private byte[] readAllBytes(ParserSource source) {
-        try {
-            return switch (source) {
-                case ParserSource.FileSource f -> {
-                    if (!f.file().exists()) {
-                        throw new DocumentParseException("File not found: " + f.file());
-                    }
-                    yield java.nio.file.Files.readAllBytes(f.file().toPath());
+    private InputStream openSource(ParserSource source) {
+        return switch (source) {
+            case ParserSource.FileSource f -> {
+                try {
+                    yield java.nio.file.Files.newInputStream(f.file().toPath());
+                } catch (NoSuchFileException e) {
+                    throw new DocumentParseException("File not found: " + f.file(), e);
+                } catch (java.io.IOException e) {
+                    throw new DocumentParseException("Failed to open " + f.file(), e);
                 }
-                case ParserSource.StreamSource s -> {
-                    try (InputStream in = s.in()) {
-                        yield in.readAllBytes();
-                    }
-                }
-                case ParserSource.UrlSource ignored ->
-                        throw new DocumentParseException(
-                                "FesodDocumentParser does not accept URL source directly. "
-                                        + "UrlFetcher must download the URL into a stream first (Phase 5)."
-                        );
-            };
-        } catch (IOException e) {
-            throw new DocumentParseException(
-                    "Failed to read bytes from " + source.nameHint(), e);
-        }
+            }
+            case ParserSource.StreamSource s -> s.in();
+            case ParserSource.UrlSource ignored -> throw new DocumentParseException(
+                    "FesodDocumentParser does not accept URL source directly");
+        };
     }
 
     private DocumentSegment buildSegment(AnalysisContext context, String text) {
@@ -158,50 +138,10 @@ public final class FesodDocumentParser implements DocumentParser {
         }
         String sectionPath = "/" + sheetName + "/Row[" + (rowIndex + 1) + "]";
         Map<String, Object> meta = new HashMap<>();
+        meta.put("format", "fesod");
         meta.put("sheet", sheetName);
         meta.put("row", rowIndex + 1);
         return new DocumentSegment(text, null, sectionPath, meta);
     }
 
-    private int extractImages(byte[] bytes, String sourceName, ParseListener listener) {
-        // xlsx magic bytes = PK\x03\x04; xls is not supported here
-        if (bytes == null || bytes.length < 4
-                || bytes[0] != 'P' || bytes[1] != 'K'
-                || bytes[2] != 0x03 || bytes[3] != 0x04) {
-            return 0;
-        }
-        int count = 0;
-        try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
-            for (int sheetIdx = 0; sheetIdx < wb.getNumberOfSheets(); sheetIdx++) {
-                XSSFSheet sheet = wb.getSheetAt(sheetIdx);
-                if (sheet == null) continue;
-                XSSFDrawing drawing = sheet.getDrawingPatriarch();
-                if (drawing == null) continue;
-                for (XSSFShape shape : drawing.getShapes()) {
-                    if (!(shape instanceof XSSFPicture pic)) continue;
-                    XSSFPictureData data = pic.getPictureData();
-                    if (data == null) continue;
-                    String mime = data.getMimeType();
-                    if (mime == null || mime.isBlank()) {
-                        mime = "image/octet-stream";
-                    }
-                    String sectionPath = "/" + sourceName
-                            + "/" + sheet.getSheetName()
-                            + "/Image[" + (count + 1) + "]";
-                    Map<String, Object> meta = new HashMap<>();
-                    meta.put("pictureIndex", count);
-                    meta.put("sheet", sheet.getSheetName());
-                    meta.put("mimeType", mime);
-                    String imageName = "Image-" + sheet.getSheetName() + "-" + (count + 1);
-                    listener.onEvent(new ParseEvent.ImageStreaming(
-                            new ImageSegment(mime, data.getData(), imageName,
-                                    null, null, sectionPath, meta)));
-                    count++;
-                }
-            }
-        } catch (Exception e) {
-            // POI image extraction is best-effort
-        }
-        return count;
-    }
 }

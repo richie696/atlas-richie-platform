@@ -44,6 +44,8 @@ import reactor.core.publisher.Mono;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
+import static cn.richie696.contract.constant.GlobalConstants.*;
+
 
 /**
  * ECC加密解密过滤器

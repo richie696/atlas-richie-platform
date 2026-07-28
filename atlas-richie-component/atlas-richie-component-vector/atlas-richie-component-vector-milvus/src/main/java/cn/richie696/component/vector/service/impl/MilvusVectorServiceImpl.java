@@ -21,10 +21,14 @@ import cn.richie696.component.vector.config.VectorProperties;
 import cn.richie696.component.vector.model.IndexInfo;
 import cn.richie696.component.vector.model.IndexStatus;
 import cn.richie696.component.vector.model.Modality;
+import cn.richie696.component.vector.model.SearchOptions;
 import cn.richie696.component.vector.model.VectorRecord;
+import cn.richie696.component.vector.model.VectorSearchResult;
 import org.springframework.ai.document.Document;
 import cn.richie696.component.ai.service.RerankService;
+import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorService;
+import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import io.milvus.client.MilvusServiceClient;
 import io.milvus.grpc.*;
 import io.milvus.param.IndexType;
@@ -45,7 +49,6 @@ import io.milvus.response.SearchResultsWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,9 +75,8 @@ import java.util.stream.Collectors;
  * @since 1.0.0
  */
 @Slf4j
-@Service
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "milvus")
-public class MilvusVectorServiceImpl extends AbstractVectorService implements VectorService {
+public class MilvusVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, VectorIndexLifecycleOperations {
 
     private final MilvusConfig milvusConfig;
     private final MilvusServiceClient milvusClient;
@@ -101,6 +103,27 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         super(rerankService, vectorStore, embeddingModel);
         this.milvusConfig = milvusConfig;
         this.milvusClient = milvusClient;
+    }
+
+    /**
+     * 文本检索必须与原生写入共用同一个 collection 和 schema；不能委托固定 collection 的 Spring AI store。
+     */
+    @Override
+    public List<VectorSearchResult> searchByText(String indexName, String text, int limit, SearchOptions options) {
+        validateIndexName(indexName);
+        if (text == null || text.isBlank()) {
+            throw new IllegalArgumentException("text 不能为空");
+        }
+        SearchOptions effectiveOptions = options == null ? SearchOptions.builder().build() : options;
+        int topK = limit > 0 ? limit : 10;
+        double minScore = effectiveOptions.getMinScore() == null ? 0.0 : effectiveOptions.getMinScore();
+        float[] queryVector = embeddingModel.embed(text);
+        String filter = compileProviderFilter(effectiveOptions);
+        List<VectorSearchResult> results = similaritySearchByVector(indexName, queryVector, topK, minScore, filter).stream()
+                .map(document -> VectorSearchResult.of(document.getId(), document.getFormattedContent(),
+                        document.getScore(), null).setMetadata(document.getMetadata()))
+                .toList();
+        return Boolean.TRUE.equals(effectiveOptions.getRerank()) ? tryRerank(text, results) : results;
     }
 
     /**
@@ -261,6 +284,10 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
     }
 
     private long countViaQuery(String indexName, long fallbackCount) {
+        // Query API 的单次 limit 有上限；不能把前 10000 条误报为 collection 总数。
+        if (fallbackCount > 10_000L) {
+            return fallbackCount;
+        }
         QueryParam qp = QueryParam.newBuilder()
                 .withCollectionName(indexName)
                 .withExpr("id != \"\"")
@@ -582,9 +609,41 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         return Math.max(deleted, previousCount);
     }
 
+    /**
+     * 在 Milvus Collection 上按向量做相似度检索，是
+     * {@link cn.richie696.component.vector.service.impl.AbstractVectorService#similaritySearchByVector}
+     * 钩子在 Milvus 上的最终执行点。
+     *
+     * <p>公共入口（如 {@code searchByText} / {@code searchByImage}）先完成 embedding 后
+     * 会落到本方法，本方法负责把向量下推到 Milvus SDK 并把结果翻译成 Spring AI
+     * {@link Document}。距离 / 相似度换算由本类内的 {@link #distanceToSimilarity}
+     * 完成，规则随 {@link MilvusConfig#getMetricType()} 变化：COSINE / IP 下
+     * {@code similarity = distance}，L2 下 {@code similarity = 1 / (1 + distance)}，
+     * 最终裁剪到 {@code [0, 1]} 区间。返回的 Document 在 {@code metadata} 中附带
+     * {@code "score"} 字段，并在写入结果集前已按 {@code minScore} 阈值过滤。</p>
+     *
+     * <p>本方法不参与 rerank / MMR 等上层策略——这些由
+     * {@link cn.richie696.component.vector.service.impl.AbstractVectorService}
+     * 在拿到本方法的原始结果后再叠加。本方法只做"向量 → Milvus → Document 列表"
+     * 的最小翻译。</p>
+     *
+     * @param indexName   Collection 名称
+     * @param queryVector 查询向量，不能为空数组
+     * @param limit       返回数量上限（与 Milvus SDK {@code topK} 等价），必须大于 0
+     * @param minScore    最低相似度分数，低于阈值的结果在返回前被丢弃
+     * @return 命中的 Spring AI Document 列表（已按 score 过滤，未排序）
+     * @throws IllegalArgumentException 当 {@code queryVector} 为空或 {@code limit <= 0} 时抛出
+     * @throws RuntimeException         当 Milvus SDK 返回非 Success 状态时抛出
+     */
     @Override
-    protected List<org.springframework.ai.document.Document> similaritySearchByVector(String indexName, float[] queryVector,
+    protected List<Document> similaritySearchByVector(String indexName, float[] queryVector,
                                                                                         int limit, double minScore) {
+        return similaritySearchByVector(indexName, queryVector, limit, minScore, null);
+    }
+
+    @Override
+    protected List<Document> similaritySearchByVector(String indexName, float[] queryVector,
+                                                       int limit, double minScore, String providerFilter) {
         if (queryVector == null || queryVector.length == 0) {
             throw new IllegalArgumentException("查询向量不能为空");
         }
@@ -603,14 +662,17 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         // withTopK: 返回最近邻的数量，等同于limit
         // withMetricType: 距离度量类型（COSINE/L2/IP），决定如何计算相似度
         // withOutFields: 指定返回哪些字段（排除vector字段节省带宽）
-        SearchParam searchParam = SearchParam.newBuilder()
+        SearchParam.Builder searchBuilder = SearchParam.newBuilder()
                 .withCollectionName(indexName)
                 .withVectorFieldName("vector")
                 .withFloatVectors(Collections.singletonList(vectorList))
                 .withLimit((long) limit)
                 .withMetricType(milvusConfig.getMetricType())
-                .withOutFields(SEARCH_OUTPUT_FIELDS)
-                .build();
+                .withOutFields(SEARCH_OUTPUT_FIELDS);
+        if (providerFilter != null && !providerFilter.isBlank()) {
+            searchBuilder.withExpr(providerFilter);
+        }
+        SearchParam searchParam = searchBuilder.build();
 
         // 调用Milvus客户端执行搜索，返回SearchResults
         R<SearchResults> response = milvusClient.search(searchParam);
@@ -668,6 +730,21 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         return searchResults;
     }
 
+    /**
+     * 将已完成 embedding 的 Spring AI 文档批量写入 Milvus Collection。
+     *
+     * <p>每个文档需满足：{@link Document#getId()} 可空（Milvus VarChar 主键）、
+     * {@code metadata["embedding"]} 为 {@code float[]}、{@link Document#getText()}
+     * 是文本内容。metadata 整体通过 {@link JsonUtils} 序列化为 JSON 后落到
+     * {@code metadata VarChar(65535)} 字段。{@code flush} 调用用于强制把 buffer
+     * 数据落到 sealed segment，保证紧随其后的 {@link #countDocumentsImpl(String)}
+     * / {@link #getByIds(String, List)} 能读出新写入行——这一步不能省略，
+     * 否则 Milvus 的 row_count 会滞后、读路径可能落空。</p>
+     *
+     * @param indexName Collection 名称
+     * @param docs      已嵌入的 Spring AI Document 列表；为空时直接返回
+     * @throws RuntimeException 当 Milvus SDK 返回非 Success 状态时抛出
+     */
     @Override
     protected void addEmbeddings(String indexName, List<Document> docs) {
         if (docs == null || docs.isEmpty()) {
@@ -680,24 +757,30 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         List<String> metadataList = new ArrayList<>();
 
         for (Document doc : docs) {
-            float[] embedding = (float[]) doc.getMetadata().get("embedding");
+            Object embeddingValue = doc.getMetadata().get("embedding");
+            if (!(embeddingValue instanceof float[] embedding) || embedding.length == 0) {
+                throw new IllegalArgumentException("Milvus write requires a non-empty float[] embedding");
+            }
             List<Float> vectorList = new ArrayList<>(embedding.length);
             for (float v : embedding) vectorList.add(v);
             vectors.add(vectorList);
 
             try {
-                metadataList.add(JsonUtils.getInstance().serialize(doc.getMetadata()));
+                Map<String, Object> metadata = new LinkedHashMap<>(doc.getMetadata());
+                metadata.remove("embedding");
+                metadataList.add(JsonUtils.getInstance().serialize(metadata));
             } catch (Exception e) {
-                metadataList.add("{}");
+                throw new IllegalStateException("Milvus metadata serialization failed; refusing to lose ACL metadata", e);
             }
         }
 
-        List<InsertParam.Field> fields = Arrays.asList(
+        List<InsertParam.Field> fields = new ArrayList<>(Arrays.asList(
                 new InsertParam.Field("id", ids),
                 new InsertParam.Field("vector", vectors),
                 new InsertParam.Field("content", contents),
                 new InsertParam.Field("metadata", metadataList)
-        );
+        ));
+        appendConfiguredScalarFields(indexName, docs, fields);
 
         InsertParam insertParam = InsertParam.newBuilder()
                 .withCollectionName(indexName)
@@ -714,6 +797,55 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         log.info("Milvus 批量写入 Collection [{}] 完成，文档数={}", indexName, docs.size());
     }
 
+    /**
+     * 将 IndexConfig.additionalFields 中显式声明的字段写入 Milvus 标量列。
+     * ACL 字段不能只存在于 metadata JSON；声明为标量字段后，缺值即拒绝写入。
+     */
+    private void appendConfiguredScalarFields(String indexName, List<Document> docs, List<InsertParam.Field> fields) {
+        for (String fieldName : configuredScalarFields(indexName).keySet()) {
+            List<Object> values = new ArrayList<>(docs.size());
+            for (Document doc : docs) {
+                Object value = doc.getMetadata().get(fieldName);
+                if (value == null) {
+                    throw new IllegalArgumentException("Milvus scalar field '" + fieldName
+                            + "' is declared for index '" + indexName + "' but missing from record metadata");
+                }
+                values.add(value);
+            }
+            fields.add(new InsertParam.Field(fieldName, values));
+        }
+    }
+
+    private Map<String, Object> configuredScalarFields(String indexName) {
+        if (vectorProperties == null || vectorProperties.getIndexes() == null) {
+            return Map.of();
+        }
+        VectorProperties.IndexConfig indexConfig = vectorProperties.getIndexes().get(indexName);
+        if (indexConfig == null || indexConfig.getAdditionalFields() == null) {
+            return Map.of();
+        }
+        return indexConfig.getAdditionalFields();
+    }
+
+    private String milvusStringLiteral(String value) {
+        if (value == null) {
+            throw new IllegalArgumentException("Milvus primary key must not be null");
+        }
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    }
+
+    /**
+     * 按主键列表从 Collection 中删除文档
+     *
+     * <p>底层使用 Milvus {@code delete} gRPC + 原生表达式 {@code id in [...]}
+     * 一次性删除，避免逐条调用开销；删除后立即 {@code flush} 一次，以保证后续
+     * {@link #countDocumentsImpl(String)} / {@link #listDocumentsImpl(String, int, int)}
+     * 不会再读到这些行。空 / null 列表直接无副作用返回。</p>
+     *
+     * @param indexName Collection 名称
+     * @param ids       待删除的主键列表；为空或 null 时直接返回
+     * @throws RuntimeException 当 Milvus SDK 返回非 Success 状态时抛出
+     */
     @Override
     protected void deleteByIds(String indexName, List<String> ids) {
         if (ids == null || ids.isEmpty()) {
@@ -721,7 +853,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         }
 
         String expr = "id in [" + ids.stream()
-                .map(id -> "\"" + id + "\"")
+                .map(this::milvusStringLiteral)
                 .collect(Collectors.joining(",")) + "]";
 
         DeleteParam deleteParam = DeleteParam.newBuilder()
@@ -738,6 +870,21 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         log.debug("Milvus 删除 Collection [{}] 文档，ID数={}", indexName, ids.size());
     }
 
+    /**
+     * 按主键集合批量读取 {@link VectorRecord}，提供给 {@link cn.richie696.component.vector.service.VectorRecordReadOperations}
+     * 做"按 ID 精确获取"等能力。
+     *
+     * <p>通过 Milvus {@code query} 投影 {@code id / content} 两列得到结果，
+     * 然后用 {@code VectorRecord.text(indexName, content).setId(id)} 还原记录。
+     * 当一条记录在 schema 漂移或 dynamic-field 路径下出现 {@code content} 为空
+     * 时，记录会被跳过并打印 warn，避免上层被空白 {@link cn.richie696.component.vector.model.VectorContent.TextContent}
+     * 校验抛错。返回顺序与输入 ID 列表一致（缺失 ID 自然缺失，不抛错）。</p>
+     *
+     * @param indexName Collection 名称
+     * @param ids       待获取的主键列表；为空或 null 时返回空列表
+     * @return 命中且 content 非空的 VectorRecord 列表
+     * @throws RuntimeException 当 Milvus SDK 返回非 Success 状态时抛出
+     */
     @Override
     protected List<VectorRecord> getByIds(String indexName, List<String> ids) {
         if (ids == null || ids.isEmpty()) {
@@ -745,7 +892,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         }
 
         String expr = "id in [" + ids.stream()
-                .map(id -> "\"" + id + "\"")
+                .map(this::milvusStringLiteral)
                 .collect(Collectors.joining(",")) + "]";
 
         QueryParam queryParam = QueryParam.newBuilder()
@@ -776,6 +923,20 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         return result;
     }
 
+    /**
+     * 在 Collection 上按 offset / limit 分页列举 {@link VectorRecord}，在不做向量相似度排序、仅按 ID 顺序翻页时使用。
+     *
+     * <p>这里只是把契约入口转交给共享的 {@link #listDocumentsHandler(String, int, int)}
+     * 执行体；分两层是为了让一些测试代码或扩展类复用 SQL 构造逻辑而不必重走抽象钩子。
+     * 返回的 {@link VectorRecord} 由 {@code id / content} 两列组装，缺失 content
+     * 的记录会被跳过（与 {@link #getByIds(String, List)} 同策略）。</p>
+     *
+     * @param indexName Collection 名称
+     * @param offset    起始偏移量，从 0 开始
+     * @param limit     最大返回数量
+     * @return 当前页的 VectorRecord 列表，按 ID 顺序
+     * @throws RuntimeException 当 Milvus SDK 返回非 Success 状态时抛出
+     */
     @Override
     protected List<VectorRecord> listDocumentsImpl(String indexName, int offset, int limit) {
         return listDocumentsHandler(indexName, offset, limit);

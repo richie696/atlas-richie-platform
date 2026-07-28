@@ -121,14 +121,16 @@ public class DynamicExecutorRegistrar
 
         pools.forEach((name, config) -> {
             String prefix = config.getThreadNamePrefix().isEmpty() ? name + "-" : config.getThreadNamePrefix();
-            DynamicExecutor executor = new DynamicExecutor(
-                    config.getCorePoolSize(), config.getMaximumPoolSize(),
-                    config.getKeepAliveTime().toMillis(), TimeUnit.MILLISECONDS,
-                    new LinkedBlockingQueue<>(config.getQueueCapacity()),
-                    new AlgorithmAutoConfiguration.DynamicExecutorThreadFactory(prefix),
-                    AlgorithmAutoConfiguration.parseRejectedHandler(config.getRejectedHandler()));
-
-            RootBeanDefinition definition = new RootBeanDefinition(DynamicExecutor.class, () -> executor);
+            // 构造延迟到 supplier lambda —— 让 parseRejectedHandler 的 IAE 在 Bean 创建阶段抛出,
+            // 被 Spring 包装为 BeanCreationException(cause=IAE)而非 BeanDefinitionStoreException,
+            // 调用方可按统一异常类型处理。
+            RootBeanDefinition definition = new RootBeanDefinition(DynamicExecutor.class,
+                    () -> new DynamicExecutor(
+                            config.getCorePoolSize(), config.getMaximumPoolSize(),
+                            config.getKeepAliveTime().toMillis(), TimeUnit.MILLISECONDS,
+                            new LinkedBlockingQueue<>(config.getQueueCapacity()),
+                            new AlgorithmAutoConfiguration.DynamicExecutorThreadFactory(prefix),
+                            AlgorithmAutoConfiguration.parseRejectedHandler(config.getRejectedHandler())));
             definition.setDestroyMethodName("shutdown");
             registry.registerBeanDefinition(name, definition);
 

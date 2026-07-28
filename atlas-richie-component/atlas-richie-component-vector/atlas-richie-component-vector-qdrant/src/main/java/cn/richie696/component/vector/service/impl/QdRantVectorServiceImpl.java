@@ -24,6 +24,7 @@ import cn.richie696.component.vector.model.VectorRecord;
 import cn.richie696.component.vector.model.VectorSearchResult;
 import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.service.VectorService;
+import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.grpc.Common;
@@ -36,7 +37,6 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,9 +64,8 @@ import java.util.concurrent.TimeUnit;
  * @since 1.0.0
  */
 @Slf4j
-@Service
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "qdrant")
-public class QdRantVectorServiceImpl extends AbstractVectorService implements VectorService {
+public class QdRantVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations {
 
     /** Qdrant客户端，用于与Qdrant服务通信 */
     private final QdrantClient qdrantClient;
@@ -501,7 +500,7 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
             return qdrantClient.listCollectionsAsync()
                     .get(WAIT_TIMEOUT, TimeUnit.SECONDS)
                     .stream()
-                    .map(name -> describeIndexImpl(name))
+                    .map(this::describeIndexImpl)
                     .toList();
         } catch (Exception e) {
             log.warn("Qdrant collection list failed", e);

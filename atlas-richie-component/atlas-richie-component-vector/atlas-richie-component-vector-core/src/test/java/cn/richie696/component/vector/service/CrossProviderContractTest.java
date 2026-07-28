@@ -43,16 +43,14 @@ class CrossProviderContractTest {
      * v2 接口声明的方法签名集合（{@code name#paramTypes}），作为契约基线。
      */
     @Test
-    @DisplayName("VectorService 接口必须正好 44 个方法（v2 能力面）")
-    void vectorService_declaresExactly44Methods() {
-        long count = Arrays.stream(VectorService.class.getDeclaredMethods())
+    @DisplayName("VectorService 核心门面必须正好 10 个方法")
+    void vectorService_exposesExactly10CoreMethods() {
+        long count = Arrays.stream(VectorService.class.getMethods())
                 .filter(m -> !m.isSynthetic() && !m.isDefault())
                 .count();
         assertThat(count)
-                .as("VectorService v2 应包含 44 个方法（5 Add / 4 Update / 2 Delete / 2 Get / "
-                        + "6 Search + 2 Hybrid / 6 IndexBase / 6 IndexExt / 2 StatsHealth / 5 Ops / 4 BatchAsync）— "
-                        + "已删除 2 个 @Deprecated 低阶方法（searchByEmbedding / ingestEmbedding）")
-                .isEqualTo(44L);
+                .as("VectorService 仅应暴露核心检索、写入、按 ID 删除和批量能力")
+                .isEqualTo(10L);
     }
 
     @Test
@@ -73,7 +71,7 @@ class CrossProviderContractTest {
     @Test
     @DisplayName("AbstractVectorService 的实现方法签名必须与接口完全一致（返回类型 + 参数）")
     void abstractVectorService_signaturesMatchInterface() {
-        for (Method ifaceMethod : VectorService.class.getDeclaredMethods()) {
+        for (Method ifaceMethod : VectorService.class.getMethods()) {
             if (ifaceMethod.isSynthetic() || ifaceMethod.isDefault()) {
                 continue;
             }
@@ -88,34 +86,26 @@ class CrossProviderContractTest {
     }
 
     @Test
-    @DisplayName("核心能力分组覆盖：所有 11 个能力分组都有方法落地")
-    void allCapabilityGroups_areCovered() {
-        Set<String> methodNames = Arrays.stream(VectorService.class.getDeclaredMethods())
+    @DisplayName("核心门面只覆盖跨 provider 稳定能力")
+    void coreCapabilityGroups_areCovered() {
+        Set<String> methodNames = Arrays.stream(VectorService.class.getMethods())
                 .map(Method::getName)
                 .collect(Collectors.toSet());
 
         // 每个能力分组至少 1 个方法
         assertThat(methodNames)
                 .contains(
-                        "addText", "add",                 // Add
-                        "updateText", "update",            // Update
-                        "delete", "deleteIf",              // Delete
-                        "get", "getAll",                  // Get
-                        "searchByText", "searchByImage",  // Search
+                        "upsert", "upsertAll",             // Write
+                        "deleteById", "deleteByIds",       // Delete
+                        "searchByText", "searchByImage",   // Search
                         "hybridSearch", "searchByMultiVector",
-                        "createIndex", "deleteIndex", "indexExists", "getIndexConfig",
-                        "countDocuments", "listDocuments",
-                        "listIndexes", "truncateIndex", "updateIndexConfig",
-                        "cloneIndex", "awaitIndexReady", "describeIndex",
-                        "getIndexStats", "healthCheck",
-                        "optimize", "createAlias", "switchAlias", "backup", "restore",
-                        "addBatch", "updateBatch", "deleteBatch");
+                        "deleteAll");
     }
 
     // ==================== 反射工具 ====================
 
     private static Set<String> interfaceSignatures(Class<?> iface) {
-        return Arrays.stream(iface.getDeclaredMethods())
+        return Arrays.stream(iface.getMethods())
                 .filter(m -> !m.isSynthetic())
                 .map(CrossProviderContractTest::signature)
                 .collect(Collectors.toSet());

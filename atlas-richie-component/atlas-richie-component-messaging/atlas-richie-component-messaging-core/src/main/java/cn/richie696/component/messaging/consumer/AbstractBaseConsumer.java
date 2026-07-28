@@ -38,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static cn.richie696.contract.constant.GlobalConstants.*;
+
 
 /**
  * 消息队列消费者

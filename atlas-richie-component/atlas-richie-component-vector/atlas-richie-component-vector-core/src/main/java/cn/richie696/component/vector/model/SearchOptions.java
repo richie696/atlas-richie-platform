@@ -46,9 +46,10 @@ public class SearchOptions {
     private Double minScore;
 
     /**
-     * 元数据过滤表达式（provider-specific DSL）
+     * 可由 provider 编译并下推的结构化过滤条件。
+     * 禁止在 JVM 侧做 ACL 后过滤。
      */
-    private String filterExpression;
+    private VectorFilter filter;
 
     /**
      * 命名空间隔离

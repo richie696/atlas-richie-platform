@@ -24,7 +24,10 @@ import cn.richie696.component.vector.model.SearchOptions;
 import cn.richie696.component.vector.model.VectorContent;
 import cn.richie696.component.vector.model.VectorRecord;
 import cn.richie696.component.vector.model.VectorSearchResult;
+import cn.richie696.component.vector.service.VectorHybridSearchOperations;
+import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorService;
+import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import io.weaviate.client.WeaviateClient;
 import io.weaviate.client.base.Result;
 import io.weaviate.client.v1.batch.model.BatchDeleteResponse;
@@ -41,7 +44,6 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -49,13 +51,47 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Weaviate 向量数据库服务实现类.
+ *
+ * <p>基于 Weaviate Java SDK 与 GraphQL 端点实现 {@link VectorService}，把 Weaviate 的
+ * class / object / payload 模型适配为 vector 中台统一的 {@link VectorRecord} / 索引视图。
+ * 与其他 provider 一样，它继承 {@link AbstractVectorService} 以复用单记录写入、模态路由、
+ * 文本重排序与三阶段批量流水线；只在本类中实现 Weaviate 原生的 schema、GraphQL
+ * Get/Hybrid/nearVector 以及 batch delete 等钩子。</p>
+ *
+ * <p>Weaviate 缺乏原生 alias / backup 概念，因此 {@code optimizeImpl}、
+ * {@code createAliasImpl}、{@code switchAliasImpl}、{@code backupImpl}、
+ * {@code restoreImpl} 五个运维 API 均通过 {@code throwUnsupportedOps} 显式抛
+ * {@link UnsupportedOperationException}，由上层依据 {@code Operations API 支持矩阵}
+ * 选择替代方案。</p>
+ *
+ * @author richie696
+ * @since 2025-07-01
+ * @see VectorService
+ * @see AbstractVectorService
+ */
 @Slf4j
-@Service
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "weaviate")
-public class WeaviateVectorServiceImpl extends AbstractVectorService implements VectorService {
+public class WeaviateVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, VectorHybridSearchOperations, VectorIndexLifecycleOperations {
 
+    /**
+     * Weaviate 原生客户端，用于执行 GraphQL、schema 与 batch delete 调用。
+     */
     private final WeaviateClient weaviateClient;
 
+    /**
+     * 构造 Weaviate 向量服务实现.
+     *
+     * <p>通过构造器注入所需的依赖：{@code VectorStore} 用于单记录写入与按 ID 删除，
+     * {@code EmbeddingModel} 用于文本向量化，{@link WeaviateClient} 提供
+     * GraphQL 与 schema 层级的低级 API 访问。</p>
+     *
+     * @param rerankService 可选的重排序服务，由父类用于文本检索后置重排
+     * @param vectorStore   Spring AI 的 {@code VectorStore}，承载 add/delete 等基础写入
+     * @param embeddingModel 文本嵌入模型，用于将文本转换为向量
+     * @param weaviateClient Weaviate 客户端，提供 GraphQL 与 schema 原生操作
+     */
     @Autowired
     public WeaviateVectorServiceImpl(@Autowired(required = false) RerankService rerankService,
                                      VectorStore vectorStore,
@@ -213,7 +249,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
         WhereFilter matchAll = WhereFilter.builder()
                 .path("_id")
                 .operator(Operator.NotEqual)
-                .valueString("")
+                .valueText("")
                 .build();
         Result<BatchDeleteResponse> result = weaviateClient.batch().objectsBatchDeleter()
                 .withClassName(indexName)
@@ -367,7 +403,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      * @param limit         返回上限
      * @param vectorWeight  向量权重 (0.0-1.0)
      * @param keywordWeight 关键字权重 (0.0-1.0)
-     * @param inner         SearchOptions (minScore / filterExpression)
+     * @param inner         SearchOptions（目前用于 minScore；ACL-safe hybrid 需由专用能力接口实现）
      * @return 搜索结果列表
      */
     @Override
@@ -375,12 +411,12 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
                                                         int limit, double vectorWeight, double keywordWeight,
                                                         SearchOptions inner) {
         String effectiveQuery = (text != null && !text.isBlank()) ? text
-                : (keywordQuery != null ? keywordQuery : null);
+                : keywordQuery;
         if (effectiveQuery == null || effectiveQuery.isBlank()) {
             log.warn("Weaviate hybridSearch: text 与 keywordQuery 都为空，降级为 searchByText");
             return searchByText(indexName, text, limit, inner);
         }
-        double alpha = Math.max(0.0, Math.min(1.0, vectorWeight));
+        double alpha = Math.clamp(vectorWeight, 0.0, 1.0);
         String graphql = String.format("""
                 {
                   Get {
@@ -440,26 +476,76 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
         return docs;
     }
 
+    /**
+     * 优化向量索引（Weaviate 不支持）。
+     *
+     * <p>Weaviate 没有提供等价于 {@code manualCompact} 的在线优化 API；后台 segment 合并
+     * 由 Weaviate 自身调度，业务层通常无需也无法显式触发。本方法直接抛
+     * {@link UnsupportedOperationException} 暴露此能力缺失。</p>
+     *
+     * @param indexName 索引名称（仅用于诊断信息）
+     * @throws UnsupportedOperationException Weaviate 不提供 optimize API
+     */
     @Override
     protected boolean optimizeImpl(String indexName) {
         return throwUnsupportedOps("optimize", indexName, "weaviate");
     }
 
+    /**
+     * 为索引创建别名（Weaviate 不支持）。
+     *
+     * <p>Weaviate 的逻辑标识就是 {@code class} 本身，没有 ES 那种 {@code _aliases}
+     * 抽象；业务层可通过共享 class 或自维护 class → 别名映射达到等价效果。</p>
+     *
+     * @param indexName 目标索引名称
+     * @param alias     期望的别名（仅用于诊断信息）
+     * @throws UnsupportedOperationException Weaviate 不支持 vector index alias
+     */
     @Override
     protected boolean createAliasImpl(String indexName, String alias) {
         return throwUnsupportedOps("createAlias", indexName, "weaviate");
     }
 
+    /**
+     * 切换别名指向新索引（Weaviate 不支持）。
+     *
+     * <p>由于 Weaviate 无原生 alias（见 {@link #createAliasImpl}），切换语义同样不可用。
+     * 业务层需要零停机切换时，可通过双写新 class + 一次性切流量的方式自行实现。</p>
+     *
+     * @param oldIndexName 原索引名称
+     * @param newIndexName 新索引名称
+     * @param alias        待切换的别名
+     * @throws UnsupportedOperationException Weaviate 不支持 vector index alias
+     */
     @Override
     protected boolean switchAliasImpl(String oldIndexName, String newIndexName, String alias) {
         return throwUnsupportedOps("switchAlias", newIndexName, "weaviate");
     }
 
+    /**
+     * 备份索引到目标路径（Weaviate 不支持 in-process）。
+     *
+     * <p>Weaviate 备份依赖外部工具（如官方 {@code weaviate-backup} 命令或第三方 ETL），
+     * Java SDK 没有等价 API。如需备份，建议在运维侧调度 out-of-process 工具完成。</p>
+     *
+     * @param indexName  索引名称（仅用于诊断信息）
+     * @param targetPath 备份目标路径
+     * @throws UnsupportedOperationException Weaviate backup 需 out-of-process 工具
+     */
     @Override
     protected boolean backupImpl(String indexName, String targetPath) {
         return throwUnsupportedOps("backup", indexName, "weaviate");
     }
 
+    /**
+     * 从源路径恢复索引（Weaviate 不支持 in-process）。
+     *
+     * <p>与 {@link #backupImpl} 对称，Weaviate 恢复同样依赖外部工具，Java SDK 无等价 API。</p>
+     *
+     * @param sourcePath 备份源文件路径
+     * @param indexName  索引名称（仅用于诊断信息）
+     * @throws UnsupportedOperationException Weaviate restore 需 out-of-process 工具
+     */
     @Override
     protected boolean restoreImpl(String sourcePath, String indexName) {
         return throwUnsupportedOps("restore", indexName, "weaviate");
@@ -469,6 +555,19 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
     // AbstractVectorService 抽象方法实现 (unchanged)
     // ====================================================================
 
+    /**
+     * 分页列出索引中的文档。
+     *
+     * <p>通过 GraphQL {@code Get} 查询实现分页：偏移与限制直接透传给 Weaviate 的
+     * {@code offset} / {@code limit} 参数。返回结果按 Weaviate 自然顺序（通常是
+     * 内部 UUID 顺序），并不保证稳定排序。</p>
+     *
+     * @param indexName 索引名称（Weaviate class）
+     * @param offset    起始偏移量（从 0 开始）
+     * @param limit     返回的最大文档数量
+     * @return VectorRecord 列表；无结果时返回空列表
+     * @throws RuntimeException 当 GraphQL 返回错误时抛出
+     */
     @Override
     protected List<VectorRecord> listDocumentsImpl(String indexName, int offset, int limit) {
         String graphql = String.format("""
@@ -521,6 +620,22 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
         return docs;
     }
 
+    /**
+     * 根据向量进行相似度搜索。
+     *
+     * <p>通过 GraphQL {@code nearVector} 子句把查询向量直接 inline 到请求中，返回按
+     * {@code certainty} 降序排列的 Spring AI {@link Document} 列表。Weaviate 的
+     * {@code certainty} 已经归一化到 {@code [0, 1]}，因此与 {@code minScore} 直接比较即可。
+     * 大向量场景下建议改用 GraphQL 变量以避免请求体积膨胀。</p>
+     *
+     * @param indexName 目标索引（Weaviate class）
+     * @param vector    查询向量，不能为空且长度必须大于 0
+     * @param limit     返回结果的最大数量，必须大于 0
+     * @param minScore  相似度阈值（{@code certainty}），低于该值的结果被过滤
+     * @return 按 certainty 降序排列的 Spring AI Document 列表
+     * @throws IllegalArgumentException 当查询向量为空或 {@code limit} 不合法
+     * @throws RuntimeException         当 GraphQL 返回错误时抛出
+     */
     @Override
     protected List<Document> similaritySearchByVector(String indexName, float[] vector, int limit, double minScore) {
         if (vector == null || vector.length == 0) {
@@ -594,6 +709,15 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
         return docs;
     }
 
+    /**
+     * 批量写入已嵌入的 Spring AI 文档。
+     *
+     * <p>直接复用 Spring AI 的 {@code VectorStore.add}（{@link org.springframework.ai.vectorstore.weaviate.WeaviateVectorStore}），
+     * 由其内部将文档写入 Weaviate class 并完成向量化副作用。空入参将直接返回，不会触发任何调用。</p>
+     *
+     * @param indexName 目标索引（Weaviate class）
+     * @param docs      待写入的 Spring AI 文档列表（已嵌入完成）
+     */
     @Override
     protected void addEmbeddings(String indexName, List<Document> docs) {
         if (docs == null || docs.isEmpty()) {
@@ -602,6 +726,40 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
         vectorStore.add(docs);
     }
 
+    /**
+     * 声明本实现使用 Store 端托管嵌入。
+     *
+     * <p>Weaviate 默认走 Spring AI 的 {@code VectorStore.add} 链路，由
+     * {@link org.springframework.ai.vectorstore.weaviate.WeaviateVectorStore} 完成向量化；因此批写入路径不再在客户端重复嵌入。</p>
+     *
+     * @return 始终为 {@code true}
+     */
+    @Override
+    protected boolean usesStoreManagedEmbedding() { return true; }
+
+    /**
+     * 将 {@link VectorRecord} 列表转换为 Spring AI 文档后写入 Weaviate class。
+     *
+     * <p>由 {@link #toAiDocument} 完成统一模型 → Spring AI 文档的映射；写入侧仍使用
+     * {@link org.springframework.ai.vectorstore.weaviate.WeaviateVectorStore}，由其内部触发嵌入。</p>
+     *
+     * @param indexName 目标索引
+     * @param records   待写入的 VectorRecord 列表
+     */
+    @Override
+    protected void writeStoreManagedRecords(String indexName, List<VectorRecord> records) {
+        vectorStore.add(records.stream().map(record -> toAiDocument(record, null)).toList());
+    }
+
+    /**
+     * 按 ID 列表删除索引内文档。
+     *
+     * <p>复用 Spring AI {@code VectorStore.delete} 的批删实现，由
+     * {@link org.springframework.ai.vectorstore.weaviate.WeaviateVectorStore} 完成底层 GraphQL delete 调度。</p>
+     *
+     * @param indexName 目标索引
+     * @param ids       待删除的文档 ID 列表
+     */
     @Override
     protected void deleteByIds(String indexName, List<String> ids) {
         if (ids == null || ids.isEmpty()) {
@@ -610,6 +768,17 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
         vectorStore.delete(ids);
     }
 
+    /**
+     * 按 ID 列表批量获取 {@link VectorRecord}。
+     *
+     * <p>逐个 ID 发起 GraphQL {@code Get(where: {path: ["_id"], operator: Equal})}
+     * 查询；任意 ID 查询报错时跳过该 ID，不影响其它 ID 的读取。最后用
+     * {@link VectorContent.TextContent} 包装文本字段，缺失时使用空字符串。</p>
+     *
+     * @param indexName 目标索引（Weaviate class）
+     * @param ids       待获取的文档 ID 列表
+     * @return 命中的 VectorRecord 列表（顺序与输入 ids 不一定一致，缺失条目跳过）
+     */
     @Override
     protected List<VectorRecord> getByIds(String indexName, List<String> ids) {
         if (ids == null || ids.isEmpty()) {

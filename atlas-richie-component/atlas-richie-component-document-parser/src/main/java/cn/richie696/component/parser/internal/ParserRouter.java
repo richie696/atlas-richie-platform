@@ -24,9 +24,9 @@ import cn.richie696.component.parser.exception.FormatNotSupportedException;
  * <b>路由规则</b>(基于用户拍板的设计原则):
  * <ul>
  *   <li>Excel (.xlsx / .xls / .ods) → {@link FesodDocumentParser} (Apache Fesod)</li>
+ *   <li>TXT / Markdown → {@link TextFastPathParser}</li>
  *   <li>其余所有可解析格式 → {@link TikaDocumentParser} (Apache Tika)</li>
  * </ul>
- * TXT / Markdown 暂走 {@link TikaDocumentParser},fast-path 由后续 phase 接入。
  *
  * @author richie696
  * @version 1.0
@@ -36,10 +36,19 @@ public final class ParserRouter {
 
     private final TikaDocumentParser tikaParser;
     private final FesodDocumentParser fesodParser;
+    private final TextFastPathParser textFastPathParser;
 
+    public ParserRouter(TikaDocumentParser tikaParser, FesodDocumentParser fesodParser,
+                        TextFastPathParser textFastPathParser) {
+        this.tikaParser = java.util.Objects.requireNonNull(tikaParser, "tikaParser must not be null");
+        this.fesodParser = java.util.Objects.requireNonNull(fesodParser, "fesodParser must not be null");
+        this.textFastPathParser = java.util.Objects.requireNonNull(textFastPathParser,
+                "textFastPathParser must not be null");
+    }
+
+    /** 便于非 Spring SPI 使用的构造器。 */
     public ParserRouter(TikaDocumentParser tikaParser, FesodDocumentParser fesodParser) {
-        this.tikaParser = tikaParser;
-        this.fesodParser = fesodParser;
+        this(tikaParser, fesodParser, new TextFastPathParser());
     }
 
     /**
@@ -55,8 +64,8 @@ public final class ParserRouter {
         }
         return switch (format) {
             case XLSX, XLS, ODS -> fesodParser;
-            case PDF, DOCX, DOC, PPTX, PPT, ODT, ODP,
-                 RTF, TXT, MD, HTML, XML -> tikaParser;
+            case TXT, MD -> textFastPathParser;
+            case PDF, DOCX, DOC, PPTX, PPT, ODT, ODP, RTF, HTML, XML -> tikaParser;
             case UNKNOWN ->
                     throw new FormatNotSupportedException(
                             "unknown",
