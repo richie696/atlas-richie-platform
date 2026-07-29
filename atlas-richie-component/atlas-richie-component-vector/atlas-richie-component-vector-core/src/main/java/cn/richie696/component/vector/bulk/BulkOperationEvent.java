@@ -22,7 +22,9 @@ import java.time.Instant;
  * @version 1.0
  * @since 2025-07-01
  */
-public sealed interface BulkOperationEvent permits BulkOperationEvent.Started,
+public sealed
+
+interface BulkOperationEvent permits BulkOperationEvent.Started,
         BulkOperationEvent.ItemStarted, BulkOperationEvent.ItemSucceeded,
         BulkOperationEvent.ItemFailed, BulkOperationEvent.Completed {
 
@@ -50,7 +52,6 @@ public sealed interface BulkOperationEvent permits BulkOperationEvent.Started,
      * @param operationId   批次关联键，与同一批其他 {@link BulkOperationEvent} 共享。
      * @param operationType 本次批次的操作类型（UPSERT / DELETE）。
      * @param occurredAt    事件发生时刻。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
@@ -58,7 +59,9 @@ public sealed interface BulkOperationEvent permits BulkOperationEvent.Started,
     record Started(
             String operationId,
             BulkOperationType operationType,
-            Instant occurredAt) implements BulkOperationEvent {
+            Instant occurredAt) implements
+
+    BulkOperationEvent {
     }
 
     /**
@@ -72,7 +75,6 @@ public sealed interface BulkOperationEvent permits BulkOperationEvent.Started,
      * @param itemId      单条记录的事件追踪键（可能为 {@code "unknown"}）。
      * @param stage       当前进入的处理阶段。
      * @param occurredAt  事件发生时刻。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
@@ -81,7 +83,9 @@ public sealed interface BulkOperationEvent permits BulkOperationEvent.Started,
             String operationId,
             String itemId,
             BulkProcessingStage stage,
-            Instant occurredAt) implements BulkOperationEvent {
+            Instant occurredAt) implements
+
+    BulkOperationEvent {
     }
 
     /**
@@ -95,7 +99,6 @@ public sealed interface BulkOperationEvent permits BulkOperationEvent.Started,
      * @param itemId      单条记录的事件追踪键。
      * @param vectorId    provider 侧的向量记录 ID。
      * @param occurredAt  事件发生时刻。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
@@ -104,7 +107,9 @@ public sealed interface BulkOperationEvent permits BulkOperationEvent.Started,
             String operationId,
             String itemId,
             String vectorId,
-            Instant occurredAt) implements BulkOperationEvent {
+            Instant occurredAt) implements
+
+    BulkOperationEvent {
     }
 
     /**
@@ -124,7 +129,6 @@ public sealed interface BulkOperationEvent permits BulkOperationEvent.Started,
      * @param errorCode   异常类名（稳定、不含包路径），便于跨进程转发时仍能定位。
      * @param message     异常消息（被截断到 512 字符以避免事件过大）。
      * @param occurredAt  事件发生时刻。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
@@ -135,7 +139,9 @@ public sealed interface BulkOperationEvent permits BulkOperationEvent.Started,
             BulkProcessingStage stage,
             String errorCode,
             String message,
-            Instant occurredAt) implements BulkOperationEvent {
+            Instant occurredAt) implements
+
+    BulkOperationEvent {
     }
 
     /**
@@ -150,7 +156,6 @@ public sealed interface BulkOperationEvent permits BulkOperationEvent.Started,
      * @param operationType 本次批次的操作类型。
      * @param summary       终态统计（成功/失败/嵌入调用/写库调用/耗时）。
      * @param occurredAt    事件发生时刻。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
@@ -159,6 +164,8 @@ public sealed interface BulkOperationEvent permits BulkOperationEvent.Started,
             String operationId,
             BulkOperationType operationType,
             BulkOperationSummary summary,
-            Instant occurredAt) implements BulkOperationEvent {
+            Instant occurredAt) implements
+
+    BulkOperationEvent {
     }
 }

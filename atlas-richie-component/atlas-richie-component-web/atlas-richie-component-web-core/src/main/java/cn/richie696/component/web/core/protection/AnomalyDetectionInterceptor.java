@@ -49,10 +49,14 @@ import java.util.Map;
 @Slf4j
 public class AnomalyDetectionInterceptor implements WebInterceptor, Ordered {
 
-    /** 决策事件 attribute key，供 §4.5 HookBus 监听。 */
+    /**
+     * 决策事件 attribute key，供 §4.5 HookBus 监听。
+     */
     public static final String DECISION_ATTRIBUTE = "platform.web.anomaly-decision";
 
-    /** 拦截器在链中的位置。 */
+    /**
+     * 拦截器在链中的位置。
+     */
     public static final int ORDER = 200;
 
     private final List<BotUserAgentMatcher> botMatchers;

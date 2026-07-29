@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>cn.richie696.component</groupId>
@@ -138,11 +138,11 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/logging/handler/QueueHandlerImpl*</include>
-                        <include>com/richie/component/logging/handler/OperatorContextHolder*</include>
-                        <include>com/richie/component/logging/config/OperateLogProperties*</include>
-                        <include>com/richie/component/logging/domain/OperatorInfo*</include>
-                        <include>com/richie/component/logging/exception/OperateLogRuntimeException*</include>
+                        <include>cn/richie696/component/logging/handler/QueueHandlerImpl*</include>
+                        <include>cn/richie696/component/logging/handler/OperatorContextHolder*</include>
+                        <include>cn/richie696/component/logging/config/OperateLogProperties*</include>
+                        <include>cn/richie696/component/logging/domain/OperatorInfo*</include>
+                        <include>cn/richie696/component/logging/exception/OperateLogRuntimeException*</include>
                     </includes>
                     <rules>
                         <rule>
@@ -162,11 +162,11 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/logging/handler/QueueHandlerImpl*</include>
-                                <include>com/richie/component/logging/handler/OperatorContextHolder*</include>
-                                <include>com/richie/component/logging/config/OperateLogProperties*</include>
-                                <include>com/richie/component/logging/domain/OperatorInfo*</include>
-                                <include>com/richie/component/logging/exception/OperateLogRuntimeException*</include>
+                                <include>cn/richie696/component/logging/handler/QueueHandlerImpl*</include>
+                                <include>cn/richie696/component/logging/handler/OperatorContextHolder*</include>
+                                <include>cn/richie696/component/logging/config/OperateLogProperties*</include>
+                                <include>cn/richie696/component/logging/domain/OperatorInfo*</include>
+                                <include>cn/richie696/component/logging/exception/OperateLogRuntimeException*</include>
                             </includes>
                             <rules>
                                 <rule>

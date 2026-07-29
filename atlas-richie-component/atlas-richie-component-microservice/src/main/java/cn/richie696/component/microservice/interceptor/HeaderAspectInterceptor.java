@@ -16,8 +16,9 @@
 package cn.richie696.component.microservice.interceptor;
 
 import cn.richie696.context.common.api.HeaderContextHolder;
-import cn.richie696.contract.constant.GlobalConstants;
 import cn.richie696.context.utils.data.Collections;
+import cn.richie696.contract.constant.GlobalConstants;
+import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,6 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.core.annotation.Order;
-import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;

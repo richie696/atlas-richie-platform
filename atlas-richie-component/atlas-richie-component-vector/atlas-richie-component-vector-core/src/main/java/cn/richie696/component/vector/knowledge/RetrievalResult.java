@@ -28,8 +28,7 @@ import java.util.List;
  *
  * @param citations   检索命中的引用列表；紧凑构造器中已防御性拷贝为不可变 List
  * @param diagnostics 本次检索的诊断信息，候选数为 0 时仍会带
- *                   {@link RetrievalDiagnostics#candidateCount()}=0 的诊断
- *
+ *                    {@link RetrievalDiagnostics#candidateCount()}=0 的诊断
  * @author richie696
  * @version 1.0
  * @since 2025-07-01
@@ -40,5 +39,7 @@ public record RetrievalResult(List<RetrievalCitation> citations, RetrievalDiagno
      *
      * <p>{@code diagnostics} 字段不做拷贝 — 它本身是不可变 record，再拷贝无意义。</p>
      */
-    public RetrievalResult { citations = List.copyOf(citations); }
+    public RetrievalResult {
+        citations = List.copyOf(citations);
+    }
 }

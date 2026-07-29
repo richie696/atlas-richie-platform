@@ -29,21 +29,37 @@ import java.util.Map;
 public final class VoiceChatEvent {
 
     public enum Type {
-        /** 语音识别中间结果 */
+        /**
+         * 语音识别中间结果
+         */
         TRANSCRIPT_PARTIAL,
-        /** 语音识别最终结果 */
+        /**
+         * 语音识别最终结果
+         */
         TRANSCRIPT_FINAL,
-        /** TTS 音频块 */
+        /**
+         * TTS 音频块
+         */
         AUDIO_CHUNK,
-        /** TTS 句子合成完成 */
+        /**
+         * TTS 句子合成完成
+         */
         AUDIO_SENTENCE_END,
-        /** 工具调用请求 */
+        /**
+         * 工具调用请求
+         */
         TOOL_CALL_REQUEST,
-        /** 用户语音打断 */
+        /**
+         * 用户语音打断
+         */
         USER_INTERRUPTED,
-        /** 服务端错误 */
+        /**
+         * 服务端错误
+         */
         ERROR,
-        /** 会话结束 */
+        /**
+         * 会话结束
+         */
         SESSION_END
     }
 
@@ -65,13 +81,33 @@ public final class VoiceChatEvent {
         this.vendorPayload = b.vendorPayload == null ? Map.of() : Map.copyOf(b.vendorPayload);
     }
 
-    public Type type() { return type; }
-    public String text() { return text; }
-    public AudioFrame audio() { return audio; }
-    public String toolName() { return toolName; }
-    public Map<String, Object> toolArguments() { return toolArguments; }
-    public String errorMessage() { return errorMessage; }
-    public Map<String, Object> vendorPayload() { return vendorPayload; }
+    public Type type() {
+        return type;
+    }
+
+    public String text() {
+        return text;
+    }
+
+    public AudioFrame audio() {
+        return audio;
+    }
+
+    public String toolName() {
+        return toolName;
+    }
+
+    public Map<String, Object> toolArguments() {
+        return toolArguments;
+    }
+
+    public String errorMessage() {
+        return errorMessage;
+    }
+
+    public Map<String, Object> vendorPayload() {
+        return vendorPayload;
+    }
 
     public static Builder builder(Type type) {
         return new Builder(type);
@@ -100,12 +136,29 @@ public final class VoiceChatEvent {
             this.timestampMs = System.currentTimeMillis();
         }
 
-        public byte[] data() { return data; }
-        public int sampleRate() { return sampleRate; }
-        public int bitsPerSample() { return bitsPerSample; }
-        public int channels() { return channels; }
-        public long timestampMs() { return timestampMs; }
-        public String codec() { return codec; }
+        public byte[] data() {
+            return data;
+        }
+
+        public int sampleRate() {
+            return sampleRate;
+        }
+
+        public int bitsPerSample() {
+            return bitsPerSample;
+        }
+
+        public int channels() {
+            return channels;
+        }
+
+        public long timestampMs() {
+            return timestampMs;
+        }
+
+        public String codec() {
+            return codec;
+        }
     }
 
     public static final class Builder {

@@ -16,15 +16,13 @@
 package cn.richie696.component.redis.streammq.stream;
 
 import cn.richie696.component.cache.GlobalCache;
-import cn.richie696.component.redis.streammq.config.stream.RedisStreamProperties;
 import cn.richie696.component.cache.redis.manage.CacheLock;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import cn.richie696.component.redis.streammq.config.stream.RedisStreamProperties;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -34,15 +32,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 /**
  * Redis Stream 消息清理服务
  * <p>
  * 使用分布式锁确保多实例环境下只有一个实例执行清理任务，避免重复操作。
- * 
+ *
  * <p>
  * <strong>工作原理：</strong>
- * 
+ *
  * <ol>
  *   <li>定时任务（默认每小时执行一次）在 JOB 开始时获取服务级别的分布式锁</li>
  *   <li>锁的粒度是按服务隔离的，不同服务之间互不影响</li>
@@ -51,7 +50,7 @@ import java.util.concurrent.TimeUnit;
  * </ol>
  * <p>
  * <strong>锁的设计：</strong>
- * 
+ *
  * <ul>
  *   <li>锁的 key 格式：{@code redis:stream:cleanup:lock:{serviceName}}</li>
  *   <li>每个服务有自己独立的锁，不同服务之间互不影响</li>
@@ -60,20 +59,16 @@ import java.util.concurrent.TimeUnit;
  * </ul>
  *
  * @author richie696
- * @since 2025/11/05
  * @version 1.0.0
+ * @since 2025/11/05
  */
 @Slf4j
-@Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(
-    prefix = "platform.cache.redis.stream.consumers",
-    name = "enabled",
-    havingValue = "true"
-)
 public class RedisStreamCleanup {
 
-    /** Stream 相关配置 */
+    /**
+     * Stream 相关配置
+     */
     private final RedisStreamProperties streamProperties;
 
     /**
@@ -81,7 +76,7 @@ public class RedisStreamCleanup {
      * <p>
      * 从 {@code spring.application.name} 配置中获取，用于区分不同服务。
      * 不同服务有各自独立的清理锁，互不影响。
-     * 
+     *
      */
     @Value("${spring.application.name:default-service}")
     private String serviceName;
@@ -96,7 +91,7 @@ public class RedisStreamCleanup {
      * <p>
      * 设置为 5 分钟，确保清理任务有足够时间完成。
      * 如果清理任务执行时间超过此值，锁会自动释放，其他实例可以获取锁。
-     * 
+     *
      */
     private static final long LOCK_TIMEOUT_SECONDS = 300L; // 5分钟
 
@@ -118,7 +113,7 @@ public class RedisStreamCleanup {
      * 初始化定时任务
      * <p>
      * 从配置中读取 Duration 格式的 interval，动态注册定时任务。
-     * 
+     *
      */
     @PostConstruct
     public void initScheduledTask() {
@@ -132,10 +127,10 @@ public class RedisStreamCleanup {
 
         // 使用固定频率调度任务
         scheduledTask = scheduler.scheduleAtFixedRate(
-            this::cleanupStreams,
-            intervalMillis,  // 初始延迟
-            intervalMillis,   // 执行间隔
-            TimeUnit.MILLISECONDS
+                this::cleanupStreams,
+                intervalMillis,  // 初始延迟
+                intervalMillis,   // 执行间隔
+                TimeUnit.MILLISECONDS
         );
 
         log.info("Stream 清理定时任务已启动，清理间隔: {}", interval);
@@ -181,10 +176,10 @@ public class RedisStreamCleanup {
      * <p>
      * 在 JOB 开始时获取服务级别的分布式锁，确保同一服务的多个实例中只有一个实例执行清理。
      * 不同服务之间互不影响，每个服务有自己独立的锁。
-     * 
+     *
      * <p>
      * 清理策略：
-     * 
+     *
      * <ul>
      *   <li>有独立 maxLen 配置的 Stream：单独清理（使用单键接口）</li>
      *   <li>使用全局 defaultMaxLen 的 Stream：批量清理（使用多键接口，提高效率）</li>
@@ -276,7 +271,7 @@ public class RedisStreamCleanup {
 
             if (cleanedCount > 0 || skippedCount > 0) {
                 log.debug("Stream 清理任务完成: serviceName={}, 单独清理 {} 个, 批量清理 {} 个, 成功 {} 个, 跳过 {} 个",
-                    serviceName, individualItems.size(), batchStreamKeys.size(), cleanedCount, skippedCount);
+                        serviceName, individualItems.size(), batchStreamKeys.size(), cleanedCount, skippedCount);
             } else {
                 log.debug("Stream 清理任务完成（无需清理）: serviceName={}", serviceName);
             }
@@ -300,10 +295,10 @@ public class RedisStreamCleanup {
      * 执行单个 Stream 清理（XTRIM）
      * <p>
      * 使用 XTRIM 命令的近似修剪模式（MAXLEN ~ count），提高性能。
-     * 
+     *
      * <p>
      * <strong>性能优化说明：</strong>
-     * 
+     *
      * <ul>
      *   <li>使用 {@code ~} 参数进行近似修剪，避免阻塞 Redis 服务器</li>
      *   <li>修剪后的 Stream 长度可能稍微超过 maxLen（但不会少于 maxLen）</li>
@@ -312,8 +307,8 @@ public class RedisStreamCleanup {
      *   <li>直接执行 XTRIM，无需提前检查长度：如果长度未超过限制，XTRIM 会返回 0，开销很小</li>
      * </ul>
      *
-     * @param streamKey Stream 键名
-     * @param maxLen 最大保留消息数
+     * @param streamKey  Stream 键名
+     * @param maxLen     最大保留消息数
      * @param configName 配置名称（用于日志）
      * @return true 表示执行了清理操作，false 表示未执行（长度未超过限制或 Stream 不存在）
      */
@@ -336,18 +331,18 @@ public class RedisStreamCleanup {
 
             if (trimmed != null && trimmed > 0) {
                 log.debug("Stream 清理完成: streamKey={}, configName={}, 清理消息数={}",
-                    streamKey, configName, trimmed);
+                        streamKey, configName, trimmed);
                 return true;
             } else {
                 // trimmed == 0 或 null，表示无需清理（长度未超过限制或 Stream 为空）
                 log.debug("Stream 无需清理: streamKey={}, configName={}, maxLen={}",
-                    streamKey, configName, maxLen);
+                        streamKey, configName, maxLen);
                 return false;
             }
 
         } catch (Exception e) {
             log.error("执行 Stream 清理失败: streamKey={}, configName={}, maxLen={}",
-                streamKey, configName, maxLen, e);
+                    streamKey, configName, maxLen, e);
             throw e;
         }
     }
@@ -356,10 +351,10 @@ public class RedisStreamCleanup {
      * 批量执行 Stream 清理（XTRIM）
      * <p>
      * 使用批量 Lua 脚本对多个 Stream 执行 XTRIM 命令，提高效率。
-     * 
+     *
      * <p>
      * <strong>批量清理优势：</strong>
-     * 
+     *
      * <ul>
      *   <li>减少网络往返：一次调用处理多个 Stream</li>
      *   <li>提高吞吐量：批量操作比逐个操作更高效</li>
@@ -367,7 +362,7 @@ public class RedisStreamCleanup {
      * </ul>
      *
      * @param streamKeys Stream 键名列表
-     * @param maxLen 最大保留消息数（全局默认值）
+     * @param maxLen     最大保留消息数（全局默认值）
      * @return 成功清理的 Stream 数量
      */
     private int trimStreamsBatch(List<String> streamKeys, long maxLen) {
@@ -380,18 +375,18 @@ public class RedisStreamCleanup {
             // 遍历所有 keys，对每个 key 执行 XTRIM，返回清理结果统计
             // 返回格式：{cleanedCount, totalTrimmed}
             String batchTrimScript = "local cleanedCount = 0 " +
-                                     "local totalTrimmed = 0 " +
-                                     "for i = 1, #KEYS do " +
-                                     "  local key = KEYS[i] " +
-                                     "  if redis.call('EXISTS', key) == 1 then " +
-                                     "    local trimmed = redis.call('XTRIM', key, 'MAXLEN', '~', ARGV[1]) " +
-                                     "    if trimmed and trimmed > 0 then " +
-                                     "      cleanedCount = cleanedCount + 1 " +
-                                     "      totalTrimmed = totalTrimmed + trimmed " +
-                                     "    end " +
-                                     "  end " +
-                                     "end " +
-                                     "return {cleanedCount, totalTrimmed}";
+                    "local totalTrimmed = 0 " +
+                    "for i = 1, #KEYS do " +
+                    "  local key = KEYS[i] " +
+                    "  if redis.call('EXISTS', key) == 1 then " +
+                    "    local trimmed = redis.call('XTRIM', key, 'MAXLEN', '~', ARGV[1]) " +
+                    "    if trimmed and trimmed > 0 then " +
+                    "      cleanedCount = cleanedCount + 1 " +
+                    "      totalTrimmed = totalTrimmed + trimmed " +
+                    "    end " +
+                    "  end " +
+                    "end " +
+                    "return {cleanedCount, totalTrimmed}";
 
             // 执行批量清理
             // Lua 脚本返回 {cleanedCount, totalTrimmed}，会被转换为 List
@@ -403,18 +398,18 @@ public class RedisStreamCleanup {
                 Object totalTrimmedObj = result.size() >= 2 ? result.get(1) : 0L;
 
                 int cleanedCount = cleanedCountObj instanceof Number
-                    ? ((Number) cleanedCountObj).intValue()
-                    : 0;
+                        ? ((Number) cleanedCountObj).intValue()
+                        : 0;
                 long totalTrimmed = totalTrimmedObj instanceof Number
-                    ? ((Number) totalTrimmedObj).longValue()
-                    : 0L;
+                        ? ((Number) totalTrimmedObj).longValue()
+                        : 0L;
 
                 if (cleanedCount > 0) {
                     log.debug("批量 Stream 清理完成: 清理 {} 个 Stream, 总清理消息数={}, defaultMaxLen={}",
-                        cleanedCount, totalTrimmed, maxLen);
+                            cleanedCount, totalTrimmed, maxLen);
                 } else {
                     log.debug("批量 Stream 清理完成（无需清理）: streamKeys={}, defaultMaxLen={}",
-                        streamKeys, maxLen);
+                            streamKeys, maxLen);
                 }
 
                 return cleanedCount;

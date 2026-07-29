@@ -37,9 +37,13 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ReplayAttackPreventionService {
 
-    /** MFA 配置，用于读取 TOTP 时间窗口与防重放 TTL 倍数 */
+    /**
+     * MFA 配置，用于读取 TOTP 时间窗口与防重放 TTL 倍数
+     */
     private final MfaProperties properties;
-    /** 租户支持，用于判断是否启用租户（影响缓存 key 格式） */
+    /**
+     * 租户支持，用于判断是否启用租户（影响缓存 key 格式）
+     */
     private final MfaTenantSupport tenantSupport;
 
     /**
@@ -49,7 +53,7 @@ public class ReplayAttackPreventionService {
      *
      * @param userId   用户ID（必填）
      * @param tenantId 租户ID（可选，如果未启用租户则为 null）
-     * @param timeStep  时间步长（当前时间戳 / 时间窗口）
+     * @param timeStep 时间步长（当前时间戳 / 时间窗口）
      * @return 是否已使用
      * <ul>
      *   <li>{@code true}：验证码已被使用（可能是重放攻击）</li>

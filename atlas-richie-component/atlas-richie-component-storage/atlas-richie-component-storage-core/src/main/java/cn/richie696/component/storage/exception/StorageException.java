@@ -24,7 +24,9 @@ package cn.richie696.component.storage.exception;
  */
 public class StorageException extends Exception {
 
-    /** 默认构造 */
+    /**
+     * 默认构造
+     */
     public StorageException() {
     }
 

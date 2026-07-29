@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.tenant.context;
 
-import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.component.tenant.exception.TenantSwitchInTransactionException;
+import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.contract.model.TenantPrincipal;
 import lombok.Setter;
 
@@ -201,7 +201,7 @@ public final class TenantContext {
     private static void checkInitialized() {
         if (holder == null) {
             throw new IllegalStateException(
-                "TenantContext not initialized. Ensure TenantAutoConfiguration is loaded.");
+                    "TenantContext not initialized. Ensure TenantAutoConfiguration is loaded.");
         }
     }
 
@@ -232,7 +232,7 @@ public final class TenantContext {
     }
 
     /**
-     *  注册事务租户切换检测器（由持久层自动配置调用）
+     * 注册事务租户切换检测器（由持久层自动配置调用）
      */
     @Setter
     private static volatile TransactionTenantChecker transactionChecker;

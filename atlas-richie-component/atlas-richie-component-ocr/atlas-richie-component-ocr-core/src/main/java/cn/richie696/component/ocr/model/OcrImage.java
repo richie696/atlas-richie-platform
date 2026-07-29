@@ -18,6 +18,7 @@ package cn.richie696.component.ocr.model;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * 待识别图像 —— 支持 3 种来源，业务侧按场景选。
@@ -26,7 +27,9 @@ import java.util.Objects;
  * @version 1.0.0
  * @since 2026-07-10
  */
-public abstract sealed class OcrImage
+public abstract sealed
+
+class OcrImage
         permits OcrImage.Bytes, OcrImage.Url, OcrImage.Stream {
 
     private OcrImage() {
@@ -64,12 +67,16 @@ public abstract sealed class OcrImage
         /**
          * @return 图像原始字节（业务侧持有, 引用而非拷贝, 业务侧不可变更）
          */
-        public byte[] data() { return data; }
+        public byte[] data() {
+            return data;
+        }
 
         /**
          * @return 图像 MIME 类型（永不为 {@code null}）
          */
-        public MimeType mime() { return mime; }
+        public MimeType mime() {
+            return mime;
+        }
 
         @Override
         public boolean equals(Object o) {
@@ -121,12 +128,16 @@ public abstract sealed class OcrImage
         /**
          * @return HTTP(S) URL
          */
-        public String url() { return url; }
+        public String url() {
+            return url;
+        }
 
         /**
          * @return 下载凭证（{@code null} 表示公开 URL）
          */
-        public HttpAuth auth() { return auth; }
+        public HttpAuth auth() {
+            return auth;
+        }
 
         @Override
         public boolean equals(Object o) {
@@ -175,12 +186,16 @@ public abstract sealed class OcrImage
         /**
          * @return 图像输入流（一次性消费, vendor 读取后会自动关闭, 业务侧无需重复关闭）
          */
-        public InputStream input() { return input; }
+        public InputStream input() {
+            return input;
+        }
 
         /**
          * @return 图像 MIME 类型
          */
-        public MimeType mime() { return mime; }
+        public MimeType mime() {
+            return mime;
+        }
 
         @Override
         public boolean equals(Object o) {

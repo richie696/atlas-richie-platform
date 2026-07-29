@@ -18,6 +18,7 @@ package cn.richie696.component.desensitize.logging.service;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 
 import java.util.Map;
+
 public interface LoggingMaskingService {
 
     /**

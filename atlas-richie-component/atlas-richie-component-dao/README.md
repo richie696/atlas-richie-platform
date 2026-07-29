@@ -1,6 +1,7 @@
 # Atlas Richie DAO Component (atlas-richie-component-dao)
 
-> Database access layer component based on MyBatis Plus, providing out-of-the-box database operation capabilities including auto-configuration, pagination, multi-tenant, distributed ID generation, and SQL monitoring.
+> Database access layer component based on MyBatis Plus, providing out-of-the-box database operation capabilities
+> including auto-configuration, pagination, multi-tenant, distributed ID generation, and SQL monitoring.
 
 ---
 
@@ -8,44 +9,44 @@
 
 - [✨ Features](#-features)
 - [🚀 Quick Start](#-quick-start)
-  - [1. Add the Dependency](#1-add-the-dependency)
-  - [2. Configure the Data Source](#2-configure-the-data-source)
-  - [3. Create the Entity Class](#3-create-the-entity-class)
-  - [4. Create the Mapper Interface](#4-create-the-mapper-interface)
-  - [5. Usage Example](#5-usage-example)
+    - [1. Add the Dependency](#1-add-the-dependency)
+    - [2. Configure the Data Source](#2-configure-the-data-source)
+    - [3. Create the Entity Class](#3-create-the-entity-class)
+    - [4. Create the Mapper Interface](#4-create-the-mapper-interface)
+    - [5. Usage Example](#5-usage-example)
 - [🔧 Core Features](#-core-features)
-  - [1. Smart Pagination](#1-smart-pagination)
-  - [2. Distributed ID Generation](#2-distributed-id-generation)
-  - [3. Auto Field Filling](#3-auto-field-filling)
-  - [4. SQL Monitoring](#4-sql-monitoring)
-  - [5. Optimistic Lock Support](#5-optimistic-lock-support)
-  - [6. Safety Protection](#6-safety-protection)
-  - [7. Batch Update Limit](#7-batch-update-limit)
+    - [1. Smart Pagination](#1-smart-pagination)
+    - [2. Distributed ID Generation](#2-distributed-id-generation)
+    - [3. Auto Field Filling](#3-auto-field-filling)
+    - [4. SQL Monitoring](#4-sql-monitoring)
+    - [5. Optimistic Lock Support](#5-optimistic-lock-support)
+    - [6. Safety Protection](#6-safety-protection)
+    - [7. Batch Update Limit](#7-batch-update-limit)
 - [🏢 Multi-Tenant Support](#-multi-tenant-support)
-  - [Overview](#overview)
-  - [Features](#features-1)
-  - [Configuration](#configuration)
-  - [Datasource Table Structure](#datasource-table-structure)
-  - [Usage Methods](#usage-methods)
-  - [Tenant Data Isolation](#tenant-data-isolation)
+    - [Overview](#overview)
+    - [Features](#features-1)
+    - [Configuration](#configuration)
+    - [Datasource Table Structure](#datasource-table-structure)
+    - [Usage Methods](#usage-methods)
+    - [Tenant Data Isolation](#tenant-data-isolation)
 - [⚙️ Configuration Reference](#-configuration-reference)
-  - [Basic Configuration](#basic-configuration)
-  - [Multi-Tenant Configuration](#multi-tenant-configuration)
+    - [Basic Configuration](#basic-configuration)
+    - [Multi-Tenant Configuration](#multi-tenant-configuration)
 - [🎯 Best Practices](#-best-practices)
-  - [1. Entity Class Design](#1-entity-class-design)
-  - [2. Pagination Query](#2-pagination-query)
-  - [3. Conditional Query](#3-conditional-query)
-  - [4. Batch Operations](#4-batch-operations)
-  - [5. Logical Delete](#5-logical-delete)
-  - [6. Multi-Tenant Usage](#6-multi-tenant-usage)
+    - [1. Entity Class Design](#1-entity-class-design)
+    - [2. Pagination Query](#2-pagination-query)
+    - [3. Conditional Query](#3-conditional-query)
+    - [4. Batch Operations](#4-batch-operations)
+    - [5. Logical Delete](#5-logical-delete)
+    - [6. Multi-Tenant Usage](#6-multi-tenant-usage)
 - [❓ FAQ](#-faq)
-  - [Q1: How to customize the ID generation strategy?](#q1-how-to-customize-the-id-generation-strategy)
-  - [Q2: How to disable auto field filling?](#q2-how-to-disable-auto-field-filling)
-  - [Q3: How is the sort field converted in pagination queries?](#q3-how-is-the-sort-field-converted-in-pagination-queries)
-  - [Q4: How does multi-tenant switch data sources?](#q4-how-does-multi-tenant-switch-data-sources)
-  - [Q5: How to configure slow SQL detection?](#q5-how-to-configure-slow-sql-detection)
-  - [Q6: How to adjust the batch update limit?](#q6-how-to-adjust-the-batch-update-limit)
-  - [Q7: How to ignore tenant isolation for some tables?](#q7-how-to-ignore-tenant-isolation-for-some-tables)
+    - [Q1: How to customize the ID generation strategy?](#q1-how-to-customize-the-id-generation-strategy)
+    - [Q2: How to disable auto field filling?](#q2-how-to-disable-auto-field-filling)
+    - [Q3: How is the sort field converted in pagination queries?](#q3-how-is-the-sort-field-converted-in-pagination-queries)
+    - [Q4: How does multi-tenant switch data sources?](#q4-how-does-multi-tenant-switch-data-sources)
+    - [Q5: How to configure slow SQL detection?](#q5-how-to-configure-slow-sql-detection)
+    - [Q6: How to adjust the batch update limit?](#q6-how-to-adjust-the-batch-update-limit)
+    - [Q7: How to ignore tenant isolation for some tables?](#q7-how-to-ignore-tenant-isolation-for-some-tables)
 - [📝 Summary](#-summary)
 
 ---
@@ -54,9 +55,12 @@
 
 ### `Core` `Capabilities`
 
-- ✅ **MyBatis Plus Auto-Configuration**: zero-config integration with MyBatis Plus, including pagination plugin and field auto-fill
-- ✅ **Smart Pagination**: `BasePage` encapsulates common pagination parameters, supports camelCase to underscore automatic conversion
-- ✅ **Distributed ID Generation**: built-in Snowflake algorithm, supports 1024 workers, 41-bit timestamp (epoch 2020-05-03)
+- ✅ **MyBatis Plus Auto-Configuration**: zero-config integration with MyBatis Plus, including pagination plugin and
+  field auto-fill
+- ✅ **Smart Pagination**: `BasePage` encapsulates common pagination parameters, supports camelCase to underscore
+  automatic conversion
+- ✅ **Distributed ID Generation**: built-in Snowflake algorithm, supports 1024 workers, 41-bit timestamp (epoch
+  2020-05-03)
 - ✅ **Multi-Tenant Support**: complete multi-tenant solution with dynamic datasource switching and tenant data isolation
 - ✅ **SQL Monitoring**: integrated with p6spy, configurable slow SQL threshold and log format
 - ✅ **Auto Field Filling**: default filling of `createId`, `updateId`, `createTime`, `updateTime`, `deleted`
@@ -68,7 +72,8 @@
 
 - ✅ **Internationalization**: integrates with `richie-component-i18n`, supports multi-language field values
 - ✅ **Dynamic DataSource**: integrates with `spring-datasource-dynamic`, supports runtime datasource switching
-- ✅ **SQL Optimization**: integrates with SQL parsing plugins, supports slow SQL interception and optimization suggestions
+- ✅ **SQL Optimization**: integrates with SQL parsing plugins, supports slow SQL interception and optimization
+  suggestions
 
 ---
 
@@ -374,13 +379,15 @@ platform:
 
 ### `Overview`
 
-Provides a complete multi-tenant solution supporting dynamic datasource switching and tenant data isolation. Tenants are identified by the `tenantCode`, and the system automatically routes requests to the corresponding tenant's datasource.
+Provides a complete multi-tenant solution supporting dynamic datasource switching and tenant data isolation. Tenants are
+identified by the `tenantCode`, and the system automatically routes requests to the corresponding tenant's datasource.
 
 ### `Features`
 
 - Dynamic datasource switching: automatically switch datasource based on `X-Tenant-Code` request header or JWT Token
 - Tenant data isolation: SQL queries auto-append `tenant_code` condition to prevent data leakage
-- Ignore table config: certain tables (e.g., dictionary tables, configuration tables) can be excluded from tenant isolation
+- Ignore table config: certain tables (e.g., dictionary tables, configuration tables) can be excluded from tenant
+  isolation
 - Datasource cache: built-in datasource connection pool, avoids repeated datasource creation
 
 ### `Configuration`
@@ -513,25 +520,25 @@ spring:
 
 ### `Basic` `Configuration`
 
-| Config Item | Type | Default | Description |
-|-------------|------|---------|-------------|
-| `platform.component.dao.db-type` | String | `MYSQL` | Database type: `MYSQL`, `POSTGRE_SQL` |
-| `platform.component.dao.enable-logging` | boolean | `false` | Whether to enable SQL log formatting |
-| `platform.component.dao.enable-tenant` | boolean | `false` | Whether to enable multi-tenant |
-| `platform.component.dao.enable-batch-update-limit` | boolean | `true` | Whether to enable batch update limit |
-| `platform.component.dao.batch-update-limit` | int | `1000` | Batch update limit threshold |
-| `platform.component.dao.enable-default-field-handler` | boolean | `true` | Whether to enable default field handler |
+| Config Item                                           | Type    | Default | Description                             |
+|-------------------------------------------------------|---------|---------|-----------------------------------------|
+| `platform.component.dao.db-type`                      | String  | `MYSQL` | Database type: `MYSQL`, `POSTGRE_SQL`   |
+| `platform.component.dao.enable-logging`               | boolean | `false` | Whether to enable SQL log formatting    |
+| `platform.component.dao.enable-tenant`                | boolean | `false` | Whether to enable multi-tenant          |
+| `platform.component.dao.enable-batch-update-limit`    | boolean | `true`  | Whether to enable batch update limit    |
+| `platform.component.dao.batch-update-limit`           | int     | `1000`  | Batch update limit threshold            |
+| `platform.component.dao.enable-default-field-handler` | boolean | `true`  | Whether to enable default field handler |
 
 ### `Multi`-`Tenant` `Configuration`
 
-| Config Item | Type | Default | Description |
-|-------------|------|---------|-------------|
-| `spring.datasource.dynamic.tenant.ignore-tenant-tables` | List<String> | `[]` | Table names excluded from tenant isolation |
-| `spring.datasource.dynamic.tenant.tenant-table-name` | String | `tenant_datasource` | Tenant datasource table name |
-| `spring.datasource.dynamic.tenant.db-url-template` | String | `jdbc:mysql://%s?...` | Database connection URL template |
-| `spring.datasource.dynamic.tenant.tenant-id-column` | String | `tenant_code` | Tenant field name |
-| `spring.datasource.dynamic.tenant.add-tenant-topic` | String | `add_tenant_topic` | Topic for adding new tenants |
-| `spring.datasource.dynamic.tenant.use-random-master` | boolean | `true` | Whether to use random datasource when master cannot be found |
+| Config Item                                             | Type         | Default               | Description                                                  |
+|---------------------------------------------------------|--------------|-----------------------|--------------------------------------------------------------|
+| `spring.datasource.dynamic.tenant.ignore-tenant-tables` | List<String> | `[]`                  | Table names excluded from tenant isolation                   |
+| `spring.datasource.dynamic.tenant.tenant-table-name`    | String       | `tenant_datasource`   | Tenant datasource table name                                 |
+| `spring.datasource.dynamic.tenant.db-url-template`      | String       | `jdbc:mysql://%s?...` | Database connection URL template                             |
+| `spring.datasource.dynamic.tenant.tenant-id-column`     | String       | `tenant_code`         | Tenant field name                                            |
+| `spring.datasource.dynamic.tenant.add-tenant-topic`     | String       | `add_tenant_topic`    | Topic for adding new tenants                                 |
+| `spring.datasource.dynamic.tenant.use-random-master`    | boolean      | `true`                | Whether to use random datasource when master cannot be found |
 
 ---
 
@@ -635,7 +642,8 @@ public List<User> findAllUsers() {
 
 ### `Q1` — `How` to customize the `ID` generation strategy?
 
-**A:** The component uses the Snowflake algorithm by default. To customize, implement the `IdentifierGenerator` interface:
+**A:** The component uses the Snowflake algorithm by default. To customize, implement the `IdentifierGenerator`
+interface:
 
 ```java
 @Component
@@ -661,11 +669,13 @@ platform:
 
 ### `Q3` — `How` is the sort field converted in pagination queries?
 
-**A:** The component automatically converts camelCase field names to underscore field names. If a ResultMap is used, the mapping relationship takes priority.
+**A:** The component automatically converts camelCase field names to underscore field names. If a ResultMap is used, the
+mapping relationship takes priority.
 
 ### `Q4` — `How` does multi-tenant switch data sources?
 
-**A:** The component automatically retrieves the tenant code from the request header (`X-Tenant-Code`) or JWT Token, and auto-switches the datasource. You can also use the `@CommonDataSource` annotation to manually specify the datasource.
+**A:** The component automatically retrieves the tenant code from the request header (`X-Tenant-Code`) or JWT Token, and
+auto-switches the datasource. You can also use the `@CommonDataSource` annotation to manually specify the datasource.
 
 ### `Q5` — `How` to configure slow `SQL` detection?
 
@@ -706,7 +716,9 @@ spring:
 
 ## 📝 Summary
 
-The DAO component provides a complete database access layer solution covering entity definition, CRUD operations, pagination, multi-tenant, ID generation, and SQL monitoring. By combining the auto-configuration and best practices provided by the component, you can quickly build reliable, secure, and performant data access layers.
+The DAO component provides a complete database access layer solution covering entity definition, CRUD operations,
+pagination, multi-tenant, ID generation, and SQL monitoring. By combining the auto-configuration and best practices
+provided by the component, you can quickly build reliable, secure, and performant data access layers.
 
 **Key Points**:
 

@@ -47,8 +47,8 @@ public interface VectorSearchOperations {
      *   <li>用 {@link SearchOptions} 中的结构化
      *       {@link cn.richie696.component.vector.model.VectorFilter} 编译 provider filter DSL</li>
      *   <li>调用 provider 检索得到候选</li>
- *   <li>若 {@link SearchOptions#rerank} 不为 {@code false}，调用
- *       {@code tryRerank} 重排</li>
+     *   <li>若 {@link SearchOptions#rerank} 不为 {@code false}，调用
+     *       {@code tryRerank} 重排</li>
      * </ol>
      *
      * @param indexName 索引/collection 名称，非空
@@ -57,7 +57,7 @@ public interface VectorSearchOperations {
      * @param options   检索调谐选项（filter、rerank、minScore、namespace 等），
      *                  {@code null} 视为默认空选项
      * @return 按相关性降序的 {@link VectorSearchResult} 列表，可能为空但不会为 {@code null}
-     * @throws IllegalArgumentException 当 {@code indexName} 或 {@code text} 为空时
+     * @throws IllegalArgumentException      当 {@code indexName} 或 {@code text} 为空时
      * @throws UnsupportedOperationException 当 filter 同时设了结构化和表达式，
      *                                       或 provider 缺少
      *                                       {@code VectorFilterCompiler} 时

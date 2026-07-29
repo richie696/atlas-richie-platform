@@ -17,10 +17,10 @@ package cn.richie696.component.messaging.enums.support;
 
 import cn.richie696.component.cache.config.CacheAutoConfiguration;
 import cn.richie696.component.cache.redis.config.base.RedisBaseAutoConfiguration;
+import cn.richie696.component.messaging.config.MessagingProperties;
 import cn.richie696.component.messaging.filter.datasource.impl.MemoryDatasourceHandlerImpl;
 import cn.richie696.component.messaging.filter.datasource.impl.RedisDatasourceHandlerImpl;
 import cn.richie696.component.messaging.filter.handler.impl.MessageHandlerServiceImpl;
-import cn.richie696.component.messaging.config.MessagingProperties;
 import cn.richie696.context.common.api.SpringContextHolder;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

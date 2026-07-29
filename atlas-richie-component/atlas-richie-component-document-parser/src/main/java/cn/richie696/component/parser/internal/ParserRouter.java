@@ -46,7 +46,9 @@ public final class ParserRouter {
                 "textFastPathParser must not be null");
     }
 
-    /** 便于非 Spring SPI 使用的构造器。 */
+    /**
+     * 便于非 Spring SPI 使用的构造器。
+     */
     public ParserRouter(TikaDocumentParser tikaParser, FesodDocumentParser fesodParser) {
         this(tikaParser, fesodParser, new TextFastPathParser());
     }
@@ -66,12 +68,11 @@ public final class ParserRouter {
             case XLSX, XLS, ODS -> fesodParser;
             case TXT, MD -> textFastPathParser;
             case PDF, DOCX, DOC, PPTX, PPT, ODT, ODP, RTF, HTML, XML -> tikaParser;
-            case UNKNOWN ->
-                    throw new FormatNotSupportedException(
-                            "unknown",
-                            "Document format could not be detected. "
-                                    + "Provide a file with a recognized extension or content type."
-                    );
+            case UNKNOWN -> throw new FormatNotSupportedException(
+                    "unknown",
+                    "Document format could not be detected. "
+                            + "Provide a file with a recognized extension or content type."
+            );
         };
     }
 }

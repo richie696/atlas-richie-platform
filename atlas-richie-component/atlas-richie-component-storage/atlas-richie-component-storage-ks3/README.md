@@ -2,14 +2,17 @@
 
 ## Overview
 
-`richie-component-storage-ks3` is the implementation of KSYUN Object Storage Service (KS3), built on the KSYUN KS3 SDK to deliver complete KS3 storage capabilities. KS3 is compatible with the AWS S3 API and supports multiple storage tiers, including Standard, Infrequent Access, and Archive.
+`richie-component-storage-ks3` is the implementation of KSYUN Object Storage Service (KS3), built on the KSYUN KS3 SDK
+to deliver complete KS3 storage capabilities. KS3 is compatible with the AWS S3 API and supports multiple storage tiers,
+including Standard, Infrequent Access, and Archive.
 
 ## Core Features
 
 - ✅ **S3 Compatible** - Compatible with the AWS S3 API
 - ✅ **Multiple Storage Tiers** - Standard, Infrequent Access, and Archive
 - ✅ **Resumable Upload** - Resumable upload support for large files
-- ✅ **Dual-Mode Architecture** - Supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to Spring Boot auto-configuration and non-Spring environments
+- ✅ **Dual-Mode Architecture** - Supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to
+  Spring Boot auto-configuration and non-Spring environments
 - ✅ **Auto-Configuration** - Spring Boot auto-configuration
 
 ## Dual-Mode Architecture
@@ -41,39 +44,43 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 ## StorageEngineProvider
 
-Each implementation package provides a `StorageEngineProvider` SPI implementation. `Ks3StorageEngineProvider` is responsible for:
+Each implementation package provides a `StorageEngineProvider` SPI implementation. `Ks3StorageEngineProvider` is
+responsible for:
 
-| Method | Description |
-|------|------|
-| `supportedEngineType()` | Returns `StorageEngineEnum.KSYUN_KS3` |
-| `create(properties)` | Creates an engine instance from configuration |
-| `validate(properties)` | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
-| `destroy(engine)` | Releases resources |
+| Method                  | Description                                                                       |
+|-------------------------|-----------------------------------------------------------------------------------|
+| `supportedEngineType()` | Returns `StorageEngineEnum.KSYUN_KS3`                                             |
+| `create(properties)`    | Creates an engine instance from configuration                                     |
+| `validate(properties)`  | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
+| `destroy(engine)`       | Releases resources                                                                |
 
-In auto mode, the Provider is registered as a Bean in `Ks3AutoConfiguration`. In manual mode, it is discovered by the Registry through SPI.
+In auto mode, the Provider is registered as a Bean in `Ks3AutoConfiguration`. In manual mode, it is discovered by the
+Registry through SPI.
 
 ## Config Validation
 
-Before the engine is created, the `ConfigValidation` utility validates the required parameters. If validation fails, an `IllegalArgumentException` is thrown:
+Before the engine is created, the `ConfigValidation` utility validates the required parameters. If validation fails, an
+`IllegalArgumentException` is thrown:
 
-| Parameter | Validation Rule |
-|------|---------|
-| endpoint | Non-empty |
-| accessKeyId | Non-empty |
-| accessKeySecret | Non-empty |
-| bucketName | Non-empty |
+| Parameter       | Validation Rule |
+|-----------------|-----------------|
+| endpoint        | Non-empty       |
+| accessKeyId     | Non-empty       |
+| accessKeySecret | Non-empty       |
+| bucketName      | Non-empty       |
 
 ## Direct Upload Policy
 
-The KS3 engine supports client-side direct upload to object storage through presigned URLs, reducing server-side traffic pressure:
+The KS3 engine supports client-side direct upload to object storage through presigned URLs, reducing server-side traffic
+pressure:
 
-| Field | Description |
-|------|------|
-| uploadUrl | Presigned upload URL |
-| method | HTTP method (PUT) |
-| headers | Signature headers |
-| expireAt | Policy expiration time |
-| success | Whether the policy is usable |
+| Field     | Description                  |
+|-----------|------------------------------|
+| uploadUrl | Presigned upload URL         |
+| method    | HTTP method (PUT)            |
+| headers   | Signature headers            |
+| expireAt  | Policy expiration time       |
+| success   | Whether the policy is usable |
 
 ```java
 DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
@@ -154,51 +161,51 @@ public class FileService {
 
 The main configuration differences between KSYUN KS3 and other cloud storage providers:
 
-| Configuration Item | KSYUN KS3 | AWS S3 | Alibaba Cloud OSS |
-|--------|-----------|--------|-----------|
-| **engine value** | `KSYUN_KS3` | `AWS_S3` | `ALIYUN_OSS` |
-| **endpoint format** | `ks3-cn-region.ksyuncs.com` | `s3.region.amazonaws.com` | `oss-cn-region.aliyuncs.com` |
-| **region format** | `cn-region` | `us-east-1` | `cn-region` |
+| Configuration Item   | KSYUN KS3                         | AWS S3                            | Alibaba Cloud OSS               |
+|----------------------|-----------------------------------|-----------------------------------|---------------------------------|
+| **engine value**     | `KSYUN_KS3`                       | `AWS_S3`                          | `ALIYUN_OSS`                    |
+| **endpoint format**  | `ks3-cn-region.ksyuncs.com`       | `s3.region.amazonaws.com`         | `oss-cn-region.aliyuncs.com`    |
+| **region format**    | `cn-region`                       | `us-east-1`                       | `cn-region`                     |
 | **Access key names** | Access Key ID / Secret Access Key | Access Key ID / Secret Access Key | AccessKey ID / AccessKey Secret |
-| **S3 compatibility** | ✅ Compatible | ✅ Native | ❌ Not compatible |
-| **Storage tiers** | 3 (Standard, IA, Archive) | 15+ | 4 |
+| **S3 compatibility** | ✅ Compatible                     | ✅ Native                         | ❌ Not compatible               |
+| **Storage tiers**    | 3 (Standard, IA, Archive)         | 15+                               | 4                               |
 
 ### endpoint Configuration
 
 KSYUN KS3 endpoint format:
 
 - **Standard format**: `ks3-cn-region.ksyuncs.com`
-  - Example: `ks3-cn-beijing.ksyuncs.com`
-  - Example: `ks3-cn-shanghai.ksyuncs.com`
-  - Example: `ks3-cn-guangzhou.ksyuncs.com`
+    - Example: `ks3-cn-beijing.ksyuncs.com`
+    - Example: `ks3-cn-shanghai.ksyuncs.com`
+    - Example: `ks3-cn-guangzhou.ksyuncs.com`
 
 - **Internal endpoint**: `ks3-cn-region-internal.ksyuncs.com`
-  - Suitable for same-region KEC access, no traffic fees
-  - Example: `ks3-cn-beijing-internal.ksyuncs.com`
+    - Suitable for same-region KEC access, no traffic fees
+    - Example: `ks3-cn-beijing-internal.ksyuncs.com`
 
 ### region Configuration
 
 Regions supported by KSYUN KS3:
 
-| Region | Code |
-|------|------|
-| Beijing | `cn-beijing` |
-| Shanghai | `cn-shanghai` |
+| Region    | Code           |
+|-----------|----------------|
+| Beijing   | `cn-beijing`   |
+| Shanghai  | `cn-shanghai`  |
 | Guangzhou | `cn-guangzhou` |
-| Hangzhou | `cn-hangzhou` |
-| Hong Kong | `cn-hongkong` |
-| Russia | `ru-moscow` |
+| Hangzhou  | `cn-hangzhou`  |
+| Hong Kong | `cn-hongkong`  |
+| Russia    | `ru-moscow`    |
 | Singapore | `ap-singapore` |
 
 ### Storage Tiers
 
 Storage tiers supported by KSYUN KS3:
 
-| Storage Tier | Description | Suitable Scenario |
-|---------|------|---------|
-| `STANDARD` | Standard storage | Frequently accessed data |
+| Storage Tier  | Description               | Suitable Scenario                                           |
+|---------------|---------------------------|-------------------------------------------------------------|
+| `STANDARD`    | Standard storage          | Frequently accessed data                                    |
 | `STANDARD_IA` | Infrequent access storage | Data that is not accessed often but requires fast retrieval |
-| `ARCHIVE` | Archive storage | Long-term retention, rarely accessed data |
+| `ARCHIVE`     | Archive storage           | Long-term retention, rarely accessed data                   |
 
 ### Access Credentials
 
@@ -209,7 +216,7 @@ KSYUN KS3 uses Access Key ID and Secret Access Key for authentication:
 3. Create a user and grant KS3 access permissions
 4. Create access keys
 
-> **Security Tips**: 
+> **Security Tips**:
 > - Use IAM sub-users and follow the principle of least privilege
 > - Do not commit access keys to source control
 > - Use environment variables or a secrets management service
@@ -250,33 +257,35 @@ platform:
 ## Best Practices
 
 1. **Region Selection**
-   - Choose the region closest to your users to minimize latency
-   - Consider data compliance requirements
+    - Choose the region closest to your users to minimize latency
+    - Consider data compliance requirements
 
 2. **Storage Tier Selection**
-   - Frequent access: `STANDARD`
-   - Occasional access: `STANDARD_IA`
-   - Long-term archiving: `ARCHIVE`
+    - Frequent access: `STANDARD`
+    - Occasional access: `STANDARD_IA`
+    - Long-term archiving: `ARCHIVE`
 
 3. **Access Credential Management**
-   - Use IAM sub-users and follow the principle of least privilege
-   - Use environment variables or a secrets management service
-   - Rotate access keys regularly
+    - Use IAM sub-users and follow the principle of least privilege
+    - Use environment variables or a secrets management service
+    - Rotate access keys regularly
 
 4. **Cost Optimization**
-   - Use lifecycle policies to automatically transition storage tiers
-   - Delete unnecessary objects
-   - Use the internal endpoint to avoid traffic fees
+    - Use lifecycle policies to automatically transition storage tiers
+    - Delete unnecessary objects
+    - Use the internal endpoint to avoid traffic fees
 
 ## FAQ
 
 ### Q: What is the difference between KS3 and AWS S3?
 
-A: KS3 is an S3-compatible object storage service. Its API is essentially the same as S3, but storage tiers and supported features differ slightly.
+A: KS3 is an S3-compatible object storage service. Its API is essentially the same as S3, but storage tiers and
+supported features differ slightly.
 
 ### Q: How do I migrate from S3 to KS3?
 
-A: Because the API is compatible, you only need to change the endpoint and access credentials; the code essentially remains unchanged.
+A: Because the API is compatible, you only need to change the endpoint and access credentials; the code essentially
+remains unchanged.
 
 ### Q: Does it support custom domains?
 

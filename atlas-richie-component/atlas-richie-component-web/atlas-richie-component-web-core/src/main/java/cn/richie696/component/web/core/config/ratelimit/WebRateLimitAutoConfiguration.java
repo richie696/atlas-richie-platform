@@ -101,9 +101,9 @@ public class WebRateLimitAutoConfiguration {
     @ConditionalOnProperty(prefix = "platform.component.web.circuit-breaker", name = "enabled",
             havingValue = "true", matchIfMissing = true)
     public CircuitBreakerInterceptor circuitBreakerInterceptor(CircuitBreakerRegistry registry,
-                                                              CircuitBreakerProperties properties,
-                                                              ObjectProvider<KeyResolver> keyResolverProvider,
-                                                              WebMetrics webMetrics) {
+                                                               CircuitBreakerProperties properties,
+                                                               ObjectProvider<KeyResolver> keyResolverProvider,
+                                                               WebMetrics webMetrics) {
         KeyResolver keyResolver = keyResolverProvider.getIfAvailable();
         if (keyResolver == null) {
             log.warn("WebRateLimitAutoConfiguration: no KeyResolver bean available — CircuitBreakerInterceptor will deny all. Define @Bean KeyResolver or set platform.component.web.circuit-breaker.enabled=false.");

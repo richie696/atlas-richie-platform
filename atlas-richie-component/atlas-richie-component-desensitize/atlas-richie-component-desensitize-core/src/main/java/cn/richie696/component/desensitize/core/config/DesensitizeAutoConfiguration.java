@@ -41,8 +41,8 @@ import java.util.List;
  * 脱敏 Core 自动配置。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @AutoConfiguration
 @EnableConfigurationProperties(DesensitizeProperties.class)
@@ -100,11 +100,11 @@ public class DesensitizeAutoConfiguration {
     /**
      * 注册统一脱敏服务。
      *
-     * @param properties 脱敏配置
-     * @param strategyRegistry 策略注册表
-     * @param ruleRegistry 字段规则注册表
+     * @param properties           脱敏配置
+     * @param strategyRegistry     策略注册表
+     * @param ruleRegistry         字段规则注册表
      * @param sensitiveKeyRegistry 敏感键注册表
-     * @param permissionEvaluator 权限评估器
+     * @param permissionEvaluator  权限评估器
      * @return 脱敏服务实现
      */
     @Bean
@@ -122,7 +122,7 @@ public class DesensitizeAutoConfiguration {
      * 注册日志安全序列化器。
      *
      * @param maskingService 脱敏服务
-     * @param ruleRegistry 字段规则注册表
+     * @param ruleRegistry   字段规则注册表
      * @return 安全序列化器
      */
     @Bean
@@ -146,7 +146,7 @@ public class DesensitizeAutoConfiguration {
     /**
      * 注册静态工具初始化器。
      *
-     * @param maskingService 脱敏服务
+     * @param maskingService       脱敏服务
      * @param objectMaskingService 对象脱敏服务
      * @return 初始化器
      */
@@ -161,15 +161,15 @@ public class DesensitizeAutoConfiguration {
      * 初始化 {@link DesensitizeUtils} 静态门面。
      *
      * @author @richie696
-     * @since 1.0.0
      * @version 1.0
+     * @since 1.0.0
      */
     public static class DesensitizeUtilsInitializer {
 
         /**
          * 构造时绑定静态工具委托。
          *
-         * @param maskingService 脱敏服务
+         * @param maskingService       脱敏服务
          * @param objectMaskingService 对象脱敏服务
          */
         public DesensitizeUtilsInitializer(MaskingService maskingService, ObjectMaskingService objectMaskingService) {

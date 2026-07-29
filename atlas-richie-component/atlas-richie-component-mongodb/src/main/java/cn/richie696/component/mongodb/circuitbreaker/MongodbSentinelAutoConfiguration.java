@@ -89,7 +89,8 @@ public class MongodbSentinelAutoConfiguration {
             if (source == null || source.isEmpty()) {
                 return new ArrayList<>();
             }
-            return JSON.parseObject(source, new TypeReference<List<DegradeRule>>() {});
+            return JSON.parseObject(source, new TypeReference<List<DegradeRule>>() {
+            });
         }
     }
 }

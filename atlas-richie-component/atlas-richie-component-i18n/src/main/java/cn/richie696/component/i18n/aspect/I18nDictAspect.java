@@ -15,11 +15,11 @@
  */
 package cn.richie696.component.i18n.aspect;
 
-import cn.richie696.contract.model.ApiResult;
 import cn.richie696.component.i18n.annotation.I18nControl;
 import cn.richie696.component.i18n.annotation.I18nDict;
 import cn.richie696.component.i18n.config.I18nProperties;
 import cn.richie696.component.i18n.handle.I18nHandle;
+import cn.richie696.contract.model.ApiResult;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +33,9 @@ import org.springframework.core.annotation.Order;
 
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 国际化字典自动注入切面
@@ -47,7 +50,9 @@ import java.util.*;
 @RequiredArgsConstructor
 public class I18nDictAspect {
 
-    /** 国际化配置，用于判断是否仅对带 I18nControl 的 Controller 做字典注入 */
+    /**
+     * 国际化配置，用于判断是否仅对带 I18nControl 的 Controller 做字典注入
+     */
     private final I18nProperties i18nProperties;
 
     /**
@@ -109,8 +114,8 @@ public class I18nDictAspect {
     /**
      * 对单个结果对象中带 @I18nDict 的字段进行扫描，并将字典 key 收集到 i18nDictMap。
      *
-     * @param result       控制器返回的数据（VO 或分页 records 中的元素）
-     * @param i18nDictMap  用于收集字典 key -> locale -> 文案 的 Map
+     * @param result      控制器返回的数据（VO 或分页 records 中的元素）
+     * @param i18nDictMap 用于收集字典 key -> locale -> 文案 的 Map
      */
     private void injectDict(Object result, Map<String, Map<String, String>> i18nDictMap) {
         if (result == null) {

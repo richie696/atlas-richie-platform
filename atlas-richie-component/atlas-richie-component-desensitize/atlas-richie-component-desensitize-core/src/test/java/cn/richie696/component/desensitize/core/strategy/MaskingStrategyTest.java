@@ -18,15 +18,15 @@ package cn.richie696.component.desensitize.core.strategy;
 import cn.richie696.component.desensitize.core.model.MaskRule;
 import cn.richie696.component.desensitize.core.model.MaskType;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
  * MaskingStrategyTest 测试类。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 class MaskingStrategyTest {
 

@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.tenant.strategy;
 
-import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.component.tenant.exception.TenantErrorCode;
+import cn.richie696.contract.exception.BusinessException;
 
 import java.util.regex.Pattern;
 
@@ -78,24 +78,24 @@ public final class NamingConventionValidator {
     public static void validate(String name, String label) {
         if (name == null) {
             throw new BusinessException(
-                TenantErrorCode.TENANT_INVALID_NAMING.name(),
-                label + " must not be null");
+                    TenantErrorCode.TENANT_INVALID_NAMING.name(),
+                    label + " must not be null");
         }
         if (name.length() < MIN_LENGTH) {
             throw new BusinessException(
-                TenantErrorCode.TENANT_INVALID_NAMING.name(),
-                label + " must not be empty");
+                    TenantErrorCode.TENANT_INVALID_NAMING.name(),
+                    label + " must not be empty");
         }
         if (name.length() > MAX_LENGTH) {
             throw new BusinessException(
-                TenantErrorCode.TENANT_INVALID_NAMING.name(),
-                label + " exceeds max length " + MAX_LENGTH + ": actual=" + name.length());
+                    TenantErrorCode.TENANT_INVALID_NAMING.name(),
+                    label + " exceeds max length " + MAX_LENGTH + ": actual=" + name.length());
         }
         if (!IDENTIFIER_PATTERN.matcher(name).matches()) {
             throw new BusinessException(
-                TenantErrorCode.TENANT_INVALID_NAMING.name(),
-                label + " validation failed: '" + name + "'. Must match ^[A-Za-z_][A-Za-z0-9_]*$ "
-                    + "(letters/digits/underscore, must start with letter or underscore)");
+                    TenantErrorCode.TENANT_INVALID_NAMING.name(),
+                    label + " validation failed: '" + name + "'. Must match ^[A-Za-z_][A-Za-z0-9_]*$ "
+                            + "(letters/digits/underscore, must start with letter or underscore)");
         }
     }
 }

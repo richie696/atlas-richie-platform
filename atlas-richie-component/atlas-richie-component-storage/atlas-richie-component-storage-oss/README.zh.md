@@ -10,7 +10,8 @@
 - ✅ **图片处理** - 支持图片缩放、裁剪、水印等
 - ✅ **多种存储类型** - 支持标准、低频、归档、冷归档
 - ✅ **断点续传** - 支持大文件断点续传
-- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非 Spring 环境
+- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非
+  Spring 环境
 - ✅ **自动配置** - Spring Boot 自动配置
 
 ## 双模式架构
@@ -45,13 +46,13 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 每个实现包都提供 `StorageEngineProvider` SPI 实现，`OssStorageEngineProvider` 负责：
 
-| 方法 | 说明 |
-|------|------|
-| `supportedEngineType()` | 返回 `StorageEngineEnum.ALIYUN_OSS` |
-| `create(properties)` | 从配置创建 `OSSClient` 和 `OssStorageEngine` |
-| `validate(properties)` | 校验 endpoint / accessKeyId / accessKeySecret / bucketName 必填 |
-| `afterPropertiesSet(engine)` | 手动模式下触发桶探测与前缀校验 |
-| `destroy(engine)` | 释放客户端资源 |
+| 方法                         | 说明                                                            |
+|------------------------------|-----------------------------------------------------------------|
+| `supportedEngineType()`      | 返回 `StorageEngineEnum.ALIYUN_OSS`                             |
+| `create(properties)`         | 从配置创建 `OSSClient` 和 `OssStorageEngine`                    |
+| `validate(properties)`       | 校验 endpoint / accessKeyId / accessKeySecret / bucketName 必填 |
+| `afterPropertiesSet(engine)` | 手动模式下触发桶探测与前缀校验                                  |
+| `destroy(engine)`            | 释放客户端资源                                                  |
 
 自动模式下 Provider 在 `OssAutoConfiguration` 中注册为 Bean；手动模式下由 Registry 通过 SPI 发现。
 
@@ -59,24 +60,24 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 引擎创建前会通过 `ConfigValidation` 工具类校验必填参数，校验失败时抛出 `IllegalArgumentException`：
 
-| 参数 | 校验规则 |
-|------|---------|
-| endpoint | 非空 |
-| accessKeyId | 非空 |
-| accessKeySecret | 非空 |
-| bucketName | 非空 |
+| 参数            | 校验规则 |
+|-----------------|----------|
+| endpoint        | 非空     |
+| accessKeyId     | 非空     |
+| accessKeySecret | 非空     |
+| bucketName      | 非空     |
 
 ## 直传策略 (DirectUploadPolicy)
 
 阿里云 OSS 引擎支持通过预签名 URL 实现客户端直传到对象存储，减少服务端流量压力：
 
-| 字段 | 说明 |
-|------|------|
-| uploadUrl | 预签名上传 URL |
-| method | HTTP 方法（PUT） |
-| headers | 签名头信息 |
-| expireAt | 策略过期时间 |
-| success | 策略是否可用 |
+| 字段      | 说明             |
+|-----------|------------------|
+| uploadUrl | 预签名上传 URL   |
+| method    | HTTP 方法（PUT） |
+| headers   | 签名头信息       |
+| expireAt  | 策略过期时间     |
+| success   | 策略是否可用     |
 
 ```java
 DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
@@ -169,27 +170,27 @@ public class FileService {
 
 阿里云 OSS 与其他云存储的主要配置差异：
 
-| 配置项 | 阿里云 OSS | AWS S3 | 腾讯云 COS |
-|--------|-----------|--------|-----------|
-| **engine 值** | `ALIYUN_OSS` | `AWS_S3` | `TENCENT_COS` |
-| **endpoint 格式** | `oss-cn-region.aliyuncs.com` | `s3.region.amazonaws.com` | `cos.region.myqcloud.com` |
-| **region 格式** | `cn-region` | `us-east-1` | `ap-region` |
-| **访问密钥名称** | AccessKey ID / AccessKey Secret | Access Key ID / Secret Access Key | SecretId / SecretKey |
-| **存储类型** | 4种（标准、低频、归档、冷归档） | 15+种 | 10+种 |
-| **图片处理** | ✅ 支持（内置） | ❌ 不支持 | ✅ 支持（需配置） |
+| 配置项            | 阿里云 OSS                      | AWS S3                            | 腾讯云 COS                |
+|-------------------|---------------------------------|-----------------------------------|---------------------------|
+| **engine 值**     | `ALIYUN_OSS`                    | `AWS_S3`                          | `TENCENT_COS`             |
+| **endpoint 格式** | `oss-cn-region.aliyuncs.com`    | `s3.region.amazonaws.com`         | `cos.region.myqcloud.com` |
+| **region 格式**   | `cn-region`                     | `us-east-1`                       | `ap-region`               |
+| **访问密钥名称**  | AccessKey ID / AccessKey Secret | Access Key ID / Secret Access Key | SecretId / SecretKey      |
+| **存储类型**      | 4种（标准、低频、归档、冷归档） | 15+种                             | 10+种                     |
+| **图片处理**      | ✅ 支持（内置）                 | ❌ 不支持                         | ✅ 支持（需配置）         |
 
 ### endpoint 配置
 
 阿里云 OSS 的 endpoint 格式：
 
 - **标准格式**: `oss-cn-region.aliyuncs.com`
-  - 示例：`oss-cn-hangzhou.aliyuncs.com`
-  - 示例：`oss-cn-beijing.aliyuncs.com`
-  - 示例：`oss-cn-shanghai.aliyuncs.com`
+    - 示例：`oss-cn-hangzhou.aliyuncs.com`
+    - 示例：`oss-cn-beijing.aliyuncs.com`
+    - 示例：`oss-cn-shanghai.aliyuncs.com`
 
 - **内网 endpoint**: `oss-cn-region-internal.aliyuncs.com`
-  - 适用于同区域 ECS 访问，免流量费
-  - 示例：`oss-cn-hangzhou-internal.aliyuncs.com`
+    - 适用于同区域 ECS 访问，免流量费
+    - 示例：`oss-cn-hangzhou-internal.aliyuncs.com`
 
 - **自定义域名**: 可在 OSS 控制台绑定自定义域名
 
@@ -197,38 +198,38 @@ public class FileService {
 
 阿里云 OSS 支持的区域：
 
-| 区域 | 代码 |
-|------|------|
-| 华东1（杭州） | `cn-hangzhou` |
-| 华东2（上海） | `cn-shanghai` |
-| 华北1（青岛） | `cn-qingdao` |
-| 华北2（北京） | `cn-beijing` |
-| 华北3（张家口） | `cn-zhangjiakou` |
-| 华北5（呼和浩特） | `cn-huhehaote` |
-| 华南1（深圳） | `cn-shenzhen` |
-| 华南2（河源） | `cn-heyuan` |
-| 西南1（成都） | `cn-chengdu` |
-| 中国（香港） | `cn-hongkong` |
-| 美国（硅谷） | `us-west-1` |
-| 美国（弗吉尼亚） | `us-east-1` |
-| 新加坡 | `ap-southeast-1` |
-| 澳大利亚（悉尼） | `ap-southeast-2` |
-| 日本（东京） | `ap-northeast-1` |
-| 印度（孟买） | `ap-south-1` |
-| 德国（法兰克福） | `eu-central-1` |
-| 英国（伦敦） | `eu-west-1` |
-| 阿联酋（迪拜） | `me-east-1` |
+| 区域              | 代码             |
+|-------------------|------------------|
+| 华东1（杭州）     | `cn-hangzhou`    |
+| 华东2（上海）     | `cn-shanghai`    |
+| 华北1（青岛）     | `cn-qingdao`     |
+| 华北2（北京）     | `cn-beijing`     |
+| 华北3（张家口）   | `cn-zhangjiakou` |
+| 华北5（呼和浩特） | `cn-huhehaote`   |
+| 华南1（深圳）     | `cn-shenzhen`    |
+| 华南2（河源）     | `cn-heyuan`      |
+| 西南1（成都）     | `cn-chengdu`     |
+| 中国（香港）      | `cn-hongkong`    |
+| 美国（硅谷）      | `us-west-1`      |
+| 美国（弗吉尼亚）  | `us-east-1`      |
+| 新加坡            | `ap-southeast-1` |
+| 澳大利亚（悉尼）  | `ap-southeast-2` |
+| 日本（东京）      | `ap-northeast-1` |
+| 印度（孟买）      | `ap-south-1`     |
+| 德国（法兰克福）  | `eu-central-1`   |
+| 英国（伦敦）      | `eu-west-1`      |
+| 阿联酋（迪拜）    | `me-east-1`      |
 
 ### 存储类型
 
 阿里云 OSS 支持的存储类型：
 
-| 存储类型 | 说明 | 适用场景 |
-|---------|------|---------|
-| `STANDARD` | 标准存储 | 频繁访问的数据 |
-| `STANDARD_IA` | 低频访问存储 | 不经常访问但需要快速访问的数据 |
-| `ARCHIVE` | 归档存储 | 长期保存、很少访问的数据 |
-| `COLD_ARCHIVE` | 冷归档存储 | 极长期保存、极少访问的数据 |
+| 存储类型       | 说明         | 适用场景                       |
+|----------------|--------------|--------------------------------|
+| `STANDARD`     | 标准存储     | 频繁访问的数据                 |
+| `STANDARD_IA`  | 低频访问存储 | 不经常访问但需要快速访问的数据 |
+| `ARCHIVE`      | 归档存储     | 长期保存、很少访问的数据       |
+| `COLD_ARCHIVE` | 冷归档存储   | 极长期保存、极少访问的数据     |
 
 ### 访问凭证
 
@@ -239,7 +240,7 @@ public class FileService {
 3. 创建用户并分配 OSS 访问权限
 4. 创建访问密钥
 
-> **安全提示**: 
+> **安全提示**:
 > - 使用 RAM 子账号，遵循最小权限原则
 > - 不要将访问密钥提交到代码仓库
 > - 使用环境变量或密钥管理服务（如阿里云 KMS）
@@ -293,28 +294,28 @@ platform:
 ## 最佳实践
 
 1. **区域选择**
-   - 选择距离用户最近的区域，降低延迟
-   - 考虑数据合规要求
+    - 选择距离用户最近的区域，降低延迟
+    - 考虑数据合规要求
 
 2. **存储类型选择**
-   - 频繁访问：`STANDARD`
-   - 偶尔访问：`STANDARD_IA`
-   - 长期归档：`ARCHIVE` 或 `COLD_ARCHIVE`
+    - 频繁访问：`STANDARD`
+    - 偶尔访问：`STANDARD_IA`
+    - 长期归档：`ARCHIVE` 或 `COLD_ARCHIVE`
 
 3. **图片处理**
-   - 上传时进行格式转换和压缩，节省存储空间
-   - 使用 CDN 加速图片访问
-   - 根据设备类型返回不同尺寸的图片
+    - 上传时进行格式转换和压缩，节省存储空间
+    - 使用 CDN 加速图片访问
+    - 根据设备类型返回不同尺寸的图片
 
 4. **访问凭证管理**
-   - 使用 RAM 子账号，遵循最小权限原则
-   - 使用环境变量或密钥管理服务
-   - 定期轮换访问密钥
+    - 使用 RAM 子账号，遵循最小权限原则
+    - 使用环境变量或密钥管理服务
+    - 定期轮换访问密钥
 
 5. **成本优化**
-   - 使用生命周期策略自动转换存储类型
-   - 删除不需要的对象
-   - 使用内网 endpoint 免流量费
+    - 使用生命周期策略自动转换存储类型
+    - 删除不需要的对象
+    - 使用内网 endpoint 免流量费
 
 ## 常见问题
 

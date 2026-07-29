@@ -24,7 +24,7 @@ package cn.richie696.component.ocr.paddle.protocol;
  * 仅向 Python 包装脚本传输必要数据。
  *
  * @param imageData 待识别的图片原始字节
- * @param lang PaddleOCR 语言码，例如 {@code ch}（简体中文）、{@code en}（英文）、{@code japan}（日文）
+ * @param lang      PaddleOCR 语言码，例如 {@code ch}（简体中文）、{@code en}（英文）、{@code japan}（日文）
  */
 public record PaddleRequest(
         byte[] imageData,

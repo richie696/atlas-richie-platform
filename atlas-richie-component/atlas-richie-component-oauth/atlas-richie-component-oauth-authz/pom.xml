@@ -56,7 +56,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/oauth/authz/**</include>
+                        <include>cn/richie696/component/oauth/authz/**</include>
                     </includes>
                     <excludes>
                         <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>
@@ -70,7 +70,7 @@
                         <configuration combine.self="override">
                             <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
                             <includes>
-                                <include>com/richie/component/oauth/authz/**</include>
+                                <include>cn/richie696/component/oauth/authz/**</include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

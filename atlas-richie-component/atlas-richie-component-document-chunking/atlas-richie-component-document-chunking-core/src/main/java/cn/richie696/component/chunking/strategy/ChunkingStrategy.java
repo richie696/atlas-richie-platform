@@ -12,13 +12,19 @@ import cn.richie696.component.chunking.model.ChunkingRule;
  */
 public interface ChunkingStrategy {
 
-    /** 本实现负责的规则类型。 */
+    /**
+     * 本实现负责的规则类型。
+     */
     ChunkingRule.Strategy type();
 
-    /** 对非空文本执行切片。输入校验与空文本短路由调用方统一完成。 */
+    /**
+     * 对非空文本执行切片。输入校验与空文本短路由调用方统一完成。
+     */
     ChunkingResult chunk(String content, ChunkingRule rule);
 
-    /** 语义切片依赖全文，不能用于增量流式会话。 */
+    /**
+     * 语义切片依赖全文，不能用于增量流式会话。
+     */
     default boolean supportsStreaming() {
         return true;
     }

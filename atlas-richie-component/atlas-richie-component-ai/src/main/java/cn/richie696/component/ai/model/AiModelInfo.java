@@ -293,8 +293,8 @@ public class AiModelInfo {
      * 创建不可用的模型信息对象
      * 用于表示一个暂时无法使用的AI模型
      *
-     * @param name        模型名称
-     * @param provider    提供商
+     * @param name         模型名称
+     * @param provider     提供商
      * @param errorMessage 错误信息，说明为什么模型不可用
      * @return 设置为不可用的模型信息对象
      */

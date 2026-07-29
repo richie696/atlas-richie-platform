@@ -19,11 +19,7 @@ import cn.richie696.component.concurrency.algorithm.CircuitBreaker;
 import cn.richie696.component.concurrency.registry.CircuitBreakerRegistry;
 import cn.richie696.component.web.core.config.ratelimit.CircuitBreakerProperties;
 import cn.richie696.component.web.core.metrics.WebMetrics;
-import cn.richie696.component.web.core.spi.KeyResolver;
-import cn.richie696.component.web.core.spi.WebFilterDecision;
-import cn.richie696.component.web.core.spi.WebInterceptor;
-import cn.richie696.component.web.core.spi.WebInterceptorChain;
-import cn.richie696.component.web.core.spi.WebRequestContext;
+import cn.richie696.component.web.core.spi.*;
 import cn.richie696.contract.model.ApiResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
@@ -82,7 +78,9 @@ public class CircuitBreakerInterceptor implements WebInterceptor, Ordered {
      */
     public static final String ATTR_KEY = "circuit_breaker.key";
 
-    /** 未命中 routes 时的默认 pattern 标记。 */
+    /**
+     * 未命中 routes 时的默认 pattern 标记。
+     */
     static final String GLOBAL_PATTERN = "__global__";
 
     private static final AntPathMatcher ANT_MATCHER = new AntPathMatcher();
@@ -217,5 +215,6 @@ public class CircuitBreakerInterceptor implements WebInterceptor, Ordered {
      * route 匹配结果：{@code pattern} 始终非 null（未匹配时为 {@link #GLOBAL_PATTERN}）；
      * {@code routeConfig} 在未匹配或 routes 为空时为 null。
      */
-    record MatchedRoute(String pattern, CircuitBreakerProperties.RouteConfig routeConfig) {}
+    record MatchedRoute(String pattern, CircuitBreakerProperties.RouteConfig routeConfig) {
+    }
 }

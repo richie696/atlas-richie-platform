@@ -27,6 +27,7 @@ import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import java.util.List;
 
 /**
  * TenantTaskDecoratorBeanPostProcessor 单元测试。

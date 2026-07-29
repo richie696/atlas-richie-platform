@@ -74,11 +74,28 @@ class DegradeStrategyTest {
     @Test
     void strategy_anonymousImpl() {
         DegradeStrategy s = new DegradeStrategy() {
-            @Override public String name() { return "test"; }
-            @Override public Set<Trigger> triggers() { return Set.of(Trigger.EXCEPTION); }
-            @Override public int order() { return 0; }
-            @Override public boolean matches(Trigger t) { return t == Trigger.EXCEPTION; }
-            @Override public DegradeResult build(Trigger t, Map<String, Object> ctx) {
+            @Override
+            public String name() {
+                return "test";
+            }
+
+            @Override
+            public Set<Trigger> triggers() {
+                return Set.of(Trigger.EXCEPTION);
+            }
+
+            @Override
+            public int order() {
+                return 0;
+            }
+
+            @Override
+            public boolean matches(Trigger t) {
+                return t == Trigger.EXCEPTION;
+            }
+
+            @Override
+            public DegradeResult build(Trigger t, Map<String, Object> ctx) {
                 return DegradeResult.of(500, "{\"error\":\"exception\"}", "test");
             }
         };

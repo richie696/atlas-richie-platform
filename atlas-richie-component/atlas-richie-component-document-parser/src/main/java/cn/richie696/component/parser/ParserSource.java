@@ -29,10 +29,12 @@ import java.net.URL;
  * @version 1.0
  * @since 2026-07-08
  */
-public sealed interface ParserSource
+public sealed
+
+interface ParserSource
         permits ParserSource.FileSource,
-                ParserSource.StreamSource,
-                ParserSource.UrlSource {
+        ParserSource.StreamSource,
+        ParserSource.UrlSource {
 
     /**
      * 源名称提示,用于日志与错误消息。
@@ -42,7 +44,9 @@ public sealed interface ParserSource
     /**
      * 本地文件源。
      */
-    record FileSource(File file) implements ParserSource {
+    record FileSource(File file) implements
+
+    ParserSource {
         public FileSource {
             if (file == null) {
                 throw new IllegalArgumentException("file must not be null");
@@ -50,7 +54,7 @@ public sealed interface ParserSource
         }
 
         @Override
-        public String nameHint() {
+        public String nameHint () {
             return file.getName();
         }
     }
@@ -62,7 +66,9 @@ public sealed interface ParserSource
      * @param in       输入流
      * @param nameHint 文件名提示(用于扩展名嗅探,例如 "report.docx")
      */
-    record StreamSource(InputStream in, String nameHint) implements ParserSource {
+    record StreamSource(InputStream in, String nameHint) implements
+
+    ParserSource {
         public StreamSource {
             if (in == null) {
                 throw new IllegalArgumentException("in must not be null");
@@ -76,7 +82,9 @@ public sealed interface ParserSource
     /**
      * HTTPS URL 源(配合 {@link UrlFetchPolicy} 三道防线)。
      */
-    record UrlSource(URL url, UrlFetchPolicy policy) implements ParserSource {
+    record UrlSource(URL url, UrlFetchPolicy policy) implements
+
+    ParserSource {
         public UrlSource {
             if (url == null) {
                 throw new IllegalArgumentException("url must not be null");
@@ -87,7 +95,7 @@ public sealed interface ParserSource
         }
 
         @Override
-        public String nameHint() {
+        public String nameHint () {
             return url.toString();
         }
     }

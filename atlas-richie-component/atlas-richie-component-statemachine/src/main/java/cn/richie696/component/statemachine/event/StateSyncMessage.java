@@ -31,12 +31,13 @@ import cn.richie696.contract.model.BaseStreamMessage;
  * <p>
  * <strong>同步键格式：</strong>{stateMachineName}:{businessId}（不包含 Redis key 前缀）
  *
- *
  * @param syncKey 同步键，格式：stateMachineName:businessId
  * @author richie696
  * @since 1.0.0
  */
-public record StateSyncMessage(String syncKey) implements BaseStreamMessage {
+public record StateSyncMessage(String syncKey) implements
+
+BaseStreamMessage {
 
     /**
      * 构建状态同步消息
@@ -48,7 +49,7 @@ public record StateSyncMessage(String syncKey) implements BaseStreamMessage {
      * @param businessId 业务对象ID（Long 类型）
      * @return 状态同步消息
      */
-    public static StateSyncMessage of(String stateMachineName, Long businessId) {
+    public static StateSyncMessage of (String stateMachineName, Long businessId){
         String syncKey = StateSyncKey.build(stateMachineName, businessId);
         return new StateSyncMessage(syncKey);
     }
@@ -58,7 +59,7 @@ public record StateSyncMessage(String syncKey) implements BaseStreamMessage {
      *
      * @return 解析结果，包含 stateMachineName 和 businessId
      */
-    public StateSyncKey parse() {
+    public StateSyncKey parse () {
         return StateSyncKey.parse(syncKey);
     }
 
@@ -67,7 +68,7 @@ public record StateSyncMessage(String syncKey) implements BaseStreamMessage {
      *
      * @return 状态机名称
      */
-    public String getStateMachineName() {
+    public String getStateMachineName () {
         StateSyncKey key = parse();
         return key != null ? key.stateMachineName() : null;
     }
@@ -77,7 +78,7 @@ public record StateSyncMessage(String syncKey) implements BaseStreamMessage {
      *
      * @return 业务对象ID（Long 类型）
      */
-    public Long getBusinessId() {
+    public Long getBusinessId () {
         StateSyncKey key = parse();
         return key != null ? key.businessId() : null;
     }

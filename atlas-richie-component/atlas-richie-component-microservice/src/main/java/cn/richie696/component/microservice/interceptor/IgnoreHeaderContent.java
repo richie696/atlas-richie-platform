@@ -27,7 +27,9 @@ import java.util.Set;
  */
 public interface IgnoreHeaderContent {
 
-    /** 透传时需忽略的 Header 名称（小写） */
+    /**
+     * 透传时需忽略的 Header 名称（小写）
+     */
     Set<String> IGNORE_HEADERS = Set.of(
             "host",
             "content-type",

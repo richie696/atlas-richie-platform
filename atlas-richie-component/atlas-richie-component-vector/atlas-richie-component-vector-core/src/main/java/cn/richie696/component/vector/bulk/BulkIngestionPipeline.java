@@ -110,7 +110,6 @@ public final class BulkIngestionPipeline {
      *                  关联单条记录。
      * @param record    原始 {@link VectorRecord}，包含待入库的完整业务字段。
      * @param embedding 已计算好的稠密向量；构造时与读取时都会被克隆，避免线程间共享底层缓冲区。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
@@ -133,7 +132,7 @@ public final class BulkIngestionPipeline {
          * @return 克隆后的 embedding 数组
          */
         @Override
-        public float[] embedding() {
+        public float[] embedding () {
             return embedding.clone();
         }
     }
@@ -191,7 +190,7 @@ public final class BulkIngestionPipeline {
      * @throws IllegalArgumentException 当 {@code indexName} 为空或任一调度参数非正时
      */
     public Flux<BulkOperationEvent> execute(String indexName, Flux<VectorRecord> records,
-                                             VectorProperties.Bulk options) {
+                                            VectorProperties.Bulk options) {
         requireIndexName(indexName);
         if (records == null) {
             return Flux.error(new IllegalArgumentException("records 不能为空"));
@@ -234,9 +233,9 @@ public final class BulkIngestionPipeline {
     }
 
     private Flux<BulkOperationEvent> executeStoreManaged(String indexName, Flux<VectorRecord> records,
-                                                          String operationId, Instant startedAt, Counters counters,
-                                                          int writeBatchSize, int writeConcurrency,
-                                                          long writeFlushIntervalMs) {
+                                                         String operationId, Instant startedAt, Counters counters,
+                                                         int writeBatchSize, int writeConcurrency,
+                                                         long writeFlushIntervalMs) {
         Flux<Signal> signals = records.map(record -> {
             try {
                 return new PreparedSignal(new PreparedVectorRecord(prepare(record, indexName), record));
@@ -252,20 +251,20 @@ public final class BulkIngestionPipeline {
                         .flatMap(chunk -> persistStoreManaged(operationId, indexName, chunk, counters), writeConcurrency)
         ));
         return Flux.concat(Mono.just(new BulkOperationEvent.Started(operationId, BulkOperationType.UPSERT, startedAt)),
-                work, Mono.fromSupplier(() -> completed(operationId, BulkOperationType.UPSERT, startedAt, counters)))
+                        work, Mono.fromSupplier(() -> completed(operationId, BulkOperationType.UPSERT, startedAt, counters)))
                 .cast(BulkOperationEvent.class);
     }
 
     private Flux<BulkOperationEvent> persistStoreManaged(String operationId, String indexName,
-                                                          List<PreparedVectorRecord> chunk, Counters counters) {
+                                                         List<PreparedVectorRecord> chunk, Counters counters) {
         List<BulkOperationEvent> started = chunk.stream().map(item -> new BulkOperationEvent.ItemStarted(
-                operationId, item.itemId(), BulkProcessingStage.PERSISTING, Instant.now()))
+                        operationId, item.itemId(), BulkProcessingStage.PERSISTING, Instant.now()))
                 .map(BulkOperationEvent.class::cast).toList();
         return Flux.concat(Flux.fromIterable(started), Mono.fromRunnable(() -> {
                     counters.writeRequests.incrementAndGet();
                     storeManagedWriter.write(indexName, chunk.stream().map(PreparedVectorRecord::record).toList());
                 }).thenMany(Flux.fromIterable(chunk).map(item -> succeeded(operationId,
-                        new EmbeddedVectorRecord(item.itemId(), item.record(), new float[]{0.0f}), counters))
+                                new EmbeddedVectorRecord(item.itemId(), item.record(), new float[]{0.0f}), counters))
                         .cast(BulkOperationEvent.class))
                 .onErrorResume(error -> Flux.fromIterable(chunk).map(item -> failed(operationId, item.itemId(),
                         BulkProcessingStage.PERSISTING, error, counters))));
@@ -294,7 +293,7 @@ public final class BulkIngestionPipeline {
     }
 
     private Flux<BulkOperationEvent> persist(String operationId, String indexName,
-                                              List<EmbeddedVectorRecord> chunk, Counters counters) {
+                                             List<EmbeddedVectorRecord> chunk, Counters counters) {
         List<BulkOperationEvent> started = chunk.stream()
                 .map(item -> new BulkOperationEvent.ItemStarted(operationId, item.itemId(),
                         BulkProcessingStage.PERSISTING, Instant.now()))
@@ -315,20 +314,20 @@ public final class BulkIngestionPipeline {
     }
 
     private BulkOperationEvent.ItemSucceeded succeeded(String operationId, EmbeddedVectorRecord item,
-                                                        Counters counters) {
+                                                       Counters counters) {
         counters.succeeded.incrementAndGet();
         return new BulkOperationEvent.ItemSucceeded(operationId, item.itemId(), item.record().getId(), Instant.now());
     }
 
     private BulkOperationEvent.ItemFailed failed(String operationId, String itemId,
-                                                  BulkProcessingStage stage, Throwable error, Counters counters) {
+                                                 BulkProcessingStage stage, Throwable error, Counters counters) {
         counters.failed.incrementAndGet();
         return new BulkOperationEvent.ItemFailed(operationId, itemId, stage,
                 error.getClass().getSimpleName(), safeMessage(error), Instant.now());
     }
 
     private BulkOperationEvent.Completed completed(String operationId, BulkOperationType type,
-                                                    Instant startedAt, Counters counters) {
+                                                   Instant startedAt, Counters counters) {
         return new BulkOperationEvent.Completed(operationId, type,
                 new BulkOperationSummary(counters.succeeded.get(), counters.failed.get(),
                         Duration.between(startedAt, Instant.now()), counters.embeddingRequests.get(),
@@ -381,16 +380,24 @@ public final class BulkIngestionPipeline {
         return value;
     }
 
-    private sealed interface Signal permits EventSignal, EmbeddedSignal, PreparedSignal {
+    private sealed
+
+    interface Signal permits EventSignal, EmbeddedSignal, PreparedSignal {
     }
 
-    private record EventSignal(BulkOperationEvent event) implements Signal {
+    private record EventSignal(BulkOperationEvent event) implements
+
+    Signal {
     }
 
-    private record EmbeddedSignal(EmbeddedVectorRecord record) implements Signal {
+    private record EmbeddedSignal(EmbeddedVectorRecord record) implements
+
+    Signal {
     }
 
-    private record PreparedSignal(PreparedVectorRecord record) implements Signal {
+    private record PreparedSignal(PreparedVectorRecord record) implements
+
+    Signal {
     }
 
     private record PreparedVectorRecord(String itemId, VectorRecord record) {

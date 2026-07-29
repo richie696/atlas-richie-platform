@@ -17,17 +17,11 @@ package cn.richie696.component.vector.service.impl;
 
 import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.config.VectorProperties;
-import cn.richie696.component.vector.model.IndexInfo;
-import cn.richie696.component.vector.model.IndexStatus;
-import cn.richie696.component.vector.model.Modality;
-import cn.richie696.component.vector.model.SearchOptions;
-import cn.richie696.component.vector.model.VectorContent;
-import cn.richie696.component.vector.model.VectorRecord;
-import cn.richie696.component.vector.model.VectorSearchResult;
+import cn.richie696.component.vector.model.*;
 import cn.richie696.component.vector.service.VectorHybridSearchOperations;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
-import cn.richie696.component.vector.service.VectorService;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
+import cn.richie696.component.vector.service.VectorService;
 import io.weaviate.client.WeaviateClient;
 import io.weaviate.client.base.Result;
 import io.weaviate.client.v1.batch.model.BatchDeleteResponse;
@@ -67,9 +61,9 @@ import java.util.Map;
  * 选择替代方案。</p>
  *
  * @author richie696
- * @since 2025-07-01
  * @see VectorService
  * @see AbstractVectorService
+ * @since 2025-07-01
  */
 @Slf4j
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "weaviate")
@@ -87,8 +81,8 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      * {@code EmbeddingModel} 用于文本向量化，{@link WeaviateClient} 提供
      * GraphQL 与 schema 层级的低级 API 访问。</p>
      *
-     * @param rerankService 可选的重排序服务，由父类用于文本检索后置重排
-     * @param vectorStore   Spring AI 的 {@code VectorStore}，承载 add/delete 等基础写入
+     * @param rerankService  可选的重排序服务，由父类用于文本检索后置重排
+     * @param vectorStore    Spring AI 的 {@code VectorStore}，承载 add/delete 等基础写入
      * @param embeddingModel 文本嵌入模型，用于将文本转换为向量
      * @param weaviateClient Weaviate 客户端，提供 GraphQL 与 schema 原生操作
      */
@@ -735,7 +729,9 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      * @return 始终为 {@code true}
      */
     @Override
-    protected boolean usesStoreManagedEmbedding() { return true; }
+    protected boolean usesStoreManagedEmbedding() {
+        return true;
+    }
 
     /**
      * 将 {@link VectorRecord} 列表转换为 Spring AI 文档后写入 Weaviate class。

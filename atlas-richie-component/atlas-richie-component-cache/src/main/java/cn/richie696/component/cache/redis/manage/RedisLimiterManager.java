@@ -41,7 +41,9 @@ import org.springframework.stereotype.Component;
 @ConditionalOnExpression("'${platform.cache.cache-provider:REDIS}'=='REDIS'")
 public class RedisLimiterManager implements LimiterOps {
 
-    /** Redis 模板（JSON 序列化） */
+    /**
+     * Redis 模板（JSON 序列化）
+     */
     @Qualifier("jsonTemplate")
     private final MultiRedisTemplate<Object> redisTemplate;
 
@@ -50,12 +52,11 @@ public class RedisLimiterManager implements LimiterOps {
     /**
      * 滑动窗口限流，判断是否允许通过。
      *
-     * @param key         限流标识键
-     * @param maxCount    窗口内最大请求数
+     * @param key           限流标识键
+     * @param maxCount      窗口内最大请求数
      * @param windowSeconds 窗口时间（秒）
      * @return true表示允许通过，false表示被限流
-     * @apiNote
-     * <p><b>时间复杂度</b>：由 Lua 脚本决定，封装为 {@link RedisComplexityTier#SCRIPT_OR_UNKNOWN}。
+     * @apiNote <p><b>时间复杂度</b>：由 Lua 脚本决定，封装为 {@link RedisComplexityTier#SCRIPT_OR_UNKNOWN}。
      * <p><b>严禁</b>：在脚本未审计前将复杂 Lua 用于 toC 极高 QPS 且无本地合并。
      * <p><b>可用</b>：接口防刷、网关限流等。
      * <p><b>注意</b>：每次调用一次网络往返；热 key 与脚本耗时需监控（见 perf 阈值）。
@@ -67,8 +68,8 @@ public class RedisLimiterManager implements LimiterOps {
                     " then return 0 else redis.call('incr', KEYS[1])" +
                     " redis.call('expire', KEYS[1], ARGV[2]) return 1 end";
             Long result = redisTemplate.execute((RedisCallback<Long>) conn ->
-                conn.scriptingCommands().eval(lua.getBytes(), ReturnType.INTEGER, 1,
-                        key.getBytes(), String.valueOf(maxCount).getBytes(), String.valueOf(windowSeconds).getBytes())
+                    conn.scriptingCommands().eval(lua.getBytes(), ReturnType.INTEGER, 1,
+                            key.getBytes(), String.valueOf(maxCount).getBytes(), String.valueOf(windowSeconds).getBytes())
             );
             return result != null && result == 1;
         });

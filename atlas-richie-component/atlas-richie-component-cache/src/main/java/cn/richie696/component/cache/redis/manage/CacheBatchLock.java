@@ -35,7 +35,9 @@ import java.util.Set;
  */
 public class CacheBatchLock implements Closeable {
 
-    /** 本批锁包含的 CacheLock 集合 */
+    /**
+     * 本批锁包含的 CacheLock 集合
+     */
     private final Set<CacheLock> cacheLocks;
 
     /**

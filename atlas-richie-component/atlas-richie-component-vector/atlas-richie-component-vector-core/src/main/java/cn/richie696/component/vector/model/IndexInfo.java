@@ -53,7 +53,6 @@ import java.util.Map;
  *                      写入），调用方应留意。
  * @param metadata      额外元信息（replicas / shards / distance params / 压缩配置等），
  *                      provider 特有字段的归一化容器；跨 provider 行为不应假设这些字段都存在。
- *
  * @author richie696
  * @version 1.0
  * @since 2025-07-01

@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.net.URL;
 
 /**
  * 二维码管理器
@@ -78,24 +79,24 @@ public class QrCodeManager {
      *   <li>{@code period}：时间窗口（秒），默认：30</li>
      * </ul>
      *
-     * @param tenantId 租户ID（可选，如果未启用租户则为 null）
-     * @param userId   用户ID（必填，业务系统User表的主键ID）
-     * @param secret   密钥（明文，Base32编码）
-     * @param issuer   发行方名称（必填，例如 "Atlas Richie Platform"），实际在 URL 中会追加用户登录名，格式：{@code {issuer} {username}}
+     * @param tenantId  租户ID（可选，如果未启用租户则为 null）
+     * @param userId    用户ID（必填，业务系统User表的主键ID）
+     * @param secret    密钥（明文，Base32编码）
+     * @param issuer    发行方名称（必填，例如 "Atlas Richie Platform"），实际在 URL 中会追加用户登录名，格式：{@code {issuer} {username}}
      * @param algorithm HMAC算法（SHA1、SHA256、SHA512，如果为null或空则从配置中读取默认算法）
-     * @param digits   验证码位数（6 或 8，默认：6）
-     * @param period   时间窗口（秒，默认：30）
+     * @param digits    验证码位数（6 或 8，默认：6）
+     * @param period    时间窗口（秒，默认：30）
      * @return TOTP二维码URL（otpauth://格式，已URL编码）
      * @throws RuntimeException 如果URL编码失败
      */
     public String generateQrCodeUrl(String tenantId, String userId, String username, String secret, String issuer,
-                                     String algorithm, int digits, int period) {
+                                    String algorithm, int digits, int period) {
         // otpauth://totp/{label}?secret={secret}&issuer={issuer}&algorithm={algorithm}&digits={digits}&period={period}
         // 如果启用租户，label可以包含租户信息，否则只使用userId
         String label = (tenantId != null && !tenantId.isEmpty())
-            ? "%s:%s:%s".formatted(issuer, tenantId, userId)
-            : "%s:%s".formatted(issuer, userId);
-        
+                ? "%s:%s:%s".formatted(issuer, tenantId, userId)
+                : "%s:%s".formatted(issuer, userId);
+
         // issuer 后面追加用户登录名，格式：{issuer} {username}
         String issuerWithUsername = "%s %s".formatted(issuer, username);
 
@@ -109,7 +110,7 @@ public class QrCodeManager {
             // 构建完整的 otpauth:// URL，包含所有必需参数
             // 注意：所有参数值都需要 URL 编码，包括 secret
             String qrCodeUrl = "otpauth://totp/%s?secret=%s&issuer=%s&algorithm=%s&digits=%d&period=%d".formatted(
-                encodedLabel, encodedSecret, encodedIssuer, normalizedAlgorithm, digits, period);
+                    encodedLabel, encodedSecret, encodedIssuer, normalizedAlgorithm, digits, period);
 
             // 输出生成的二维码 URL 到控制台，便于调试
             log.info("=== MFA 二维码 URL（调试信息）===");

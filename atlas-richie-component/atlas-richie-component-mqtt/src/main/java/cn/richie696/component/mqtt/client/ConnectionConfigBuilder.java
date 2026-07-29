@@ -15,11 +15,11 @@
  */
 package cn.richie696.component.mqtt.client;
 
-import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.component.mqtt.beans.WillMessage;
 import cn.richie696.component.mqtt.config.Mqtt5Config;
 import cn.richie696.component.mqtt.config.MqttClientProperties;
 import cn.richie696.component.mqtt.enums.NetworkTypeEnum;
+import cn.richie696.context.utils.data.JsonUtils;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperty;
@@ -111,7 +111,7 @@ public class ConnectionConfigBuilder {
     /**
      * 配置遗嘱消息
      *
-     * @param builder 连接构建器
+     * @param builder     连接构建器
      * @param mqtt5Config MQTT 5.0配置
      */
     private void configureWillMessage(Mqtt5ConnectBuilder builder, Mqtt5Config mqtt5Config) {

@@ -95,16 +95,16 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/statemachine/model/**</include>
-                        <include>com/richie/component/statemachine/context/**</include>
-                        <include>com/richie/component/statemachine/engine/StateTransitionResult*</include>
-                        <include>com/richie/component/statemachine/rule/**</include>
-                        <include>com/richie/component/statemachine/registry/**</include>
-                        <include>com/richie/component/statemachine/storage/StateHistory*</include>
-                        <include>com/richie/component/statemachine/storage/StateMachineKeyBuilder*</include>
-                        <include>com/richie/component/statemachine/StateMachineName*</include>
-                        <include>com/richie/component/statemachine/StateMachineEvent*</include>
-                        <include>com/richie/component/statemachine/config/StatePersistenceModeResolver*</include>
+                        <include>cn/richie696/component/statemachine/model/**</include>
+                        <include>cn/richie696/component/statemachine/context/**</include>
+                        <include>cn/richie696/component/statemachine/engine/StateTransitionResult*</include>
+                        <include>cn/richie696/component/statemachine/rule/**</include>
+                        <include>cn/richie696/component/statemachine/registry/**</include>
+                        <include>cn/richie696/component/statemachine/storage/StateHistory*</include>
+                        <include>cn/richie696/component/statemachine/storage/StateMachineKeyBuilder*</include>
+                        <include>cn/richie696/component/statemachine/StateMachineName*</include>
+                        <include>cn/richie696/component/statemachine/StateMachineEvent*</include>
+                        <include>cn/richie696/component/statemachine/config/StatePersistenceModeResolver*</include>
                     </includes>
                     <rules>
                         <rule>
@@ -124,16 +124,17 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/statemachine/model/**</include>
-                                <include>com/richie/component/statemachine/context/**</include>
-                                <include>com/richie/component/statemachine/engine/StateTransitionResult*</include>
-                                <include>com/richie/component/statemachine/rule/**</include>
-                                <include>com/richie/component/statemachine/registry/**</include>
-                                <include>com/richie/component/statemachine/storage/StateHistory*</include>
-                                <include>com/richie/component/statemachine/storage/StateMachineKeyBuilder*</include>
-                                <include>com/richie/component/statemachine/StateMachineName*</include>
-                                <include>com/richie/component/statemachine/StateMachineEvent*</include>
-                                <include>com/richie/component/statemachine/config/StatePersistenceModeResolver*</include>
+                                <include>cn/richie696/component/statemachine/model/**</include>
+                                <include>cn/richie696/component/statemachine/context/**</include>
+                                <include>cn/richie696/component/statemachine/engine/StateTransitionResult*</include>
+                                <include>cn/richie696/component/statemachine/rule/**</include>
+                                <include>cn/richie696/component/statemachine/registry/**</include>
+                                <include>cn/richie696/component/statemachine/storage/StateHistory*</include>
+                                <include>cn/richie696/component/statemachine/storage/StateMachineKeyBuilder*</include>
+                                <include>cn/richie696/component/statemachine/StateMachineName*</include>
+                                <include>cn/richie696/component/statemachine/StateMachineEvent*</include>
+                                <include>cn/richie696/component/statemachine/config/StatePersistenceModeResolver*
+                                </include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

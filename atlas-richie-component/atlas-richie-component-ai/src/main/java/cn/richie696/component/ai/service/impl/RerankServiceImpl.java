@@ -141,8 +141,8 @@ public class RerankServiceImpl implements RerankService {
      * 这里以入参 {@code documents} 为权威，回填到 {@link RerankResult#getDocument()} 字段，
      * 调用方可以直接消费，无需再做一次列表对位。
      *
-     * @param results    厂商返回的重排序结果（可能为 {@code null}）
-     * @param documents  原始候选文档列表
+     * @param results   厂商返回的重排序结果（可能为 {@code null}）
+     * @param documents 原始候选文档列表
      * @return 回填后的重排序结果；当入参为 {@code null} 时返回空列表
      */
     private List<RerankResult> enrichDocuments(List<RerankResult> results, List<String> documents) {

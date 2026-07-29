@@ -22,11 +22,11 @@ import java.util.Objects;
 /**
  * 识别结果 —— 业务侧只依赖此模型，不接触 Provider 私有 schema。
  *
- * @param text 整体识别文本（必传, 由 Provider 拼接各 block 文本得到）
- * @param blocks 块级定位结果（{@code null} 视为空列表）
+ * @param text              整体识别文本（必传, 由 Provider 拼接各 block 文本得到）
+ * @param blocks            块级定位结果（{@code null} 视为空列表）
  * @param overallConfidence 整体置信度（取值区间 [0.0, 1.0]）
- * @param pageMetadata 页面级元数据（如 PDF 页码 / 旋转角度 / Vendor 私有字段, {@code null} 视为空 Map）
- * @param latencyMs 识别耗时（毫秒）
+ * @param pageMetadata      页面级元数据（如 PDF 页码 / 旋转角度 / Vendor 私有字段, {@code null} 视为空 Map）
+ * @param latencyMs         识别耗时（毫秒）
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-10
@@ -43,8 +43,8 @@ public record OcrResult(String text, List<OcrBlock> blocks, float overallConfide
      * @param pageMetadata      页面级元数据（如 PDF 页码 / 旋转角度 / Vendor 私有字段, {@code null} 视为空 Map）
      * @param latencyMs         识别耗时（毫秒）
      */
-    public OcrResult(String text, List<OcrBlock> blocks, float overallConfidence,
-                     Map<String, Object> pageMetadata, long latencyMs) {
+    public OcrResult(String text, List < OcrBlock > blocks, float overallConfidence,
+    Map<String, Object> pageMetadata, long latencyMs){
         this.text = Objects.requireNonNull(text, "text");
         this.blocks = blocks != null ? List.copyOf(blocks) : List.of();
         this.overallConfidence = overallConfidence;
@@ -58,7 +58,7 @@ public record OcrResult(String text, List<OcrBlock> blocks, float overallConfide
      * @return 整体识别文本（拼接所有 block 文本得到）
      */
     @Override
-    public String text() {
+    public String text () {
         return text;
     }
 
@@ -66,7 +66,7 @@ public record OcrResult(String text, List<OcrBlock> blocks, float overallConfide
      * @return 块级定位结果（按版面顺序）
      */
     @Override
-    public List<OcrBlock> blocks() {
+    public List<OcrBlock> blocks () {
         return blocks;
     }
 
@@ -74,7 +74,7 @@ public record OcrResult(String text, List<OcrBlock> blocks, float overallConfide
      * @return 整体置信度
      */
     @Override
-    public float overallConfidence() {
+    public float overallConfidence () {
         return overallConfidence;
     }
 
@@ -82,7 +82,7 @@ public record OcrResult(String text, List<OcrBlock> blocks, float overallConfide
      * @return 页面级元数据
      */
     @Override
-    public Map<String, Object> pageMetadata() {
+    public Map<String, Object> pageMetadata () {
         return pageMetadata;
     }
 
@@ -90,7 +90,7 @@ public record OcrResult(String text, List<OcrBlock> blocks, float overallConfide
      * @return 识别耗时（毫秒）
      */
     @Override
-    public long latencyMs() {
+    public long latencyMs () {
         return latencyMs;
     }
 
@@ -100,7 +100,7 @@ public record OcrResult(String text, List<OcrBlock> blocks, float overallConfide
      * @param threshold 置信度阈值
      * @return 过滤后的文本
      */
-    public String highConfidenceText(float threshold) {
+    public String highConfidenceText ( float threshold){
         StringBuilder sb = new StringBuilder();
         for (OcrBlock block : blocks) {
             if (block.confidence() >= threshold) {
@@ -116,12 +116,12 @@ public record OcrResult(String text, List<OcrBlock> blocks, float overallConfide
      *
      * @return 过滤后的文本
      */
-    public String highConfidenceText() {
+    public String highConfidenceText () {
         return highConfidenceText(OcrOptions.DEFAULT_CONFIDENCE_THRESHOLD);
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals (Object o){
         if (this == o) return true;
         if (!(o instanceof OcrResult that)) return false;
         return Float.compare(overallConfidence, that.overallConfidence) == 0
@@ -131,12 +131,12 @@ public record OcrResult(String text, List<OcrBlock> blocks, float overallConfide
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode () {
         return Objects.hash(text, blocks, overallConfidence, latencyMs);
     }
 
     @Override
-    public String toString() {
+    public String toString () {
         return "OcrResult{text.length=" + text.length()
                 + ", blocks=" + blocks.size()
                 + ", confidence=" + overallConfidence

@@ -26,7 +26,6 @@ import java.util.List;
  * 表示一个完整的状态机定义，包含所有状态和转换规则。
  * 从配置文件（YAML/JSON）加载后转换为该模型对象。
  *
- *
  * @author richie696
  * @since 1.0.0
  */
@@ -112,7 +111,6 @@ public class StateMachineModel {
      * <p>
      * 根据状态名称查找对应的状态对象。
      *
-     *
      * @param stateName 状态名称
      * @return 状态对象，如果不存在则返回 null
      */
@@ -128,7 +126,6 @@ public class StateMachineModel {
      * <p>
      * 根据源状态和事件查找匹配的转换规则。
      * 如果 event 为 null，则返回所有从指定状态出发的转换。
-     *
      *
      * @param fromState 源状态
      * @param event     触发事件，如果为 null 则匹配所有事件

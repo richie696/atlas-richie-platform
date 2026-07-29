@@ -15,18 +15,11 @@
  */
 package cn.richie696.component.http.restclient;
 
-import cn.richie696.component.http.core.AsyncCallback;
-import cn.richie696.component.http.core.HttpClient;
-import cn.richie696.component.http.core.HttpMethod;
-import cn.richie696.component.http.core.HttpRequest;
-import cn.richie696.component.http.core.HttpRequestSupport;
-import cn.richie696.component.http.core.HttpResponse;
-import cn.richie696.component.http.core.SseConnection;
-import cn.richie696.component.http.core.SseListener;
-import tools.jackson.core.type.TypeReference;
+import cn.richie696.component.http.core.*;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClient;
+import tools.jackson.core.type.TypeReference;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -38,8 +31,8 @@ import java.util.concurrent.CompletableFuture;
  * 基于 Spring {@link RestClient} 的 {@link HttpClient} 实现。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class RestClientAdapter implements HttpClient {
 
@@ -52,17 +45,34 @@ public class RestClientAdapter implements HttpClient {
     }
 
     @Override
-    public HttpRequest get(String url) { return new HttpRequest(url, HttpMethod.GET, null).client(this); }
+    public HttpRequest get(String url) {
+        return new HttpRequest(url, HttpMethod.GET, null).client(this);
+    }
+
     @Override
-    public HttpRequest post(String url, Object body) { return new HttpRequest(url, HttpMethod.POST, body).client(this); }
+    public HttpRequest post(String url, Object body) {
+        return new HttpRequest(url, HttpMethod.POST, body).client(this);
+    }
+
     @Override
-    public HttpRequest post(String url) { return new HttpRequest(url, HttpMethod.POST, null).client(this); }
+    public HttpRequest post(String url) {
+        return new HttpRequest(url, HttpMethod.POST, null).client(this);
+    }
+
     @Override
-    public HttpRequest put(String url, Object body) { return new HttpRequest(url, HttpMethod.PUT, body).client(this); }
+    public HttpRequest put(String url, Object body) {
+        return new HttpRequest(url, HttpMethod.PUT, body).client(this);
+    }
+
     @Override
-    public HttpRequest delete(String url, Object body) { return new HttpRequest(url, HttpMethod.DELETE, body).client(this); }
+    public HttpRequest delete(String url, Object body) {
+        return new HttpRequest(url, HttpMethod.DELETE, body).client(this);
+    }
+
     @Override
-    public HttpRequest delete(String url) { return new HttpRequest(url, HttpMethod.DELETE, null).client(this); }
+    public HttpRequest delete(String url) {
+        return new HttpRequest(url, HttpMethod.DELETE, null).client(this);
+    }
 
     @Override
     public HttpResponse execute(HttpRequest request) {

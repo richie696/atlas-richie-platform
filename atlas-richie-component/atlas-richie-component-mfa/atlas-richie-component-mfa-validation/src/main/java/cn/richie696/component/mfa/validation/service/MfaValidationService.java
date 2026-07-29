@@ -48,7 +48,7 @@ public interface MfaValidationService {
      *   <li>检查账户是否已锁定</li>
      * </ol>
      *
-     * @param userId 用户ID（必填）
+     * @param userId   用户ID（必填）
      * @param tenantId 租户ID（可选，如果未启用租户则为 null）
      * @param deviceId 设备ID（可选，用于检查可信设备）
      * @return MFA 验证结果
@@ -72,9 +72,9 @@ public interface MfaValidationService {
      *   <li>标记验证码已使用（如果验证成功）</li>
      * </ol>
      *
-     * @param userId 用户ID（必填）
+     * @param userId   用户ID（必填）
      * @param tenantId 租户ID（可选）
-     * @param mfaCode TOTP 验证码（6位数字）
+     * @param mfaCode  TOTP 验证码（6位数字）
      * @return MFA 验证结果
      * <ul>
      *   <li>如果 {@code success = true}：验证通过，网关可签发正式访问 Token</li>
@@ -88,7 +88,7 @@ public interface MfaValidationService {
      * <p>
      * 用于在登录时判断是否可以跳过 MFA 验证。
      *
-     * @param userId 用户ID（必填）
+     * @param userId   用户ID（必填）
      * @param tenantId 租户ID（可选）
      * @param deviceId 设备ID（必填）
      * @return MFA 验证结果

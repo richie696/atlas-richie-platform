@@ -1,6 +1,8 @@
 # Atlas Richie HTTP HttpClient5 (atlas-richie-component-http-httpclient5)
 
-Apache HttpClient 5 provider for the http component. Implements `HttpClient` on top of `org.apache.httpcomponents.client5:httpclient5` with classic-style `PoolingHttpClientConnectionManager`. Selected by `platform.component.http.provider=http_client_5`.
+Apache HttpClient 5 provider for the http component. Implements `HttpClient` on top of
+`org.apache.httpcomponents.client5:httpclient5` with classic-style `PoolingHttpClientConnectionManager`. Selected by
+`platform.component.http.provider=http_client_5`.
 
 This module has the **most mature multipart support** of all four providers.
 
@@ -9,40 +11,42 @@ This module has the **most mature multipart support** of all four providers.
 ## 📖 Contents
 
 - [📖 Overview](#📖-overview)
-  - [What this module gives you](#what-this-module-gives-you)
+    - [What this module gives you](#what-this-module-gives-you)
 - [🏗️ Architecture & Module Layout](#🏗️-architecture-&-module-layout)
 - [🚀 Quick Start](#🚀-quick-start)
 - [🔧 Core Capabilities](#🔧-core-capabilities)
-  - [1. `HttpClient5Adapter` — `HttpClient` implementation](#1-httpclient5adapter-—-httpclient-implementation)
-  - [2. `HttpClient5SseClient` — SSE](#2-httpclient5sseclient-—-sse)
+    - [1. `HttpClient5Adapter` — `HttpClient` implementation](#1-httpclient5adapter-—-httpclient-implementation)
+    - [2. `HttpClient5SseClient` — SSE](#2-httpclient5sseclient-—-sse)
 - [⚙️ Configuration Reference](#⚙️-configuration-reference)
 - [🎯 Best Practices](#🎯-best-practices)
 - [⚠️ Known Limitations](#⚠️-known-limitations)
 - [❓ FAQ](#❓-faq)
-  - [Q1: Why isn't `strictSsl=false` working?](#q1-why-isnt-strictssl=false-working?)
-  - [Q2: Why is my call hitting `ConnectTimeoutException` instead of my expected `responseTimeout`?](#q2-why-is-my-call-hitting-connecttimeoutexception-instead-of-my-expected-responsetimeout?)
-  - [Q3: How do I attach request / response interceptors?](#q3-how-do-i-attach-request-/-response-interceptors?)
-  - [Q4: Can I share this client across threads safely?](#q4-can-i-share-this-client-across-threads-safely?)
-  - [Q5: What HTTP/2 options exist?](#q5-what-http/2-options-exist?)
+    - [Q1: Why isn't `strictSsl=false` working?](#q1-why-isnt-strictssl=false-working?)
+    - [Q2: Why is my call hitting `ConnectTimeoutException` instead of my expected
+      `responseTimeout`?](#q2-why-is-my-call-hitting-connecttimeoutexception-instead-of-my-expected-responsetimeout?)
+    - [Q3: How do I attach request / response interceptors?](#q3-how-do-i-attach-request-/-response-interceptors?)
+    - [Q4: Can I share this client across threads safely?](#q4-can-i-share-this-client-across-threads-safely?)
+    - [Q5: What HTTP/2 options exist?](#q5-what-http/2-options-exist?)
 - [📚 Further Reading](#📚-further-reading)
+
 ---
 
 ## 📖 Overview
 
-| Item | Value |
-|------|-------|
-| **Artifact** | `cn.richie696.component:atlas-richie-component-http-httpclient5` |
-| **Selected by** | `platform.component.http.provider=<provider>` |
+| Item            | Value                                                            |
+|-----------------|------------------------------------------------------------------|
+| **Artifact**    | `cn.richie696.component:atlas-richie-component-http-httpclient5` |
+| **Selected by** | `platform.component.http.provider=<provider>`                    |
 
 ### What this module gives you
 
-| ✅ Provides | ❌ Does not provide |
-|------------|---------------------|
-| `CloseableHttpClient` singleton with `PoolingHttpClientConnectionManager` | HTTP/2 multiplexed streams |
-| TLS 1.2 / 1.3 by default | `strictSsl=false` trust-all toggle |
-| Per-route and total connection pool caps | Body streaming — body is loaded as `byte[]` |
-| **Most mature multipart** (uses `MultipartEntityBuilder`) | `BodyHandlers`-style async — wraps sync via `runAsync` |
-| Per-request `RequestConfig` (timeout override) | |
+| ✅ Provides                                                               | ❌ Does not provide                                    |
+|---------------------------------------------------------------------------|--------------------------------------------------------|
+| `CloseableHttpClient` singleton with `PoolingHttpClientConnectionManager` | HTTP/2 multiplexed streams                             |
+| TLS 1.2 / 1.3 by default                                                  | `strictSsl=false` trust-all toggle                     |
+| Per-route and total connection pool caps                                  | Body streaming — body is loaded as `byte[]`            |
+| **Most mature multipart** (uses `MultipartEntityBuilder`)                 | `BodyHandlers`-style async — wraps sync via `runAsync` |
+| Per-request `RequestConfig` (timeout override)                            |                                                        |
 
 ## 🏗️ Architecture & Module Layout
 
@@ -97,25 +101,27 @@ See [`http-core`](../atlas-richie-component-http-core/README.md) for the full AP
 
 ### 1. `HttpClient5Adapter` — `HttpClient` implementation
 
-- `execute(HttpRequest)` uses `httpClient.execute(buildRequest, this::buildResponse)` — response handler releases connection back to pool.
+- `execute(HttpRequest)` uses `httpClient.execute(buildRequest, this::buildResponse)` — response handler releases
+  connection back to pool.
 - `bodyEntity(HttpRequest)`:
-  - If `multipart` is set → `MultipartEntityBuilder.addBinaryBody(...)`.
-  - Otherwise → `ByteArrayEntity` with configured mime; **does not** set entity when body is empty.
+    - If `multipart` is set → `MultipartEntityBuilder.addBinaryBody(...)`.
+    - Otherwise → `ByteArrayEntity` with configured mime; **does not** set entity when body is empty.
 
 ### 2. `HttpClient5SseClient` — SSE
 
-Reads response body as stream and feeds each line into [`SseLineParser`](../atlas-richie-component-http-core/README.md#4-sse--full-protocol-support).
+Reads response body as stream and feeds each line into [
+`SseLineParser`](../atlas-richie-component-http-core/README.md#4-sse--full-protocol-support).
 
 ## ⚙️ Configuration Reference
 
 All under `platform.component.http.httpclient5.*`:
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `connection-request-timeout` / `-time-unit` | int / TimeUnit | `5` / `SECONDS` | Wait time for a connection from the pool |
-| `response-timeout` / `-time-unit` | int / TimeUnit | `5` / `SECONDS` | Wait for server response after request is sent |
-| `max-total` | int | `250` | Total connections in the pool |
-| `default-max-per-route` | int | `25` | Per-route connection cap |
+| Property                                    | Type           | Default         | Description                                    |
+|---------------------------------------------|----------------|-----------------|------------------------------------------------|
+| `connection-request-timeout` / `-time-unit` | int / TimeUnit | `5` / `SECONDS` | Wait time for a connection from the pool       |
+| `response-timeout` / `-time-unit`           | int / TimeUnit | `5` / `SECONDS` | Wait for server response after request is sent |
+| `max-total`                                 | int            | `250`           | Total connections in the pool                  |
+| `default-max-per-route`                     | int            | `25`            | Per-route connection cap                       |
 
 ## 🎯 Best Practices
 
@@ -127,12 +133,12 @@ All under `platform.component.http.httpclient5.*`:
 
 ## ⚠️ Known Limitations
 
-| Limitation | Impact | Workaround |
-|------------|--------|------------|
-| **No HTTP/2 by default** | Single connection per host; head-of-line blocking | Set `HttpVersionPolicy.NEGOTIATE` via custom `HttpClientBuilder` |
-| **Async wraps sync via `runAsync(ForkJoinPool.commonPool())`** | Blocks a common-pool thread | For pure async, switch to OkHttp / JDK |
-| **Body loaded as `byte[]`** | Large downloads inflate memory | Wait for streaming API |
-| **`strictSsl=false` not honored** | Trust-all not auto-enabled | Configure trust-all on the underlying `HttpClientBuilder` |
+| Limitation                                                     | Impact                                            | Workaround                                                       |
+|----------------------------------------------------------------|---------------------------------------------------|------------------------------------------------------------------|
+| **No HTTP/2 by default**                                       | Single connection per host; head-of-line blocking | Set `HttpVersionPolicy.NEGOTIATE` via custom `HttpClientBuilder` |
+| **Async wraps sync via `runAsync(ForkJoinPool.commonPool())`** | Blocks a common-pool thread                       | For pure async, switch to OkHttp / JDK                           |
+| **Body loaded as `byte[]`**                                    | Large downloads inflate memory                    | Wait for streaming API                                           |
+| **`strictSsl=false` not honored**                              | Trust-all not auto-enabled                        | Configure trust-all on the underlying `HttpClientBuilder`        |
 
 ## ❓ FAQ
 
@@ -146,7 +152,8 @@ HttpClient5 distinguishes between *getting a connection from the pool* and *wait
 
 ### Q3: How do I attach request / response interceptors?
 
-Override the `CloseableHttpClient` bean with `@Primary` and call `.addInterceptorFirst(...)` / `.addInterceptorLast(...)`.
+Override the `CloseableHttpClient` bean with `@Primary` and call `.addInterceptorFirst(...)` /
+`.addInterceptorLast(...)`.
 
 ### Q4: Can I share this client across threads safely?
 
@@ -154,13 +161,15 @@ Yes — `CloseableHttpClient` is thread-safe.
 
 ### Q5: What HTTP/2 options exist?
 
-HttpClient5 supports HTTP/2 via `setVersionPolicy(HttpVersionPolicy.NEGOTIATE)` — but not default; switch providers if HTTP/2 is a hard requirement.
+HttpClient5 supports HTTP/2 via `setVersionPolicy(HttpVersionPolicy.NEGOTIATE)` — but not default; switch providers if
+HTTP/2 is a hard requirement.
 
 ## 📚 Further Reading
 
 - **Parent** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
 - **Core** — [`../atlas-richie-component-http-core/README.md`](../atlas-richie-component-http-core/README.md)
-- **Other providers** — [OkHttp](../atlas-richie-component-http-okhttp/README.md) · [HttpClient5](../atlas-richie-component-http-httpclient5/README.md) · [JDK](../atlas-richie-component-http-jdk/README.md) · [RestClient](../atlas-richie-component-http-restclient/README.md)
+- **Other
+  providers** — [OkHttp](../atlas-richie-component-http-okhttp/README.md) · [HttpClient5](../atlas-richie-component-http-httpclient5/README.md) · [JDK](../atlas-richie-component-http-jdk/README.md) · [RestClient](../atlas-richie-component-http-restclient/README.md)
 
 ---
 

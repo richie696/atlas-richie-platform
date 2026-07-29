@@ -20,6 +20,7 @@ import cn.richie696.component.mqtt.enums.DatasourceTypeEnum;
 import cn.richie696.component.mqtt.enums.ServerTypeEnum;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * MQTT客户端属性配置信息
@@ -77,6 +78,7 @@ public class MqttClientProperties {
     /**
      * MQTT 服务器配置
      */
+    @NestedConfigurationProperty
     private ServerInfo server;
 
     /**
@@ -102,6 +104,7 @@ public class MqttClientProperties {
     /**
      * MQTT 5.0 专用配置
      */
+    @NestedConfigurationProperty
     private Mqtt5Config mqtt5 = new Mqtt5Config();
 
     /**

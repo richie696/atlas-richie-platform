@@ -24,7 +24,7 @@
         SELECT *
         FROM mfa_trusted_device
         WHERE user_id = #{userId}
-          AND device_id = #{deviceId}
+        AND device_id = #{deviceId}
         <choose>
             <when test="tenantId != null and tenantId != ''">
                 AND tenant_id = #{tenantId}
@@ -92,7 +92,7 @@
         UPDATE mfa_trusted_device
         SET is_primary = 1
         WHERE user_id = #{userId}
-          AND device_id = #{deviceId}
+        AND device_id = #{deviceId}
         <choose>
             <when test="tenantId != null and tenantId != ''">
                 AND tenant_id = #{tenantId}

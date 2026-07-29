@@ -15,10 +15,11 @@
  */
 package cn.richie696.component.chunking;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import cn.richie696.component.chunking.model.Chunk;
+import cn.richie696.component.chunking.model.ChunkingResult;
 import cn.richie696.component.chunking.model.ChunkingRule;
 import cn.richie696.component.chunking.model.ChunkingRule.Strategy;
-import cn.richie696.component.chunking.model.ChunkingResult;
 import cn.richie696.component.chunking.spi.SemanticBoundaryAdvisor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,15 +30,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SemanticChunkingService — boundary advisor + fallback orchestrator")

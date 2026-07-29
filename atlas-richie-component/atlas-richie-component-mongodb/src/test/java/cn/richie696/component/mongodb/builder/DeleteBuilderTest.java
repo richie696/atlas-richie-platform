@@ -16,6 +16,7 @@
 package cn.richie696.component.mongodb.builder;
 
 import cn.richie696.component.mongodb.core.EntityIntrospector;
+import com.mongodb.client.result.DeleteResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,12 +24,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
-import com.mongodb.client.result.DeleteResult;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,11 +51,11 @@ class DeleteBuilderTest {
     void eq_shouldAddCriteria() {
         when(deleteResult.getDeletedCount()).thenReturn(1L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .eq(TestDoc::getId, "x")
-            .execute();
+                .eq(TestDoc::getId, "x")
+                .execute();
 
         assertThat(count).isEqualTo(1L);
     }
@@ -64,11 +64,11 @@ class DeleteBuilderTest {
     void eq_withConditionFalse_shouldSkip() {
         when(deleteResult.getDeletedCount()).thenReturn(0L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .eq(false, TestDoc::getId, "x")
-            .execute();
+                .eq(false, TestDoc::getId, "x")
+                .execute();
 
         assertThat(count).isEqualTo(0L);
     }
@@ -77,11 +77,11 @@ class DeleteBuilderTest {
     void eq_withNullValue_shouldSkip() {
         when(deleteResult.getDeletedCount()).thenReturn(0L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .eq(TestDoc::getId, null)
-            .execute();
+                .eq(TestDoc::getId, null)
+                .execute();
 
         assertThat(count).isEqualTo(0L);
     }
@@ -90,11 +90,11 @@ class DeleteBuilderTest {
     void gt_shouldAddGtCriteria() {
         when(deleteResult.getDeletedCount()).thenReturn(2L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .gt(TestDoc::getAge, 18)
-            .execute();
+                .gt(TestDoc::getAge, 18)
+                .execute();
 
         assertThat(count).isEqualTo(2L);
     }
@@ -103,11 +103,11 @@ class DeleteBuilderTest {
     void gt_withNullValue_shouldSkip() {
         when(deleteResult.getDeletedCount()).thenReturn(0L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .gt(TestDoc::getAge, null)
-            .execute();
+                .gt(TestDoc::getAge, null)
+                .execute();
 
         assertThat(count).isEqualTo(0L);
     }
@@ -116,11 +116,11 @@ class DeleteBuilderTest {
     void ge_shouldAddGteCriteria() {
         when(deleteResult.getDeletedCount()).thenReturn(3L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .ge(TestDoc::getAge, 18)
-            .execute();
+                .ge(TestDoc::getAge, 18)
+                .execute();
 
         assertThat(count).isEqualTo(3L);
     }
@@ -129,11 +129,11 @@ class DeleteBuilderTest {
     void lt_shouldAddLtCriteria() {
         when(deleteResult.getDeletedCount()).thenReturn(1L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .lt(TestDoc::getAge, 100)
-            .execute();
+                .lt(TestDoc::getAge, 100)
+                .execute();
 
         assertThat(count).isEqualTo(1L);
     }
@@ -142,11 +142,11 @@ class DeleteBuilderTest {
     void le_shouldAddLteCriteria() {
         when(deleteResult.getDeletedCount()).thenReturn(1L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .le(TestDoc::getAge, 100)
-            .execute();
+                .le(TestDoc::getAge, 100)
+                .execute();
 
         assertThat(count).isEqualTo(1L);
     }
@@ -155,11 +155,11 @@ class DeleteBuilderTest {
     void in_shouldAddInCriteria() {
         when(deleteResult.getDeletedCount()).thenReturn(2L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .in(TestDoc::getStatus, java.util.List.of("A", "B"))
-            .execute();
+                .in(TestDoc::getStatus, java.util.List.of("A", "B"))
+                .execute();
 
         assertThat(count).isEqualTo(2L);
     }
@@ -168,11 +168,11 @@ class DeleteBuilderTest {
     void in_withEmptyCollection_shouldSkip() {
         when(deleteResult.getDeletedCount()).thenReturn(0L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .in(TestDoc::getStatus, java.util.Collections.emptyList())
-            .execute();
+                .in(TestDoc::getStatus, java.util.Collections.emptyList())
+                .execute();
 
         assertThat(count).isEqualTo(0L);
     }
@@ -181,11 +181,11 @@ class DeleteBuilderTest {
     void in_withNullCollection_shouldSkip() {
         when(deleteResult.getDeletedCount()).thenReturn(0L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .in(TestDoc::getStatus, null)
-            .execute();
+                .in(TestDoc::getStatus, null)
+                .execute();
 
         assertThat(count).isEqualTo(0L);
     }
@@ -194,11 +194,11 @@ class DeleteBuilderTest {
     void nin_shouldAddNinCriteria() {
         when(deleteResult.getDeletedCount()).thenReturn(1L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .nin(TestDoc::getStatus, java.util.List.of("X", "Y"))
-            .execute();
+                .nin(TestDoc::getStatus, java.util.List.of("X", "Y"))
+                .execute();
 
         assertThat(count).isEqualTo(1L);
     }
@@ -207,11 +207,11 @@ class DeleteBuilderTest {
     void exists_shouldAddExistsCriteria() {
         when(deleteResult.getDeletedCount()).thenReturn(1L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .exists(TestDoc::getName)
-            .execute();
+                .exists(TestDoc::getName)
+                .execute();
 
         assertThat(count).isEqualTo(1L);
     }
@@ -220,10 +220,10 @@ class DeleteBuilderTest {
     void execute_withNoCriteria_shouldStillWork() {
         when(deleteResult.getDeletedCount()).thenReturn(5L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-            .execute();
+                .execute();
 
         assertThat(count).isEqualTo(5L);
     }
@@ -232,15 +232,15 @@ class DeleteBuilderTest {
     void execute_calledTwice_shouldThrowIllegalState() {
         when(deleteResult.getDeletedCount()).thenReturn(1L);
         when(mongoTemplate.remove(any(Query.class), eq(TestDoc.class)))
-            .thenReturn(deleteResult);
+                .thenReturn(deleteResult);
 
         DeleteBuilder<TestDoc> builder = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector);
         builder.eq(TestDoc::getId, "x");
         builder.execute();
 
         assertThatThrownBy(() -> builder.execute())
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("can only be executed once");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("can only be executed once");
     }
 
     static class TestDoc {
@@ -249,13 +249,36 @@ class DeleteBuilderTest {
         private int age;
         private String status;
 
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public int getAge() { return age; }
-        public void setAge(int age) { this.age = age; }
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
     }
 }

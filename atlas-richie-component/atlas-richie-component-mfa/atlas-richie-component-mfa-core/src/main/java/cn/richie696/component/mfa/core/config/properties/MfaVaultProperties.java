@@ -17,6 +17,7 @@ package cn.richie696.component.mfa.core.config.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * MFA 组件使用的 Vault 业务配置属性（仅引擎路径与密钥名等，不包含连接信息）
@@ -78,5 +79,6 @@ public class MfaVaultProperties {
      *   <li>{@code gracePeriodDays}：宽限期（天），配合 Vault 自身的最小解密版本配置使用</li>
      * </ul>
      */
+    @NestedConfigurationProperty
     private MfaKeyRotationProperties rotation = new MfaKeyRotationProperties();
 }

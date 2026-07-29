@@ -95,11 +95,17 @@ public final class CircuitBreaker {
      * 熔断器状态。
      */
     public enum State {
-        /** 正常：请求通过，记录成功/失败统计 */
+        /**
+         * 正常：请求通过，记录成功/失败统计
+         */
         CLOSED,
-        /** 断开：请求被立即拒绝，不再调用下游 */
+        /**
+         * 断开：请求被立即拒绝，不再调用下游
+         */
         OPEN,
-        /** 半开：允许单个请求探测，验证下游是否恢复 */
+        /**
+         * 半开：允许单个请求探测，验证下游是否恢复
+         */
         HALF_OPEN
     }
 
@@ -107,9 +113,13 @@ public final class CircuitBreaker {
      * 滑动窗口策略。
      */
     public enum SlidingWindowType {
-        /** 计数窗口：保留最近 {@code windowSize} 次调用 */
+        /**
+         * 计数窗口：保留最近 {@code windowSize} 次调用
+         */
         COUNT_BASED,
-        /** 时间窗口：保留最近 {@code windowDuration} 内的所有调用 */
+        /**
+         * 时间窗口：保留最近 {@code windowDuration} 内的所有调用
+         */
         TIME_BASED
     }
 

@@ -51,23 +51,31 @@ public interface ParseListener {
      */
     void onEvent(ParseEvent event);
 
-    /** 文本段落事件回调 */
+    /**
+     * 文本段落事件回调
+     */
     default void onStreaming(DocumentSegment segment, String sourceName) {
         // 默认 no-op — 调用方按需重写
     }
 
-    /** 图片资源事件回调 */
+    /**
+     * 图片资源事件回调
+     */
     default void onImage(ImageSegment image, String sourceName) {
         // 默认 no-op — 调用方按需重写 (OCR / 存图 / 忽略)
     }
 
-    /** 完成事件回调 */
+    /**
+     * 完成事件回调
+     */
     default void onFinished(DocumentSummary summary, int totalSegments,
                             int totalImages, String sourceName) {
         // 默认 no-op
     }
 
-    /** 失败事件回调 */
+    /**
+     * 失败事件回调
+     */
     default void onError(DocumentParseException error, String sourceName) {
         // 默认 no-op (异常仍可通过 facade 抛出,这里只是事件通知)
     }

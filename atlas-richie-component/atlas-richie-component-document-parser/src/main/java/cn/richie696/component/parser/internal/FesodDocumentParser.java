@@ -15,18 +15,13 @@
  */
 package cn.richie696.component.parser.internal;
 
-import cn.richie696.component.parser.DocumentParser;
-import cn.richie696.component.parser.DocumentSegment;
-import cn.richie696.component.parser.DocumentSummary;
-import cn.richie696.component.parser.ParseEvent;
-import cn.richie696.component.parser.ParseListener;
-import cn.richie696.component.parser.ParserContext;
-import cn.richie696.component.parser.ParserSource;
+import cn.richie696.component.parser.*;
 import cn.richie696.component.parser.exception.DocumentParseException;
 import org.apache.fesod.sheet.ExcelReader;
 import org.apache.fesod.sheet.FesodSheet;
 import org.apache.fesod.sheet.context.AnalysisContext;
 import org.apache.fesod.sheet.read.listener.ReadListener;
+
 import java.io.InputStream;
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
@@ -92,7 +87,7 @@ public final class FesodDocumentParser implements DocumentParser {
 
             try (InputStream in = openSource(source);
                  ExcelReader reader = FesodSheet.read(in,
-                    textListener).headRowNumber(0).build()) {
+                         textListener).headRowNumber(0).build()) {
                 reader.readAll();
             }
         } catch (DocumentParseException e) {

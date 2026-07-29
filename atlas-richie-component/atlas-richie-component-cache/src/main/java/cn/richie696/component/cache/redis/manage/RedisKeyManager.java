@@ -23,18 +23,21 @@ import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
 import cn.richie696.component.cache.redis.config.base.AtlasRedisProperties;
 import cn.richie696.component.cache.redis.perf.RedisOperationCatalog;
 import cn.richie696.component.cache.redis.perf.RedisPerfGuard;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.dao.DataAccessException;
-import jakarta.annotation.Nullable;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Key管理与元数据操作子管理器
@@ -49,20 +52,30 @@ import java.util.concurrent.TimeUnit;
 @ConditionalOnExpression("'${platform.cache.cache-provider:REDIS}'=='REDIS'")
 public class RedisKeyManager implements KeyOps, CacheInfrastructure {
 
-    /** 多数据源 Redis 模板（JSON 序列化） */
+    /**
+     * 多数据源 Redis 模板（JSON 序列化）
+     */
     @Qualifier("jsonTemplate")
     private final MultiRedisTemplate<Object> redisTemplate;
 
-    /** Redis 连接与行为配置 */
+    /**
+     * Redis 连接与行为配置
+     */
     private final AtlasRedisProperties redisProperties;
 
-    /** Redis 性能守卫（可选启用） */
+    /**
+     * Redis 性能守卫（可选启用）
+     */
     private final RedisPerfGuard redisPerfGuard;
 
-    /** 连接信息字符串（懒加载） */
+    /**
+     * 连接信息字符串（懒加载）
+     */
     private String connectionString;
 
-    /** key 到值类型的注册表（使用前缀存储，避免按完整 key 膨胀） */
+    /**
+     * key 到值类型的注册表（使用前缀存储，避免按完整 key 膨胀）
+     */
     private static final Map<String, Class<?>> TYPE_REGISTRY = new ConcurrentHashMap<>();
 
     /**
@@ -96,6 +109,7 @@ public class RedisKeyManager implements KeyOps, CacheInfrastructure {
 
     /**
      * 检查是否启用二级缓存的方法
+     *
      * @return 返回是否启用二级缓存（true：启用，false：不启用）
      */
     @Override

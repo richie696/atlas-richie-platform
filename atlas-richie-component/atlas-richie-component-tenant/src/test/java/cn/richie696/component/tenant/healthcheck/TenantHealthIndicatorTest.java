@@ -24,9 +24,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.ApplicationArguments;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 @DisplayName("TenantHealthIndicator 启动期 SPI 健康检查")
@@ -48,11 +46,11 @@ class TenantHealthIndicatorTest {
         @DisplayName("SPI 仍是 NoOp → 拋 IllegalStateException 阻止启动")
         void noOpProviderFailsStartup() {
             TenantHealthIndicator indicator = new TenantHealthIndicator(
-                new NoOpTenantInfoProvider(), props(true));
+                    new NoOpTenantInfoProvider(), props(true));
 
             assertThatThrownBy(() -> indicator.run(args))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("NoOpTenantInfoProvider");
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("NoOpTenantInfoProvider");
         }
 
         @Test
@@ -78,12 +76,12 @@ class TenantHealthIndicatorTest {
         @DisplayName("异常信息包含'NoOpTenantInfoProvider'和实现指引")
         void errorMessageGuidesImplementation() {
             TenantHealthIndicator indicator = new TenantHealthIndicator(
-                new NoOpTenantInfoProvider(), props(true));
+                    new NoOpTenantInfoProvider(), props(true));
 
             assertThatThrownBy(() -> indicator.run(args))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("NoOpTenantInfoProvider")
-                .hasMessageContaining("TenantInfoProvider");
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("NoOpTenantInfoProvider")
+                    .hasMessageContaining("TenantInfoProvider");
         }
     }
 
@@ -95,7 +93,7 @@ class TenantHealthIndicatorTest {
         @DisplayName("multi-tenancy.enabled=false 时跳过检查,即使是 NoOp 也不抛")
         void multiTenancyDisabledSkipsCheck() {
             TenantHealthIndicator indicator = new TenantHealthIndicator(
-                new NoOpTenantInfoProvider(), props(false));
+                    new NoOpTenantInfoProvider(), props(false));
 
             assertThatCode(() -> indicator.run(args)).doesNotThrowAnyException();
         }
@@ -118,7 +116,7 @@ class TenantHealthIndicatorTest {
             TenantHealthIndicator indicator = new TenantHealthIndicator(noOpSubclass, props(true));
 
             assertThatThrownBy(() -> indicator.run(args))
-                .isInstanceOf(IllegalStateException.class);
+                    .isInstanceOf(IllegalStateException.class);
         }
 
         @Test
@@ -140,7 +138,7 @@ class TenantHealthIndicatorTest {
 
             assertThatCode(() -> indicator.run(args)).doesNotThrowAnyException();
             assertThat(new CustomProvider().getClass().getSimpleName())
-                .isEqualTo("CustomProvider");
+                    .isEqualTo("CustomProvider");
         }
     }
 }

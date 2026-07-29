@@ -60,14 +60,14 @@ public class MfaAuditEventPublisher {
      * @param durationMs    操作耗时（毫秒，可选）
      */
     public void publishEvent(String tenantId,
-                            String userId,
-                            MfaOperationTypeEnum operationType,
-                            String authMethod,
-                            String deviceId,
-                            String result,
-                            String errorCode,
-                            String errorMessage,
-                            Long durationMs) {
+                             String userId,
+                             MfaOperationTypeEnum operationType,
+                             String authMethod,
+                             String deviceId,
+                             String result,
+                             String errorCode,
+                             String errorMessage,
+                             Long durationMs) {
         try {
             // 提取 IP 和 User-Agent
             String ipAddress = extractIpAddress();
@@ -75,30 +75,30 @@ public class MfaAuditEventPublisher {
 
             // 构建并发布事件
             MfaAuditEvent event = MfaAuditEvent.builder(source)
-                .tenantId(tenantId)
-                .userId(userId)
-                .operationType(operationType)
-                .authMethod(authMethod)
-                .ipAddress(ipAddress)
-                .userAgent(userAgent)
-                .deviceId(deviceId)
-                .result(result)
-                .errorCode(errorCode)
-                .errorMessage(errorMessage)
-                .durationMs(durationMs)
-                .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-                .build();
+                    .tenantId(tenantId)
+                    .userId(userId)
+                    .operationType(operationType)
+                    .authMethod(authMethod)
+                    .ipAddress(ipAddress)
+                    .userAgent(userAgent)
+                    .deviceId(deviceId)
+                    .result(result)
+                    .errorCode(errorCode)
+                    .errorMessage(errorMessage)
+                    .durationMs(durationMs)
+                    .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
+                    .build();
 
             eventPublisher.publishEvent(event);
 
             if (log.isDebugEnabled()) {
                 log.debug("MFA审计事件已发布: operationType={}, userId={}, result={}",
-                    operationType != null ? operationType.getCode() : null, userId, result);
+                        operationType != null ? operationType.getCode() : null, userId, result);
             }
         } catch (Exception e) {
             // 审计事件发布失败不应影响主流程，只记录错误日志
             log.error("发布MFA审计事件失败: operationType={}, userId={}, result={}",
-                operationType != null ? operationType.getCode() : null, userId, result, e);
+                    operationType != null ? operationType.getCode() : null, userId, result, e);
         }
     }
 
@@ -127,7 +127,7 @@ public class MfaAuditEventPublisher {
      * @param errorMessage  错误消息
      */
     public void publishFailure(String tenantId, String userId, MfaOperationTypeEnum operationType, String authMethod,
-                              String deviceId, String errorCode, String errorMessage) {
+                               String deviceId, String errorCode, String errorMessage) {
         publishEvent(tenantId, userId, operationType, authMethod, deviceId, "FAILED", errorCode, errorMessage, null);
     }
 

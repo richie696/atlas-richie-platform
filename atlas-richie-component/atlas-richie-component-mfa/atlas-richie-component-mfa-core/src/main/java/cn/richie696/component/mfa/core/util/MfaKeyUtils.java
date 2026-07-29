@@ -34,8 +34,8 @@ public class MfaKeyUtils {
     /**
      * 生成用户MFA信息缓存Key
      *
-     * @param tenantId 租户ID（可为null）
-     * @param userId 用户ID
+     * @param tenantId     租户ID（可为null）
+     * @param userId       用户ID
      * @param enableTenant 是否启用租户
      * @return 缓存Key
      */
@@ -50,8 +50,8 @@ public class MfaKeyUtils {
     /**
      * 生成失败计数缓存Key
      *
-     * @param tenantId 租户ID（可为null）
-     * @param userId 用户ID
+     * @param tenantId     租户ID（可为null）
+     * @param userId       用户ID
      * @param enableTenant 是否启用租户
      * @return 缓存Key
      */
@@ -66,9 +66,9 @@ public class MfaKeyUtils {
     /**
      * 生成防重放攻击缓存Key
      *
-     * @param tenantId 租户ID（可为null）
-     * @param userId 用户ID
-     * @param timeStep 时间步长
+     * @param tenantId     租户ID（可为null）
+     * @param userId       用户ID
+     * @param timeStep     时间步长
      * @param enableTenant 是否启用租户
      * @return 缓存Key
      */
@@ -83,8 +83,8 @@ public class MfaKeyUtils {
     /**
      * 生成同步锁Key
      *
-     * @param tenantId 租户ID（可为null）
-     * @param userId 用户ID
+     * @param tenantId     租户ID（可为null）
+     * @param userId       用户ID
      * @param enableTenant 是否启用租户
      * @return 缓存Key
      */
@@ -99,9 +99,9 @@ public class MfaKeyUtils {
     /**
      * 生成可信设备缓存Key
      *
-     * @param tenantId 租户ID（可为null）
-     * @param userId 用户ID
-     * @param deviceId 设备ID
+     * @param tenantId     租户ID（可为null）
+     * @param userId       用户ID
+     * @param deviceId     设备ID
      * @param enableTenant 是否启用租户
      * @return 缓存Key
      */
@@ -116,8 +116,8 @@ public class MfaKeyUtils {
     /**
      * 生成可信设备列表缓存Key（用于存储用户的所有可信设备ID列表）
      *
-     * @param tenantId 租户ID（可为null）
-     * @param userId 用户ID
+     * @param tenantId     租户ID（可为null）
+     * @param userId       用户ID
      * @param enableTenant 是否启用租户
      * @return 缓存Key
      */
@@ -132,8 +132,8 @@ public class MfaKeyUtils {
     /**
      * 生成密钥存储缓存Key（用于存储用户的MFA密钥）
      *
-     * @param tenantId 租户ID（可为null）
-     * @param userId 用户ID
+     * @param tenantId     租户ID（可为null）
+     * @param userId       用户ID
      * @param enableTenant 是否启用租户
      * @return 缓存Key
      */

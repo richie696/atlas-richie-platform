@@ -12,7 +12,8 @@
 - ✅ **内容去重** - 基于 SHA-256 的内容指纹去重
 - ✅ **路径安全** - 防止目录穿越攻击
 - ✅ **自动清理** - 支持冷数据自动清理任务
-- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非 Spring 环境
+- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非
+  Spring 环境
 - ✅ **数据库 Schema 管理** - 支持自动建表和 Liquibase 迁移
 
 ## 双模式架构
@@ -47,11 +48,11 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 `LocalStorageEngineProvider` 实现 `StorageEngineProvider` SPI，负责：
 
-| 方法 | 说明 |
-|------|------|
-| `supportedEngineType()` | 返回 `StorageEngineEnum.LOCAL` |
-| `create(properties)` | 从配置创建 `LocalStorageEngine` 实例 |
-| `validate(properties)` | 校验本地存储路径等配置 |
+| 方法                    | 说明                                 |
+|-------------------------|--------------------------------------|
+| `supportedEngineType()` | 返回 `StorageEngineEnum.LOCAL`       |
+| `create(properties)`    | 从配置创建 `LocalStorageEngine` 实例 |
+| `validate(properties)`  | 校验本地存储路径等配置               |
 
 自动模式下 Provider 在 `LocalAutoConfiguration` 中注册为 Bean；手动模式下由 Registry 通过 SPI 发现。
 
@@ -59,8 +60,8 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 引擎创建前会通过 `ConfigValidation` 工具类校验必填参数，校验失败时抛出 `IllegalArgumentException`：
 
-| 参数 | 校验规则 |
-|------|---------|
+| 参数 | 校验规则             |
+|------|----------------------|
 | path | 非空（本地存储路径） |
 
 ## 快速开始
@@ -160,19 +161,19 @@ public class FileService {
 
 本地存储与其他云存储的主要配置差异：
 
-| 配置项 | 本地存储 | 云存储 |
-|--------|---------|--------|
-| **配置前缀** | `platform.component.storage.local` | `platform.component.storage.object` |
-| **engine 字段** | 不需要 | 必填（如 `MINIO`, `AWS_S3` 等） |
-| **endpoint** | 不需要 | 必填 |
-| **region** | 不需要 | 必填（部分云存储） |
-| **accessKeyId** | 不需要 | 必填 |
-| **accessKeySecret** | 不需要 | 必填 |
-| **bucketName** | 不需要 | 必填 |
-| **path** | **必填**（存储路径） | 不需要 |
-| **缓存配置** | **支持**（三级缓存） | 不支持 |
-| **数据库元数据** | **支持** | 不支持 |
-| **内容去重** | **支持**（SHA-256） | 不支持 |
+| 配置项              | 本地存储                           | 云存储                              |
+|---------------------|------------------------------------|-------------------------------------|
+| **配置前缀**        | `platform.component.storage.local` | `platform.component.storage.object` |
+| **engine 字段**     | 不需要                             | 必填（如 `MINIO`, `AWS_S3` 等）     |
+| **endpoint**        | 不需要                             | 必填                                |
+| **region**          | 不需要                             | 必填（部分云存储）                  |
+| **accessKeyId**     | 不需要                             | 必填                                |
+| **accessKeySecret** | 不需要                             | 必填                                |
+| **bucketName**      | 不需要                             | 必填                                |
+| **path**            | **必填**（存储路径）               | 不需要                              |
+| **缓存配置**        | **支持**（三级缓存）               | 不支持                              |
+| **数据库元数据**    | **支持**                           | 不支持                              |
+| **内容去重**        | **支持**（SHA-256）                | 不支持                              |
 
 ### 路径配置
 
@@ -191,6 +192,7 @@ public class FileService {
 ### 数据库 Schema
 
 本地存储会自动创建 `rd_file_metadata` 表用于存储文件元数据，包括：
+
 - 文件路径（key）
 - 原始文件名
 - 内容类型
@@ -251,23 +253,23 @@ platform:
 ## 最佳实践
 
 1. **路径组织**
-   - 使用业务维度组织路径：`/user/{userId}/avatar.jpg`
-   - 使用日期维度组织路径：`/2024/01/15/document.pdf`
-   - 避免过深的目录层级
+    - 使用业务维度组织路径：`/user/{userId}/avatar.jpg`
+    - 使用日期维度组织路径：`/2024/01/15/document.pdf`
+    - 避免过深的目录层级
 
 2. **缓存策略**
-   - 小文件（< 1MB）会自动缓存内容
-   - 大文件只缓存元数据，不缓存内容
-   - 根据业务场景调整缓存过期时间
+    - 小文件（< 1MB）会自动缓存内容
+    - 大文件只缓存元数据，不缓存内容
+    - 根据业务场景调整缓存过期时间
 
 3. **数据库元数据**
-   - 启用数据库元数据管理，便于文件查询和统计
-   - 定期清理过期的元数据记录
+    - 启用数据库元数据管理，便于文件查询和统计
+    - 定期清理过期的元数据记录
 
 4. **存储路径**
-   - 生产环境使用绝对路径
-   - 确保应用有读写权限
-   - 考虑磁盘空间和备份策略
+    - 生产环境使用绝对路径
+    - 确保应用有读写权限
+    - 考虑磁盘空间和备份策略
 
 ## 常见问题
 

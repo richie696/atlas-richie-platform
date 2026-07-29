@@ -1,6 +1,7 @@
 # Atlas Richie Concurrency Component (atlas-richie-component-concurrency)
 
-> Concurrency utilities for the Richie platform, focused on high-frequency pattern encapsulation for **JDK 25 Structured Concurrency** and **Virtual Threads**.
+> Concurrency utilities for the Richie platform, focused on high-frequency pattern encapsulation for **JDK 25 Structured
+Concurrency** and **Virtual Threads**.
 
 ---
 
@@ -12,22 +13,24 @@
 - [🚀 Quick Start](#quick-start)
 - [🧠 Core Concepts at a Glance](#core-concepts-at-a-glance)
 - [🏗️ The Three Modules in Detail](#the-three-modules-in-detail)
-  - [✨ Module 1: Structured Concurrency and Virtual Threads (`virtual/`)](#module-1-structured-concurrency-and-virtual-threads-virtual)
-    - [🔌 1.1 StructuredConcurrency](#11-structuredconcurrency-structured-concurrency)
-    - [🔧 1.2 VirtualThreadFactory](#12-virtualthreadfactory-virtual-thread-factory)
-    - [🔧 1.3 BatchProcessor](#13-batchprocessor-batch-processor)
-  - [✨ Module 2: Rate Limiting and Fault Tolerance Algorithms (`algorithm/`)](#module-2-rate-limiting-and-fault-tolerance-algorithms-algorithm)
-    - [🔧 2.1 Retryer](#21-retryer)
-    - [🔧 2.2 RateLimiter](#22-ratelimiter-token-bucket-rate-limiter)
-    - [🔧 2.3 CircuitBreaker](#23-circuitbreaker)
-    - [🔧 2.4 Debouncer](#24-debouncer)
-  - [✨ Module 3: Dynamic Thread Pool (`threadpool/`)](#module-3-dynamic-thread-pool-threadpool)
-    - [🔧 3.0 Implementation Principles](#30-implementation-principles)
-      - [🏗️ 3.0.1 Overall Architecture](#301-overall-architecture)
-      - [🔄 3.0.2 Tuning Workflow](#302-tuning-workflow)
-      - [📊 3.0.3 Rejection Counting Principle](#303-rejection-counting-principle)
-      - [🆚 3.0.4 Positioning Difference from dynamic-tp](#304-positioning-difference-from-dynamic-tp)
-    - [🔧 3.1 DynamicExecutor](#31-dynamicexecutor-dynamic-thread-pool)
+    - [✨ Module 1: Structured Concurrency and Virtual Threads (
+      `virtual/`)](#module-1-structured-concurrency-and-virtual-threads-virtual)
+        - [🔌 1.1 StructuredConcurrency](#11-structuredconcurrency-structured-concurrency)
+        - [🔧 1.2 VirtualThreadFactory](#12-virtualthreadfactory-virtual-thread-factory)
+        - [🔧 1.3 BatchProcessor](#13-batchprocessor-batch-processor)
+    - [✨ Module 2: Rate Limiting and Fault Tolerance Algorithms (
+      `algorithm/`)](#module-2-rate-limiting-and-fault-tolerance-algorithms-algorithm)
+        - [🔧 2.1 Retryer](#21-retryer)
+        - [🔧 2.2 RateLimiter](#22-ratelimiter-token-bucket-rate-limiter)
+        - [🔧 2.3 CircuitBreaker](#23-circuitbreaker)
+        - [🔧 2.4 Debouncer](#24-debouncer)
+    - [✨ Module 3: Dynamic Thread Pool (`threadpool/`)](#module-3-dynamic-thread-pool-threadpool)
+        - [🔧 3.0 Implementation Principles](#30-implementation-principles)
+            - [🏗️ 3.0.1 Overall Architecture](#301-overall-architecture)
+            - [🔄 3.0.2 Tuning Workflow](#302-tuning-workflow)
+            - [📊 3.0.3 Rejection Counting Principle](#303-rejection-counting-principle)
+            - [🆚 3.0.4 Positioning Difference from dynamic-tp](#304-positioning-difference-from-dynamic-tp)
+        - [🔧 3.1 DynamicExecutor](#31-dynamicexecutor-dynamic-thread-pool)
 - [⚙️ Configuration Reference](#configuration-reference)
 - [🎯 Best Practices](#best-practices)
 - [❓ FAQ](#faq)
@@ -37,14 +40,24 @@
 
 ## Overview
 
-`atlas-richie-component-concurrency` is the concurrency utilities component for the Richie platform. Rather than wrapping third-party thread pool management libraries, it directly leverages JDK 25 standard concurrency primitives (`StructuredTaskScope`, virtual threads, `ScopedValue`) to encapsulate the 8 most common patterns found in distributed and high-concurrency scenarios into semantically clear utilities.
+`atlas-richie-component-concurrency` is the concurrency utilities component for the Richie platform. Rather than
+wrapping third-party thread pool management libraries, it directly leverages JDK 25 standard concurrency primitives
+(`StructuredTaskScope`, virtual threads, `ScopedValue`) to encapsulate the 8 most common patterns found in distributed
+and high-concurrency scenarios into semantically clear utilities.
 
 Design philosophy:
 
-- **Replace boilerplate with semantic naming**: Method names like `gatherAll`, `race`, `withDeadline`, `gatherBatched`, and `gatherAllBestEffort` describe the design intent themselves, so callers immediately know which concurrency pattern they have chosen.
-- **Virtual threads first**: All underlying implementations are built on virtual threads, enabling million-level concurrency for I/O-bound scenarios.
-- **Zero third-party concurrency dependencies**: No binding to Resilience4j, Guava RateLimiter, Hystrix, etc. Token bucket, circuit breaking, rate limiting, and debouncing are all implemented in-house, making it easier for business teams to evolve and troubleshoot uniformly.
-- **Both declarative and imperative APIs**: Core components (`Retryer`, `RateLimiter`, `CircuitBreaker`, `Debouncer`, `BatchProcessor`) provide imperative Builders, while also exposing `@ConfigurationProperties` configuration entries via `ConcurrencyProperties` for out-of-the-box usage.
+- **Replace boilerplate with semantic naming**: Method names like `gatherAll`, `race`, `withDeadline`, `gatherBatched`,
+  and `gatherAllBestEffort` describe the design intent themselves, so callers immediately know which concurrency pattern
+  they have chosen.
+- **Virtual threads first**: All underlying implementations are built on virtual threads, enabling million-level
+  concurrency for I/O-bound scenarios.
+- **Zero third-party concurrency dependencies**: No binding to Resilience4j, Guava RateLimiter, Hystrix, etc. Token
+  bucket, circuit breaking, rate limiting, and debouncing are all implemented in-house, making it easier for business
+  teams to evolve and troubleshoot uniformly.
+- **Both declarative and imperative APIs**: Core components (`Retryer`, `RateLimiter`, `CircuitBreaker`, `Debouncer`,
+  `BatchProcessor`) provide imperative Builders, while also exposing `@ConfigurationProperties` configuration entries
+  via `ConcurrencyProperties` for out-of-the-box usage.
 
 > Applicable versions: JDK 25, Spring Boot 4.0.x, Spring Framework 7.x.
 
@@ -52,7 +65,8 @@ Design philosophy:
 
 ## Key Features
 
-This component is divided into three modules by scenario responsibility. Each module corresponds to one source sub-package:
+This component is divided into three modules by scenario responsibility. Each module corresponds to one source
+sub-package:
 
 | Module                                                    | Component               | Problem It Solves                                                                            | One-line Value                                                                                     |
 |-----------------------------------------------------------|-------------------------|----------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
@@ -98,7 +112,8 @@ Additional capabilities:
 </dependency>
 ```
 
-No need to separately introduce Resilience4j, Guava, or other concurrency libraries. This component only depends on Spring Boot (in `provided` scope).
+No need to separately introduce Resilience4j, Guava, or other concurrency libraries. This component only depends on
+Spring Boot (in `provided` scope).
 
 ### 2) `Minimal` `Example`
 
@@ -132,7 +147,11 @@ public class QuickStart {
 
 ### `What` is `Structured` `Concurrency`
 
-`java.util.concurrent.StructuredTaskScope`, introduced in JDK 25, treats a group of concurrent tasks as a single "unit of work". The parent task forks child tasks via `fork()` and waits for all of them to complete via `join()`. When the parent task ends, regardless of whether the children have finished, the scope automatically ensures they are cancelled or joined. This "parent-child binding + lifecycle consistency" semantics is more suitable than `CompletableFuture` for expressing "a group of mutually independent parallel tasks".
+`java.util.concurrent.StructuredTaskScope`, introduced in JDK 25, treats a group of concurrent tasks as a single "unit
+of work". The parent task forks child tasks via `fork()` and waits for all of them to complete via `join()`. When the
+parent task ends, regardless of whether the children have finished, the scope automatically ensures they are cancelled
+or joined. This "parent-child binding + lifecycle consistency" semantics is more suitable than `CompletableFuture` for
+expressing "a group of mutually independent parallel tasks".
 
 This component's `StructuredConcurrency` utility encapsulates these semantics into 5 methods:
 
@@ -146,29 +165,46 @@ This component's `StructuredConcurrency` utility encapsulates these semantics in
 
 ### `What` is a `Virtual` `Thread`
 
-Lightweight threads introduced in JDK 21+. The JVM unparks blocking operations onto a pool of OS threads. For I/O-bound tasks, millions of virtual threads can exist simultaneously without exhausting memory. All `forEach`, `mapParallel`, and `fork` operations in this component run on virtual threads, so business code does not need to worry about thread pool size.
+Lightweight threads introduced in JDK 21+. The JVM unparks blocking operations onto a pool of OS threads. For I/O-bound
+tasks, millions of virtual threads can exist simultaneously without exhausting memory. All `forEach`, `mapParallel`, and
+`fork` operations in this component run on virtual threads, so business code does not need to worry about thread pool
+size.
 
 ### `What` is `ScopedValue`
 
-Immutable thread-local variables introduced in JDK 21+, with better performance than `ThreadLocal` and free from inheritance-chain pollution. `VirtualThreadFactory.Builder.scopedValue()` can bind context at virtual thread creation time, avoiding the manual `where().run()` boilerplate.
+Immutable thread-local variables introduced in JDK 21+, with better performance than `ThreadLocal` and free from
+inheritance-chain pollution. `VirtualThreadFactory.Builder.scopedValue()` can bind context at virtual thread creation
+time, avoiding the manual `where().run()` boilerplate.
 
 ---
 
 ## The Three Modules in Detail
 
-This component is divided into three modules by scenario responsibility, each corresponding to one source sub-package. Readers may skip as needed: read Module 1 for concurrency orchestration, Module 2 for call protection, and Module 3 for thread pool tuning.
+This component is divided into three modules by scenario responsibility, each corresponding to one source sub-package.
+Readers may skip as needed: read Module 1 for concurrency orchestration, Module 2 for call protection, and Module 3 for
+thread pool tuning.
 
 ### Module 1 — Structured Concurrency and Virtual Threads (`virtual/`)
 
-Focused on encapsulating the high-frequency patterns of JDK 25 `StructuredTaskScope` and `Thread.ofVirtual()`, packaging "concurrency orchestration patterns + virtual thread context propagation" into semantically clear static utilities and factory classes. The `virtual/` sub-package contains three components: `StructuredConcurrency` (5 structured concurrency modes: gather, race, deadline, batched gather, best-effort gather), `VirtualThreadFactory` (virtual thread factory with naming prefix and `ScopedValue` bindings), and `BatchProcessor` (concurrency throttling + error isolation + batch processing with results collected in input order). All APIs in this module run on virtual threads, so business code does not need to worry about thread pool size or lifecycle.
+Focused on encapsulating the high-frequency patterns of JDK 25 `StructuredTaskScope` and `Thread.ofVirtual()`, packaging
+"concurrency orchestration patterns + virtual thread context propagation" into semantically clear static utilities and
+factory classes. The `virtual/` sub-package contains three components: `StructuredConcurrency` (5 structured concurrency
+modes: gather, race, deadline, batched gather, best-effort gather), `VirtualThreadFactory` (virtual thread factory with
+naming prefix and `ScopedValue` bindings), and `BatchProcessor` (concurrency throttling + error isolation + batch
+processing with results collected in input order). All APIs in this module run on virtual threads, so business code does
+not need to worry about thread pool size or lifecycle.
 
 #### 1.1 `StructuredConcurrency`
 
 ##### 1.1.1 What It Is
 
-`StructuredConcurrency` is a high-frequency-scenario wrapper around JDK 25 `StructuredTaskScope`. The design goal is to expose "concurrency orchestration patterns" as the API: the caller only needs to choose one of `gatherAll` / `race` / `withDeadline` / `gatherBatched` / `gatherAllBestEffort`, and does not need to worry about `Joiner` selection, scope lifecycle, or the calling order of `Configuration.withTimeout` and other low-level details.
+`StructuredConcurrency` is a high-frequency-scenario wrapper around JDK 25 `StructuredTaskScope`. The design goal is to
+expose "concurrency orchestration patterns" as the API: the caller only needs to choose one of `gatherAll` / `race` /
+`withDeadline` / `gatherBatched` / `gatherAllBestEffort`, and does not need to worry about `Joiner` selection, scope
+lifecycle, or the calling order of `Configuration.withTimeout` and other low-level details.
 
-All underlying methods share a static `VirtualThreadFactory` (thread-name prefix `ar-concurrency-`), ensuring that the thread-name counter increments monotonically across multiple `open` calls.
+All underlying methods share a static `VirtualThreadFactory` (thread-name prefix `ar-concurrency-`), ensuring that the
+thread-name counter increments monotonically across multiple `open` calls.
 
 ##### 1.1.2 Interface Design Semantics
 
@@ -185,11 +221,15 @@ All underlying methods share a static `VirtualThreadFactory` (thread-name prefix
 
 ##### 1.1.3 Use Cases
 
-1. **Order detail aggregation query**: query user info, order body, shipping address, and coupon status in parallel; any failure means the whole thing fails.
+1. **Order detail aggregation query**: query user info, order body, shipping address, and coupon status in parallel; any
+   failure means the whole thing fails.
 2. **Multi-level cache penetration**: query Redis and Caffeine in parallel; first hit wins.
-3. **External API timeout control**: every external call must return within 500ms, otherwise fall back to fallback logic.
-4. **Report data batch fetch**: pull data from 10 data sources in parallel; allow up to 2 failures while still showing partial data.
-5. **Million-level ID validation**: split 1 million IDs into 100 batches of 10,000 each, validate concurrently, and start the next batch after each batch completes.
+3. **External API timeout control**: every external call must return within 500ms, otherwise fall back to fallback
+   logic.
+4. **Report data batch fetch**: pull data from 10 data sources in parallel; allow up to 2 failures while still showing
+   partial data.
+5. **Million-level ID validation**: split 1 million IDs into 100 batches of 10,000 each, validate concurrently, and
+   start the next batch after each batch completes.
 
 ##### 1.1.4 What It Looks Like Without This Component
 
@@ -316,18 +356,19 @@ public class StructuredConcurrencyExamples {
 
 ##### 1.1.7 API Quick Reference
 
-| Method | Exception Propagation | Return Value |
-|--------|----------------------|--------------|
-| `gatherAll(Collection<Callable>)` | Any task throwing an exception propagates it and cancels the others | `List<T>` in input order |
-| `gatherAllSuppliers(Collection<Supplier>)` | Same as above | `List<T>` in input order |
-| `race(Collection<Callable>)` | Throws the last exception when all fail | `T` first successful result |
-| `raceSuppliers(Collection<Supplier>)` | Same as above | `T` |
-| `withDeadline(Callable, Duration)` | Throws `TimeoutException` on timeout, or the task's original exception | `T` |
-| `gatherBatched(Collection<Callable>, int)` | Any task exception | `List<T>` flattened merge |
-| `gatherAllBestEffort(Collection<Callable>)` | No exception (unless interrupted) | `BestEffortResult<T>` |
-| `gatherAllBestEffortSuppliers(Collection<Supplier>)` | Same as above | `BestEffortResult<T>` |
+| Method                                               | Exception Propagation                                                  | Return Value                |
+|------------------------------------------------------|------------------------------------------------------------------------|-----------------------------|
+| `gatherAll(Collection<Callable>)`                    | Any task throwing an exception propagates it and cancels the others    | `List<T>` in input order    |
+| `gatherAllSuppliers(Collection<Supplier>)`           | Same as above                                                          | `List<T>` in input order    |
+| `race(Collection<Callable>)`                         | Throws the last exception when all fail                                | `T` first successful result |
+| `raceSuppliers(Collection<Supplier>)`                | Same as above                                                          | `T`                         |
+| `withDeadline(Callable, Duration)`                   | Throws `TimeoutException` on timeout, or the task's original exception | `T`                         |
+| `gatherBatched(Collection<Callable>, int)`           | Any task exception                                                     | `List<T>` flattened merge   |
+| `gatherAllBestEffort(Collection<Callable>)`          | No exception (unless interrupted)                                      | `BestEffortResult<T>`       |
+| `gatherAllBestEffortSuppliers(Collection<Supplier>)` | Same as above                                                          | `BestEffortResult<T>`       |
 
-`BestEffortResult` fields: `successes()` list of success results, `failures()` list of exceptions, `failedIndices()` list of failure indices, plus helper methods `hasAnySuccess()` / `successCount()` / `failureCount()`.
+`BestEffortResult` fields: `successes()` list of success results, `failures()` list of exceptions, `failedIndices()`
+list of failure indices, plus helper methods `hasAnySuccess()` / `successCount()` / `failureCount()`.
 
 ---
 
@@ -337,28 +378,35 @@ public class StructuredConcurrencyExamples {
 
 `VirtualThreadFactory` implements the standard `ThreadFactory`, but adds two things on top:
 
-1. **Naming convention**: Every virtual thread has a readable prefix (e.g. `async-job-1`), which can be precisely located with JDK 25's `jcmd <pid> Thread.print` or JFR.
-2. **ScopedValue bindings**: Use the Builder to "weld" `ScopedValue` key-value pairs onto the factory. From then on, all virtual threads created by this factory automatically carry that context, eliminating manual `where().run()` wrapping at every call site.
+1. **Naming convention**: Every virtual thread has a readable prefix (e.g. `async-job-1`), which can be precisely
+   located with JDK 25's `jcmd <pid> Thread.print` or JFR.
+2. **ScopedValue bindings**: Use the Builder to "weld" `ScopedValue` key-value pairs onto the factory. From then on, all
+   virtual threads created by this factory automatically carry that context, eliminating manual `where().run()` wrapping
+   at every call site.
 
 Underneath, threads are created via `Thread.ofVirtual().name(name).unstarted(...)` with zero reflection.
 
 ##### 1.2.2 Interface Design Semantics
 
-| Method | Caller's Promise | Callee's Guarantee |
-|--------|------------------|--------------------|
-| `builder()` | "I want to customize a factory." | Returns a blank Builder; all fields have defaults (prefix `vt-`, no ScopedValue bindings). |
-| `of(namePrefix)` | "I only need a naming prefix; defaults for the rest." | Creates a simple factory; the virtual thread name returned by `newThread(runnable)` has the format `<prefix><auto-incrementing-suffix>`. |
-| `Builder.namePrefix(prefix)` | "My threads should use this prefix." | Sets the prefix; throws `NullPointerException` if the prefix is null. |
-| `Builder.scopedValue(key, value)` | "Every virtual thread should carry this context." | Appends the key-value pair to the bindings list. |
-| `Builder.scopedValues(bindings...)` | "I have multiple contexts to bind." | Replaces the bindings array wholesale (not appended). |
-| `Builder.build()` | "I'm done configuring; give me the factory." | Returns an immutable factory instance; thread-safe. |
+| Method                              | Caller's Promise                                      | Callee's Guarantee                                                                                                                       |
+|-------------------------------------|-------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| `builder()`                         | "I want to customize a factory."                      | Returns a blank Builder; all fields have defaults (prefix `vt-`, no ScopedValue bindings).                                               |
+| `of(namePrefix)`                    | "I only need a naming prefix; defaults for the rest." | Creates a simple factory; the virtual thread name returned by `newThread(runnable)` has the format `<prefix><auto-incrementing-suffix>`. |
+| `Builder.namePrefix(prefix)`        | "My threads should use this prefix."                  | Sets the prefix; throws `NullPointerException` if the prefix is null.                                                                    |
+| `Builder.scopedValue(key, value)`   | "Every virtual thread should carry this context."     | Appends the key-value pair to the bindings list.                                                                                         |
+| `Builder.scopedValues(bindings...)` | "I have multiple contexts to bind."                   | Replaces the bindings array wholesale (not appended).                                                                                    |
+| `Builder.build()`                   | "I'm done configuring; give me the factory."          | Returns an immutable factory instance; thread-safe.                                                                                      |
 
 ##### 1.2.3 Use Cases
 
-1. **Unified thread naming convention**: business-side async tasks use different prefixes (`order-async-`, `report-async-`), making log troubleshooting crystal clear.
-2. **Automatic tenant context propagation**: bind a tenant ID from `ScopedValue.newInstance()` to the factory; all virtual threads need no `ScopedValue.where(...)` wrapping.
-3. **Spring `@Async` custom executor**: inject the factory into `ThreadPoolTaskExecutor.setThreadFactory(...)`; all `@Async` tasks run on virtual threads with prefixes.
-4. **Log traceId propagation**: bind the traceId's `ScopedValue` to the factory; avoid copying `MDC.getCopyOfContextMap`.
+1. **Unified thread naming convention**: business-side async tasks use different prefixes (`order-async-`,
+   `report-async-`), making log troubleshooting crystal clear.
+2. **Automatic tenant context propagation**: bind a tenant ID from `ScopedValue.newInstance()` to the factory; all
+   virtual threads need no `ScopedValue.where(...)` wrapping.
+3. **Spring `@Async` custom executor**: inject the factory into `ThreadPoolTaskExecutor.setThreadFactory(...)`; all
+   `@Async` tasks run on virtual threads with prefixes.
+4. **Log traceId propagation**: bind the traceId's `ScopedValue` to the factory; avoid copying
+   `MDC.getCopyOfContextMap`.
 
 ##### 1.2.4 What It Looks Like Without This Component
 
@@ -433,15 +481,15 @@ public class VirtualThreadFactoryExamples {
 
 ##### 1.2.7 API Quick Reference
 
-| Method | Description |
-|--------|-------------|
-| `builder()` | Returns a Builder (default prefix `vt-`) |
-| `of(namePrefix)` | Quick factory, prefix only |
-| `Builder.namePrefix(prefix)` | Set the prefix |
-| `Builder.scopedValue(key, value)` | Bind a single ScopedValue |
-| `Builder.scopedValues(bindings...)` | Replace ScopedValue bindings in bulk |
-| `Builder.build()` | Build an immutable factory |
-| `newThread(runnable)` | Create a virtual thread (name format `<prefix><suffix>`) |
+| Method                              | Description                                              |
+|-------------------------------------|----------------------------------------------------------|
+| `builder()`                         | Returns a Builder (default prefix `vt-`)                 |
+| `of(namePrefix)`                    | Quick factory, prefix only                               |
+| `Builder.namePrefix(prefix)`        | Set the prefix                                           |
+| `Builder.scopedValue(key, value)`   | Bind a single ScopedValue                                |
+| `Builder.scopedValues(bindings...)` | Replace ScopedValue bindings in bulk                     |
+| `Builder.build()`                   | Build an immutable factory                               |
+| `newThread(runnable)`               | Create a virtual thread (name format `<prefix><suffix>`) |
 
 ---
 
@@ -449,29 +497,35 @@ public class VirtualThreadFactoryExamples {
 
 ##### 1.3.1 What It Is
 
-`BatchProcessor` is a concurrent batch-processing utility built on top of JDK 25 `StructuredTaskScope`. It encapsulates "concurrency throttling + per-item error isolation + overall timeout + results collected in input order" into a fluent API:
+`BatchProcessor` is a concurrent batch-processing utility built on top of JDK 25 `StructuredTaskScope`. It encapsulates
+"concurrency throttling + per-item error isolation + overall timeout + results collected in input order" into a fluent
+API:
 
 - **Concurrency throttling**: A `Semaphore` controls the number of virtual threads running concurrently.
 - **Error isolation**: a single failure does not stop other items; failure details are aggregated into a result object.
-- **Overall timeout**: `StructuredTaskScope.withTimeout` controls the total duration; on timeout, returns the partially completed results.
-- **Order preservation**: in `mapParallel` mode, the result list strictly corresponds to the input collection by index (failed items correspond to `null`).
+- **Overall timeout**: `StructuredTaskScope.withTimeout` controls the total duration; on timeout, returns the partially
+  completed results.
+- **Order preservation**: in `mapParallel` mode, the result list strictly corresponds to the input collection by index
+  (failed items correspond to `null`).
 
 ##### 1.3.2 Interface Design Semantics
 
-| Method | Caller's Promise | Callee's Guarantee |
-|--------|------------------|--------------------|
-| `of(items)` | "I have N items to process." | Creates a Builder and makes an immutable copy of the input. |
-| `parallelism(n)` | "At most n tasks run at the same time." | `Semaphore(n)` throttling; n must be ≥ 1; default `max(2, CPU*2)`. |
-| `timeout(d)` | "The whole batch takes at most d." | Controlled by `withTimeout(d)`; returns partial results on timeout. |
-| `forEach(consumer)` | "I only care about side effects (DB writes, push), not return values." | Runs `consumer.accept(item)` concurrently; returns `BatchResult` (contains success/failure counts and exception details). |
-| `mapParallel(mapper)` | "I need the result for each item, collected in input order." | Runs `mapper.apply(item)` concurrently; returns `BatchMappingResult` (result list aligned by index, failed items are `null`). |
+| Method                | Caller's Promise                                                       | Callee's Guarantee                                                                                                            |
+|-----------------------|------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| `of(items)`           | "I have N items to process."                                           | Creates a Builder and makes an immutable copy of the input.                                                                   |
+| `parallelism(n)`      | "At most n tasks run at the same time."                                | `Semaphore(n)` throttling; n must be ≥ 1; default `max(2, CPU*2)`.                                                            |
+| `timeout(d)`          | "The whole batch takes at most d."                                     | Controlled by `withTimeout(d)`; returns partial results on timeout.                                                           |
+| `forEach(consumer)`   | "I only care about side effects (DB writes, push), not return values." | Runs `consumer.accept(item)` concurrently; returns `BatchResult` (contains success/failure counts and exception details).     |
+| `mapParallel(mapper)` | "I need the result for each item, collected in input order."           | Runs `mapper.apply(item)` concurrently; returns `BatchMappingResult` (result list aligned by index, failed items are `null`). |
 
 ##### 1.3.3 Use Cases
 
-1. **Batch order processing**: 1,000 orders concurrently call the downstream shipping API; concurrency capped at 20; overall timeout 5 minutes.
+1. **Batch order processing**: 1,000 orders concurrently call the downstream shipping API; concurrency capped at 20;
+   overall timeout 5 minutes.
 2. **Batch ID query**: 10,000 user IDs concurrently queried against the database; results assembled in input order.
 3. **Batch file upload**: 500 files uploaded concurrently; failed files retried separately.
-4. **Data migration**: million records migrated concurrently; partial failures allowed but full error details must be captured.
+4. **Data migration**: million records migrated concurrently; partial failures allowed but full error details must be
+   captured.
 5. **Batch message push**: 1,000 users pushed to concurrently; one failure does not affect the others.
 
 ##### 1.3.4 What It Looks Like Without This Component
@@ -599,50 +653,60 @@ public class BatchProcessorExamples {
 
 ##### 1.3.7 API Quick Reference
 
-| Method | Default | Description |
-|--------|---------|-------------|
-| `of(items)` | Required | Creates a Builder; input is copied immutably |
-| `parallelism(n)` | `max(2, CPU*2)` | Max concurrency, n ≥ 1 |
-| `timeout(d)` | 30 minutes | Overall timeout, d must be positive |
-| `forEach(consumer)` | - | Processes each item; returns `BatchResult` |
-| `mapParallel(mapper)` | - | Maps each item; returns `BatchMappingResult` |
+| Method                | Default         | Description                                  |
+|-----------------------|-----------------|----------------------------------------------|
+| `of(items)`           | Required        | Creates a Builder; input is copied immutably |
+| `parallelism(n)`      | `max(2, CPU*2)` | Max concurrency, n ≥ 1                       |
+| `timeout(d)`          | 30 minutes      | Overall timeout, d must be positive          |
+| `forEach(consumer)`   | -               | Processes each item; returns `BatchResult`   |
+| `mapParallel(mapper)` | -               | Maps each item; returns `BatchMappingResult` |
 
 `BatchResult` fields: `successCount()`, `failureCount()`, `errors()`, `hasError()`, `empty()`.
 
-`BatchMappingResult` extra fields: `results()` result list in input order (failed items are `null`), `resultAt(index)` index-based access (throws `IndexOutOfBoundsException` if out of bounds).
+`BatchMappingResult` extra fields: `results()` result list in input order (failed items are `null`), `resultAt(index)`
+index-based access (throws `IndexOutOfBoundsException` if out of bounds).
 
 ---
 
 ### Module 2 — Rate Limiting and Fault Tolerance Algorithms (`algorithm/`)
 
-Encapsulates the most common "protection for outbound calls" algorithms in distributed and high-concurrency scenarios into stateless utilities and builders, which the caller composes via the Builder pattern as needed. The `algorithm/` sub-package contains four components: `Retryer` (exponential backoff + full jitter + exception filtering + Fallback in one), `RateLimiter` (token bucket with three waiting semantics), `CircuitBreaker` (three-state-machine circuit-breaker protection), and `Debouncer` (one `trigger()` method for all debounce scheduling). None of these components bind to any third-party libraries, with zero runtime reflection; the business side is free to evolve or replace the implementation.
+Encapsulates the most common "protection for outbound calls" algorithms in distributed and high-concurrency scenarios
+into stateless utilities and builders, which the caller composes via the Builder pattern as needed. The `algorithm/`
+sub-package contains four components: `Retryer` (exponential backoff + full jitter + exception filtering + Fallback in
+one), `RateLimiter` (token bucket with three waiting semantics), `CircuitBreaker` (three-state-machine circuit-breaker
+protection), and `Debouncer` (one `trigger()` method for all debounce scheduling). None of these components bind to any
+third-party libraries, with zero runtime reflection; the business side is free to evolve or replace the implementation.
 
 #### 2.1 `Retryer`
 
 ##### 2.1.1 What It Is
 
-`Retryer` is a universal retry utility for distributed-call scenarios. It packages the "exponential backoff + full jitter + exception filtering + Fallback degradation" quartet into one Builder:
+`Retryer` is a universal retry utility for distributed-call scenarios. It packages the "exponential backoff + full
+jitter + exception filtering + Fallback degradation" quartet into one Builder:
 
 - **Exponential backoff**: after the n-th failure, wait `min(initialBackoff × 2^(n-1), maxBackoff)`.
-- **Full jitter**: the actual backoff is randomly picked within `[backoff/2, backoff]` (algorithm proposed by AWS architect Marc Brooker), avoiding the thundering-herd effect caused by many clients retrying simultaneously.
-- **Precise exception matching**: only retries on the exception types specified by `retryOn(...)`; business exceptions (e.g. 4xx) are immediately propagated.
-- **Interrupt-aware**: when the thread is interrupted, immediately throws `RetryExhaustedException` and restores the interrupt flag, without wasting wait time.
+- **Full jitter**: the actual backoff is randomly picked within `[backoff/2, backoff]` (algorithm proposed by AWS
+  architect Marc Brooker), avoiding the thundering-herd effect caused by many clients retrying simultaneously.
+- **Precise exception matching**: only retries on the exception types specified by `retryOn(...)`; business exceptions
+  (e.g. 4xx) are immediately propagated.
+- **Interrupt-aware**: when the thread is interrupted, immediately throws `RetryExhaustedException` and restores the
+  interrupt flag, without wasting wait time.
 - **Fallback degradation**: optional `execute(task, fallback)` returns a fallback value after retries are exhausted.
 
 The implementation uses `Thread.sleep` + `ThreadLocalRandom`; it does not depend on `ScheduledExecutorService`.
 
 ##### 2.1.2 Interface Design Semantics
 
-| Method | Caller's Promise | Callee's Guarantee |
-|--------|------------------|--------------------|
-| `of(initialBackoff)` | "My first backoff is X." | Returns a Builder; initial backoff is X; X must be non-negative. |
-| `maxAttempts(n)` | "I can tolerate at most n attempts (including the first)." | n ≥ 1; n = 1 means no retry. |
-| `maxBackoff(d)` | "The backoff should not exceed this ceiling." | Adds `min(..., d)` to the backoff formula; d must be non-negative. |
-| `jitter(true)` | "This is a multi-client scenario; enable jitter." | Actual backoff is randomized within `[backoff/2, backoff]`. |
-| `retryOn(types...)` | "I only want to retry on these exceptions." | Triggers retry only on the specified types (including subclasses); other exceptions are sneaky-thrown immediately. |
-| `execute(task)` | "I want the result; throw if retries are exhausted." | Throws `RetryExhaustedException` on retry exhaustion; cause is the last exception. |
+| Method                    | Caller's Promise                                                                        | Callee's Guarantee                                                                                                                      |
+|---------------------------|-----------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| `of(initialBackoff)`      | "My first backoff is X."                                                                | Returns a Builder; initial backoff is X; X must be non-negative.                                                                        |
+| `maxAttempts(n)`          | "I can tolerate at most n attempts (including the first)."                              | n ≥ 1; n = 1 means no retry.                                                                                                            |
+| `maxBackoff(d)`           | "The backoff should not exceed this ceiling."                                           | Adds `min(..., d)` to the backoff formula; d must be non-negative.                                                                      |
+| `jitter(true)`            | "This is a multi-client scenario; enable jitter."                                       | Actual backoff is randomized within `[backoff/2, backoff]`.                                                                             |
+| `retryOn(types...)`       | "I only want to retry on these exceptions."                                             | Triggers retry only on the specified types (including subclasses); other exceptions are sneaky-thrown immediately.                      |
+| `execute(task)`           | "I want the result; throw if retries are exhausted."                                    | Throws `RetryExhaustedException` on retry exhaustion; cause is the last exception.                                                      |
 | `execute(task, fallback)` | "I still need a return value when retries are exhausted; don't let the upstream crash." | Returns the fallback on retry exhaustion, interruption, or non-retry exception. Catches `Exception` only; **does not swallow `Error`**. |
-| `execute(runnable)` | "I have no return value." | Internally wraps with `Executors.callable(runnable, null)` and reuses the same logic. |
+| `execute(runnable)`       | "I have no return value."                                                               | Internally wraps with `Executors.callable(runnable, null)` and reuses the same logic.                                                   |
 
 ##### 2.1.3 Use Cases
 
@@ -753,16 +817,16 @@ public class RetryerExamples {
 
 ##### 2.1.7 API Quick Reference
 
-| Method | Default | Description |
-|--------|---------|-------------|
-| `of(initialBackoff)` | Required | Creates a Builder; initial backoff must be non-negative |
-| `maxAttempts(n)` | 3 | Max attempts (including the first), n ≥ 1 |
-| `maxBackoff(d)` | 30s | Backoff ceiling |
-| `jitter(bool)` | false | Full jitter |
-| `retryOn(types...)` | `{Exception.class}` | Exception types that trigger retry; at least 1 |
-| `execute(Callable)` | - | Executes the task; throws `RetryExhaustedException` on retry exhaustion |
-| `execute(Callable, fallback)` | - | Executes the task; returns fallback on failure (does not swallow `Error`) |
-| `execute(Runnable)` | - | No-return-value variant |
+| Method                        | Default             | Description                                                               |
+|-------------------------------|---------------------|---------------------------------------------------------------------------|
+| `of(initialBackoff)`          | Required            | Creates a Builder; initial backoff must be non-negative                   |
+| `maxAttempts(n)`              | 3                   | Max attempts (including the first), n ≥ 1                                 |
+| `maxBackoff(d)`               | 30s                 | Backoff ceiling                                                           |
+| `jitter(bool)`                | false               | Full jitter                                                               |
+| `retryOn(types...)`           | `{Exception.class}` | Exception types that trigger retry; at least 1                            |
+| `execute(Callable)`           | -                   | Executes the task; throws `RetryExhaustedException` on retry exhaustion   |
+| `execute(Callable, fallback)` | -                   | Executes the task; returns fallback on failure (does not swallow `Error`) |
+| `execute(Runnable)`           | -                   | No-return-value variant                                                   |
 
 `RetryExhaustedException` is a subclass of `RuntimeException`; `getCause()` returns the last original exception.
 
@@ -772,39 +836,47 @@ public class RetryerExamples {
 
 ##### 2.2.1 What It Is
 
-`RateLimiter` implements rate limiting on outbound calls using the classic token-bucket algorithm. The bucket is refilled with tokens at a fixed rate; each call consumes 1 (or N) tokens; when the bucket is empty, it returns `false` or blocks according to the method semantics.
+`RateLimiter` implements rate limiting on outbound calls using the classic token-bucket algorithm. The bucket is
+refilled with tokens at a fixed rate; each call consumes 1 (or N) tokens; when the bucket is empty, it returns `false`
+or blocks according to the method semantics.
 
 Core design:
 
-- **Three waiting semantics**: `tryAcquire()` is non-blocking, `tryAcquire(Duration)` is time-limited blocking, `acquire()` is unbounded blocking — caller picks as needed.
-- **Virtual-thread scheduler**: internally uses `Executors.newSingleThreadScheduledExecutor(Thread.ofVirtual().factory())` to refill tokens periodically; very low resource usage.
-- **Multi-token granularity**: `tryAcquire(n)` / `acquire(n)` support consuming N tokens at once, ideal for bulk-import scenarios.
-- **Lifecycle management**: `close()` idempotently shuts down the scheduler; after shutdown, `tryAcquire` returns false and `acquire` throws `IllegalStateException`.
+- **Three waiting semantics**: `tryAcquire()` is non-blocking, `tryAcquire(Duration)` is time-limited blocking,
+  `acquire()` is unbounded blocking — caller picks as needed.
+- **Virtual-thread scheduler**: internally uses
+  `Executors.newSingleThreadScheduledExecutor(Thread.ofVirtual().factory())` to refill tokens periodically; very low
+  resource usage.
+- **Multi-token granularity**: `tryAcquire(n)` / `acquire(n)` support consuming N tokens at once, ideal for bulk-import
+  scenarios.
+- **Lifecycle management**: `close()` idempotently shuts down the scheduler; after shutdown, `tryAcquire` returns false
+  and `acquire` throws `IllegalStateException`.
 
 ##### 2.2.2 Interface Design Semantics
 
-| Method | Caller's Promise | Callee's Guarantee |
-|--------|------------------|--------------------|
-| `ofTokensPerSecond(n)` | "I allow at most n calls per second." | Bucket capacity = n; refills n tokens every 1 second. |
-| `ofTokensPerDuration(n, window)` | "I allow at most n calls in any window of time." | Bucket capacity = n; refills once per window. |
-| `ofTryAcquireTimeout(n, timeout)` | (Deprecated) | Since 2.2.0 the `try*` prefix strictly means non-blocking. This method is kept for compatibility only. Use `ofTokensPerDuration(n, window)` + `tryAcquire(Duration)` instead. |
-| `builder()` | "I want fine-grained configuration." | Returns a Builder. |
-| `tryAcquire()` | "Give me a token now; skip if none." | Returns false immediately if the bucket is empty; **does not block**. |
-| `tryAcquire(n)` | Same as above but takes n tokens at once. | n ≥ 1; returns false immediately if fewer than n tokens are available. |
-| `tryAcquire(Duration)` | "I can wait, but no more than timeout." | Blocks waiting for 1 token within timeout; returns false on timeout; restores interrupt flag and returns false when interrupted. |
-| `tryAcquire(n, Duration)` | Same as above but takes n tokens at once. | Same as above. |
-| `acquire()` | "I must get a token; I can wait however long it takes." | Blocks until 1 token is acquired; throws `InterruptedException` on interrupt. |
-| `acquire(n)` | Same as above but takes n tokens at once. | Blocks until n tokens are acquired. |
-| `acquireUninterruptibly(n)` | "I don't respond to interrupts." | Does not throw `InterruptedException`, but preserves the interrupt flag. |
-| `availablePermits()` | "Let me see how many tokens are in the bucket." | Returns an instantaneous snapshot (**approximate**, not atomically consistent). |
-| `close()` | "I'm done with it." | Shuts down the scheduler thread; idempotent. |
+| Method                            | Caller's Promise                                        | Callee's Guarantee                                                                                                                                                            |
+|-----------------------------------|---------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ofTokensPerSecond(n)`            | "I allow at most n calls per second."                   | Bucket capacity = n; refills n tokens every 1 second.                                                                                                                         |
+| `ofTokensPerDuration(n, window)`  | "I allow at most n calls in any window of time."        | Bucket capacity = n; refills once per window.                                                                                                                                 |
+| `ofTryAcquireTimeout(n, timeout)` | (Deprecated)                                            | Since 2.2.0 the `try*` prefix strictly means non-blocking. This method is kept for compatibility only. Use `ofTokensPerDuration(n, window)` + `tryAcquire(Duration)` instead. |
+| `builder()`                       | "I want fine-grained configuration."                    | Returns a Builder.                                                                                                                                                            |
+| `tryAcquire()`                    | "Give me a token now; skip if none."                    | Returns false immediately if the bucket is empty; **does not block**.                                                                                                         |
+| `tryAcquire(n)`                   | Same as above but takes n tokens at once.               | n ≥ 1; returns false immediately if fewer than n tokens are available.                                                                                                        |
+| `tryAcquire(Duration)`            | "I can wait, but no more than timeout."                 | Blocks waiting for 1 token within timeout; returns false on timeout; restores interrupt flag and returns false when interrupted.                                              |
+| `tryAcquire(n, Duration)`         | Same as above but takes n tokens at once.               | Same as above.                                                                                                                                                                |
+| `acquire()`                       | "I must get a token; I can wait however long it takes." | Blocks until 1 token is acquired; throws `InterruptedException` on interrupt.                                                                                                 |
+| `acquire(n)`                      | Same as above but takes n tokens at once.               | Blocks until n tokens are acquired.                                                                                                                                           |
+| `acquireUninterruptibly(n)`       | "I don't respond to interrupts."                        | Does not throw `InterruptedException`, but preserves the interrupt flag.                                                                                                      |
+| `availablePermits()`              | "Let me see how many tokens are in the bucket."         | Returns an instantaneous snapshot (**approximate**, not atomically consistent).                                                                                               |
+| `close()`                         | "I'm done with it."                                     | Shuts down the scheduler thread; idempotent.                                                                                                                                  |
 
 ##### 2.2.3 Use Cases
 
 1. **Global rate limiting on external APIs**: call a third-party payment interface; cap at 100 times per second.
 2. **Database write rate limiting**: batch writes limited to 500 per second to avoid overloading the database.
 3. **Scheduled-task rate limiting**: trigger at most 10 times per minute; drop the rest.
-4. **SLA-strict time-limited waiting**: if no token can be obtained within 500ms on a critical path, fall back to fallback logic.
+4. **SLA-strict time-limited waiting**: if no token can be obtained within 500ms on a critical path, fall back to
+   fallback logic.
 5. **Burst-traffic protection**: allow 1,000 calls within 60 seconds to handle short bursts.
 
 ##### 2.2.4 What It Looks Like Without This Component
@@ -912,23 +984,23 @@ public class RateLimiterExamples {
 
 ##### 2.2.7 API Quick Reference
 
-| Method | Description |
-|--------|-------------|
-| `ofTokensPerSecond(n)` | Refill n tokens per second (n ≥ 1) |
-| `ofTokensPerDuration(n, window)` | Refill n tokens per window |
-| `ofTryAcquireTimeout(n, timeout)` | Deprecated; use `ofTokensPerDuration` + `tryAcquire(Duration)` |
-| `builder()` | Custom builder |
-| `tryAcquire()` | Non-blocking, take 1 token |
-| `tryAcquire(n)` | Non-blocking, take n tokens |
-| `tryAcquire(Duration)` | Time-limited blocking, take 1 token |
-| `tryAcquire(n, Duration)` | Time-limited blocking, take n tokens |
-| `acquire()` | Unbounded blocking, take 1 token |
-| `acquire(n)` | Unbounded blocking, take n tokens |
-| `acquireUninterruptibly(n)` | Uninterruptible blocking |
-| `availablePermits()` | Current available tokens (approximate) |
-| `close()` | Shut down the limiter (idempotent) |
-| `Builder.period(d)` | Custom period (d must be positive) |
-| `Builder.tryAcquireTimeoutEnabled(bool)` | Deprecated; no longer affects `tryAcquire` behavior |
+| Method                                   | Description                                                    |
+|------------------------------------------|----------------------------------------------------------------|
+| `ofTokensPerSecond(n)`                   | Refill n tokens per second (n ≥ 1)                             |
+| `ofTokensPerDuration(n, window)`         | Refill n tokens per window                                     |
+| `ofTryAcquireTimeout(n, timeout)`        | Deprecated; use `ofTokensPerDuration` + `tryAcquire(Duration)` |
+| `builder()`                              | Custom builder                                                 |
+| `tryAcquire()`                           | Non-blocking, take 1 token                                     |
+| `tryAcquire(n)`                          | Non-blocking, take n tokens                                    |
+| `tryAcquire(Duration)`                   | Time-limited blocking, take 1 token                            |
+| `tryAcquire(n, Duration)`                | Time-limited blocking, take n tokens                           |
+| `acquire()`                              | Unbounded blocking, take 1 token                               |
+| `acquire(n)`                             | Unbounded blocking, take n tokens                              |
+| `acquireUninterruptibly(n)`              | Uninterruptible blocking                                       |
+| `availablePermits()`                     | Current available tokens (approximate)                         |
+| `close()`                                | Shut down the limiter (idempotent)                             |
+| `Builder.period(d)`                      | Custom period (d must be positive)                             |
+| `Builder.tryAcquireTimeoutEnabled(bool)` | Deprecated; no longer affects `tryAcquire` behavior            |
 
 ---
 
@@ -936,44 +1008,53 @@ public class RateLimiterExamples {
 
 ##### 2.3.1 What It Is
 
-`CircuitBreaker` is a three-state-machine circuit breaker inspired by Hystrix / Resilience4j design, used to protect downstream services from being overwhelmed during sustained failures.
+`CircuitBreaker` is a three-state-machine circuit breaker inspired by Hystrix / Resilience4j design, used to protect
+downstream services from being overwhelmed during sustained failures.
 
 Three states:
 
 - **CLOSED**: normal state; requests pass through; success/failure statistics are accumulated.
-- **OPEN**: fault state; requests are immediately rejected (throws `CircuitBreakerOpenException`), without calling the downstream.
-- **HALF_OPEN**: probe state; entered after waiting `openDuration`; the first probe call is let through — success transitions back to CLOSED, failure returns to OPEN.
+- **OPEN**: fault state; requests are immediately rejected (throws `CircuitBreakerOpenException`), without calling the
+  downstream.
+- **HALF_OPEN**: probe state; entered after waiting `openDuration`; the first probe call is let through — success
+  transitions back to CLOSED, failure returns to OPEN.
 
 Three trigger modes:
 
-- **Failure-rate mode (default)**: monitors the most recent N calls; trips when the failure rate exceeds the threshold. Requires at least 10 calls accumulated in the window before judging, to avoid cold-start false-trips.
+- **Failure-rate mode (default)**: monitors the most recent N calls; trips when the failure rate exceeds the threshold.
+  Requires at least 10 calls accumulated in the window before judging, to avoid cold-start false-trips.
 - **Absolute-count mode (`ofCount`)**: trips when N failures accumulate in the window, without calculating failure rate.
-- **Time-window mode (`ofRate`)**: trips when the failure rate within the most recent `windowDuration` exceeds the threshold (`TIME_BASED` sliding window).
+- **Time-window mode (`ofRate`)**: trips when the failure rate within the most recent `windowDuration` exceeds the
+  threshold (`TIME_BASED` sliding window).
 
-The HALF_OPEN state uses **single-probe** semantics: an `AtomicBoolean halfOpenGate` `compareAndSet` ensures that only one probe call is let through at any moment, while other concurrent threads are rejected as if OPEN.
+The HALF_OPEN state uses **single-probe** semantics: an `AtomicBoolean halfOpenGate` `compareAndSet` ensures that only
+one probe call is let through at any moment, while other concurrent threads are rejected as if OPEN.
 
 ##### 2.3.2 Interface Design Semantics
 
-| Method | Caller's Promise | Callee's Guarantee |
-|--------|------------------|--------------------|
-| `ofDefaults()` | "Default parameters are fine." | Failure rate 50% / window 100 / OPEN duration 10s. |
-| `of(failurePercent, openDuration)` | "Use failure-rate mode with a 100-call window." | Same as above; parameterized failure rate and OPEN duration. |
-| `ofCount(failureCount, openDuration)` | "Trip on absolute failure count." | Trips on N failures; no minimum-sample requirement. |
-| `ofRate(failurePercent, window, openDuration)` | "Use the time-window mode." | Failure rate within a time window. |
-| `builder()` | "I want fine-grained configuration." | Returns a Builder. |
-| `execute(task)` | "Run the task; tell me if the circuit is open." | Throws `CircuitBreakerOpenException` in OPEN state; task exceptions are also propagated. |
-| `execute(task, fallback)` | "No failure of any kind should crash the upstream." | Both circuit-open and exceptions return the fallback; no exception thrown. |
-| `executeOrThrow(task)` | "Make the semantics explicit: I will throw." | Same as `execute(task)`, but the method name reinforces the "may throw" semantics. |
-| `state()` | "I need to monitor the circuit-breaker state." | Returns the current `CLOSED` / `OPEN` / `HALF_OPEN`. |
-| `reset()` | "Force the circuit breaker back to CLOSED." | Clears statistics; idempotent. |
-| `forceOpen()` | "I want to test the OPEN state." | Forces OPEN; does not affect `openDuration` timing. |
+| Method                                         | Caller's Promise                                    | Callee's Guarantee                                                                       |
+|------------------------------------------------|-----------------------------------------------------|------------------------------------------------------------------------------------------|
+| `ofDefaults()`                                 | "Default parameters are fine."                      | Failure rate 50% / window 100 / OPEN duration 10s.                                       |
+| `of(failurePercent, openDuration)`             | "Use failure-rate mode with a 100-call window."     | Same as above; parameterized failure rate and OPEN duration.                             |
+| `ofCount(failureCount, openDuration)`          | "Trip on absolute failure count."                   | Trips on N failures; no minimum-sample requirement.                                      |
+| `ofRate(failurePercent, window, openDuration)` | "Use the time-window mode."                         | Failure rate within a time window.                                                       |
+| `builder()`                                    | "I want fine-grained configuration."                | Returns a Builder.                                                                       |
+| `execute(task)`                                | "Run the task; tell me if the circuit is open."     | Throws `CircuitBreakerOpenException` in OPEN state; task exceptions are also propagated. |
+| `execute(task, fallback)`                      | "No failure of any kind should crash the upstream." | Both circuit-open and exceptions return the fallback; no exception thrown.               |
+| `executeOrThrow(task)`                         | "Make the semantics explicit: I will throw."        | Same as `execute(task)`, but the method name reinforces the "may throw" semantics.       |
+| `state()`                                      | "I need to monitor the circuit-breaker state."      | Returns the current `CLOSED` / `OPEN` / `HALF_OPEN`.                                     |
+| `reset()`                                      | "Force the circuit breaker back to CLOSED."         | Clears statistics; idempotent.                                                           |
+| `forceOpen()`                                  | "I want to test the OPEN state."                    | Forces OPEN; does not affect `openDuration` timing.                                      |
 
 ##### 2.3.3 Use Cases
 
-1. **External API call protection**: trip when failure rate of payment or SMS interfaces exceeds 50%, to avoid dragging down the whole system.
+1. **External API call protection**: trip when failure rate of payment or SMS interfaces exceeds 50%, to avoid dragging
+   down the whole system.
 2. **Downstream service degradation**: trip when the user service fails; return cached fallback data.
-3. **Database fault protection**: trip when primary-database failure rate rises; the application layer switches to read-only database.
-4. **Cold-start protection for new services**: use absolute-count mode (e.g. trip on 5 failures) to avoid cold-start misjudgment.
+3. **Database fault protection**: trip when primary-database failure rate rises; the application layer switches to
+   read-only database.
+4. **Cold-start protection for new services**: use absolute-count mode (e.g. trip on 5 failures) to avoid cold-start
+   misjudgment.
 5. **Multi-tenant isolation**: one circuit breaker per tenant; a single-tenant failure does not affect other tenants.
 
 ##### 2.3.4 What It Looks Like Without This Component
@@ -1101,25 +1182,25 @@ public class CircuitBreakerExamples {
 
 ##### 2.3.7 API Quick Reference
 
-| Method | Description |
-|--------|-------------|
-| `ofDefaults()` | Default config (50% / 100 window / 10s) |
-| `of(failurePercent, openDuration)` | Failure-rate mode, 100-call window |
-| `ofCount(failureCount, openDuration)` | Absolute-count mode |
-| `ofRate(failurePercent, window, openDuration)` | Time-window mode |
-| `builder()` | Fine-grained Builder |
-| `execute(task)` | Run the task; throws `CircuitBreakerOpenException` if OPEN |
-| `execute(task, fallback)` | Run the task; returns fallback on failure |
-| `executeOrThrow(task)` | Same as `execute`, but the method name emphasizes "may throw" |
-| `state()` | Current state (`CLOSED` / `OPEN` / `HALF_OPEN`) |
-| `reset()` | Force reset to CLOSED |
-| `forceOpen()` | Force to OPEN (for testing) |
-| `Builder.failurePercent(p)` | Failure-rate threshold (1-100) |
-| `Builder.failureCount(n)` | Absolute failure count (n ≥ 1) |
-| `Builder.windowSize(n)` | Counting window size (n ≥ 10; default 100) |
-| `Builder.windowDuration(d)` | Time-window length (only `TIME_BASED`) |
-| `Builder.openDuration(d)` | OPEN duration |
-| `Builder.slidingWindowType(type)` | Sliding-window type (`COUNT_BASED` / `TIME_BASED`) |
+| Method                                         | Description                                                   |
+|------------------------------------------------|---------------------------------------------------------------|
+| `ofDefaults()`                                 | Default config (50% / 100 window / 10s)                       |
+| `of(failurePercent, openDuration)`             | Failure-rate mode, 100-call window                            |
+| `ofCount(failureCount, openDuration)`          | Absolute-count mode                                           |
+| `ofRate(failurePercent, window, openDuration)` | Time-window mode                                              |
+| `builder()`                                    | Fine-grained Builder                                          |
+| `execute(task)`                                | Run the task; throws `CircuitBreakerOpenException` if OPEN    |
+| `execute(task, fallback)`                      | Run the task; returns fallback on failure                     |
+| `executeOrThrow(task)`                         | Same as `execute`, but the method name emphasizes "may throw" |
+| `state()`                                      | Current state (`CLOSED` / `OPEN` / `HALF_OPEN`)               |
+| `reset()`                                      | Force reset to CLOSED                                         |
+| `forceOpen()`                                  | Force to OPEN (for testing)                                   |
+| `Builder.failurePercent(p)`                    | Failure-rate threshold (1-100)                                |
+| `Builder.failureCount(n)`                      | Absolute failure count (n ≥ 1)                                |
+| `Builder.windowSize(n)`                        | Counting window size (n ≥ 10; default 100)                    |
+| `Builder.windowDuration(d)`                    | Time-window length (only `TIME_BASED`)                        |
+| `Builder.openDuration(d)`                      | OPEN duration                                                 |
+| `Builder.slidingWindowType(type)`              | Sliding-window type (`COUNT_BASED` / `TIME_BASED`)            |
 
 `CircuitBreaker.State` enum: `CLOSED` / `OPEN` / `HALF_OPEN`.
 
@@ -1129,27 +1210,33 @@ public class CircuitBreakerExamples {
 
 ##### 2.4.1 What It Is
 
-`Debouncer` wraps the "reset timer on repeated trigger" debounce pattern into a single `trigger()` method. It uses a `ScheduledExecutorService` (virtual thread factory) under the hood; every `trigger()` cancels the old timer and starts a new one; if no new `trigger()` arrives within `delay`, the pending action is executed.
+`Debouncer` wraps the "reset timer on repeated trigger" debounce pattern into a single `trigger()` method. It uses a
+`ScheduledExecutorService` (virtual thread factory) under the hood; every `trigger()` cancels the old timer and starts a
+new one; if no new `trigger()` arrives within `delay`, the pending action is executed.
 
-Design intent: the caller does not need to keep a `ScheduledFuture` reference, does not need to try/catch `InterruptedException`, and does not need to remember the two-step `cancel + schedule` pattern. A single `trigger()` call site completes all the logic.
+Design intent: the caller does not need to keep a `ScheduledFuture` reference, does not need to try/catch
+`InterruptedException`, and does not need to remember the two-step `cancel + schedule` pattern. A single `trigger()`
+call site completes all the logic.
 
 ##### 2.4.2 Interface Design Semantics
 
-| Method | Caller's Promise | Callee's Guarantee |
-|--------|------------------|--------------------|
-| `of(delay, action)` | "I have a debounced action with delay d." | Creates a debouncer; delay must be positive; scheduler uses virtual threads. |
-| `trigger()` | "I triggered again; reset the countdown." | Cancels the currently pending task and creates a new one; repeated `trigger` within delay keeps resetting; no effect after the debouncer is closed. |
-| `flush()` | "Execute the pending action right now; no more waiting." | Cancels the timer and immediately runs `action.run()`; no effect if nothing is pending; swallows action exceptions. |
-| `cancel()` | "Cancel the pending action, but keep the debouncer." | Cancels the timer; does not affect subsequent `trigger()` calls. |
-| `isPending()` | "I want to know whether there is a pending operation." | Returns true if there is a pending and unfinished operation; returns false if none or if closed. |
-| `close()` | "I'm done with it; release the scheduler." | Shuts down the scheduler thread; idempotent. |
+| Method              | Caller's Promise                                         | Callee's Guarantee                                                                                                                                  |
+|---------------------|----------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `of(delay, action)` | "I have a debounced action with delay d."                | Creates a debouncer; delay must be positive; scheduler uses virtual threads.                                                                        |
+| `trigger()`         | "I triggered again; reset the countdown."                | Cancels the currently pending task and creates a new one; repeated `trigger` within delay keeps resetting; no effect after the debouncer is closed. |
+| `flush()`           | "Execute the pending action right now; no more waiting." | Cancels the timer and immediately runs `action.run()`; no effect if nothing is pending; swallows action exceptions.                                 |
+| `cancel()`          | "Cancel the pending action, but keep the debouncer."     | Cancels the timer; does not affect subsequent `trigger()` calls.                                                                                    |
+| `isPending()`       | "I want to know whether there is a pending operation."   | Returns true if there is a pending and unfinished operation; returns false if none or if closed.                                                    |
+| `close()`           | "I'm done with it; release the scheduler."               | Shuts down the scheduler thread; idempotent.                                                                                                        |
 
 ##### 2.4.3 Use Cases
 
-1. **Search-box input debounce**: avoid hitting the backend on every keystroke; trigger the search only after 300ms of inactivity.
+1. **Search-box input debounce**: avoid hitting the backend on every keystroke; trigger the search only after 300ms of
+   inactivity.
 2. **Form auto-save**: keep triggering "save" on every edit; actually save only after 1s of inactivity.
 3. **Window resize events**: resize events fire at high frequency; debounce so layout runs only after resizing stops.
-4. **Button double-submit prevention**: even if the user clicks repeatedly, the actual submit fires only 500ms after the last click.
+4. **Button double-submit prevention**: even if the user clicks repeatedly, the actual submit fires only 500ms after the
+   last click.
 5. **Editor content sync**: editor changes fire frequently; debounce 2 seconds before syncing to the server.
 
 ##### 2.4.4 What It Looks Like Without This Component
@@ -1250,28 +1337,40 @@ public class DebouncerExamples {
 
 ##### 2.4.7 API Quick Reference
 
-| Method | Description |
-|--------|-------------|
-| `of(delay, action)` | Create a debouncer (delay must be positive) |
-| `trigger()` | Trigger the debounce (repeated triggers reset the timer) |
-| `flush()` | Execute the pending action immediately |
-| `cancel()` | Cancel the pending action (does not affect later triggers) |
-| `isPending()` | Whether there is a pending operation |
-| `close()` | Shut down the debouncer (idempotent) |
+| Method              | Description                                                |
+|---------------------|------------------------------------------------------------|
+| `of(delay, action)` | Create a debouncer (delay must be positive)                |
+| `trigger()`         | Trigger the debounce (repeated triggers reset the timer)   |
+| `flush()`           | Execute the pending action immediately                     |
+| `cancel()`          | Cancel the pending action (does not affect later triggers) |
+| `isPending()`       | Whether there is a pending operation                       |
+| `close()`           | Shut down the debouncer (idempotent)                       |
 
 ---
 
 ### Module 3 — Dynamic Thread Pool (`threadpool/`)
 
-Extends the standard `ThreadPoolExecutor` with "event-driven resize + rejection counting + one-stop runtime snapshot", allowing thread pool parameters to be adjusted at runtime without restarting the application. The `threadpool/` sub-package contains three components: `DynamicExecutor` (a tunable thread pool extending `ThreadPoolExecutor`), `PoolResizeEvent` (a hot-update event that updates only non-null fields), and `PoolStatus` (an immutable runtime snapshot of 9 core metrics). The multi-pool scenario is configuration-driven via the `platform.concurrency.thread-pools` Map, and injected by name with `@Resource(name = "<poolName>")`, without writing any `@Bean` methods on the business side.
+Extends the standard `ThreadPoolExecutor` with "event-driven resize + rejection counting + one-stop runtime snapshot",
+allowing thread pool parameters to be adjusted at runtime without restarting the application. The `threadpool/`
+sub-package contains three components: `DynamicExecutor` (a tunable thread pool extending `ThreadPoolExecutor`),
+`PoolResizeEvent` (a hot-update event that updates only non-null fields), and `PoolStatus` (an immutable runtime
+snapshot of 9 core metrics). The multi-pool scenario is configuration-driven via the `platform.concurrency.thread-pools`
+Map, and injected by name with `@Resource(name = "<poolName>")`, without writing any `@Bean` methods on the business
+side.
 
 ### 3.0 `Implementation` `Principles`
 
-This section deconstructs the dynamic thread pool's runtime mechanism at the source-code level, helping readers judge the extension boundaries and room for modification. Section 3.1 describes the API for callers; this section describes the design for implementers.
+This section deconstructs the dynamic thread pool's runtime mechanism at the source-code level, helping readers judge
+the extension boundaries and room for modification. Section 3.1 describes the API for callers; this section describes
+the design for implementers.
 
 #### 3.0.1 `Overall` `Architecture`
 
-The mechanism is split into three layers: the core layer is responsible for hot-update capability itself; the auto-configuration layer is responsible for registering multiple pools into the Spring container; the config-center integration layer is responsible for listening to external configuration changes and triggering the core layer. The three layers have strictly separated responsibilities; the core layer does not depend on the Spring container at all, so unit tests can run without Spring.
+The mechanism is split into three layers: the core layer is responsible for hot-update capability itself; the
+auto-configuration layer is responsible for registering multiple pools into the Spring container; the config-center
+integration layer is responsible for listening to external configuration changes and triggering the core layer. The
+three layers have strictly separated responsibilities; the core layer does not depend on the Spring container at all, so
+unit tests can run without Spring.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -1316,9 +1415,14 @@ The mechanism is split into three layers: the core layer is responsible for hot-
 
 Key points of each layer:
 
-- **Core layer has zero Spring dependency**: `DynamicExecutor` only extends `java.util.concurrent.ThreadPoolExecutor`; it can be used in any Java process.
-- **Auto-configuration layer only does "config → Bean" translation**: at startup, `AlgorithmAutoConfiguration` iterates the `platform.concurrency.thread-pools` Map, registering each key as a `DynamicExecutor` singleton Bean; bean name = key, making `@Qualifier` references easy.
-- **Integration layer activates on demand**: it is only effective when Spring Cloud's `EnvironmentChangeEvent` class is on the classpath; if that dependency is missing, this Bean will not appear in the project. It works with any config center that can trigger this event — Nacos, Apollo, Config, ZK, Consul, etc.
+- **Core layer has zero Spring dependency**: `DynamicExecutor` only extends `java.util.concurrent.ThreadPoolExecutor`;
+  it can be used in any Java process.
+- **Auto-configuration layer only does "config → Bean" translation**: at startup, `AlgorithmAutoConfiguration` iterates
+  the `platform.concurrency.thread-pools` Map, registering each key as a `DynamicExecutor` singleton Bean; bean name =
+  key, making `@Qualifier` references easy.
+- **Integration layer activates on demand**: it is only effective when Spring Cloud's `EnvironmentChangeEvent` class is
+  on the classpath; if that dependency is missing, this Bean will not appear in the project. It works with any config
+  center that can trigger this event — Nacos, Apollo, Config, ZK, Consul, etc.
 
 #### 3.0.2 `Tuning` `Workflow`
 
@@ -1359,7 +1463,8 @@ Internally calls setCorePoolSize / setMaximumPoolSize /
         setKeepAliveTime / setRejectedExecutionHandler by field
 ```
 
-Key source structure of `ThreadPoolConfigRefresher` (located in `cn.richie696.component.concurrency.config.ThreadPoolConfigRefresher`):
+Key source structure of `ThreadPoolConfigRefresher` (located in
+`cn.richie696.component.concurrency.config.ThreadPoolConfigRefresher`):
 
 ```java
 import cn.richie696.component.concurrency.config.ConcurrencyProperties;
@@ -1463,16 +1568,25 @@ public class ThreadPoolConfigRefresher {
 
 **Key design trade-offs**:
 
-- **Diff is done in the auto-configuration layer**: `ThreadPoolConfigRefresher` caches the most recent `PoolProperties` snapshot and only issues `onResize` when fields actually change, avoiding pointless triggers.
-- **Null fields keep their original values**: All `PoolProperties` fields are wrapper types (`Integer` / `Duration`); leaving them out of the config means "do not touch" — they will not be force-overwritten with defaults.
+- **Diff is done in the auto-configuration layer**: `ThreadPoolConfigRefresher` caches the most recent `PoolProperties`
+  snapshot and only issues `onResize` when fields actually change, avoiding pointless triggers.
+- **Null fields keep their original values**: All `PoolProperties` fields are wrapper types (`Integer` / `Duration`);
+  leaving them out of the config means "do not touch" — they will not be force-overwritten with defaults.
 - **`queueCapacity` and `threadNamePrefix` cannot be dynamically changed**:
-  - **`queueCapacity`** adjustment requires creating a new `LinkedBlockingQueue` and "moving" tasks from the old queue, which the JDK `ThreadPoolExecutor` does not expose a public API for at runtime. This component chooses not to support it in `onResize`; configure it at startup via `platform.concurrency.thread-pools.<poolName>.queue-capacity`. If you really need to adjust, please restart.
-  - **`threadNamePrefix`** only affects "Workers newly created from then on"; existing thread names cannot be retroactively changed. If thread names appear inconsistent immediately after a tuning change, that is the expected behavior.
-  - If the above two items appear in a config change, this component will log a WARN and silently ignore them, without throwing an exception to interrupt the whole batch of refreshes.
+    - **`queueCapacity`** adjustment requires creating a new `LinkedBlockingQueue` and "moving" tasks from the old
+      queue, which the JDK `ThreadPoolExecutor` does not expose a public API for at runtime. This component chooses not
+      to support it in `onResize`; configure it at startup via
+      `platform.concurrency.thread-pools.<poolName>.queue-capacity`. If you really need to adjust, please restart.
+    - **`threadNamePrefix`** only affects "Workers newly created from then on"; existing thread names cannot be
+      retroactively changed. If thread names appear inconsistent immediately after a tuning change, that is the expected
+      behavior.
+    - If the above two items appear in a config change, this component will log a WARN and silently ignore them, without
+      throwing an exception to interrupt the whole batch of refreshes.
 
 #### 3.0.3 `Rejection` `Counting` `Principle`
 
-`ThreadPoolExecutor.rejectedExecution(Runnable, ThreadPoolExecutor)` is a package-private method and cannot be overridden by subclasses to count rejections. `DynamicExecutor` solves this with a "decorator + delegation" pattern:
+`ThreadPoolExecutor.rejectedExecution(Runnable, ThreadPoolExecutor)` is a package-private method and cannot be
+overridden by subclasses to count rejections. `DynamicExecutor` solves this with a "decorator + delegation" pattern:
 
 ```java
 import java.util.concurrent.RejectedExecutionHandler;
@@ -1538,75 +1652,100 @@ public class DynamicExecutor extends ThreadPoolExecutor {
 
 Key points:
 
-- **TPE internally calls `CountingHandler.rejectedExecution`** during `execute()`: it first calls `incrementAndGet()` and then delegates to the user's handler; both counting and the user's original behavior are preserved.
-- **`getRejectedExecutionHandler()` is overridden to return the user's original handler**: monitoring code, third-party tools, and business-side debugging all still get the originally `new`'d object, with no awareness of the wrapper.
-- **`onResize` switches the rejection policy via `setRejectedExecutionHandler`**: the overridden setter does not directly modify the parent's field, but instead calls `countingHandler.setDelegate(newHandler)` to atomically replace the delegate, keeping the TPE's internal handler reference consistent with the new delegate.
+- **TPE internally calls `CountingHandler.rejectedExecution`** during `execute()`: it first calls `incrementAndGet()`
+  and then delegates to the user's handler; both counting and the user's original behavior are preserved.
+- **`getRejectedExecutionHandler()` is overridden to return the user's original handler**: monitoring code, third-party
+  tools, and business-side debugging all still get the originally `new`'d object, with no awareness of the wrapper.
+- **`onResize` switches the rejection policy via `setRejectedExecutionHandler`**: the overridden setter does not
+  directly modify the parent's field, but instead calls `countingHandler.setDelegate(newHandler)` to atomically replace
+  the delegate, keeping the TPE's internal handler reference consistent with the new delegate.
 
-> Note: the `CountingHandler` above is a simplified example used to illustrate the principle; in the actual implementation, the counter is an instance field of `DynamicExecutor` rather than a static variable, so each pool counts independently.
+> Note: the `CountingHandler` above is a simplified example used to illustrate the principle; in the actual
+> implementation, the counter is an instance field of `DynamicExecutor` rather than a static variable, so each pool counts
+> independently.
 
 #### 3.0.4 `Positioning` `Difference` from dynamic-tp
 
-In one sentence: **this component is a "just enough" JDK 25 + Spring Boot native implementation; dynamic-tp is a "feature-complete" open-source platform solution**.
+In one sentence: **this component is a "just enough" JDK 25 + Spring Boot native implementation; dynamic-tp is a "
+feature-complete" open-source platform solution**.
 
-For a complete difference comparison, decision tree, and repo URL see [FAQ Q1](#q1-why-not-keep-using-dynamic-tp). Below is a quick-look version of the positioning difference:
+For a complete difference comparison, decision tree, and repo URL see [FAQ Q1](#q1-why-not-keep-using-dynamic-tp). Below
+is a quick-look version of the positioning difference:
 
-| Dimension | This Component (`DynamicExecutor`) | dynamic-tp |
-|-----------|-----------------------------------|------------|
-| Design Goal | Lightweight alternative; covers 80% of platform thread pool scenarios | Platform-grade thread pool management framework; covers all advanced capabilities |
-| Dependency Footprint | 0 extra dependencies (only comes with this component) | Need to introduce `dynamic-tp-spring-boot-starter` and its transitive dependencies |
-| Auto-Configuration | Zero config (just include this component) | Need to introduce the starter and configure the `dynamic-tp` namespace |
-| Core Capabilities | resize + rejection counting + snapshot | resize + rejection counting + snapshot + alerting + web admin + task wrapping + persistence |
-| Spring Cloud Adaptation | Indirectly adapts to all config centers via `EnvironmentChangeEvent` | Built-in dedicated adapters for Nacos / Apollo / Etcd, etc. |
-| Learning Curve | Read this README and you're up and running | Need to be familiar with its config model and extension points |
-| Suitable Projects | Small-to-medium projects where simple tuning + basic monitoring is enough | Medium-to-large projects needing alerting / web admin / task wrapping / multi-env management |
+| Dimension               | This Component (`DynamicExecutor`)                                        | dynamic-tp                                                                                   |
+|-------------------------|---------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| Design Goal             | Lightweight alternative; covers 80% of platform thread pool scenarios     | Platform-grade thread pool management framework; covers all advanced capabilities            |
+| Dependency Footprint    | 0 extra dependencies (only comes with this component)                     | Need to introduce `dynamic-tp-spring-boot-starter` and its transitive dependencies           |
+| Auto-Configuration      | Zero config (just include this component)                                 | Need to introduce the starter and configure the `dynamic-tp` namespace                       |
+| Core Capabilities       | resize + rejection counting + snapshot                                    | resize + rejection counting + snapshot + alerting + web admin + task wrapping + persistence  |
+| Spring Cloud Adaptation | Indirectly adapts to all config centers via `EnvironmentChangeEvent`      | Built-in dedicated adapters for Nacos / Apollo / Etcd, etc.                                  |
+| Learning Curve          | Read this README and you're up and running                                | Need to be familiar with its config model and extension points                               |
+| Suitable Projects       | Small-to-medium projects where simple tuning + basic monitoring is enough | Medium-to-large projects needing alerting / web admin / task wrapping / multi-env management |
 
 **When to choose which**:
 
-1. **Choose this component**: multiple pools + tuning + rejection counting + basic snapshot + already using Spring Cloud config center integration (no need to write extra listener code).
-2. **Choose this component**: don't want to add yet another starter and its transitive dependencies just for thread pool management.
-3. **Choose this component**: thread pool count is controllable (generally < 10), manual tuning + monitoring alerting is enough.
+1. **Choose this component**: multiple pools + tuning + rejection counting + basic snapshot + already using Spring Cloud
+   config center integration (no need to write extra listener code).
+2. **Choose this component**: don't want to add yet another starter and its transitive dependencies just for thread pool
+   management.
+3. **Choose this component**: thread pool count is controllable (generally < 10), manual tuning + monitoring alerting is
+   enough.
 4. **Choose dynamic-tp**: need multi-channel alerting (DingTalk / WeCom / Feishu / email).
 5. **Choose dynamic-tp**: need a visual web admin to manage thread pool parameters and runtime metrics.
 6. **Choose dynamic-tp**: need task wrapping like MDC / TransmittableThreadLocal, or thread pool data persistence.
-7. **Both together**: core pools use this component (lightweight, zero deps); pools with special requirements (MDC propagation, alerting persistence) hook into dynamic-tp separately (mix at the pool level).
+7. **Both together**: core pools use this component (lightweight, zero deps); pools with special requirements (MDC
+   propagation, alerting persistence) hook into dynamic-tp separately (mix at the pool level).
 
-dynamic-tp repo: <https://github.com/dromara/dynamic-tp>; detailed capability matrix and usage docs are in that repo's README.
+dynamic-tp repo: <https://github.com/dromara/dynamic-tp>; detailed capability matrix and usage docs are in that repo's
+README.
 
 #### 3.1 `DynamicExecutor`
 
 ##### 3.1.1 What It Is
 
-`DynamicExecutor` extends the standard `ThreadPoolExecutor` and exposes two sets of capabilities that standard TPE lacks:
+`DynamicExecutor` extends the standard `ThreadPoolExecutor` and exposes two sets of capabilities that standard TPE
+lacks:
 
-1. **Event-driven resize**: `onResize(PoolResizeEvent)` can adjust `corePoolSize` / `maximumPoolSize` / `keepAliveTime` / `rejectedHandler` at runtime without restarting the application. The event source can be Nacos, Etcd, Admin API, a timer, or JMX — this component does not bind to any specific event source.
-2. **Rejection counting + status snapshot**: at construction time, the user-supplied `RejectedExecutionHandler` is automatically wrapped into an internal `CountingHandler`, fully transparent to `getRejectedExecutionHandler()` callers. `snapshot()` returns an immutable snapshot of 9 monitoring metrics in one call.
+1. **Event-driven resize**: `onResize(PoolResizeEvent)` can adjust `corePoolSize` / `maximumPoolSize` /
+   `keepAliveTime` / `rejectedHandler` at runtime without restarting the application. The event source can be Nacos,
+   Etcd, Admin API, a timer, or JMX — this component does not bind to any specific event source.
+2. **Rejection counting + status snapshot**: at construction time, the user-supplied `RejectedExecutionHandler` is
+   automatically wrapped into an internal `CountingHandler`, fully transparent to `getRejectedExecutionHandler()`
+   callers. `snapshot()` returns an immutable snapshot of 9 monitoring metrics in one call.
 
-The underlying TPE behavior is exactly the same as JDK `ThreadPoolExecutor` (`execute` / `submit` / `shutdown` / `shutdownNow` / `awaitTermination`, etc., all unchanged); it can serve as a drop-in replacement for TPE.
+The underlying TPE behavior is exactly the same as JDK `ThreadPoolExecutor` (`execute` / `submit` / `shutdown` /
+`shutdownNow` / `awaitTermination`, etc., all unchanged); it can serve as a drop-in replacement for TPE.
 
 ##### 3.1.2 Interface Design Semantics
 
-| Method | Caller's Promise | Callee's Guarantee |
-|--------|------------------|--------------------|
-| `DynamicExecutor(corePoolSize, maxPoolSize, keepAliveTime, unit, workQueue)` | "I want to create a tunable thread pool." | Constructor params match standard TPE; the default handler is `AbortPolicy`, which is automatically wrapped as `CountingHandler` to support rejection counting. |
-| `DynamicExecutor(..., threadFactory, handler)` | "I want a custom thread factory and rejection policy." | Full-arg constructor; the handler is also transparently wrapped in `CountingHandler`; `getRejectedExecutionHandler()` returns the original user-supplied handler. |
-| `onResize(PoolResizeEvent)` | "I want to hot-update the thread pool parameters." | Updates only the non-null fields in the event (`corePoolSize` / `maximumPoolSize` / `keepAliveTime` / `rejectedHandler`); null fields mean "do not adjust". A null event is ignored with a WARN log. |
-| `snapshot()` | "I want to take a snapshot for monitoring." | Returns an immutable `PoolStatus` (with 9 fields including `poolSize` / `activeCount` / `queueSize` / `queueRemainingCapacity` / `completedTaskCount` / `totalTaskCount` / `rejectedCount`, etc.). |
-| `getRejectionCount()` | "I want the total rejection count." | Returns the cumulative count of tasks rejected since the thread pool was created (long; cross-restart persistence is your responsibility). |
-| `resetRejectionCount()` | "I want to reset the rejection counter." | Zeros out the internal counter (stays in sync with `snapshot()`'s `rejectedCount`). |
-| `PoolResizeEvent.builder()` | "I want to build a hot-update event." | All fields are optional (null means "do not adjust"); the rejection policy is optional; `queueCapacity` is not included (see design decisions below). |
-| `PoolStatus.builder()` | "I want to manually construct a status snapshot." | 9 fields assignable independently, for testing or third-party monitoring integration. |
+| Method                                                                       | Caller's Promise                                       | Callee's Guarantee                                                                                                                                                                                   |
+|------------------------------------------------------------------------------|--------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `DynamicExecutor(corePoolSize, maxPoolSize, keepAliveTime, unit, workQueue)` | "I want to create a tunable thread pool."              | Constructor params match standard TPE; the default handler is `AbortPolicy`, which is automatically wrapped as `CountingHandler` to support rejection counting.                                      |
+| `DynamicExecutor(..., threadFactory, handler)`                               | "I want a custom thread factory and rejection policy." | Full-arg constructor; the handler is also transparently wrapped in `CountingHandler`; `getRejectedExecutionHandler()` returns the original user-supplied handler.                                    |
+| `onResize(PoolResizeEvent)`                                                  | "I want to hot-update the thread pool parameters."     | Updates only the non-null fields in the event (`corePoolSize` / `maximumPoolSize` / `keepAliveTime` / `rejectedHandler`); null fields mean "do not adjust". A null event is ignored with a WARN log. |
+| `snapshot()`                                                                 | "I want to take a snapshot for monitoring."            | Returns an immutable `PoolStatus` (with 9 fields including `poolSize` / `activeCount` / `queueSize` / `queueRemainingCapacity` / `completedTaskCount` / `totalTaskCount` / `rejectedCount`, etc.).   |
+| `getRejectionCount()`                                                        | "I want the total rejection count."                    | Returns the cumulative count of tasks rejected since the thread pool was created (long; cross-restart persistence is your responsibility).                                                           |
+| `resetRejectionCount()`                                                      | "I want to reset the rejection counter."               | Zeros out the internal counter (stays in sync with `snapshot()`'s `rejectedCount`).                                                                                                                  |
+| `PoolResizeEvent.builder()`                                                  | "I want to build a hot-update event."                  | All fields are optional (null means "do not adjust"); the rejection policy is optional; `queueCapacity` is not included (see design decisions below).                                                |
+| `PoolStatus.builder()`                                                       | "I want to manually construct a status snapshot."      | 9 fields assignable independently, for testing or third-party monitoring integration.                                                                                                                |
 
 ##### 3.1.3 Use Cases
 
-1. **Config-center-driven tuning**: when a Nacos/Etcd config-change listener receives parameter changes, build a `PoolResizeEvent` and call `onResize` — "tune without stopping".
-2. **Multi-tenant / multi-business-line isolation**: one `DynamicExecutor` instance per business scenario (order processing, notification push, report export, each in its own pool), injected by name via `@Qualifier`.
-3. **Rejection counting and alerting**: trigger an alert when `snapshot().getRejectedCount()` keeps climbing; expose it to Prometheus along with `queueSize` / `activeCount`.
-4. **Burst-traffic protection**: when an upstream API fault causes task backlog, switch `rejectedHandler` from `AbortPolicy` to `CallerRunsPolicy` at runtime, using the caller's thread to absorb some of the pressure.
-5. **Production fault-injection testing**: use `forceResize` to directly scale the thread pool up/down and validate the downstream service's behavior at various concurrency levels.
+1. **Config-center-driven tuning**: when a Nacos/Etcd config-change listener receives parameter changes, build a
+   `PoolResizeEvent` and call `onResize` — "tune without stopping".
+2. **Multi-tenant / multi-business-line isolation**: one `DynamicExecutor` instance per business scenario (order
+   processing, notification push, report export, each in its own pool), injected by name via `@Qualifier`.
+3. **Rejection counting and alerting**: trigger an alert when `snapshot().getRejectedCount()` keeps climbing; expose it
+   to Prometheus along with `queueSize` / `activeCount`.
+4. **Burst-traffic protection**: when an upstream API fault causes task backlog, switch `rejectedHandler` from
+   `AbortPolicy` to `CallerRunsPolicy` at runtime, using the caller's thread to absorb some of the pressure.
+5. **Production fault-injection testing**: use `forceResize` to directly scale the thread pool up/down and validate the
+   downstream service's behavior at various concurrency levels.
 
 ##### 3.1.4 What It Looks Like Without This Component
 
-Adjusting `ThreadPoolExecutor` parameters requires holding the original reference, and there is no way to batch-tune at runtime without restarting:
+Adjusting `ThreadPoolExecutor` parameters requires holding the original reference, and there is no way to batch-tune at
+runtime without restarting:
 
 ```java
 // 1) Must restart after modifying
@@ -1629,8 +1768,10 @@ public void onConfigChange(String newConfig) {
 Pain points:
 
 - Tuning logic is scattered across config listeners; no unified event API.
-- After calling `setRejectedExecutionHandler`, the user handler is overwritten, so monitoring/alerting cannot count "how many times was this rejected".
-- `ThreadPoolExecutor` has no one-stop snapshot; you must call `getPoolSize` / `getActiveCount` / `getQueue().size()` separately, with no cross-thread consistency guarantee.
+- After calling `setRejectedExecutionHandler`, the user handler is overwritten, so monitoring/alerting cannot count "how
+  many times was this rejected".
+- `ThreadPoolExecutor` has no one-stop snapshot; you must call `getPoolSize` / `getActiveCount` / `getQueue().size()`
+  separately, with no cross-thread consistency guarantee.
 - Multi-pool config must write `@Bean` methods one by one; cannot be driven by `Map<String, PoolProperties>` config.
 
 ##### 3.1.5 Using This Component
@@ -1759,44 +1900,63 @@ public class DynamicExecutorExamples {
 
 ##### 3.1.7 Design Decisions
 
-- **Rejection policy as a runtime event parameter**: rejection policy is essentially a "runtime policy choice"; when the initial configuration is unreasonable, it can be hot-updated via `onResize` without modifying code or re-releasing.
-- **Does not include `queueCapacity`**: hot-update of queue capacity cannot solve the "producer-consumer rate mismatch" problem; instead, it can accumulate more unconsumed tasks on instance crash, expanding the fault blast radius. `queueCapacity` can only be configured at startup via `platform.concurrency.thread-pools.*.queue-capacity`.
-- **Transparent counting in CountingHandler**: TPE's `rejectedExecution` is not an overridable protected method, so subclasses cannot count by overriding. `DynamicExecutor` wraps the user handler as an internal `CountingHandler` (with an `AtomicLong` counter) at construction, then passes it to `super(...)`. `getRejectedExecutionHandler()` is overridden to return the original user handler, so monitoring code never notices the wrapper.
-- **`onResize` only updates non-null fields**: callers only need to care about "the one I want to change", avoiding the "tune one parameter means pass all 4" boilerplate. The event itself is immutable, safe to pass across threads.
-- **Constructor signatures match standard TPE**: the 4 / 5 / 6 / 7-arg constructors cover common usage scenarios; IDE hints and docs are inherited from `ThreadPoolExecutor`, with zero learning cost.
+- **Rejection policy as a runtime event parameter**: rejection policy is essentially a "runtime policy choice"; when the
+  initial configuration is unreasonable, it can be hot-updated via `onResize` without modifying code or re-releasing.
+- **Does not include `queueCapacity`**: hot-update of queue capacity cannot solve the "producer-consumer rate mismatch"
+  problem; instead, it can accumulate more unconsumed tasks on instance crash, expanding the fault blast radius.
+  `queueCapacity` can only be configured at startup via `platform.concurrency.thread-pools.*.queue-capacity`.
+- **Transparent counting in CountingHandler**: TPE's `rejectedExecution` is not an overridable protected method, so
+  subclasses cannot count by overriding. `DynamicExecutor` wraps the user handler as an internal `CountingHandler` (with
+  an `AtomicLong` counter) at construction, then passes it to `super(...)`. `getRejectedExecutionHandler()` is
+  overridden to return the original user handler, so monitoring code never notices the wrapper.
+- **`onResize` only updates non-null fields**: callers only need to care about "the one I want to change", avoiding the
+  "tune one parameter means pass all 4" boilerplate. The event itself is immutable, safe to pass across threads.
+- **Constructor signatures match standard TPE**: the 4 / 5 / 6 / 7-arg constructors cover common usage scenarios; IDE
+  hints and docs are inherited from `ThreadPoolExecutor`, with zero learning cost.
 
 ##### 3.1.8 API Quick Reference
 
-| Method | Description |
-|--------|-------------|
-| `DynamicExecutor(corePoolSize, maxPoolSize, keepAliveTime, unit, workQueue)` | 4-arg constructor; default thread factory + `AbortPolicy` |
-| `DynamicExecutor(..., workQueue, threadFactory)` | 5-arg constructor; custom thread factory + `AbortPolicy` |
-| `DynamicExecutor(..., workQueue, handler)` | 6-arg constructor; default thread factory + custom handler |
-| `DynamicExecutor(..., workQueue, threadFactory, handler)` | Full 7-arg constructor |
-| `onResize(event)` | Runtime adjustment (updates only non-null fields) |
-| `snapshot()` | One-stop runtime snapshot (`PoolStatus`, with 9 fields) |
-| `getRejectionCount()` | Cumulative rejection count |
-| `resetRejectionCount()` | Reset rejection counter |
-| `PoolResizeEvent.builder()` | Create a hot-update event |
-| `PoolResizeEvent.Builder.corePoolSize(Integer)` | Set core pool size (null = do not adjust) |
-| `PoolResizeEvent.Builder.maximumPoolSize(Integer)` | Set maximum pool size (null = do not adjust) |
-| `PoolResizeEvent.Builder.keepAliveTime(Duration)` | Set keep-alive time (null = do not adjust) |
-| `PoolResizeEvent.Builder.rejectedHandler(handler)` | Set rejection policy (null = do not adjust) |
-| `PoolStatus.getPoolSize()` | Current worker count (including idle) |
-| `PoolStatus.getActiveCount()` | Current active thread count |
-| `PoolStatus.getQueueSize()` | Queue used capacity |
-| `PoolStatus.getQueueRemainingCapacity()` | Queue remaining capacity |
-| `PoolStatus.getCompletedTaskCount()` | Completed task count |
-| `PoolStatus.getTotalTaskCount()` | Total submitted task count |
-| `PoolStatus.getRejectedCount()` | Cumulative rejection count |
-| `PoolStatus.getCorePoolSize()` | Current core pool size |
-| `PoolStatus.getMaximumPoolSize()` | Current maximum pool size |
+| Method                                                                       | Description                                                |
+|------------------------------------------------------------------------------|------------------------------------------------------------|
+| `DynamicExecutor(corePoolSize, maxPoolSize, keepAliveTime, unit, workQueue)` | 4-arg constructor; default thread factory + `AbortPolicy`  |
+| `DynamicExecutor(..., workQueue, threadFactory)`                             | 5-arg constructor; custom thread factory + `AbortPolicy`   |
+| `DynamicExecutor(..., workQueue, handler)`                                   | 6-arg constructor; default thread factory + custom handler |
+| `DynamicExecutor(..., workQueue, threadFactory, handler)`                    | Full 7-arg constructor                                     |
+| `onResize(event)`                                                            | Runtime adjustment (updates only non-null fields)          |
+| `snapshot()`                                                                 | One-stop runtime snapshot (`PoolStatus`, with 9 fields)    |
+| `getRejectionCount()`                                                        | Cumulative rejection count                                 |
+| `resetRejectionCount()`                                                      | Reset rejection counter                                    |
+| `PoolResizeEvent.builder()`                                                  | Create a hot-update event                                  |
+| `PoolResizeEvent.Builder.corePoolSize(Integer)`                              | Set core pool size (null = do not adjust)                  |
+| `PoolResizeEvent.Builder.maximumPoolSize(Integer)`                           | Set maximum pool size (null = do not adjust)               |
+| `PoolResizeEvent.Builder.keepAliveTime(Duration)`                            | Set keep-alive time (null = do not adjust)                 |
+| `PoolResizeEvent.Builder.rejectedHandler(handler)`                           | Set rejection policy (null = do not adjust)                |
+| `PoolStatus.getPoolSize()`                                                   | Current worker count (including idle)                      |
+| `PoolStatus.getActiveCount()`                                                | Current active thread count                                |
+| `PoolStatus.getQueueSize()`                                                  | Queue used capacity                                        |
+| `PoolStatus.getQueueRemainingCapacity()`                                     | Queue remaining capacity                                   |
+| `PoolStatus.getCompletedTaskCount()`                                         | Completed task count                                       |
+| `PoolStatus.getTotalTaskCount()`                                             | Total submitted task count                                 |
+| `PoolStatus.getRejectedCount()`                                              | Cumulative rejection count                                 |
+| `PoolStatus.getCorePoolSize()`                                               | Current core pool size                                     |
+| `PoolStatus.getMaximumPoolSize()`                                            | Current maximum pool size                                  |
 
 ##### 3.1.9 PoolResizeEvent — Hot-Update Event
 
-`PoolResizeEvent` is the immutable event object consumed by `DynamicExecutor.onResize`. It packages "the thread pool parameters I want to change" into a value object so the config-center listener only needs to care about "the changed parts", without sending back the complete current configuration. The event has 4 fields: `corePoolSize` / `maximumPoolSize` / `keepAliveTime` / `rejectedHandler`, all of which may be `null` (meaning "do not adjust this field").
+`PoolResizeEvent` is the immutable event object consumed by `DynamicExecutor.onResize`. It packages "the thread pool
+parameters I want to change" into a value object so the config-center listener only needs to care about "the changed
+parts", without sending back the complete current configuration. The event has 4 fields: `corePoolSize` /
+`maximumPoolSize` / `keepAliveTime` / `rejectedHandler`, all of which may be `null` (meaning "do not adjust this
+field").
 
-Built via `PoolResizeEvent.builder()`; all fields are independently optional; the event itself is immutable and safe to pass across threads. After `onResize` receives the event, it updates only the non-null fields and keeps the rest unchanged. `queueCapacity` is not part of the event fields — hot-update of queue capacity cannot solve the "producer-consumer rate mismatch" problem; instead, it can accumulate more unconsumed tasks on instance crash, expanding the fault blast radius. `queueCapacity` can only be configured at startup via `platform.concurrency.thread-pools.<poolName>.queue-capacity` (see [Configuration Reference](#configuration-reference)). See [FAQ Q15](#q15-how-to-integrate-with-config-centers-nacosetcd-for-dynamic-tuning) for an example of integrating `PoolResizeEvent` with config centers such as Nacos / Etcd.
+Built via `PoolResizeEvent.builder()`; all fields are independently optional; the event itself is immutable and safe to
+pass across threads. After `onResize` receives the event, it updates only the non-null fields and keeps the rest
+unchanged. `queueCapacity` is not part of the event fields — hot-update of queue capacity cannot solve the
+"producer-consumer rate mismatch" problem; instead, it can accumulate more unconsumed tasks on instance crash, expanding
+the fault blast radius. `queueCapacity` can only be configured at startup via
+`platform.concurrency.thread-pools.<poolName>.queue-capacity` (see [Configuration Reference](#configuration-reference)).
+See [FAQ Q15](#q15-how-to-integrate-with-config-centers-nacosetcd-for-dynamic-tuning) for an example of integrating
+`PoolResizeEvent` with config centers such as Nacos / Etcd.
 
 ```java
 PoolResizeEvent event = PoolResizeEvent.builder()
@@ -1810,9 +1970,17 @@ orderExecutor.onResize(event);
 
 ##### 3.1.10 PoolStatus — Runtime Snapshot
 
-`PoolStatus` is the immutable runtime snapshot returned by `DynamicExecutor.snapshot()`. It aggregates 9 core monitoring metrics (`poolSize` / `activeCount` / `queueSize` / `queueRemainingCapacity` / `completedTaskCount` / `totalTaskCount` / `rejectedCount` / `corePoolSize` / `maximumPoolSize`) into a single value object, avoiding the cross-thread consistency issues that arise from calling multiple `ThreadPoolExecutor` getters separately from business code. `PoolStatus.builder()` provides 9 independent field setters, useful for mocking arbitrary states in unit tests or for serializing to third-party monitoring systems.
+`PoolStatus` is the immutable runtime snapshot returned by `DynamicExecutor.snapshot()`. It aggregates 9 core monitoring
+metrics (`poolSize` / `activeCount` / `queueSize` / `queueRemainingCapacity` / `completedTaskCount` / `totalTaskCount` /
+`rejectedCount` / `corePoolSize` / `maximumPoolSize`) into a single value object, avoiding the cross-thread consistency
+issues that arise from calling multiple `ThreadPoolExecutor` getters separately from business code.
+`PoolStatus.builder()` provides 9 independent field setters, useful for mocking arbitrary states in unit tests or for
+serializing to third-party monitoring systems.
 
-All fields are immutable `int` / `long`, safe to pass across threads without synchronization. `PoolStatus.getRejectedCount()` and `DynamicExecutor.getRejectionCount()` share the same internal counter; after calling `resetRejectionCount()`, the next `snapshot()`'s `rejectedCount` will be reset to zero in sync. See the `reportStatus()` example in [Module 3.1.6](#316-full-code-examples) for typical usage.
+All fields are immutable `int` / `long`, safe to pass across threads without synchronization.
+`PoolStatus.getRejectedCount()` and `DynamicExecutor.getRejectionCount()` share the same internal counter; after calling
+`resetRejectionCount()`, the next `snapshot()`'s `rejectedCount` will be reset to zero in sync. See the `reportStatus()`
+example in [Module 3.1.6](#316-full-code-examples) for typical usage.
 
 ```java
 PoolStatus status = orderExecutor.snapshot();
@@ -1824,7 +1992,12 @@ metrics.gauge("threadpool.rejected_count", status.getRejectedCount());
 
 ## Configuration Reference
 
-This section expands the configuration by the three subsystems corresponding to the three modules: `rate-limiter` for the `RateLimiter` in [Module 2.2](#22-ratelimiter-token-bucket-rate-limiter), `circuit-breaker` for the `CircuitBreaker` in [Module 2.3](#23-circuitbreaker), and `thread-pools` for the `DynamicExecutor` in [Module 3.1](#31-dynamicexecutor-dynamic-thread-pool). The components in the other modules (`StructuredConcurrency` / `VirtualThreadFactory` / `BatchProcessor` / `Retryer` / `Debouncer`) have no runtime configuration entries and are only provided via imperative Builders.
+This section expands the configuration by the three subsystems corresponding to the three modules: `rate-limiter` for
+the `RateLimiter` in [Module 2.2](#22-ratelimiter-token-bucket-rate-limiter), `circuit-breaker` for the `CircuitBreaker`
+in [Module 2.3](#23-circuitbreaker), and `thread-pools` for the `DynamicExecutor`
+in [Module 3.1](#31-dynamicexecutor-dynamic-thread-pool). The components in the other modules (`StructuredConcurrency` /
+`VirtualThreadFactory` / `BatchProcessor` / `Retryer` / `Debouncer`) have no runtime configuration entries and are only
+provided via imperative Builders.
 
 ### 1) `Unified` `Configuration` `Entry`
 
@@ -1913,44 +2086,56 @@ platform:
 
 #### 3.1 Token Bucket Rate Limiter (`platform.concurrency.rate-limiter.*`, Module 2.2)
 
-| Config Item | Type | Default | Description |
-|-------------|------|---------|-------------|
-| `enabled` | boolean | `false` | Whether to register a `RateLimiter` Bean in the Spring container |
-| `permits-per-second` | int | `100` | Tokens refilled per second (also the bucket capacity) |
+| Config Item          | Type    | Default | Description                                                      |
+|----------------------|---------|---------|------------------------------------------------------------------|
+| `enabled`            | boolean | `false` | Whether to register a `RateLimiter` Bean in the Spring container |
+| `permits-per-second` | int     | `100`   | Tokens refilled per second (also the bucket capacity)            |
 
 #### 3.2 Circuit Breaker (`platform.concurrency.circuit-breaker.*`, Module 2.3)
 
-| Config Item | Type | Default | Description |
-|-------------|------|---------|-------------|
-| `enabled` | boolean | `false` | Whether to register a `CircuitBreaker` Bean in the Spring container |
-| `failure-rate-threshold` | double | `0.5` | Failure-rate threshold (0.0-1.0) |
-| `sliding-window-size` | int | `10` | Sliding window size (minimum 10) |
-| `wait-duration` | Duration | `30s` | Duration of the OPEN state |
-| `half-open-max-successes` | int | `3` | Successes required in HALF_OPEN probe (reserved; not used in current calculation) |
+| Config Item               | Type     | Default | Description                                                                       |
+|---------------------------|----------|---------|-----------------------------------------------------------------------------------|
+| `enabled`                 | boolean  | `false` | Whether to register a `CircuitBreaker` Bean in the Spring container               |
+| `failure-rate-threshold`  | double   | `0.5`   | Failure-rate threshold (0.0-1.0)                                                  |
+| `sliding-window-size`     | int      | `10`    | Sliding window size (minimum 10)                                                  |
+| `wait-duration`           | Duration | `30s`   | Duration of the OPEN state                                                        |
+| `half-open-max-successes` | int      | `3`     | Successes required in HALF_OPEN probe (reserved; not used in current calculation) |
 
 #### 3.3 Dynamic Thread Pools (`platform.concurrency.thread-pools.*`, Module 3.1)
 
-Multi-pool config; each key is a named thread pool and is also the name of the corresponding Spring Bean. Business code injects via `@Resource(name = "<poolName>")` / `@Qualifier("<poolName>")`, or via bulk `Map<String, DynamicExecutor>` injection.
+Multi-pool config; each key is a named thread pool and is also the name of the corresponding Spring Bean. Business code
+injects via `@Resource(name = "<poolName>")` / `@Qualifier("<poolName>")`, or via bulk `Map<String, DynamicExecutor>`
+injection.
 
 Per-pool (`PoolProperties`) configurable items:
 
-| Config Item | Type | Default | Description |
-|-------------|------|---------|-------------|
-| `{poolName}.core-pool-size` | int | `4` | Core pool size (kept even when there are no tasks) |
-| `{poolName}.maximum-pool-size` | int | `8` | Maximum pool size (new threads are created up to this cap when the task queue is full) |
-| `{poolName}.keep-alive-time` | Duration | `60s` | Idle threads above the core size are reclaimed after this duration |
-| `{poolName}.queue-capacity` | int | `2000` | Work queue capacity; `LinkedBlockingQueue` is created based on this value |
-| `{poolName}.thread-name-prefix` | String | `""` (=`<poolName>-`) | Thread-name prefix |
-| `{poolName}.rejected-handler` | String | `AbortPolicy` | Rejection policy, case-insensitive; options `AbortPolicy` / `CallerRunsPolicy` / `DiscardPolicy` / `DiscardOldestPolicy` |
+| Config Item                     | Type     | Default               | Description                                                                                                              |
+|---------------------------------|----------|-----------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `{poolName}.core-pool-size`     | int      | `4`                   | Core pool size (kept even when there are no tasks)                                                                       |
+| `{poolName}.maximum-pool-size`  | int      | `8`                   | Maximum pool size (new threads are created up to this cap when the task queue is full)                                   |
+| `{poolName}.keep-alive-time`    | Duration | `60s`                 | Idle threads above the core size are reclaimed after this duration                                                       |
+| `{poolName}.queue-capacity`     | int      | `2000`                | Work queue capacity; `LinkedBlockingQueue` is created based on this value                                                |
+| `{poolName}.thread-name-prefix` | String   | `""` (=`<poolName>-`) | Thread-name prefix                                                                                                       |
+| `{poolName}.rejected-handler`   | String   | `AbortPolicy`         | Rejection policy, case-insensitive; options `AbortPolicy` / `CallerRunsPolicy` / `DiscardPolicy` / `DiscardOldestPolicy` |
 
-> On container shutdown, `shutdown()` is automatically called on each registered `DynamicExecutor`, with a maximum wait of 5 seconds; if not terminated, it falls back to `shutdownNow()`.
+> On container shutdown, `shutdown()` is automatically called on each registered `DynamicExecutor`, with a maximum wait
+> of 5 seconds; if not terminated, it falls back to `shutdownNow()`.
 
 ### 4) `Key` `Design` `Decisions`
 
-- **`failure-rate-threshold` exposed as `double`**: configuration readability is more intuitive as `0.5` than `50`; internally, when building `CircuitBreaker.Builder`, it is multiplied by 100 to convert to integer percent.
-- **`permits-per-second` is the only tunable RateLimiter configuration**: the default factory is `RateLimiter.ofTokensPerSecond`, suitable for "out-of-the-box" scenarios; complex scenarios (custom period, capacity) recommend overriding with a `@Primary` Bean on the business side.
-- **`half-open-max-successes` reserved field**: the current underlying implementation uses "single-probe-success-then-close" semantics; the field is preserved so future extensions don't break the config contract.
-- **`thread-pools` is a `Map<String, PoolProperties>`**: the key is the pool name (also the bean name); with config, a `DynamicExecutor` Bean is registered; without config, there is none. Runtime tuning is not done through this config item, but through the `DynamicExecutor.onResize(PoolResizeEvent)` API (see [Module 3.1.9](#319-poolresizeevent--hot-update-event) and [Module 3.1](#31-dynamicexecutor-dynamic-thread-pool)).
+- **`failure-rate-threshold` exposed as `double`**: configuration readability is more intuitive as `0.5` than `50`;
+  internally, when building `CircuitBreaker.Builder`, it is multiplied by 100 to convert to integer percent.
+- **`permits-per-second` is the only tunable RateLimiter configuration**: the default factory is
+  `RateLimiter.ofTokensPerSecond`, suitable for "out-of-the-box" scenarios; complex scenarios (custom period, capacity)
+  recommend overriding with a `@Primary` Bean on the business side.
+- **`half-open-max-successes` reserved field**: the current underlying implementation uses
+  "single-probe-success-then-close" semantics; the field is preserved so future extensions don't break the config
+  contract.
+- **`thread-pools` is a `Map<String, PoolProperties>`**: the key is the pool name (also the bean name); with config, a
+  `DynamicExecutor` Bean is registered; without config, there is none. Runtime tuning is not done through this config
+  item, but through the `DynamicExecutor.onResize(PoolResizeEvent)` API
+  (see [Module 3.1.9](#319-poolresizeevent--hot-update-event)
+  and [Module 3.1](#31-dynamicexecutor-dynamic-thread-pool)).
 
 ---
 
@@ -1958,63 +2143,87 @@ Per-pool (`PoolProperties`) configurable items:
 
 ### `General` `Principles`
 
-1. **Prefer semantically-named methods**: `gatherAll`, `race`, `withDeadline` express intent at a glance and are more maintainable than `CompletableFuture.allOf().get()`.
-2. **Virtual threads first**: JDK 25 projects should default to `spring.threads.virtual.enabled=true` so I/O-bound tasks enjoy million-level concurrency.
-3. **Zero-dependency philosophy**: this component does not bind to third-party concurrency libraries; if you really need Resilience4j, Hystrix, etc., please introduce them yourself in your business modules.
-4. **Configuration-driven**: if config can solve it, don't write code. `platform.concurrency.*` config items cover 90% of scenarios.
+1. **Prefer semantically-named methods**: `gatherAll`, `race`, `withDeadline` express intent at a glance and are more
+   maintainable than `CompletableFuture.allOf().get()`.
+2. **Virtual threads first**: JDK 25 projects should default to `spring.threads.virtual.enabled=true` so I/O-bound tasks
+   enjoy million-level concurrency.
+3. **Zero-dependency philosophy**: this component does not bind to third-party concurrency libraries; if you really need
+   Resilience4j, Hystrix, etc., please introduce them yourself in your business modules.
+4. **Configuration-driven**: if config can solve it, don't write code. `platform.concurrency.*` config items cover 90%
+   of scenarios.
 
 ### `Module` 1 — `Structured` `Concurrency` and `Virtual` `Threads`
 
 #### `StructuredConcurrency` (`Section` 1.1)
 
-1. **Prefer `gatherAll` over manual `CompletableFuture`**: error propagation is more accurate and cancellation semantics are clearer.
-2. **Race mode is for disaster recovery only**: for multiple implementations of the same goal, any one succeeding is enough (multi-level cache, multi-region disaster recovery).
+1. **Prefer `gatherAll` over manual `CompletableFuture`**: error propagation is more accurate and cancellation semantics
+   are clearer.
+2. **Race mode is for disaster recovery only**: for multiple implementations of the same goal, any one succeeding is
+   enough (multi-level cache, multi-region disaster recovery).
 3. **Timeout mode protects external calls**: every external API call must have a timeout (recommend 200-500ms).
-4. **Batch execution for large tasks**: when there are more than 100 concurrent tasks, use `gatherBatched` to control concurrency and avoid forking too many virtual threads.
-5. **Best-effort gather for fault-tolerant aggregation**: when the goal is "get as many results as possible" rather than "all must succeed", use `gatherAllBestEffort` instead of `gatherAll`.
+4. **Batch execution for large tasks**: when there are more than 100 concurrent tasks, use `gatherBatched` to control
+   concurrency and avoid forking too many virtual threads.
+5. **Best-effort gather for fault-tolerant aggregation**: when the goal is "get as many results as possible" rather than
+   "all must succeed", use `gatherAllBestEffort` instead of `gatherAll`.
 
 #### `VirtualThreadFactory` (`Section` 1.2)
 
 1. **Always set a thread-name prefix**: helps with troubleshooting (JFR, Micrometer).
-2. **ScopedValue instead of ThreadLocal**: ThreadLocal has performance issues with virtual threads; prefer `ScopedValue`.
-3. **Don't pool virtual threads**: virtual threads are lightweight (creation cost ~1KB), creating a new thread is simpler than pooling.
-4. **Avoid CPU-intensive computation inside virtual threads**: virtual threads are for I/O-blocking scenarios; CPU-bound work should still use platform thread pools.
+2. **ScopedValue instead of ThreadLocal**: ThreadLocal has performance issues with virtual threads; prefer
+   `ScopedValue`.
+3. **Don't pool virtual threads**: virtual threads are lightweight (creation cost ~1KB), creating a new thread is
+   simpler than pooling.
+4. **Avoid CPU-intensive computation inside virtual threads**: virtual threads are for I/O-blocking scenarios; CPU-bound
+   work should still use platform thread pools.
 
 #### `BatchProcessor` (`Section` 1.3)
 
 1. **Set parallelism reasonably**: 50-200 for I/O-bound; `CPU count ± 2` for CPU-bound.
-2. **Set an appropriate timeout**: prevent one slow task from blocking the whole batch; partial results are still usable after timeout.
+2. **Set an appropriate timeout**: prevent one slow task from blocking the whole batch; partial results are still usable
+   after timeout.
 3. **Always check `result.hasError()`**: do compensation processing for failed items.
-4. **No need to pool under virtual threads**: `BatchProcessor` leverages the lightweight nature of virtual threads; no extra thread pool is needed.
+4. **No need to pool under virtual threads**: `BatchProcessor` leverages the lightweight nature of virtual threads; no
+   extra thread pool is needed.
 
 ### `Module` 2 — `Rate` `Limiting` and `Fault` `Tolerance` `Algorithms`
 
 #### `Retryer` (`Section` 2.1)
 
-1. **Always set a reasonable backoff**: start `initialBackoff` from 50-200ms to avoid dense retries that knock down the downstream.
-2. **Always enable jitter in multi-client scenarios**: `jitter(true)` avoids the server receiving a flood of retries simultaneously.
-3. **Precisely limit retry exceptions**: `retryOn(IOException.class, TimeoutException.class)` avoids retrying business exceptions (e.g. 4xx).
-4. **Use Fallback for critical business**: `execute(task, fallback)` returns a fallback after retries are exhausted, avoiding upstream crashes.
+1. **Always set a reasonable backoff**: start `initialBackoff` from 50-200ms to avoid dense retries that knock down the
+   downstream.
+2. **Always enable jitter in multi-client scenarios**: `jitter(true)` avoids the server receiving a flood of retries
+   simultaneously.
+3. **Precisely limit retry exceptions**: `retryOn(IOException.class, TimeoutException.class)` avoids retrying business
+   exceptions (e.g. 4xx).
+4. **Use Fallback for critical business**: `execute(task, fallback)` returns a fallback after retries are exhausted,
+   avoiding upstream crashes.
 5. **Don't retry `Error`**: `Retryer` only catches `Exception`; `OutOfMemoryError` and others are propagated.
 
 #### `RateLimiter` (`Section` 2.2)
 
-1. **Choose rate-limit granularity based on downstream SLA**: external APIs use `ofTokensPerSecond`; batch tasks use `ofTokensPerDuration`.
+1. **Choose rate-limit granularity based on downstream SLA**: external APIs use `ofTokensPerSecond`; batch tasks use
+   `ofTokensPerDuration`.
 2. **Pick `tryAcquire` variant by scenario**:
-   - Business-critical path → `tryAcquire()` (strictly non-blocking)
-   - Strict SLA → `tryAcquire(Duration)` (time-limited blocking)
-   - Background task → `acquire()` (unbounded blocking)
-3. **Multi-token granularity to control bursts**: for scenarios like batch imports, use `tryAcquire(n)` to consume multiple tokens at once.
-4. **Avoid deprecated APIs**: don't use `ofTryAcquireTimeout` or `Builder.tryAcquireTimeoutEnabled`; switch to `ofTokensPerDuration` + `tryAcquire(Duration)`.
+    - Business-critical path → `tryAcquire()` (strictly non-blocking)
+    - Strict SLA → `tryAcquire(Duration)` (time-limited blocking)
+    - Background task → `acquire()` (unbounded blocking)
+3. **Multi-token granularity to control bursts**: for scenarios like batch imports, use `tryAcquire(n)` to consume
+   multiple tokens at once.
+4. **Avoid deprecated APIs**: don't use `ofTryAcquireTimeout` or `Builder.tryAcquireTimeoutEnabled`; switch to
+   `ofTokensPerDuration` + `tryAcquire(Duration)`.
 5. **Resource management**: call `close()` in a `@PreDestroy` hook to release the scheduler thread.
 
 #### `CircuitBreaker` (`Section` 2.3)
 
 1. **Granularity by service**: one circuit breaker per downstream service; avoid one fault polluting all calls.
-2. **Failure rate vs failure count**: high QPS uses failure-rate mode; low QPS uses absolute-count mode (to avoid cold-start misjudgment).
-3. **OPEN duration > downstream average recovery time**: usually 5-30 seconds; too short causes repeated flapping, too long delays recovery.
-4. **Don't omit Fallback**: always use `execute(task, fallback)` instead of `executeOrThrow`, to avoid the circuit breaker causing HTTP 500.
-5. **Don't break the circuit inside transactions**: fast-fail bypasses the transaction rollback path; circuit breaking fits external services better.
+2. **Failure rate vs failure count**: high QPS uses failure-rate mode; low QPS uses absolute-count mode (to avoid
+   cold-start misjudgment).
+3. **OPEN duration > downstream average recovery time**: usually 5-30 seconds; too short causes repeated flapping, too
+   long delays recovery.
+4. **Don't omit Fallback**: always use `execute(task, fallback)` instead of `executeOrThrow`, to avoid the circuit
+   breaker causing HTTP 500.
+5. **Don't break the circuit inside transactions**: fast-fail bypasses the transaction rollback path; circuit breaking
+   fits external services better.
 6. **Monitor `state()`**: expose `CircuitBreaker.State` to Prometheus for real-time observation.
 
 #### `Debouncer` (`Section` 2.4)
@@ -2023,52 +2232,63 @@ Per-pool (`PoolProperties`) configurable items:
 2. **Call `close()` when the Spring Bean is destroyed**: release the virtual-thread scheduler.
 3. **`flush()` for user-initiated actions**: when the user clicks "Save Now", call `flush()` to bypass the wait.
 4. **`cancel()` for undo**: when the user clicks "Cancel Edit", call `cancel()` to cancel the pending operation.
-5. **Don't do heavy work inside the debounced action**: debouncing is meant to delay execution; the debounced action itself should remain async.
+5. **Don't do heavy work inside the debounced action**: debouncing is meant to delay execution; the debounced action
+   itself should remain async.
 
 ### `Module` 3 — `Dynamic` `Thread` `Pool`
 
 #### `DynamicExecutor` (`Section` 3.1)
 
-1. **One independent pool per business scenario**: order processing, notification push, report export, etc. — each with its own load characteristics, each its own pool; one slow call should not drag down all tasks.
-2. **Integrate `onResize` with the config center**: in a Nacos/Etcd config listener, build a `PoolResizeEvent` and call `onResize` for "tune without stopping". `PoolResizeEvent.builder()` supports passing only the fields that need to change.
-3. **Monitor `PoolStatus.rejectedCount` trend**: a steady rise indicates the pool or queue is too small; trigger an increase in thread count or switch to `CallerRunsPolicy`.
-4. **Don't call `onResize` too frequently**: over-adjustment causes the `ThreadPoolExecutor` to repeatedly rebuild Workers; recommend at least 1 minute between adjustments.
-5. **Keep the default queue capacity to avoid producer-consumer imbalance**: frequent queue-size adjustments amplify system jitter; queue capacity is configured at startup via `platform.concurrency.thread-pools.<poolName>.queue-capacity` and is not part of `onResize` at runtime.
+1. **One independent pool per business scenario**: order processing, notification push, report export, etc. — each with
+   its own load characteristics, each its own pool; one slow call should not drag down all tasks.
+2. **Integrate `onResize` with the config center**: in a Nacos/Etcd config listener, build a `PoolResizeEvent` and call
+   `onResize` for "tune without stopping". `PoolResizeEvent.builder()` supports passing only the fields that need to
+   change.
+3. **Monitor `PoolStatus.rejectedCount` trend**: a steady rise indicates the pool or queue is too small; trigger an
+   increase in thread count or switch to `CallerRunsPolicy`.
+4. **Don't call `onResize` too frequently**: over-adjustment causes the `ThreadPoolExecutor` to repeatedly rebuild
+   Workers; recommend at least 1 minute between adjustments.
+5. **Keep the default queue capacity to avoid producer-consumer imbalance**: frequent queue-size adjustments amplify
+   system jitter; queue capacity is configured at startup via
+   `platform.concurrency.thread-pools.<poolName>.queue-capacity` and is not part of `onResize` at runtime.
 
 ### `Error` `Handling` `Philosophy`
 
-| Component | Recommended Error Handling |
-|-----------|----------------------------|
-| `StructuredConcurrency.gatherAll` | Let exceptions propagate; let upper layers handle errors uniformly |
-| `StructuredConcurrency.gatherAllBestEffort` | Inspect `outcome.failures()`; compensate failed tasks |
-| `Retryer.execute(task)` | `catch (RetryExhaustedException)` and propagate upward or wrap as a business exception |
-| `Retryer.execute(task, fallback)` | Use the fallback directly; no need to catch |
-| `BatchProcessor` | Check `result.hasError()`; retry or compensate failed items separately |
-| `RateLimiter` | Check return value in non-blocking scenarios; `InterruptedException` decides in blocking scenarios |
-| `CircuitBreaker` | Critical business uses `execute(task, fallback)`; monitoring scenarios use `executeOrThrow` |
-| `Debouncer` | Internal `action` exceptions are swallowed (by debouncer design); critical operations should bring their own try/catch |
+| Component                                   | Recommended Error Handling                                                                                             |
+|---------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| `StructuredConcurrency.gatherAll`           | Let exceptions propagate; let upper layers handle errors uniformly                                                     |
+| `StructuredConcurrency.gatherAllBestEffort` | Inspect `outcome.failures()`; compensate failed tasks                                                                  |
+| `Retryer.execute(task)`                     | `catch (RetryExhaustedException)` and propagate upward or wrap as a business exception                                 |
+| `Retryer.execute(task, fallback)`           | Use the fallback directly; no need to catch                                                                            |
+| `BatchProcessor`                            | Check `result.hasError()`; retry or compensate failed items separately                                                 |
+| `RateLimiter`                               | Check return value in non-blocking scenarios; `InterruptedException` decides in blocking scenarios                     |
+| `CircuitBreaker`                            | Critical business uses `execute(task, fallback)`; monitoring scenarios use `executeOrThrow`                            |
+| `Debouncer`                                 | Internal `action` exceptions are swallowed (by debouncer design); critical operations should bring their own try/catch |
 
 ### `Testing` `Recommendations`
 
-| Component | Testing Recommendation |
-|-----------|------------------------|
-| `StructuredConcurrency` | Use `Mockito` to mock each task; build mixed success/failure scenarios to verify order guarantees |
-| `VirtualThreadFactory` | Verify the thread-name prefix; verify context propagation with `ScopedValue.get(key)` |
-| `Retryer` | Use an `AtomicInteger` counter to control failure count; verify backoff timing matches expectations |
-| `BatchProcessor` | Verify `successCount` / `failureCount`; verify `results()` aligns with input order |
-| `RateLimiter` | After high-frequency calls, assert `availablePermits()` is close to 0; verify behavior after `close()` |
-| `CircuitBreaker` | Inject a fake clock with `Builder.build(LongSupplier)`; build scenarios where the failure rate exceeds the threshold |
-| `Debouncer` | Use `CountDownLatch` to wait for the action to run; verify `trigger()` resets the timer |
+| Component               | Testing Recommendation                                                                                               |
+|-------------------------|----------------------------------------------------------------------------------------------------------------------|
+| `StructuredConcurrency` | Use `Mockito` to mock each task; build mixed success/failure scenarios to verify order guarantees                    |
+| `VirtualThreadFactory`  | Verify the thread-name prefix; verify context propagation with `ScopedValue.get(key)`                                |
+| `Retryer`               | Use an `AtomicInteger` counter to control failure count; verify backoff timing matches expectations                  |
+| `BatchProcessor`        | Verify `successCount` / `failureCount`; verify `results()` aligns with input order                                   |
+| `RateLimiter`           | After high-frequency calls, assert `availablePermits()` is close to 0; verify behavior after `close()`               |
+| `CircuitBreaker`        | Inject a fake clock with `Builder.build(LongSupplier)`; build scenarios where the failure rate exceeds the threshold |
+| `Debouncer`             | Use `CountDownLatch` to wait for the action to run; verify `trigger()` resets the timer                              |
 
 ### `Monitoring` and `Observability`
 
-1. **Virtual-thread monitoring**: JDK 25 JFR natively supports virtual-thread events (`jdk.VirtualThreadStart`, `jdk.VirtualThreadPinned`); you can observe in real time with `jfr` or JMC.
+1. **Virtual-thread monitoring**: JDK 25 JFR natively supports virtual-thread events (`jdk.VirtualThreadStart`,
+   `jdk.VirtualThreadPinned`); you can observe in real time with `jfr` or JMC.
 2. **Micrometer metrics**: recommend exposing the following metrics:
-   - `circuit_breaker.state`: current state (0 = CLOSED / 0.5 = HALF_OPEN / 1 = OPEN)
-   - `rate_limiter.available_permits`: current available tokens
-   - `batch_processor.success_count` / `failure_count`: batch success/failure counts
-3. **Circuit-breaker state alerting**: send an alert when `CircuitBreaker.State` transitions to OPEN; escalate to a severe alert if OPEN persists too long.
-4. **Batch-processing failure details**: periodically scan `BatchResult.errors()`; trigger an alert when the failure rate exceeds a threshold.
+    - `circuit_breaker.state`: current state (0 = CLOSED / 0.5 = HALF_OPEN / 1 = OPEN)
+    - `rate_limiter.available_permits`: current available tokens
+    - `batch_processor.success_count` / `failure_count`: batch success/failure counts
+3. **Circuit-breaker state alerting**: send an alert when `CircuitBreaker.State` transitions to OPEN; escalate to a
+   severe alert if OPEN persists too long.
+4. **Batch-processing failure details**: periodically scan `BatchResult.errors()`; trigger an alert when the failure
+   rate exceeds a threshold.
 
 ---
 
@@ -2076,47 +2296,65 @@ Per-pool (`PoolProperties`) configurable items:
 
 ### `Q1` — `Why` `Not` `Keep` `Using` `Dynamic`-`TP`?
 
-This component's `DynamicExecutor` is a **lightweight dynamic thread-pool implementation**, aiming to cover 80% of platform thread pool scenarios (multi-pool management, runtime tuning, rejection counting, runtime snapshot) with zero extra dependencies. It does not aim for feature completeness; instead, it does the "most commonly used, would be painful to miss" capabilities right and well. dynamic-tp ([dromara/dynamic-tp](https://github.com/dromara/dynamic-tp)) is a feature-complete platform-grade thread pool management framework. The capability boundary between them is as follows.
+This component's `DynamicExecutor` is a **lightweight dynamic thread-pool implementation**, aiming to cover 80% of
+platform thread pool scenarios (multi-pool management, runtime tuning, rejection counting, runtime snapshot) with zero
+extra dependencies. It does not aim for feature completeness; instead, it does the "most commonly used, would be painful
+to miss" capabilities right and well. dynamic-tp ([dromara/dynamic-tp](https://github.com/dromara/dynamic-tp)) is a
+feature-complete platform-grade thread pool management framework. The capability boundary between them is as follows.
 
 #### `Feature` `Comparison`
 
-| Feature | This Component (`DynamicExecutor`) | dynamic-tp |
-|---------|-----------------------------------|------------|
-| Config-center integration (Nacos/Apollo/Config/ZK/Consul) | Indirectly via Spring Cloud `EnvironmentChangeEvent`; covers all config centers that can trigger this event | Built-in dedicated adapters for Nacos / Apollo / Etcd / ZK |
-| Runtime tuning (core/max/keepAlive/handler) | Supported (`onResize` event-driven; see [Module 3.0.2](#302-tuning-workflow)) | Supported (admin backend or config-center push) |
-| Rejection counting | Supported (transparent `CountingHandler` wrapping; see [Module 3.0.3](#303-rejection-counting-principle)) | Supported |
-| Runtime snapshot | Supported (`PoolStatus` returns 9 metrics in one call) | Supported |
-| Alerting (DingTalk / WeCom / Feishu / Email) | **Not supported** (business side must hook into Prometheus / monitoring alerting themselves) | Built-in multi-channel alerting |
-| Web admin backend | **Not supported** | Built-in visual interface |
-| Task wrapping (MDC / Ttl / Transmittable) | **Not supported** | Built-in `MdcRunnable` / `TtlRunnable` / `TransmittableThreadLocal` wrapping |
-| Thread-pool data persistence | **Not supported** | Built-in DB / Redis-based persistence |
-| Dependency footprint | 0 extra dependencies (only comes with this component) | Need to introduce `dynamic-tp-spring-boot-starter` and its transitive dependencies |
-| Auto-configuration | Zero config (just include this dependency and write `platform.concurrency.thread-pools.*` config) | Need to introduce the starter and configure the `dynamic-tp` namespace |
+| Feature                                                   | This Component (`DynamicExecutor`)                                                                          | dynamic-tp                                                                         |
+|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| Config-center integration (Nacos/Apollo/Config/ZK/Consul) | Indirectly via Spring Cloud `EnvironmentChangeEvent`; covers all config centers that can trigger this event | Built-in dedicated adapters for Nacos / Apollo / Etcd / ZK                         |
+| Runtime tuning (core/max/keepAlive/handler)               | Supported (`onResize` event-driven; see [Module 3.0.2](#302-tuning-workflow))                               | Supported (admin backend or config-center push)                                    |
+| Rejection counting                                        | Supported (transparent `CountingHandler` wrapping; see [Module 3.0.3](#303-rejection-counting-principle))   | Supported                                                                          |
+| Runtime snapshot                                          | Supported (`PoolStatus` returns 9 metrics in one call)                                                      | Supported                                                                          |
+| Alerting (DingTalk / WeCom / Feishu / Email)              | **Not supported** (business side must hook into Prometheus / monitoring alerting themselves)                | Built-in multi-channel alerting                                                    |
+| Web admin backend                                         | **Not supported**                                                                                           | Built-in visual interface                                                          |
+| Task wrapping (MDC / Ttl / Transmittable)                 | **Not supported**                                                                                           | Built-in `MdcRunnable` / `TtlRunnable` / `TransmittableThreadLocal` wrapping       |
+| Thread-pool data persistence                              | **Not supported**                                                                                           | Built-in DB / Redis-based persistence                                              |
+| Dependency footprint                                      | 0 extra dependencies (only comes with this component)                                                       | Need to introduce `dynamic-tp-spring-boot-starter` and its transitive dependencies |
+| Auto-configuration                                        | Zero config (just include this dependency and write `platform.concurrency.thread-pools.*` config)           | Need to introduce the starter and configure the `dynamic-tp` namespace             |
 
 #### `Decision` `Guide`
 
-- **Want only "multi-pool + tuning + basic monitoring"**: use this component; zero extra dependencies; the API in [Module 3.1](#31-dynamicexecutor-dynamic-thread-pool) gets a thread pool running in one line; tuning goes through `onResize` + config-center integration.
-- **Need alerting / web admin / task wrapping / data persistence**: introduce [dynamic-tp](https://github.com/dromara/dynamic-tp); it has already turned these capabilities into out-of-the-box features.
-- **Already using a Spring Cloud config center**: this component can directly reuse `EnvironmentChangeEvent`; no listener code is needed (see [Module 3.0.2](#302-tuning-workflow)); in this case, integration cost is lower.
-- **Don't want to add another starter and its transitive dependencies just for thread pool management**: use this component; it only depends on Spring Boot (`provided` scope) and won't bloat the project.
-- **The two are not in conflict**: use this component for core pools; pools with special needs (MDC propagation, alerting persistence) hook into dynamic-tp separately; mixing at the pool level is fine.
+- **Want only "multi-pool + tuning + basic monitoring"**: use this component; zero extra dependencies; the API
+  in [Module 3.1](#31-dynamicexecutor-dynamic-thread-pool) gets a thread pool running in one line; tuning goes through
+  `onResize` + config-center integration.
+- **Need alerting / web admin / task wrapping / data persistence**:
+  introduce [dynamic-tp](https://github.com/dromara/dynamic-tp); it has already turned these capabilities into
+  out-of-the-box features.
+- **Already using a Spring Cloud config center**: this component can directly reuse `EnvironmentChangeEvent`; no
+  listener code is needed (see [Module 3.0.2](#302-tuning-workflow)); in this case, integration cost is lower.
+- **Don't want to add another starter and its transitive dependencies just for thread pool management**: use this
+  component; it only depends on Spring Boot (`provided` scope) and won't bloat the project.
+- **The two are not in conflict**: use this component for core pools; pools with special needs (MDC propagation,
+  alerting persistence) hook into dynamic-tp separately; mixing at the pool level is fine.
 
 #### `Summary`
 
-> **This component = lightweight + enough**; dynamic-tp = **feature-complete + completeness means heavier dependencies**. Start with this component, and only upgrade to dynamic-tp when you hit a real need — that's the reasonable evolution path for most projects.
+> **This component = lightweight + enough**; dynamic-tp = **feature-complete + completeness means heavier
+dependencies**. Start with this component, and only upgrade to dynamic-tp when you hit a real need — that's the
+> reasonable evolution path for most projects.
 
-If you need to use dynamic-tp, please introduce the dependency in your business modules yourself; this component does not enforce the dependency, and they are not mutually exclusive.
+If you need to use dynamic-tp, please introduce the dependency in your business modules yourself; this component does
+not enforce the dependency, and they are not mutually exclusive.
 
 ### `Q2` — `What`'s the `Difference` `Between` `StructuredConcurrency` and `TenantStructuredTaskScope`?
 
-- `StructuredConcurrency`: generic concurrency-semantic wrapper (gather, race, deadline, batched gather, best-effort gather), not bound to any specific context.
-- `TenantStructuredTaskScope`: a tenant-context-aware concurrency utility based on `ScopedValue`, providing factory methods like `awaitAll` / `anySuccessful`.
+- `StructuredConcurrency`: generic concurrency-semantic wrapper (gather, race, deadline, batched gather, best-effort
+  gather), not bound to any specific context.
+- `TenantStructuredTaskScope`: a tenant-context-aware concurrency utility based on `ScopedValue`, providing factory
+  methods like `awaitAll` / `anySuccessful`.
 
-The two are complementary, not replacements. You can call `StructuredConcurrency`'s static methods inside a `TenantStructuredTaskScope`.
+The two are complementary, not replacements. You can call `StructuredConcurrency`'s static methods inside a
+`TenantStructuredTaskScope`.
 
 ### `Q3` — `How` to `Monitor` `Virtual` `Threads`?
 
-1. JDK 25 JFR: use `jcmd <pid> JFR.start name=vthreads` to start JFR recording; events `jdk.VirtualThreadStart` / `jdk.VirtualThreadPinned` let you observe virtual threads.
+1. JDK 25 JFR: use `jcmd <pid> JFR.start name=vthreads` to start JFR recording; events `jdk.VirtualThreadStart` /
+   `jdk.VirtualThreadPinned` let you observe virtual threads.
 2. Micrometer: use the `jvm.threads.*` metrics, which include platform and virtual thread statistics.
 3. JMX: `ThreadMXBean.getThreadInfo(long[])` supports retrieving virtual thread information.
 
@@ -2131,14 +2369,16 @@ A typical chain: `RateLimiter.tryAcquire() → CircuitBreaker.execute(task, fall
 
 ### `Q5` — `When` `Does` the `Circuit` `Breaker` `Auto`-`Recover` `After` `Tripping`?
 
-After the OPEN state lasts for `openDuration` (default 10 seconds), it automatically transitions to HALF_OPEN; the next call is treated as a "probe":
+After the OPEN state lasts for `openDuration` (default 10 seconds), it automatically transitions to HALF_OPEN; the next
+call is treated as a "probe":
 
 - Probe success → back to CLOSED (normal recovery)
 - Probe failure → back to OPEN and re-timing
 
 ### `Q6` — `What`'s the `Difference` `Between` `Debouncer` and `RateLimiter`?
 
-- `Debouncer`: delays action execution; repeated triggers reset the timer; used for "stop operating X seconds, then execute Y".
+- `Debouncer`: delays action execution; repeated triggers reset the timer; used for "stop operating X seconds, then
+  execute Y".
 - `RateLimiter`: controls the maximum number of calls per unit time; used for "at most N calls per second".
 
 They solve different problems and should not be mixed.
@@ -2166,32 +2406,43 @@ If you need both, first use `mapParallel` to get the results, then use `result.r
 
 ### `Q9` — `Why` `Doesn`'t the half-open-max-successes `Config` `Item` `Take` `Effect`?
 
-The underlying `CircuitBreaker.Builder` currently uses "single-probe-success-then-close" semantics; the `half-open-max-successes` field is reserved for future extension (when upgrading to multi-probe mode, no need to break the config contract). If you need "multiple successful probes to close" semantics, consider building your own circuit breaker on the business side, or wait for this component to upgrade.
+The underlying `CircuitBreaker.Builder` currently uses "single-probe-success-then-close" semantics; the
+`half-open-max-successes` field is reserved for future extension (when upgrading to multi-probe mode, no need to break
+the config contract). If you need "multiple successful probes to close" semantics, consider building your own circuit
+breaker on the business side, or wait for this component to upgrade.
 
 ### `Q10` — `How` to `Replace` `Time`-`Related` `Behavior` of `RateLimiter` / `CircuitBreaker` in `Tests`?
 
-- **RateLimiter**: use `RateLimiter.builder()` to create a custom instance; call `close()` in tests for quick resource release.
-- **CircuitBreaker**: use `CircuitBreaker.builder().build(LongSupplier)` to inject a fake clock, simulating the "OPEN → HALF_OPEN after 10 seconds" transition.
-- **Debouncer**: use `Duration.ofMillis(50)` short delay to ease testing; use `CountDownLatch` to wait for the action to run.
+- **RateLimiter**: use `RateLimiter.builder()` to create a custom instance; call `close()` in tests for quick resource
+  release.
+- **CircuitBreaker**: use `CircuitBreaker.builder().build(LongSupplier)` to inject a fake clock, simulating the "OPEN →
+  HALF_OPEN after 10 seconds" transition.
+- **Debouncer**: use `Duration.ofMillis(50)` short delay to ease testing; use `CountDownLatch` to wait for the action to
+  run.
 
 ### `Q11` — `Do` `I` `Need` to `Restart` the `Application` `After` `Config` `Changes`?
 
-Yes. All `platform.concurrency.*` config items are bound through `ConcurrencyProperties` at startup; runtime modifications will not take effect automatically. If dynamic adjustment is needed, you can:
+Yes. All `platform.concurrency.*` config items are bound through `ConcurrencyProperties` at startup; runtime
+modifications will not take effect automatically. If dynamic adjustment is needed, you can:
 
 1. Expose monitoring metrics like `RateLimiter.availablePermits()` via JMX.
-2. Recreate component instances on the business side with `@RefreshScope` (not recommended; affects other Beans' dependencies).
+2. Recreate component instances on the business side with `@RefreshScope` (not recommended; affects other Beans'
+   dependencies).
 3. Restart the application.
 
 ### `Q12` — `Why` `Is` ofTryAcquireTimeout `Marked` as `Deprecated`?
 
-Since 2.2.0, this component has unified the `try*` prefix convention: all `try*` methods must be strictly non-blocking. `ofTryAcquireTimeout(permits, timeout)` implicitly makes `tryAcquire()` wait within `timeout`, violating this convention. Switch to `ofTokensPerDuration(permits, window)` + `tryAcquire(Duration)` to make the time-limited-blocking semantics explicit and clearer.
+Since 2.2.0, this component has unified the `try*` prefix convention: all `try*` methods must be strictly non-blocking.
+`ofTryAcquireTimeout(permits, timeout)` implicitly makes `tryAcquire()` wait within `timeout`, violating this
+convention. Switch to `ofTokensPerDuration(permits, window)` + `tryAcquire(Duration)` to make the time-limited-blocking
+semantics explicit and clearer.
 
 ### `Q13` — `Which` `Spring` `Boot` `Versions` `Are` `Compatible`?
 
-| Component Version | Compatibility |
-|-------------------|---------------|
-| Spring Boot | 4.0.x (`provided` scope; not forced) |
-| JDK | 25+ (uses `StructuredTaskScope`, `ScopedValue`, `Thread.ofVirtual`) |
+| Component Version | Compatibility                                                       |
+|-------------------|---------------------------------------------------------------------|
+| Spring Boot       | 4.0.x (`provided` scope; not forced)                                |
+| JDK               | 25+ (uses `StructuredTaskScope`, `ScopedValue`, `Thread.ofVirtual`) |
 
 Environments below JDK 25 cannot use this component (because it depends on `StructuredTaskScope` preview API).
 
@@ -2225,11 +2476,14 @@ private DynamicExecutor notificationExecutor;
 private Map<String, DynamicExecutor> executors;
 ```
 
-No need to write `@Bean` registration methods on the business side. `AlgorithmAutoConfiguration` iterates the `platform.concurrency.thread-pools` Map during `PostConstruct` and registers each pool as a Spring singleton Bean. `shutdown()` is called automatically on container shutdown.
+No need to write `@Bean` registration methods on the business side. `AlgorithmAutoConfiguration` iterates the
+`platform.concurrency.thread-pools` Map during `PostConstruct` and registers each pool as a Spring singleton Bean.
+`shutdown()` is called automatically on container shutdown.
 
 ### `Q15` — `How` to `Integrate` with `Config` `Centers` (`Nacos`/`Etcd`) for `Dynamic` `Tuning`?
 
-`PoolResizeEvent` supports passing only the fields that need to change; `null` means "do not adjust" — the listener does not need to know the full current configuration:
+`PoolResizeEvent` supports passing only the fields that need to change; `null` means "do not adjust" — the listener does
+not need to know the full current configuration:
 
 ```java
 @NacosConfigListener(dataId = "order-executor.yml")
@@ -2246,17 +2500,28 @@ public void onConfigChange(String newConfig) {
 }
 ```
 
-The event itself is immutable and safe to pass across threads. `onResize` is idempotent: two consecutive identical events have the same effect as one. Recommend adding debounce outside the listener (e.g. two config changes less than 30s apart count as one tuning), to avoid triggering `ThreadPoolExecutor` internal Worker rebuilds in short bursts.
+The event itself is immutable and safe to pass across threads. `onResize` is idempotent: two consecutive identical
+events have the same effect as one. Recommend adding debounce outside the listener (e.g. two config changes less than
+30s apart count as one tuning), to avoid triggering `ThreadPoolExecutor` internal Worker rebuilds in short bursts.
 
 ### Q16 — What's the Difference Between DynamicExecutor and a Plain `ThreadPoolExecutor`?
 
-`DynamicExecutor` extends the standard `ThreadPoolExecutor`, so all native TPE APIs (`execute` / `submit` / `shutdown` / `shutdownNow` / `awaitTermination`, etc.) remain unchanged — it can be a drop-in replacement for TPE. The differences are only in extended capabilities:
+`DynamicExecutor` extends the standard `ThreadPoolExecutor`, so all native TPE APIs (`execute` / `submit` / `shutdown` /
+`shutdownNow` / `awaitTermination`, etc.) remain unchanged — it can be a drop-in replacement for TPE. The differences
+are only in extended capabilities:
 
-- **`onResize` hot-update capability**: adjust `corePoolSize` / `maximumPoolSize` / `keepAliveTime` / `rejectedHandler` at runtime without modifying code or releasing; updates only the non-null fields in the event; null fields stay unchanged.
-- **Transparent rejection counting via wrapper**: a `CountingHandler` (an internal `private static` wrapper) automatically counts rejected tasks; `getRejectedExecutionHandler()` returns the user's original handler, so business code is completely unaware of the wrapper.
-- **`PoolStatus` snapshot**: one-stop access to 9 runtime metrics (`poolSize` / `activeCount` / `queueSize` / `queueRemainingCapacity` / `completedTaskCount` / `totalTaskCount` / `rejectedCount` / `corePoolSize` / `maximumPoolSize`), without calling multiple TPE getters.
+- **`onResize` hot-update capability**: adjust `corePoolSize` / `maximumPoolSize` / `keepAliveTime` / `rejectedHandler`
+  at runtime without modifying code or releasing; updates only the non-null fields in the event; null fields stay
+  unchanged.
+- **Transparent rejection counting via wrapper**: a `CountingHandler` (an internal `private static` wrapper)
+  automatically counts rejected tasks; `getRejectedExecutionHandler()` returns the user's original handler, so business
+  code is completely unaware of the wrapper.
+- **`PoolStatus` snapshot**: one-stop access to 9 runtime metrics (`poolSize` / `activeCount` / `queueSize` /
+  `queueRemainingCapacity` / `completedTaskCount` / `totalTaskCount` / `rejectedCount` / `corePoolSize` /
+  `maximumPoolSize`), without calling multiple TPE getters.
 - **Non-intrusive**: constructor signatures match standard TPE exactly; zero migration cost from old code.
-- **Independent of any config center**: `onResize` is just a public method; the event source is determined by the caller (Nacos / Etcd / Admin API / timer / JMX); no external dependencies are bound inside this component.
+- **Independent of any config center**: `onResize` is just a public method; the event source is determined by the caller
+  (Nacos / Etcd / Admin API / timer / JMX); no external dependencies are bound inside this component.
 
 ---
 
@@ -2264,7 +2529,8 @@ The event itself is immutable and safe to pass across threads. `onResize` is ide
 
 ### `JDK` `Official`
 
-- [JDK 25 `StructuredTaskScope` Javadoc](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/StructuredTaskScope.html)
+- [JDK 25
+  `StructuredTaskScope` Javadoc](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/StructuredTaskScope.html)
 - [JEP 444: Virtual Threads](https://openjdk.org/jeps/444)
 - [JEP 446: Scoped Values (Final)](https://openjdk.org/jeps/446)
 - [JEP 480: Structured Concurrency (Third Preview)](https://openjdk.org/jeps/480)

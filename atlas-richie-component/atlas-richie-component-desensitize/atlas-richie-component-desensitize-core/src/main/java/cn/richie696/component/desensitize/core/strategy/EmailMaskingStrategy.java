@@ -23,8 +23,8 @@ import org.springframework.stereotype.Component;
  * 邮箱脱敏：本地部分保留首字符。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @Component
 public class EmailMaskingStrategy implements MaskingStrategy {
@@ -43,7 +43,7 @@ public class EmailMaskingStrategy implements MaskingStrategy {
     /**
      * 脱敏邮箱本地部分，域名保持不变。
      *
-     * @param raw 原始字符串
+     * @param raw  原始字符串
      * @param rule 脱敏规则
      * @return 脱敏结果
      */

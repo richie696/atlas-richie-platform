@@ -34,10 +34,12 @@ import java.time.temporal.ChronoUnit;
 @Data
 @Primary
 @EqualsAndHashCode(callSuper = true)
-@ConfigurationProperties(prefix = "spring.data.redis.lettuce")
+@ConfigurationProperties(prefix = "platform.component.cache.redis.lettuce")
 public class LettuceExtension extends DataRedisProperties.Lettuce {
 
-    /** 默认构造函数，供配置绑定使用。 */
+    /**
+     * 默认构造函数，供配置绑定使用。
+     */
     public LettuceExtension() {
     }
 
@@ -76,7 +78,9 @@ public class LettuceExtension extends DataRedisProperties.Lettuce {
     @Data
     public static class EpollKeepAliveProperties {
 
-        /** 默认构造函数，供配置绑定使用。 */
+        /**
+         * 默认构造函数，供配置绑定使用。
+         */
         public EpollKeepAliveProperties() {
         }
 

@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.vector.service.impl;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import cn.richie696.component.vector.model.VectorContent;
 import cn.richie696.component.vector.model.VectorRecord;
 import cn.richie696.component.vector.model.VectorSearchResult;
+import com.google.common.util.concurrent.ListenableFuture;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.grpc.Common;
 import io.qdrant.client.grpc.JsonWithInt;

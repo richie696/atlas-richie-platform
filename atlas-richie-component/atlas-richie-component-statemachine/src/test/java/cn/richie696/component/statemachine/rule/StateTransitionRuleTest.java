@@ -15,13 +15,16 @@
  */
 package cn.richie696.component.statemachine.rule;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import cn.richie696.component.statemachine.config.properties.RulesEngineConfig;
 import cn.richie696.component.statemachine.context.StateContext;
 import cn.richie696.component.statemachine.model.Transition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * StateTransitionRule 单元测试
@@ -38,7 +41,7 @@ class StateTransitionRuleTest {
     void setUp() {
         // 重置配置
         ExpressionConfigHolder.setConfig(null);
-        
+
         // 创建测试转换
         transition = new Transition();
         transition.setName("test_transition");
@@ -115,7 +118,7 @@ class StateTransitionRuleTest {
     void testThen_UpdateState() {
         rule = new StateTransitionRule(transition, context);
         rule.then();
-        
+
         assertEquals("CONFIRMED", context.getCurrentState());
         assertEquals("PENDING", context.getPreviousState());
         assertEquals(transition, context.getTransition());

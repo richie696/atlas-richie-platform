@@ -28,7 +28,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 2022-09-16
  */
 @Data
-@ConfigurationProperties(prefix = "spring.cloud.stream")
+@ConfigurationProperties(prefix = "platform.component.messaging")
 public class MessagingProperties {
 
     /**

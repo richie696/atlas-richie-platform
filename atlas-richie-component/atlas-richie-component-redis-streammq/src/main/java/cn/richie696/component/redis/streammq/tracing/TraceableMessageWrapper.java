@@ -22,11 +22,12 @@ import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapPropagator;
-import lombok.extern.slf4j.Slf4j;
 import jakarta.annotation.Nonnull;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.lang.Iterable;
 
 /**
  * 可追踪消息包装器
@@ -71,7 +72,7 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
      * @param originalMessage 原始业务消息
      * @param traceContext    追踪上下文
      */
-    public TraceableMessageWrapper(Object originalMessage, Map<String, String> traceContext) {
+    public TraceableMessageWrapper(Object originalMessage, Map < String, String > traceContext) {
         this.originalMessage = originalMessage;
         this.traceContext = traceContext != null ? new HashMap<>(traceContext) : new HashMap<>();
     }
@@ -81,7 +82,7 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
      *
      * @param openTelemetry OpenTelemetry 实例（可选，优先使用 GlobalOpenTelemetry）
      */
-    public void injectTraceContext(OpenTelemetry openTelemetry) {
+    public void injectTraceContext (OpenTelemetry openTelemetry){
         try {
             // 获取当前 Span 上下文
             SpanContext spanContext = Span.current().getSpanContext();
@@ -129,7 +130,7 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
      * @param openTelemetry OpenTelemetry 实例（可选，优先使用 GlobalOpenTelemetry）
      * @return 包含追踪上下文的 OpenTelemetry Context
      */
-    public Context extractTraceContext(OpenTelemetry openTelemetry) {
+    public Context extractTraceContext (OpenTelemetry openTelemetry){
         try {
             if (traceContext.isEmpty()) {
                 log.debug("消息中没有追踪上下文，返回当前上下文");
@@ -172,7 +173,7 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
      *
      * @return true 如果有有效的追踪上下文
      */
-    public boolean hasValidTraceContext() {
+    public boolean hasValidTraceContext () {
         // 兼容两类判定：
         // 1) 标准 OTel 传播载体：traceparent/tracestate（优先）
         // 2) 冗余简化字段：仅 traceId（用于日志排查）
@@ -191,7 +192,7 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
      *
      * @return Trace ID，如果没有则返回 null
      */
-    public String getTraceId() {
+    public String getTraceId () {
         return traceContext.get(TRACE_ID_KEY);
     }
 
@@ -200,7 +201,7 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
      *
      * @return Span ID，如果没有则返回 null
      */
-    public String getSpanId() {
+    public String getSpanId () {
         return traceContext.get(SPAN_ID_KEY);
     }
 
@@ -209,7 +210,7 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
      *
      * @return true 如果被采样，否则 false
      */
-    public boolean isSampled() {
+    public boolean isSampled () {
         String sampled = traceContext.get(SAMPLED_KEY);
         return "true".equalsIgnoreCase(sampled);
     }
@@ -220,7 +221,7 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
      * @return 追踪上下文映射
      */
     @Override
-    public Map<String, String> traceContext() {
+    public Map<String, String> traceContext () {
         return new HashMap<>(traceContext);
     }
 
@@ -231,7 +232,7 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
      * @param openTelemetry OpenTelemetry 实例
      * @return 包装后的消息
      */
-    public static TraceableMessageWrapper wrapForPublish(Object message, OpenTelemetry openTelemetry) {
+    public static TraceableMessageWrapper wrapForPublish (Object message, OpenTelemetry openTelemetry){
         TraceableMessageWrapper wrapper = new TraceableMessageWrapper(message);
         wrapper.injectTraceContext(openTelemetry);
         return wrapper;
@@ -244,13 +245,13 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
      * @param traceContext 追踪上下文
      * @return 包装后的消息
      */
-    public static TraceableMessageWrapper wrapForConsume(Object message, Map<String, String> traceContext) {
+    public static TraceableMessageWrapper wrapForConsume (Object message, Map < String, String > traceContext){
         return new TraceableMessageWrapper(message, traceContext);
     }
 
     @Nonnull
     @Override
-    public String toString() {
+    public String toString () {
         return String.format("TraceableMessageWrapper{originalMessage=%s, traceId=%s, spanId=%s, sampled=%s}",
                 originalMessage.getClass().getSimpleName(), getTraceId(), getSpanId(), isSampled());
     }

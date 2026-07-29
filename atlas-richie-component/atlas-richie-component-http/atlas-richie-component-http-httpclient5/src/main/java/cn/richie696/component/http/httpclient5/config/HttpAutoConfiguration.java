@@ -34,8 +34,8 @@ import org.springframework.context.annotation.Bean;
  * HttpClient5 Provider 自动配置。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @Slf4j
 @AutoConfiguration

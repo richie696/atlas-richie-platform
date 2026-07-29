@@ -15,21 +15,10 @@
  */
 package cn.richie696.component.parser.internal;
 
-import cn.richie696.component.parser.DocumentParser;
-import cn.richie696.component.parser.DocumentSegment;
-import cn.richie696.component.parser.DocumentSummary;
-import cn.richie696.component.parser.ParseEvent;
-import cn.richie696.component.parser.ParseListener;
-import cn.richie696.component.parser.ParserContext;
-import cn.richie696.component.parser.ParserSource;
+import cn.richie696.component.parser.*;
 import cn.richie696.component.parser.exception.DocumentParseException;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,10 +28,10 @@ import java.util.Map;
  * <p>
  * <b>不走 Tika</b>,直接按 UTF-8 边读行边 emit Streaming event。
  * 遇到空行 (
-
- / \r
-\r
-) 即视作段落边界,立即 emit。
+ * <p>
+ * / \r
+ * \r
+ * ) 即视作段落边界,立即 emit。
  *
  * @author richie696
  * @version 1.0
@@ -158,11 +147,10 @@ public final class TextFastPathParser implements DocumentParser {
         return switch (source) {
             case ParserSource.FileSource f -> openFile(f);
             case ParserSource.StreamSource s -> s.in();
-            case ParserSource.UrlSource ignored ->
-                    throw new DocumentParseException(
-                            "TextFastPathParser does not accept URL source directly. "
-                                    + "UrlFetcher must download the URL into a stream first (Phase 5)."
-                    );
+            case ParserSource.UrlSource ignored -> throw new DocumentParseException(
+                    "TextFastPathParser does not accept URL source directly. "
+                            + "UrlFetcher must download the URL into a stream first (Phase 5)."
+            );
         };
     }
 

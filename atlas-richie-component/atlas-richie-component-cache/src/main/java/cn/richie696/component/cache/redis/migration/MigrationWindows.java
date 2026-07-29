@@ -53,8 +53,8 @@ public final class MigrationWindows {
      * 扫描 {@code bean} 所在类（含其父类、含静态/实例字段）中所有 {@link MigrationWindow} 字段，
      * 若 {@code now} &gt; {@code until} 且字段值仍为 {@code false}，记录违规。
      *
-     * @param bean      配置类实例
-     * @param clock     提供"今天"的时间源（测试时可注入固定值）
+     * @param bean  配置类实例
+     * @param clock 提供"今天"的时间源（测试时可注入固定值）
      * @return 违规列表；若全部合规或没有标记字段则为空
      */
     public static List<MigrationViolation> check(Object bean, Supplier<LocalDate> clock) {

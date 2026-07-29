@@ -19,6 +19,7 @@ import cn.richie696.component.concurrency.measurement.Stopwatch;
 import cn.richie696.component.logging.annotations.LogMethodTrace;
 import cn.richie696.component.logging.annotations.LogTrace;
 import cn.richie696.component.logging.domain.LogTraceInfo;
+import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -31,7 +32,6 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.LineNumberNode;
 import org.springframework.core.annotation.Order;
-import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;

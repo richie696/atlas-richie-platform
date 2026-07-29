@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.messaging.config;
 
-import cn.richie696.contract.gateway.config.DeployConfig;
 import cn.richie696.component.messaging.filter.CanaryMessageFilter;
+import cn.richie696.contract.gateway.config.DeployConfig;
 import jakarta.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -59,7 +59,7 @@ public class MessagingConfiguration {
      *
      * @param discoveryClient 服务发现客户端
      * @param applicationName 当前应用名
-     * @param deployConfig     Gateway 灰度配置
+     * @param deployConfig    Gateway 灰度配置
      * @return 灰度实例管理器
      */
     @Bean

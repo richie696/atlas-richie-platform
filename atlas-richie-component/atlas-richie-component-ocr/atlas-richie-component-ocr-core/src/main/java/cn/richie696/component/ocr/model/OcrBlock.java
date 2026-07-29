@@ -39,7 +39,7 @@ public record OcrBlock(String text, List<Point> box, float confidence, List<OcrL
      * @param confidence 块置信度（取值区间 [0.0, 1.0]）
      * @param lines      行级定位结果（{@code null} 视为空列表, 部分 Provider 不输出行级信息）
      */
-    public OcrBlock(String text, List<Point> box, float confidence, List<OcrLine> lines) {
+    public OcrBlock(String text, List < Point > box, float confidence, List<OcrLine > lines){
         this.text = Objects.requireNonNull(text, "text");
         this.box = box != null ? List.copyOf(box) : List.of();
         this.confidence = confidence;
@@ -53,7 +53,7 @@ public record OcrBlock(String text, List<Point> box, float confidence, List<OcrL
      * @param box        四点坐标（{@code null} 视为空列表）
      * @param confidence 块置信度（取值区间 [0.0, 1.0]）
      */
-    public OcrBlock(String text, List<Point> box, float confidence) {
+    public OcrBlock(String text, List < Point > box, float confidence){
         this(text, box, confidence, List.of());
     }
 
@@ -61,7 +61,7 @@ public record OcrBlock(String text, List<Point> box, float confidence, List<OcrL
      * @return 块内合并文本
      */
     @Override
-    public String text() {
+    public String text () {
         return text;
     }
 
@@ -69,7 +69,7 @@ public record OcrBlock(String text, List<Point> box, float confidence, List<OcrL
      * @return 四点坐标（顺序由 Provider 决定, 通常为顺时针左上→右上→右下→左下）
      */
     @Override
-    public List<Point> box() {
+    public List<Point> box () {
         return box;
     }
 
@@ -77,7 +77,7 @@ public record OcrBlock(String text, List<Point> box, float confidence, List<OcrL
      * @return 块置信度（取值区间 [0.0, 1.0]）
      */
     @Override
-    public float confidence() {
+    public float confidence () {
         return confidence;
     }
 
@@ -85,7 +85,7 @@ public record OcrBlock(String text, List<Point> box, float confidence, List<OcrL
      * @return 行级定位结果（Provider 未输出时为空列表）
      */
     @Override
-    public List<OcrLine> lines() {
+    public List<OcrLine> lines () {
         return lines;
     }
 
@@ -94,7 +94,7 @@ public record OcrBlock(String text, List<Point> box, float confidence, List<OcrL
      *
      * @return {@code true} 表示该块置信度 ≥ 0.6, 适合 KB 注入等下游消费
      */
-    public boolean isConfident() {
+    public boolean isConfident () {
         return confidence >= 0.6f;
     }
 
@@ -104,14 +104,15 @@ public record OcrBlock(String text, List<Point> box, float confidence, List<OcrL
      * @param threshold 阈值（业务侧按场景调整）
      * @return {@code true} 表示该块置信度 ≥ threshold
      */
-    public boolean isConfident(float threshold) {
+    public boolean isConfident ( float threshold){
         return confidence >= threshold;
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals (Object o){
         if (this == o) return true;
-        if (!(o instanceof OcrBlock(String text1, List<Point> box1, float confidence1, List<OcrLine> lines1))) return false;
+        if (!(o instanceof OcrBlock(String text1, List<Point> box1, float confidence1, List<OcrLine> lines1)))
+            return false;
         return Float.compare(confidence, confidence1) == 0
                 && text.equals(text1)
                 && box.equals(box1)

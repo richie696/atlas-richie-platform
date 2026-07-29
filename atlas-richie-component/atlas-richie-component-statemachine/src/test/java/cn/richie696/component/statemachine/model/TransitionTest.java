@@ -70,7 +70,7 @@ class TransitionTest {
         transition.setCondition("amount > 0");
         transition.setAction("context.setAttribute('completed', true)");
         transition.setPriority(10);
-        
+
         assertEquals("test_transition", transition.getName());
         assertEquals("PENDING", transition.getFromState());
         assertEquals("CONFIRMED", transition.getToState());
@@ -87,7 +87,7 @@ class TransitionTest {
         attributes.put("reopen", true);
         attributes.put("priority", 5);
         transition.setAttributes(attributes);
-        
+
         assertNotNull(transition.getAttributes());
         assertEquals(true, transition.getAttributes().get("reopen"));
         assertEquals(5, transition.getAttributes().get("priority"));
@@ -99,7 +99,7 @@ class TransitionTest {
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("reopen", true);
         transition.setAttributes(attributes);
-        
+
         assertTrue(Boolean.TRUE.equals(transition.getAttributes().get("reopen")));
     }
 
@@ -108,7 +108,7 @@ class TransitionTest {
         Transition t1 = new Transition("confirm", "PENDING", "CONFIRMED", "CONFIRM");
         Transition t2 = new Transition("confirm", "PENDING", "CONFIRMED", "CONFIRM");
         Transition t3 = new Transition("cancel", "PENDING", "CANCELLED", "CANCEL");
-        
+
         assertEquals(t1, t2);
         assertNotEquals(t1, t3);
         assertEquals(t1.hashCode(), t2.hashCode());

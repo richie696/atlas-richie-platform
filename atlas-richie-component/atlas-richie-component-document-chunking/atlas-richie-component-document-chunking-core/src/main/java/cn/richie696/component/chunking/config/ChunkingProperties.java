@@ -23,7 +23,9 @@ import java.util.Locale;
 @ConfigurationProperties(prefix = "platform.component.document-chunking")
 public class ChunkingProperties {
 
-    /** 是否启用本组件；{@code false} 时 {@link ChunkingAutoConfiguration} 不会注册任何 Bean。默认 {@code true}。 */
+    /**
+     * 是否启用本组件；{@code false} 时 {@link ChunkingAutoConfiguration} 不会注册任何 Bean。默认 {@code true}。
+     */
     private boolean enabled = true;
 
     /**
@@ -57,11 +59,15 @@ public class ChunkingProperties {
      */
     private int maxChunksPerDocument = 10_000;
 
-    /** 流式切片专属配置；含缓冲区上限等运行时参数。 */
+    /**
+     * 流式切片专属配置；含缓冲区上限等运行时参数。
+     */
     @NestedConfigurationProperty
     private Streaming streaming = new Streaming();
 
-    /** RECURSIVE 策略专属配置；分隔符列表优先级由前到后逐级降级。 */
+    /**
+     * RECURSIVE 策略专属配置；分隔符列表优先级由前到后逐级降级。
+     */
     @NestedConfigurationProperty
     private Recursive recursive = new Recursive();
 

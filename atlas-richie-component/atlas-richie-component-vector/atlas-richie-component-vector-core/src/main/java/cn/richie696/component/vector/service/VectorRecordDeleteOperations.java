@@ -1,6 +1,8 @@
 package cn.richie696.component.vector.service;
 
 import java.util.Collection;
+import java.util.List;
+
 /**
  * 以向量记录主键精确删除的核心能力。
  *

@@ -18,10 +18,10 @@ package cn.richie696.component.ocr.baidu.protocol;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import cn.richie696.component.ocr.model.OcrOptions;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import cn.richie696.component.ocr.model.OcrOptions;
 
 /**
  * 百度智能云 OCR {@code /rest/2.0/ocr/v1/general_basic} 端点请求 wire-format record。
@@ -69,7 +69,7 @@ public record BaiduOcrPayload(
      * @param options 调用侧 OCR 选项，用于驱动 {@code detect_direction} / {@code recognize_granularity} / {@code prob}
      * @return 新的 BaiduOcrPayload 实例
      */
-    public static BaiduOcrPayload ofBase64(String accessToken, String base64, String languageType, OcrOptions options) {
+    public static BaiduOcrPayload ofBase64 (String accessToken, String base64, String languageType, OcrOptions options){
         return new BaiduOcrPayload(
                 accessToken,
                 null,
@@ -89,7 +89,7 @@ public record BaiduOcrPayload(
      * @param options 调用侧 OCR 选项，用于驱动 {@code detect_direction} / {@code recognize_granularity} / {@code prob}
      * @return 新的 BaiduOcrPayload 实例
      */
-    public static BaiduOcrPayload ofUrl(String accessToken, String imageUrl, String languageType, OcrOptions options) {
+    public static BaiduOcrPayload ofUrl (String accessToken, String imageUrl, String languageType, OcrOptions options){
         return new BaiduOcrPayload(
                 accessToken,
                 imageUrl,
@@ -112,7 +112,7 @@ public record BaiduOcrPayload(
      *
      * @return 已 URL-encoded 的 form body 字符串
      */
-    public String toFormBody() {
+    public String toFormBody () {
         StringBuilder sb = new StringBuilder(256);
         sb.append("access_token=").append(URLEncoder.encode(accessToken, StandardCharsets.UTF_8));
         if (url != null) {

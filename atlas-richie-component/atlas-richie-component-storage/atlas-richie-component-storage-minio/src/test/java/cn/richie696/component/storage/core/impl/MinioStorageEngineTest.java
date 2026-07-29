@@ -310,7 +310,8 @@ class MinioStorageEngineTest {
         CompletableFuture<GetObjectResponse> future = CompletableFuture.completedFuture(getObjectResponse);
         when(minioAsyncClient.getObject(any(GetObjectArgs.class))).thenReturn(future);
 
-        var response = engine.getData("data.json", new TypeReference<Map<String, String>>() {});
+        var response = engine.getData("data.json", new TypeReference<Map<String, String>>() {
+        });
 
         assertThat(response.isSuccess()).isTrue();
         assertThat(response.getBucketName()).isEqualTo("test-bucket");
@@ -323,7 +324,8 @@ class MinioStorageEngineTest {
         CompletableFuture<GetObjectResponse> future = CompletableFuture.failedFuture(new RuntimeException("Object not found"));
         when(minioAsyncClient.getObject(any(GetObjectArgs.class))).thenReturn(future);
 
-        var response = engine.getData("missing.json", new TypeReference<Map<String, String>>() {});
+        var response = engine.getData("missing.json", new TypeReference<Map<String, String>>() {
+        });
 
         assertThat(response.isSuccess()).isFalse();
         assertThat(response.getErrorMessage()).contains("Object not found");
@@ -339,7 +341,8 @@ class MinioStorageEngineTest {
         CompletableFuture<GetObjectResponse> future = CompletableFuture.completedFuture(getObjectResponse);
         when(minioAsyncClient.getObject(any(GetObjectArgs.class))).thenReturn(future);
 
-        var response = engine.getData("corrupt.json", new TypeReference<Map<String, String>>() {});
+        var response = engine.getData("corrupt.json", new TypeReference<Map<String, String>>() {
+        });
 
         assertThat(response.isSuccess()).isFalse();
         assertThat(response.getErrorMessage()).contains("Read error");

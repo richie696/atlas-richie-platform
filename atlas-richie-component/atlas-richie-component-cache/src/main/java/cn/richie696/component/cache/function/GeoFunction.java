@@ -36,7 +36,7 @@ public interface GeoFunction extends CacheFunction {
     /**
      * 添加地理位置数据到Redis GEO集合。
      *
-     * @param key      GEO集合的键
+     * @param key       GEO集合的键
      * @param longitude 经度
      * @param latitude  纬度
      * @param member    成员名称

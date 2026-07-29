@@ -29,8 +29,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * </ul>
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @Data
 @ConfigurationProperties(prefix = "platform.component.http")

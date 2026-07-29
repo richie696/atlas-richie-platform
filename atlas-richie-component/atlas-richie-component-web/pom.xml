@@ -11,7 +11,8 @@
 
     <artifactId>atlas-richie-component-web</artifactId>
     <name>atlas-richie-component-web</name>
-    <description>Web 父 POM：聚合 web-core（容器无关）和 web-tomcat（生产调优）；未来扩展 web-jetty / web-undertow</description>
+    <description>Web 父 POM：聚合 web-core（容器无关）和 web-tomcat（生产调优）；未来扩展 web-jetty / web-undertow
+    </description>
     <packaging>pom</packaging>
 
     <modules>

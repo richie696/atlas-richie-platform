@@ -2,13 +2,15 @@
 
 ## 概述
 
-`richie-component-storage-sftp` 是 SFTP（SSH File Transfer Protocol）文件传输的实现，基于 Apache MINA SSHD 3.0 提供 SFTP 文件存储能力。适用于需要通过 SSH 协议访问远程文件服务器的场景。
+`richie-component-storage-sftp` 是 SFTP（SSH File Transfer Protocol）文件传输的实现，基于 Apache MINA SSHD 3.0 提供 SFTP
+文件存储能力。适用于需要通过 SSH 协议访问远程文件服务器的场景。
 
 ## 核心特性
 
 - ✅ **SFTP 协议** - 基于 SSH 的安全文件传输
 - ✅ **密钥认证** - 支持密码和密钥文件两种认证方式
-- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非 Spring 环境
+- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非
+  Spring 环境
 - ✅ **自动配置** - Spring Boot 自动配置
 
 ## 双模式架构
@@ -43,12 +45,12 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 `SftpStorageEngineProvider` 实现 `StorageEngineProvider` SPI，负责：
 
-| 方法 | 说明 |
-|------|------|
-| `supportedEngineType()` | 返回 `StorageEngineEnum.SFTP` |
-| `create(properties)` | 创建 `SshClient`、`SftpSessionPool` 和 `SftpStorageEngine` |
-| `validate(properties)` | 校验 host / username / password 必填 |
-| `destroy(engine)` | 关闭 SSH 客户端，释放连接池 |
+| 方法                    | 说明                                                       |
+|-------------------------|------------------------------------------------------------|
+| `supportedEngineType()` | 返回 `StorageEngineEnum.SFTP`                              |
+| `create(properties)`    | 创建 `SshClient`、`SftpSessionPool` 和 `SftpStorageEngine` |
+| `validate(properties)`  | 校验 host / username / password 必填                       |
+| `destroy(engine)`       | 关闭 SSH 客户端，释放连接池                                |
 
 自动模式下 Provider 在 `SftpAutoConfiguration` 中注册为 Bean；手动模式下由 Registry 通过 SPI 发现。
 
@@ -56,11 +58,11 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 引擎创建前会通过 `ConfigValidation` 工具类校验必填参数，校验失败时抛出 `IllegalArgumentException`：
 
-| 参数       | 校验规则 |
-|----------|------|
-| host     | 非空   |
-| username | 非空   |
-| password | 非空   |
+| 参数     | 校验规则 |
+|----------|----------|
+| host     | 非空     |
+| username | 非空     |
+| password | 非空     |
 
 ## 快速开始
 
@@ -131,20 +133,20 @@ public class FileService {
 
 SFTP 与其他存储方式的主要配置差异：
 
-| 配置项              | SFTP                              | 对象存储                                | 本地存储                               |
+| 配置项           | SFTP                              | 对象存储                            | 本地存储                           |
 |------------------|-----------------------------------|-------------------------------------|------------------------------------|
-| **配置前缀**         | `platform.component.storage.sftp` | `platform.component.storage.object` | `platform.component.storage.local` |
-| **enable 字段**    | **必填**（true/false）                | 不需要                                 | 不需要                                |
-| **host**         | **必填**（SFTP服务器地址）                 | 不需要                                 | 不需要                                |
-| **port**         | **必填**（默认：22）                     | 不需要                                 | 不需要                                |
-| **username**     | **必填**                            | 不需要                                 | 不需要                                |
-| **password**     | 密码登录时必填                           | 不需要                                 | 不需要                                |
-| **identityFile** | SSH登录时必填                          | 不需要                                 | 不需要                                |
-| **sshLogin**     | **必填**（true=密钥，false=密码）          | 不需要                                 | 不需要                                |
-| **basePath**     | 可选（默认：/）                          | 不需要                                 | 不需要                                |
-| **engine**       | 不需要                               | 必填                                  | 不需要                                |
-| **endpoint**     | 不需要                               | 必填                                  | 不需要                                |
-| **region**       | 不需要                               | 必填（部分）                              | 不需要                                |
+| **配置前缀**     | `platform.component.storage.sftp` | `platform.component.storage.object` | `platform.component.storage.local` |
+| **enable 字段**  | **必填**（true/false）            | 不需要                              | 不需要                             |
+| **host**         | **必填**（SFTP服务器地址）        | 不需要                              | 不需要                             |
+| **port**         | **必填**（默认：22）              | 不需要                              | 不需要                             |
+| **username**     | **必填**                          | 不需要                              | 不需要                             |
+| **password**     | 密码登录时必填                    | 不需要                              | 不需要                             |
+| **identityFile** | SSH登录时必填                     | 不需要                              | 不需要                             |
+| **sshLogin**     | **必填**（true=密钥，false=密码） | 不需要                              | 不需要                             |
+| **basePath**     | 可选（默认：/）                   | 不需要                              | 不需要                             |
+| **engine**       | 不需要                            | 必填                                | 不需要                             |
+| **endpoint**     | 不需要                            | 必填                                | 不需要                             |
+| **region**       | 不需要                            | 必填（部分）                        | 不需要                             |
 
 ### 认证方式
 
@@ -217,23 +219,23 @@ SFTP 基于 SSH 协议，提供加密的文件传输，比 FTP 更安全。
 ## 最佳实践
 
 1. **认证方式选择**
-   - 生产环境推荐使用 SSH 密钥认证
-   - 密钥文件权限设置为 600（仅所有者可读）
+    - 生产环境推荐使用 SSH 密钥认证
+    - 密钥文件权限设置为 600（仅所有者可读）
 
 2. **安全性**
-   - 不要在配置文件中硬编码密码
-   - 使用环境变量或密钥管理服务
-   - 定期轮换密钥
+    - 不要在配置文件中硬编码密码
+    - 使用环境变量或密钥管理服务
+    - 定期轮换密钥
 
 3. **网络配置**
-   - 确保应用服务器可以访问 SFTP 服务器
-   - 配置防火墙规则允许 SSH 连接
-   - 考虑使用 VPN 或专线连接
+    - 确保应用服务器可以访问 SFTP 服务器
+    - 配置防火墙规则允许 SSH 连接
+    - 考虑使用 VPN 或专线连接
 
 4. **路径管理**
-   - 使用 `basePath` 组织文件结构
-   - 避免过深的目录层级
-   - 定期清理不需要的文件
+    - 使用 `basePath` 组织文件结构
+    - 避免过深的目录层级
+    - 定期清理不需要的文件
 
 ## 常见问题
 
@@ -244,6 +246,7 @@ A: SFTP 基于 SSH 协议，提供加密传输，比 FTP 更安全。FTP 是明�
 ### Q: 如何生成 SSH 密钥对？
 
 A: 使用 `ssh-keygen` 命令生成密钥对：
+
 ```bash
 ssh-keygen -t rsa -b 4096 -f ~/.ssh/sftp_key
 ```
@@ -255,6 +258,7 @@ A: 本组件基于 Apache MINA SSHD 3.0，支持标准的 SFTP 协议。SFTP ove
 ### Q: 如何测试 SFTP 连接？
 
 A: 可以使用 `sftp` 命令行工具测试连接：
+
 ```bash
 sftp -i /path/to/private-key sftpuser@sftp.example.com
 ```

@@ -35,9 +35,19 @@ class HotReloadIntegrationTest {
         hookBus.subscribe(ReloadEvent.class, events::add);
 
         registry.register("interceptor-a", new Reloadable<String>() {
-            @Override public String currentState() { return "s"; }
-            @Override public void accept(String newState) {}
-            @Override public String name() { return "interceptor-a"; }
+            @Override
+            public String currentState() {
+                return "s";
+            }
+
+            @Override
+            public void accept(String newState) {
+            }
+
+            @Override
+            public String name() {
+                return "interceptor-a";
+            }
         });
 
         registry.reload("interceptor-a");
@@ -68,7 +78,9 @@ class HotReloadIntegrationTest {
         DefaultHookBus realBus = (DefaultHookBus) hookBus;
         DefaultHotReloadRegistry registry = new DefaultHotReloadRegistry(realBus);
 
-        hookBus.subscribe(ReloadEvent.class, e -> { throw new RuntimeException("boom"); });
+        hookBus.subscribe(ReloadEvent.class, e -> {
+            throw new RuntimeException("boom");
+        });
 
         registry.register("a", stub());
         registry.reload("a");
@@ -76,8 +88,14 @@ class HotReloadIntegrationTest {
 
     private static Reloadable<String> stub() {
         return new Reloadable<String>() {
-            @Override public String currentState() { return "x"; }
-            @Override public void accept(String newState) {}
+            @Override
+            public String currentState() {
+                return "x";
+            }
+
+            @Override
+            public void accept(String newState) {
+            }
         };
     }
 }

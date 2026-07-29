@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.mqtt.integration;
 
+import cn.richie696.component.mqtt.support.MqttIntegrationTestSupport;
 import com.hivemq.client.mqtt.MqttClient;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5BlockingClient;
-import cn.richie696.component.mqtt.support.MqttIntegrationTestSupport;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 

@@ -41,8 +41,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 将完整事件分发给 {@link SseListener} 回调。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class HttpClient5SseClient {
 

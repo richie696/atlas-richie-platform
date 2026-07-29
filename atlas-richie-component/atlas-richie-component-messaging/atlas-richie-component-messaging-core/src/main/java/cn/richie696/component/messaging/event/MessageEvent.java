@@ -18,11 +18,11 @@ package cn.richie696.component.messaging.event;
 
 import cn.richie696.context.utils.data.JsonUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tools.jackson.core.type.TypeReference;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.springframework.util.MimeType;
+import tools.jackson.core.type.TypeReference;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -105,7 +105,7 @@ public class MessageEvent implements Serializable {
     /**
      * 根据主题和消息内容构造消息事件
      *
-     * @param topic 主题
+     * @param topic   主题
      * @param content 消息内容
      */
     public MessageEvent(String topic, Object content) {

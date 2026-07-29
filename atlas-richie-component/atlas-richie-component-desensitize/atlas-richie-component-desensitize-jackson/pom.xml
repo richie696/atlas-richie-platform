@@ -50,7 +50,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/desensitize/jackson/**</include>
+                        <include>cn/richie696/component/desensitize/jackson/**</include>
                     </includes>
                     <excludes>
                         <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

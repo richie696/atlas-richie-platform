@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.cache.redis.manage;
 
-import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.component.cache.redis.enums.TopicTypeEnum;
+import cn.richie696.context.utils.data.JsonUtils;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
@@ -61,12 +61,14 @@ public abstract class MessageSubscriber<T> implements MessageListener {
 
     /**
      * 接收到的消息的类型
+     *
      * @return 返回消息类型定义
      */
     protected abstract Class<T> getValueType();
 
     /**
      * 消息处理器
+     *
      * @param message 消息
      * @param pattern 匹配模式
      */
@@ -74,18 +76,21 @@ public abstract class MessageSubscriber<T> implements MessageListener {
 
     /**
      * 获取订阅的主题
+     *
      * @return 返回订阅主题
      */
     protected abstract String getTopicName();
 
     /**
      * 获取订阅的主题类型
+     *
      * @return 返回主题类型
      */
     protected abstract TopicTypeEnum getTopicType();
 
     /**
      * 获取订阅的主题
+     *
      * @return 订阅主题
      */
     public Topic getTopic() {

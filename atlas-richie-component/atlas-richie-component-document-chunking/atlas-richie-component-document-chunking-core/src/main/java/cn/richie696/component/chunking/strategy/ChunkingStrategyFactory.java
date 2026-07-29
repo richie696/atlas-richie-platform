@@ -30,7 +30,9 @@ public final class ChunkingStrategyFactory {
         register(new PageChunkingStrategy(support));
     }
 
-    /** 注册一个策略；同一类型只能有一个实现，避免启动时出现不确定路由。 */
+    /**
+     * 注册一个策略；同一类型只能有一个实现，避免启动时出现不确定路由。
+     */
     public void register(ChunkingStrategy strategy) {
         Objects.requireNonNull(strategy, "strategy must not be null");
         ChunkingStrategy previous = strategies.putIfAbsent(strategy.type(), strategy);
@@ -39,7 +41,9 @@ public final class ChunkingStrategyFactory {
         }
     }
 
-    /** 按规则中的策略枚举选择实现。 */
+    /**
+     * 按规则中的策略枚举选择实现。
+     */
     public ChunkingStrategy select(ChunkingRule.Strategy type) {
         ChunkingStrategy strategy = strategies.get(Objects.requireNonNull(type, "strategy type must not be null"));
         if (strategy == null) {

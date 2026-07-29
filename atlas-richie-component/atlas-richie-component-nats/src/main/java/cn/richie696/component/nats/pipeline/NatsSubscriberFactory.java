@@ -37,10 +37,10 @@ public class NatsSubscriberFactory {
     private final long idempotentTtlMillis;
 
     public NatsSubscriberFactory(NatsTracingSupport tracingSupport,
-                                  NatsHeaderExtractor headerExtractor,
-                                  NatsIdempotentChecker idempotentChecker,
-                                  boolean idempotentEnabled,
-                                  long idempotentTtlMillis) {
+                                 NatsHeaderExtractor headerExtractor,
+                                 NatsIdempotentChecker idempotentChecker,
+                                 boolean idempotentEnabled,
+                                 long idempotentTtlMillis) {
         this.tracingSupport = tracingSupport;
         this.headerExtractor = headerExtractor;
         this.idempotentChecker = idempotentChecker;

@@ -27,15 +27,10 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.within;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * {@link OllamaImageEmbeddingAdapter} 的纯单元测试，不连接真实 Ollama 服务。
@@ -222,7 +217,9 @@ class OllamaImageEmbeddingAdapterTest {
         return new RequestFixture(httpClient, request);
     }
 
-    /** HTTP 桩组合。 */
+    /**
+     * HTTP 桩组合。
+     */
     private record RequestFixture(HttpClient httpClient, HttpRequest request) {
     }
 }

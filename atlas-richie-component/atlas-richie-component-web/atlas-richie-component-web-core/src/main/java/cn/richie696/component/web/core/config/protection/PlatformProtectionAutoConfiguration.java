@@ -15,12 +15,7 @@
  */
 package cn.richie696.component.web.core.config.protection;
 
-import cn.richie696.component.web.core.protection.AnomalyDetectionInterceptor;
-import cn.richie696.component.web.core.protection.BruteForceInterceptor;
-import cn.richie696.component.web.core.protection.LongLivedPathBypass;
-import cn.richie696.component.web.core.protection.LoginAttemptTracker;
-import cn.richie696.component.web.core.protection.PlatformProtectionInterceptor;
-import cn.richie696.component.web.core.protection.RequestSizeGuard;
+import cn.richie696.component.web.core.protection.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;

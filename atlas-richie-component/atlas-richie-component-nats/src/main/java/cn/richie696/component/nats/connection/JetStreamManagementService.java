@@ -17,15 +17,9 @@ package cn.richie696.component.nats.connection;
 
 import cn.richie696.component.nats.config.NatsProperties;
 import cn.richie696.component.nats.exception.NatsException;
-import io.nats.client.api.AckPolicy;
-import io.nats.client.api.ConsumerConfiguration;
-import io.nats.client.api.DeliverPolicy;
-import io.nats.client.api.DiscardPolicy;
-import io.nats.client.api.ReplayPolicy;
-import io.nats.client.api.RetentionPolicy;
-import io.nats.client.api.StorageType;
-import io.nats.client.api.StreamConfiguration;
+import io.nats.client.api.*;
 import lombok.extern.slf4j.Slf4j;
+import java.util.stream.Stream;
 
 /**
  * JetStream 管理服务

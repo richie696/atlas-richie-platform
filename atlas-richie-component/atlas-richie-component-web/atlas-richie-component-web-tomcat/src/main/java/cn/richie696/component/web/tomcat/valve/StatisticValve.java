@@ -15,12 +15,7 @@
  */
 package cn.richie696.component.web.tomcat.valve;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.Timer;
-import jakarta.servlet.http.HttpServletResponse;
+import io.micrometer.core.instrument.*;
 import org.apache.catalina.Valve;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
@@ -86,7 +81,7 @@ public class StatisticValve extends ValveBase {
     }
 
     private void recordMetrics(Request request, Response response,
-                                long durationNanos, boolean handled) {
+                               long durationNanos, boolean handled) {
         try {
             String method = request.getMethod();
             int status = response.getStatus();
@@ -94,26 +89,26 @@ public class StatisticValve extends ValveBase {
 
             // Counter: 累计请求数
             totalCounters.computeIfAbsent(tagKey, k -> Counter.builder(prefix + ".requests.total")
-                    .description("Total HTTP requests handled by Tomcat")
-                    .tags(Tags.of("method", method, "status", String.valueOf(status)))
-                    .register(meterRegistry))
+                            .description("Total HTTP requests handled by Tomcat")
+                            .tags(Tags.of("method", method, "status", String.valueOf(status)))
+                            .register(meterRegistry))
                     .increment();
 
             // Timer: 请求耗时
             timers.computeIfAbsent(tagKey, k -> Timer.builder(prefix + ".request.duration")
-                    .description("HTTP request duration distribution")
-                    .tags(Tags.of("method", method, "status", String.valueOf(status)))
-                    .publishPercentiles(0.5, 0.95, 0.99)
-                    .publishPercentileHistogram()
-                    .register(meterRegistry))
+                            .description("HTTP request duration distribution")
+                            .tags(Tags.of("method", method, "status", String.valueOf(status)))
+                            .publishPercentiles(0.5, 0.95, 0.99)
+                            .publishPercentileHistogram()
+                            .register(meterRegistry))
                     .record(durationNanos, TimeUnit.NANOSECONDS);
 
             // Counter: 5xx 错误
             if (status >= 500 && status < 600) {
                 errorCounters.computeIfAbsent(tagKey, k -> Counter.builder(prefix + ".requests.errors")
-                        .description("Total 5xx HTTP errors handled by Tomcat")
-                        .tags(Tags.of("method", method, "status", String.valueOf(status)))
-                        .register(meterRegistry))
+                                .description("Total 5xx HTTP errors handled by Tomcat")
+                                .tags(Tags.of("method", method, "status", String.valueOf(status)))
+                                .register(meterRegistry))
                         .increment();
             }
         } catch (Exception ignored) {

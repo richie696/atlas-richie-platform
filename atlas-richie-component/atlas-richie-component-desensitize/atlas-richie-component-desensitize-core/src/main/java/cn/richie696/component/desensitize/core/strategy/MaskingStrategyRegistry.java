@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
  * 按 {@link MaskType} 解析 {@link MaskingStrategy}。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class MaskingStrategyRegistry {
 

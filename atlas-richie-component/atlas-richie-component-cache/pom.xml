@@ -137,33 +137,33 @@
                 <configuration>
                     <!-- 白名单：仅统计可单测覆盖的实现类与纯逻辑（IT 覆盖的 Manager/有界结构不计入） -->
                     <includes>
-                        <include>com/richie/component/cache/ops/**</include>
-                        <include>com/richie/component/cache/commons/**</include>
-                        <include>com/richie/component/cache/operations/BoundedList*</include>
-                        <include>com/richie/component/cache/operations/SetCapacity*</include>
-                        <include>com/richie/component/cache/operations/ZSetCapacity*</include>
-                        <include>com/richie/component/cache/redis/perf/**</include>
-                        <include>com/richie/component/cache/redis/migration/**</include>
+                        <include>cn/richie696/component/cache/ops/**</include>
+                        <include>cn/richie696/component/cache/commons/**</include>
+                        <include>cn/richie696/component/cache/operations/BoundedList*</include>
+                        <include>cn/richie696/component/cache/operations/SetCapacity*</include>
+                        <include>cn/richie696/component/cache/operations/ZSetCapacity*</include>
+                        <include>cn/richie696/component/cache/redis/perf/**</include>
+                        <include>cn/richie696/component/cache/redis/migration/**</include>
                     </includes>
                     <excludes>
-                        <exclude>com/richie/component/cache/ops/ValueOps</exclude>
-                        <exclude>com/richie/component/cache/ops/StructOps</exclude>
-                        <exclude>com/richie/component/cache/ops/FieldOps</exclude>
-                        <exclude>com/richie/component/cache/ops/CollectionOps</exclude>
-                        <exclude>com/richie/component/cache/ops/RankingOps</exclude>
-                        <exclude>com/richie/component/cache/ops/LockOps</exclude>
-                        <exclude>com/richie/component/cache/ops/BitmapOps</exclude>
-                        <exclude>com/richie/component/cache/ops/GeoOps</exclude>
-                        <exclude>com/richie/component/cache/ops/HyperLogOps</exclude>
-                        <exclude>com/richie/component/cache/ops/NotificationOps</exclude>
-                        <exclude>com/richie/component/cache/ops/EventOps</exclude>
-                        <exclude>com/richie/component/cache/ops/BoundedQueueOps</exclude>
-                        <exclude>com/richie/component/cache/ops/BoundedStackOps</exclude>
-                        <exclude>com/richie/component/cache/ops/KeyOps</exclude>
-                        <exclude>com/richie/component/cache/ops/ScriptOps</exclude>
-                        <exclude>com/richie/component/cache/ops/LimiterOps</exclude>
-                        <exclude>com/richie/component/cache/ops/CacheInfrastructure</exclude>
-                        <exclude>com/richie/component/cache/commons/GeoPointResult</exclude>
+                        <exclude>cn/richie696/component/cache/ops/ValueOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/StructOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/FieldOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/CollectionOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/RankingOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/LockOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/BitmapOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/GeoOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/HyperLogOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/NotificationOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/EventOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/BoundedQueueOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/BoundedStackOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/KeyOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/ScriptOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/LimiterOps</exclude>
+                        <exclude>cn/richie696/component/cache/ops/CacheInfrastructure</exclude>
+                        <exclude>cn/richie696/component/cache/commons/GeoPointResult</exclude>
                     </excludes>
                     <rules>
                         <rule>
@@ -183,33 +183,33 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/cache/ops/**</include>
-                                <include>com/richie/component/cache/commons/**</include>
-                                <include>com/richie/component/cache/operations/BoundedList*</include>
-                                <include>com/richie/component/cache/operations/SetCapacity*</include>
-                                <include>com/richie/component/cache/operations/ZSetCapacity*</include>
-                                <include>com/richie/component/cache/redis/perf/**</include>
-                                <include>com/richie/component/cache/redis/migration/**</include>
+                                <include>cn/richie696/component/cache/ops/**</include>
+                                <include>cn/richie696/component/cache/commons/**</include>
+                                <include>cn/richie696/component/cache/operations/BoundedList*</include>
+                                <include>cn/richie696/component/cache/operations/SetCapacity*</include>
+                                <include>cn/richie696/component/cache/operations/ZSetCapacity*</include>
+                                <include>cn/richie696/component/cache/redis/perf/**</include>
+                                <include>cn/richie696/component/cache/redis/migration/**</include>
                             </includes>
                             <excludes>
-                                <exclude>com/richie/component/cache/ops/ValueOps</exclude>
-                                <exclude>com/richie/component/cache/ops/StructOps</exclude>
-                                <exclude>com/richie/component/cache/ops/FieldOps</exclude>
-                                <exclude>com/richie/component/cache/ops/CollectionOps</exclude>
-                                <exclude>com/richie/component/cache/ops/RankingOps</exclude>
-                                <exclude>com/richie/component/cache/ops/LockOps</exclude>
-                                <exclude>com/richie/component/cache/ops/BitmapOps</exclude>
-                                <exclude>com/richie/component/cache/ops/GeoOps</exclude>
-                                <exclude>com/richie/component/cache/ops/HyperLogOps</exclude>
-                                <exclude>com/richie/component/cache/ops/NotificationOps</exclude>
-                                <exclude>com/richie/component/cache/ops/EventOps</exclude>
-                                <exclude>com/richie/component/cache/ops/BoundedQueueOps</exclude>
-                                <exclude>com/richie/component/cache/ops/BoundedStackOps</exclude>
-                                <exclude>com/richie/component/cache/ops/KeyOps</exclude>
-                                <exclude>com/richie/component/cache/ops/ScriptOps</exclude>
-                                <exclude>com/richie/component/cache/ops/LimiterOps</exclude>
-                                <exclude>com/richie/component/cache/ops/CacheInfrastructure</exclude>
-                                <exclude>com/richie/component/cache/commons/GeoPointResult</exclude>
+                                <exclude>cn/richie696/component/cache/ops/ValueOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/StructOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/FieldOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/CollectionOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/RankingOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/LockOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/BitmapOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/GeoOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/HyperLogOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/NotificationOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/EventOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/BoundedQueueOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/BoundedStackOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/KeyOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/ScriptOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/LimiterOps</exclude>
+                                <exclude>cn/richie696/component/cache/ops/CacheInfrastructure</exclude>
+                                <exclude>cn/richie696/component/cache/commons/GeoPointResult</exclude>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>
                                 <exclude>cn.richie696.component.**.config.**</exclude>
                                 <exclude>cn.richie696.component.**.enums.**</exclude>

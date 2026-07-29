@@ -41,10 +41,10 @@ public class ConnectionStateEvent {
     /**
      * 构造连接状态事件
      *
-     * @param clientId   客户端ID
-     * @param state      连接状态
+     * @param clientId    客户端ID
+     * @param state       连接状态
      * @param networkType 网络类型
-     * @param timestamp  时间戳
+     * @param timestamp   时间戳
      */
     public ConnectionStateEvent(String clientId, ConnectionState state, NetworkTypeEnum networkType, long timestamp) {
         this.clientId = clientId;
@@ -73,8 +73,8 @@ public class ConnectionStateEvent {
     /**
      * 创建连接状态事件（使用当前时间戳）
      *
-     * @param clientId   客户端ID
-     * @param state      连接状态
+     * @param clientId    客户端ID
+     * @param state       连接状态
      * @param networkType 网络类型
      * @return 连接状态事件实例
      */

@@ -350,7 +350,7 @@ public class AiRequest {
      *
      * @param content 用户的问题或指令
      * @return 配置好的AI请求对象
-     *
+     * <p>
      * 示例：
      * AiRequest request = AiRequest.ofUserMessage("请介绍一下Java语言");
      */
@@ -371,11 +371,11 @@ public class AiRequest {
      * @param systemPrompt 系统提示，设置AI的行为规则
      * @param userMessage  用户消息，具体的问题或指令
      * @return 配置好的AI请求对象
-     *
+     * <p>
      * 示例：
      * AiRequest request = AiRequest.ofSystemAndUser(
-     *     "你是一个专业的Java开发工程师，请用简洁的语言回答",
-     *     "请解释什么是Spring Boot"
+     * "你是一个专业的Java开发工程师，请用简洁的语言回答",
+     * "请解释什么是Spring Boot"
      * );
      */
     public static AiRequest ofSystemAndUser(String systemPrompt, String userMessage) {

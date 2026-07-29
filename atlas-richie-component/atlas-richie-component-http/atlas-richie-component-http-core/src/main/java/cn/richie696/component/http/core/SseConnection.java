@@ -17,6 +17,7 @@ package cn.richie696.component.http.core;
 
 import java.util.List;
 import java.util.Map;
+import java.lang.AutoCloseable;
 
 /**
  * SSE 长连接的句柄。
@@ -25,8 +26,8 @@ import java.util.Map;
  * 实现类必须保证 {@link #close()} 的幂等性：重复关闭不应抛出异常。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public interface SseConnection extends AutoCloseable {
 

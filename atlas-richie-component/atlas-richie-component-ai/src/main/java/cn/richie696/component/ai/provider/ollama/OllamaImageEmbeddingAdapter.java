@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.ai.provider.ollama;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.core.HttpRequest;
 import cn.richie696.context.utils.data.JsonUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.Embedding;
@@ -27,12 +27,9 @@ import org.springframework.ai.embedding.EmbeddingResponse;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Spring AI {@link org.springframework.ai.embedding.EmbeddingModel} 适配 Ollama 本地推理运行时。
@@ -67,13 +64,19 @@ import java.util.Objects;
 @Slf4j
 public class OllamaImageEmbeddingAdapter implements org.springframework.ai.embedding.EmbeddingModel {
 
-    /** Ollama 默认本地服务地址。 */
+    /**
+     * Ollama 默认本地服务地址。
+     */
     public static final String DEFAULT_BASE_URL = "http://localhost:11434";
 
-    /** Ollama 推荐的文本 embedding 模型，默认输出 768 维向量。 */
+    /**
+     * Ollama 推荐的文本 embedding 模型，默认输出 768 维向量。
+     */
     public static final String DEFAULT_MODEL = "nomic-embed-text";
 
-    /** {@link #DEFAULT_MODEL} 的默认向量维度；不通过远程 probe 获取。 */
+    /**
+     * {@link #DEFAULT_MODEL} 的默认向量维度；不通过远程 probe 获取。
+     */
     public static final int DEFAULT_DIMENSIONS = 768;
 
     private static final String EMBEDDINGS_PATH = "/api/embed";
@@ -155,7 +158,7 @@ public class OllamaImageEmbeddingAdapter implements org.springframework.ai.embed
      * @param request Spring AI embedding 请求
      * @return 与请求输入数量一致的 embedding 响应；空输入返回空结果
      * @throws NullPointerException 当请求或输入列表为空时
-     * @throws RuntimeException 当 Ollama HTTP 调用失败时，原始异常作为 cause 保留
+     * @throws RuntimeException     当 Ollama HTTP 调用失败时，原始异常作为 cause 保留
      */
     @Override
     public EmbeddingResponse call(EmbeddingRequest request) {
@@ -184,7 +187,7 @@ public class OllamaImageEmbeddingAdapter implements org.springframework.ai.embed
      * @param document 待向量化文档
      * @return 文档文本的 embedding，或空文本对应的零向量
      * @throws NullPointerException 当文档为空时
-     * @throws RuntimeException 当文本 embedding 请求失败时
+     * @throws RuntimeException     当文本 embedding 请求失败时
      */
     @Override
     public float[] embed(Document document) {
@@ -227,7 +230,7 @@ public class OllamaImageEmbeddingAdapter implements org.springframework.ai.embed
     /**
      * 将 Ollama 返回结果按输入位置映射为 Spring AI 响应。
      *
-     * @param raw Ollama 原始响应
+     * @param raw            Ollama 原始响应
      * @param expectedInputs 请求输入数量
      * @return 位置稳定且维度固定的 embedding 响应
      */
@@ -293,7 +296,9 @@ public class OllamaImageEmbeddingAdapter implements org.springframework.ai.embed
         return end == url.length() ? url : url.substring(0, end);
     }
 
-    /** Ollama {@code /api/embed} 顶层响应。 */
+    /**
+     * Ollama {@code /api/embed} 顶层响应。
+     */
     static final class OllamaEmbeddingRawResponse {
         @JsonProperty("model")
         public String model;

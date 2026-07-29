@@ -25,14 +25,14 @@
 
 Richie MFA组件是一个企业级多因子认证解决方案，基于RFC 6238/4226标准实现TOTP/HOTP算法，为企业应用提供高性能、高安全性的身份验证能力。
 
-**重要架构说明**：MFA组件采用**分离式架构设计**，拆分为两个独立的模块：
+**重要架构说明**：MFA组件采用 **分离式架构设计**，拆分为两个独立的模块：
 
 - **richie-component-mfa-validation**：验证模块，部署在 `richie-gateway-service` 中
-  - **职责**：MFA验证逻辑，只读GlobalCache（richie-component-cache），**零数据库依赖**
-  - **特点**：轻量级、高性能、毫秒级响应
+    - **职责**：MFA验证逻辑，只读GlobalCache（richie-component-cache）， **零数据库依赖**
+    - **特点**：轻量级、高性能、毫秒级响应
 - **richie-component-mfa-management**：管理模块，部署在 `richie-general-service` 中
-  - **职责**：MFA管理功能（绑定、解绑、状态管理等），操作数据库
-  - **特点**：完整的CRUD操作，使用Liquibase管理DDL
+    - **职责**：MFA管理功能（绑定、解绑、状态管理等），操作数据库
+    - **特点**：完整的CRUD操作，使用Liquibase管理DDL
 
 ### 1.2 核心特性
 
@@ -46,16 +46,14 @@ Richie MFA组件是一个企业级多因子认证解决方案，基于RFC 6238/4
 
 ### 1.3 设计目标
 
-
-| 指标       | 目标值         | 说明        |
-| -------- | ----------- | --------- |
-| 验证响应时间   | < 10ms      | 网关层通过缓存验证 |
-| 管理操作响应时间 | < 100ms     | 数据库操作     |
-| 并发验证能力   | 10,000+ QPS | 支持高并发场景   |
-| 系统可用性    | 99.99%      | 4个9可用性    |
-| 缓存命中率    | > 95%       | 热点数据缓存    |
-| 数据一致性    | 最终一致性       | 缓存与数据库同步  |
-
+| 指标             | 目标值      | 说明               |
+|------------------|-------------|--------------------|
+| 验证响应时间     | < 10ms      | 网关层通过缓存验证 |
+| 管理操作响应时间 | < 100ms     | 数据库操作         |
+| 并发验证能力     | 10,000+ QPS | 支持高并发场景     |
+| 系统可用性       | 99.99%      | 4个9可用性         |
+| 缓存命中率       | > 95%       | 热点数据缓存       |
+| 数据一致性       | 最终一致性  | 缓存与数据库同步   |
 
 ---
 
@@ -64,15 +62,15 @@ Richie MFA组件是一个企业级多因子认证解决方案，基于RFC 6238/4
 ### 2.1 架构分离原则
 
 - **网关验证层（richie-component-mfa-validation）**：
-  - 部署位置：`richie-gateway-service`
-  - 职责：MFA验证逻辑，只读GlobalCache（richie-component-cache）
-  - **严格限制**：零数据库依赖，不操作数据库
-  - 性能目标：毫秒级响应（<10ms）
+    - 部署位置：`richie-gateway-service`
+    - 职责：MFA验证逻辑，只读GlobalCache（richie-component-cache）
+    - **严格限制**：零数据库依赖，不操作数据库
+    - 性能目标：毫秒级响应（<10ms）
 - **管理服务层（richie-component-mfa-management）**：
-  - 部署位置：`richie-general-service`
-  - 职责：MFA管理功能（绑定、解绑、状态管理等）
-  - 数据库操作：所有CRUD操作，使用Liquibase管理DDL
-  - 缓存同步：数据库变更后同步到GlobalCache（richie-component-cache）
+    - 部署位置：`richie-general-service`
+    - 职责：MFA管理功能（绑定、解绑、状态管理等）
+    - 数据库操作：所有CRUD操作，使用Liquibase管理DDL
+    - 缓存同步：数据库变更后同步到GlobalCache（richie-component-cache）
 - **职责清晰**：验证与管理完全分离，降低耦合度，符合网关轻量化原则
 
 ### 2.2 安全优先原则
@@ -92,7 +90,7 @@ Richie MFA组件是一个企业级多因子认证解决方案，基于RFC 6238/4
 ### 2.4 容错降级原则
 
 - **熔断保护**：缓存不可用时自动熔断，避免雪崩
-- **降级策略**：网关验证层缓存故障时，**拒绝验证请求**（不降级到数据库，保持网关轻量化）
+- **降级策略**：网关验证层缓存故障时， **拒绝验证请求**（不降级到数据库，保持网关轻量化）
 - **重试机制**：管理服务层失败自动重试，提高成功率
 - **优雅降级**：部分功能不可用时，核心功能仍可用
 
@@ -219,7 +217,7 @@ graph TB
 
 - MFA验证逻辑（TOTP/HOTP验证）
 - 防重放攻击检查
-- MFA状态检查（`checkMfaStatus` 仅根据缓存判断是否绑定 MFA 并返回元数据，**不做可信设备校验**；可信设备校验在业务登录层）
+- MFA状态检查（`checkMfaStatus` 仅根据缓存判断是否绑定 MFA 并返回元数据， **不做可信设备校验**；可信设备校验在业务登录层）
 - 风控检测
 
 **数据访问**：
@@ -563,7 +561,8 @@ graph TB
 
 #### 4.4.1 概述
 
-可信设备（Trusted Device）功能允许用户在首次通过MFA验证后，将当前登录的设备标记为"可信设备"。在信任期内，该设备再次登录时可以跳过MFA验证，提升用户体验的同时保持安全性。
+可信设备（Trusted
+Device）功能允许用户在首次通过MFA验证后，将当前登录的设备标记为"可信设备"。在信任期内，该设备再次登录时可以跳过MFA验证，提升用户体验的同时保持安全性。
 
 **核心价值**：
 
@@ -599,7 +598,7 @@ graph TB
 
 **关键点**：
 
-- 设备注册是**可选的**，用户可以选择是否信任设备
+- 设备注册是 **可选的**，用户可以选择是否信任设备
 - 设备信息保存到数据库，同时同步到缓存
 - 信任过期时间由配置决定（默认30天）
 
@@ -640,8 +639,9 @@ graph TB
 
 **关键点**：
 
-- 设备信任与“是否需要 MFA”的判断在**业务登录层**执行（`MfaBindManager.checkLoginMfa`），不在网关
-- 网关仅当业务未返回 accessToken 时调用 `MfaValidationService.checkMfaStatus`，根据缓存返回 mfaRequired 及前端展示用元数据（trustedDeviceSupported 等），**不做可信设备校验**
+- 设备信任与“是否需要 MFA”的判断在 **业务登录层**执行（`MfaBindManager.checkLoginMfa`），不在网关
+- 网关仅当业务未返回 accessToken 时调用 `MfaValidationService.checkMfaStatus`，根据缓存返回 mfaRequired
+  及前端展示用元数据（trustedDeviceSupported 等）， **不做可信设备校验**
 - 信任过期后需重新进行 MFA 验证
 
 #### 4.4.3 设备指纹生成
@@ -650,7 +650,7 @@ graph TB
 
 ##### 4.4.3.1 网页端设备指纹生成
 
-网页端由于没有固定的设备ID（不像移动应用可以获取设备UUID），需要依赖**浏览器指纹技术**来识别设备。
+网页端由于没有固定的设备ID（不像移动应用可以获取设备UUID），需要依赖 **浏览器指纹技术**来识别设备。
 
 **完整的浏览器指纹生成方案（JavaScript）**：
 
@@ -1068,9 +1068,9 @@ class LoginActivity : AppCompatActivity() {
 **注意事项**：
 
 - **Android ID限制**：
-  - Android 8.0+：Android ID与应用签名绑定，不同签名的应用获取的ID不同
-  - 恢复出厂设置：Android ID会改变
-  - 某些设备：Android ID可能为null或固定值
+    - Android 8.0+：Android ID与应用签名绑定，不同签名的应用获取的ID不同
+    - 恢复出厂设置：Android ID会改变
+    - 某些设备：Android ID可能为null或固定值
 - **备用方案**：如果Android ID不可用，使用自定义UUID保存在SharedPreferences
 - **隐私考虑**：Android 10+对设备标识符有严格限制，建议使用Android ID或自定义UUID
 
@@ -1271,9 +1271,9 @@ class LoginViewController: UIViewController {
 **iOS注意事项**：
 
 - **IdentifierForVendor（IDFV）**：
-  - 同一厂商的同一应用在不同设备上不同
-  - 同一设备上，卸载重装后IDFV会改变
-  - 如果所有该厂商的应用都被卸载，IDFV会重置
+    - 同一厂商的同一应用在不同设备上不同
+    - 同一设备上，卸载重装后IDFV会改变
+    - 如果所有该厂商的应用都被卸载，IDFV会重置
 - **备用方案**：使用Keychain存储自定义UUID，即使应用卸载重装也能保持（除非用户清除Keychain）
 - **隐私合规**：iOS对设备标识符有严格限制，禁止使用IDFA（广告标识符）用于非广告目的
 
@@ -1727,25 +1727,23 @@ Page({
 
 **2. 设备ID稳定性**
 
-
-| 平台      | 设备ID来源        | 稳定性 | 重置场景          |
-| ------- | ------------- | --- | ------------- |
-| Android | Android ID    | 中等  | 恢复出厂设置、应用签名变更 |
-| Android | 自定义UUID       | 高   | 清除应用数据        |
-| iOS     | IDFV          | 中等  | 卸载所有同厂商应用     |
-| iOS     | Keychain UUID | 高   | 清除Keychain    |
-
+| 平台    | 设备ID来源    | 稳定性 | 重置场景                   |
+|---------|---------------|--------|----------------------------|
+| Android | Android ID    | 中等   | 恢复出厂设置、应用签名变更 |
+| Android | 自定义UUID    | 高     | 清除应用数据               |
+| iOS     | IDFV          | 中等   | 卸载所有同厂商应用         |
+| iOS     | Keychain UUID | 高     | 清除Keychain               |
 
 **3. 隐私合规**
 
 - **Android**：
-  - Android 10+对设备标识符有严格限制
-  - 禁止使用IMEI、MAC地址等敏感标识符
-  - 建议使用Android ID或自定义UUID
+    - Android 10+对设备标识符有严格限制
+    - 禁止使用IMEI、MAC地址等敏感标识符
+    - 建议使用Android ID或自定义UUID
 - **iOS**：
-  - iOS禁止使用IDFA（广告标识符）用于非广告目的
-  - 建议使用IDFV或Keychain存储的自定义UUID
-  - 遵循App Store审核指南
+    - iOS禁止使用IDFA（广告标识符）用于非广告目的
+    - 建议使用IDFV或Keychain存储的自定义UUID
+    - 遵循App Store审核指南
 
 **4. 最佳实践**
 
@@ -1903,17 +1901,15 @@ npm install node-machine-id uuid
 
 ###### 4.4.3.2.8 平台对比总结
 
-
-| 平台               | 主要标识符      | 稳定性 | 重置场景       | 推荐方案                       |
-| ---------------- | ---------- | --- | ---------- | -------------------------- |
-| **网页端**          | 浏览器指纹      | 低-中 | 浏览器更新、插件变更 | LocalStorage + 浏览器指纹组合     |
-| **Android原生**    | Android ID | 中   | 恢复出厂设置     | Android ID + 自定义UUID备用     |
-| **iOS原生**        | IDFV       | 中   | 卸载所有同厂商应用  | IDFV + Keychain UUID备用     |
-| **React Native** | 平台原生ID     | 中   | 同原生应用      | 使用react-native-device-info |
-| **Flutter**      | 平台原生ID     | 中   | 同原生应用      | 使用device_info_plus         |
-| **微信小程序**        | 系统信息组合     | 低   | 卸载小程序      | 本地存储 + 系统信息组合              |
-| **Electron**     | 机器ID       | 高   | 硬件变更       | node-machine-id + 硬件特征     |
-
+| 平台             | 主要标识符   | 稳定性 | 重置场景             | 推荐方案                      |
+|------------------|--------------|--------|----------------------|-------------------------------|
+| **网页端**       | 浏览器指纹   | 低-中  | 浏览器更新、插件变更 | LocalStorage + 浏览器指纹组合 |
+| **Android原生**  | Android ID   | 中     | 恢复出厂设置         | Android ID + 自定义UUID备用   |
+| **iOS原生**      | IDFV         | 中     | 卸载所有同厂商应用   | IDFV + Keychain UUID备用      |
+| **React Native** | 平台原生ID   | 中     | 同原生应用           | 使用react-native-device-info  |
+| **Flutter**      | 平台原生ID   | 中     | 同原生应用           | 使用device_info_plus          |
+| **微信小程序**   | 系统信息组合 | 低     | 卸载小程序           | 本地存储 + 系统信息组合       |
+| **Electron**     | 机器ID       | 高     | 硬件变更             | node-machine-id + 硬件特征    |
 
 **选择建议**：
 
@@ -2019,7 +2015,7 @@ async function getDeviceIdWithFallback() {
 - **Firefox浏览器**：生成另一个设备ID
 - **移动设备**：生成第三个设备ID
 
-这是**预期行为**，每个浏览器/设备都需要单独信任。
+这是 **预期行为**，每个浏览器/设备都需要单独信任。
 
 **4. Cookie作为补充存储**
 
@@ -2154,7 +2150,7 @@ class LoginForm {
 **注意事项总结**：
 
 - 网页端设备指纹可能因浏览器更新、插件安装等发生变化
-- 建议使用**容错机制**：如果设备ID变化，但其他特征匹配，可以提示用户重新信任
+- 建议使用 **容错机制**：如果设备ID变化，但其他特征匹配，可以提示用户重新信任
 - 隐私考虑：设备指纹收集应遵循GDPR等隐私法规，建议在隐私政策中说明
 - 性能考虑：设备指纹生成可能耗时，建议异步生成或使用缓存
 - 存储策略：优先使用LocalStorage，降级到SessionStorage，Cookie作为补充
@@ -2256,30 +2252,31 @@ platform:
 
 **配置项说明**：
 
-
-| 配置项                  | 类型      | 默认值    | 说明                         |
-| -------------------- | ------- | ------ | -------------------------- |
-| `enabled`            | boolean | `true` | 是否启用可信设备功能                 |
+| 配置项               | 类型    | 默认值 | 说明                                           |
+|----------------------|---------|--------|------------------------------------------------|
+| `enabled`            | boolean | `true` | 是否启用可信设备功能                           |
 | `default-trust-days` | int     | `30`   | 默认信任天数，信任过期时间 = 当前时间 + 此天数 |
-| `max-devices`        | int     | `10`   | 单个用户最多可注册的可信设备数量           |
-
+| `max-devices`        | int     | `10`   | 单个用户最多可注册的可信设备数量               |
 
 #### 4.4.7 实现位置
 
 **管理服务层（richie-component-mfa-management）**：
 
 - `TrustedDeviceManager`：可信设备管理器
-- `MfaBindManager.checkLoginMfa(tenantId, userId, deviceId)`：登录时统一判断是否需要 MFA（先校验可信设备，再查 MFA 绑定），返回 `LoginMfaCheckResult`（mfaRequired、mfaBound）
+- `MfaBindManager.checkLoginMfa(tenantId, userId, deviceId)`：登录时统一判断是否需要 MFA（先校验可信设备，再查 MFA 绑定），返回
+  `LoginMfaCheckResult`（mfaRequired、mfaBound）
 - `MfaTrustedDeviceMapper`：数据库操作
 - `MfaTrustedDevice`：实体类
 
 **业务登录层（如 sample-mfa）**：
 
-- 登录接口调用 `mfaBindManager.checkLoginMfa`，根据 `LoginMfaCheckResult.mfaRequired`、`mfaBound` 决定是否返回 accessToken 或要求用户进行 MFA
+- 登录接口调用 `mfaBindManager.checkLoginMfa`，根据 `LoginMfaCheckResult.mfaRequired`、`mfaBound` 决定是否返回 accessToken
+  或要求用户进行 MFA
 
 **网关验证层（richie-component-mfa-validation）**：
 
-- `MfaValidationService.checkMfaStatus`：仅根据 GlobalCache 判断用户是否绑定 MFA 并返回元数据（mfaRequired、trustedDeviceSupported 等），**不做可信设备校验**
+- `MfaValidationService.checkMfaStatus`：仅根据 GlobalCache 判断用户是否绑定 MFA
+  并返回元数据（mfaRequired、trustedDeviceSupported 等）， **不做可信设备校验**
 - 网关过滤器（如 `IssueTokensFilter`）：若业务响应体 `data.accessToken` 已存在且非空，则不再调用 checkMfaStatus，直接放行
 
 **数据存储**：
@@ -2297,7 +2294,8 @@ platform:
 
 ### 5.1 密钥管理
 
-**存储位置**：MFA 用户 TOTP 密钥由 **SecretKeyManager** 统一管理，存储于 KMS（生产）或 Redis（本地/开发），**不写入** `mfa_user_info` 表。验证时网关通过 KeyManagementProvider 按 tenantId+userId 检索明文密钥进行 TOTP 校验。
+**存储位置**：MFA 用户 TOTP 密钥由 **SecretKeyManager** 统一管理，存储于 KMS（生产）或 Redis（本地/开发）， **不写入**
+`mfa_user_info` 表。验证时网关通过 KeyManagementProvider 按 tenantId+userId 检索明文密钥进行 TOTP 校验。
 
 #### 5.1.1 密钥生成与存储
 
@@ -2311,75 +2309,77 @@ String plainSecret = retrieveSecretFromKms(buildSecretReference(tenantId, userId
 
 #### 5.1.2 密钥轮换（KMS / Vault / HSM 最佳实践）
 
-> 目标：在**降低主密钥泄露风险**的前提下，避免对业务产生“全量重加密”的巨大冲击。
+> 目标：在 **降低主密钥泄露风险**的前提下，避免对业务产生“全量重加密”的巨大冲击。
 
 - **核心原则：基于“密钥版本（Key Version）+ 延迟/按需重加密”**
-  - 不在轮换瞬间重刷所有历史密文，而是：
-    - 新生成的数据统一使用**最新版本主密钥**；
-    - 历史数据在宽限期内允许用**旧版本主密钥**解密；
-    - 如有需要，再通过**后台任务逐步重加密**，而不是“一刀切”。
+    - 不在轮换瞬间重刷所有历史密文，而是：
+        - 新生成的数据统一使用 **最新版本主密钥**；
+        - 历史数据在宽限期内允许用 **旧版本主密钥**解密；
+        - 如有需要，再通过 **后台任务逐步重加密**，而不是“一刀切”。
 - **统一逻辑主密钥（Logical Master Key）**
-  - 在云 KMS / Vault / HSM 中，都只暴露一个“逻辑主密钥”给业务（如 `alias/mfa-master-key` 或 `transit/mfa-master-key`），其下挂多个**版本（v1 / v2 / v3 ...）**。
-  - 应用只记“逻辑主密钥 ID”，**不直接记物理版本号**，加密时由后端系统选择当前最新版本。
+    - 在云 KMS / Vault / HSM 中，都只暴露一个“逻辑主密钥”给业务（如 `alias/mfa-master-key` 或 `transit/mfa-master-key`
+      ），其下挂多个 **版本（v1 / v2 / v3 ...）**。
+    - 应用只记“逻辑主密钥 ID”， **不直接记物理版本号**，加密时由后端系统选择当前最新版本。
 - **轮换策略（与 `MfaKeyRotationProperties` 对应）**
-  - `enabled = true`：开启主密钥自动轮换能力。
-  - `rotationIntervalDays = 90`：推荐每 90 天轮换一次主密钥版本（云 KMS / Vault 可以在服务端配置自动轮换策略）。
-  - `gracePeriodDays = 7`：推荐 7 天宽限期：
-    - 在宽限期内，新写入使用新版本密钥；
-    - 旧版本密钥依然允许用于解密存量数据；
-    - 宽限期结束后，可以视情况关闭更老版本的解密能力（例如怀疑泄露时）。
+    - `enabled = true`：开启主密钥自动轮换能力。
+    - `rotationIntervalDays = 90`：推荐每 90 天轮换一次主密钥版本（云 KMS / Vault 可以在服务端配置自动轮换策略）。
+    - `gracePeriodDays = 7`：推荐 7 天宽限期：
+        - 在宽限期内，新写入使用新版本密钥；
+        - 旧版本密钥依然允许用于解密存量数据；
+        - 宽限期结束后，可以视情况关闭更老版本的解密能力（例如怀疑泄露时）。
 - **云 KMS（AWS / 阿里云 / 腾讯云 / 火山引擎 / 华为云）**
-  - 加密：
-    - 使用逻辑 CMK（例如 `alias/mfa-master-key`）调用 `Encrypt`；
-    - 云厂商自动选用最新版本（例如 v3）。
-  - 解密：
-    - 直接把密文传给 `Decrypt`；
-    - 云 KMS 根据密文中的元信息自动选择对应版本（v1/v2/v3）解密。
-  - 轮换实现：
-    - 在 KMS 控制台/配置中为 CMK 配置“每 90 天自动轮换”；
-    - MFA 组件的代码**无需改动**，只需保证始终通过逻辑 CMK 调用即可。
-  - 可选：如合规要求严格，可增加**后台重加密 Job**：
-    - 扫描存量数据：旧版本解密 → 使用逻辑 CMK 重新加密（此时会使用最新版本）→ 覆盖写回；
-    - Job 可以分片/限流执行，避免对业务造成冲击。
+    - 加密：
+        - 使用逻辑 CMK（例如 `alias/mfa-master-key`）调用 `Encrypt`；
+        - 云厂商自动选用最新版本（例如 v3）。
+    - 解密：
+        - 直接把密文传给 `Decrypt`；
+        - 云 KMS 根据密文中的元信息自动选择对应版本（v1/v2/v3）解密。
+    - 轮换实现：
+        - 在 KMS 控制台/配置中为 CMK 配置“每 90 天自动轮换”；
+        - MFA 组件的代码 **无需改动**，只需保证始终通过逻辑 CMK 调用即可。
+    - 可选：如合规要求严格，可增加 **后台重加密 Job**：
+        - 扫描存量数据：旧版本解密 → 使用逻辑 CMK 重新加密（此时会使用最新版本）→ 覆盖写回；
+        - Job 可以分片/限流执行，避免对业务造成冲击。
 - **Vault Transit Engine**
-  - Transit Key：如 `mfa-master-key`，开启 `supports_encryption`, `supports_decryption`, `supports_derivation` 等能力，并允许多版本。
-  - 加密：
-    - 调用 `vault encrypt transit/mfa-master-key`，Vault 使用当前 `latest_version`。
-  - 解密：
-    - 调用 `vault decrypt transit/mfa-master-key`，Vault 会根据密文中的版本号自动选择正确版本。
-  - 轮换建议：
-    - 使用 Vault 的 `rotate` 命令定期创建新版本；
-    - 通过 `min_encryption_version`、`min_decryption_version` 控制“新写入必须使用新版本”“旧版本在宽限期内仍可解密”；
-    - 如需废弃旧版本（例如怀疑泄露），提升 `min_decryption_version` 并配合后台重加密任务。
+    - Transit Key：如 `mfa-master-key`，开启 `supports_encryption`, `supports_decryption`, `supports_derivation`
+      等能力，并允许多版本。
+    - 加密：
+        - 调用 `vault encrypt transit/mfa-master-key`，Vault 使用当前 `latest_version`。
+    - 解密：
+        - 调用 `vault decrypt transit/mfa-master-key`，Vault 会根据密文中的版本号自动选择正确版本。
+    - 轮换建议：
+        - 使用 Vault 的 `rotate` 命令定期创建新版本；
+        - 通过 `min_encryption_version`、`min_decryption_version` 控制“新写入必须使用新版本”“旧版本在宽限期内仍可解密”；
+        - 如需废弃旧版本（例如怀疑泄露），提升 `min_decryption_version` 并配合后台重加密任务。
 - **HSM 场景**
-  - 在 HSM 中为 MFA 组件维护多把主密钥对象，如：
-    - `MFA_MASTER_KEY_V1`、`MFA_MASTER_KEY_V2`、`MFA_MASTER_KEY_V3`；
-  - 组件内部维护一份**密钥元数据**（可存 DB 表形式）：
-    - `current_key_label`：当前加密使用的 key（例如 `MFA_MASTER_KEY_V3`）；
-    - `allowed_decrypt_labels`：允许解密的旧 key 列表（例如 `[V1, V2, V3]`）；
-    - `rotation_time` / `grace_period_end_time`：记录轮换时间和宽限期结束时间。
-  - 加密：
-    - 始终使用 `current_key_label` 对应的 HSM key handle。
-  - 解密：
-    - 推荐在密文中携带版本/label 信息，解密时直达对应 key；
-    - 如历史原因无法携带，则按 `allowed_decrypt_labels` 顺序尝试（不推荐长期使用）。
+    - 在 HSM 中为 MFA 组件维护多把主密钥对象，如：
+        - `MFA_MASTER_KEY_V1`、`MFA_MASTER_KEY_V2`、`MFA_MASTER_KEY_V3`；
+    - 组件内部维护一份 **密钥元数据**（可存 DB 表形式）：
+        - `current_key_label`：当前加密使用的 key（例如 `MFA_MASTER_KEY_V3`）；
+        - `allowed_decrypt_labels`：允许解密的旧 key 列表（例如 `[V1, V2, V3]`）；
+        - `rotation_time` / `grace_period_end_time`：记录轮换时间和宽限期结束时间。
+    - 加密：
+        - 始终使用 `current_key_label` 对应的 HSM key handle。
+    - 解密：
+        - 推荐在密文中携带版本/label 信息，解密时直达对应 key；
+        - 如历史原因无法携带，则按 `allowed_decrypt_labels` 顺序尝试（不推荐长期使用）。
 - **业务数据层的迁移策略**
-  - **新数据**：从轮换生效时起，统一使用新版本主密钥加密。
-  - **存量数据**：通过两种方式迁移：
-    1. **按需迁移**：数据被访问/修改时，解密后顺带用新 key 重新加密再写回；
-    2. **后台批量迁移**：开启定时任务分批扫描，重加密高价值/敏感数据。
-  - 针对 MFA 组件的典型场景：
-    - 用户 MFA 秘钥（种子）；
-    - 备份码明文在生成阶段用主密钥包裹（存库为哈希，不需要迁移）；
-    - 可信设备指纹（如采用加密存储时）。
+    - **新数据**：从轮换生效时起，统一使用新版本主密钥加密。
+    - **存量数据**：通过两种方式迁移：
+        1. **按需迁移**：数据被访问/修改时，解密后顺带用新 key 重新加密再写回；
+        2. **后台批量迁移**：开启定时任务分批扫描，重加密高价值/敏感数据。
+    - 针对 MFA 组件的典型场景：
+        - 用户 MFA 秘钥（种子）；
+        - 备份码明文在生成阶段用主密钥包裹（存库为哈希，不需要迁移）；
+        - 可信设备指纹（如采用加密存储时）。
 - **与配置的对应关系（`MfaKeyManagementProperties`）**
-  - `keyRotation.enabled`：是否启用轮换策略（仅作为“平台安全策略”配置，具体轮换由 KMS / Vault / HSM + 后台任务实现）。
-  - `keyRotation.rotationIntervalDays`：为云 KMS / Vault / HSM 轮换策略提供建议周期（例如在基础设施层配置自动轮换）。
-  - `keyRotation.gracePeriodDays`：驱动“允许旧版本解密 + 后台迁移”的时间窗口，避免硬切导致解密失败。
+    - `keyRotation.enabled`：是否启用轮换策略（仅作为“平台安全策略”配置，具体轮换由 KMS / Vault / HSM + 后台任务实现）。
+    - `keyRotation.rotationIntervalDays`：为云 KMS / Vault / HSM 轮换策略提供建议周期（例如在基础设施层配置自动轮换）。
+    - `keyRotation.gracePeriodDays`：驱动“允许旧版本解密 + 后台迁移”的时间窗口，避免硬切导致解密失败。
 - **不建议的做法（反例）**
-  - ❌ 在单一时刻停机 + 遍历所有表 + 立即用新密钥重加密所有数据，既不可控又风险极高；
-  - ❌ 在业务代码中直接依赖具体云厂商的 key 版本号，导致轮换策略和业务逻辑强耦合；
-  - ✅ 正确做法是：业务只依赖“逻辑主密钥 + 版本不可见抽象”，轮换细节交给 KMS / Vault / HSM 与后台迁移任务。
+    - ❌ 在单一时刻停机 + 遍历所有表 + 立即用新密钥重加密所有数据，既不可控又风险极高；
+    - ❌ 在业务代码中直接依赖具体云厂商的 key 版本号，导致轮换策略和业务逻辑强耦合；
+    - ✅ 正确做法是：业务只依赖“逻辑主密钥 + 版本不可见抽象”，轮换细节交给 KMS / Vault / HSM 与后台迁移任务。
 
 ### 5.2 防重放攻击
 
@@ -2674,7 +2674,8 @@ CREATE TABLE mfa_trusted_device (
 
 #### 8.1.3 MfaAuditEvent（审计事件对象）
 
-**说明**：MFA 组件不维护审计日志表，而是通过 Spring `ApplicationEventPublisher` 发布 `MfaAuditEvent` 事件。业务系统通过 `@EventListener` 监听并自行决定如何处理（持久化、签名、归档等）。
+**说明**：MFA 组件不维护审计日志表，而是通过 Spring `ApplicationEventPublisher` 发布 `MfaAuditEvent` 事件。业务系统通过
+`@EventListener` 监听并自行决定如何处理（持久化、签名、归档等）。
 
 **事件对象结构**：
 
@@ -2716,7 +2717,8 @@ public enum MfaOperationTypeEnum {
 
 **业务系统处理建议**：
 
-如果业务系统需要持久化审计日志，可自行创建 `mfa_operation_log` 表并监听事件。详细集成指南请参考 [11. 审计日志](#11-审计日志) 章节。
+如果业务系统需要持久化审计日志，可自行创建 `mfa_operation_log`
+表并监听事件。详细集成指南请参考 [11. 审计日志](#11-审计日志) 章节。
 
 ### 8.2 缓存数据结构
 
@@ -2743,7 +2745,8 @@ public class MfaCachedInfo {
 ## 9. API设计
 
 **MFA 管理内置控制器 API 文档（Apifox）**：  
-完整接口定义、请求/响应示例及数据模型可参考：[MFA 管理接口 - platform](https://6n26bnszvc.apifox.cn/)（绑定、激活、解绑、可信设备管理、设为主管理设备、备份码验证等）。
+完整接口定义、请求/响应示例及数据模型可参考：[MFA 管理接口 - platform](https://6n26bnszvc.apifox.cn/)
+（绑定、激活、解绑、可信设备管理、设为主管理设备、备份码验证等）。
 
 以下为设计说明与关键接口摘要。
 
@@ -2839,9 +2842,9 @@ Response 200:
 
 - 验证MFA验证码
 - **设备信任支持**：
-  - `deviceId`：设备唯一标识（前端生成）
-  - `deviceName`：设备名称（可选，用于显示）
-  - `trustDevice: true`：验证成功后自动注册为可信设备
+    - `deviceId`：设备唯一标识（前端生成）
+    - `deviceName`：设备名称（可选，用于显示）
+    - `trustDevice: true`：验证成功后自动注册为可信设备
 - 如果设备已信任且未过期，可跳过MFA验证（由网关过滤器自动处理）
 
 #### 9.1.4 查询MFA状态
@@ -2978,7 +2981,8 @@ Content-Type: application/json
 
 **职责**：在登录流程中拦截并验证MFA码
 
-**实现方式**：通过网关过滤器（如 `IssueTokensFilter`）在登录响应阶段处理；是否需要 MFA 由业务登录接口根据 `MfaBindManager.checkLoginMfa` 决定，网关仅当业务未返回 accessToken 时调用 `checkMfaStatus` 并返回 MFA_REQUIRED。
+**实现方式**：通过网关过滤器（如 `IssueTokensFilter`）在登录响应阶段处理；是否需要 MFA 由业务登录接口根据
+`MfaBindManager.checkLoginMfa` 决定，网关仅当业务未返回 accessToken 时调用 `checkMfaStatus` 并返回 MFA_REQUIRED。
 
 **验证流程**：
 
@@ -3198,8 +3202,9 @@ mfa:
 
 > **说明**：
 > - MFA组件作为技术组件，不包含监控指标收集功能。监控指标（如Prometheus、Grafana等）应由接入的应用层统一管理和配置。
-> - **审计日志采用 Spring ApplicationEvent 发布订阅模式**：MFA 组件通过 `ApplicationEventPublisher` 发布审计事件，业务系统通过 `@EventListener` 监听并自行决定如何处理（持久化、签名、归档等）。
-> - MFA 组件**只负责发布事件**，不直接写数据库，保持组件轻量化和独立性。
+> - **审计日志采用 Spring ApplicationEvent 发布订阅模式**：MFA 组件通过 `ApplicationEventPublisher` 发布审计事件，业务系统通过
+    `@EventListener` 监听并自行决定如何处理（持久化、签名、归档等）。
+> - MFA 组件 **只负责发布事件**，不直接写数据库，保持组件轻量化和独立性。
 
 ### 11.1 审计事件方案设计
 
@@ -3219,37 +3224,37 @@ MFA 组件定义 `MfaAuditEvent` 事件类，继承 Spring `ApplicationEvent`：
 
 **完整字段说明**：
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `tenantId` | `String` | 否 | 租户ID（如果未启用租户则为 null） |
-| `userId` | `String` | 是 | 用户ID（业务系统User表的主键ID） |
-| `operationType` | `MfaOperationTypeEnum` | 是 | 操作类型枚举（见下方说明） |
-| `authMethod` | `String` | 是 | 认证方式（TOTP/HOTP/SMS/EMAIL/BACKUP_CODE） |
-| `ipAddress` | `String` | 否 | IP地址（自动从HTTP请求提取，支持反向代理） |
-| `userAgent` | `String` | 否 | 用户代理（自动从HTTP请求提取） |
-| `deviceId` | `String` | 否 | 设备ID（设备指纹，用于可信设备场景） |
-| `result` | `String` | 是 | 操作结果（SUCCESS/FAILED/BLOCKED） |
-| `errorCode` | `String` | 否 | 错误码（失败时使用，如 MFA_CODE_INVALID） |
-| `errorMessage` | `String` | 否 | 错误消息（失败时使用） |
-| `durationMs` | `Long` | 否 | 操作耗时（毫秒，可选） |
-| `timestamp` | `LocalDateTime` | 是 | 事件时间戳（自动生成） |
+| 字段            | 类型                   | 必填 | 说明                                        |
+|-----------------|------------------------|------|---------------------------------------------|
+| `tenantId`      | `String`               | 否   | 租户ID（如果未启用租户则为 null）           |
+| `userId`        | `String`               | 是   | 用户ID（业务系统User表的主键ID）            |
+| `operationType` | `MfaOperationTypeEnum` | 是   | 操作类型枚举（见下方说明）                  |
+| `authMethod`    | `String`               | 是   | 认证方式（TOTP/HOTP/SMS/EMAIL/BACKUP_CODE） |
+| `ipAddress`     | `String`               | 否   | IP地址（自动从HTTP请求提取，支持反向代理）  |
+| `userAgent`     | `String`               | 否   | 用户代理（自动从HTTP请求提取）              |
+| `deviceId`      | `String`               | 否   | 设备ID（设备指纹，用于可信设备场景）        |
+| `result`        | `String`               | 是   | 操作结果（SUCCESS/FAILED/BLOCKED）          |
+| `errorCode`     | `String`               | 否   | 错误码（失败时使用，如 MFA_CODE_INVALID）   |
+| `errorMessage`  | `String`               | 否   | 错误消息（失败时使用）                      |
+| `durationMs`    | `Long`                 | 否   | 操作耗时（毫秒，可选）                      |
+| `timestamp`     | `LocalDateTime`        | 是   | 事件时间戳（自动生成）                      |
 
 **操作类型枚举**（`MfaOperationTypeEnum`）：
 
-| 枚举值 | 编码 | 描述 | 使用场景 |
-|--------|------|------|----------|
-| `BIND` | "BIND" | 绑定设备 | 用户绑定 MFA 设备时 |
-| `UNBIND` | "UNBIND" | 解绑设备 | 用户解绑 MFA 设备时 |
-| `VERIFY` | "VERIFY" | 验证码验证 | 用户验证 TOTP 码或备份码时 |
-| `ACTIVATE` | "ACTIVATE" | 激活设备 | 用户激活 MFA 设备时 |
-| `DISABLE` | "DISABLE" | 禁用设备 | 管理员禁用用户 MFA 时（暂未实现） |
+| 枚举值     | 编码       | 描述       | 使用场景                          |
+|------------|------------|------------|-----------------------------------|
+| `BIND`     | "BIND"     | 绑定设备   | 用户绑定 MFA 设备时               |
+| `UNBIND`   | "UNBIND"   | 解绑设备   | 用户解绑 MFA 设备时               |
+| `VERIFY`   | "VERIFY"   | 验证码验证 | 用户验证 TOTP 码或备份码时        |
+| `ACTIVATE` | "ACTIVATE" | 激活设备   | 用户激活 MFA 设备时               |
+| `DISABLE`  | "DISABLE"  | 禁用设备   | 管理员禁用用户 MFA 时（暂未实现） |
 
 **操作结果枚举**：
 
-| 值 | 说明 | 使用场景 |
-|----|------|----------|
-| `SUCCESS` | 操作成功 | 绑定、激活、验证成功 |
-| `FAILED` | 操作失败 | 验证码错误、用户不存在等 |
+| 值        | 说明     | 使用场景                     |
+|-----------|----------|------------------------------|
+| `SUCCESS` | 操作成功 | 绑定、激活、验证成功         |
+| `FAILED`  | 操作失败 | 验证码错误、用户不存在等     |
 | `BLOCKED` | 账户锁定 | 达到最大失败次数，账户被锁定 |
 
 #### 11.1.3 事件发布时机
@@ -3257,35 +3262,39 @@ MFA 组件定义 `MfaAuditEvent` 事件类，继承 Spring `ApplicationEvent`：
 MFA 组件在以下关键操作点自动发布审计事件：
 
 **1. 绑定设备（BIND）**
+
 - **位置**：`MfaBindManager.bindDevice()`
 - **时机**：绑定成功后
 - **事件内容**：`operationType=BIND`, `result=SUCCESS`
 
 **2. 激活设备（ACTIVATE）**
+
 - **位置**：`MfaBindManager.activateDevice()`
 - **时机**：
-  - 激活成功：`result=SUCCESS`
-  - 激活失败（验证码错误）：`result=FAILED`, `errorCode=MFA_CODE_INVALID`
-  - 激活失败（用户不存在）：`result=FAILED`, `errorCode=MFA_NOT_BOUND`
+    - 激活成功：`result=SUCCESS`
+    - 激活失败（验证码错误）：`result=FAILED`, `errorCode=MFA_CODE_INVALID`
+    - 激活失败（用户不存在）：`result=FAILED`, `errorCode=MFA_NOT_BOUND`
 
 **3. 解绑设备（UNBIND）**
+
 - **位置**：`MfaBindManager.unbindDevice()`
 - **时机**：
-  - 解绑成功：`result=SUCCESS`
-  - 解绑失败（用户不存在）：`result=FAILED`, `errorCode=MFA_NOT_BOUND`
+    - 解绑成功：`result=SUCCESS`
+    - 解绑失败（用户不存在）：`result=FAILED`, `errorCode=MFA_NOT_BOUND`
 
 **4. 验证 MFA 码（VERIFY）**
+
 - **位置**：
-  - `MfaBindManager.verifyMfaCode()`（备份码验证）
-  - `MfaValidationServiceImpl.verifyMfaCode()`（TOTP 验证）
+    - `MfaBindManager.verifyMfaCode()`（备份码验证）
+    - `MfaValidationServiceImpl.verifyMfaCode()`（TOTP 验证）
 - **时机**：
-  - 验证成功：`result=SUCCESS`, `authMethod=TOTP` 或 `BACKUP_CODE`
-  - 验证失败（验证码错误）：`result=FAILED`, `errorCode=MFA_CODE_INVALID`
-  - 验证失败（用户未绑定）：`result=FAILED`, `errorCode=MFA_NOT_BOUND`
-  - 验证失败（MFA 未启用）：`result=FAILED`, `errorCode=MFA_NOT_ENABLED`
-  - 账户锁定：`result=BLOCKED`, `errorCode=ACCOUNT_LOCKED`
-  - 重放攻击：`result=FAILED`, `errorCode=MFA_CODE_USED`
-  - 验证异常：`result=FAILED`, `errorCode=MFA_VERIFY_ERROR`
+    - 验证成功：`result=SUCCESS`, `authMethod=TOTP` 或 `BACKUP_CODE`
+    - 验证失败（验证码错误）：`result=FAILED`, `errorCode=MFA_CODE_INVALID`
+    - 验证失败（用户未绑定）：`result=FAILED`, `errorCode=MFA_NOT_BOUND`
+    - 验证失败（MFA 未启用）：`result=FAILED`, `errorCode=MFA_NOT_ENABLED`
+    - 账户锁定：`result=BLOCKED`, `errorCode=ACCOUNT_LOCKED`
+    - 重放攻击：`result=FAILED`, `errorCode=MFA_CODE_USED`
+    - 验证异常：`result=FAILED`, `errorCode=MFA_VERIFY_ERROR`
 
 #### 11.1.4 事件发布实现
 
@@ -3294,6 +3303,7 @@ MFA 组件内部使用 `MfaAuditEventPublisher` 工具类封装事件发布逻�
 **工具类位置**：`util.cn.richie696.component.mfa.management.MfaAuditEventPublisher`
 
 **核心功能**：
+
 - 自动提取 IP 地址和 User-Agent（从 HTTP 请求上下文）
 - 提供简化方法：`publishSuccess()`、`publishFailure()`、`publishBlocked()`
 - 异常处理：事件发布失败不影响主流程
@@ -3630,22 +3640,27 @@ public class MfaAuditLogListener {
 #### 11.2.3 最佳实践
 
 **1. 异步处理**
+
 - ✅ 使用 `@Async` 异步处理事件，避免阻塞主流程
 - ✅ 配置专用线程池，避免影响其他异步任务
 
 **2. 异常处理**
+
 - ✅ 事件处理失败不应影响主流程，只记录错误日志
 - ✅ 使用 try-catch 包裹处理逻辑
 
 **3. 性能优化**
+
 - ✅ 批量处理：对于高并发场景，可批量收集事件后批量处理
 - ✅ 异步队列：使用消息队列缓冲，避免事件丢失
 
 **4. 数据完整性**
+
 - ✅ 数字签名：对重要审计日志进行数字签名，防止篡改
 - ✅ 定期归档：定期归档历史日志到对象存储
 
 **5. 监控告警**
+
 - ✅ 监控事件处理延迟和失败率
 - ✅ 高风险事件（账户锁定、重放攻击）及时告警
 
@@ -4012,26 +4027,22 @@ graph TB
 
 ### 13.1 NIST 800-63B合规
 
-
-| 要求项     | 实现方式                    |
-| ------- | ----------------------- |
-| 密钥加密存储  | KMS/HSM管理，AES-256-GCM加密 |
-| 防重放攻击   | 验证码使用记录，TTL控制           |
-| 审计日志完整性 | 数字签名，防篡改                |
-| 密钥轮换    | 自动轮换，90天周期              |
-| 备份码安全   | BCrypt哈希，一次性使用          |
-
+| 要求项         | 实现方式                     |
+|----------------|------------------------------|
+| 密钥加密存储   | KMS/HSM管理，AES-256-GCM加密 |
+| 防重放攻击     | 验证码使用记录，TTL控制      |
+| 审计日志完整性 | 数字签名，防篡改             |
+| 密钥轮换       | 自动轮换，90天周期           |
+| 备份码安全     | BCrypt哈希，一次性使用       |
 
 ### 13.2 OWASP MFA指南合规
 
-
-| 要求项     | 实现方式                |
-| ------- | ------------------- |
-| 多种认证方式  | TOTP/HOTP/SMS/Email |
-| 风险自适应认证 | 风控引擎，动态调整验证强度       |
-| 设备信任机制  | 设备指纹，信任管理           |
-| 错误处理    | 错误码体系，友好提示          |
-
+| 要求项         | 实现方式                   |
+|----------------|----------------------------|
+| 多种认证方式   | TOTP/HOTP/SMS/Email        |
+| 风险自适应认证 | 风控引擎，动态调整验证强度 |
+| 设备信任机制   | 设备指纹，信任管理         |
+| 错误处理       | 错误码体系，友好提示       |
 
 ### 13.3 GDPR合规
 

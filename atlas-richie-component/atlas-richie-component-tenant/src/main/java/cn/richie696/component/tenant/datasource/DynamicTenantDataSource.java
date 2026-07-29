@@ -42,7 +42,7 @@ public class DynamicTenantDataSource extends AbstractRoutingDataSource {
     private final Map<String, DataSource> tenantDataSources = new ConcurrentHashMap<>();
     private final Object lock = new Object();
     /**
-     *  获取共享数据源
+     * 获取共享数据源
      */
     @Getter
     private final DataSource sharedDataSource;

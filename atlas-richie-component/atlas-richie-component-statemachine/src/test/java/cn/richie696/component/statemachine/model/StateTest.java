@@ -73,7 +73,7 @@ class StateTest {
         state.setName("CONFIRMED");
         state.setDescription("已确认");
         state.setType(State.StateType.NORMAL);
-        
+
         assertEquals("CONFIRMED", state.getName());
         assertEquals("已确认", state.getDescription());
         assertEquals(State.StateType.NORMAL, state.getType());
@@ -84,7 +84,7 @@ class StateTest {
         State state1 = new State("PENDING", "待确认");
         State state2 = new State("PENDING", "待确认");
         State state3 = new State("CONFIRMED", "已确认");
-        
+
         assertEquals(state1, state2);
         assertNotEquals(state1, state3);
         assertEquals(state1.hashCode(), state2.hashCode());

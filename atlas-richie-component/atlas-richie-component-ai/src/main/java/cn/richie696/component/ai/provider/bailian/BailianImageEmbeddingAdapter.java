@@ -15,22 +15,19 @@
  */
 package cn.richie696.component.ai.provider.bailian;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.ai.api.image.ImageEmbeddingModel;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.context.utils.data.JsonUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.ai.embedding.EmbeddingResponse;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Spring AI {@link org.springframework.ai.embedding.EmbeddingModel} 在阿里百炼（DashScope）平台上的适配器。
@@ -103,7 +100,9 @@ public class BailianImageEmbeddingAdapter implements ImageEmbeddingModel {
     public static final String DEFAULT_BASE_URL =
             "https://dashscope.aliyuncs.com/api/v1/services/embeddings/multimodal-embedding/multimodal-embedding";
 
-    /** DashScope 官方当前唯一对外的多模态嵌入模型名 — 1024 维。 */
+    /**
+     * DashScope 官方当前唯一对外的多模态嵌入模型名 — 1024 维。
+     */
     public static final String DEFAULT_MODEL = "multimodal-embedding-v1";
 
     /**
@@ -113,7 +112,9 @@ public class BailianImageEmbeddingAdapter implements ImageEmbeddingModel {
      */
     public static final int DIMENSIONS = 1024;
 
-    /** Spring AI {@code ImageModel.embed(Document)} 默认的"文本分支"标识 — 区别于业务自定义图像分支。 */
+    /**
+     * Spring AI {@code ImageModel.embed(Document)} 默认的"文本分支"标识 — 区别于业务自定义图像分支。
+     */
     private static final String INPUT_TYPE_TEXT = "text";
 
     private final HttpClient httpClient;
@@ -299,12 +300,16 @@ public class BailianImageEmbeddingAdapter implements ImageEmbeddingModel {
 
     // ====== DashScope response DTOs ======
 
-    /** 顶层响应：{@code { "output": { "embeddings": [...] } }}。 */
+    /**
+     * 顶层响应：{@code { "output": { "embeddings": [...] } }}。
+     */
     static class EmbeddingRawResponse {
         public EmbeddingRawOutput output;
     }
 
-    /** {@code output} 子对象。 */
+    /**
+     * {@code output} 子对象。
+     */
     static class EmbeddingRawOutput {
         public List<EmbeddingRawItem> embeddings;
     }

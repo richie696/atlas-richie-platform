@@ -16,6 +16,7 @@
 package cn.richie696.component.http.core;
 
 import jakarta.annotation.Nullable;
+
 import java.io.IOException;
 
 /**
@@ -23,8 +24,8 @@ import java.io.IOException;
  *
  * @param <T> 响应数据类型
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public interface AsyncCallback<T> {
 

@@ -56,8 +56,8 @@ public final class ParserChunkingAdapter {
      * {@link StreamingChunker} 的初始 pending 上界传入，实际生效值为
      * {@code max(maxPendingCharacters, rule.maxCharacters())}。
      *
-     * @param chunkingService       底层 {@link ChunkingService}，必须非空。
-     * @param maxPendingCharacters  pending 缓冲上限（字符数），必须大于 0。
+     * @param chunkingService      底层 {@link ChunkingService}，必须非空。
+     * @param maxPendingCharacters pending 缓冲上限（字符数），必须大于 0。
      * @throws NullPointerException     {@code chunkingService} 为 {@code null}。
      * @throws IllegalArgumentException {@code maxPendingCharacters <= 0}。
      */
@@ -131,7 +131,7 @@ public final class ParserChunkingAdapter {
      * @param source 上游解析事件发布器，必须非空。
      * @param rule   切片规则，必须非空。
      * @return 同时承载 {@link ChunkingEvent.Section}、{@link ChunkingEvent.Finished}、
-     *         {@link ChunkingEvent.Failed} 三类事件的发布器。
+     * {@link ChunkingEvent.Failed} 三类事件的发布器。
      * @throws NullPointerException 任一参数为 {@code null}。
      */
     public Flow.Publisher<ChunkingEvent> adaptEvents(Flow.Publisher<ReadEvent> source, ChunkingRule rule) {
@@ -151,32 +151,58 @@ public final class ParserChunkingAdapter {
      */
     private final class ChunkingSubscriber implements Flow.Subscriber<ReadEvent>, Flow.Subscription {
 
-        /** 下游消费者，所有 {@link ChunkingEvent} 都通过 {@code downstream.onNext} 发出。 */
+        /**
+         * 下游消费者，所有 {@link ChunkingEvent} 都通过 {@code downstream.onNext} 发出。
+         */
         private final Flow.Subscriber<? super ChunkingEvent> downstream;
-        /** 当前 session 的切片器，pending 缓冲在内部按 chunker 规则累积。 */
+        /**
+         * 当前 session 的切片器，pending 缓冲在内部按 chunker 规则累积。
+         */
         private final StreamingChunker chunker;
-        /** 已生产但尚未被下游消费的 {@link ChunkingEvent} 队列。 */
+        /**
+         * 已生产但尚未被下游消费的 {@link ChunkingEvent} 队列。
+         */
         private final ArrayDeque<ChunkingEvent> pendingEvents = new ArrayDeque<>();
-        /** 已到达的 {@link ReadEvent.Section} 及其文档级偏移、文件名等元数据。 */
+        /**
+         * 已到达的 {@link ReadEvent.Section} 及其文档级偏移、文件名等元数据。
+         */
         private final List<DocumentSection> sections = new ArrayList<>();
 
-        /** 上游 Subscription；首次 {@link #onSubscribe} 之后才被赋值。 */
+        /**
+         * 上游 Subscription；首次 {@link #onSubscribe} 之后才被赋值。
+         */
         private Flow.Subscription upstream;
-        /** 下游累计请求的 demand；{@link Long#MAX_VALUE} 表示不限速。 */
+        /**
+         * 下游累计请求的 demand；{@link Long#MAX_VALUE} 表示不限速。
+         */
         private long requested;
-        /** 下一个要分配的 section 顺序索引。 */
+        /**
+         * 下一个要分配的 section 顺序索引。
+         */
         private int nextSectionIndex;
-        /** 当前文档的累计字符偏移，用于跨 section 的 SourceSpan 换算。 */
+        /**
+         * 当前文档的累计字符偏移，用于跨 section 的 SourceSpan 换算。
+         */
         private int nextDocumentOffset;
-        /** 本 session 累计下发的 Chunk 数，写入 {@link ChunkingEvent.Finished#emittedChunks()}。 */
+        /**
+         * 本 session 累计下发的 Chunk 数，写入 {@link ChunkingEvent.Finished#emittedChunks()}。
+         */
         private int emittedChunks;
-        /** 上游是否还有一份未 ack 的请求（防 request 重入）。 */
+        /**
+         * 上游是否还有一份未 ack 的请求（防 request 重入）。
+         */
         private boolean upstreamOutstanding;
-        /** 上游是否已发出 {@code onComplete}。 */
+        /**
+         * 上游是否已发出 {@code onComplete}。
+         */
         private boolean upstreamCompleted;
-        /** 下游是否已调用 {@link #cancel()}；为 true 后所有回调都直接吞掉。 */
+        /**
+         * 下游是否已调用 {@link #cancel()}；为 true 后所有回调都直接吞掉。
+         */
         private boolean cancelled;
-        /** 本会话是否已发出过终止事件（{@code onError} / {@code onComplete} / Failed）。 */
+        /**
+         * 本会话是否已发出过终止事件（{@code onError} / {@code onComplete} / Failed）。
+         */
         private boolean terminalSent;
 
         /**

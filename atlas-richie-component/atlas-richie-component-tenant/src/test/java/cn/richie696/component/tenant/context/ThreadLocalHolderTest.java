@@ -16,11 +16,7 @@
 package cn.richie696.component.tenant.context;
 
 import cn.richie696.contract.model.TenantPrincipal;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -87,7 +83,8 @@ class ThreadLocalHolderTest {
         @Test
         @DisplayName("作用域结束后自动清理（无先前值）")
         void autoCleanAfterScope() {
-            holder.runWithTenant(principal(2001L), () -> {});
+            holder.runWithTenant(principal(2001L), () -> {
+            });
             assertThat(holder.get()).isNull();
         }
 

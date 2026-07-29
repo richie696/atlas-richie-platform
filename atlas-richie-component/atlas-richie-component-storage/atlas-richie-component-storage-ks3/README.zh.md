@@ -2,14 +2,16 @@
 
 ## 概述
 
-`richie-component-storage-ks3` 是金山云对象存储服务（KS3）的实现，基于金山云 KS3 SDK 提供完整的 KS3 存储能力。KS3 兼容 AWS S3 API，支持标准、低频、归档等多种存储类型。
+`richie-component-storage-ks3` 是金山云对象存储服务（KS3）的实现，基于金山云 KS3 SDK 提供完整的 KS3 存储能力。KS3 兼容 AWS
+S3 API，支持标准、低频、归档等多种存储类型。
 
 ## 核心特性
 
 - ✅ **S3 兼容** - 兼容 AWS S3 API
 - ✅ **多种存储类型** - 支持标准、低频、归档
 - ✅ **断点续传** - 支持大文件断点续传
-- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非 Spring 环境
+- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非
+  Spring 环境
 - ✅ **自动配置** - Spring Boot 自动配置
 
 ## 双模式架构
@@ -43,12 +45,12 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 每个实现包都提供 `StorageEngineProvider` SPI 实现，`Ks3StorageEngineProvider` 负责：
 
-| 方法 | 说明 |
-|------|------|
-| `supportedEngineType()` | 返回 `StorageEngineEnum.KSYUN_KS3` |
-| `create(properties)` | 从配置创建引擎实例 |
-| `validate(properties)` | 校验 endpoint / accessKeyId / accessKeySecret / bucketName 必填 |
-| `destroy(engine)` | 释放资源 |
+| 方法                    | 说明                                                            |
+|-------------------------|-----------------------------------------------------------------|
+| `supportedEngineType()` | 返回 `StorageEngineEnum.KSYUN_KS3`                              |
+| `create(properties)`    | 从配置创建引擎实例                                              |
+| `validate(properties)`  | 校验 endpoint / accessKeyId / accessKeySecret / bucketName 必填 |
+| `destroy(engine)`       | 释放资源                                                        |
 
 自动模式下 Provider 在 `Ks3AutoConfiguration` 中注册为 Bean；手动模式下由 Registry 通过 SPI 发现。
 
@@ -56,24 +58,24 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 引擎创建前会通过 `ConfigValidation` 工具类校验必填参数，校验失败时抛出 `IllegalArgumentException`：
 
-| 参数 | 校验规则 |
-|------|---------|
-| endpoint | 非空 |
-| accessKeyId | 非空 |
-| accessKeySecret | 非空 |
-| bucketName | 非空 |
+| 参数            | 校验规则 |
+|-----------------|----------|
+| endpoint        | 非空     |
+| accessKeyId     | 非空     |
+| accessKeySecret | 非空     |
+| bucketName      | 非空     |
 
 ## 直传策略 (DirectUploadPolicy)
 
 KS3 引擎支持通过预签名 URL 实现客户端直传到对象存储，减少服务端流量压力：
 
-| 字段 | 说明 |
-|------|------|
-| uploadUrl | 预签名上传 URL |
-| method | HTTP 方法（PUT） |
-| headers | 签名头信息 |
-| expireAt | 策略过期时间 |
-| success | 策略是否可用 |
+| 字段      | 说明             |
+|-----------|------------------|
+| uploadUrl | 预签名上传 URL   |
+| method    | HTTP 方法（PUT） |
+| headers   | 签名头信息       |
+| expireAt  | 策略过期时间     |
+| success   | 策略是否可用     |
 
 ```java
 DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
@@ -154,51 +156,51 @@ public class FileService {
 
 金山云 KS3 与其他云存储的主要配置差异：
 
-| 配置项 | 金山云 KS3 | AWS S3 | 阿里云 OSS |
-|--------|-----------|--------|-----------|
-| **engine 值** | `KSYUN_KS3` | `AWS_S3` | `ALIYUN_OSS` |
-| **endpoint 格式** | `ks3-cn-region.ksyuncs.com` | `s3.region.amazonaws.com` | `oss-cn-region.aliyuncs.com` |
-| **region 格式** | `cn-region` | `us-east-1` | `cn-region` |
-| **访问密钥名称** | Access Key ID / Secret Access Key | Access Key ID / Secret Access Key | AccessKey ID / AccessKey Secret |
-| **S3 兼容性** | ✅ 兼容 | ✅ 原生 | ❌ 不兼容 |
-| **存储类型** | 3种（标准、低频、归档） | 15+种 | 4种 |
+| 配置项            | 金山云 KS3                        | AWS S3                            | 阿里云 OSS                      |
+|-------------------|-----------------------------------|-----------------------------------|---------------------------------|
+| **engine 值**     | `KSYUN_KS3`                       | `AWS_S3`                          | `ALIYUN_OSS`                    |
+| **endpoint 格式** | `ks3-cn-region.ksyuncs.com`       | `s3.region.amazonaws.com`         | `oss-cn-region.aliyuncs.com`    |
+| **region 格式**   | `cn-region`                       | `us-east-1`                       | `cn-region`                     |
+| **访问密钥名称**  | Access Key ID / Secret Access Key | Access Key ID / Secret Access Key | AccessKey ID / AccessKey Secret |
+| **S3 兼容性**     | ✅ 兼容                           | ✅ 原生                           | ❌ 不兼容                       |
+| **存储类型**      | 3种（标准、低频、归档）           | 15+种                             | 4种                             |
 
 ### endpoint 配置
 
 金山云 KS3 的 endpoint 格式：
 
 - **标准格式**: `ks3-cn-region.ksyuncs.com`
-  - 示例：`ks3-cn-beijing.ksyuncs.com`
-  - 示例：`ks3-cn-shanghai.ksyuncs.com`
-  - 示例：`ks3-cn-guangzhou.ksyuncs.com`
+    - 示例：`ks3-cn-beijing.ksyuncs.com`
+    - 示例：`ks3-cn-shanghai.ksyuncs.com`
+    - 示例：`ks3-cn-guangzhou.ksyuncs.com`
 
 - **内网 endpoint**: `ks3-cn-region-internal.ksyuncs.com`
-  - 适用于同区域 KEC 访问，免流量费
-  - 示例：`ks3-cn-beijing-internal.ksyuncs.com`
+    - 适用于同区域 KEC 访问，免流量费
+    - 示例：`ks3-cn-beijing-internal.ksyuncs.com`
 
 ### region 配置
 
 金山云 KS3 支持的区域：
 
-| 区域 | 代码 |
-|------|------|
-| 北京 | `cn-beijing` |
-| 上海 | `cn-shanghai` |
-| 广州 | `cn-guangzhou` |
-| 杭州 | `cn-hangzhou` |
-| 香港 | `cn-hongkong` |
-| 俄罗斯 | `ru-moscow` |
+| 区域   | 代码           |
+|--------|----------------|
+| 北京   | `cn-beijing`   |
+| 上海   | `cn-shanghai`  |
+| 广州   | `cn-guangzhou` |
+| 杭州   | `cn-hangzhou`  |
+| 香港   | `cn-hongkong`  |
+| 俄罗斯 | `ru-moscow`    |
 | 新加坡 | `ap-singapore` |
 
 ### 存储类型
 
 金山云 KS3 支持的存储类型：
 
-| 存储类型 | 说明 | 适用场景 |
-|---------|------|---------|
-| `STANDARD` | 标准存储 | 频繁访问的数据 |
+| 存储类型      | 说明         | 适用场景                       |
+|---------------|--------------|--------------------------------|
+| `STANDARD`    | 标准存储     | 频繁访问的数据                 |
 | `STANDARD_IA` | 低频访问存储 | 不经常访问但需要快速访问的数据 |
-| `ARCHIVE` | 归档存储 | 长期保存、很少访问的数据 |
+| `ARCHIVE`     | 归档存储     | 长期保存、很少访问的数据       |
 
 ### 访问凭证
 
@@ -209,7 +211,7 @@ public class FileService {
 3. 创建用户并分配 KS3 访问权限
 4. 创建访问密钥
 
-> **安全提示**: 
+> **安全提示**:
 > - 使用 IAM 子用户，遵循最小权限原则
 > - 不要将访问密钥提交到代码仓库
 > - 使用环境变量或密钥管理服务
@@ -250,23 +252,23 @@ platform:
 ## 最佳实践
 
 1. **区域选择**
-   - 选择距离用户最近的区域，降低延迟
-   - 考虑数据合规要求
+    - 选择距离用户最近的区域，降低延迟
+    - 考虑数据合规要求
 
 2. **存储类型选择**
-   - 频繁访问：`STANDARD`
-   - 偶尔访问：`STANDARD_IA`
-   - 长期归档：`ARCHIVE`
+    - 频繁访问：`STANDARD`
+    - 偶尔访问：`STANDARD_IA`
+    - 长期归档：`ARCHIVE`
 
 3. **访问凭证管理**
-   - 使用 IAM 子用户，遵循最小权限原则
-   - 使用环境变量或密钥管理服务
-   - 定期轮换访问密钥
+    - 使用 IAM 子用户，遵循最小权限原则
+    - 使用环境变量或密钥管理服务
+    - 定期轮换访问密钥
 
 4. **成本优化**
-   - 使用生命周期策略自动转换存储类型
-   - 删除不需要的对象
-   - 使用内网 endpoint 免流量费
+    - 使用生命周期策略自动转换存储类型
+    - 删除不需要的对象
+    - 使用内网 endpoint 免流量费
 
 ## 常见问题
 

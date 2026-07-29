@@ -59,11 +59,11 @@ spring:
 
 ### Kafka Binder 配置
 
-| 配置项                                                | 说明                | 默认值              |
-|----------------------------------------------------|-------------------|------------------|
-| `spring.cloud.stream.kafka.binder.brokers`         | Kafka Broker 地址   | `localhost:9092` |
+| 配置项                                             | 说明                     | 默认值           |
+|----------------------------------------------------|--------------------------|------------------|
+| `spring.cloud.stream.kafka.binder.brokers`         | Kafka Broker 地址        | `localhost:9092` |
 | `spring.cloud.stream.kafka.binder.zkNodes`         | Zookeeper 地址（旧版本） | -                |
-| `spring.cloud.stream.kafka.binder.configuration.*` | Kafka 客户端配置       | -                |
+| `spring.cloud.stream.kafka.binder.configuration.*` | Kafka 客户端配置         | -                |
 
 ### 详细配置
 

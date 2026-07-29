@@ -37,13 +37,13 @@ import java.util.Base64;
  *
  * <p>全部字段为基本类型 / String，无可空字段；{@code @JsonInclude(NON_NULL)} 作为通用防御保留。
  *
+ * @param image            base64 编码后的图片字节串（来自 {@link VlRequest#imageData()}）
+ * @param lang             语言码（{@code zh}/{@code en}/{@code ja}/{@code ko} 等）
+ * @param tableRecognition 是否启用表格识别
+ * @param gpuPool          sidecar GPU worker 数量（来自 Provider 配置，不是 per-call 参数）
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-12
- * @param image base64 编码后的图片字节串（来自 {@link VlRequest#imageData()}）
- * @param lang 语言码（{@code zh}/{@code en}/{@code ja}/{@code ko} 等）
- * @param tableRecognition 是否启用表格识别
- * @param gpuPool sidecar GPU worker 数量（来自 Provider 配置，不是 per-call 参数）
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -60,7 +60,7 @@ public record VlSubmitPayload(
      * @param gpuPool Provider 配置的 sidecar GPU worker 数量
      * @return 序列化后字节与原 {@code ObjectNode.put(...)} 链等价的 typed payload
      */
-    public static VlSubmitPayload of(VlRequest request, int gpuPool) {
+    public static VlSubmitPayload of (VlRequest request,int gpuPool){
         return new VlSubmitPayload(
                 Base64.getEncoder().encodeToString(request.imageData()),
                 request.lang(),

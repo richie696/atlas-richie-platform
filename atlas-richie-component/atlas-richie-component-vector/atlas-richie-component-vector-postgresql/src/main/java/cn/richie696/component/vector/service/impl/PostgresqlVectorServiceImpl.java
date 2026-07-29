@@ -17,14 +17,10 @@ package cn.richie696.component.vector.service.impl;
 
 import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.config.VectorProperties;
-import cn.richie696.component.vector.model.IndexInfo;
-import cn.richie696.component.vector.model.IndexStatus;
-import cn.richie696.component.vector.model.Modality;
-import cn.richie696.component.vector.model.VectorContent;
-import cn.richie696.component.vector.model.VectorRecord;
+import cn.richie696.component.vector.model.*;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
-import cn.richie696.component.vector.service.VectorService;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
+import cn.richie696.component.vector.service.VectorService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -54,9 +50,9 @@ import java.util.stream.Collectors;
  *
  * @author jinyang.wang
  * @version 1.0.0
- * @since 1.0.0
  * @see AbstractVectorService
  * @see <a href="https://github.com/pgvector/pgvector">pgvector扩展</a>
+ * @since 1.0.0
  */
 @Slf4j
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "postgresql")
@@ -71,10 +67,10 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      * 用于文档存取、EmbeddingModel用于生成文本嵌入向量，以及JdbcTemplate
      * 用于执行原生SQL操作。
      *
-     * @param rerankService 重排序服务（可选）
-     * @param vectorStore Spring AI向量存储接口，用于文档的添加和搜索
+     * @param rerankService  重排序服务（可选）
+     * @param vectorStore    Spring AI向量存储接口，用于文档的添加和搜索
      * @param embeddingModel 嵌入模型接口，用于将文本转换为向量表示
-     * @param jdbcTemplate JDBC模板，用于执行PostgreSQL原生SQL语句
+     * @param jdbcTemplate   JDBC模板，用于执行PostgreSQL原生SQL语句
      */
     @Autowired
     public PostgresqlVectorServiceImpl(@Autowired(required = false) RerankService rerankService,
@@ -85,7 +81,9 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    /** pgvector 默认向量维度（OpenAI text-embedding-3-small 等） */
+    /**
+     * pgvector 默认向量维度（OpenAI text-embedding-3-small 等）
+     */
     private static final int DEFAULT_DIMENSION = 1536;
 
     /**
@@ -390,7 +388,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      * 在运维侧通过 cron / k8s CronJob 调度 {@code pg_dump} 工具生成
      * {@code .sql} 或 {@code .dump} 文件落盘。VectorService 层不直接支持。
      *
-     * @param indexName 索引名称（对应表名 {@code vector_<indexName>}）
+     * @param indexName  索引名称（对应表名 {@code vector_<indexName>}）
      * @param targetPath 备份文件目标路径
      * @throws UnsupportedOperationException PostgreSQL 备份需走 pg_dump 工具
      */
@@ -623,7 +621,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      * 由 AbstractVectorService.toAiDocument 负责写入。
      *
      * @param indexName 索引名称
-     * @param docs 已嵌入完成的 Spring AI Document 列表
+     * @param docs      已嵌入完成的 Spring AI Document 列表
      */
     @Override
     protected void addEmbeddings(String indexName, List<Document> docs) {
@@ -656,7 +654,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      * 按 ID 列表批量删除记录。
      *
      * @param indexName 索引名称
-     * @param ids 待删除的记录 ID 列表（空或 null 则直接返回）
+     * @param ids       待删除的记录 ID 列表（空或 null 则直接返回）
      */
     @Override
     protected void deleteByIds(String indexName, List<String> ids) {
@@ -677,7 +675,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      * {@link VectorContent.TextContent} 紧凑构造器抛错）。
      *
      * @param indexName 索引名称
-     * @param ids 待查询的 ID 列表
+     * @param ids       待查询的 ID 列表
      * @return 命中记录的 VectorRecord 列表
      */
     @Override
@@ -703,8 +701,8 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      * 支持分页查询。使用PostgreSQL的OFFSET/LIMIT语法实现分页。
      *
      * @param indexName 索引名称
-     * @param offset 起始偏移量，从0开始
-     * @param limit 最大返回数量
+     * @param offset    起始偏移量，从0开始
+     * @param limit     最大返回数量
      * @return 记录列表，按ID升序排列
      */
     @Override

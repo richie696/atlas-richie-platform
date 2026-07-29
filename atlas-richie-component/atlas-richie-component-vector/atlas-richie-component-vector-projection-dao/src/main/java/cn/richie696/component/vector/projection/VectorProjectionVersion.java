@@ -23,17 +23,16 @@ import java.time.Instant;
  * <p>关键不变量：record 不可变；任何字段更新都会生成新 snapshot 而非就地修改。终态
  * CLEANED 之后该快照不再变化；FAILED 终态保留 {@link #failureReason} 不为空。
  *
- * @param projectionId 投影维度的稳定标识（同一 {@link VectorProjectionReference} 共享同一 projectionId）。
- * @param versionId 单次重建对应的版本唯一标识，作为写入 / 激活 / 失败状态推进的主键。
- * @param reference 业务文档的稳定引用三元组 (tenantId, knowledgeBaseId, documentRef)。
- * @param specification 本次重建的不可变规格三元组 (sourceVersion, indexName, embeddingSpaceId)。
- * @param state 当前生命周期状态，参见 {@link VectorProjectionState}。
+ * @param projectionId   投影维度的稳定标识（同一 {@link VectorProjectionReference} 共享同一 projectionId）。
+ * @param versionId      单次重建对应的版本唯一标识，作为写入 / 激活 / 失败状态推进的主键。
+ * @param reference      业务文档的稳定引用三元组 (tenantId, knowledgeBaseId, documentRef)。
+ * @param specification  本次重建的不可变规格三元组 (sourceVersion, indexName, embeddingSpaceId)。
+ * @param state          当前生命周期状态，参见 {@link VectorProjectionState}。
  * @param writtenRecords 已成功写入向量库的记录数（按 manifest 中 vectorId 计数）。
- * @param failedRecords 本次重建累计失败记录数；写入阶段为单条失败累计，激活后保持不变。
- * @param cleanupAfter RETIRING 状态下的清理截止时间；到期后由 cleanup 服务回收；非 RETIRING 时为 null。
- * @param failureReason FAILED 状态下由 {@link VectorProjectionLifecycleService#markFailed} 写入的失败原因；
- *                      其他状态下为 null。
- *
+ * @param failedRecords  本次重建累计失败记录数；写入阶段为单条失败累计，激活后保持不变。
+ * @param cleanupAfter   RETIRING 状态下的清理截止时间；到期后由 cleanup 服务回收；非 RETIRING 时为 null。
+ * @param failureReason  FAILED 状态下由 {@link VectorProjectionLifecycleService#markFailed} 写入的失败原因；
+ *                       其他状态下为 null。
  * @author richie696
  * @version 1.0
  * @since 2025-07-01

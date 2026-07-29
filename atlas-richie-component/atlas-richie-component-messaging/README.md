@@ -1,61 +1,65 @@
 # Atlas Richie Messaging Component (atlas-richie-component-messaging)
 
-> Parent module for **unified message queue** access. Wraps Spring Cloud Stream Function and provides one `MessageService` facade across **12 providers**: Kafka, RabbitMQ, RocketMQ, Kinesis, Pub/Sub, Event Hubs, Service Bus, SQS, SNS, Pulsar, Solace, NATS.
+> Parent module for **unified message queue** access. Wraps Spring Cloud Stream Function and provides one
+> `MessageService` facade across **12 providers**: Kafka, RabbitMQ, RocketMQ, Kinesis, Pub/Sub, Event Hubs, Service Bus,
+> SQS, SNS, Pulsar, Solace, NATS.
 
 ---
 
 ## 📖 Contents
 
 - [📖 Overview](#📖-overview)
-  - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
+    - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
 - [✨ Features](#✨-features)
-  - [Core capabilities](#core-capabilities)
-  - [Design choices](#design-choices)
+    - [Core capabilities](#core-capabilities)
+    - [Design choices](#design-choices)
 - [🏗️ Architecture & Module Layout](#🏗️-architecture-&-module-layout)
 - [🚀 Quick Start](#🚀-quick-start)
-  - [1. Add the dependency](#1-add-the-dependency)
-  - [2. Configure](#2-configure)
-  - [3. Send a message](#3-send-a-message)
-  - [4. Consume a message](#4-consume-a-message)
+    - [1. Add the dependency](#1-add-the-dependency)
+    - [2. Configure](#2-configure)
+    - [3. Send a message](#3-send-a-message)
+    - [4. Consume a message](#4-consume-a-message)
 - [🔧 Core Capabilities](#🔧-core-capabilities)
-  - [1. Send: ordinary, delayed, scheduled](#1-send-ordinary,-delayed,-scheduled)
-  - [2. Consume via Function](#2-consume-via-function)
-  - [3. Idempotency / retry](#3-idempotency-/-retry)
-  - [4. Multi-binder](#4-multi-binder)
+    - [1. Send: ordinary, delayed, scheduled](#1-send-ordinary,-delayed,-scheduled)
+    - [2. Consume via Function](#2-consume-via-function)
+    - [3. Idempotency / retry](#3-idempotency-/-retry)
+    - [4. Multi-binder](#4-multi-binder)
 - [⚙️ Configuration Reference](#⚙️-configuration-reference)
 - [🎯 Best Practices](#🎯-best-practices)
 - [⚠️ Known Limitations](#⚠️-known-limitations)
 - [❓ FAQ](#❓-faq)
-  - [Q1: Which provider should I choose?](#q1-which-provider-should-i-choose?)
-  - [Q2: How do I consume with custom header propagation?](#q2-how-do-i-consume-with-custom-header-propagation?)
-  - [Q3: Can I have multiple consumers for the same topic?](#q3-can-i-have-multiple-consumers-for-the-same-topic?)
-  - [Q4: Where are dead-lettered messages?](#q4-where-are-dead-lettered-messages?)
+    - [Q1: Which provider should I choose?](#q1-which-provider-should-i-choose?)
+    - [Q2: How do I consume with custom header propagation?](#q2-how-do-i-consume-with-custom-header-propagation?)
+    - [Q3: Can I have multiple consumers for the same topic?](#q3-can-i-have-multiple-consumers-for-the-same-topic?)
+    - [Q4: Where are dead-lettered messages?](#q4-where-are-dead-lettered-messages?)
 - [📚 Further Reading](#📚-further-reading)
+
 ---
 
 ## 📖 Overview
 
-| Item | Value |
-|------|-------|
-| **Artifact** | `cn.richie696.component:atlas-richie-component-messaging` (parent POM) |
-| **Category** | Messaging — async event / message bus |
-| **Hard dependencies** | Spring Cloud Stream, `atlas-richie-context` |
-| **Default provider** | `kafka` |
+| Item                  | Value                                                                  |
+|-----------------------|------------------------------------------------------------------------|
+| **Artifact**          | `cn.richie696.component:atlas-richie-component-messaging` (parent POM) |
+| **Category**          | Messaging — async event / message bus                                  |
+| **Hard dependencies** | Spring Cloud Stream, `atlas-richie-context`                            |
+| **Default provider**  | `kafka`                                                                |
 
 ### `What` this component is — and what it isn't
 
-| ✅ It gives you | ❌ It does not give you |
-|-----------------|------------------------|
-| One `MessageService` facade across 12 providers | Exactly-once delivery (depends on broker) |
-| Spring Cloud Stream Function integration | Kafka Connect / RabbitMQ Streams (raw) |
-| Idempotency, retry, delay, scheduled | Schema registry (use Confluent / Apicurio separately) |
-| Multi-binder routing (send to multiple brokers) | Complex event sourcing (use Atlas) |
+| ✅ It gives you                                 | ❌ It does not give you                               |
+|-------------------------------------------------|-------------------------------------------------------|
+| One `MessageService` facade across 12 providers | Exactly-once delivery (depends on broker)             |
+| Spring Cloud Stream Function integration        | Kafka Connect / RabbitMQ Streams (raw)                |
+| Idempotency, retry, delay, scheduled            | Schema registry (use Confluent / Apicurio separately) |
+| Multi-binder routing (send to multiple brokers) | Complex event sourcing (use Atlas)                    |
 
 ## ✨ Features
 
 ### `Core` capabilities
 
-- ✅ **12 providers** — Kafka, RabbitMQ, RocketMQ, Kinesis, Pub/Sub, Event Hubs, Service Bus, SQS, SNS, Pulsar, Solace, NATS.
+- ✅ **12 providers** — Kafka, RabbitMQ, RocketMQ, Kinesis, Pub/Sub, Event Hubs, Service Bus, SQS, SNS, Pulsar, Solace,
+  NATS.
 - ✅ **One API** — `MessageService.send`, `sendDelay`, `sendScheduled`.
 - ✅ **Function-based consumer** — `Supplier`, `Function`, `Consumer` auto-registered.
 - ✅ **Idempotency** — memory or Redis deduplication.
@@ -199,13 +203,13 @@ messageService.sendMessage("audit-event", "rabbitmq-binder", event);
 
 ## ⚙️ Configuration Reference
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `datasource` | enum | `memory` | `memory` / `redis` (idempotency backend) |
-| `max-retries` | int | `3` | Max retry attempts before drop / DLQ |
-| `delay.message-store` | String | redis | Delay message backend |
-| `bindings.<binding>.destination` | String | – | Topic / queue name |
-| `bindings.<binding>.group` | String | – | Consumer group |
+| Property                         | Type   | Default  | Description                              |
+|----------------------------------|--------|----------|------------------------------------------|
+| `datasource`                     | enum   | `memory` | `memory` / `redis` (idempotency backend) |
+| `max-retries`                    | int    | `3`      | Max retry attempts before drop / DLQ     |
+| `delay.message-store`            | String | redis    | Delay message backend                    |
+| `bindings.<binding>.destination` | String | –        | Topic / queue name                       |
+| `bindings.<binding>.group`       | String | –        | Consumer group                           |
 
 ## 🎯 Best Practices
 
@@ -217,11 +221,11 @@ messageService.sendMessage("audit-event", "rabbitmq-binder", event);
 
 ## ⚠️ Known Limitations
 
-| Limitation | Impact | Workaround |
-|------------|--------|------------|
-| **Exactly-once not guaranteed** | May process duplicate | Use idempotency + `datasource: redis` |
+| Limitation                                      | Impact                                     | Workaround                                  |
+|-------------------------------------------------|--------------------------------------------|---------------------------------------------|
+| **Exactly-once not guaranteed**                 | May process duplicate                      | Use idempotency + `datasource: redis`       |
 | **Delay message granularity depends on broker** | RabbitMQ: per-queue TTL; Kafka: not native | Use `scheduled` for cross-broker guarantees |
-| **Multi-binder routing complexity** | Hard to debug | Keep routing config in one place |
+| **Multi-binder routing complexity**             | Hard to debug                              | Keep routing config in one place            |
 
 ## ❓ FAQ
 
@@ -256,7 +260,8 @@ Broker-dependent. Configure per-binder; this component doesn't own DLQ.
 ## 📚 Further Reading
 
 - **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
-- **State machine (uses messaging)** — [`../atlas-richie-component-statemachine/README.md`](../atlas-richie-component-statemachine/README.md)
+- **State machine (uses messaging)** — [
+  `../atlas-richie-component-statemachine/README.md`](../atlas-richie-component-statemachine/README.md)
 - External: [Spring Cloud Stream](https://spring.io/projects/spring-cloud-stream)
 
 ---

@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Import;
 @SpringBootConfiguration
 @EnableAutoConfiguration
 @Import({
-        
+
 })
 public class MessagingIntegrationTestConfiguration {
 }

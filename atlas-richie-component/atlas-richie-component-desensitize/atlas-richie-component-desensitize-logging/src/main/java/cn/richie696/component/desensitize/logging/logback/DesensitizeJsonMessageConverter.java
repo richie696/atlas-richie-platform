@@ -16,9 +16,9 @@
 package cn.richie696.component.desensitize.logging.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.component.desensitize.core.model.MaskScene;
 import cn.richie696.component.desensitize.core.util.DesensitizeUtils;
+import cn.richie696.context.utils.data.JsonUtils;
 import tools.jackson.core.type.TypeReference;
 
 import java.util.Map;
@@ -29,13 +29,14 @@ import java.util.Map;
  * <p>当日志消息是 JSON 字符串时，按 `sensitive-keys` 对字段值脱敏；非 JSON 文本原样返回。</p>
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class DesensitizeJsonMessageConverter extends DesensitizeConverter {
 
     /**
      * convert。
+     *
      * @param event 参数
      * @return 处理结果
      */

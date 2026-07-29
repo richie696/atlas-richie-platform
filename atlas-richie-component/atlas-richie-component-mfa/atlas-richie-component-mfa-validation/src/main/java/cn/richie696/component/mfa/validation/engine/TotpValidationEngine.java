@@ -47,7 +47,9 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class TotpValidationEngine {
 
-    /** MFA 统一配置，用于读取 TOTP 时间窗口、算法、位数等 */
+    /**
+     * MFA 统一配置，用于读取 TOTP 时间窗口、算法、位数等
+     */
     private final MfaProperties properties;
 
     /**
@@ -66,9 +68,9 @@ public class TotpValidationEngine {
      * @param plainSecret 明文密钥（从 KMS 检索，Base32编码）
      * @param code        用户输入的验证码（6位数字）
      * @param userId      用户ID（用于日志记录）
-     * @param tenantId   租户ID（用于日志记录，可选）
-     * @param window     时间窗口容错（±window，例如 window=1 表示允许前后1个时间窗口）
-     * @param algorithm  算法（SHA1、SHA256、SHA512，如果为null或空则从配置中读取默认算法）
+     * @param tenantId    租户ID（用于日志记录，可选）
+     * @param window      时间窗口容错（±window，例如 window=1 表示允许前后1个时间窗口）
+     * @param algorithm   算法（SHA1、SHA256、SHA512，如果为null或空则从配置中读取默认算法）
      * @return 验证结果
      * <ul>
      *   <li>{@code true}：验证码正确</li>
@@ -76,16 +78,16 @@ public class TotpValidationEngine {
      * </ul>
      */
     public boolean verifyCode(String plainSecret, String code,
-                             String userId, String tenantId, int window, String algorithm) {
+                              String userId, String tenantId, int window, String algorithm) {
         try {
             // 调试日志：记录验证参数
             log.info("=== TOTP验证调试信息 ===");
             log.info("userId: {}, tenantId: {}, code: {}, window: {}, algorithm: {}",
-                userId, tenantId, code, window, algorithm);
+                    userId, tenantId, code, window, algorithm);
             log.info("plainSecret (前50字符): {}...",
-                plainSecret != null && plainSecret.length() > 50
-                    ? plainSecret.substring(0, 50)
-                    : plainSecret);
+                    plainSecret != null && plainSecret.length() > 50
+                            ? plainSecret.substring(0, 50)
+                            : plainSecret);
             log.info("plainSecret (完整): {}", plainSecret);
 
             // 验证密钥是否为空
@@ -103,15 +105,15 @@ public class TotpValidationEngine {
             long unixTimeSeconds = Instant.now().getEpochSecond();
             long currentTimeStep = unixTimeSeconds / timeStep;
             log.info("时间步长: {}, 当前时间步: {}, 当前时间戳(秒, UTC): {}",
-                timeStep, currentTimeStep, unixTimeSeconds);
+                    timeStep, currentTimeStep, unixTimeSeconds);
 
             // 检查±window个时间窗口
             for (int i = -window; i <= window; i++) {
                 long testTimeStep = currentTimeStep + i;
                 String generatedCode = generateCode(plainSecret, testTimeStep,
-                    properties.getTotp().getCodeLength(), normalizedAlgorithm);
+                        properties.getTotp().getCodeLength(), normalizedAlgorithm);
                 log.info("时间窗口偏移: {}, 时间步: {}, 生成的验证码: {}, 用户输入: {}, 匹配: {}",
-                    i, testTimeStep, generatedCode, code, generatedCode.equals(code));
+                        i, testTimeStep, generatedCode, code, generatedCode.equals(code));
                 if (generatedCode.equals(code)) {
                     log.info("验证码匹配成功！");
                     log.info("========================");
@@ -138,21 +140,21 @@ public class TotpValidationEngine {
      * @param plainSecret 明文密钥（从 KMS 检索，Base32编码）
      * @param code        用户输入的验证码（6位数字）
      * @param userId      用户ID（用于日志记录）
-     * @param tenantId   租户ID（用于日志记录，可选）
-     * @param window     时间窗口容错（±window，例如 window=1 表示允许前后1个时间窗口）
-     * @param algorithm  算法（SHA1、SHA256、SHA512，如果为null或空则从配置中读取默认算法）
-     * @param period     时间窗口周期（秒，必须与二维码生成时使用的 period 一致）
-     * @param digits     验证码位数（必须与二维码生成时使用的 digits 一致）
+     * @param tenantId    租户ID（用于日志记录，可选）
+     * @param window      时间窗口容错（±window，例如 window=1 表示允许前后1个时间窗口）
+     * @param algorithm   算法（SHA1、SHA256、SHA512，如果为null或空则从配置中读取默认算法）
+     * @param period      时间窗口周期（秒，必须与二维码生成时使用的 period 一致）
+     * @param digits      验证码位数（必须与二维码生成时使用的 digits 一致）
      * @return 验证结果
      */
     public boolean verifyCode(String plainSecret, String code,
-                             String userId, String tenantId, int window, String algorithm,
-                             int period, int digits) {
+                              String userId, String tenantId, int window, String algorithm,
+                              int period, int digits) {
         try {
             // 调试日志：记录验证参数
             log.info("=== TOTP验证调试信息（使用数据库参数）===");
             log.info("userId: {}, tenantId: {}, code: {}, window: {}, algorithm: {}, period: {}, digits: {}",
-                userId, tenantId, code, window, algorithm, period, digits);
+                    userId, tenantId, code, window, algorithm, period, digits);
             log.info("plainSecret (完整): {}", plainSecret);
 
             // 验证密钥是否为空
@@ -169,14 +171,14 @@ public class TotpValidationEngine {
             long unixTimeSeconds = Instant.now().getEpochSecond();
             long currentTimeStep = unixTimeSeconds / period;
             log.info("时间窗口周期: {} 秒, 当前时间步: {}, 当前时间戳(秒, UTC): {}",
-                period, currentTimeStep, unixTimeSeconds);
+                    period, currentTimeStep, unixTimeSeconds);
 
             // 检查±window个时间窗口
             for (int i = -window; i <= window; i++) {
                 long testTimeStep = currentTimeStep + i;
                 String generatedCode = generateCode(plainSecret, testTimeStep, digits, normalizedAlgorithm);
                 log.info("时间窗口偏移: {}, 时间步: {}, 生成的验证码: {}, 用户输入: {}, 匹配: {}",
-                    i, testTimeStep, generatedCode, code, generatedCode.equals(code));
+                        i, testTimeStep, generatedCode, code, generatedCode.equals(code));
                 if (generatedCode.equals(code)) {
                     log.info("验证码匹配成功！");
                     log.info("========================");
@@ -201,12 +203,12 @@ public class TotpValidationEngine {
      * @param plainSecret 明文密钥（从 KMS 检索，Base32编码）
      * @param code        用户输入的验证码（6位数字）
      * @param userId      用户ID（用于日志记录）
-     * @param tenantId   租户ID（用于日志记录，可选）
-     * @param window     时间窗口容错（±window，例如 window=1 表示允许前后1个时间窗口）
+     * @param tenantId    租户ID（用于日志记录，可选）
+     * @param window      时间窗口容错（±window，例如 window=1 表示允许前后1个时间窗口）
      * @return 验证结果
      */
     public boolean verifyCode(String plainSecret, String code,
-                             String userId, String tenantId, int window) {
+                              String userId, String tenantId, int window) {
         return verifyCode(plainSecret, code, userId, tenantId, window, null);
     }
 
@@ -222,9 +224,9 @@ public class TotpValidationEngine {
      *   <li>取模并格式化为指定位数的字符串</li>
      * </ol>
      *
-     * @param secret   Base32编码的密钥（明文）
-     * @param timeStep 时间步长（当前时间戳 / 时间窗口）
-     * @param digits   验证码位数（通常为 6）
+     * @param secret    Base32编码的密钥（明文）
+     * @param timeStep  时间步长（当前时间戳 / 时间窗口）
+     * @param digits    验证码位数（通常为 6）
      * @param algorithm 算法（SHA1、SHA256、SHA512，如果为null或空则从配置中读取默认算法）
      * @return TOTP 验证码（指定位数的数字字符串，例如 "123456"）
      * @throws RuntimeException 如果 Base32 解码失败或生成过程异常
@@ -237,9 +239,9 @@ public class TotpValidationEngine {
 
             // 时间步长转换为8字节数组（大端序）
             byte[] data = ByteBuffer.allocate(8)
-                .order(ByteOrder.BIG_ENDIAN)
-                .putLong(timeStep)
-                .array();
+                    .order(ByteOrder.BIG_ENDIAN)
+                    .putLong(timeStep)
+                    .array();
             log.debug("时间步长 {} 转换为字节数组: {}", timeStep, java.util.Arrays.toString(data));
 
             // 标准化算法名称（如果为null或空，默认使用SHA1）
@@ -262,9 +264,9 @@ public class TotpValidationEngine {
             // 动态截取
             int offset = hmacResult[hmacResult.length - 1] & 0xf;
             int binary = ((hmacResult[offset] & 0x7f) << 24) |
-                        ((hmacResult[offset + 1] & 0xff) << 16) |
-                        ((hmacResult[offset + 2] & 0xff) << 8) |
-                        (hmacResult[offset + 3] & 0xff);
+                    ((hmacResult[offset + 1] & 0xff) << 16) |
+                    ((hmacResult[offset + 2] & 0xff) << 8) |
+                    (hmacResult[offset + 3] & 0xff);
             log.debug("动态截取 - offset: {}, binary: {}", offset, binary);
 
             int otp = binary % ((int) Math.pow(10, digits));
@@ -292,7 +294,7 @@ public class TotpValidationEngine {
             // Base32 解码会自动处理填充字符，即使输入不包含填充也能正确解码
             byte[] decoded = base32.decode(encoded);
             log.debug("Base32解码 - 输入: {}, 输入长度: {}, 输出长度: {} 字节",
-                encoded, encoded.length(), decoded.length);
+                    encoded, encoded.length(), decoded.length);
             return decoded;
         } catch (Exception e) {
             log.error("Base32解码失败，encoded: {}, 长度: {}", encoded, encoded != null ? encoded.length() : 0, e);

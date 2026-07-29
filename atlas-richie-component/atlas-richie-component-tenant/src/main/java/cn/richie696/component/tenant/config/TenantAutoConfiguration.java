@@ -17,14 +17,10 @@ package cn.richie696.component.tenant.config;
 
 import cn.richie696.component.tenant.circuit.DataSourceCircuitBreaker;
 import cn.richie696.component.tenant.circuit.DataSourceHealthProbe;
-import cn.richie696.component.tenant.context.ScopedValueHolder;
-import cn.richie696.component.tenant.context.TenantContext;
-import cn.richie696.component.tenant.context.TenantContextHolder;
-import cn.richie696.component.tenant.context.TransactionTenantHolder;
-import cn.richie696.component.tenant.context.ThreadLocalHolder;
-import cn.richie696.component.tenant.datasource.DynamicTenantDataSource;
+import cn.richie696.component.tenant.context.*;
 import cn.richie696.component.tenant.cross.TenantTaskDecorator;
 import cn.richie696.component.tenant.cross.TenantTaskDecoratorBeanPostProcessor;
+import cn.richie696.component.tenant.datasource.DynamicTenantDataSource;
 import cn.richie696.component.tenant.handler.TenantExceptionHandler;
 import cn.richie696.component.tenant.handler.TenantMetaObjectHandler;
 import cn.richie696.component.tenant.interceptor.ConnectionResetInterceptor;
@@ -36,15 +32,9 @@ import cn.richie696.component.tenant.monitor.TenantMetricsCollector;
 import cn.richie696.component.tenant.reactive.TenantWebFilter;
 import cn.richie696.component.tenant.spi.CachingTenantInfoProvider;
 import cn.richie696.component.tenant.spi.TenantInfoProvider;
-import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
-import cn.richie696.component.tenant.strategy.ColumnStrategy;
-import cn.richie696.component.tenant.strategy.DatabaseStrategy;
-import cn.richie696.component.tenant.strategy.HybridStrategy;
-import cn.richie696.component.tenant.strategy.SchemaStrategy;
-import cn.richie696.component.tenant.strategy.TableStrategy;
-import cn.richie696.component.tenant.strategy.TenancyStrategy;
-import cn.richie696.component.tenant.strategy.TenancyStrategyFactory;
+import cn.richie696.component.tenant.strategy.*;
 import cn.richie696.component.tenant.web.TenantIdentityFilter;
+import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -137,10 +127,10 @@ public class TenantAutoConfiguration {
         @Primary
         @ConditionalOnProperty(prefix = "multi-tenancy.cache.tenant-info", name = "enabled", havingValue = "true", matchIfMissing = true)
         public CachingTenantInfoProvider cachingTenantInfoProvider(TenantInfoProvider tenantInfoProvider,
-                                                                    ObjectProvider<TenantMetricsCollector> metricsCollectorProvider) {
+                                                                   ObjectProvider<TenantMetricsCollector> metricsCollectorProvider) {
             MultiTenancyProperties.TenantInfoCacheConfig cfg = properties.getCache();
             return new CachingTenantInfoProvider(tenantInfoProvider, cfg.getTtlSeconds(), cfg.getMaxSize(),
-                metricsCollectorProvider.getIfUnique());
+                    metricsCollectorProvider.getIfUnique());
         }
 
         @Bean
@@ -152,8 +142,8 @@ public class TenantAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean
         public DataSourceHealthProbe dataSourceHealthProbe(
-            ObjectProvider<DynamicTenantDataSource> dynamicDataSourceProvider,
-            DataSourceCircuitBreaker circuitBreaker) {
+                ObjectProvider<DynamicTenantDataSource> dynamicDataSourceProvider,
+                DataSourceCircuitBreaker circuitBreaker) {
             DynamicTenantDataSource dynamicDataSource = dynamicDataSourceProvider.getIfAvailable();
             if (dynamicDataSource == null) {
                 log.debug("DynamicTenantDataSource not available, DataSourceHealthProbe disabled");
@@ -231,9 +221,9 @@ public class TenantAutoConfiguration {
 
             if (hasHttp || hasGrpc) {
                 log.info("[多租户] 微服务通信框架已就绪: {}{}{}",
-                    hasHttp ? "HTTP (Feign/RestClient)" : "",
-                    hasHttp && hasGrpc ? " + " : "",
-                    hasGrpc ? "gRPC" : "");
+                        hasHttp ? "HTTP (Feign/RestClient)" : "",
+                        hasHttp && hasGrpc ? " + " : "",
+                        hasGrpc ? "gRPC" : "");
             } else {
                 log.warn("[多租户] 微服务模式已开启但未检测到通信框架！跨服务调用时租户上下文将中断。");
                 log.warn("  请根据通信协议引入其中一个组件:");
@@ -297,12 +287,12 @@ public class TenantAutoConfiguration {
 
         @Bean
         public FilterRegistrationBean<TenantIdentityFilter> tenantIdentityFilter(
-            TenantInfoProvider tenantInfoProvider,
-            ObjectProvider<List<String>> whitelistPathsProvider) {
+                TenantInfoProvider tenantInfoProvider,
+                ObjectProvider<List<String>> whitelistPathsProvider) {
 
             List<String> whitelistPaths = whitelistPathsProvider.getIfAvailable();
             TenantIdentityFilter filter = new TenantIdentityFilter(
-                properties, tenantInfoProvider, whitelistPaths);
+                    properties, tenantInfoProvider, whitelistPaths);
 
             FilterRegistrationBean<TenantIdentityFilter> registration = new FilterRegistrationBean<>(filter);
             registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 500);
@@ -375,7 +365,7 @@ public class TenantAutoConfiguration {
         @Bean
         @Order(2)
         public TenantLineInnerInterceptor tenantLineInnerInterceptor(TenantInfoProvider provider,
-                                                                      ObjectProvider<TenantMetricsCollector> metricsCollectorProvider) {
+                                                                     ObjectProvider<TenantMetricsCollector> metricsCollectorProvider) {
             return new TenantLineInnerInterceptor(properties, provider, metricsCollectorProvider.getIfUnique());
         }
 
@@ -398,9 +388,9 @@ public class TenantAutoConfiguration {
         @Bean
         @Order(4)
         public TenantStrategyInterceptor tenantStrategyInterceptor(
-            TenancyStrategyFactory factory,
-            TenantInfoProvider provider,
-            DataSourceCircuitBreaker circuitBreaker) {
+                TenancyStrategyFactory factory,
+                TenantInfoProvider provider,
+                DataSourceCircuitBreaker circuitBreaker) {
             return new TenantStrategyInterceptor(properties, factory, provider, circuitBreaker);
         }
 
@@ -448,10 +438,10 @@ public class TenantAutoConfiguration {
         @ConditionalOnMissingBean
         public TenantWebFilter tenantWebFilter() {
             return new TenantWebFilter(
-                properties,
-                tenantInfoProvider,
-                whitelistPathsProvider.getIfAvailable(),
-                superAdminPathsProvider.getIfAvailable()
+                    properties,
+                    tenantInfoProvider,
+                    whitelistPathsProvider.getIfAvailable(),
+                    superAdminPathsProvider.getIfAvailable()
             );
         }
 

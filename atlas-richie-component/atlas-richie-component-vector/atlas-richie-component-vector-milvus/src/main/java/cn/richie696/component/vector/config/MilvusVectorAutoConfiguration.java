@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.vector.config;
 
-import cn.richie696.component.vector.service.impl.MilvusVectorServiceImpl;
 import cn.richie696.component.vector.filter.MilvusVectorFilterCompiler;
 import cn.richie696.component.vector.filter.VectorFilterCompiler;
+import cn.richie696.component.vector.service.impl.MilvusVectorServiceImpl;
 import io.milvus.client.MilvusServiceClient;
 import io.milvus.param.ConnectParam;
 import lombok.extern.slf4j.Slf4j;
@@ -25,10 +25,10 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.TokenCountBatchingStrategy;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.milvus.MilvusVectorStore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -64,7 +64,7 @@ public class MilvusVectorAutoConfiguration {
      * @return Spring AI 统一的 {@link VectorStore} 视图
      */
     @Bean
-    @ConditionalOnProperty(prefix = "platform.component.vector", name="provider", havingValue = "milvus")
+    @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "milvus")
     public VectorStore vectorStore(MilvusServiceClient milvusClient, EmbeddingModel embeddingModel, MilvusConfig config) {
         return MilvusVectorStore.builder(milvusClient, embeddingModel)
                 .databaseName(config.getDatabaseName())
@@ -77,7 +77,9 @@ public class MilvusVectorAutoConfiguration {
                 .build();
     }
 
-    /** Milvus 原生 expression 编译器，供 ACL/知识库门面将结构化过滤安全地下推。 */
+    /**
+     * Milvus 原生 expression 编译器，供 ACL/知识库门面将结构化过滤安全地下推。
+     */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "milvus")
     @ConditionalOnMissingBean(VectorFilterCompiler.class)

@@ -21,8 +21,8 @@ package cn.richie696.component.ocr.aliyun.protocol;
  * <p>vendor: {@code aliyun}；API 协议类型: HTTP JSON 同步识别响应；
  * 配置方式: 与 {@code platform.component.ocr.aliyun.*} 指定的端点、模型和鉴权配置对应。</p>
  *
- * @param body     已通过 {@code HttpResponse.bodyAs(AliyunOcrResponse.class)} 反序列化的 envelope，
- *                 非 {@code null} (HTTP 层负责空 body 防御)
+ * @param body      已通过 {@code HttpResponse.bodyAs(AliyunOcrResponse.class)} 反序列化的 envelope，
+ *                  非 {@code null} (HTTP 层负责空 body 防御)
  * @param latencyMs 从请求发出到客户端收到响应的墙钟耗时，单位毫秒
  * @author richie696
  * @version 1.0.0

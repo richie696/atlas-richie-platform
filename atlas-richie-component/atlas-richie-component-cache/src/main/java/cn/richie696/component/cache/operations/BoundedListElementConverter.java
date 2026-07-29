@@ -94,17 +94,23 @@ final class BoundedListElementConverter {
         }
     }
 
-    private record ConvertOutcome<T>(@Nullable T converted, @Nullable String failureReason) {
-        static <T> ConvertOutcome<T> success(T converted) {
-            return new ConvertOutcome<>(Objects.requireNonNull(converted, "converted"), null);
-        }
+    private record ConvertOutcome<T>(
+    @Nullable
+    T converted,
+    @Nullable
+    String failureReason)
 
-        static <T> ConvertOutcome<T> failure(String failureReason) {
-            return new ConvertOutcome<>(null, Objects.requireNonNull(failureReason, "failureReason"));
-        }
+    {
+        static <T > ConvertOutcome < T > success(T converted) {
+        return new ConvertOutcome<>(Objects.requireNonNull(converted, "converted"), null);
+    }
 
-        boolean isSuccess() {
-            return failureReason == null;
-        }
+        static <T > ConvertOutcome < T > failure(String failureReason) {
+        return new ConvertOutcome<>(null, Objects.requireNonNull(failureReason, "failureReason"));
+    }
+
+        boolean isSuccess () {
+        return failureReason == null;
+    }
     }
 }

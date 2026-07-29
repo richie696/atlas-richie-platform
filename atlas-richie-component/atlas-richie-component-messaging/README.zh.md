@@ -1,42 +1,44 @@
 # Atlas Richie Messaging组件 (atlas-richie-component-messaging)
 
-基于 Spring Cloud Stream 的统一消息队列组件，提供抽象的消息发送和消费接口，支持多种消息队列（Kafka、RabbitMQ、RocketMQ、Kinesis、Pub/Sub 等）。
+基于 Spring Cloud Stream 的统一消息队列组件，提供抽象的消息发送和消费接口，支持多种消息队列（Kafka、RabbitMQ、RocketMQ、Kinesis、Pub/Sub
+等）。
 
 ## 📖 目录
 
 - [✨ 功能特性](#✨-功能特性)
-  - [核心能力](#核心能力)
-  - [高级特性](#高级特性)
+    - [核心能力](#核心能力)
+    - [高级特性](#高级特性)
 - [🚀 快速开始](#🚀-快速开始)
-  - [1. 添加依赖](#1-添加依赖)
-  - [2. 配置消息队列](#2-配置消息队列)
-  - [3. 发送消息](#3-发送消息)
-  - [4. 消费消息](#4-消费消息)
+    - [1. 添加依赖](#1-添加依赖)
+    - [2. 配置消息队列](#2-配置消息队列)
+    - [3. 发送消息](#3-发送消息)
+    - [4. 消费消息](#4-消费消息)
 - [🔧 核心功能](#🔧-核心功能)
-  - [1. 消息发送](#1-消息发送)
-  - [2. 消息消费](#2-消息消费)
-  - [3. 幂等去重](#3-幂等去重)
-  - [4. 消息重试](#4-消息重试)
-  - [5. 请求头传递](#5-请求头传递)
+    - [1. 消息发送](#1-消息发送)
+    - [2. 消息消费](#2-消息消费)
+    - [3. 幂等去重](#3-幂等去重)
+    - [4. 消息重试](#4-消息重试)
+    - [5. 请求头传递](#5-请求头传递)
 - [📎 📦 支持的 MQ 类型](#📎-📦-支持的-mq-类型)
 - [⚙️ 配置说明](#⚙️-配置说明)
-  - [基础配置](#基础配置)
-  - [Spring Cloud Stream 配置](#spring-cloud-stream-配置)
+    - [基础配置](#基础配置)
+    - [Spring Cloud Stream 配置](#spring-cloud-stream-配置)
 - [🎯 最佳实践](#🎯-最佳实践)
-  - [1. Topic 别名管理](#1-topic-别名管理)
-  - [2. 消息事件定义](#2-消息事件定义)
-  - [3. 消费者注册](#3-消费者注册)
-  - [4. 错误处理](#4-错误处理)
-  - [5. 幂等去重](#5-幂等去重)
-  - [6. 多 Binder 场景](#6-多-binder-场景)
+    - [1. Topic 别名管理](#1-topic-别名管理)
+    - [2. 消息事件定义](#2-消息事件定义)
+    - [3. 消费者注册](#3-消费者注册)
+    - [4. 错误处理](#4-错误处理)
+    - [5. 幂等去重](#5-幂等去重)
+    - [6. 多 Binder 场景](#6-多-binder-场景)
 - [❓ 常见问题](#❓-常见问题)
-  - [Q1: 如何选择 MQ 类型？](#q1-如何选择-mq-类型？)
-  - [Q2: 消息处理失败会怎样？](#q2-消息处理失败会怎样？)
-  - [Q3: 如何实现消息幂等？](#q3-如何实现消息幂等？)
-  - [Q4: 延迟消息如何实现？](#q4-延迟消息如何实现？)
-  - [Q5: 如何传递自定义请求头？](#q5-如何传递自定义请求头？)
-  - [Q6: 消息消费是同步还是异步？](#q6-消息消费是同步还是异步？)
+    - [Q1: 如何选择 MQ 类型？](#q1-如何选择-mq-类型？)
+    - [Q2: 消息处理失败会怎样？](#q2-消息处理失败会怎样？)
+    - [Q3: 如何实现消息幂等？](#q3-如何实现消息幂等？)
+    - [Q4: 延迟消息如何实现？](#q4-延迟消息如何实现？)
+    - [Q5: 如何传递自定义请求头？](#q5-如何传递自定义请求头？)
+    - [Q6: 消息消费是同步还是异步？](#q6-消息消费是同步还是异步？)
 - [📎 📝 总结](#📎-📝-总结)
+
 ---
 
 ## ✨ 功能特性
@@ -310,6 +312,7 @@ spring:
 ```
 
 **工作原理**：
+
 - 消息处理前检查是否已处理过（基于消息ID）
 - 如果已处理，直接跳过
 - 如果未处理，保存处理记录（2分钟过期）
@@ -327,6 +330,7 @@ spring:
 ```
 
 **重试机制**：
+
 - 消息处理函数返回 `false` 时触发重试
 - 达到最大重试次数后，消息将被丢弃
 - 重试次数记录在 `MessageEvent.retryCount` 中
@@ -350,19 +354,19 @@ spring:
 
 组件支持以下消息队列（需要添加对应的依赖）：
 
-| MQ 类型                 | 依赖                                      | 说明              |
-|-----------------------|-----------------------------------------|-----------------|
-| **Apache Kafka**      | `richie-component-messaging-kafka`      | 高性能分布式消息队列      |
-| **RabbitMQ**          | `richie-component-messaging-rabbitmq`   | 企业级消息队列         |
-| **Apache RocketMQ**   | `richie-component-messaging-rocketmq`   | 阿里云 RocketMQ    |
-| **Amazon Kinesis**    | `richie-component-messaging-kinesis`    | AWS Kinesis 数据流 |
-| **Google Pub/Sub**    | `richie-component-messaging-gcp-pubsub` | GCP 发布订阅        |
-| **Azure Event Hubs**  | `richie-component-messaging-eventhubs`  | Azure 事件中心      |
-| **Azure Service Bus** | `richie-component-messaging-servicebus` | Azure 服务总线      |
-| **AWS SQS**           | `richie-component-messaging-sqs`        | AWS 简单队列服务      |
-| **AWS SNS**           | `richie-component-messaging-sns`        | AWS 简单通知服务      |
-| **Apache Pulsar**     | `richie-component-messaging-pulsar`     | Apache Pulsar   |
-| **Solace PubSub+**    | `richie-component-messaging-solace`     | Solace 发布订阅     |
+| MQ 类型               | 依赖                                    | 说明                 |
+|-----------------------|-----------------------------------------|----------------------|
+| **Apache Kafka**      | `richie-component-messaging-kafka`      | 高性能分布式消息队列 |
+| **RabbitMQ**          | `richie-component-messaging-rabbitmq`   | 企业级消息队列       |
+| **Apache RocketMQ**   | `richie-component-messaging-rocketmq`   | 阿里云 RocketMQ      |
+| **Amazon Kinesis**    | `richie-component-messaging-kinesis`    | AWS Kinesis 数据流   |
+| **Google Pub/Sub**    | `richie-component-messaging-gcp-pubsub` | GCP 发布订阅         |
+| **Azure Event Hubs**  | `richie-component-messaging-eventhubs`  | Azure 事件中心       |
+| **Azure Service Bus** | `richie-component-messaging-servicebus` | Azure 服务总线       |
+| **AWS SQS**           | `richie-component-messaging-sqs`        | AWS 简单队列服务     |
+| **AWS SNS**           | `richie-component-messaging-sns`        | AWS 简单通知服务     |
+| **Apache Pulsar**     | `richie-component-messaging-pulsar`     | Apache Pulsar        |
+| **Solace PubSub+**    | `richie-component-messaging-solace`     | Solace 发布订阅      |
 
 📖 **各 MQ 的具体配置请参考对应的子组件 README**
 
@@ -372,8 +376,8 @@ spring:
 
 ### 基础配置
 
-| 配置项                               | 类型      | 默认值      | 说明                            |
-|-----------------------------------|---------|----------|-------------------------------|
+| 配置项                            | 类型    | 默认值   | 说明                                        |
+|-----------------------------------|---------|----------|---------------------------------------------|
 | `spring.cloud.stream.datasource`  | String  | `memory` | 幂等去重使用的数据缓存源：`memory`、`redis` |
 | `spring.cloud.stream.max-retries` | Integer | `3`      | 消息处理失败后的最大重试次数                |
 
@@ -544,7 +548,8 @@ messageService.sendMessage("topic", "rabbitmq-binder", event);
 
 ### `Q1` — 如何选择 `MQ` 类型？
 
-**A:** 
+**A:**
+
 - **Kafka**：适合高吞吐量、日志收集、流处理场景
 - **RabbitMQ**：适合企业级应用、复杂路由场景
 - **RocketMQ**：适合阿里云环境、事务消息场景
@@ -553,34 +558,39 @@ messageService.sendMessage("topic", "rabbitmq-binder", event);
 
 ### `Q2` — 消息处理失败会怎样？
 
-**A:** 
+**A:**
+
 - 消息处理函数返回 `false` 时，会触发重试
 - 达到最大重试次数后，消息将被丢弃
 - 建议在消息处理函数中记录失败日志，便于排查问题
 
 ### `Q3` — 如何实现消息幂等？
 
-**A:** 
+**A:**
+
 - 组件已内置幂等去重机制（基于消息ID）
 - 生产环境建议使用 Redis 进行幂等去重
 - 业务层面也可以实现额外的幂等逻辑
 
 ### `Q4` — 延迟消息如何实现？
 
-**A:** 
+**A:**
+
 - 使用 `sendDelayMessage` 方法发送延迟消息
 - 延迟时间以毫秒为单位
 - 具体实现取决于 MQ 类型（部分 MQ 可能不支持延迟消息）
 
 ### `Q5` — 如何传递自定义请求头？
 
-**A:** 
+**A:**
+
 - 组件自动传递标准请求头
 - 如需传递自定义请求头，需要在发送消息前设置到 `HeaderContextHolder` 中
 
 ### `Q6` — 消息消费是同步还是异步？
 
-**A:** 
+**A:**
+
 - Spring Cloud Stream 默认使用异步消费
 - 消息处理函数在独立的线程中执行
 - 可以通过配置调整并发数

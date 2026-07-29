@@ -74,9 +74,9 @@ flowchart TB
 - **类型**：`ExecutorService`（虚拟线程）
 - **实现**：`Executors.newVirtualThreadPerTaskExecutor()`
 - **特点**：
-  - 使用 Java 21 虚拟线程，轻量级，可创建数百万个线程
-  - 在 I/O 阻塞时自动释放平台线程，提高资源利用率
-  - 无需手动管理线程池大小，由 JVM 自动调度
+    - 使用 Java 21 虚拟线程，轻量级，可创建数百万个线程
+    - 在 I/O 阻塞时自动释放平台线程，提高资源利用率
+    - 无需手动管理线程池大小，由 JVM 自动调度
 
 ### 2. 定时刷新调度器 (flushScheduler)
 
@@ -85,18 +85,18 @@ flowchart TB
 - **实现**：`Executors.newScheduledThreadPool(1, Thread.ofVirtual().factory())`
 - **调度间隔**：`flushIntervalMs`（默认 2000ms）
 - **特点**：
-  - 即使未达到批量大小，也会定期刷写缓冲区中的数据
-  - 确保数据及时持久化，避免长时间停留在缓冲区
-  - 使用虚拟线程，资源占用极低
+    - 即使未达到批量大小，也会定期刷写缓冲区中的数据
+    - 确保数据及时持久化，避免长时间停留在缓冲区
+    - 使用虚拟线程，资源占用极低
 
 ### 3. 共享缓冲区 (sharedBuffer & sharedCounter)
 
 - **sharedBuffer**：`ConcurrentLinkedQueue<StateSyncKey>`，存储待同步的状态同步键
 - **sharedCounter**：`AtomicInteger`，记录当前缓冲区中的消息数量
 - **特点**：
-  - 所有虚拟线程共享同一个缓冲区，支持跨线程批量累积
-  - 使用 `ConcurrentLinkedQueue` 和 `AtomicInteger` 保证线程安全
-  - 不再使用 ThreadLocal，避免了虚拟线程场景下的问题
+    - 所有虚拟线程共享同一个缓冲区，支持跨线程批量累积
+    - 使用 `ConcurrentLinkedQueue` 和 `AtomicInteger` 保证线程安全
+    - 不再使用 ThreadLocal，避免了虚拟线程场景下的问题
 
 ### 4. 批量刷写锁 (flushLock)
 
@@ -109,10 +109,10 @@ flowchart TB
 - **作用**：根据不同的数据库类型选择不同的批量插入或更新策略
 - **检测方式**：通过 `DataSource` 的 `DatabaseMetaData` 自动检测
 - **支持类型**：
-  - MySQL：使用 `INSERT ... ON DUPLICATE KEY UPDATE`
-  - PostgreSQL：使用 `INSERT ... ON CONFLICT ... DO UPDATE`
-  - Oracle：使用 `MERGE INTO`
-  - 其他：回退到查询+分离方式
+    - MySQL：使用 `INSERT ... ON DUPLICATE KEY UPDATE`
+    - PostgreSQL：使用 `INSERT ... ON CONFLICT ... DO UPDATE`
+    - Oracle：使用 `MERGE INTO`
+    - 其他：回退到查询+分离方式
 
 ## 数据流向
 
@@ -289,17 +289,24 @@ sequenceDiagram
 ## 触发刷写的条件
 
 1. **批量大小触发**：`sharedCounter >= batchSize`（默认 200）
-  - 当计数器达到批量大小时，自动触发刷写
-  - 每个虚拟线程在添加数据后都会检查此条件
+
+- 当计数器达到批量大小时，自动触发刷写
+- 每个虚拟线程在添加数据后都会检查此条件
+
 2. **缓冲区容量触发**：`sharedCounter >= bufferCapacity`（默认 10000，紧急刷写）
-  - 当缓冲区达到最大容量时，立即触发紧急刷写
-  - 避免缓冲区溢出，保证系统稳定性
+
+- 当缓冲区达到最大容量时，立即触发紧急刷写
+- 避免缓冲区溢出，保证系统稳定性
+
 3. **定时触发**：`flushScheduler` 每 `flushIntervalMs`（默认 2000ms）执行一次
-  - 定期检查共享缓冲区，如果有数据则触发刷写
-  - 确保数据及时持久化，即使未达到批量大小也会定期刷写
-  - 使用共享缓冲区，定时任务可以正常访问
+
+- 定期检查共享缓冲区，如果有数据则触发刷写
+- 确保数据及时持久化，即使未达到批量大小也会定期刷写
+- 使用共享缓冲区，定时任务可以正常访问
+
 4. **服务关闭触发**：`@PreDestroy` 方法中刷写剩余缓冲区
-  - 优雅关闭时，确保所有待同步数据都被写入数据库
+
+- 优雅关闭时，确保所有待同步数据都被写入数据库
 
 ## 线程安全机制
 
@@ -312,14 +319,12 @@ sequenceDiagram
 
 ### 支持的数据库及策略
 
-
-| 数据库类型      | 批量插入或更新策略                          | SQL 语法                                 |
-| ---------- | ---------------------------------- | -------------------------------------- |
+| 数据库类型 | 批量插入或更新策略                 | SQL 语法                               |
+|------------|------------------------------------|----------------------------------------|
 | MySQL      | `insertOrUpdateBatchForMysql`      | `INSERT ... ON DUPLICATE KEY UPDATE`   |
 | PostgreSQL | `insertOrUpdateBatchForPostgresql` | `INSERT ... ON CONFLICT ... DO UPDATE` |
 | Oracle     | `insertOrUpdateBatchForOracle`     | `MERGE INTO ...`                       |
-| 其他         | `writeCurrentStateBatchWithQuery`  | 查询+分离方式（兼容所有数据库）                       |
-
+| 其他       | `writeCurrentStateBatchWithQuery`  | 查询+分离方式（兼容所有数据库）        |
 
 ### 自动检测机制
 
@@ -369,12 +374,10 @@ sequenceDiagram
 
 ## 配置参数
 
-
-| 参数               | 类型  | 默认值   | 说明                        |
-| ---------------- | --- | ----- | ------------------------- |
-| `batchSize`      | int | 200   | 批量写入数据库的记录数，达到此数量时触发批量写入  |
-| `bufferCapacity` | int | 10000 | 最大缓冲条数，当缓冲区达到此大小时立即触发紧急刷写 |
-
+| 参数             | 类型 | 默认值 | 说明                                               |
+|------------------|------|--------|----------------------------------------------------|
+| `batchSize`      | int  | 200    | 批量写入数据库的记录数，达到此数量时触发批量写入   |
+| `bufferCapacity` | int  | 10000  | 最大缓冲条数，当缓冲区达到此大小时立即触发紧急刷写 |
 
 ## 注意事项
 

@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * MFA可信设备Mapper
- * 
+ *
  * @author richie696
  * @since 1.0.0
  */
@@ -41,7 +41,7 @@ public interface MfaTrustedDeviceMapper extends BaseMapper<MfaTrustedDevice> {
      * @return 可信设备列表（如果不存在则返回空列表）
      */
     List<MfaTrustedDevice> selectByTenantAndUser(@Param("tenantId") String tenantId,
-                                                  @Param("userId") String userId);
+                                                 @Param("userId") String userId);
 
     /**
      * 根据租户ID、用户ID和设备ID查询可信设备
@@ -77,7 +77,7 @@ public interface MfaTrustedDeviceMapper extends BaseMapper<MfaTrustedDevice> {
      * @return 主设备，若无则 null
      */
     MfaTrustedDevice selectPrimaryByTenantAndUser(@Param("tenantId") String tenantId,
-                                                   @Param("userId") String userId);
+                                                  @Param("userId") String userId);
 
     /**
      * 清除该用户下所有设备的主标记
@@ -87,7 +87,7 @@ public interface MfaTrustedDeviceMapper extends BaseMapper<MfaTrustedDevice> {
      * @return 更新行数
      */
     int clearPrimaryByTenantAndUser(@Param("tenantId") String tenantId,
-                                     @Param("userId") String userId);
+                                    @Param("userId") String userId);
 
     /**
      * 将指定设备设为主设备（is_primary=1）

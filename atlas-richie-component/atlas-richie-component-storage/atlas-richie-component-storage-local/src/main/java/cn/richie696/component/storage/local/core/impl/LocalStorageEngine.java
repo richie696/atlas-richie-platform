@@ -15,7 +15,6 @@
  */
 package cn.richie696.component.storage.local.core.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.storage.bean.DownloadResponse;
 import cn.richie696.component.storage.bean.LocalConfig;
@@ -27,6 +26,7 @@ import cn.richie696.component.storage.local.repository.entity.FileMetadata;
 import cn.richie696.component.storage.local.repository.mapper.FileMetadataMapper;
 import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.context.utils.security.HashUtils;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -43,6 +43,11 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.io.File;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * 本地文件存储引擎
@@ -413,11 +418,12 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
 
     /**
      * 将文件元数据写入或更新到数据库
-     * @param key 存储键
+     *
+     * @param key          存储键
      * @param originalName 原始文件名（可空）
-     * @param contentType 内容类型
-     * @param sizeBytes 大小
-     * @param hashValue 指纹
+     * @param contentType  内容类型
+     * @param sizeBytes    大小
+     * @param hashValue    指纹
      * @param physicalPath 物理路径
      */
     private void upsertMetadata(String key, String originalName, String contentType, long sizeBytes, String hashValue, String physicalPath) {
@@ -469,11 +475,11 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
         // 更新文件元数据缓存
         String metadataCacheKey = FILE_METADATA_PREFIX + key;
         Map<String, Object> metadata = Map.of(
-            "key", key,
-            "hashValue", hashValue,
-            "size", content.length(),
-            "uploadTime", OffsetDateTime.now().toString(),
-            "contentType", "application/json"
+                "key", key,
+                "hashValue", hashValue,
+                "size", content.length(),
+                "uploadTime", OffsetDateTime.now().toString(),
+                "contentType", "application/json"
         );
         GlobalCache.struct().set(metadataCacheKey, metadata, FILE_METADATA_TTL);
     }

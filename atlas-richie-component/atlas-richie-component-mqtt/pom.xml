@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>cn.richie696.component</groupId>
@@ -62,11 +62,11 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/mqtt/filter/handler/impl/HiveMqMessageHandler*</include>
-                        <include>com/richie/component/mqtt/filter/datasource/impl/MemoryDatasourceHandlerImpl*</include>
-                        <include>com/richie/component/mqtt/filter/datasource/impl/RedisDatasourceHandlerImpl*</include>
-                        <include>com/richie/component/mqtt/utils/Tools*</include>
-                        <include>com/richie/component/mqtt/generator/impl/DefaultClientIdRuler*</include>
+                        <include>cn/richie696/component/mqtt/filter/handler/impl/HiveMqMessageHandler*</include>
+                        <include>cn/richie696/component/mqtt/filter/datasource/impl/MemoryDatasourceHandlerImpl*</include>
+                        <include>cn/richie696/component/mqtt/filter/datasource/impl/RedisDatasourceHandlerImpl*</include>
+                        <include>cn/richie696/component/mqtt/utils/Tools*</include>
+                        <include>cn/richie696/component/mqtt/generator/impl/DefaultClientIdRuler*</include>
                     </includes>
                     <rules>
                         <rule>
@@ -86,11 +86,13 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/mqtt/filter/handler/impl/HiveMqMessageHandler*</include>
-                                <include>com/richie/component/mqtt/filter/datasource/impl/MemoryDatasourceHandlerImpl*</include>
-                                <include>com/richie/component/mqtt/filter/datasource/impl/RedisDatasourceHandlerImpl*</include>
-                                <include>com/richie/component/mqtt/utils/Tools*</include>
-                                <include>com/richie/component/mqtt/generator/impl/DefaultClientIdRuler*</include>
+                                <include>cn/richie696/component/mqtt/filter/handler/impl/HiveMqMessageHandler*</include>
+                                <include>cn/richie696/component/mqtt/filter/datasource/impl/MemoryDatasourceHandlerImpl*
+                                </include>
+                                <include>cn/richie696/component/mqtt/filter/datasource/impl/RedisDatasourceHandlerImpl*
+                                </include>
+                                <include>cn/richie696/component/mqtt/utils/Tools*</include>
+                                <include>cn/richie696/component/mqtt/generator/impl/DefaultClientIdRuler*</include>
                             </includes>
                             <rules>
                                 <rule>

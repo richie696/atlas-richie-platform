@@ -19,14 +19,13 @@ import cn.richie696.component.mongodb.annotation.TenantScoped;
 import cn.richie696.component.tenant.context.TenantContext;
 import cn.richie696.component.tenant.context.ThreadLocalHolder;
 import cn.richie696.contract.model.TenantPrincipal;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.mongodb.core.query.Query;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TenantHandlerTest {
 
@@ -126,15 +125,25 @@ class TenantHandlerTest {
     private static class TenantScopedEntity {
         private String tenantId;
 
-        public String getTenantId() { return tenantId; }
-        public void setTenantId(String tenantId) { this.tenantId = tenantId; }
+        public String getTenantId() {
+            return tenantId;
+        }
+
+        public void setTenantId(String tenantId) {
+            this.tenantId = tenantId;
+        }
     }
 
     private static class PlainEntity {
         private String name;
 
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 
     @TenantScoped("tenantId")

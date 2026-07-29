@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.messaging.service.impl;
 
+import cn.richie696.component.messaging.event.MessageEvent;
 import cn.richie696.context.common.api.HeaderContextHolder;
 import cn.richie696.contract.constant.GlobalConstants;
-import cn.richie696.component.messaging.event.MessageEvent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,9 +31,7 @@ import org.springframework.messaging.Message;
 import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 

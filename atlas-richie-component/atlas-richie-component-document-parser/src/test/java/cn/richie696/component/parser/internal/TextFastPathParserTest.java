@@ -17,10 +17,10 @@ package cn.richie696.component.parser.internal;
 
 import cn.richie696.component.parser.DocumentSegment;
 import cn.richie696.component.parser.ParsedDocument;
-import cn.richie696.component.parser.testutil.ParseSyncHelper;
 import cn.richie696.component.parser.ParserContext;
 import cn.richie696.component.parser.ParserSource;
 import cn.richie696.component.parser.exception.DocumentParseException;
+import cn.richie696.component.parser.testutil.ParseSyncHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -36,10 +36,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * {@link TextFastPathParser} 单元测试 — 覆盖 UTF-8 解析 + 双换行分段 + 异常路径。
@@ -56,7 +53,7 @@ class TextFastPathParserTest {
     @DisplayName("UTF-8 text with multiple paragraphs should be split correctly")
     void utf8TextParsed() {
         String content = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph.";
-        ParsedDocument doc = ParseSyncHelper.collect(parser,streamOf(content, "test.txt"), ParserContext.defaults());
+        ParsedDocument doc = ParseSyncHelper.collect(parser, streamOf(content, "test.txt"), ParserContext.defaults());
 
         assertNotNull(doc);
         List<DocumentSegment> segments = doc.segments();
@@ -72,7 +69,7 @@ class TextFastPathParserTest {
     @DisplayName("Paragraphs should split on \\n\\n, \\r\\n\\r\\n, and \\r\\r")
     void paragraphSplitOnDoubleNewline() {
         String content = "A.\n\nB.\r\n\r\nC.\r\rD.";
-        ParsedDocument doc = ParseSyncHelper.collect(parser,streamOf(content, "test.txt"), ParserContext.defaults());
+        ParsedDocument doc = ParseSyncHelper.collect(parser, streamOf(content, "test.txt"), ParserContext.defaults());
 
         List<DocumentSegment> segments = doc.segments();
         assertEquals(4, segments.size());
@@ -85,7 +82,7 @@ class TextFastPathParserTest {
     @Test
     @DisplayName("Empty content should produce zero segments")
     void emptyContentProducesZeroSegments() {
-        ParsedDocument doc = ParseSyncHelper.collect(parser,streamOf("", "empty.txt"), ParserContext.defaults());
+        ParsedDocument doc = ParseSyncHelper.collect(parser, streamOf("", "empty.txt"), ParserContext.defaults());
         assertNotNull(doc);
         assertTrue(doc.segments().isEmpty());
     }
@@ -94,7 +91,7 @@ class TextFastPathParserTest {
     @DisplayName("Segments should carry order metadata")
     void segmentsCarryOrderMeta() {
         String content = "First.\n\nSecond.\n\nThird.";
-        ParsedDocument doc = ParseSyncHelper.collect(parser,streamOf(content, "test.txt"), ParserContext.defaults());
+        ParsedDocument doc = ParseSyncHelper.collect(parser, streamOf(content, "test.txt"), ParserContext.defaults());
 
         List<DocumentSegment> segments = doc.segments();
         for (int i = 0; i < segments.size(); i++) {
@@ -121,7 +118,7 @@ class TextFastPathParserTest {
         File missing = tempDir.resolve("does-not-exist.txt").toFile();
         DocumentParseException ex = assertThrows(
                 DocumentParseException.class,
-                () -> ParseSyncHelper.collect(parser,new ParserSource.FileSource(missing), ParserContext.defaults()));
+                () -> ParseSyncHelper.collect(parser, new ParserSource.FileSource(missing), ParserContext.defaults()));
         assertTrue(ex.getMessage().contains("File not found"));
     }
 
@@ -133,7 +130,7 @@ class TextFastPathParserTest {
                 cn.richie696.component.parser.UrlFetchPolicy.defaults());
         DocumentParseException ex = assertThrows(
                 DocumentParseException.class,
-                () -> ParseSyncHelper.collect(parser,urlSource, ParserContext.defaults()));
+                () -> ParseSyncHelper.collect(parser, urlSource, ParserContext.defaults()));
         assertTrue(ex.getMessage().contains("TextFastPathParser")
                 || ex.getMessage().contains("Phase 5"));
     }
@@ -154,7 +151,7 @@ class TextFastPathParserTest {
     @DisplayName("Each segment should carry sectionPath")
     void segmentsCarryStreamSectionPath() {
         String content = "Para 1.\n\nPara 2.";
-        ParsedDocument doc = ParseSyncHelper.collect(parser,streamOf(content, "notes.md"), ParserContext.defaults());
+        ParsedDocument doc = ParseSyncHelper.collect(parser, streamOf(content, "notes.md"), ParserContext.defaults());
         assertNotNull(doc);
         List<DocumentSegment> segments = doc.segments();
         assertEquals(2, segments.size());

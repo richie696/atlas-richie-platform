@@ -46,18 +46,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 @EnabledIf("isDockerAvailable")
 @SpringBootTest(
-    classes = {S3AutoConfiguration.class, SpringContextHolder.class},
-    webEnvironment = SpringBootTest.WebEnvironment.NONE
+        classes = {S3AutoConfiguration.class, SpringContextHolder.class},
+        webEnvironment = SpringBootTest.WebEnvironment.NONE
 )
 @TestPropertySource(properties = {
-    "platform.component.storage.object.engine=aws_s3",
-    "platform.component.storage.object.endpoint=http://127.0.0.1:${minio.port}",
-    "platform.component.storage.object.access-key-id=minioadmin",
-    "platform.component.storage.object.access-key-secret=minioadmin",
-    "platform.component.storage.object.bucket-name=test-bucket",
-    "platform.component.storage.object.region=us-east-1",
-    "platform.component.storage.object.base-path=test",
-    "platform.component.storage.object.auto-create-bucket=true"
+        "platform.component.storage.object.engine=aws_s3",
+        "platform.component.storage.object.endpoint=http://127.0.0.1:${minio.port}",
+        "platform.component.storage.object.access-key-id=minioadmin",
+        "platform.component.storage.object.access-key-secret=minioadmin",
+        "platform.component.storage.object.bucket-name=test-bucket",
+        "platform.component.storage.object.region=us-east-1",
+        "platform.component.storage.object.base-path=test",
+        "platform.component.storage.object.auto-create-bucket=true"
 })
 class S3StorageEngineIT {
 
@@ -82,7 +82,7 @@ class S3StorageEngineIT {
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) {
         registry.add("platform.component.storage.object.endpoint",
-            () -> "http://127.0.0.1:" + rustfsContainer.getMappedPort(9000));
+                () -> "http://127.0.0.1:" + rustfsContainer.getMappedPort(9000));
     }
 
     @Autowired

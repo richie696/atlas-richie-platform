@@ -16,6 +16,7 @@
 package cn.richie696.component.mongodb.circuitbreaker;
 
 import org.junit.jupiter.api.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class MongodbCircuitBreakerPropertiesTest {

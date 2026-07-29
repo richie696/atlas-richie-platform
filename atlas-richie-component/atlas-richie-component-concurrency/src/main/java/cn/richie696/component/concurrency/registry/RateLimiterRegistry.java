@@ -29,7 +29,7 @@ import java.util.function.Function;
  * 是解药：调用方在 Registry 内按 key 创建并缓存独立实例。
  *
  * <h2>并发安全</h2>
- * <p>实现必须线程安全（拦截器在多线程并发下访问）。默认实现使用 {@code ConcurrentHashMap} + 
+ * <p>实现必须线程安全（拦截器在多线程并发下访问）。默认实现使用 {@code ConcurrentHashMap} +
  * {@code computeIfAbsent} 保证同一 key 仅创建一次。
  *
  * <h2>生命周期</h2>

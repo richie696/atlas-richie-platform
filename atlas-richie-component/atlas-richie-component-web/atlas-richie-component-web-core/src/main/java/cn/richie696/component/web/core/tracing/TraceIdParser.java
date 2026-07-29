@@ -37,19 +37,29 @@ import java.util.UUID;
  */
 public final class TraceIdParser {
 
-    /** W3C traceparent header 名。 */
+    /**
+     * W3C traceparent header 名。
+     */
     public static final String TRACEPARENT_HEADER = "traceparent";
 
-    /** 业务侧常用 Request ID header。 */
+    /**
+     * 业务侧常用 Request ID header。
+     */
     public static final String X_REQUEST_ID_HEADER = "X-Request-Id";
 
-    /** 响应头：让下游链路可关联。 */
+    /**
+     * 响应头：让下游链路可关联。
+     */
     public static final String RESPONSE_TRACE_ID_HEADER = "X-Trace-Id";
 
-    /** traceparent 协议版本（当前固定 00）。 */
+    /**
+     * traceparent 协议版本（当前固定 00）。
+     */
     private static final String TRACEPARENT_VERSION = "00";
 
-    /** trace-id 长度（W3C 标准 16 字节 = 32 hex char）。 */
+    /**
+     * trace-id 长度（W3C 标准 16 字节 = 32 hex char）。
+     */
     private static final int TRACE_ID_LENGTH = 32;
 
     private static final SecureRandom RNG = new SecureRandom();

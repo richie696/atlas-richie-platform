@@ -17,20 +17,18 @@ package cn.richie696.component.oauth.core;
 
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.oauth.core.config.OAuth2RedisKey;
-import cn.richie696.contract.gateway.model.OAuth2Constants;
 import cn.richie696.context.utils.spring.JwtUtils;
+import cn.richie696.contract.gateway.model.OAuth2Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.AntPathMatcher;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Scope 路径解析器

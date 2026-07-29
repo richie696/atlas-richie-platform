@@ -35,7 +35,9 @@ import java.util.Objects;
  */
 public class LongLivedPathBypass {
 
-    /** ctx attribute key（{@link PlatformProtectionInterceptor} 写入，{@code HangDetectionInterceptor} 读取）。 */
+    /**
+     * ctx attribute key（{@link PlatformProtectionInterceptor} 写入，{@code HangDetectionInterceptor} 读取）。
+     */
     public static final String LONG_LIVED_ATTRIBUTE = "platform.web.long-lived";
 
     private final List<String> pathPatterns;

@@ -33,8 +33,8 @@ import java.util.Map;
  * 基于 OkHttp SSE SDK 实现的 SSE 连接管理器，用于建立和管理 SSE 长连接。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 class OkHttpSseClient {
 

@@ -16,6 +16,7 @@
 package cn.richie696.component.web.core.degrade;
 
 import java.util.Set;
+import java.util.Map;
 
 /**
  * 降级策略 SPI（README.md §4.7）。

@@ -190,15 +190,15 @@ public class StorageEngineAutoConfiguration {
             StorageEngineRegistry registry,
             StorageEngineProxyFactoryBean proxyFactory,
             @Autowired(required = false) @Qualifier("objectStorageEngine")
-                    StorageEngine objectEngine,
+            StorageEngine objectEngine,
             @Autowired(required = false) @Qualifier("ftpStorageEngine")
-                    StorageEngine ftpEngine,
+            StorageEngine ftpEngine,
             @Autowired(required = false) @Qualifier("sftpStorageEngine")
-                    StorageEngine sftpEngine,
+            StorageEngine sftpEngine,
             @Autowired(required = false) @Qualifier("smbStorageEngine")
-                    StorageEngine smbEngine,
+            StorageEngine smbEngine,
             @Autowired(required = false) @Qualifier("localStorageEngine")
-                    StorageEngine localEngine,
+            StorageEngine localEngine,
             StorageProperties properties) {
         return args -> {
             // 按优先级选择默认引擎（object > ftp > sftp > smb > local）
@@ -257,9 +257,9 @@ public class StorageEngineAutoConfiguration {
     }
 
     private void registerIfPresent(StorageEngineRegistry registry,
-                                    StorageEngineEnum engineType, String typeKey,
-                                    StorageEngine engine, StorageProperties properties,
-                                    String actor, String reason) {
+                                   StorageEngineEnum engineType, String typeKey,
+                                   StorageEngine engine, StorageProperties properties,
+                                   String actor, String reason) {
         if (engine != null && !registry.getRegisteredTypes().contains(engineType)) {
             String engineId = resolveEngineId(typeKey, engine, properties);
             log.info("自动模式启动绑定：注册非默认引擎: type={}, id={}, engine={}, actor={}, reason={}",
@@ -270,7 +270,7 @@ public class StorageEngineAutoConfiguration {
     }
 
     private StorageEngineEnum resolveEngineType(String typeKey, StorageEngine engine,
-                                                 StorageProperties properties) {
+                                                StorageProperties properties) {
         if ("object".equals(typeKey)) {
             return resolveObjectEngineType(engine, properties);
         }
@@ -278,7 +278,7 @@ public class StorageEngineAutoConfiguration {
     }
 
     private StorageEngineEnum resolveObjectEngineType(StorageEngine engine,
-                                                       StorageProperties properties) {
+                                                      StorageProperties properties) {
         if (properties.getObject().getEngine() != null) {
             return properties.getObject().getEngine();
         }
@@ -322,5 +322,10 @@ public class StorageEngineAutoConfiguration {
     /**
      * 内部辅助类：引擎类型 + 实例配对
      */
-    private record EngineEntry<T>(String typeKey, T engine) {}
+    private record EngineEntry<T>(
+    String typeKey, T
+    engine)
+
+    {
+    }
 }

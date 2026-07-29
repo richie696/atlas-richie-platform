@@ -15,16 +15,12 @@
  */
 package cn.richie696.component.vector.service.impl;
 
-import cn.richie696.context.utils.data.Collections;
-import cn.richie696.component.vector.config.VectorProperties;
-import cn.richie696.component.vector.model.IndexInfo;
-import cn.richie696.component.vector.model.IndexStatus;
-import cn.richie696.component.vector.model.Modality;
-import cn.richie696.component.vector.model.VectorRecord;
-import cn.richie696.component.vector.model.VectorSearchResult;
 import cn.richie696.component.ai.service.RerankService;
-import cn.richie696.component.vector.service.VectorService;
+import cn.richie696.component.vector.config.VectorProperties;
+import cn.richie696.component.vector.model.*;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
+import cn.richie696.component.vector.service.VectorService;
+import cn.richie696.context.utils.data.Collections;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.grpc.Common;
@@ -67,10 +63,14 @@ import java.util.concurrent.TimeUnit;
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "qdrant")
 public class QdRantVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations {
 
-    /** Qdrant客户端，用于与Qdrant服务通信 */
+    /**
+     * Qdrant客户端，用于与Qdrant服务通信
+     */
     private final QdrantClient qdrantClient;
 
-    /** 异步操作等待超时时间（秒），防止无限期阻塞 */
+    /**
+     * 异步操作等待超时时间（秒），防止无限期阻塞
+     */
     private static final int WAIT_TIMEOUT = 3;
 
     /**
@@ -79,10 +79,10 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
      * <p>通过构造器注入所需的依赖：VectorStore用于文档存储管理，
      * EmbeddingModel用于文本向量化，QdrantClient用于Qdrant服务通信。</p>
      *
-     * @param rerankService 重排序服务（可选）
-     * @param vectorStore Spring AI的VectorStore实现，用于文档的添加和删除
+     * @param rerankService  重排序服务（可选）
+     * @param vectorStore    Spring AI的VectorStore实现，用于文档的添加和删除
      * @param embeddingModel 嵌入模型，用于将文本转换为向量
-     * @param qdrantClient Qdrant客户端，提供与Qdrant服务的低级API交互
+     * @param qdrantClient   Qdrant客户端，提供与Qdrant服务的低级API交互
      */
     @Autowired
     public QdRantVectorServiceImpl(@Autowired(required = false) RerankService rerankService,
@@ -93,7 +93,9 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
         this.qdrantClient = qdrantClient;
     }
 
-    /** Qdrant 默认向量维度（OpenAI text-embedding-3-small 等） */
+    /**
+     * Qdrant 默认向量维度（OpenAI text-embedding-3-small 等）
+     */
     private static final int DEFAULT_DIMENSION = 1536;
 
     /**
@@ -265,8 +267,8 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
      * </ol>
      *
      * @param indexName collection名称
-     * @param offset 跳过的文档数量，用于分页
-     * @param limit 返回的最大文档数量
+     * @param offset    跳过的文档数量，用于分页
+     * @param limit     返回的最大文档数量
      * @return 文档列表，不足limit时可能少于指定数量
      */
     protected List<VectorRecord> listDocumentsImpl(String indexName, int offset, int limit) {
@@ -524,7 +526,7 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
      * Qdrant不支持直接修改collection向量配置。
      *
      * @param indexName collection名称
-     * @param config 新配置
+     * @param config    新配置
      * @return 始终返回false
      */
     protected boolean updateIndexConfigImpl(String indexName, VectorProperties.IndexConfig config) {

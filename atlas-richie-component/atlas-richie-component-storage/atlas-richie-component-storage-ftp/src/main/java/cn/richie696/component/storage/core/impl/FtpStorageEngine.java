@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.io.File;
 
 @Slf4j
 @Service("ftpStorageEngine")
@@ -128,7 +129,8 @@ public class FtpStorageEngine extends AbstractDestroyEngine<FTPClient> implement
                 }
             }
             try (var fis = new FileInputStream(tempFile)) {
-                T obj = JsonUtils.getInstance().deserialize(fis, new TypeReference<>() {});
+                T obj = JsonUtils.getInstance().deserialize(fis, new TypeReference<>() {
+                });
                 if (obj == null) {
                     return new DownloadResponse<T>()
                             .setSuccess(false)
@@ -238,8 +240,14 @@ public class FtpStorageEngine extends AbstractDestroyEngine<FTPClient> implement
 
     @Override
     public void destroy(FTPClient client) {
-        try { client.logout(); } catch (IOException ignored) { }
-        try { client.disconnect(); } catch (IOException ignored) { }
+        try {
+            client.logout();
+        } catch (IOException ignored) {
+        }
+        try {
+            client.disconnect();
+        } catch (IOException ignored) {
+        }
     }
 
     // ====== Internal helpers ======

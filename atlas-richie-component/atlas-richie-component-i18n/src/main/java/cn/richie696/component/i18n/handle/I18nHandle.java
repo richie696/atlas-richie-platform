@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.i18n.handle;
 
-import cn.richie696.contract.constant.GlobalConstants;
 import cn.richie696.component.cache.GlobalCache;
+import cn.richie696.contract.constant.GlobalConstants;
 
 import java.util.Map;
 import java.util.Objects;
@@ -37,7 +37,7 @@ public record I18nHandle() {
      *
      * @param i18nDictMap 国际化字典
      */
-    public static void addI18nDictionaries(Map<String, Map<String, String>> i18nDictMap) {
+    public static void addI18nDictionaries (Map < String, Map < String, String >> i18nDictMap){
         i18nDictMap.forEach((k, v) -> GlobalCache.field().setAll(GlobalConstants.I18N_CACHE_KEY + k, v, TIME_OUT));
     }
 
@@ -47,7 +47,7 @@ public record I18nHandle() {
      * @param key            字典key
      * @param localeValueMap 国际化字典
      */
-    public static void addI18nDictionary(String key, Map<String, String> localeValueMap) {
+    public static void addI18nDictionary (String key, Map < String, String > localeValueMap){
         localeValueMap.forEach((k, v) -> GlobalCache.field().set(GlobalConstants.I18N_CACHE_KEY + key, k, v));
     }
 
@@ -57,7 +57,7 @@ public record I18nHandle() {
      * @param key 字典key
      * @return 字典值
      */
-    public static Map<String, String> getI18nDictionaries(String key) {
+    public static Map<String, String> getI18nDictionaries (String key){
         return Objects.requireNonNullElse(GlobalCache.field().getAll(GlobalConstants.I18N_CACHE_KEY + key, String.class), Map.of());
     }
 
@@ -68,7 +68,7 @@ public record I18nHandle() {
      * @param locale 语言
      * @return 字典值
      */
-    public static String getI18nDictionary(String key, String locale) {
+    public static String getI18nDictionary (String key, String locale){
         String mapCache = GlobalCache.field().get(GlobalConstants.I18N_CACHE_KEY + key, locale, String.class);
         return mapCache == null ? key : mapCache;
     }
@@ -78,7 +78,7 @@ public record I18nHandle() {
      *
      * @param key 字典key
      */
-    public static void deleteI18nDictionary(String key) {
+    public static void deleteI18nDictionary (String key){
         GlobalCache.key().removeCache(GlobalConstants.I18N_CACHE_KEY + key);
     }
 

@@ -60,7 +60,9 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(BaiduOcrProperties.class)
 public class BaiduOcrAutoConfiguration {
 
-    /** 自动配置注册过程使用的日志记录器。 */
+    /**
+     * 自动配置注册过程使用的日志记录器。
+     */
     private static final Logger log = LoggerFactory.getLogger(BaiduOcrAutoConfiguration.class);
 
     /**
@@ -69,7 +71,7 @@ public class BaiduOcrAutoConfiguration {
      * <p>激活条件由主开关 {@code platform.component.ocr.enabled=true} 与 vendor 选择
      * {@code platform.component.ocr.vendor=baidu} 共同控制。
      *
-     * @param props 百度 OCR 私有配置属性，由 {@code platform.component.ocr.baidu.*} 绑定得到，不能为 {@code null}
+     * @param props      百度 OCR 私有配置属性，由 {@code platform.component.ocr.baidu.*} 绑定得到，不能为 {@code null}
      * @param httpClient OCR 专用 HTTP 客户端，用于调用百度 OCR 识别接口和 OAuth2 Token 接口，不能为 {@code null}
      * @return 已完成配置加载的 {@link BaiduOcrProvider}
      */
@@ -80,7 +82,7 @@ public class BaiduOcrAutoConfiguration {
     @ConditionalOnProperty(prefix = OcrProperties.PREFIX, name = "vendor",
             havingValue = "baidu")
     public BaiduOcrProvider baiduOcrProvider(BaiduOcrProperties props,
-                                              @Qualifier("ocrHttpClient") HttpClient httpClient) {
+                                             @Qualifier("ocrHttpClient") HttpClient httpClient) {
         return new BaiduOcrProvider(props, httpClient);
     }
 }

@@ -17,10 +17,10 @@ package cn.richie696.component.parser.internal;
 
 import cn.richie696.component.parser.DocumentSegment;
 import cn.richie696.component.parser.ParsedDocument;
-import cn.richie696.component.parser.testutil.ParseSyncHelper;
 import cn.richie696.component.parser.ParserContext;
 import cn.richie696.component.parser.ParserSource;
 import cn.richie696.component.parser.exception.DocumentParseException;
+import cn.richie696.component.parser.testutil.ParseSyncHelper;
 import org.apache.fesod.sheet.FesodSheet;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,10 +33,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * {@link FesodDocumentParser} 单元测试 — xlsx 流式解析。
@@ -122,7 +119,7 @@ class FesodDocumentParserTest {
                 cn.richie696.component.parser.UrlFetchPolicy.defaults());
         DocumentParseException ex = assertThrows(
                 DocumentParseException.class,
-                () -> ParseSyncHelper.collect(parser,urlSource, ParserContext.defaults()));
+                () -> ParseSyncHelper.collect(parser, urlSource, ParserContext.defaults()));
         assertTrue(ex.getMessage().contains("FesodDocumentParser")
                 || ex.getMessage().contains("Phase 5"));
     }
@@ -133,7 +130,7 @@ class FesodDocumentParserTest {
         File missing = tempDir.resolve("does-not-exist.xlsx").toFile();
         DocumentParseException ex = assertThrows(
                 DocumentParseException.class,
-                () -> ParseSyncHelper.collect(parser,new ParserSource.FileSource(missing), ParserContext.defaults()));
+                () -> ParseSyncHelper.collect(parser, new ParserSource.FileSource(missing), ParserContext.defaults()));
         assertTrue(ex.getMessage().contains("File not found"));
     }
 

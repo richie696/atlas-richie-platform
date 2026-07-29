@@ -2,13 +2,16 @@
 
 ## Overview
 
-`richie-component-storage-sftp` is an SFTP (SSH File Transfer Protocol) file transfer implementation built on Apache MINA SSHD 3.0. It provides SFTP file storage capabilities for scenarios that require accessing remote file servers via the SSH protocol.
+`richie-component-storage-sftp` is an SFTP (SSH File Transfer Protocol) file transfer implementation built on Apache
+MINA SSHD 3.0. It provides SFTP file storage capabilities for scenarios that require accessing remote file servers via
+the SSH protocol.
 
 ## Core Features
 
 - ✅ **SFTP Protocol** - Secure file transfer over SSH
 - ✅ **Key Authentication** - Supports both password and key file authentication
-- ✅ **Dual-Mode Architecture** - Supports two initialization modes: Auto-Init and Manual Registry, flexibly adapting to Spring Boot auto-configuration and non-Spring environments
+- ✅ **Dual-Mode Architecture** - Supports two initialization modes: Auto-Init and Manual Registry, flexibly adapting to
+  Spring Boot auto-configuration and non-Spring environments
 - ✅ **Auto-Configuration** - Spring Boot auto-configuration
 
 ## Dual-Mode Architecture
@@ -43,24 +46,26 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 `SftpStorageEngineProvider` implements the `StorageEngineProvider` SPI and is responsible for:
 
-| Method | Description |
-|------|------|
-| `supportedEngineType()` | Returns `StorageEngineEnum.SFTP` |
-| `create(properties)` | Creates the `SshClient`, `SftpSessionPool`, and `SftpStorageEngine` |
-| `validate(properties)` | Validates that host / username / password are required |
-| `destroy(engine)` | Closes the SSH client and releases the connection pool |
+| Method                  | Description                                                         |
+|-------------------------|---------------------------------------------------------------------|
+| `supportedEngineType()` | Returns `StorageEngineEnum.SFTP`                                    |
+| `create(properties)`    | Creates the `SshClient`, `SftpSessionPool`, and `SftpStorageEngine` |
+| `validate(properties)`  | Validates that host / username / password are required              |
+| `destroy(engine)`       | Closes the SSH client and releases the connection pool              |
 
-In auto mode, the provider is registered as a Bean in `SftpAutoConfiguration`. In manual mode, it is discovered by the Registry through SPI.
+In auto mode, the provider is registered as a Bean in `SftpAutoConfiguration`. In manual mode, it is discovered by the
+Registry through SPI.
 
 ## Parameter Validation (ConfigValidation)
 
-Before the engine is created, the `ConfigValidation` utility class validates required parameters. If validation fails, an `IllegalArgumentException` is thrown:
+Before the engine is created, the `ConfigValidation` utility class validates required parameters. If validation fails,
+an `IllegalArgumentException` is thrown:
 
 | Parameter | Validation Rule |
-|----------|------|
-| host     | Non-null |
-| username | Non-null |
-| password | Non-null |
+|-----------|-----------------|
+| host      | Non-null        |
+| username  | Non-null        |
+| password  | Non-null        |
 
 ## Quick Start
 
@@ -131,20 +136,20 @@ public class FileService {
 
 The main configuration differences between SFTP and other storage methods:
 
-| Configuration | SFTP | Object Storage | Local Storage |
-|----------------|-----------------------------------|-------------------------------------|------------------------------------|
-| **Configuration Prefix** | `platform.component.storage.sftp` | `platform.component.storage.object` | `platform.component.storage.local` |
-| **enable Field** | **Required** (true/false) | Not required | Not required |
-| **host** | **Required** (SFTP server address) | Not required | Not required |
-| **port** | **Required** (default: 22) | Not required | Not required |
-| **username** | **Required** | Not required | Not required |
-| **password** | Required for password-based login | Not required | Not required |
-| **identityFile** | Required for SSH key login | Not required | Not required |
-| **sshLogin** | **Required** (true=key, false=password) | Not required | Not required |
-| **basePath** | Optional (default: /) | Not required | Not required |
-| **engine** | Not required | Required | Not required |
-| **endpoint** | Not required | Required | Not required |
-| **region** | Not required | Required (for some) | Not required |
+| Configuration            | SFTP                                    | Object Storage                      | Local Storage                      |
+|--------------------------|-----------------------------------------|-------------------------------------|------------------------------------|
+| **Configuration Prefix** | `platform.component.storage.sftp`       | `platform.component.storage.object` | `platform.component.storage.local` |
+| **enable Field**         | **Required** (true/false)               | Not required                        | Not required                       |
+| **host**                 | **Required** (SFTP server address)      | Not required                        | Not required                       |
+| **port**                 | **Required** (default: 22)              | Not required                        | Not required                       |
+| **username**             | **Required**                            | Not required                        | Not required                       |
+| **password**             | Required for password-based login       | Not required                        | Not required                       |
+| **identityFile**         | Required for SSH key login              | Not required                        | Not required                       |
+| **sshLogin**             | **Required** (true=key, false=password) | Not required                        | Not required                       |
+| **basePath**             | Optional (default: /)                   | Not required                        | Not required                       |
+| **engine**               | Not required                            | Required                            | Not required                       |
+| **endpoint**             | Not required                            | Required                            | Not required                       |
+| **region**               | Not required                            | Required (for some)                 | Not required                       |
 
 ### Authentication Methods
 
@@ -217,29 +222,30 @@ When uploading a file, if the target directory does not exist, it is created aut
 ## Best Practices
 
 1. **Authentication Method Selection**
-   - SSH key authentication is recommended in production environments
-   - Set key file permissions to 600 (owner-readable only)
+    - SSH key authentication is recommended in production environments
+    - Set key file permissions to 600 (owner-readable only)
 
 2. **Security**
-   - Do not hardcode passwords in configuration files
-   - Use environment variables or a secrets management service
-   - Rotate keys regularly
+    - Do not hardcode passwords in configuration files
+    - Use environment variables or a secrets management service
+    - Rotate keys regularly
 
 3. **Network Configuration**
-   - Make sure the application server can reach the SFTP server
-   - Configure firewall rules to allow SSH connections
-   - Consider using a VPN or leased-line connection
+    - Make sure the application server can reach the SFTP server
+    - Configure firewall rules to allow SSH connections
+    - Consider using a VPN or leased-line connection
 
 4. **Path Management**
-   - Use `basePath` to organize file structure
-   - Avoid overly deep directory hierarchies
-   - Periodically clean up unneeded files
+    - Use `basePath` to organize file structure
+    - Avoid overly deep directory hierarchies
+    - Periodically clean up unneeded files
 
 ## Frequently Asked Questions
 
 ### Q: What is the difference between SFTP and FTP?
 
-A: SFTP is based on the SSH protocol and provides encrypted transmission, which is more secure than FTP. FTP transmits data in cleartext and is not secure.
+A: SFTP is based on the SSH protocol and provides encrypted transmission, which is more secure than FTP. FTP transmits
+data in cleartext and is not secure.
 
 ### Q: How do I generate an SSH key pair?
 
@@ -251,7 +257,8 @@ ssh-keygen -t rsa -b 4096 -f ~/.ssh/sftp_key
 
 ### Q: Does this support SFTP over SSL/TLS?
 
-A: This component is built on Apache MINA SSHD 3.0 and supports the standard SFTP protocol. SFTP over SSL/TLS requires special server-side configuration.
+A: This component is built on Apache MINA SSHD 3.0 and supports the standard SFTP protocol. SFTP over SSL/TLS requires
+special server-side configuration.
 
 ### Q: How can I test the SFTP connection?
 
@@ -263,7 +270,8 @@ sftp -i /path/to/private-key sftpuser@sftp.example.com
 
 ### Q: Does this support resumable uploads?
 
-A: The current implementation does not support resumable uploads. If you need resumable uploads, use an object storage service.
+A: The current implementation does not support resumable uploads. If you need resumable uploads, use an object storage
+service.
 
 ## Related Documentation
 

@@ -15,10 +15,9 @@
  */
 package cn.richie696.component.ai.provider.pangu;
 
-import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
-
 import cn.richie696.component.ai.api.RerankRequest;
 import cn.richie696.component.ai.api.RerankResult;
+import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
 import cn.richie696.component.ai.provider.sign.AppCodeSigner;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.core.HttpRequest;
@@ -30,18 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * 盘古 Rerank 适配器的纯单元测试（hermetic —— 不发起真实网络请求）。
@@ -226,7 +216,9 @@ class PanguRerankModelTest {
         return cfg;
     }
 
-    /** HTTP 桩组合，把假 JSON 反序列化为调用方私有 DTO 并包成 completed future。 */
+    /**
+     * HTTP 桩组合，把假 JSON 反序列化为调用方私有 DTO 并包成 completed future。
+     */
     private static RequestFixture futureJsonFixture(String json) {
         HttpClient httpClient = mock(HttpClient.class);
         HttpRequest request = mock(HttpRequest.class);
@@ -240,7 +232,9 @@ class PanguRerankModelTest {
         return new RequestFixture(httpClient, request);
     }
 
-    /** HTTP 桩组合。 */
+    /**
+     * HTTP 桩组合。
+     */
     private record RequestFixture(HttpClient httpClient, HttpRequest request) {
     }
 }

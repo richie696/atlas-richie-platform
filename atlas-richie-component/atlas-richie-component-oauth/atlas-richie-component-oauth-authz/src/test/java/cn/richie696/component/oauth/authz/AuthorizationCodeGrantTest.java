@@ -15,13 +15,13 @@
  */
 package cn.richie696.component.oauth.authz;
 
-import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.component.oauth.authz.spi.AuthorizationCodeStore;
 import cn.richie696.component.oauth.core.ClientRegistry;
 import cn.richie696.component.oauth.core.config.OAuth2Properties;
 import cn.richie696.component.oauth.core.model.ClientConfig;
 import cn.richie696.component.oauth.core.model.TokenResponse;
 import cn.richie696.component.oauth.core.spi.TokenStore;
+import cn.richie696.contract.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

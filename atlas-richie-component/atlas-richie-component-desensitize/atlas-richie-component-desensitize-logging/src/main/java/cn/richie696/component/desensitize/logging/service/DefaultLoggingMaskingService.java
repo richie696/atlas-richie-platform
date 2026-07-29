@@ -16,8 +16,8 @@
 package cn.richie696.component.desensitize.logging.service;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import cn.richie696.component.desensitize.core.support.SensitiveLogArg;
 import cn.richie696.component.desensitize.core.model.MaskScene;
+import cn.richie696.component.desensitize.core.support.SensitiveLogArg;
 import cn.richie696.component.desensitize.core.util.DesensitizeUtils;
 import org.slf4j.helpers.MessageFormatter;
 
@@ -28,13 +28,14 @@ import java.util.Map;
  * 默认日志脱敏服务：仅处理显式 {@link SensitiveLogArg} 参数。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class DefaultLoggingMaskingService implements LoggingMaskingService {
 
     /**
      * toMaskedMessage。
+     *
      * @param event 参数
      * @return 处理结果
      */

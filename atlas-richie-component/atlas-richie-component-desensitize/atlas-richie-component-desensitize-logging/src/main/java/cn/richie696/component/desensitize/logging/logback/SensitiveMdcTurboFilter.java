@@ -29,8 +29,8 @@ import java.util.Map;
  * 在日志事件创建前对 MDC 执行脱敏，适配 JSON Layout includeMdc 场景。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class SensitiveMdcTurboFilter extends TurboFilter {
 

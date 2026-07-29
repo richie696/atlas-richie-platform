@@ -16,27 +16,15 @@
 package cn.richie696.component.nats.config;
 
 import cn.richie696.component.nats.NatsComponent;
+import cn.richie696.component.nats.bus.JetStreamBus;
 import cn.richie696.component.nats.bus.NatsBus;
-import cn.richie696.component.nats.connection.NatsConnectionManager;
 import cn.richie696.component.nats.bus.NatsEndpoint;
+import cn.richie696.component.nats.connection.JetStreamManagementService;
+import cn.richie696.component.nats.connection.NatsConnectionManager;
 import cn.richie696.component.nats.dlq.NatsDeadLetterAdvisoryConsumer;
 import cn.richie696.component.nats.dlq.NatsDeadLetterPublisher;
-import cn.richie696.component.nats.strategy.DefaultNatsErrorStrategy;
-import cn.richie696.component.nats.strategy.DefaultNatsHeaderExtractor;
-import cn.richie696.component.nats.strategy.DefaultNatsHeaderInjector;
-import cn.richie696.component.nats.strategy.MemoryNatsIdempotentChecker;
-import cn.richie696.component.nats.strategy.RedisNatsIdempotentChecker;
-import cn.richie696.component.nats.strategy.JacksonNatsMessageSerializer;
-import cn.richie696.component.nats.strategy.OpenTelemetryNatsTracingSupport;
-import cn.richie696.component.nats.connection.JetStreamManagementService;
 import cn.richie696.component.nats.pipeline.NatsSubscriberFactory;
-import cn.richie696.component.nats.strategy.NatsErrorStrategy;
-import cn.richie696.component.nats.strategy.NatsHeaderExtractor;
-import cn.richie696.component.nats.strategy.NatsHeaderInjector;
-import cn.richie696.component.nats.strategy.NatsIdempotentChecker;
-import cn.richie696.component.nats.strategy.NatsMessageSerializer;
-import cn.richie696.component.nats.strategy.NatsTracingSupport;
-import cn.richie696.component.nats.bus.JetStreamBus;
+import cn.richie696.component.nats.strategy.*;
 import io.nats.client.Connection;
 import io.nats.client.JetStream;
 import io.nats.client.JetStreamManagement;
@@ -156,9 +144,9 @@ public class NatsAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(NatsSubscriberFactory.class)
     public NatsSubscriberFactory natsSubscriberFactory(NatsTracingSupport tracingSupport,
-                                                        NatsHeaderExtractor headerExtractor,
-                                                        NatsIdempotentChecker idempotentChecker,
-                                                        NatsProperties properties) {
+                                                       NatsHeaderExtractor headerExtractor,
+                                                       NatsIdempotentChecker idempotentChecker,
+                                                       NatsProperties properties) {
         return new NatsSubscriberFactory(
                 tracingSupport,
                 headerExtractor,
@@ -173,12 +161,12 @@ public class NatsAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(NatsBus.class)
     public NatsBus natsBus(NatsConnectionManager connectionManager,
-                            NatsMessageSerializer serializer,
-                            NatsHeaderInjector headerInjector,
-                            NatsTracingSupport tracingSupport,
-                            NatsSubscriberFactory subscriberFactory,
-                            NatsErrorStrategy errorStrategy,
-                            NatsProperties properties) {
+                           NatsMessageSerializer serializer,
+                           NatsHeaderInjector headerInjector,
+                           NatsTracingSupport tracingSupport,
+                           NatsSubscriberFactory subscriberFactory,
+                           NatsErrorStrategy errorStrategy,
+                           NatsProperties properties) {
         return new NatsBus(connectionManager, serializer, headerInjector,
                 tracingSupport, subscriberFactory, errorStrategy, properties);
     }
@@ -187,11 +175,11 @@ public class NatsAutoConfiguration {
     @ConditionalOnMissingBean(JetStreamBus.class)
     @ConditionalOnProperty(name = "platform.nats.jetstream.enabled", havingValue = "true")
     public JetStreamBus jetStreamBus(NatsConnectionManager connectionManager,
-                                      NatsMessageSerializer serializer,
-                                      NatsHeaderInjector headerInjector,
-                                      NatsTracingSupport tracingSupport,
-                                      NatsSubscriberFactory subscriberFactory,
-                                      NatsErrorStrategy errorStrategy) {
+                                     NatsMessageSerializer serializer,
+                                     NatsHeaderInjector headerInjector,
+                                     NatsTracingSupport tracingSupport,
+                                     NatsSubscriberFactory subscriberFactory,
+                                     NatsErrorStrategy errorStrategy) {
         return new JetStreamBus(connectionManager, serializer, headerInjector,
                 tracingSupport, subscriberFactory, errorStrategy);
     }
@@ -202,11 +190,11 @@ public class NatsAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(JetStreamBus.class)
     public JetStreamBus noopJetStreamBus(NatsConnectionManager connectionManager,
-                                          NatsMessageSerializer serializer,
-                                          NatsHeaderInjector headerInjector,
-                                          NatsTracingSupport tracingSupport,
-                                          NatsSubscriberFactory subscriberFactory,
-                                          NatsErrorStrategy errorStrategy) {
+                                         NatsMessageSerializer serializer,
+                                         NatsHeaderInjector headerInjector,
+                                         NatsTracingSupport tracingSupport,
+                                         NatsSubscriberFactory subscriberFactory,
+                                         NatsErrorStrategy errorStrategy) {
         return new JetStreamBus(connectionManager, serializer, headerInjector,
                 tracingSupport, subscriberFactory, errorStrategy);
     }
@@ -214,10 +202,10 @@ public class NatsAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(NatsEndpoint.class)
     public NatsEndpoint natsEndpoint(NatsConnectionManager connectionManager,
-                                      NatsMessageSerializer serializer,
-                                      NatsHeaderInjector headerInjector,
-                                      NatsSubscriberFactory subscriberFactory,
-                                      NatsErrorStrategy errorStrategy) {
+                                     NatsMessageSerializer serializer,
+                                     NatsHeaderInjector headerInjector,
+                                     NatsSubscriberFactory subscriberFactory,
+                                     NatsErrorStrategy errorStrategy) {
         return new NatsEndpoint(connectionManager, serializer, headerInjector,
                 subscriberFactory, errorStrategy);
     }
@@ -227,11 +215,11 @@ public class NatsAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(NatsComponent.class)
     public NatsComponent natsComponent(NatsProperties properties,
-                                        NatsConnectionManager connectionManager,
-                                        JetStreamManagementService jetStreamManagementService,
-                                        NatsBus natsBus,
-                                        JetStreamBus jetStreamBus,
-                                        NatsEndpoint natsEndpoint) {
+                                       NatsConnectionManager connectionManager,
+                                       JetStreamManagementService jetStreamManagementService,
+                                       NatsBus natsBus,
+                                       JetStreamBus jetStreamBus,
+                                       NatsEndpoint natsEndpoint) {
         return new NatsComponent(properties, connectionManager,
                 jetStreamManagementService, natsBus, jetStreamBus, natsEndpoint);
     }
@@ -241,15 +229,15 @@ public class NatsAutoConfiguration {
     @Bean(destroyMethod = "")
     @ConditionalOnProperty(name = "platform.nats.dlq.enabled", havingValue = "true")
     public NatsDeadLetterPublisher natsDeadLetterPublisher(NatsConnectionManager connectionManager,
-                                                            NatsProperties properties) {
+                                                           NatsProperties properties) {
         return new NatsDeadLetterPublisher(natsJetStream(connectionManager), properties);
     }
 
     @Bean(destroyMethod = "stop")
     @ConditionalOnProperty(name = "platform.nats.dlq.enabled", havingValue = "true")
     public NatsDeadLetterAdvisoryConsumer natsDeadLetterAdvisoryConsumer(NatsConnectionManager connectionManager,
-                                                                          NatsDeadLetterPublisher natsDeadLetterPublisher,
-                                                                          NatsProperties properties) {
+                                                                         NatsDeadLetterPublisher natsDeadLetterPublisher,
+                                                                         NatsProperties properties) {
         return new NatsDeadLetterAdvisoryConsumer(
                 natsConnection(connectionManager),
                 natsJetStream(connectionManager),

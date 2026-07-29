@@ -35,9 +35,13 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class DefaultI18nResolver implements I18nResolver {
 
-    /** Spring 消息源，用于根据 key 与 Locale 解析文案 */
+    /**
+     * Spring 消息源，用于根据 key 与 Locale 解析文案
+     */
     private final MessageSource messageSource;
-    /** 国际化组件配置 */
+    /**
+     * 国际化组件配置
+     */
     private final I18nProperties properties;
 
     @Override

@@ -66,9 +66,9 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/storage/local/config/CacheConfigurationChecker*</include>
-                        <include>com/richie/component/storage/local/core/impl/LocalStorageEngine*</include>
-                        <include>com/richie/component/storage/local/exception/**</include>
+                        <include>cn/richie696/component/storage/local/config/CacheConfigurationChecker*</include>
+                        <include>cn/richie696/component/storage/local/core/impl/LocalStorageEngine*</include>
+                        <include>cn/richie696/component/storage/local/exception/**</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -76,9 +76,9 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/storage/local/config/CacheConfigurationChecker*</include>
-                                <include>com/richie/component/storage/local/core/impl/LocalStorageEngine*</include>
-                                <include>com/richie/component/storage/local/exception/**</include>
+                                <include>cn/richie696/component/storage/local/config/CacheConfigurationChecker*</include>
+                                <include>cn/richie696/component/storage/local/core/impl/LocalStorageEngine*</include>
+                                <include>cn/richie696/component/storage/local/exception/**</include>
                             </includes>
                             <rules>
                                 <rule>

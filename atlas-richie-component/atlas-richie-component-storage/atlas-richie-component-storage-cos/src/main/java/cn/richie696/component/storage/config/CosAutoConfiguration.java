@@ -15,6 +15,9 @@
  */
 package cn.richie696.component.storage.config;
 
+import cn.richie696.component.storage.bean.ObjectConfig;
+import cn.richie696.component.storage.exception.StorageException;
+import cn.richie696.component.storage.support.ObjectStorageStartupProbe;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
@@ -25,9 +28,6 @@ import com.qcloud.cos.model.COSObject;
 import com.qcloud.cos.model.HeadBucketRequest;
 import com.qcloud.cos.model.ObjectMetadata;
 import com.qcloud.cos.region.Region;
-import cn.richie696.component.storage.bean.ObjectConfig;
-import cn.richie696.component.storage.exception.StorageException;
-import cn.richie696.component.storage.support.ObjectStorageStartupProbe;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

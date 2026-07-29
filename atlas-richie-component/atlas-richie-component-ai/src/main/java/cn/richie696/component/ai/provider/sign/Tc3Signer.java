@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.HexFormat;
+import java.util.Date;
 
 /**
  * 腾讯云 TC3-HMAC-SHA256 签名工具（纯 JDK 实现，无第三方依赖）。
@@ -42,9 +43,13 @@ import java.util.HexFormat;
  */
 public class Tc3Signer {
 
-    /** 腾讯云 TC3 签名算法名称。 */
+    /**
+     * 腾讯云 TC3 签名算法名称。
+     */
     private static final String TC3_ALGORITHM = "TC3-HMAC-SHA256";
-    /** 腾讯云 TC3 签名固定终止 scope。 */
+    /**
+     * 腾讯云 TC3 签名固定终止 scope。
+     */
     private static final String TC3_REQUEST = "tc3_request";
 
     public Tc3Signer() {
@@ -66,14 +71,14 @@ public class Tc3Signer {
      *   <li>返回 {@code TC3-HMAC-SHA256 Credential=<secretId>/<scope>, SignedHeaders=..., Signature=<hex>}</li>
      * </ol>
      *
-     * @param secretId   腾讯云 SecretId
-     * @param secretKey  腾讯云 SecretKey
-     * @param service    服务名（如 {@code tts} / {@code asr} / {@code ocr}）
-     * @param region     区域（如 {@code ap-guangzhou}）
-     * @param action     Action 名（如 {@code TextToVoice} / {@code SentenceRecognition}）
-     * @param endpoint   完整端点 URL（如 {@code https://tts.tencentcloudapi.com}），用于解析 host 头
-     * @param bodyJson   请求体 JSON 串（用于计算 {@code payloadHash}）
-     * @param timestamp  客户端秒级 Unix 时间戳；同时用于 {@code X-TC-Timestamp} 头
+     * @param secretId  腾讯云 SecretId
+     * @param secretKey 腾讯云 SecretKey
+     * @param service   服务名（如 {@code tts} / {@code asr} / {@code ocr}）
+     * @param region    区域（如 {@code ap-guangzhou}）
+     * @param action    Action 名（如 {@code TextToVoice} / {@code SentenceRecognition}）
+     * @param endpoint  完整端点 URL（如 {@code https://tts.tencentcloudapi.com}），用于解析 host 头
+     * @param bodyJson  请求体 JSON 串（用于计算 {@code payloadHash}）
+     * @param timestamp 客户端秒级 Unix 时间戳；同时用于 {@code X-TC-Timestamp} 头
      * @return 完整的 {@code Authorization} 头部值
      */
     public String buildAuthorization(String secretId, String secretKey, String service, String region,

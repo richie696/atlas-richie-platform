@@ -2,7 +2,9 @@
 
 ## Overview
 
-`richie-component-storage-cos` is the Tencent Cloud Object Storage (COS) implementation, built on the Tencent Cloud COS SDK to provide the full COS storage capability, including advanced features such as multi-AZ storage and image processing.
+`richie-component-storage-cos` is the Tencent Cloud Object Storage (COS) implementation, built on the Tencent Cloud COS
+SDK to provide the full COS storage capability, including advanced features such as multi-AZ storage and image
+processing.
 
 ## Core Features
 
@@ -11,7 +13,8 @@
 - ✅ **Image processing** - supports image resizing, cropping, watermarking, and more
 - ✅ **Multiple storage classes** - supports Standard, Infrequent Access, Archive, Cold Archive, and Deep Cold Archive
 - ✅ **Resumable upload/download** - supports resumable transfer for large files
-- ✅ **Dual-mode architecture** - supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to Spring Boot auto-configuration and non-Spring environments
+- ✅ **Dual-mode architecture** - supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to
+  Spring Boot auto-configuration and non-Spring environments
 - ✅ **Auto-configuration** - Spring Boot auto-configuration
 
 ## Dual-Mode Architecture
@@ -44,40 +47,44 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 ## StorageEngineProvider
 
-Each implementation package provides a `StorageEngineProvider` SPI implementation. `CosStorageEngineProvider` is responsible for:
+Each implementation package provides a `StorageEngineProvider` SPI implementation. `CosStorageEngineProvider` is
+responsible for:
 
-| Method | Description |
-|------|------|
-| `supportedEngineType()` | Returns `StorageEngineEnum.TENCENT_COS` |
-| `create(properties)` | Creates the `COSClient` and `CosStorageEngine` from the configuration |
-| `validate(properties)` | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
-| `afterPropertiesSet(engine)` | Triggers bucket probing and prefix validation in manual mode |
-| `destroy(engine)` | Releases client resources |
+| Method                       | Description                                                                       |
+|------------------------------|-----------------------------------------------------------------------------------|
+| `supportedEngineType()`      | Returns `StorageEngineEnum.TENCENT_COS`                                           |
+| `create(properties)`         | Creates the `COSClient` and `CosStorageEngine` from the configuration             |
+| `validate(properties)`       | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
+| `afterPropertiesSet(engine)` | Triggers bucket probing and prefix validation in manual mode                      |
+| `destroy(engine)`            | Releases client resources                                                         |
 
-In auto mode, the Provider is registered as a Bean in `CosAutoConfiguration`; in manual mode, it is discovered by the Registry through SPI.
+In auto mode, the Provider is registered as a Bean in `CosAutoConfiguration`; in manual mode, it is discovered by the
+Registry through SPI.
 
 ## Parameter Validation (ConfigValidation)
 
-Before creating the engine, the `ConfigValidation` utility validates required parameters. If validation fails, an `IllegalArgumentException` is thrown:
+Before creating the engine, the `ConfigValidation` utility validates required parameters. If validation fails, an
+`IllegalArgumentException` is thrown:
 
-| Parameter | Validation rule |
-|------|---------|
-| endpoint | Non-empty |
-| accessKeyId | Non-empty |
-| accessKeySecret | Non-empty |
-| bucketName | Non-empty |
+| Parameter       | Validation rule |
+|-----------------|-----------------|
+| endpoint        | Non-empty       |
+| accessKeyId     | Non-empty       |
+| accessKeySecret | Non-empty       |
+| bucketName      | Non-empty       |
 
 ## Direct Upload Policy (DirectUploadPolicy)
 
-The Tencent Cloud COS engine supports client-side direct upload to object storage through presigned URLs, reducing server-side traffic pressure:
+The Tencent Cloud COS engine supports client-side direct upload to object storage through presigned URLs, reducing
+server-side traffic pressure:
 
-| Field | Description |
-|------|------|
-| uploadUrl | Presigned upload URL |
-| method | HTTP method (PUT) |
-| headers | Signature headers |
-| expireAt | Policy expiration time |
-| success | Whether the policy is usable |
+| Field     | Description                  |
+|-----------|------------------------------|
+| uploadUrl | Presigned upload URL         |
+| method    | HTTP method (PUT)            |
+| headers   | Signature headers            |
+| expireAt  | Policy expiration time       |
+| success   | Whether the policy is usable |
 
 ```java
 DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
@@ -161,28 +168,28 @@ public class FileService {
 
 The main configuration differences between Tencent Cloud COS and other cloud storage services:
 
-| Configuration | Tencent Cloud COS | Alibaba Cloud OSS | AWS S3 |
-|--------|-----------|-----------|--------|
-| **engine value** | `TENCENT_COS` | `ALIYUN_OSS` | `AWS_S3` |
-| **endpoint format** | `cos.region.myqcloud.com` | `oss-cn-region.aliyuncs.com` | `s3.region.amazonaws.com` |
-| **region format** | `ap-region` | `cn-region` | `us-east-1` |
-| **Credential name** | SecretId / SecretKey | AccessKey ID / AccessKey Secret | Access Key ID / Secret Access Key |
-| **bucketName format** | `bucket-name-appid` | `bucket-name` | `bucket-name` |
-| **Storage classes** | 11 (including multi-AZ) | 4 | 15+ |
-| **Multi-AZ storage** | ✅ Supported | ❌ Not supported | ❌ Not supported |
+| Configuration         | Tencent Cloud COS         | Alibaba Cloud OSS               | AWS S3                            |
+|-----------------------|---------------------------|---------------------------------|-----------------------------------|
+| **engine value**      | `TENCENT_COS`             | `ALIYUN_OSS`                    | `AWS_S3`                          |
+| **endpoint format**   | `cos.region.myqcloud.com` | `oss-cn-region.aliyuncs.com`    | `s3.region.amazonaws.com`         |
+| **region format**     | `ap-region`               | `cn-region`                     | `us-east-1`                       |
+| **Credential name**   | SecretId / SecretKey      | AccessKey ID / AccessKey Secret | Access Key ID / Secret Access Key |
+| **bucketName format** | `bucket-name-appid`       | `bucket-name`                   | `bucket-name`                     |
+| **Storage classes**   | 11 (including multi-AZ)   | 4                               | 15+                               |
+| **Multi-AZ storage**  | ✅ Supported              | ❌ Not supported                | ❌ Not supported                  |
 
 ### endpoint Configuration
 
 The Tencent Cloud COS endpoint format:
 
 - **Standard format**: `cos.region.myqcloud.com`
-  - Example: `cos.ap-guangzhou.myqcloud.com`
-  - Example: `cos.ap-beijing.myqcloud.com`
-  - Example: `cos.ap-shanghai.myqcloud.com`
+    - Example: `cos.ap-guangzhou.myqcloud.com`
+    - Example: `cos.ap-beijing.myqcloud.com`
+    - Example: `cos.ap-shanghai.myqcloud.com`
 
 - **Internal endpoint**: `cos-internal.region.myqcloud.com`
-  - Suitable for CVM access from the same region, traffic-free
-  - Example: `cos-internal.ap-guangzhou.myqcloud.com`
+    - Suitable for CVM access from the same region, traffic-free
+    - Example: `cos-internal.ap-guangzhou.myqcloud.com`
 
 - **Custom domain**: A custom domain can be bound in the COS console
 
@@ -190,39 +197,39 @@ The Tencent Cloud COS endpoint format:
 
 Regions supported by Tencent Cloud COS:
 
-| Region | Code |
-|------|------|
-| Guangzhou | `ap-guangzhou` |
-| Beijing | `ap-beijing` |
-| Shanghai | `ap-shanghai` |
-| Chengdu | `ap-chengdu` |
-| Chongqing | `ap-chongqing` |
-| Nanjing | `ap-nanjing` |
-| Hong Kong (China) | `ap-hongkong` |
-| Singapore | `ap-singapore` |
-| Mumbai | `ap-mumbai` |
-| Seoul | `ap-seoul` |
-| Tokyo | `ap-tokyo` |
-| Silicon Valley | `na-siliconvalley` |
-| Virginia | `na-ashburn` |
-| Frankfurt | `eu-frankfurt` |
+| Region            | Code               |
+|-------------------|--------------------|
+| Guangzhou         | `ap-guangzhou`     |
+| Beijing           | `ap-beijing`       |
+| Shanghai          | `ap-shanghai`      |
+| Chengdu           | `ap-chengdu`       |
+| Chongqing         | `ap-chongqing`     |
+| Nanjing           | `ap-nanjing`       |
+| Hong Kong (China) | `ap-hongkong`      |
+| Singapore         | `ap-singapore`     |
+| Mumbai            | `ap-mumbai`        |
+| Seoul             | `ap-seoul`         |
+| Tokyo             | `ap-tokyo`         |
+| Silicon Valley    | `na-siliconvalley` |
+| Virginia          | `na-ashburn`       |
+| Frankfurt         | `eu-frankfurt`     |
 
 ### Storage Classes
 
 Storage classes supported by Tencent Cloud COS (including multi-AZ):
 
-| Storage class | Description | Use case |
-|---------|------|---------|
-| `STANDARD` | Standard storage | Frequently accessed data |
-| `STANDARD_IA` | Infrequent access storage | Data accessed infrequently but requiring rapid access |
-| `ARCHIVE` | Archive storage | Long-term retention, rarely accessed data |
-| `COLD_ARCHIVE` | Cold archive storage | Very long-term retention, extremely rarely accessed data |
-| `DEEP_COLD_ARCHIVE` | Deep cold archive storage | Very long-term retention, almost never accessed data |
-| `MULTI_AZ_STANDARD` | Multi-AZ standard storage | Frequently accessed data requiring high availability |
-| `MULTI_AZ_STANDARD_IA` | Multi-AZ infrequent access storage | Occasionally accessed data requiring high availability |
-| `MULTI_AZ_ARCHIVE` | Multi-AZ archive storage | Archive data requiring high availability |
-| `MULTI_AZ_COLD_ARCHIVE` | Multi-AZ cold archive storage | Cold archive data requiring high availability |
-| `MULTI_AZ_DEEP_COLD_ARCHIVE` | Multi-AZ deep cold archive storage | Deep cold archive data requiring high availability |
+| Storage class                  | Description                          | Use case                                                      |
+|--------------------------------|--------------------------------------|---------------------------------------------------------------|
+| `STANDARD`                     | Standard storage                     | Frequently accessed data                                      |
+| `STANDARD_IA`                  | Infrequent access storage            | Data accessed infrequently but requiring rapid access         |
+| `ARCHIVE`                      | Archive storage                      | Long-term retention, rarely accessed data                     |
+| `COLD_ARCHIVE`                 | Cold archive storage                 | Very long-term retention, extremely rarely accessed data      |
+| `DEEP_COLD_ARCHIVE`            | Deep cold archive storage            | Very long-term retention, almost never accessed data          |
+| `MULTI_AZ_STANDARD`            | Multi-AZ standard storage            | Frequently accessed data requiring high availability          |
+| `MULTI_AZ_STANDARD_IA`         | Multi-AZ infrequent access storage   | Occasionally accessed data requiring high availability        |
+| `MULTI_AZ_ARCHIVE`             | Multi-AZ archive storage             | Archive data requiring high availability                      |
+| `MULTI_AZ_COLD_ARCHIVE`        | Multi-AZ cold archive storage        | Cold archive data requiring high availability                 |
+| `MULTI_AZ_DEEP_COLD_ARCHIVE`   | Multi-AZ deep cold archive storage   | Deep cold archive data requiring high availability            |
 | `MULTI_AZ_INTELLIGENT_TIERING` | Multi-AZ intelligent tiering storage | Data with unknown access patterns requiring high availability |
 
 > **Note**: Multi-AZ storage provides higher availability and data durability, but at a slightly higher cost.
@@ -299,34 +306,35 @@ platform:
 ## Best Practices
 
 1. **Region selection**
-   - Choose the region closest to your users to reduce latency
-   - Consider data compliance requirements
+    - Choose the region closest to your users to reduce latency
+    - Consider data compliance requirements
 
 2. **Storage class selection**
-   - Frequently accessed: `STANDARD` or `MULTI_AZ_STANDARD`
-   - Occasionally accessed: `STANDARD_IA` or `MULTI_AZ_STANDARD_IA`
-   - Long-term archive: `ARCHIVE` or `MULTI_AZ_ARCHIVE`
-   - High availability required: choose multi-AZ storage classes
+    - Frequently accessed: `STANDARD` or `MULTI_AZ_STANDARD`
+    - Occasionally accessed: `STANDARD_IA` or `MULTI_AZ_STANDARD_IA`
+    - Long-term archive: `ARCHIVE` or `MULTI_AZ_ARCHIVE`
+    - High availability required: choose multi-AZ storage classes
 
 3. **bucketName configuration**
-   - Must include the AppID, format: `bucket-name-appid`
-   - The AppID can be found in the Tencent Cloud console
+    - Must include the AppID, format: `bucket-name-appid`
+    - The AppID can be found in the Tencent Cloud console
 
 4. **Access credential management**
-   - Use CAM sub-users and follow the principle of least privilege
-   - Use environment variables or a secret management service
-   - Rotate access keys regularly
+    - Use CAM sub-users and follow the principle of least privilege
+    - Use environment variables or a secret management service
+    - Rotate access keys regularly
 
 5. **Cost optimization**
-   - Use lifecycle policies to transition storage classes automatically
-   - Remove unnecessary objects
-   - Use internal endpoints to avoid traffic charges
+    - Use lifecycle policies to transition storage classes automatically
+    - Remove unnecessary objects
+    - Use internal endpoints to avoid traffic charges
 
 ## FAQ
 
 ### Q: What is the AppID in the bucketName?
 
-A: The AppID is the unique identifier of your Tencent Cloud account and can be found in the top-right corner of the console. The bucket name must include the AppID, in the format `bucket-name-appid`.
+A: The AppID is the unique identifier of your Tencent Cloud account and can be found in the top-right corner of the
+console. The bucket name must include the AppID, in the format `bucket-name-appid`.
 
 ### Q: How do I configure image processing?
 
@@ -338,7 +346,8 @@ A: Yes. After binding a custom domain in the COS console, use that custom domain
 
 ### Q: What are the advantages of multi-AZ storage?
 
-A: Multi-AZ storage provides higher availability (99.995%) and data durability (99.999999999%), making it ideal for scenarios with strict availability requirements.
+A: Multi-AZ storage provides higher availability (99.995%) and data durability (99.999999999%), making it ideal for
+scenarios with strict availability requirements.
 
 ### Q: What are the advantages of internal network access?
 

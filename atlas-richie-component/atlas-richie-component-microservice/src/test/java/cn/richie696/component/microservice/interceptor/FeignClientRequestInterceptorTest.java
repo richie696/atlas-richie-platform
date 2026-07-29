@@ -16,14 +16,11 @@
 package cn.richie696.component.microservice.interceptor;
 
 import feign.RequestTemplate;
-import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-
-import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

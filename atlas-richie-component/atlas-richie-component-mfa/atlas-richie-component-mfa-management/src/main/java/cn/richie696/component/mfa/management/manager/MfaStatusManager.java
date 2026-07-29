@@ -15,18 +15,18 @@
  */
 package cn.richie696.component.mfa.management.manager;
 
-import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.component.mfa.core.config.MfaProperties;
 import cn.richie696.component.mfa.core.constant.MfaStatusEnum;
 import cn.richie696.component.mfa.core.entity.MfaUserInfo;
 import cn.richie696.component.mfa.core.support.MfaTenantSupport;
 import cn.richie696.component.mfa.management.dto.MfaStatusResponse;
 import cn.richie696.component.mfa.management.mapper.MfaUserMapper;
-import tools.jackson.core.type.TypeReference;
+import cn.richie696.context.utils.data.JsonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.type.TypeReference;
 
 import java.util.List;
 import java.util.concurrent.StructuredTaskScope;
@@ -98,9 +98,9 @@ public class MfaStatusManager {
         try (var scope = StructuredTaskScope.open()) {
             // 并行查询：MFA用户信息和可信设备数量（两个独立的数据库查询，无数据依赖）
             var userInfoTask = scope.fork(() ->
-                mfaUserMapper.selectByTenantAndUser(actualTenantId, userId));
+                    mfaUserMapper.selectByTenantAndUser(actualTenantId, userId));
             var trustedDevicesTask = scope.fork(() ->
-                trustedDeviceManager.countTrustedDevices(actualTenantId, userId));
+                    trustedDeviceManager.countTrustedDevices(actualTenantId, userId));
 
             scope.join(); // JDK 25: 全部成功则返回，任一失败则抛出 FailedException
 
@@ -109,11 +109,11 @@ public class MfaStatusManager {
 
             if (userInfo == null) {
                 return MfaStatusResponse.builder()
-                    .userId(userId)
-                    .status(MfaStatusEnum.NOT_BOUND)
-                    .trustedDevices(0)
-                    .backupCodesRemaining(0)
-                    .build();
+                        .userId(userId)
+                        .status(MfaStatusEnum.NOT_BOUND)
+                        .trustedDevices(0)
+                        .backupCodesRemaining(0)
+                        .build();
             }
 
             // 如果状态为null，默认返回未激活
@@ -123,14 +123,14 @@ public class MfaStatusManager {
             int backupCodesRemaining = calculateBackupCodesRemaining(userInfo.getBackupCodesHashed());
 
             return MfaStatusResponse.builder()
-                .userId(userId)
-                .status(status)
-                .deviceType(userInfo.getDeviceType())
-                .bindTime(userInfo.getBindTime())
-                .lastUsedTime(userInfo.getLastUsedTime())
-                .trustedDevices(trustedDevices)
-                .backupCodesRemaining(backupCodesRemaining)
-                .build();
+                    .userId(userId)
+                    .status(status)
+                    .deviceType(userInfo.getDeviceType())
+                    .bindTime(userInfo.getBindTime())
+                    .lastUsedTime(userInfo.getLastUsedTime())
+                    .trustedDevices(trustedDevices)
+                    .backupCodesRemaining(backupCodesRemaining)
+                    .build();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("并行查询MFA状态被中断，tenantId: {}, userId: {}", tenantId, userId, e);
@@ -164,8 +164,9 @@ public class MfaStatusManager {
         try {
             // 反序列化JSON数组为List<String>
             List<String> hashedCodes = JsonUtils.getInstance().deserialize(
-                backupCodesHashed,
-                new TypeReference<List<String>>() {}
+                    backupCodesHashed,
+                    new TypeReference<List<String>>() {
+                    }
             );
             return hashedCodes != null ? hashedCodes.size() : 0;
         } catch (Exception e) {

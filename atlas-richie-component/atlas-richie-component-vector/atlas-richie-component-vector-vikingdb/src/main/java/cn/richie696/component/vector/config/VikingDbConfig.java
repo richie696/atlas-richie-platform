@@ -6,7 +6,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.Map;
 
-/** VikingDB 连接与 collection 配置。 */
+/**
+ * VikingDB 连接与 collection 配置。
+ */
 @Data
 @ConfigurationProperties(prefix = "platform.component.vector.vikingdb")
 public class VikingDbConfig {

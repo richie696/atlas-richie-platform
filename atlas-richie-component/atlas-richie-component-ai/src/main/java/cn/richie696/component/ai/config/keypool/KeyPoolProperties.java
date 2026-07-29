@@ -16,6 +16,7 @@
 package cn.richie696.component.ai.config.keypool;
 
 import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * API Key 池全局配置 — 映射 {@code platform.component.ai.key-pool}。
@@ -38,9 +39,12 @@ import lombok.Data;
  * @since 1.0.0
  */
 @Data
+@ConfigurationProperties(prefix = "platform.component.ai.key-pool")
 public class KeyPoolProperties {
 
-    /** 是否启用 Key 池。false 时回退为单 key 行为(取 apiKeys 第一个)。 */
+    /**
+     * 是否启用 Key 池。false 时回退为单 key 行为(取 apiKeys 第一个)。
+     */
     private boolean enabled = true;
 
     /**

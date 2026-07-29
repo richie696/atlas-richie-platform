@@ -354,7 +354,8 @@ class RateLimitAndCircuitBreakerIntegrationTest {
                 circuitBreakerRegistry, circuitBreakerProperties, keyResolver);
 
         WebRequestContext ctx = ctx("GET", "/api/v1/orders/list");
-        WebInterceptorChain chain = new DefaultWebInterceptorChain(List.of((c, ch) -> {}));
+        WebInterceptorChain chain = new DefaultWebInterceptorChain(List.of((c, ch) -> {
+        }));
         interceptor.intercept(ctx, chain);
 
         assertThat(ctx.isShortCircuited()).isFalse();
@@ -381,7 +382,8 @@ class RateLimitAndCircuitBreakerIntegrationTest {
         cb.forceOpen();
 
         WebRequestContext ctx = ctx("GET", "/api/v1/orders/list");
-        WebInterceptorChain chain = new DefaultWebInterceptorChain(List.of((c, ch) -> {}));
+        WebInterceptorChain chain = new DefaultWebInterceptorChain(List.of((c, ch) -> {
+        }));
         interceptor.intercept(ctx, chain);
 
         assertThat(ctx.isShortCircuited()).isTrue();

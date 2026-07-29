@@ -24,7 +24,7 @@ import java.time.Duration;
  * Redis Stream 消费幂等去重配置（自 cache 模块迁移）。
  */
 @Data
-@ConfigurationProperties(prefix = "spring.data.redis.stream-idempotency")
+@ConfigurationProperties(prefix = "platform.component.cache.redis.stream.idempotency")
 public class RedisStreamIdempotencyProperties {
 
     private String keyPrefix = "idemp:stream:";

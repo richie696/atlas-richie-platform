@@ -78,9 +78,13 @@ public class FtpConfig {
      */
     private boolean testWhileIdle = true;
 
-    /** 连接超时 */
+    /**
+     * 连接超时
+     */
     private Duration connectTimeout = Duration.ofSeconds(15);
-    /** 数据传输超时 */
+    /**
+     * 数据传输超时
+     */
     private Duration dataTimeout = Duration.ofSeconds(30);
 
     public enum LoginType {

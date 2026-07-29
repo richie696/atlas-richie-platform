@@ -24,7 +24,6 @@ import org.apache.ibatis.annotations.Mapper;
  * <p>
  * MyBatis Plus Mapper 接口，用于操作 statemachine_state_history 表。
  * 提供基础的 CRUD 操作，支持历史记录的查询和批量插入。
- * 
  *
  * @author richie696
  * @since 1.0.0

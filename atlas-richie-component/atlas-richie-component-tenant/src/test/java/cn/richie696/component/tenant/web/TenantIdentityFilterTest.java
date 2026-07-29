@@ -18,21 +18,17 @@ package cn.richie696.component.tenant.web;
 import cn.richie696.component.tenant.config.MultiTenancyProperties;
 import cn.richie696.component.tenant.context.TenantContext;
 import cn.richie696.component.tenant.context.ThreadLocalHolder;
-import cn.richie696.contract.exception.BusinessException;
+import cn.richie696.component.tenant.model.IsolationMode;
 import cn.richie696.component.tenant.model.TenantInfo;
 import cn.richie696.component.tenant.model.TenantStatus;
-import cn.richie696.component.tenant.model.IsolationMode;
 import cn.richie696.component.tenant.spi.TenantInfoProvider;
 import cn.richie696.contract.constant.GlobalConstants;
+import cn.richie696.contract.exception.BusinessException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
@@ -43,11 +39,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @DisplayName("TenantIdentityFilter — 租户身份识别过滤器")
 class TenantIdentityFilterTest {
@@ -99,7 +91,7 @@ class TenantIdentityFilterTest {
         };
 
         filter = new TenantIdentityFilter(props, provider, List.of("/health", "/public/**"),
-            List.of("/platform-admin/**"));
+                List.of("/platform-admin/**"));
         TenantContext.init(new ThreadLocalHolder());
 
         request = mock(HttpServletRequest.class);
@@ -361,8 +353,8 @@ class TenantIdentityFilterTest {
             doThrow(new ServletException(be)).when(chain).doFilter(any(), any());
 
             assertThatThrownBy(() -> filter.doFilterInternal(request, response, chain))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("业务异常");
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessage("业务异常");
         }
 
         @Test
@@ -377,8 +369,8 @@ class TenantIdentityFilterTest {
             doThrow(new IOException("IO error")).when(chain).doFilter(any(), any());
 
             assertThatThrownBy(() -> filter.doFilterInternal(request, response, chain))
-                .isInstanceOf(RuntimeException.class)
-                .hasCauseInstanceOf(IOException.class);
+                    .isInstanceOf(RuntimeException.class)
+                    .hasCauseInstanceOf(IOException.class);
         }
     }
 }

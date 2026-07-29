@@ -1,48 +1,54 @@
 # Atlas Richie HTTP RestClient (atlas-richie-component-http-restclient)
 
-Spring `RestClient` provider for the http component. Implements `HttpClient` on top of [`org.springframework.web.client.RestClient`](https://docs.spring.io/spring-framework/reference/integration/rest-clients.html#rest-restclient) (Spring 6.1+). Selected by `platform.component.http.provider=rest_client`. **Reuses any Spring `RestClient.Builder` bean you provide.**
+Spring `RestClient` provider for the http component. Implements `HttpClient` on top of [
+`org.springframework.web.client.RestClient`](https://docs.spring.io/spring-framework/reference/integration/rest-clients.html#rest-restclient)
+(Spring 6.1+). Selected by `platform.component.http.provider=rest_client`. **Reuses any Spring `RestClient.Builder` bean
+you provide.**
 
 ---
 
 ## 📖 Contents
 
 - [📖 Overview](#📖-overview)
-  - [What this module gives you](#what-this-module-gives-you)
+    - [What this module gives you](#what-this-module-gives-you)
 - [🏗️ Architecture & Module Layout](#🏗️-architecture-&-module-layout)
 - [🚀 Quick Start](#🚀-quick-start)
 - [🔧 Core Capabilities](#🔧-core-capabilities)
-  - [1. `RestClientAdapter` — `HttpClient` implementation](#1-restclientadapter-—-httpclient-implementation)
-  - [2. Per-request timeout](#2-per-request-timeout)
-  - [3. SSE](#3-sse)
-  - [4. Strict SSL](#4-strict-ssl)
+    - [1. `RestClientAdapter` — `HttpClient` implementation](#1-restclientadapter-—-httpclient-implementation)
+    - [2. Per-request timeout](#2-per-request-timeout)
+    - [3. SSE](#3-sse)
+    - [4. Strict SSL](#4-strict-ssl)
 - [⚙️ Configuration Reference](#⚙️-configuration-reference)
 - [🎯 Best Practices](#🎯-best-practices)
 - [⚠️ Known Limitations](#⚠️-known-limitations)
 - [❓ FAQ](#❓-faq)
-  - [Q1: Why is `strict-ssl=false` not working?](#q1-why-is-strict-ssl=false-not-working?)
-  - [Q2: Can I share my `RestClient.Builder` with non-facade callers?](#q2-can-i-share-my-restclientbuilder-with-non-facade-callers?)
-  - [Q3: Why is multipart throwing "Unsupported"?](#q3-why-is-multipart-throwing-unsupported?)
-  - [Q4: How do I add an interceptor to all requests?](#q4-how-do-i-add-an-interceptor-to-all-requests?)
-  - [Q5: What's the threading model for async / future?](#q5-whats-the-threading-model-for-async-/-future?)
-  - [Q6: Does this provider work without `spring-boot-starter-web`?](#q6-does-this-provider-work-without-spring-boot-starter-web?)
+    - [Q1: Why is `strict-ssl=false` not working?](#q1-why-is-strict-ssl=false-not-working?)
+    - [Q2: Can I share my
+      `RestClient.Builder` with non-facade callers?](#q2-can-i-share-my-restclientbuilder-with-non-facade-callers?)
+    - [Q3: Why is multipart throwing "Unsupported"?](#q3-why-is-multipart-throwing-unsupported?)
+    - [Q4: How do I add an interceptor to all requests?](#q4-how-do-i-add-an-interceptor-to-all-requests?)
+    - [Q5: What's the threading model for async / future?](#q5-whats-the-threading-model-for-async-/-future?)
+    - [Q6: Does this provider work without
+      `spring-boot-starter-web`?](#q6-does-this-provider-work-without-spring-boot-starter-web?)
 - [📚 Further Reading](#📚-further-reading)
+
 ---
 
 ## 📖 Overview
 
-| Item | Value |
-|------|-------|
-| **Artifact** | `cn.richie696.component:atlas-richie-component-http-restclient` |
-| **Selected by** | `platform.component.http.provider=<provider>` |
+| Item            | Value                                                           |
+|-----------------|-----------------------------------------------------------------|
+| **Artifact**    | `cn.richie696.component:atlas-richie-component-http-restclient` |
+| **Selected by** | `platform.component.http.provider=<provider>`                   |
 
 ### What this module gives you
 
-| ✅ Provides | ❌ Does not provide |
-|------------|---------------------|
-| `RestClientAdapter` wrapping `RestClient` | Provider-specific tuning (timeouts, pool, TLS) |
-| Reuse of any `@Bean RestClient.Builder` | Multipart form fields (use HttpClient5 for uploads) |
-| Per-request timeout wrapping (`CompletableFuture.orTimeout`) | HTTP/2 control |
-| `RestClientSseClient` SSE implementation | Body streaming |
+| ✅ Provides                                                  | ❌ Does not provide                                 |
+|--------------------------------------------------------------|-----------------------------------------------------|
+| `RestClientAdapter` wrapping `RestClient`                    | Provider-specific tuning (timeouts, pool, TLS)      |
+| Reuse of any `@Bean RestClient.Builder`                      | Multipart form fields (use HttpClient5 for uploads) |
+| Per-request timeout wrapping (`CompletableFuture.orTimeout`) | HTTP/2 control                                      |
+| `RestClientSseClient` SSE implementation                     | Body streaming                                      |
 
 ## 🏗️ Architecture & Module Layout
 
@@ -98,7 +104,8 @@ See [`http-core`](../atlas-richie-component-http-core/README.md) for the full AP
 
 - `execute(HttpRequest)` calls `buildSpec(request).retrieve().toEntity(byte[].class)`.
 - `async(...)` and `future(...)` delegate to `CompletableFuture.runAsync(...)` — sync wrapped in async.
-- `buildSpec(HttpRequest)` builds a `RestClient.RequestBodySpec`; method, URI, headers, `Content-Type`, body all set explicitly.
+- `buildSpec(HttpRequest)` builds a `RestClient.RequestBodySpec`; method, URI, headers, `Content-Type`, body all set
+  explicitly.
 
 ### 2. Per-request timeout
 
@@ -112,7 +119,8 @@ Uses raw response stream from `RestClient` and feeds lines to `SseLineParser`.
 
 ### 4. Strict SSL
 
-`platform.component.http.strict-ssl=false` is **not** wired here. Configure trust-all on the underlying `RestClient.Builder`.
+`platform.component.http.strict-ssl=false` is **not** wired here. Configure trust-all on the underlying
+`RestClient.Builder`.
 
 ## ⚙️ Configuration Reference
 
@@ -136,18 +144,19 @@ public RestClient.Builder customRestClientBuilder() {
 
 ## ⚠️ Known Limitations
 
-| Limitation | Impact | Workaround |
-|------------|--------|------------|
-| **No multipart** | File uploads not supported via the facade | Use `http_client_5` provider |
-| **Async wraps sync** | Blocks a `ForkJoinPool.commonPool()` thread | Switch to OkHttp / JDK for high-concurrency |
-| **No native HTTP/2 control** | Whatever RestClient's underlying ClientHttpRequestFactory provides | Use a `JdkClientHttpRequestFactory` for HTTP/2 |
-| **`strictSsl=false` not wired** | Trust-all must be configured on the `RestClient.Builder` | Configure `ClientHttpRequestFactory` manually |
+| Limitation                      | Impact                                                             | Workaround                                     |
+|---------------------------------|--------------------------------------------------------------------|------------------------------------------------|
+| **No multipart**                | File uploads not supported via the facade                          | Use `http_client_5` provider                   |
+| **Async wraps sync**            | Blocks a `ForkJoinPool.commonPool()` thread                        | Switch to OkHttp / JDK for high-concurrency    |
+| **No native HTTP/2 control**    | Whatever RestClient's underlying ClientHttpRequestFactory provides | Use a `JdkClientHttpRequestFactory` for HTTP/2 |
+| **`strictSsl=false` not wired** | Trust-all must be configured on the `RestClient.Builder`           | Configure `ClientHttpRequestFactory` manually  |
 
 ## ❓ FAQ
 
 ### Q1: Why is `strict-ssl=false` not working?
 
-This provider does not wire trust-all `SSLContext`. Configure it via your `RestClient.Builder` with a custom `ClientHttpRequestFactory`.
+This provider does not wire trust-all `SSLContext`. Configure it via your `RestClient.Builder` with a custom
+`ClientHttpRequestFactory`.
 
 ### Q2: Can I share my `RestClient.Builder` with non-facade callers?
 
@@ -174,17 +183,20 @@ public RestClient.Builder customRestClientBuilder() {
 
 ### Q5: What's the threading model for async / future?
 
-`CompletableFuture.runAsync(...)` — runs on `ForkJoinPool.commonPool()`. For virtual-thread-friendly async, switch to the `jdk` provider.
+`CompletableFuture.runAsync(...)` — runs on `ForkJoinPool.commonPool()`. For virtual-thread-friendly async, switch to
+the `jdk` provider.
 
 ### Q6: Does this provider work without `spring-boot-starter-web`?
 
-No — `RestClient` lives in `org.springframework.web.client.RestClient`, provided by `spring-boot-starter-web`. The provider is `@ConditionalOnClass(RestClient.class)`.
+No — `RestClient` lives in `org.springframework.web.client.RestClient`, provided by `spring-boot-starter-web`. The
+provider is `@ConditionalOnClass(RestClient.class)`.
 
 ## 📚 Further Reading
 
 - **Parent** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
 - **Core** — [`../atlas-richie-component-http-core/README.md`](../atlas-richie-component-http-core/README.md)
-- **Other providers** — [OkHttp](../atlas-richie-component-http-okhttp/README.md) · [HttpClient5](../atlas-richie-component-http-httpclient5/README.md) · [JDK](../atlas-richie-component-http-jdk/README.md) · [RestClient](../atlas-richie-component-http-restclient/README.md)
+- **Other
+  providers** — [OkHttp](../atlas-richie-component-http-okhttp/README.md) · [HttpClient5](../atlas-richie-component-http-httpclient5/README.md) · [JDK](../atlas-richie-component-http-jdk/README.md) · [RestClient](../atlas-richie-component-http-restclient/README.md)
 
 ---
 

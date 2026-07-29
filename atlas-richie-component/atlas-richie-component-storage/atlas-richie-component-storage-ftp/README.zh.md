@@ -2,13 +2,15 @@
 
 ## 概述
 
-`richie-component-storage-ftp` 是 FTP（File Transfer Protocol）文件传输的实现，基于 Apache Commons Net 3.x 的 `FTPClient` 提供 FTP/FTPS 文件存储能力，内置 Apache Commons Pool 2 连接池复用。适用于对接传统 FTP 服务器或启用 SSL/TLS 的 FTPS 服务器场景。
+`richie-component-storage-ftp` 是 FTP（File Transfer Protocol）文件传输的实现，基于 Apache Commons Net 3.x 的 `FTPClient`
+提供 FTP/FTPS 文件存储能力，内置 Apache Commons Pool 2 连接池复用。适用于对接传统 FTP 服务器或启用 SSL/TLS 的 FTPS 服务器场景。
 
 ## 核心特性
 
 - ✅ **FTP/FTPS 协议** - 同时支持明文 FTP 与 SSL/TLS 加密的 FTPS
 - ✅ **多种认证方式** - 支持普通账号密码登录与匿名登录
-- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非 Spring 环境
+- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非
+  Spring 环境
 - ✅ **连接池复用** - 基于 Apache Commons Pool 2 复用 `FTPClient`，避免频繁建连开销
 - ✅ **自动配置** - Spring Boot 自动配置
 
@@ -44,12 +46,12 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 `FtpStorageEngineProvider` 实现 `StorageEngineProvider` SPI，负责：
 
-| 方法 | 说明 |
-|------|------|
-| `supportedEngineType()` | 返回 `StorageEngineEnum.FTP` |
-| `create(properties)` | 创建 `FtpClientPool` 与 `FtpStorageEngine` |
-| `validate(properties)` | 校验 `FtpConfig` 与 `host` 必填 |
-| `destroy(engine)` | 关闭 FTP 客户端，释放连接池 |
+| 方法                    | 说明                                       |
+|-------------------------|--------------------------------------------|
+| `supportedEngineType()` | 返回 `StorageEngineEnum.FTP`               |
+| `create(properties)`    | 创建 `FtpClientPool` 与 `FtpStorageEngine` |
+| `validate(properties)`  | 校验 `FtpConfig` 与 `host` 必填            |
+| `destroy(engine)`       | 关闭 FTP 客户端，释放连接池                |
 
 自动模式下 Provider 在 `FtpAutoConfiguration` 中注册为 Bean；手动模式下由 Registry 通过 SPI 发现。
 
@@ -57,10 +59,10 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 引擎创建前会通过 `ConfigValidation` 工具类校验必填参数，校验失败时抛出 `IllegalArgumentException`：
 
-| 参数 | 校验规则 |
-|------|---------|
-| ftp | 非空（`FtpConfig`） |
-| host | 非空 |
+| 参数 | 校验规则            |
+|------|---------------------|
+| ftp  | 非空（`FtpConfig`） |
+| host | 非空                |
 
 ## 快速开始
 
@@ -137,20 +139,20 @@ public class FileService {
 
 FTP 与其他存储方式的主要配置差异：
 
-| 配置项 | FTP | 对象存储 | 本地存储 |
-|--------|-----|---------|---------|
-| **配置前缀** | `platform.component.storage.ftp` | `platform.component.storage.object` | `platform.component.storage.local` |
-| **enable 字段** | **必填**（true/false） | 不需要 | 不需要 |
-| **host** | **必填**（FTP服务器地址） | 不需要 | 不需要 |
-| **port** | **必填**（默认：21） | 不需要 | 不需要 |
-| **ftpType** | **必填**（FTP/FTPS） | 不需要 | 不需要 |
-| **loginType** | **必填**（NORMAL/ANONYMOUS） | 不需要 | 不需要 |
-| **username** | NORMAL登录时必填 | 不需要 | 不需要 |
-| **password** | NORMAL登录时必填 | 不需要 | 不需要 |
-| **basePath** | 可选（默认：/） | 不需要 | 不需要 |
-| **engine** | 不需要 | 必填 | 不需要 |
-| **endpoint** | 不需要 | 必填 | 不需要 |
-| **region** | 不需要 | 必填（部分） | 不需要 |
+| 配置项          | FTP                              | 对象存储                            | 本地存储                           |
+|-----------------|----------------------------------|-------------------------------------|------------------------------------|
+| **配置前缀**    | `platform.component.storage.ftp` | `platform.component.storage.object` | `platform.component.storage.local` |
+| **enable 字段** | **必填**（true/false）           | 不需要                              | 不需要                             |
+| **host**        | **必填**（FTP服务器地址）        | 不需要                              | 不需要                             |
+| **port**        | **必填**（默认：21）             | 不需要                              | 不需要                             |
+| **ftpType**     | **必填**（FTP/FTPS）             | 不需要                              | 不需要                             |
+| **loginType**   | **必填**（NORMAL/ANONYMOUS）     | 不需要                              | 不需要                             |
+| **username**    | NORMAL登录时必填                 | 不需要                              | 不需要                             |
+| **password**    | NORMAL登录时必填                 | 不需要                              | 不需要                             |
+| **basePath**    | 可选（默认：/）                  | 不需要                              | 不需要                             |
+| **engine**      | 不需要                           | 必填                                | 不需要                             |
+| **endpoint**    | 不需要                           | 必填                                | 不需要                             |
+| **region**      | 不需要                           | 必填（部分）                        | 不需要                             |
 
 ### 协议类型
 
@@ -226,15 +228,15 @@ platform:
 
 `FtpClientPool` 基于 Apache Commons Pool 2 实现，默认配置如下：
 
-| 配置项 | 默认值 | 说明 |
-|--------|-------|------|
-| `maxTotal` | 8 | 最大连接数 |
-| `maxIdle` | 4 | 最大空闲连接数 |
-| `minIdle` | 1 | 最小空闲连接数 |
-| `testOnBorrow` | true | 借出时校验连接可用性 |
-| `testWhileIdle` | true | 空闲时校验连接可用性 |
-| `connectTimeout` | 15 秒 | 连接超时 |
-| `dataTimeout` | 30 秒 | 数据传输超时 |
+| 配置项           | 默认值 | 说明                 |
+|------------------|--------|----------------------|
+| `maxTotal`       | 8      | 最大连接数           |
+| `maxIdle`        | 4      | 最大空闲连接数       |
+| `minIdle`        | 1      | 最小空闲连接数       |
+| `testOnBorrow`   | true   | 借出时校验连接可用性 |
+| `testWhileIdle`  | true   | 空闲时校验连接可用性 |
+| `connectTimeout` | 15 秒  | 连接超时             |
+| `dataTimeout`    | 30 秒  | 数据传输超时         |
 
 > 详细字段定义见 `cn.richie696.component.storage.bean.FtpConfig`。
 
@@ -264,7 +266,8 @@ platform:
         systemKey: UNIX            # 目录列表解析器（UNIX/VMS/WINDOWS 等）
 ```
 
-支持的 `SystemKey` 取值：`UNIX`、`UNIX_LTRIM`、`VMS`、`WINDOWS`、`OS/2`、`OS/400`、`AS/400`、`MVS`、`L8`、`NETWARE`、`MACOS_PETER`，对应不同的 FTP 服务端实现。
+支持的 `SystemKey` 取值：`UNIX`、`UNIX_LTRIM`、`VMS`、`WINDOWS`、`OS/2`、`OS/400`、`AS/400`、`MVS`、`L8`、`NETWARE`、`MACOS_PETER`
+，对应不同的 FTP 服务端实现。
 
 ### 主动/被动模式
 
@@ -289,7 +292,8 @@ platform:
 
 ### 2. 连接池复用
 
-`FtpClientPool` 基于 Apache Commons Pool 2 实现，按需借用与归还 `FTPClient` 实例，避免每次操作都建立新的 TCP 连接，显著提升吞吐并降低连接风暴风险。
+`FtpClientPool` 基于 Apache Commons Pool 2 实现，按需借用与归还 `FTPClient` 实例，避免每次操作都建立新的 TCP
+连接，显著提升吞吐并降低连接风暴风险。
 
 ### 3. 目录自动创建
 
@@ -297,54 +301,59 @@ platform:
 
 ### 4. 字符集与服务端适配
 
-通过 `charset` 与 `serverLanguageCode` 处理跨区域 FTP 服务器的文件名编码问题，通过 `systemKey` 切换目录列表解析器以适配 Windows / UNIX / VMS / AS400 等服务端。
+通过 `charset` 与 `serverLanguageCode` 处理跨区域 FTP 服务器的文件名编码问题，通过 `systemKey` 切换目录列表解析器以适配
+Windows / UNIX / VMS / AS400 等服务端。
 
 ## 最佳实践
 
 1. **协议与认证方式选择**
-   - 公网开放或非敏感场景：使用匿名 ANONYMOUS 仅下载
-   - 内网受信任环境：使用明文 FTP + 账号密码
-   - 涉及敏感数据：使用 FTPS（SSL/TLS）加密传输
+    - 公网开放或非敏感场景：使用匿名 ANONYMOUS 仅下载
+    - 内网受信任环境：使用明文 FTP + 账号密码
+    - 涉及敏感数据：使用 FTPS（SSL/TLS）加密传输
 
 2. **安全性**
-   - 不要在配置文件中硬编码密码
-   - 使用环境变量或密钥管理服务
-   - 优先启用 FTPS 而非明文 FTP
-   - 定期轮换账号密码
+    - 不要在配置文件中硬编码密码
+    - 使用环境变量或密钥管理服务
+    - 优先启用 FTPS 而非明文 FTP
+    - 定期轮换账号密码
 
 3. **网络配置**
-   - 被动模式（默认）下确保应用服务器出站到 FTP 服务器的高位端口可达
-   - 主动模式下确保 FTP 服务器能反向连入应用服务器
-   - 配置防火墙规则放行 FTP 控制/数据端口
-   - 考虑使用专线或 VPN 提升传输稳定性
+    - 被动模式（默认）下确保应用服务器出站到 FTP 服务器的高位端口可达
+    - 主动模式下确保 FTP 服务器能反向连入应用服务器
+    - 配置防火墙规则放行 FTP 控制/数据端口
+    - 考虑使用专线或 VPN 提升传输稳定性
 
 4. **连接池调优**
-   - 高并发上传场景：适当调高 `maxTotal`，并相应调高 `maxIdle` 减少抖动
-   - 低频场景：保持默认 8/4/1 即可，避免占用过多 FTP 服务端会话
-   - 长时间闲置场景：保持 `testWhileIdle=true` 让池自动回收失效连接
+    - 高并发上传场景：适当调高 `maxTotal`，并相应调高 `maxIdle` 减少抖动
+    - 低频场景：保持默认 8/4/1 即可，避免占用过多 FTP 服务端会话
+    - 长时间闲置场景：保持 `testWhileIdle=true` 让池自动回收失效连接
 
 5. **路径管理**
-   - 使用 `basePath` 组织文件结构
-   - 避免过深的目录层级
-   - 定期清理不需要的文件
+    - 使用 `basePath` 组织文件结构
+    - 避免过深的目录层级
+    - 定期清理不需要的文件
 
 ## 常见问题
 
 ### Q: FTP 与 SFTP 有什么区别？
 
-A: FTP 与 SFTP 是两种完全不同的协议。FTP 基于 TCP 明文传输，账号密码与文件内容均为明文；SFTP 基于 SSH 加密传输，更安全。本组件对应 FTP/FTPS，SFTP 请使用 `richie-component-storage-sftp`。
+A: FTP 与 SFTP 是两种完全不同的协议。FTP 基于 TCP 明文传输，账号密码与文件内容均为明文；SFTP 基于 SSH 加密传输，更安全。本组件对应
+FTP/FTPS，SFTP 请使用 `richie-component-storage-sftp`。
 
 ### Q: 如何选择 FTP 与 FTPS？
 
-A: 公网开放环境或对安全有要求的场景建议使用 FTPS，配置 `ftpType: FTPS` 即可，无需修改代码。FTPS 与 FTP 使用相同的 21 端口，通过 SSL/TLS 握手升级连接。
+A: 公网开放环境或对安全有要求的场景建议使用 FTPS，配置 `ftpType: FTPS` 即可，无需修改代码。FTPS 与 FTP 使用相同的 21 端口，通过
+SSL/TLS 握手升级连接。
 
 ### Q: 为什么上传中文文件名出现乱码？
 
-A: 请确认 `charset` 与服务端字符集一致，常用做法是保持 `UTF-8`，并配合 `serverLanguageCode: zh`。若服务端为 Windows，也可以设置 `systemKey: WINDOWS`。
+A: 请确认 `charset` 与服务端字符集一致，常用做法是保持 `UTF-8`，并配合 `serverLanguageCode: zh`。若服务端为 Windows，也可以设置
+`systemKey: WINDOWS`。
 
 ### Q: 上传失败提示连接超时怎么办？
 
-A: 优先排查网络与防火墙：被动模式下需要放行 FTP 服务器的数据端口回连到客户端；主动模式则要开放应用服务器入站端口。也可以将 `connectTimeout` / `dataTimeout` 适当调大。
+A: 优先排查网络与防火墙：被动模式下需要放行 FTP 服务器的数据端口回连到客户端；主动模式则要开放应用服务器入站端口。也可以将
+`connectTimeout` / `dataTimeout` 适当调大。
 
 ### Q: 如何测试 FTP 连接？
 
@@ -360,7 +369,8 @@ lftp -e "set ssl:verify-certificate no; login ftpuser your-password; ls" ftps://
 
 ### Q: 支持断点续传和预签名上传吗？
 
-A: FTP 协议本身不支持预签名直传 URL，`issueDirectUploadPolicy` 始终返回 `fallback=true` 让业务侧走服务端代理上传。断点续传同样不在 FTP 协议范围内，如需相关能力建议使用对象存储服务。
+A: FTP 协议本身不支持预签名直传 URL，`issueDirectUploadPolicy` 始终返回 `fallback=true` 让业务侧走服务端代理上传。断点续传同样不在
+FTP 协议范围内，如需相关能力建议使用对象存储服务。
 
 ### Q: 支持图片处理（`putImage`）吗？
 

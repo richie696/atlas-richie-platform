@@ -12,14 +12,14 @@ import java.util.List;
  *
  * <p>字段约束见各 {@code @param} 注释；构造器对所有不变量做集中校验。</p>
  *
- * @param ruleId 规则业务标识；调用方负责全局唯一、跨环境稳定（建议带业务前缀，例如 {@code "kb-v1"}）
- * @param version 同一 {@code ruleId} 下的版本号；任一字段变更都应递增版本，旧版本随文档保留
- * @param strategy 切片策略；不同策略对 {@link #separators()} 的使用方式不同，详见 {@link Strategy}
- * @param maxCharacters 单个切片的硬字符上限；必须 {@code > 0} 且严格大于 {@link #overlapCharacters()}
+ * @param ruleId            规则业务标识；调用方负责全局唯一、跨环境稳定（建议带业务前缀，例如 {@code "kb-v1"}）
+ * @param version           同一 {@code ruleId} 下的版本号；任一字段变更都应递增版本，旧版本随文档保留
+ * @param strategy          切片策略；不同策略对 {@link #separators()} 的使用方式不同，详见 {@link Strategy}
+ * @param maxCharacters     单个切片的硬字符上限；必须 {@code > 0} 且严格大于 {@link #overlapCharacters()}
  * @param overlapCharacters 相邻切片的重叠字符数；{@code 0 <= overlap < maxCharacters}，
- *                         保证每段至少能产出一个非空 chunk
- * @param separators 自定义分隔符列表；仅当 {@link #strategy()} 为 {@code RECURSIVE} / {@code SEMANTIC}
- *                   时生效，其余策略使用组件内置分隔符集；为 {@code null} 时回落到内置默认分隔符集
+ *                          保证每段至少能产出一个非空 chunk
+ * @param separators        自定义分隔符列表；仅当 {@link #strategy()} 为 {@code RECURSIVE} / {@code SEMANTIC}
+ *                          时生效，其余策略使用组件内置分隔符集；为 {@code null} 时回落到内置默认分隔符集
  */
 public record ChunkingRule(String ruleId, String version, Strategy strategy, int maxCharacters,
                            int overlapCharacters, List<String> separators) {
@@ -139,7 +139,7 @@ public record ChunkingRule(String ruleId, String version, Strategy strategy, int
      * @return 等价于 {@code new ChunkingRule("default-recursive", "1", RECURSIVE, max, overlap, null)}
      * @throws IllegalArgumentException 当参数违反 {@link ChunkingRule} 不变量时抛出
      */
-    public static ChunkingRule recursiveDefaults(int max, int overlap) {
+    public static ChunkingRule recursiveDefaults ( int max, int overlap){
         return new ChunkingRule("default-recursive", "1", Strategy.RECURSIVE, max, overlap, null);
     }
 }

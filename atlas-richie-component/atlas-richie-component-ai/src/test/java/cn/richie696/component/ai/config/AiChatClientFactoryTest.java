@@ -93,46 +93,49 @@ class AiChatClientFactoryTest {
     private record StubChatModel(String content) implements ChatModel {
 
         @Override
-        public @Nonnull ChatResponse call(@Nonnull Prompt prompt) {
+        public @Nonnull ChatResponse call (@Nonnull Prompt prompt){
             return new ChatResponse(List.of(new Generation(new AssistantMessage(content))));
         }
     }
 
-    private record StaticObjectProvider<T>(T value) implements ObjectProvider<T> {
+    private record StaticObjectProvider<T>(
+    T value)implements ObjectProvider<T>
+
+    {
 
         @Override
-        public @Nonnull T getObject() {
-            return value;
-        }
+        public @Nonnull T getObject () {
+        return value;
+    }
 
         @Override
-        public @Nonnull T getObject(@Nonnull Object... args) {
-            return value;
-        }
+        public @Nonnull T getObject (@Nonnull Object...args){
+        return value;
+    }
 
         @Override
-        public T getIfAvailable() {
-            return value;
-        }
+        public T getIfAvailable () {
+        return value;
+    }
 
         @Override
-        public T getIfUnique() {
-            return value;
-        }
+        public T getIfUnique () {
+        return value;
+    }
 
         @Override
-        public @Nonnull T getIfAvailable(@Nonnull Supplier<T> defaultSupplier) {
-            return value != null ? value : defaultSupplier.get();
-        }
+        public @Nonnull T getIfAvailable (@Nonnull Supplier<T> defaultSupplier) {
+        return value != null ? value : defaultSupplier.get();
+    }
 
         @Override
-        public @Nonnull Stream<T> stream() {
-            return Stream.of(value);
-        }
+        public @Nonnull Stream<T> stream () {
+        return Stream.of(value);
+    }
 
         @Override
-        public @Nonnull Stream<T> orderedStream() {
-            return Stream.of(value);
-        }
+        public @Nonnull Stream<T> orderedStream () {
+        return Stream.of(value);
+    }
     }
 }

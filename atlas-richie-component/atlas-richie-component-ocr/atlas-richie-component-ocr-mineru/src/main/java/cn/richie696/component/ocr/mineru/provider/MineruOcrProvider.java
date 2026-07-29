@@ -15,18 +15,18 @@
  */
 package cn.richie696.component.ocr.mineru.provider;
 
+import cn.richie696.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpResponse;
+import cn.richie696.component.ocr.exception.OcrException;
+import cn.richie696.component.ocr.mineru.config.MineruOcrProperties;
 import cn.richie696.component.ocr.mineru.protocol.MineruPollEnvelope;
 import cn.richie696.component.ocr.mineru.protocol.MineruRequest;
 import cn.richie696.component.ocr.mineru.protocol.MineruResponse;
 import cn.richie696.component.ocr.mineru.protocol.MineruUploadEnvelope;
-import cn.richie696.component.http.core.HttpClient;
-import cn.richie696.component.http.core.HttpResponse;
 import cn.richie696.component.ocr.model.OcrImage;
 import cn.richie696.component.ocr.model.OcrOptions;
 import cn.richie696.component.ocr.model.OcrResult;
-import cn.richie696.component.ocr.exception.OcrException;
 import cn.richie696.component.ocr.provider.AbstractOcrProvider;
-import cn.richie696.component.ocr.mineru.config.MineruOcrProperties;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -66,16 +66,26 @@ import java.util.concurrent.TimeUnit;
  */
 public class MineruOcrProvider extends AbstractOcrProvider<MineruRequest, MineruResponse> {
 
-    /** 默认 MinerU 内部端点。 */
+    /**
+     * 默认 MinerU 内部端点。
+     */
     private static final String DEFAULT_ENDPOINT = "http://mineru.internal:8000";
-    /** 默认单次识别（涵盖上传 + 轮询直至完成）超时时间，单位毫秒。 */
+    /**
+     * 默认单次识别（涵盖上传 + 轮询直至完成）超时时间，单位毫秒。
+     */
     private static final long DEFAULT_TIMEOUT_MS = 180_000L;
-    /** 轮询间隔，单位毫秒。 */
+    /**
+     * 轮询间隔，单位毫秒。
+     */
     private static final long POLL_INTERVAL_MS = 3_000L;
 
-    /** 调用 MinerU HTTP 接口的共享客户端（不是 vendor 配置，不走 props）。 */
+    /**
+     * 调用 MinerU HTTP 接口的共享客户端（不是 vendor 配置，不走 props）。
+     */
     private final HttpClient httpClient;
-    /** MinerU vendor 配置 Properties —— 每次调用 lazy 读取。 */
+    /**
+     * MinerU vendor 配置 Properties —— 每次调用 lazy 读取。
+     */
     private final MineruOcrProperties props;
 
     /**
@@ -84,7 +94,7 @@ public class MineruOcrProvider extends AbstractOcrProvider<MineruRequest, Mineru
      * <p>仅保存 {@code props} 引用并 fast-fail 校验必填项
      * （{@code api-key}）；其他配置在每次调用时通过 {@code liveXxx()} 实时读取。
      *
-     * @param props 从 {@code platform.component.ocr.mineru} 绑定的 typed 配置（含 endpoint / api-key / timeout-ms）
+     * @param props      从 {@code platform.component.ocr.mineru} 绑定的 typed 配置（含 endpoint / api-key / timeout-ms）
      * @param httpClient 共享的 HTTP 客户端，用于调用 MinerU 上传与轮询接口
      * @throws OcrException.ConfigMissing 当 {@code api-key} 未配置（null 或 blank）时抛出
      */
@@ -122,10 +132,10 @@ public class MineruOcrProvider extends AbstractOcrProvider<MineruRequest, Mineru
      * <p>仅支持 {@link OcrImage.Bytes} 与 {@link OcrImage.Stream}（应为 PDF 字节流）；
      * {@link OcrImage.Url} 因 sidecar 不支持远程拉取而被拒绝。
      *
-     * @param image 待识别 PDF（{@code Bytes} 或 {@code Stream}）
+     * @param image   待识别 PDF（{@code Bytes} 或 {@code Stream}）
      * @param options 调用选项（MinerU 当前不解析该字段）
      * @return 包含 PDF 字节的 MinerU 请求对象
-     * @throws OcrException.Unrecognized 当传入的 {@link OcrImage} 类型为 {@code Url} 时抛出
+     * @throws OcrException.Unrecognized        当传入的 {@link OcrImage} 类型为 {@code Url} 时抛出
      * @throws OcrException.ProviderUnavailable 当读取 {@link OcrImage.Stream} 输入流发生 {@link IOException} 时抛出
      */
     @Override
@@ -151,9 +161,9 @@ public class MineruOcrProvider extends AbstractOcrProvider<MineruRequest, Mineru
      *
      * @param request 已构造好的 MinerU 请求（PDF 字节）
      * @return 包含任务 ID、终态、Markdown 结果与耗时的 MinerU 响应
-     * @throws OcrException.SidecarUnavailable 当 HTTP 5xx、连接失败或 IO 异常时抛出
-     * @throws OcrException.VlmTimeout 当轮询超过 {@code timeoutMs} 仍未完成时抛出
-     * @throws OcrException.Unrecognized 当任务终态为 {@code FAILED} 时抛出
+     * @throws OcrException.SidecarUnavailable  当 HTTP 5xx、连接失败或 IO 异常时抛出
+     * @throws OcrException.VlmTimeout          当轮询超过 {@code timeoutMs} 仍未完成时抛出
+     * @throws OcrException.Unrecognized        当任务终态为 {@code FAILED} 时抛出
      * @throws OcrException.ProviderUnavailable 当轮询被中断时抛出，并恢复线程中断状态
      */
     @Override

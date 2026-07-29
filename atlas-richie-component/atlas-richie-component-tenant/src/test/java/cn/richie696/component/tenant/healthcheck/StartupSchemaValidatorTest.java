@@ -16,9 +16,9 @@
 package cn.richie696.component.tenant.healthcheck;
 
 import cn.richie696.component.tenant.config.MultiTenancyProperties;
-import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.component.tenant.exception.TenantErrorCode;
 import cn.richie696.component.tenant.model.IsolationMode;
+import cn.richie696.contract.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -126,9 +126,9 @@ class StartupSchemaValidatorTest {
 
             StartupSchemaValidator v = new StartupSchemaValidator(dataSource, p);
             assertThatThrownBy(() -> v.run(args))
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getCode())
-                .isEqualTo(TenantErrorCode.TENANT_IGNORE_TABLE_NOT_FOUND.name());
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getCode())
+                    .isEqualTo(TenantErrorCode.TENANT_IGNORE_TABLE_NOT_FOUND.name());
         }
 
         @Test
@@ -162,7 +162,7 @@ class StartupSchemaValidatorTest {
         void allTablesHaveTenantIdColumn() throws SQLException {
             MultiTenancyProperties p = columnProps();
             p.getStartupValidation().setSchemaTables(
-                new ArrayList<>(Arrays.asList("orders", "products")));
+                    new ArrayList<>(Arrays.asList("orders", "products")));
 
             ResultSet ordersCols = resultSetWithNames("id", "tenant_id", "name");
             ResultSet productsCols = resultSetWithNames("id", "tenant_id", "price");
@@ -178,16 +178,16 @@ class StartupSchemaValidatorTest {
         void missingTenantIdColumnThrows() throws SQLException {
             MultiTenancyProperties p = columnProps();
             p.getStartupValidation().setSchemaTables(
-                new ArrayList<>(Arrays.asList("orders")));
+                    new ArrayList<>(Arrays.asList("orders")));
 
             ResultSet ordersCols = resultSetWithNames("id", "name");
             when(metaData.getColumns(any(), any(), eq("orders"), any())).thenReturn(ordersCols);
 
             StartupSchemaValidator v = new StartupSchemaValidator(dataSource, p);
             assertThatThrownBy(() -> v.run(args))
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getCode())
-                .isEqualTo(TenantErrorCode.TENANT_TENANT_ID_COLUMN_MISSING.name());
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getCode())
+                    .isEqualTo(TenantErrorCode.TENANT_TENANT_ID_COLUMN_MISSING.name());
         }
 
         @Test
@@ -196,7 +196,7 @@ class StartupSchemaValidatorTest {
             MultiTenancyProperties p = columnProps();
             p.setTenantIdColumn("org_id");
             p.getStartupValidation().setSchemaTables(
-                new ArrayList<>(Arrays.asList("orders")));
+                    new ArrayList<>(Arrays.asList("orders")));
 
             ResultSet ordersCols = resultSetWithNames("id", "org_id");
             when(metaData.getColumns(any(), any(), eq("orders"), any())).thenReturn(ordersCols);
@@ -217,8 +217,8 @@ class StartupSchemaValidatorTest {
             MultiTenancyProperties p = columnProps();
             StartupSchemaValidator v = new StartupSchemaValidator(dataSource, p);
             assertThatThrownBy(() -> v.run(args))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Failed to query database metadata");
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("Failed to query database metadata");
         }
     }
 

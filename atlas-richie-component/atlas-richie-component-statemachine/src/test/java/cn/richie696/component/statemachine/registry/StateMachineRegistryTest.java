@@ -36,16 +36,16 @@ class StateMachineRegistryTest {
     @BeforeEach
     void setUp() {
         registry = new StateMachineRegistry();
-        
+
         // 创建测试状态机
         stateMachine = new StateMachineModel("order", "订单状态机");
         stateMachine.setInitialState("PENDING");
-        
+
         State pending = new State("PENDING", "待确认", State.StateType.INITIAL);
         State confirmed = new State("CONFIRMED", "已确认", State.StateType.NORMAL);
         stateMachine.addState(pending);
         stateMachine.addState(confirmed);
-        
+
         Transition transition = new Transition("confirm", "PENDING", "CONFIRMED", "CONFIRM");
         stateMachine.addTransition(transition);
     }
@@ -53,7 +53,7 @@ class StateMachineRegistryTest {
     @Test
     void testRegister() {
         registry.register(stateMachine);
-        
+
         assertTrue(registry.contains("order"));
         StateMachineModel retrieved = registry.getStateMachine("order");
         assertNotNull(retrieved);
@@ -83,7 +83,7 @@ class StateMachineRegistryTest {
     @Test
     void testRemove() {
         registry.register(stateMachine);
-        
+
         StateMachineModel removed = registry.remove("order");
         assertNotNull(removed);
         assertEquals("order", removed.getName());
@@ -106,10 +106,10 @@ class StateMachineRegistryTest {
     @Test
     void testGetStateMachineNames() {
         registry.register(stateMachine);
-        
+
         StateMachineModel payment = new StateMachineModel("payment", "支付状态机");
         registry.register(payment);
-        
+
         var names = registry.getStateMachineNames();
         assertEquals(2, names.size());
         assertTrue(names.contains("order"));
@@ -119,15 +119,15 @@ class StateMachineRegistryTest {
     @Test
     void testGetAllStateMachines() {
         registry.register(stateMachine);
-        
+
         StateMachineModel payment = new StateMachineModel("payment", "支付状态机");
         registry.register(payment);
-        
+
         var all = registry.getAllStateMachines();
         assertEquals(2, all.size());
         assertTrue(all.containsKey("order"));
         assertTrue(all.containsKey("payment"));
-        
+
         // 验证返回的是副本，修改不影响原注册表
         all.clear();
         assertEquals(2, registry.getAllStateMachines().size());
@@ -137,11 +137,11 @@ class StateMachineRegistryTest {
     void testClear() {
         registry.register(stateMachine);
         registry.register(new StateMachineModel("payment", "支付状态机"));
-        
+
         assertEquals(2, registry.getStateMachineNames().size());
-        
+
         registry.clear();
-        
+
         assertEquals(0, registry.getStateMachineNames().size());
         assertFalse(registry.contains("order"));
         assertFalse(registry.contains("payment"));
@@ -150,10 +150,10 @@ class StateMachineRegistryTest {
     @Test
     void testMultipleRegistrations_SameName() {
         registry.register(stateMachine);
-        
+
         StateMachineModel newOrder = new StateMachineModel("order", "新订单状态机");
         registry.register(newOrder);
-        
+
         StateMachineModel retrieved = registry.getStateMachine("order");
         assertEquals("新订单状态机", retrieved.getDescription());
     }

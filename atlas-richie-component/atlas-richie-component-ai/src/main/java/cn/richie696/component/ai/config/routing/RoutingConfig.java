@@ -30,15 +30,23 @@ import java.util.Map;
 @Data
 public class RoutingConfig {
 
-    /** 是否启用场景路由与自动降级链。 */
+    /**
+     * 是否启用场景路由与自动降级链。
+     */
     private boolean enabled = false;
 
-    /** 主模型失败时是否尝试 fallback 链中的后续模型。 */
+    /**
+     * 主模型失败时是否尝试 fallback 链中的后续模型。
+     */
     private boolean fallbackEnabled = true;
 
-    /** 全局 fallback 模型链(在主模型失败后追加,去重)。 */
+    /**
+     * 全局 fallback 模型链(在主模型失败后追加,去重)。
+     */
     private List<String> fallbackModels = new ArrayList<>();
 
-    /** 按场景(scene)选择模型链,按顺序尝试。 */
+    /**
+     * 按场景(scene)选择模型链,按顺序尝试。
+     */
     private Map<String, List<String>> sceneRules = new LinkedHashMap<>();
 }

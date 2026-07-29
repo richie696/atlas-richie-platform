@@ -69,12 +69,18 @@ public interface ApiKeyPool {
      */
     void invalidate(ApiKey key);
 
-    /** 当前活跃借出数(健康检查用)。 */
+    /**
+     * 当前活跃借出数(健康检查用)。
+     */
     int getNumActive();
 
-    /** 当前池大小(健康检查用)。 */
+    /**
+     * 当前池大小(健康检查用)。
+     */
     int getTotalKeys();
 
-    /** 当前处于冷却中的 key 数。 */
+    /**
+     * 当前处于冷却中的 key 数。
+     */
     int getNumCooldown();
 }

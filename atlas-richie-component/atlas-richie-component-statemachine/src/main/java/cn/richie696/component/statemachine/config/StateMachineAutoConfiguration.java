@@ -39,7 +39,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * Spring Boot 自动配置类，负责在应用启动时加载状态机配置文件并注册状态机模型。
  * 支持从 classpath 或文件系统加载 YAML 和 JSON 格式的状态机配置文件。
  *
- *
  * @author richie696
  * @since 1.0.0
  */
@@ -79,7 +78,9 @@ public class StateMachineAutoConfiguration {
      */
     private final StateMachineDefinitionRegistry definitionRegistry;
 
-    /** Liquibase 变更日志注册表，用于注册状态机表结构脚本 */
+    /**
+     * Liquibase 变更日志注册表，用于注册状态机表结构脚本
+     */
     private final ChangeLogRegistry changeLogRegistry;
 
     /**
@@ -98,7 +99,6 @@ public class StateMachineAutoConfiguration {
      * 1. 从配置路径加载所有状态机配置文件（YAML/JSON）
      * 2. 将定义注册到定义注册表
      * 3. 转换为状态机模型并注册到状态机注册表
-     *
      *
      * @return ApplicationRunner Bean
      */

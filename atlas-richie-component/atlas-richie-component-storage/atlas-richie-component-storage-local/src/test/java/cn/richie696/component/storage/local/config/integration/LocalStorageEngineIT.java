@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.storage.local.config.integration;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import cn.richie696.component.storage.bean.DownloadResponse;
 import cn.richie696.component.storage.local.config.support.AbstractStorageLocalIntegrationTest;
 import cn.richie696.component.storage.local.repository.entity.FileMetadata;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.junit.jupiter.api.Test;
 import tools.jackson.core.type.TypeReference;
 

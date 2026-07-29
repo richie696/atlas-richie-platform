@@ -41,7 +41,7 @@ import java.lang.reflect.Proxy;
 public class StorageEngineProxyFactoryBean implements FactoryBean<StorageEngine> {
 
     /**
-     *  获取当前委托的引擎实例
+     * 获取当前委托的引擎实例
      */
     private volatile StorageEngine delegate;
 

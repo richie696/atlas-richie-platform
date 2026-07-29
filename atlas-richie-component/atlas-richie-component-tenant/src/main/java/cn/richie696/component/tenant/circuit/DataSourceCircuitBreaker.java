@@ -98,7 +98,7 @@ public class DataSourceCircuitBreaker {
         }
         // OPEN → HALF_OPEN: CAS 翻转,只一个线程成功
         CircuitState next = new CircuitState(CircuitStatus.HALF_OPEN,
-            state.failureCount, state.openedAt, true);
+                state.failureCount, state.openedAt, true);
         if (ref.compareAndSet(state, next)) {
             log.info("Circuit breaker HALF_OPEN for datasource: {} (after {}ms)", key, elapsed);
             return false;
@@ -106,7 +106,7 @@ public class DataSourceCircuitBreaker {
         // CAS 失败:重新读取最新状态
         CircuitState latest = ref.get();
         return latest.status == CircuitStatus.OPEN
-            || (latest.status == CircuitStatus.HALF_OPEN && latest.probeInFlight);
+                || (latest.status == CircuitStatus.HALF_OPEN && latest.probeInFlight);
     }
 
     /**
@@ -126,7 +126,7 @@ public class DataSourceCircuitBreaker {
             return;
         }
         CircuitState next = new CircuitState(CircuitStatus.CLOSED,
-            new AtomicInteger(0), null, false);
+                new AtomicInteger(0), null, false);
         if (ref.compareAndSet(prev, next)) {
             if (prev.status == CircuitStatus.HALF_OPEN) {
                 log.info("Circuit breaker CLOSED for datasource: {} (probe success)", key);
@@ -149,7 +149,7 @@ public class DataSourceCircuitBreaker {
      */
     public void recordFailure(String key) {
         AtomicReference<CircuitState> ref = states.computeIfAbsent(key,
-            k -> new AtomicReference<>(new CircuitState(CircuitStatus.CLOSED, new AtomicInteger(0), null, false)));
+                k -> new AtomicReference<>(new CircuitState(CircuitStatus.CLOSED, new AtomicInteger(0), null, false)));
         CircuitState prev = ref.get();
         // CLOSED → CLOSED with count+1
         if (prev.status == CircuitStatus.CLOSED) {
@@ -159,7 +159,7 @@ public class DataSourceCircuitBreaker {
             }
             // 达到阈值:尝试翻 OPEN
             CircuitState opened = new CircuitState(CircuitStatus.OPEN,
-                new AtomicInteger(newCount), Instant.now(), false);
+                    new AtomicInteger(newCount), Instant.now(), false);
             if (ref.compareAndSet(prev, opened)) {
                 log.warn("Circuit breaker OPEN for datasource: {} (failures={})", key, newCount);
                 Consumer<String> cb = onOpenCallback;
@@ -172,7 +172,7 @@ public class DataSourceCircuitBreaker {
         // HALF_OPEN:探测失败,翻回 OPEN
         if (prev.status == CircuitStatus.HALF_OPEN) {
             CircuitState opened = new CircuitState(CircuitStatus.OPEN,
-                new AtomicInteger(prev.failureCount.get()), Instant.now(), false);
+                    new AtomicInteger(prev.failureCount.get()), Instant.now(), false);
             if (ref.compareAndSet(prev, opened)) {
                 log.warn("Circuit breaker OPEN for datasource: {} (probe failure)", key);
                 Consumer<String> cb = onOpenCallback;
@@ -200,17 +200,22 @@ public class DataSourceCircuitBreaker {
         states.forEach((key, ref) -> {
             CircuitState state = ref.get();
             result.put(key, new CircuitStatusSnapshot(
-                state.status.name(), state.failureCount.get(), state.openedAt));
+                    state.status.name(), state.failureCount.get(), state.openedAt));
         });
         return result;
     }
 
-    public void onOpen(Consumer<String> callback) { this.onOpenCallback = callback; }
-    public void onClose(Consumer<String> callback) { this.onCloseCallback = callback; }
+    public void onOpen(Consumer<String> callback) {
+        this.onOpenCallback = callback;
+    }
+
+    public void onClose(Consumer<String> callback) {
+        this.onCloseCallback = callback;
+    }
 
     // ==================== 内部类型 ====================
 
-    public enum CircuitStatus { CLOSED, OPEN, HALF_OPEN }
+    public enum CircuitStatus {CLOSED, OPEN, HALF_OPEN}
 
     /**
      * 不可变状态对象(每次状态变化都创建新对象,通过 CAS 替换)。
@@ -231,5 +236,6 @@ public class DataSourceCircuitBreaker {
         }
     }
 
-    public record CircuitStatusSnapshot(String status, int failures, Instant openedAt) {}
+    public record CircuitStatusSnapshot(String status, int failures, Instant openedAt) {
+    }
 }

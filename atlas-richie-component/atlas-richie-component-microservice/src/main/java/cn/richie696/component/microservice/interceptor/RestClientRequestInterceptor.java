@@ -16,6 +16,7 @@
 package cn.richie696.component.microservice.interceptor;
 
 import cn.richie696.context.utils.data.Collections;
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,6 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
-import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -61,9 +61,9 @@ public class RestClientRequestInterceptor implements ClientHttpRequestIntercepto
     /**
      * 将当前 HTTP 请求的 Header（除忽略列表外）透传到 RestClient 请求，并执行调用。
      *
-     * @param request    HTTP 请求
-     * @param body       请求体
-     * @param execution  执行链
+     * @param request   HTTP 请求
+     * @param body      请求体
+     * @param execution 执行链
      * @return 下游响应
      * @throws IOException 执行请求时发生 IO 异常
      */

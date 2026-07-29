@@ -15,15 +15,13 @@
  */
 package cn.richie696.component.desensitize.core.config;
 
+import cn.richie696.component.desensitize.core.model.MaskRule;
 import cn.richie696.component.desensitize.core.model.MaskScene;
 import cn.richie696.component.desensitize.core.model.MaskType;
-import cn.richie696.component.desensitize.core.model.MaskRule;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,8 +29,8 @@ import java.util.Set;
  * 脱敏组件配置：{@code platform.component.desensitize}。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @Data
 @ConfigurationProperties(prefix = "platform.component.desensitize")
@@ -227,8 +225,8 @@ public class DesensitizeProperties {
      * 权限相关配置。
      *
      * @author @richie696
-     * @since 1.0.0
      * @version 1.0
+     * @since 1.0.0
      */
     @Data
     @ConfigurationProperties(prefix = "platform.component.desensitize.permission")
@@ -267,8 +265,8 @@ public class DesensitizeProperties {
      * API场景覆盖配置。
      *
      * @author @richie696
-     * @since 1.0.0
      * @version 1.0
+     * @since 1.0.0
      */
     @Data
     @ConfigurationProperties(prefix = "platform.component.desensitize.api")
@@ -292,12 +290,13 @@ public class DesensitizeProperties {
          */
         private Map<String, MaskType> sensitiveKeys = new HashMap<>();
     }
+
     /**
      * 日志场景覆盖配置。
      *
      * @author @richie696
-     * @since 1.0.0
      * @version 1.0
+     * @since 1.0.0
      */
     @ConfigurationProperties(prefix = "platform.component.desensitize.log")
     public static class LogSceneOverride extends SceneOverride {
@@ -307,8 +306,8 @@ public class DesensitizeProperties {
      * 正则兜底配置。
      *
      * @author @richie696
-     * @since 1.0.0
      * @version 1.0
+     * @since 1.0.0
      */
     @Data
     @ConfigurationProperties(prefix = "platform.component.desensitize.log-regex-fallback")
@@ -345,8 +344,8 @@ public class DesensitizeProperties {
      * 正则兜底配置。
      *
      * @author @richie696
-     * @since 1.0.0
      * @version 1.0
+     * @since 1.0.0
      */
     @Data
     @ConfigurationProperties(prefix = "platform.component.desensitize.exception-regex-fallback")
@@ -383,8 +382,8 @@ public class DesensitizeProperties {
      * 单个 {@link MaskType} 的规则配置。
      *
      * @author @richie696
-     * @since 1.0.0
      * @version 1.0
+     * @since 1.0.0
      */
     @Data
     public static class TypeRule {

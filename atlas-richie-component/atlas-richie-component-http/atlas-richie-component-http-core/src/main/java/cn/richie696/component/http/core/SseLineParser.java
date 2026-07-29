@@ -47,8 +47,8 @@ import java.util.regex.Pattern;
  * }</pre>
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public final class SseLineParser {
 

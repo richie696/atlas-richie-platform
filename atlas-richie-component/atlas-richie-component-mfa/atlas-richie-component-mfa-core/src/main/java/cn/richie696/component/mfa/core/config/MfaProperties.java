@@ -20,6 +20,7 @@ import cn.richie696.component.mfa.core.config.properties.MfaSecurityProperties;
 import cn.richie696.component.mfa.core.config.properties.MfaTotpProperties;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * MFA统一配置属性
@@ -49,6 +50,7 @@ public class MfaProperties {
      * <p>
      * 用于业务服务（richie-general-service），控制 MFA 管理功能的启用和配置
      */
+    @NestedConfigurationProperty
     private MfaManagementProperties management = new MfaManagementProperties();
 
     /**
@@ -63,6 +65,7 @@ public class MfaProperties {
      * <p>
      * 包含密钥管理、备份码、可信设备、防重放攻击、最大尝试次数、账户锁定等配置
      */
+    @NestedConfigurationProperty
     private MfaSecurityProperties security = new MfaSecurityProperties();
 
 }

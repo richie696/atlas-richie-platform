@@ -21,8 +21,8 @@ import org.springframework.messaging.Message;
 /**
  * 消息处理器接口
  * <p>
- *     本接口作用包括但不限于给消息队列收发的消息进行加工处
- *     理、幂等去重、校验判断等所有和消息处理有关的逻辑。
+ * 本接口作用包括但不限于给消息队列收发的消息进行加工处
+ * 理、幂等去重、校验判断等所有和消息处理有关的逻辑。
  *
  * @author richie696
  * @version 1.0
@@ -43,6 +43,7 @@ public interface MessageHandlerService {
 
     /**
      * 清除缓存的方法
+     *
      * @param message 待清除的消息
      */
     void clearCache(Message<MessageEvent> message);

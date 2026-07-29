@@ -56,7 +56,7 @@ public enum PublishFailureReason {
 
     /**
      * 非序列化访问
-     <p>
+     * <p>
      * 多个线程同时访问Sink，违反了序列化访问规则。
      * 这通常表示存在并发访问问题。
      */

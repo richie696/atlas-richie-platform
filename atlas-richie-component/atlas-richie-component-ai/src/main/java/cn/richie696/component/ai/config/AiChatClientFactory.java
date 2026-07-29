@@ -20,12 +20,7 @@ import cn.richie696.component.ai.config.chat.AiChatModelOptions;
 import cn.richie696.component.ai.config.chat.LlmProvider;
 import cn.richie696.component.ai.model.ModelOptions;
 import cn.richie696.component.ai.support.AiChatOptionsResolver;
-import cn.richie696.component.ai.support.keypool.ApiKeyPool;
-import cn.richie696.component.ai.support.keypool.ApiKeyPoolManager;
-import cn.richie696.component.ai.support.keypool.ApiKeyUtils;
-import cn.richie696.component.ai.support.keypool.ApiKeyValidator;
-import cn.richie696.component.ai.support.keypool.DefaultApiKeyValidator;
-import cn.richie696.component.ai.support.keypool.PooledChatModel;
+import cn.richie696.component.ai.support.keypool.*;
 import com.openai.client.OpenAIClient;
 import com.openai.client.OpenAIClientAsync;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -58,6 +53,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * AI ChatClient工厂
@@ -209,8 +205,7 @@ public class AiChatClientFactory {
 
     public EmbeddingModel createEmbeddingModel(String modelName, AiChatModel aiModel) {
         return switch (aiModel.getProvider()) {
-            case OPENAI, ZHIPUAI, MOONSHOT, DEEPSEEK, ANTHROPIC, MINIMAX ->
-                    buildOpenAiEmbeddingModel(aiModel);
+            case OPENAI, ZHIPUAI, MOONSHOT, DEEPSEEK, ANTHROPIC, MINIMAX -> buildOpenAiEmbeddingModel(aiModel);
             case OLLAMA -> OllamaEmbeddingModel.builder()
                     .ollamaApi(OllamaApi.builder()
                             .baseUrl(aiModel.getBaseUrl())

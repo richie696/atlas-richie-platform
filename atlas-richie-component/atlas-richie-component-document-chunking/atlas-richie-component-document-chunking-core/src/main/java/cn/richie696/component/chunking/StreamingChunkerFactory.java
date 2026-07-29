@@ -27,7 +27,7 @@ public final class StreamingChunkerFactory {
      * {@link ChunkingRule#maxCharacters()} 取较大值，避免传入的规则实际容量大于默认上限
      * 时 {@link StreamingChunker} 构造失败。</p>
      *
-     * @param chunkingService 委托的同步切片器；必须非空
+     * @param chunkingService      委托的同步切片器；必须非空
      * @param maxPendingCharacters 默认的 pending 缓冲字符上限；可以小于规则上限（会被覆盖）
      * @throws NullPointerException {@code chunkingService} 为 {@code null}
      */

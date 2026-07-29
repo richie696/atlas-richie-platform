@@ -28,8 +28,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 提供幂等的 close() 方法，支持中断底层读取线程。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 class RestClientSseConnection implements SseConnection {
 

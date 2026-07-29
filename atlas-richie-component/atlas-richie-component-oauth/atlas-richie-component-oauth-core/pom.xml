@@ -67,7 +67,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/oauth/core/**</include>
+                        <include>cn/richie696/component/oauth/core/**</include>
                     </includes>
                     <excludes>
                         <exclude>cn.richie696.component.oauth.core.config.OAuth2RedisKey</exclude>
@@ -82,7 +82,7 @@
                         <configuration combine.self="override">
                             <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
                             <includes>
-                                <include>com/richie/component/oauth/core/**</include>
+                                <include>cn/richie696/component/oauth/core/**</include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.oauth.core.config.OAuth2RedisKey</exclude>

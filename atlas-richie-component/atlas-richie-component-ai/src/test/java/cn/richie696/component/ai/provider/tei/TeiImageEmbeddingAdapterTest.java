@@ -27,16 +27,9 @@ import org.springframework.ai.embedding.EmbeddingResponse;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.within;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * {@link TeiImageEmbeddingAdapter} 的纯单元测试（hermetic —— 不发起真实 TEI 调用）。
@@ -73,7 +66,7 @@ class TeiImageEmbeddingAdapterTest {
 
         EmbeddingResponse resp = adapter.call(new EmbeddingRequest(List.of("hello"), null));
 
-assertThat(resp).isNotNull();
+        assertThat(resp).isNotNull();
         assertThat(resp.getResults()).hasSize(1);
         assertThat(resp.getResults().get(0).getOutput()).containsExactly(0.0123f, -0.0456f, 0.0789f);
         assertThat(resp.getResults().get(0).getIndex()).isEqualTo(0);
@@ -264,7 +257,9 @@ assertThat(resp).isNotNull();
 
     // -------- helpers --------
 
-    /** HTTP 桩组合:把假 JSON 反序列化为 {@link TeiImageEmbeddingAdapter.TeiEmbeddingRawResponse}。 */
+    /**
+     * HTTP 桩组合:把假 JSON 反序列化为 {@link TeiImageEmbeddingAdapter.TeiEmbeddingRawResponse}。
+     */
     private static RequestFixture fixture(String json) {
         HttpClient httpClient = mock(HttpClient.class);
         HttpRequest request = mock(HttpRequest.class);
@@ -277,7 +272,9 @@ assertThat(resp).isNotNull();
         return new RequestFixture(httpClient, request);
     }
 
-    /** HTTP 桩组合。 */
+    /**
+     * HTTP 桩组合。
+     */
     private record RequestFixture(HttpClient httpClient, HttpRequest request) {
     }
 }

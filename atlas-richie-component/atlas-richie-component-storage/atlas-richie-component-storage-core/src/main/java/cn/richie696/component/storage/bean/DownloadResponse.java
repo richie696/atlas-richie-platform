@@ -24,10 +24,10 @@ import lombok.experimental.Accessors;
 /**
  * 下载数据
  *
+ * @param <T> 下载数据类型
  * @author richie696
  * @version 1.0
  * @since 2023-10-16 17:52:04
- * @param <T> 下载数据类型
  */
 @NoArgsConstructor
 @AllArgsConstructor

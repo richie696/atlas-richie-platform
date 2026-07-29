@@ -39,7 +39,9 @@ public final class VectorRedisIntegrationTestSupport implements RedisIntegration
         return INSTANCE;
     }
 
-        /** JUnit { @EnabledIf} 入口（不可与实例 { #isEnabled()} 同名）。 */
+    /**
+     * JUnit { @EnabledIf} 入口（不可与实例 { #isEnabled()} 同名）。
+     */
     public static boolean integrationTestsEnabled() {
         return getInstance().isEnabled();
     }

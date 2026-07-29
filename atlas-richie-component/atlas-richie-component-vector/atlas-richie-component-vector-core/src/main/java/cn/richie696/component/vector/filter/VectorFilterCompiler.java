@@ -26,8 +26,8 @@ public interface VectorFilterCompiler {
      *
      * <p>实现要求：</p>
      * <ul>
- *   <li>对 {@link cn.richie696.component.vector.model.VectorFilter} sealed 接口中所有
- *       节点都做穷尽处理；新增节点后编译器应在编译期就发现问题。</li>
+     *   <li>对 {@link cn.richie696.component.vector.model.VectorFilter} sealed 接口中所有
+     *       节点都做穷尽处理；新增节点后编译器应在编译期就发现问题。</li>
      *   <li>遇到 provider 不支持的节点（如部分 provider 不支持
      *       {@link cn.richie696.component.vector.model.VectorFilter.ContainsAny}）应主动
      *       抛 {@link UnsupportedOperationException}，让上层明确知道"过滤下推失败"。</li>

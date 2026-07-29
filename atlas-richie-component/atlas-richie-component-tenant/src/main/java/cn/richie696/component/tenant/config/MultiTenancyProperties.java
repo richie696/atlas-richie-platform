@@ -18,6 +18,7 @@ package cn.richie696.component.tenant.config;
 import cn.richie696.component.tenant.model.IsolationMode;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,7 +35,7 @@ import java.util.Map;
  * @since 2.0
  */
 @Data
-@ConfigurationProperties(prefix = "multi-tenancy")
+@ConfigurationProperties(prefix = "platform.component.multi-tenancy")
 public class MultiTenancyProperties {
 
     /**
@@ -105,6 +106,7 @@ public class MultiTenancyProperties {
     /**
      * 数据源配置（shared + 各租户独立数据源）。
      */
+    @NestedConfigurationProperty
     private DataSourceConfig datasource = new DataSourceConfig();
 
     /**
@@ -120,6 +122,7 @@ public class MultiTenancyProperties {
     /**
      * 健康探测配置。
      */
+    @NestedConfigurationProperty
     private HealthProbeConfig health = new HealthProbeConfig();
 
     /**
@@ -128,6 +131,7 @@ public class MultiTenancyProperties {
      * <p>默认开启，大幅降低 {@code TenantInfoProvider.getTenantInfo()} 调用频率。
      * 若需关闭，设置 {@code multi-tenancy.cache.tenant-info.enabled=false}。</p>
      */
+    @NestedConfigurationProperty
     private TenantInfoCacheConfig cache = new TenantInfoCacheConfig();
 
     /**
@@ -136,6 +140,7 @@ public class MultiTenancyProperties {
      * <p>默认关闭。生产环境建议开启以确保 {@link cn.richie696.component.tenant.spi.TenantInfoProvider}
      * 被业务方实际实现（而非 NoOp 占位）。</p>
      */
+    @NestedConfigurationProperty
     private HealthCheckConfig healthCheck = new HealthCheckConfig();
 
     /**
@@ -156,6 +161,7 @@ public class MultiTenancyProperties {
         /**
          * 共享数据源配置（Column / Table / Schema 模式必须）。
          */
+        @NestedConfigurationProperty
         private SharedDataSourceConfig shared = new SharedDataSourceConfig();
 
         /**
@@ -191,6 +197,7 @@ public class MultiTenancyProperties {
         /**
          * 若为 null 则继承 shared 的 Hikari 配置。
          */
+        @NestedConfigurationProperty
         private HikariConfig hikari;
     }
 

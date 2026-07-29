@@ -71,15 +71,25 @@ public class SftpConfig {
      */
     private String basePath = "/";
 
-    /** 连接池最大连接数 */
+    /**
+     * 连接池最大连接数
+     */
     private int maxTotal = 4;
-    /** 连接池最大空闲数 */
+    /**
+     * 连接池最大空闲数
+     */
     private int maxIdle = 2;
-    /** 连接池最小空闲数 */
+    /**
+     * 连接池最小空闲数
+     */
     private int minIdle = 1;
-    /** 借出时是否校验连接可用性 */
+    /**
+     * 借出时是否校验连接可用性
+     */
     private boolean testOnBorrow = true;
-    /** 空闲时是否校验连接可用性 */
+    /**
+     * 空闲时是否校验连接可用性
+     */
     private boolean testWhileIdle = true;
 
 }

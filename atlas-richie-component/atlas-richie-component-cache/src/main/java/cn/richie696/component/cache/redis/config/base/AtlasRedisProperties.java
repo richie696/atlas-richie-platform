@@ -22,6 +22,7 @@ import io.lettuce.core.protocol.ProtocolVersion;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.boot.data.redis.autoconfigure.DataRedisProperties;
 import org.springframework.context.annotation.Primary;
 
@@ -39,7 +40,7 @@ import java.util.Map;
 @Data
 @Primary
 @EqualsAndHashCode(callSuper = true)
-@ConfigurationProperties(prefix = "spring.data.redis")
+@ConfigurationProperties(prefix = "platform.component.cache.redis")
 public class AtlasRedisProperties extends DataRedisProperties {
 
 
@@ -56,6 +57,7 @@ public class AtlasRedisProperties extends DataRedisProperties {
     /**
      * lettuce配置
      */
+    @NestedConfigurationProperty
     private LettuceExtension lettuce = new LettuceExtension();
 
     /**

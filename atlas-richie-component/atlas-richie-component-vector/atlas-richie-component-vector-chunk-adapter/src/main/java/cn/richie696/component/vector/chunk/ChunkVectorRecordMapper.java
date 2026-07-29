@@ -3,7 +3,9 @@ package cn.richie696.component.vector.chunk;
 import cn.richie696.component.chunking.model.Chunk;
 import cn.richie696.component.vector.model.VectorRecord;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * 把 chunking 组件的 {@link Chunk} 翻译成 vector 组件的 {@link VectorRecord} 的纯函数式桥接。
@@ -65,18 +67,18 @@ public final class ChunkVectorRecordMapper {
      *       context 元数据；合并时 chunk 级字段覆盖 context 同名字段以保证切片位置是
      *       唯一真相</li>
      *   <li>按上述拼接规则生成 {@code id}，构造 {@link VectorRecord} 并填齐
- *       {@code documentId / chunkNo / version / namespace / metadata}</li>
- * </ol>
- *
- * <p>本方法不会调用任何向量服务，也不会写入 embedding；embedding 由后续 AI 组件
+     *       {@code documentId / chunkNo / version / namespace / metadata}</li>
+     * </ol>
+     *
+     * <p>本方法不会调用任何向量服务，也不会写入 embedding；embedding 由后续 AI 组件
      * 回填。本方法可在没有真实向量库的环境下被单元测试独立调用。</p>
      *
      * @param chunk   chunking 组件产出的文本切片；必填，{@code ordinal} / {@code text} /
-     *               {@code charStart} / {@code charEnd} 由 chunking 自身的紧凑构造器保证合法
+     *                {@code charStart} / {@code charEnd} 由 chunking 自身的紧凑构造器保证合法
      * @param context 文档级上下文载体，详见 {@link VectorRecordContext}；必填，
-     *               其内部 {@code metadata} 可以为 {@code null}（视作空 Map）
+     *                其内部 {@code metadata} 可以为 {@code null}（视作空 Map）
      * @return 一条尚未嵌入（{@code embedding=null}）的 {@link VectorRecord}，可直接交给
-     *         AI 组件做 embedding 后调用 {@code VectorService.upsert}
+     * AI 组件做 embedding 后调用 {@code VectorService.upsert}
      * @throws NullPointerException 当 {@code chunk} 或 {@code context} 为 {@code null} 时抛出
      */
     public VectorRecord map(Chunk chunk, VectorRecordContext context) {

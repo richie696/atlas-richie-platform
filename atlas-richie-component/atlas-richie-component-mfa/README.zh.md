@@ -7,34 +7,35 @@
 
 - [📖 简介](#📖-简介)
 - [🎯 设计原则](#🎯-设计原则)
-  - [独立性与解耦](#独立性与解耦)
-  - [租户功能可选](#租户功能可选)
+    - [独立性与解耦](#独立性与解耦)
+    - [租户功能可选](#租户功能可选)
 - [✨ 核心特性](#✨-核心特性)
-  - [🔐 多重认证方式](#🔐-多重认证方式)
-  - [🛡️ 安全保障](#🛡️-安全保障)
-  - [⚡ 高性能设计](#⚡-高性能设计)
-  - [🎯 易用性强](#🎯-易用性强)
+    - [🔐 多重认证方式](#🔐-多重认证方式)
+    - [🛡️ 安全保障](#🛡️-安全保障)
+    - [⚡ 高性能设计](#⚡-高性能设计)
+    - [🎯 易用性强](#🎯-易用性强)
 - [🚀 快速开始](#🚀-快速开始)
-  - [1. 添加依赖](#1-添加依赖)
-  - [2. 配置文件](#2-配置文件)
-  - [3. 启动服务](#3-启动服务)
+    - [1. 添加依赖](#1-添加依赖)
+    - [2. 配置文件](#2-配置文件)
+    - [3. 启动服务](#3-启动服务)
 - [📚 文档](#📚-文档)
 - [📚 相关文档](#📚-相关文档)
+
 ---
 
 ## 📖 简介
 
 Richie MFA组件是一个企业级多因子认证解决方案，基于RFC 6238/4226标准实现TOTP/HOTP算法，为企业应用提供高性能、高安全性的身份验证能力。
 
-**重要架构说明**：MFA组件采用**分离式架构设计**，拆分为两个独立的模块：
+**重要架构说明**：MFA组件采用 **分离式架构设计**，拆分为两个独立的模块：
 
 - **richie-component-mfa-validation**：验证模块，部署在 `richie-gateway-service` 中
-  - **职责**：MFA验证逻辑，只读GlobalCache（richie-component-cache），**零数据库依赖**
-  - **特点**：轻量级、高性能、毫秒级响应
-  
+    - **职责**：MFA验证逻辑，只读GlobalCache（richie-component-cache）， **零数据库依赖**
+    - **特点**：轻量级、高性能、毫秒级响应
+
 - **richie-component-mfa-management**：管理模块，部署在 `richie-general-service` 中
-  - **职责**：MFA管理功能（绑定、解绑、状态管理等），操作数据库
-  - **特点**：完整的CRUD操作，使用Liquibase管理DDL
+    - **职责**：MFA管理功能（绑定、解绑、状态管理等），操作数据库
+    - **特点**：完整的CRUD操作，使用Liquibase管理DDL
 
 ## 🎯 设计原则
 
@@ -58,6 +59,7 @@ Richie MFA组件是一个企业级多因子认证解决方案，基于RFC 6238/4
 - ⚠️ **配置一致性**：两个模块（validation和management）的 `enableTenant` 配置必须保持一致
 
 **示例（无租户系统）**：
+
 ```java
 // 无租户系统：tenantId可以为null
 MfaBindRequest request = new MfaBindRequest();
@@ -69,6 +71,7 @@ mfaBindService.bindDevice(null, request.getUserId(), request.getDeviceType());
 ```
 
 **示例（有租户系统）**：
+
 ```java
 // 有租户系统：tenantId必须提供
 MfaBindRequest request = new MfaBindRequest();
@@ -82,23 +85,27 @@ mfaBindService.bindDevice(request.getTenantId(), request.getUserId(), request.ge
 ## ✨ 核心特性
 
 ### 🔐 多重认证方式
+
 - **TOTP认证**：基于时间的一次性密码（Time-based One-Time Password）
 - **HOTP认证**：基于事件的一次性密码（HMAC-based One-Time Password）
 - **短信验证码**：支持主流短信服务商集成
 - **邮箱验证码**：SMTP邮件验证支持
 
 ### 🛡️ 安全保障
+
 - **密钥加密存储**：KMS/HSM管理，AES-256-GCM加密
 - **防重放攻击**：验证码使用记录，TTL控制
 - **审计日志完整性**：数字签名，防篡改
 - **防暴力破解**：智能失败次数限制
 
 ### ⚡ 高性能设计
+
 - **GlobalCache缓存**：热点数据高速访问（richie-component-cache）
 - **架构分离**：验证与管理完全分离，网关零数据库依赖
 - **异步处理**：非阻塞操作提升性能
 
 ### 🎯 易用性强
+
 - **Spring Boot Starter**：一键集成
 - **RESTful API**：标准化接口设计（管理模块）
 - **自动配置**：开箱即用
@@ -203,12 +210,14 @@ platform:
 ### 3) 启动服务
 
 启动服务后：
+
 - **网关服务**：MFA验证过滤器自动生效
 - **通用服务**：数据库表自动创建（Liquibase），API自动注册
 
 ## 📚 文档
 
-- **MFA 管理内置控制器 API 文档（Apifox）**：[MFA 管理接口 - platform](https://6n26bnszvc.apifox.cn/) — 绑定、激活、解绑、可信设备、设为主管理设备、备份码验证等接口定义与示例
+- **MFA 管理内置控制器 API 文档（Apifox）**：[MFA 管理接口 - platform](https://6n26bnszvc.apifox.cn/) —
+  绑定、激活、解绑、可信设备、设为主管理设备、备份码验证等接口定义与示例
 
 详细的设计文档请参考 [docs](./docs/) 目录：
 

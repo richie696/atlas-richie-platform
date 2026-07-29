@@ -45,9 +45,11 @@ public record RequestCompletedEvent(
         boolean hasError,
         String clientKey,
         String traceId
-) implements HookEvent {
+) implements
 
-    public static RequestCompletedEvent of(WebRequestContext ctx, long endNanos) {
+HookEvent {
+
+    public static RequestCompletedEvent of (WebRequestContext ctx,long endNanos){
         return new RequestCompletedEvent(
                 ctx.method(),
                 ctx.path(),
@@ -60,7 +62,7 @@ public record RequestCompletedEvent(
                 ctx.traceId());
     }
 
-    public long durationMillis() {
+    public long durationMillis () {
         return (endNanos - startNanos) / 1_000_000L;
     }
 }

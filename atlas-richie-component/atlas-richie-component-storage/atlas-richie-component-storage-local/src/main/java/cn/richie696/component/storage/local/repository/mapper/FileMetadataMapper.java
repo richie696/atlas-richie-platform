@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.storage.local.repository.mapper;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import cn.richie696.component.storage.local.repository.entity.FileMetadata;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

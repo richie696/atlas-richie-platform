@@ -15,7 +15,6 @@
  */
 package cn.richie696.component.ai.provider.pangu;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.ai.api.RerankModel;
 import cn.richie696.component.ai.api.RerankRequest;
 import cn.richie696.component.ai.api.RerankResponse;
@@ -24,16 +23,14 @@ import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
 import cn.richie696.component.ai.provider.sign.AppCodeSigner;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.context.utils.data.JsonUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * 华为盘古大模型重排序模型适配器。
@@ -62,10 +59,14 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class PanguRerankModel implements RerankModel {
 
-    /** 华为盘古 Rerank REST 默认端点（{@code pangu.open.huawei.com/api/v1/rerank}）。 */
+    /**
+     * 华为盘古 Rerank REST 默认端点（{@code pangu.open.huawei.com/api/v1/rerank}）。
+     */
     public static final String DEFAULT_BASE_URL = "https://pangu.open.huawei.com/api/v1/rerank";
 
-    /** 当 {@link RerankRequest#model} 为空时使用的默认模型（{@code pangu-rerank}）。 */
+    /**
+     * 当 {@link RerankRequest#model} 为空时使用的默认模型（{@code pangu-rerank}）。
+     */
     public static final String DEFAULT_MODEL = "pangu-rerank";
 
     private final HttpClient httpClient;
@@ -173,7 +174,9 @@ public class PanguRerankModel implements RerankModel {
 
     // ====== Pangu response DTOs ======
 
-    /** 顶层响应：{@code { "results": [...] }}。 */
+    /**
+     * 顶层响应：{@code { "results": [...] }}。
+     */
     static class PanguRerankRawResponse {
         @JsonProperty("results")
         public List<PanguRerankRawItem> results;

@@ -17,6 +17,7 @@ package cn.richie696.component.statemachine.model;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
 import java.util.Map;
 
 /**
@@ -24,7 +25,6 @@ import java.util.Map;
  * <p>
  * 定义从一个状态到另一个状态的转换规则，包括触发事件、转换条件、转换动作等。
  * 支持 Spring SpEL 表达式进行条件判断和动作执行。
- *
  *
  * @author richie696
  * @since 1.0.0
@@ -81,7 +81,7 @@ public class Transition {
      * <p>
      * 当存在多个匹配的转换规则时，优先级高的规则会先执行。
      * 数字越大优先级越高，默认为 0。
-     * 
+     *
      */
     private int priority = 0;
 
@@ -90,7 +90,7 @@ public class Transition {
      * <p>
      * 用于存储转换规则的扩展属性，例如：
      * - reopen: true - 允许从 FINAL/ERROR 状态转换
-     * 
+     *
      */
     private Map<String, Object> attributes;
 

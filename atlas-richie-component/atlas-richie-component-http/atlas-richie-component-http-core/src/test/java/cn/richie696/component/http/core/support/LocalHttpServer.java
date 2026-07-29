@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.lang.AutoCloseable;
 
 /**
  * 轻量本地 HTTP 服务，供各 Provider 单元测试复用。

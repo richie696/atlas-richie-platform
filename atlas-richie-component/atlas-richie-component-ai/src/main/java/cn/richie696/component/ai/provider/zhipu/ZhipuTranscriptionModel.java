@@ -15,11 +15,11 @@
  */
 package cn.richie696.component.ai.provider.zhipu;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.context.utils.spring.SpringBeanUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.audio.transcription.AudioTranscription;
 import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
@@ -65,14 +65,20 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class ZhipuTranscriptionModel implements TranscriptionModel {
 
-    /** 智谱 STT REST 端点。 */
+    /**
+     * 智谱 STT REST 端点。
+     */
     public static final String DEFAULT_STT_URL =
             "https://open.bigmodel.cn/api/paas/v4/audio/transcriptions";
 
-    /** 当未指定模型时使用的默认模型（{@code glm-asr-2512}）。 */
+    /**
+     * 当未指定模型时使用的默认模型（{@code glm-asr-2512}）。
+     */
     public static final String DEFAULT_MODEL = "glm-asr-2512";
 
-    /** 单次调用允许的最大音频字节数（10 MB）—— 智谱 ASR 限制，防止 OOM。 */
+    /**
+     * 单次调用允许的最大音频字节数（10 MB）—— 智谱 ASR 限制，防止 OOM。
+     */
     public static final long MAX_AUDIO_BYTES = 10L * 1024 * 1024;
 
     private final AbstractAudioModelConfig cfg;

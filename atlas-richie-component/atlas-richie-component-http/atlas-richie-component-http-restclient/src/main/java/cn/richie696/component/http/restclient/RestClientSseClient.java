@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.List;
 
 /**
  * RestClient SSE 客户端实现。
@@ -39,8 +40,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 因此不能异步读取）。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 class RestClientSseClient {
 

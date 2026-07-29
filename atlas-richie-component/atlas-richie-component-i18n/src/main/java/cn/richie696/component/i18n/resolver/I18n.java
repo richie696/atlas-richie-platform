@@ -29,11 +29,14 @@ import java.util.Locale;
 @Component
 public class I18n {
 
-    /** 静态持有的国际化解析器，由 Spring 注入后赋值 */
+    /**
+     * 静态持有的国际化解析器，由 Spring 注入后赋值
+     */
     private static I18nResolver i18nResolver;
 
     /**
      * 构造方法
+     *
      * @param i18nResolver 国际化对象
      */
     public I18n(I18nResolver i18nResolver) {
@@ -43,7 +46,7 @@ public class I18n {
     /**
      * 根据国际化资源键和参数获取国际化资源文本的方法
      *
-     * @param key 国际化资源键
+     * @param key  国际化资源键
      * @param args 国际化资源文本动态参数
      * @return 返回国际化文本
      */
@@ -55,8 +58,8 @@ public class I18n {
      * 根据自定义区域和国际化资源键和参数获取国际化资源文本的方法
      *
      * @param locale 自定义区域
-     * @param key 国际化资源键
-     * @param args 国际化资源文本动态参数
+     * @param key    国际化资源键
+     * @param args   国际化资源文本动态参数
      * @return 返回国际化文本
      */
     public static String get(Locale locale, String key, Object... args) {

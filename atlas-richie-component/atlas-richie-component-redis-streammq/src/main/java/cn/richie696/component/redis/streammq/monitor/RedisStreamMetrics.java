@@ -20,11 +20,10 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import jakarta.annotation.Nonnull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import jakarta.annotation.Nonnull;
-import org.springframework.stereotype.Component;
+
 
 import java.time.Duration;
 import java.util.Map;
@@ -65,75 +64,107 @@ import java.util.concurrent.atomic.AtomicLong;
  * @since 2025-09-15
  */
 @Slf4j
-@Component
-@ConditionalOnClass(MeterRegistry.class)
 public class RedisStreamMetrics {
 
     /**
-     *  获取 MeterRegistry 实例
+     * 获取 MeterRegistry 实例
      */
     @Getter
     private final MeterRegistry meterRegistry;
 
     // ==================== 业务指标 ====================
 
-    /** 消息发布计数器 */
+    /**
+     * 消息发布计数器
+     */
     private final Counter messagesPublished;
 
-    /** 消息消费计数器 */
+    /**
+     * 消息消费计数器
+     */
     private final Counter messagesConsumed;
 
-    /** 消息确认计数器 */
+    /**
+     * 消息确认计数器
+     */
     private final Counter messagesAcknowledged;
 
-    /** 消息处理失败计数器 */
+    /**
+     * 消息处理失败计数器
+     */
     private final Counter messagesFailed;
 
-    /** 消息重试计数器 */
+    /**
+     * 消息重试计数器
+     */
     private final Counter messagesRetried;
 
     // ==================== 性能指标 ====================
 
-    /** 消息处理耗时计时器 */
+    /**
+     * 消息处理耗时计时器
+     */
     private final Timer processingDuration;
 
-    /** 拉取操作耗时计时器 */
+    /**
+     * 拉取操作耗时计时器
+     */
     private final Timer pollingDuration;
 
-    /** 消息发布耗时计时器 */
+    /**
+     * 消息发布耗时计时器
+     */
     private final Timer publishingDuration;
 
     // ==================== 系统指标 ====================
 
-    /** 活跃消费者数量 */
+    /**
+     * 活跃消费者数量
+     */
     private final AtomicInteger activeConsumers = new AtomicInteger(0);
 
-    /** 活跃拉取器数量 */
+    /**
+     * 活跃拉取器数量
+     */
     private final AtomicInteger activePollers = new AtomicInteger(0);
 
-    /** 活跃连接数 */
+    /**
+     * 活跃连接数
+     */
     private final AtomicInteger activeConnections = new AtomicInteger(0);
 
-    /** 消息积压数量 */
+    /**
+     * 消息积压数量
+     */
     private final AtomicLong messageBacklog = new AtomicLong(0);
 
     // ==================== 错误指标 ====================
 
-    /** 总错误数 */
+    /**
+     * 总错误数
+     */
     private final Counter totalErrors;
 
-    /** 超时错误数 */
+    /**
+     * 超时错误数
+     */
     private final Counter timeoutErrors;
 
-    /** 连接错误数 */
+    /**
+     * 连接错误数
+     */
     private final Counter connectionErrors;
 
-    /** 序列化错误数 */
+    /**
+     * 序列化错误数
+     */
     private final Counter serializationErrors;
 
     // ==================== 配置与构造函数 ====================
 
-    /** 监控配置 */
+    /**
+     * 监控配置
+     */
     private final RedisStreamMonitoringProperties properties;
 
     /**
@@ -224,7 +255,7 @@ public class RedisStreamMetrics {
     /**
      * 记录消息消费
      *
-     * @param streamKey Stream 键名
+     * @param streamKey     Stream 键名
      * @param consumerGroup 消费者组
      */
     public void recordMessageConsumed(String streamKey, String consumerGroup) {
@@ -236,7 +267,7 @@ public class RedisStreamMetrics {
     /**
      * 记录消息确认
      *
-     * @param streamKey Stream 键名
+     * @param streamKey     Stream 键名
      * @param consumerGroup 消费者组
      */
     public void recordMessageAcknowledged(String streamKey, String consumerGroup) {
@@ -248,9 +279,9 @@ public class RedisStreamMetrics {
     /**
      * 记录消息处理失败
      *
-     * @param streamKey Stream 键名
+     * @param streamKey     Stream 键名
      * @param consumerGroup 消费者组
-     * @param errorType 错误类型
+     * @param errorType     错误类型
      */
     public void recordMessageFailed(String streamKey, String consumerGroup, String errorType) {
         if (!properties.getErrorMonitoring().isEnabled() || shouldSkipSampling()) return;
@@ -262,7 +293,7 @@ public class RedisStreamMetrics {
     /**
      * 记录消息重试
      *
-     * @param streamKey Stream 键名
+     * @param streamKey     Stream 键名
      * @param consumerGroup 消费者组
      */
     public void recordMessageRetried(String streamKey, String consumerGroup) {
@@ -277,10 +308,11 @@ public class RedisStreamMetrics {
      * 记录消息处理耗时
      *
      * @param streamKey Stream 键名
-     * @param duration 处理耗时
+     * @param duration  处理耗时
      */
     public void recordProcessingDuration(String streamKey, Duration duration) {
-        if (!properties.getPerformance().isEnabled() || !properties.getPerformance().isRecordProcessingTime() || shouldSkipSampling()) return;
+        if (!properties.getPerformance().isEnabled() || !properties.getPerformance().isRecordProcessingTime() || shouldSkipSampling())
+            return;
         processingDuration.record(duration);
         log.debug("记录处理耗时: streamKey={}, duration={}ms", streamKey, duration.toMillis());
     }
@@ -289,10 +321,11 @@ public class RedisStreamMetrics {
      * 记录拉取操作耗时
      *
      * @param streamKey Stream 键名
-     * @param duration 拉取耗时
+     * @param duration  拉取耗时
      */
     public void recordPollingDuration(String streamKey, Duration duration) {
-        if (!properties.getPerformance().isEnabled() || !properties.getPerformance().isRecordPollingTime() || shouldSkipSampling()) return;
+        if (!properties.getPerformance().isEnabled() || !properties.getPerformance().isRecordPollingTime() || shouldSkipSampling())
+            return;
         pollingDuration.record(duration);
         log.debug("记录拉取耗时: streamKey={}, duration={}ms", streamKey, duration.toMillis());
     }
@@ -301,10 +334,11 @@ public class RedisStreamMetrics {
      * 记录消息发布耗时
      *
      * @param streamKey Stream 键名
-     * @param duration 发布耗时
+     * @param duration  发布耗时
      */
     public void recordPublishingDuration(String streamKey, Duration duration) {
-        if (!properties.getPerformance().isEnabled() || !properties.getPerformance().isRecordPublishingTime() || shouldSkipSampling()) return;
+        if (!properties.getPerformance().isEnabled() || !properties.getPerformance().isRecordPublishingTime() || shouldSkipSampling())
+            return;
         publishingDuration.record(duration);
         log.debug("记录发布耗时: streamKey={}, duration={}ms", streamKey, duration.toMillis());
     }

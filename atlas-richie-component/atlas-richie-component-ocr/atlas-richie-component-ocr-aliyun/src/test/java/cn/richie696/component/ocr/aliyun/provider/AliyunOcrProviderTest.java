@@ -15,31 +15,28 @@
  */
 package cn.richie696.component.ocr.aliyun.provider;
 
-import tools.jackson.databind.JsonNode;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.jdk.JdkHttpAdapter;
 import cn.richie696.component.ocr.aliyun.config.AliyunOcrProperties;
+import cn.richie696.component.ocr.exception.OcrException;
 import cn.richie696.component.ocr.model.MimeType;
 import cn.richie696.component.ocr.model.OcrImage;
 import cn.richie696.component.ocr.model.OcrOptions;
 import cn.richie696.component.ocr.model.OcrResult;
-import cn.richie696.component.ocr.exception.OcrException;
 import cn.richie696.context.utils.data.JsonUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * AliyunOcrProvider 单测 —— Mock 本地 HttpServer 验证协议细节.

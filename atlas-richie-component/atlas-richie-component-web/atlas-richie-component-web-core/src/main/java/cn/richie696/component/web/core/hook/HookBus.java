@@ -16,6 +16,7 @@
 package cn.richie696.component.web.core.hook;
 
 import java.util.List;
+import java.lang.AutoCloseable;
 
 /**
  * 事件总线（README.md §4.5 HookBus）。
@@ -40,9 +41,9 @@ public interface HookBus {
     /**
      * 注册订阅者。订阅者将接收所有匹配事件类型的 publish。
      *
-     * @param eventType 事件 class（如 {@code RequestCompletedEvent.class}）
+     * @param eventType  事件 class（如 {@code RequestCompletedEvent.class}）
      * @param subscriber 订阅者实例
-     * @param <E> 事件类型
+     * @param <E>        事件类型
      * @return 用于反注册的 token
      */
     <E extends HookEvent> Subscription subscribe(Class<E> eventType, HookSubscriber<E> subscriber);

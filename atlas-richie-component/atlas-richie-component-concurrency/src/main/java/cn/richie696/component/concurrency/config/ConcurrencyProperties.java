@@ -21,6 +21,7 @@ import cn.richie696.component.concurrency.config.properties.RateLimiterPropertie
 import cn.richie696.component.concurrency.threadpool.DynamicExecutor;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -68,13 +69,14 @@ import java.util.Map;
  * @author richie696
  * @since 1.0.0
  */
-@ConfigurationProperties(prefix = "platform.concurrency")
+@ConfigurationProperties(prefix = "platform.component.concurrency")
 @Data
 public class ConcurrencyProperties {
 
     /**
      * 限流器子系统配置 —— {@code platform.concurrency.rate-limiter.*}。
      */
+    @NestedConfigurationProperty
     private RateLimiterProperties rateLimiter = new RateLimiterProperties();
 
     /**

@@ -17,6 +17,7 @@ package cn.richie696.component.desensitize.core.model;
 
 import java.util.Collections;
 import java.util.Set;
+
 public record MaskContext(
         MaskScene scene,
         String fieldName,
@@ -30,7 +31,7 @@ public record MaskContext(
      * @param scene 脱敏场景
      * @return 上下文实例
      */
-    public static MaskContext of(MaskScene scene) {
+    public static MaskContext of (MaskScene scene){
         return new MaskContext(scene, null, null, Collections.emptySet());
     }
 
@@ -42,7 +43,7 @@ public record MaskContext(
      * @param declaringClass 声明类
      * @return 上下文实例
      */
-    public static MaskContext of(MaskScene scene, String fieldName, Class<?> declaringClass) {
+    public static MaskContext of (MaskScene scene, String fieldName, Class < ? > declaringClass){
         return new MaskContext(scene, fieldName, declaringClass, Collections.emptySet());
     }
 
@@ -52,7 +53,7 @@ public record MaskContext(
      * @param roles 当前用户角色
      * @return 新上下文实例
      */
-    public MaskContext withRoles(Set<String> roles) {
+    public MaskContext withRoles (Set < String > roles) {
         return new MaskContext(scene, fieldName, declaringClass,
                 roles == null ? Collections.emptySet() : Set.copyOf(roles));
     }

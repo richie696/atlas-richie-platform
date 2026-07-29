@@ -16,21 +16,16 @@
 package cn.richie696.component.ocr.tencent.provider;
 
 import cn.richie696.component.http.core.HttpClient;
-import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.component.http.core.HttpResponse;
-import cn.richie696.component.ocr.model.OcrBlock;
-import cn.richie696.component.ocr.model.OcrImage;
-import cn.richie696.component.ocr.model.OcrLine;
-import cn.richie696.component.ocr.model.OcrOptions;
-import cn.richie696.component.ocr.model.OcrResult;
-import cn.richie696.component.ocr.model.Point;
 import cn.richie696.component.ocr.exception.OcrException;
+import cn.richie696.component.ocr.model.*;
+import cn.richie696.component.ocr.provider.AbstractOcrProvider;
+import cn.richie696.component.ocr.tencent.config.TencentOcrProperties;
 import cn.richie696.component.ocr.tencent.protocol.TencentOcrEnvelope;
 import cn.richie696.component.ocr.tencent.protocol.TencentOcrPayload;
 import cn.richie696.component.ocr.tencent.protocol.TencentRequest;
 import cn.richie696.component.ocr.tencent.protocol.TencentResponse;
-import cn.richie696.component.ocr.provider.AbstractOcrProvider;
-import cn.richie696.component.ocr.tencent.config.TencentOcrProperties;
+import cn.richie696.context.utils.data.JsonUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.crypto.Mac;
@@ -40,15 +35,14 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.net.URI;
 import java.security.MessageDigest;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HexFormat;
-import java.util.HashMap;
+import java.util.*;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -103,27 +97,47 @@ import java.util.Map;
  */
 public class TencentOcrProvider extends AbstractOcrProvider<TencentRequest, TencentResponse> implements Serializable {
 
-    /** Java 序列化版本号，保持 Provider 序列化兼容。 */
+    /**
+     * Java 序列化版本号，保持 Provider 序列化兼容。
+     */
     @Serial
     private static final long serialVersionUID = 1L;
 
-    /** 默认腾讯云 OCR HTTP JSON 服务端点。 */
+    /**
+     * 默认腾讯云 OCR HTTP JSON 服务端点。
+     */
     private static final String DEFAULT_ENDPOINT = "https://ocr.tencentcloudapi.com";
-    /** 默认请求超时时间，单位毫秒。 */
+    /**
+     * 默认请求超时时间，单位毫秒。
+     */
     private static final long DEFAULT_TIMEOUT_MS = 30_000L;
-    /** 默认腾讯云服务地域。 */
+    /**
+     * 默认腾讯云服务地域。
+     */
     private static final String DEFAULT_REGION = "ap-guangzhou";
-    /** 默认腾讯云 OCR API Action。 */
+    /**
+     * 默认腾讯云 OCR API Action。
+     */
     private static final String DEFAULT_ACTION = "GeneralAccurateOCR";
-    /** 腾讯云 TC3 签名算法名称。 */
+    /**
+     * 腾讯云 TC3 签名算法名称。
+     */
     private static final String TC3_ALGORITHM = "TC3-HMAC-SHA256";
-    /** 腾讯云 OCR 服务名称。 */
+    /**
+     * 腾讯云 OCR 服务名称。
+     */
     private static final String TC3_SERVICE = "ocr";
-    /** 腾讯云 TC3 签名请求类型。 */
+    /**
+     * 腾讯云 TC3 签名请求类型。
+     */
     private static final String TC3_REQUEST = "tc3_request";
-    /** 调用腾讯云 OCR HTTP 接口的共享客户端（不是 vendor 配置，不走 props）。 */
+    /**
+     * 调用腾讯云 OCR HTTP 接口的共享客户端（不是 vendor 配置，不走 props）。
+     */
     private final HttpClient httpClient;
-    /** 腾讯云 OCR vendor 配置 Properties —— 每次调用 lazy 读取。 */
+    /**
+     * 腾讯云 OCR vendor 配置 Properties —— 每次调用 lazy 读取。
+     */
     private final TencentOcrProperties props;
 
     /**
@@ -133,7 +147,7 @@ public class TencentOcrProvider extends AbstractOcrProvider<TencentRequest, Tenc
      * （{@code credentials.secret-id} / {@code credentials.secret-key}）；其他配置
      * 在每次调用时通过 {@code liveXxx()} 实时读取。
      *
-     * @param props typed 配置（非 {@code null}）
+     * @param props      typed 配置（非 {@code null}）
      * @param httpClient 调用腾讯云 OCR HTTP JSON 端点的共享 HTTP 客户端，不能为 {@code null}
      * @throws OcrException.ConfigMissing {@code credentials.secret-id} 或 {@code credentials.secret-key} 缺失时抛出
      */
@@ -311,8 +325,8 @@ public class TencentOcrProvider extends AbstractOcrProvider<TencentRequest, Tenc
     // --- TC3-HMAC-SHA256 签名 ---
 
     private String buildAuthorization(String secretId, String secretKey, String region,
-                                       String action, String endpoint,
-                                       String bodyJson, String timestamp, String date) {
+                                      String action, String endpoint,
+                                      String bodyJson, String timestamp, String date) {
         try {
             // 1. Hash payload
             String payloadHash = sha256Hex(bodyJson);

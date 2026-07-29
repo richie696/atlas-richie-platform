@@ -19,6 +19,7 @@ import cn.richie696.component.web.core.spi.WebInterceptor;
 import cn.richie696.component.web.core.spi.WebInterceptorChain;
 import cn.richie696.component.web.core.spi.WebRequestContext;
 import org.springframework.core.Ordered;
+import java.util.UUID;
 
 /**
  * OTel 透传拦截器（README.md §4.3 / §6 R3）。
@@ -42,7 +43,9 @@ import org.springframework.core.Ordered;
  */
 public class OtelTracingInterceptor implements WebInterceptor, Ordered {
 
-    /** Order=50：早于 PlatformProtection(100)，让 traceId 第一时间入 ctx。 */
+    /**
+     * Order=50：早于 PlatformProtection(100)，让 traceId 第一时间入 ctx。
+     */
     public static final int ORDER = 50;
 
     @Override

@@ -73,7 +73,7 @@ public final class CacheLockManager {
     /**
      * 注册锁对象到本地锁池
      *
-     * @param key 业务锁key
+     * @param key  业务锁key
      * @param lock CacheLock对象
      */
     public static void addLock(String key, CacheLock lock) {
@@ -83,7 +83,7 @@ public final class CacheLockManager {
     /**
      * 从本地锁池移除锁对象
      *
-     * @param key 业务锁key
+     * @param key  业务锁key
      * @param lock CacheLock对象
      */
     public static void removeLock(String key, CacheLock lock) {

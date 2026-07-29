@@ -16,17 +16,17 @@
 package cn.richie696.component.redis.streammq.stream;
 
 import cn.richie696.component.redis.streammq.bean.DeadLetterMessage;
-import cn.richie696.context.utils.data.Collections;
-import cn.richie696.context.utils.data.JsonUtils;
-import cn.richie696.component.redis.streammq.function.StreamFunction;
-import cn.richie696.contract.model.BaseStreamMessage;
 import cn.richie696.component.redis.streammq.config.stream.RedisStreamProperties;
+import cn.richie696.component.redis.streammq.function.StreamFunction;
 import cn.richie696.component.redis.streammq.monitor.MetricsErrorRecorder;
 import cn.richie696.component.redis.streammq.monitor.RedisStreamBacklogMonitor;
 import cn.richie696.component.redis.streammq.monitor.RedisStreamMetrics;
 import cn.richie696.component.redis.streammq.tracing.RedisStreamTracingUtils;
 import cn.richie696.component.redis.streammq.tracing.TraceableMessageWrapper;
 import cn.richie696.component.redis.streammq.utils.DeadLetterQueueUtil;
+import cn.richie696.context.utils.data.Collections;
+import cn.richie696.context.utils.data.JsonUtils;
+import cn.richie696.contract.model.BaseStreamMessage;
 import io.micrometer.core.instrument.Timer;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -88,31 +88,49 @@ public abstract class AbstractStreamConsumer<T extends BaseStreamMessage> {
      */
     public static final class Options<T> {
 
-        /** Stream 键名 */
+        /**
+         * Stream 键名
+         */
         private final String streamKey;
 
-        /** 消费者组名 */
+        /**
+         * 消费者组名
+         */
         private final String group;
 
-        /** 消费者名称 */
+        /**
+         * 消费者名称
+         */
         private final String consumer;
 
-        /** 消息负载类型 */
+        /**
+         * 消息负载类型
+         */
         private final Class<T> targetType;
 
-        /** 并发处理数 */
+        /**
+         * 并发处理数
+         */
         private final int concurrency;
 
-        /** 单次拉取消息数量 */
+        /**
+         * 单次拉取消息数量
+         */
         private final int count;
 
-        /** 是否自动确认消息 */
+        /**
+         * 是否自动确认消息
+         */
         private final boolean autoAck;
 
-        /** 是否自动启动 */
+        /**
+         * 是否自动启动
+         */
         private final boolean autoStart;
 
-        /** 错误处理策略 */
+        /**
+         * 错误处理策略
+         */
         private final ErrorStrategy errorStrategy;
 
         private Options(Builder<T> b) {
@@ -145,31 +163,49 @@ public abstract class AbstractStreamConsumer<T extends BaseStreamMessage> {
          */
         public static final class Builder<T> {
 
-            /** 消息负载类型 */
+            /**
+             * 消息负载类型
+             */
             private final Class<T> targetType;
 
-            /** Stream 键名 */
+            /**
+             * Stream 键名
+             */
             private String streamKey;
 
-            /** 消费者组名 */
+            /**
+             * 消费者组名
+             */
             private String group;
 
-            /** 消费者名称 */
+            /**
+             * 消费者名称
+             */
             private String consumer = "default-consumer";
 
-            /** 并发处理数（默认 CPU 核心数的一半，至少 1） */
+            /**
+             * 并发处理数（默认 CPU 核心数的一半，至少 1）
+             */
             private int concurrency = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
 
-            /** 单次拉取消息数量（默认 1） */
+            /**
+             * 单次拉取消息数量（默认 1）
+             */
             private int count = 1;
 
-            /** 是否自动确认消息（默认 true） */
+            /**
+             * 是否自动确认消息（默认 true）
+             */
             private boolean autoAck = true;
 
-            /** 是否自动启动（默认 true） */
+            /**
+             * 是否自动启动（默认 true）
+             */
             private boolean autoStart = true;
 
-            /** 错误处理策略（默认 SKIP） */
+            /**
+             * 错误处理策略（默认 SKIP）
+             */
             private ErrorStrategy errorStrategy = ErrorStrategy.SKIP;
 
             private Builder(Class<T> type) {
@@ -302,30 +338,46 @@ public abstract class AbstractStreamConsumer<T extends BaseStreamMessage> {
     @Autowired
     private RedisStreamBacklogMonitor backlogMonitor;
 
-    /** Stream 操作函数 */
+    /**
+     * Stream 操作函数
+     */
     @Autowired
     private StreamFunction stream;
 
-    /** 幂等防护 */
+    /**
+     * 幂等防护
+     */
     @Autowired
     private RedisStreamIdempotencyGuard idempotencyGuard;
 
-    /** 幂等窗口（可后续改为从配置读取） */
+    /**
+     * 幂等窗口（可后续改为从配置读取）
+     */
     private final Duration idempotencyTtl = Duration.ofHours(24);
 
-    /** 响应式订阅对象，用于控制消费者的生命周期 */
+    /**
+     * 响应式订阅对象，用于控制消费者的生命周期
+     */
     private Disposable subscription;
 
-    /** 已处理消息数 */
+    /**
+     * 已处理消息数
+     */
     private final AtomicLong processedCount = new AtomicLong(0);
 
-    /** 处理失败数 */
+    /**
+     * 处理失败数
+     */
     private final AtomicLong errorCount = new AtomicLong(0);
 
-    /** 重试次数 */
+    /**
+     * 重试次数
+     */
     private final AtomicLong retryCount = new AtomicLong(0);
 
-    /** 是否正在优雅停机 */
+    /**
+     * 是否正在优雅停机
+     */
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     /**
@@ -376,7 +428,7 @@ public abstract class AbstractStreamConsumer<T extends BaseStreamMessage> {
 
         // 从配置中获取参数
         ConsumerConfig config =
-            consumerProperties.getConfigs().get(configName);
+                consumerProperties.getConfigs().get(configName);
 
         if (config == null) {
             throw new IllegalStateException("未找到消费者配置: %s".formatted(configName));
@@ -391,15 +443,15 @@ public abstract class AbstractStreamConsumer<T extends BaseStreamMessage> {
         }
 
         this.options = Options.builder((Class<T>) targetType)
-            .streamKey(config.getStreamKey())
-            .group(config.getGroup())
-            .consumer(config.getConsumer())
-            .autoAck(config.isAutoAck())
-            .concurrency(config.getConcurrency())
-            .count(config.getCount())
-            .errorStrategy(config.getErrorStrategy())
-            .autoStart(config.isAutoStart())
-            .build();
+                .streamKey(config.getStreamKey())
+                .group(config.getGroup())
+                .consumer(config.getConsumer())
+                .autoAck(config.isAutoAck())
+                .concurrency(config.getConcurrency())
+                .count(config.getCount())
+                .errorStrategy(config.getErrorStrategy())
+                .autoStart(config.isAutoStart())
+                .build();
 
         log.debug("AbstractStreamConsumer 从配置初始化: streamKey={}, group={}, targetType={}, count={}, concurrency={}",
                 options.streamKey, options.group, options.targetType.getSimpleName(), options.count, options.concurrency);
@@ -418,10 +470,10 @@ public abstract class AbstractStreamConsumer<T extends BaseStreamMessage> {
      */
     private boolean isDeadLetterQueueConfig(String configName) {
         return configName != null && (
-            configName.startsWith("dlq-") ||
-            configName.startsWith("dlq:") ||
-            configName.contains("dead-letter") ||
-            configName.contains("deadletter")
+                configName.startsWith("dlq-") ||
+                        configName.startsWith("dlq:") ||
+                        configName.contains("dead-letter") ||
+                        configName.contains("deadletter")
         );
     }
 
@@ -783,8 +835,8 @@ public abstract class AbstractStreamConsumer<T extends BaseStreamMessage> {
      * <p>子类可以决定是否发送到死信队列，以及使用什么策略
      *
      * @param payload 发生错误的消息负载
-     * @param error 异常对象
-     * @param ctx 事件上下文
+     * @param error   异常对象
+     * @param ctx     事件上下文
      * @return 是否发送成功
      */
     protected boolean sendToDeadLetterQueue(T payload, Throwable error, EventContext ctx) {
@@ -810,14 +862,14 @@ public abstract class AbstractStreamConsumer<T extends BaseStreamMessage> {
      * <p>框架提供此工具方法，子类可以在 onError 方法中调用
      * <p>子类可以决定是否发送到死信队列，以及使用什么策略
      *
-     * @param payload 发生错误的消息负载
-     * @param error 异常对象
-     * @param ctx 事件上下文
+     * @param payload  发生错误的消息负载
+     * @param error    异常对象
+     * @param ctx      事件上下文
      * @param strategy 死信队列策略
      * @return 是否发送成功
      */
     protected boolean sendToDeadLetterQueue(T payload, Throwable error, EventContext ctx,
-                                          DeadLetterQueueUtil.DeadLetterStrategy strategy) {
+                                            DeadLetterQueueUtil.DeadLetterStrategy strategy) {
         try {
             // 使用指定策略发送到死信队列
             DeadLetterQueueUtil.sendToDeadLetterQueue(payload, error, ctx, this.getClass(), strategy);

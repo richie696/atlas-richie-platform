@@ -15,16 +15,12 @@
  */
 package cn.richie696.component.ai.service.impl;
 
-import cn.richie696.component.ai.config.resilience.ResilienceConfig;
-
-import cn.richie696.component.ai.config.routing.RoutingConfig;
-
-import cn.richie696.component.ai.config.chat.LlmProvider;
-
-import cn.richie696.component.ai.config.chat.AiChatModel;
-
 import cn.richie696.component.ai.config.AiChatClientFactory;
 import cn.richie696.component.ai.config.AiModelProperties;
+import cn.richie696.component.ai.config.chat.AiChatModel;
+import cn.richie696.component.ai.config.chat.LlmProvider;
+import cn.richie696.component.ai.config.resilience.ResilienceConfig;
+import cn.richie696.component.ai.config.routing.RoutingConfig;
 import cn.richie696.component.ai.model.AiRequest;
 import cn.richie696.component.ai.model.AiResponse;
 import cn.richie696.component.ai.model.ModelOptions;

@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.mqtt.config;
 
-import cn.richie696.contract.gateway.config.DeployConfig;
 import cn.richie696.component.mqtt.canary.CanaryInstanceManager;
+import cn.richie696.contract.gateway.config.DeployConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -52,7 +52,7 @@ public class MqttClientAutoConfiguration {
      *
      * @param discoveryClient 服务发现客户端
      * @param applicationName 应用名称
-     * @param deployConfig 部署配置
+     * @param deployConfig    部署配置
      * @return 灰度实例管理器实例
      */
     @Bean

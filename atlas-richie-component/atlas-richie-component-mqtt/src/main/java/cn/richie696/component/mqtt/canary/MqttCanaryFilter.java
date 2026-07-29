@@ -16,8 +16,8 @@
 package cn.richie696.component.mqtt.canary;
 
 import cn.richie696.context.common.api.SpringContextHolder;
-import cn.richie696.contract.gateway.config.DeployConfig;
 import cn.richie696.contract.constant.GlobalConstants;
+import cn.richie696.contract.gateway.config.DeployConfig;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -150,7 +150,7 @@ public final class MqttCanaryFilter {
      * <p>
      * 灰度发布统一使用 ID 模式，直接判断 canaryId 是否在灰度列表中
      *
-     * @param canaryId    灰度ID（门店ID、用户ID等）
+     * @param canaryId     灰度ID（门店ID、用户ID等）
      * @param deployConfig 灰度配置
      * @return true 如果是灰度消息
      */

@@ -19,6 +19,7 @@ import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
 import cn.richie696.component.redis.streammq.monitor.RedisStreamBacklogMonitor;
 import cn.richie696.component.redis.streammq.monitor.RedisStreamEndpoint;
 import cn.richie696.component.redis.streammq.monitor.RedisStreamHealthIndicator;
+import cn.richie696.component.redis.streammq.monitor.RedisStreamLinksEndpoint;
 import cn.richie696.component.redis.streammq.monitor.RedisStreamMetrics;
 import cn.richie696.component.redis.streammq.stream.RedisStreamReactor;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -59,37 +60,50 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnClass(MeterRegistry.class)
 @ConditionalOnProperty(
-    prefix = "platform.cache.redis.stream.monitoring",
-    name = "enabled",
-    havingValue = "true",
-    matchIfMissing = true
+        prefix = "platform.cache.redis.stream.monitoring",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = true
 )
 @EnableConfigurationProperties({RedisStreamMonitoringProperties.class})
 public class RedisStreamMonitoringAutoConfiguration {
 
     /**
-     * 配置 Redis Stream 监控指标收集器
-     *
-     * @param meterRegistry MeterRegistry 实例
-     * @param properties    Stream 监控配置
-     * @return RedisStreamMetrics 实例
+     * 配置 Redis Stream 消息积压监控器。
      */
     @Bean
     @ConditionalOnProperty(
-        prefix = "platform.cache.redis.stream.monitoring.metrics",
-        name = "enabled",
-        havingValue = "true",
-        matchIfMissing = true
+            prefix = "platform.cache.redis.stream.monitoring.backlog",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = true
     )
-    public RedisStreamMetrics redisStreamMetrics(MeterRegistry meterRegistry, RedisStreamMonitoringProperties properties) {
-        log.info("配置 Redis Stream 监控指标收集器");
-        return new RedisStreamMetrics(meterRegistry, properties);
+    public RedisStreamBacklogMonitor redisStreamBacklogMonitor(
+            MultiRedisTemplate<Object> redisTemplate,
+            RedisStreamMetrics metrics,
+            RedisStreamMonitoringProperties properties) {
+        log.info("配置 Redis Stream 消息积压监控器");
+        return new RedisStreamBacklogMonitor(redisTemplate, metrics, properties);
+    }
+
+    /**
+     * 配置 Redis Stream 链接清单端点。
+     */
+    @Bean
+    @ConditionalOnProperty(
+            prefix = "management.endpoint.redis-stream-links",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = true
+    )
+    public RedisStreamLinksEndpoint redisStreamLinksEndpoint() {
+        return new RedisStreamLinksEndpoint();
     }
 
     /**
      * 配置 Redis Stream 健康检查指示器
      *
-     * @param redisTemplate  MultiRedisTemplate 实例
+     * @param redisTemplate MultiRedisTemplate 实例
      * @param metrics       RedisStreamMetrics 实例
      * @param reactor       Stream 拉取反应器
      * @param meterRegistry MeterRegistry 实例
@@ -98,10 +112,10 @@ public class RedisStreamMonitoringAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(
-        prefix = "platform.cache.redis.stream.monitoring.health-check",
-        name = "enabled",
-        havingValue = "true",
-        matchIfMissing = true
+            prefix = "platform.cache.redis.stream.monitoring.health-check",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = true
     )
     public RedisStreamHealthIndicator redisStreamHealthIndicator(
             MultiRedisTemplate<Object> redisTemplate,
@@ -126,10 +140,10 @@ public class RedisStreamMonitoringAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(
-        prefix = "management.endpoint.redis-stream",
-        name = "enabled",
-        havingValue = "true",
-        matchIfMissing = true
+            prefix = "management.endpoint.redis-stream",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = true
     )
     public RedisStreamEndpoint redisStreamEndpoint(
             MultiRedisTemplate<Object> redisTemplate,

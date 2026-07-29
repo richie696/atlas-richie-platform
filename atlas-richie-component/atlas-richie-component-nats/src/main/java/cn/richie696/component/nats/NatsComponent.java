@@ -15,13 +15,13 @@
  */
 package cn.richie696.component.nats;
 
-import cn.richie696.component.nats.bus.NatsBus;
-import cn.richie696.component.nats.config.NatsProperties;
-import cn.richie696.component.nats.connection.NatsConnectionManager;
-import cn.richie696.component.nats.bus.NatsEndpoint;
-import cn.richie696.component.nats.enums.ConnectionState;
-import cn.richie696.component.nats.connection.JetStreamManagementService;
 import cn.richie696.component.nats.bus.JetStreamBus;
+import cn.richie696.component.nats.bus.NatsBus;
+import cn.richie696.component.nats.bus.NatsEndpoint;
+import cn.richie696.component.nats.config.NatsProperties;
+import cn.richie696.component.nats.connection.JetStreamManagementService;
+import cn.richie696.component.nats.connection.NatsConnectionManager;
+import cn.richie696.component.nats.enums.ConnectionState;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.SmartLifecycle;
 

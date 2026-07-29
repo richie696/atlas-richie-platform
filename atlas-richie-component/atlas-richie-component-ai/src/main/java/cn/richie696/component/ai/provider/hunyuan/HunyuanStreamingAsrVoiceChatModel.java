@@ -15,16 +15,10 @@
  */
 package cn.richie696.component.ai.provider.hunyuan;
 
+import cn.richie696.component.ai.api.voicechat.*;
 import cn.richie696.component.ai.provider.support.JsonSafe;
-
-import cn.richie696.component.ai.support.sign.VendorStsContext;
-
-import cn.richie696.component.ai.api.voicechat.StsTicket;
-import cn.richie696.component.ai.api.voicechat.VoiceChatConfig;
-import cn.richie696.component.ai.api.voicechat.VoiceChatEvent;
-import cn.richie696.component.ai.api.voicechat.VoiceChatModel;
-import cn.richie696.component.ai.api.voicechat.VoiceConversation;
 import cn.richie696.component.ai.service.VoiceStsService;
+import cn.richie696.component.ai.support.sign.VendorStsContext;
 import cn.richie696.context.utils.data.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,8 +87,15 @@ public class HunyuanStreamingAsrVoiceChatModel implements VoiceChatModel {
         this.supportedModels = supportedModels == null ? DEFAULT_SUPPORTED_MODELS.clone() : supportedModels.clone();
     }
 
-    @Override public String vendor() { return vendor; }
-    @Override public String[] supportedModels() { return supportedModels.clone(); }
+    @Override
+    public String vendor() {
+        return vendor;
+    }
+
+    @Override
+    public String[] supportedModels() {
+        return supportedModels.clone();
+    }
 
     @Override
     public VoiceConversation open(VoiceChatConfig config) {
@@ -221,7 +222,10 @@ public class HunyuanStreamingAsrVoiceChatModel implements VoiceChatModel {
             endSession();
         }
 
-        @Override public java.util.concurrent.Flow.Publisher<VoiceChatEvent> events() { return publisher; }
+        @Override
+        public java.util.concurrent.Flow.Publisher<VoiceChatEvent> events() {
+            return publisher;
+        }
 
         @Override
         public void sendAudio(VoiceChatEvent.AudioFrame frame) {
@@ -241,9 +245,14 @@ public class HunyuanStreamingAsrVoiceChatModel implements VoiceChatModel {
             throw new UnsupportedOperationException("Hunyuan ASR 不支持 sendText, 请用 sendAudio");
         }
 
-        @Override public void interrupt() {}
+        @Override
+        public void interrupt() {
+        }
 
-        @Override public boolean isActive() { return active.get() && !closed.get(); }
+        @Override
+        public boolean isActive() {
+            return active.get() && !closed.get();
+        }
 
         @Override
         public void close() {
@@ -254,8 +263,12 @@ public class HunyuanStreamingAsrVoiceChatModel implements VoiceChatModel {
                         Map<String, Object> end = new LinkedHashMap<>();
                         end.put("type", "ended");
                         webSocket.sendText(JsonUtils.getInstance().serialize(end), true);
-                    } catch (Exception ignored) {}
-                    try { webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "client_close"); } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
+                    try {
+                        webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "client_close");
+                    } catch (Exception ignored) {
+                    }
                 }
                 publisher.submit(VoiceChatEvent.builder(VoiceChatEvent.Type.SESSION_END).build());
                 publisher.close();

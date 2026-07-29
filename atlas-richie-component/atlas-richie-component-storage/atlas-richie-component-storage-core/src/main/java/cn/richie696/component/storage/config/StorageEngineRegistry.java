@@ -26,6 +26,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 存储引擎注册中心（多引擎并存模式）
@@ -111,7 +114,7 @@ public class StorageEngineRegistry {
      * @param engine     Spring 管理的引擎实例
      */
     public synchronized void registerInitialEngine(StorageEngineEnum engineType, String engineId,
-                                                    StorageEngine engine) {
+                                                   StorageEngine engine) {
         ProxyHolder holder = engineProxies.get(engineType);
         if (holder == null) {
             throw new IllegalStateException("未知的引擎类型: " + engineType);
@@ -149,7 +152,7 @@ public class StorageEngineRegistry {
      * @return 新创建的引擎实例
      */
     public StorageEngine switchEngine(StorageEngineEnum engineType,
-                                       StorageProperties properties) {
+                                      StorageProperties properties) {
         return switchEngine(engineType, properties, "system", null);
     }
 
@@ -166,8 +169,8 @@ public class StorageEngineRegistry {
      * @return 新创建的引擎实例
      */
     public synchronized StorageEngine switchEngine(StorageEngineEnum engineType,
-                                                    StorageProperties properties,
-                                                    String actor, String reason) {
+                                                   StorageProperties properties,
+                                                   String actor, String reason) {
         Objects.requireNonNull(engineType, "engineType must not be null");
         Objects.requireNonNull(properties, "properties must not be null");
 
@@ -190,7 +193,7 @@ public class StorageEngineRegistry {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException(
                         "未找到引擎类型 [" + engineType + "] 的 Provider，" +
-                        "请确认对应引擎模块已引入 classpath"));
+                                "请确认对应引擎模块已引入 classpath"));
 
         // 2. 校验参数
         provider.validate(properties);
@@ -241,7 +244,7 @@ public class StorageEngineRegistry {
      * </ul>
      */
     public StorageEngine refreshEngine(StorageEngineEnum engineType,
-                                        StorageProperties properties) {
+                                       StorageProperties properties) {
         return refreshEngine(engineType, properties, "system", null);
     }
 
@@ -256,8 +259,8 @@ public class StorageEngineRegistry {
      * @throws IllegalStateException 当引擎类型未知或当前未初始化时
      */
     public synchronized StorageEngine refreshEngine(StorageEngineEnum engineType,
-                                                     StorageProperties properties,
-                                                     String actor, String reason) {
+                                                    StorageProperties properties,
+                                                    String actor, String reason) {
         Objects.requireNonNull(engineType, "engineType must not be null");
         Objects.requireNonNull(properties, "properties must not be null");
 

@@ -29,8 +29,8 @@
 19. [Local Cache (Independent from L2)](#19-local-cache-independent-from-l2)
 20. [Pub/Sub and Keyspace Notification](#20-pubsub-and-keyspace-notification)
 21. [Migration Window Validation](#21-migration-window-validation)
-22. [Bounded Queue queue()](#22-bounded-queue-queue)
-23. [Bounded Stack stack()](#23-bounded-stack-stack)
+22. [Bounded Queue queue ()](#22-bounded-queue-queue)
+23. [Bounded Stack stack ()](#23-bounded-stack-stack)
 24. [Feature Summary](#24-feature-summary)
 
 ---
@@ -39,7 +39,8 @@
 
 ### Design Rationale
 
-Build a business-oriented wrapper over the Redis String data structure, packaging native `SET/GET/INCR/DECR` commands into clean Java static methods while integrating the L2 local cache, Bloom filter, and performance guard.
+Build a business-oriented wrapper over the Redis String data structure, packaging native `SET/GET/INCR/DECR` commands
+into clean Java static methods while integrating the L2 local cache, Bloom filter, and performance guard.
 
 Layered capability flow:
 
@@ -52,7 +53,8 @@ GlobalCache.value().set(k, v, ttl)
 
 ### Problems Solved
 
-- Business code that talks to `RedisTemplate` directly has to handle serialization, deserialization, key composition, and exception plumbing as boilerplate.
+- Business code that talks to `RedisTemplate` directly has to handle serialization, deserialization, key composition,
+  and exception plumbing as boilerplate.
 - Different developers each writing their own Redis utility classes leads to scattered, inconsistent usage.
 - Inconsistent write governance (big-key detection, String anti-pattern detection, slow-query monitoring).
 - Repeated serialization and deserialization for numeric and boolean types.
@@ -102,7 +104,8 @@ spring.data.redis:
 - **Unified facade**: all String operations go through `GlobalCache`, never scattered across business code.
 - **Governance instrumentation**: natural write-time governance point that prevents big keys.
 - **L2 acceleration**: with L2 enabled, the read path hits the local cache first, cutting Redis network overhead.
-- **Transparent complexity**: each method is annotated with its time complexity so callers understand the performance impact.
+- **Transparent complexity**: each method is annotated with its time complexity so callers understand the performance
+  impact.
 
 ### Test Cases
 
@@ -139,7 +142,8 @@ Wrap the full set of Redis Hash operations, supporting:
 
 ### Problems Solved
 
-- Hashes are a natural fit for structured objects, but reading or writing the whole object via JSON in a String is an anti-pattern (no partial update, big-key risk).
+- Hashes are a natural fit for structured objects, but reading or writing the whole object via JSON in a String is an
+  anti-pattern (no partial update, big-key risk).
 - Hash field-level storage enables partial reads and updates.
 - Cache stampede: under high concurrency, many requests for a non-existent key at once all fall through to the DB.
 
@@ -197,19 +201,24 @@ UserInfo result = GlobalCache.struct().getWithLock(
 
 ### Design Rationale
 
-The native unbounded List API has been removed. List scenarios are served uniformly by **`GlobalCache.queue()`** (FIFO traffic shaping) and **`GlobalCache.stack()`** (LIFO, latest N entries), with capacity governed by `maxLen` (1 to 4999).
+The native unbounded List API has been removed. List scenarios are served uniformly by **`GlobalCache.queue()`** (FIFO
+traffic shaping) and **`GlobalCache.stack()`** (LIFO, latest N entries), with capacity governed by `maxLen` (1 to 4999).
 
-> **Boundary with Stream MQ**: bounded queues and stacks are **actively pulled**, with no consumer group, no ACK, and no dead-letter handling. They are **not** message queues. For reliable delivery, use the standalone **`StreamMQ`** module (`atlas-richie-component-redis-streammq`). See [§22](#22-bounded-queue-queue) / [§23](#23-bounded-stack-stack).
+> **Boundary with Stream MQ**: bounded queues and stacks are **actively pulled**, with no consumer group, no ACK, and no
+> dead-letter handling. They are **not** message queues. For reliable delivery, use the standalone **`StreamMQ`** module
+> (`atlas-richie-component-redis-streammq`). See [§22](#22-bounded-queue-queue) / [§23](#23-bounded-stack-stack).
 
 ### Problems Solved
 
 - Unbounded Lists grow without limit under high concurrency → big keys, blocking, memory risk.
 - Need predictable traffic-shaping buffering: drop the head of the queue when full (`queue`) or reject pushes (`stack`).
-- Lightweight async channel when PaaS Redis does not support the full Stream feature set (accepts active pull and at-most-once semantics).
+- Lightweight async channel when PaaS Redis does not support the full Stream feature set (accepts active pull and
+  at-most-once semantics).
 
 ### Configuration
 
-Shares the `spring.data.redis.*` connection with Redis; no independent switch. Capacity is decided at creation time by `maxLen`.
+Shares the `spring.data.redis.*` connection with Redis; no independent switch. Capacity is decided at creation time by
+`maxLen`.
 
 ### Recommended Configuration
 
@@ -246,7 +255,8 @@ Event latest = stack.peek();
 
 ### Design Rationale
 
-Wrap the Redis Set data structure, supporting add, remove, query, batch operations, and random pop on a non-duplicating set.
+Wrap the Redis Set data structure, supporting add, remove, query, batch operations, and random pop on a non-duplicating
+set.
 
 ### Problems Solved
 
@@ -292,7 +302,8 @@ assert all.contains("redis");
 
 ### Design Rationale
 
-Wrap the full set of Redis ZSet (sorted set) operations, supporting score-based ordering, rank queries, range queries, and score updates.
+Wrap the full set of Redis ZSet (sorted set) operations, supporting score-based ordering, rank queries, range queries,
+and score updates.
 
 ### Problems Solved
 
@@ -302,7 +313,8 @@ Wrap the full set of Redis ZSet (sorted set) operations, supporting score-based 
 
 ### Configuration
 
-ZSet is currently not in the `l2-caching-data` `KeyTypeEnum` (which only includes STRING / HASH / LIST / SET). ZSet does not go through L2 local cache.
+ZSet is currently not in the `l2-caching-data` `KeyTypeEnum` (which only includes STRING / HASH / LIST / SET). ZSet does
+not go through L2 local cache.
 
 ### Recommended Configuration
 
@@ -310,7 +322,8 @@ No extra configuration required. ZSet data volumes tend to be large and are not 
 
 ### Design Wins
 
-- **Transparent complexity annotation**: most ZSet operations are O(log n), and the documentation calls this out explicitly.
+- **Transparent complexity annotation**: most ZSet operations are O (log n), and the documentation calls this out
+  explicitly.
 - **Rank queries**: `ranking().reverseRank` wraps `ZREVRANK`.
 - **Range pop**: `ranking().popMin` supports batch pop.
 
@@ -417,9 +430,17 @@ assert values.size() == 3;
 
 ### Design Rationale
 
-A distributed lock implementation built on Redisson FencedLock. Before reaching Redisson, an extra JVM local lock pool (`CacheLockManager.LOCK_POOL`) is added, forming a three-layer acquisition order: "local lock → reentrant check → Redisson". Optimistic and pessimistic modes, lock renewal, and reentrancy are supported.
+A distributed lock implementation built on Redisson FencedLock. Before reaching Redisson, an extra JVM local lock pool
+(`CacheLockManager.LOCK_POOL`) is added, forming a three-layer acquisition order: "local lock → reentrant check →
+Redisson". Optimistic and pessimistic modes, lock renewal, and reentrancy are supported.
 
-**Why a local lock pool is needed**: every Redisson lock acquire and release is a Redis network RTT (about 1 to 5 ms). When many threads in the same JVM contend on the same lock key, the contention can be resolved in JVM memory (about 0.01 ms) before any of them reaches Redisson. `CacheLockManager` maintains a local lock registry backed by `ConcurrentHashMap` that records which threads in the current JVM hold which locks. Acquisition and release check the registry first; if a thread in the same JVM already holds the lock, subsequent threads can perceive the state locally and do not need to hit Redis every time. This mechanism is fully transparent to business code and does not change the semantics of the distributed lock (Redisson still guarantees cross-instance mutual exclusion).
+**Why a local lock pool is needed**: every Redisson lock acquire and release is a Redis network RTT (about 1 to 5 ms).
+When many threads in the same JVM contend on the same lock key, the contention can be resolved in JVM memory (about 0.01
+ms) before any of them reaches Redisson. `CacheLockManager` maintains a local lock registry backed by
+`ConcurrentHashMap` that records which threads in the current JVM hold which locks. Acquisition and release check the
+registry first; if a thread in the same JVM already holds the lock, subsequent threads can perceive the state locally
+and do not need to hit Redis every time. This mechanism is fully transparent to business code and does not change the
+semantics of the distributed lock (Redisson still guarantees cross-instance mutual exclusion).
 
 **Lock acquisition chain**:
 
@@ -430,10 +451,16 @@ optimisticLock / pessimisticLock(key, seconds)
 
 ### Problems Solved
 
-- **Mutual exclusion in a distributed environment**: write operations on the same resource across JVM instances must be exclusive. Redisson FencedLock provides a fencing-token mechanism that guarantees distributed consistency.
-- **Redis pressure under high contention**: when dozens of threads in the same JVM fight for the same lock key, hitting Redis RTT for each attempt magnifies the concurrent load on Redis. The local lock pool resolves the first round of contention inside the JVM; only the actual winner reaches Redisson, eliminating wasted network round trips within the same JVM.
-- **Avoiding lock expiry while business logic is still in flight**: `lockWithRenewal` uses the Redisson watchdog to auto-renew, so the lock is not released prematurely when the business work exceeds the lease.
-- **Reentrancy for the same thread, no self-deadlock**: when the same thread re-acquires the same lock, `CacheLockManager` detects it locally and increments the counter without going through Redis.
+- **Mutual exclusion in a distributed environment**: write operations on the same resource across JVM instances must be
+  exclusive. Redisson FencedLock provides a fencing-token mechanism that guarantees distributed consistency.
+- **Redis pressure under high contention**: when dozens of threads in the same JVM fight for the same lock key, hitting
+  Redis RTT for each attempt magnifies the concurrent load on Redis. The local lock pool resolves the first round of
+  contention inside the JVM; only the actual winner reaches Redisson, eliminating wasted network round trips within the
+  same JVM.
+- **Avoiding lock expiry while business logic is still in flight**: `lockWithRenewal` uses the Redisson watchdog to
+  auto-renew, so the lock is not released prematurely when the business work exceeds the lease.
+- **Reentrancy for the same thread, no self-deadlock**: when the same thread re-acquires the same lock,
+  `CacheLockManager` detects it locally and increments the counter without going through Redis.
 
 ### Configuration
 
@@ -453,16 +480,28 @@ spring.data.redis:
   enable-local-lock: true    # enabled by default; significantly reduces Redisson pressure under high contention
 ```
 
-The local lock pool is enabled by default. In the vast majority of scenarios, there is no need to turn it off. Only in extreme cases (an enormous number of distinct lock keys with a very low hit rate, causing `ConcurrentHashMap` bloat) should you consider disabling it. In real-world workloads, this almost never happens.
+The local lock pool is enabled by default. In the vast majority of scenarios, there is no need to turn it off. Only in
+extreme cases (an enormous number of distinct lock keys with a very low hit rate, causing `ConcurrentHashMap` bloat)
+should you consider disabling it. In real-world workloads, this almost never happens.
 
 ### Design Wins
 
-- **Three-layer lock fallback**: local lock → reentrant → Redisson, with each layer reducing Redis pressure. The local lock pool resolves the first round of contention inside the JVM; under high contention, a large batch of threads in the same JVM does not need to serialize through Redis RTT, they perceive the lock state in the O(1) `ConcurrentHashMap` lookup phase.
-- **Quantified impact**: a local lock hit is about 0.01 ms (pure JVM memory); Redisson lock acquisition is about 1 to 5 ms (one network RTT). When 100 threads compete for the same lock concurrently, the local lock pool reduces 99 network RTTs to 0, and only the thread that actually wins the lock issues a Redisson request.
-- **Lock renewal**: `lockWithRenewal` uses the built-in Redisson watchdog to auto-renew, preventing premature lock expiry while business work is still in progress.
-- **Optimistic and pessimistic modes**: optimistic lock `tryLock(0, time)` returns after a single attempt without blocking; pessimistic lock `lock(time)` blocks until acquisition or timeout. Choose by scenario.
-- **AutoCloseable**: `CacheLock` implements `AutoCloseable`, so try-with-resources releases the lock automatically, eliminating deadlocks caused by forgotten `unlock` calls.
-- **Reentrancy detection**: when the same thread re-acquires the same lock, `tryReentrant` recognizes the situation locally via `CacheLockManager.existLock()` and increments the counter without going through Redis, keeping the reentry count accurate.
+- **Three-layer lock fallback**: local lock → reentrant → Redisson, with each layer reducing Redis pressure. The local
+  lock pool resolves the first round of contention inside the JVM; under high contention, a large batch of threads in
+  the same JVM does not need to serialize through Redis RTT, they perceive the lock state in the O (1)
+  `ConcurrentHashMap` lookup phase.
+- **Quantified impact**: a local lock hit is about 0.01 ms (pure JVM memory); Redisson lock acquisition is about 1 to 5
+  ms (one network RTT). When 100 threads compete for the same lock concurrently, the local lock pool reduces 99 network
+  RTTs to 0, and only the thread that actually wins the lock issues a Redisson request.
+- **Lock renewal**: `lockWithRenewal` uses the built-in Redisson watchdog to auto-renew, preventing premature lock
+  expiry while business work is still in progress.
+- **Optimistic and pessimistic modes**: optimistic lock `tryLock(0, time)` returns after a single attempt without
+  blocking; pessimistic lock `lock(time)` blocks until acquisition or timeout. Choose by scenario.
+- **AutoCloseable**: `CacheLock` implements `AutoCloseable`, so try-with-resources releases the lock automatically,
+  eliminating deadlocks caused by forgotten `unlock` calls.
+- **Reentrancy detection**: when the same thread re-acquires the same lock, `tryReentrant` recognizes the situation
+  locally via `CacheLockManager.existLock()` and increments the counter without going through Redis, keeping the reentry
+  count accurate.
 
 ### Test Cases
 
@@ -486,7 +525,8 @@ try (var lock = GlobalCache.lock().pessimistic("lock:order:456", 10L)) {
 
 ### Design Rationale
 
-Hot-key cache reads get a four-layer protection chain: "L2 → Bloom filter → Redis → distributed lock → DB fallback". The core methods are the `getXxxWithLock` family.
+Hot-key cache reads get a four-layer protection chain: "L2 → Bloom filter → Redis → distributed lock → DB fallback". The
+core methods are the `getXxxWithLock` family.
 
 **Full chain** (using `value().getWithLock` as the example):
 
@@ -499,7 +539,8 @@ value().getWithLock(key, timeout, dbLoader)
 
 - **Cache penetration**: requests for keys that do not exist in Redis or the DB fall through to the DB every time.
 - **Cache stampede**: the instant a hot key expires, a large wave of concurrent requests all hit the DB.
-- Non-blocking failure handling: threads that fail to acquire the lock do not block waiting for the lock to be released; they retry reading the cache (which the successful thread has already written).
+- Non-blocking failure handling: threads that fail to acquire the lock do not block waiting for the lock to be released;
+  they retry reading the cache (which the successful thread has already written).
 
 ### Configuration
 
@@ -533,8 +574,10 @@ spring.data.redis.l2-caching-data: [STRING, HASH]
 ### Design Wins
 
 - **Four-layer defense**: L2 → Bloom → Redis → lock + DB. Each layer absorbs what it can and the next is bypassed.
-- **Zero stampede impact**: even if lock acquisition fails, the request does not fall through to the DB directly; it retries reading the cache that the successful thread just wrote.
-- **Automatic DB write-back**: data loaded from the source is automatically written back to the cache and the Bloom filter.
+- **Zero stampede impact**: even if lock acquisition fails, the request does not fall through to the DB directly; it
+  retries reading the cache that the successful thread just wrote.
+- **Automatic DB write-back**: data loaded from the source is automatically written back to the cache and the Bloom
+  filter.
 - **Unified API**: `value()` / `struct()` / `field()` all provide `getWithLock`, with a consistent usage pattern.
 
 ### Test Cases
@@ -562,7 +605,8 @@ String name = GlobalCache.field().getWithLock(
 
 ### Design Rationale
 
-Add a JVM local cache layer (Caffeine / Ehcache / cache2k) in front of Redis, forming a three-tier cache hierarchy: L1 (local) + L2 (Redis) + DB.
+Add a JVM local cache layer (Caffeine / Ehcache / cache2k) in front of Redis, forming a three-tier cache hierarchy: L1
+(local) + L2 (Redis) + DB.
 
 **Read and write paths**:
 
@@ -580,8 +624,10 @@ Write: GlobalCache.value().set(key, value, ttl)
 
 ### Problems Solved
 
-- **Cache avalanche**: a large batch of keys expire at once and all hit Redis. The L1 local cache absorbs the read pressure.
-- **Hot key in Redis**: a single key is read by many instances at the same time, creating a Redis CPU bottleneck. L1 local hits return directly.
+- **Cache avalanche**: a large batch of keys expire at once and all hit Redis. The L1 local cache absorbs the read
+  pressure.
+- **Hot key in Redis**: a single key is read by many instances at the same time, creating a Redis CPU bottleneck. L1
+  local hits return directly.
 - **Network latency**: every Redis read costs a network round trip. L1 hits cost zero network.
 
 ### Configuration
@@ -619,9 +665,12 @@ Cross-instance L2 sync relies on Redis keyspace notifications (`notify-keyspace-
 notify-keyspace-events KEA
 ```
 
-- Instance A writes or deletes a Redis key → Redis fires a keyspace event → instance B receives the notification → it invalidates its local cache.
-- **Short dirty-read window**: between the Redis write and the moment the notification arrives, instance B's local cache still holds the old value.
-- **Recommended tolerance**: even if no invalidation notification arrives, the L2 local cache TTL should not exceed `original TTL × 2`.
+- Instance A writes or deletes a Redis key → Redis fires a keyspace event → instance B receives the notification → it
+  invalidates its local cache.
+- **Short dirty-read window**: between the Redis write and the moment the notification arrives, instance B's local cache
+  still holds the old value.
+- **Recommended tolerance**: even if no invalidation notification arrives, the L2 local cache TTL should not exceed
+  `original TTL × 2`.
 
 ### Design Wins
 
@@ -644,19 +693,22 @@ assert "value".equals(val);
 
 ### Design Rationale
 
-Provide Bloom filter capability, paired with the cache stampede prevention methods, to **efficiently decide whether a key is "definitely absent"** and intercept invalid queries before they fall through to the DB.
+Provide Bloom filter capability, paired with the cache stampede prevention methods, to **efficiently decide whether a
+key is "definitely absent"** and intercept invalid queries before they fall through to the DB.
 
 Two implementations are supported:
 
-| Implementation | Scenario | Characteristics |
-|----------------|----------|-----------------|
-| `GuavaBloomFilter` | Single instance | JVM memory, no network overhead, cannot be shared across processes |
-| `RedissonBloomFilter` | Multi-instance | Stored in Redis, shared across processes, every check costs a network call |
+| Implementation        | Scenario        | Characteristics                                                            |
+|-----------------------|-----------------|----------------------------------------------------------------------------|
+| `GuavaBloomFilter`    | Single instance | JVM memory, no network overhead, cannot be shared across processes         |
+| `RedissonBloomFilter` | Multi-instance  | Stored in Redis, shared across processes, every check costs a network call |
 
 ### Problems Solved
 
-- Cache penetration: many requests for non-existent keys (for example, malicious traffic) pass through to the DB. The Bloom filter intercepts them before L1 / L2.
-- Pairs with `value().getWithLock`: when the Bloom filter says "absent", skip the Redis query and lock acquisition and fall back to the source directly.
+- Cache penetration: many requests for non-existent keys (for example, malicious traffic) pass through to the DB. The
+  Bloom filter intercepts them before L1 / L2.
+- Pairs with `value().getWithLock`: when the Bloom filter says "absent", skip the Redis query and lock acquisition and
+  fall back to the source directly.
 
 ### Configuration
 
@@ -681,6 +733,7 @@ platform.cache.bloom-filter:
 ```
 
 **When to enable**:
+
 - Cache data set has more than 10k entries and there is a penetration risk → enable.
 - Data structure is well bounded (e.g., user IDs or product IDs with a known range) → the effect is best.
 - A 0.1% false-positive rate means 1 in 1000 queries will fall back to the source unnecessarily, which is acceptable.
@@ -689,7 +742,8 @@ platform.cache.bloom-filter:
 
 - **Zero false-negatives**: "absent" is 100% absent, so penetration queries are intercepted directly.
 - **Tunable low false-positive rate**: trade space for accuracy through `false-probability`.
-- **Pairs with the cache**: the Bloom filter is updated automatically on cache writes (`bloomFilter.add(key)`), keeping it consistent.
+- **Pairs with the cache**: the Bloom filter is updated automatically on cache writes (`bloomFilter.add(key)`), keeping
+  it consistent.
 
 ### Test Cases
 
@@ -709,7 +763,9 @@ String val = GlobalCache.value().getWithLock(
 
 ### Design Rationale
 
-`RedisPerfGuard` is a runtime Redis operation governance layer that sits in front of every Redis call in every Manager, monitoring and optionally blocking along three dimensions: **complexity tier**, **latency threshold**, and **String payload detection**.
+`RedisPerfGuard` is a runtime Redis operation governance layer that sits in front of every Redis call in every Manager,
+monitoring and optionally blocking along three dimensions: **complexity tier**, **latency threshold**, and **String
+payload detection**.
 
 **Governance dimensions**:
 
@@ -734,7 +790,7 @@ RedisPerfGuard.execute(manager, method, tier, supplier)
 
 ### Problems Solved
 
-- Developers inadvertently call `KEYS *` or full `HGETALL` on ToC core paths, which are O(n) operations.
+- Developers inadvertently call `KEYS *` or full `HGETALL` on ToC core paths, which are O (n) operations.
 - Large values cause network bottlenecks and JVM GC pressure, with no early warning mechanism.
 - Slow queries have no tiered alerts; problems only surface after users complain.
 
@@ -784,10 +840,14 @@ spring.data.redis.perf:
 
 ### Design Wins
 
-- **Complexity governance made real**: instead of a document saying "do not use KEYS", the runtime detects the call and emits WARN or blocks it.
-- **Performance degradation is observable**: `toc-soft-ms` / `toc-hard-ms` automatically detect slow queries and output `[RedisPerf]` logs.
-- **BIGKEY prevention**: `checkStringWritePayload` detects Collection, Map, and oversized text stored as String before the write goes through.
-- **Progressive canary**: `enabled` goes from false → canary true (warn only) → production true (block), avoiding a one-shot blast radius.
+- **Complexity governance made real**: instead of a document saying "do not use KEYS", the runtime detects the call and
+  emits WARN or blocks it.
+- **Performance degradation is observable**: `toc-soft-ms` / `toc-hard-ms` automatically detect slow queries and output
+  `[RedisPerf]` logs.
+- **BIGKEY prevention**: `checkStringWritePayload` detects Collection, Map, and oversized text stored as String before
+  the write goes through.
+- **Progressive canary**: `enabled` goes from false → canary true (warn only) → production true (block), avoiding a
+  one-shot blast radius.
 
 ### Test Cases
 
@@ -819,7 +879,8 @@ try {
 
 ### Design Rationale
 
-`MultiRedisTemplate` and `MultiStringRedisTemplate` support **named child Redis instances**, routing to different Redis nodes by key prefix or business name.
+`MultiRedisTemplate` and `MultiStringRedisTemplate` support **named child Redis instances**, routing to different Redis
+nodes by key prefix or business name.
 
 ### Problems Solved
 
@@ -862,12 +923,14 @@ spring.data.redis.slaves:
 ### Design Wins
 
 - **Named routing**: routes to a specific Redis by key prefix or business name, no hard-coding required.
-- **Independent connection pools**: the primary Redis and child Redis instances each have their own connection pools, with no interference.
+- **Independent connection pools**: the primary Redis and child Redis instances each have their own connection pools,
+  with no interference.
 - **Transparent switching**: business code is unaware; the routing logic is encapsulated inside `MultiRedisTemplate`.
 
 ### Note
 
-`MultiRedisTemplate`'s routing table is initialized statically at configuration time. Adding or removing a child Redis instance at runtime requires a restart.
+`MultiRedisTemplate`'s routing table is initialized statically at configuration time. Adding or removing a child Redis
+instance at runtime requires a restart.
 
 ---
 
@@ -875,7 +938,8 @@ spring.data.redis.slaves:
 
 ### Design Rationale
 
-Wrap the Redis Lua script execution capability, supporting atomic execution of complex business logic through `script().eval`.
+Wrap the Redis Lua script execution capability, supporting atomic execution of complex business logic through
+`script().eval`.
 
 ### Problems Solved
 
@@ -895,7 +959,7 @@ Manage Lua scripts as resource files (`.lua`) rather than concatenating strings 
 
 - **Atomicity**: Lua scripts run serially on the Redis server, atomic by design.
 - **Reduced network round trips**: multiple commands sent in one go.
-- **Complexity classification**: encapsulated under the `SCRIPT_OR_UNKNOWN` tier, not classified as O(1) / O(n).
+- **Complexity classification**: encapsulated under the `SCRIPT_OR_UNKNOWN` tier, not classified as O (1) / O (n).
 
 ### Test Cases
 
@@ -915,7 +979,9 @@ assert "ok".equals(result);
 
 ### Design Rationale
 
-A sliding-window rate limiting algorithm built on Redis plus a Lua script. `limiter().tryAcquire(key, maxCount, windowSeconds)` decides whether a request exceeds the threshold within the current window.
+A sliding-window rate limiting algorithm built on Redis plus a Lua script.
+`limiter().tryAcquire(key, maxCount, windowSeconds)` decides whether a request exceeds the threshold within the current
+window.
 
 ### Problems Solved
 
@@ -934,7 +1000,8 @@ boolean pass = GlobalCache.limiter().tryAcquire("rl:/api/pay", 100, 60);
 
 ### Recommended Configuration
 
-Rate-limiting parameters should be set by the business side based on interface capacity. The recommended windows and thresholds:
+Rate-limiting parameters should be set by the business side based on interface capacity. The recommended windows and
+thresholds:
 
 ```yaml
 # It is recommended to manage rate-limiting thresholds dynamically in the config center (not hard-coded in code)
@@ -968,7 +1035,8 @@ assert !GlobalCache.limiter().tryAcquire(limitKey, 5, 60);
 
 ### Design Rationale
 
-Wrap the Redis GEO data structure, supporting storage of geographic locations, distance calculation, and nearby range queries.
+Wrap the Redis GEO data structure, supporting storage of geographic locations, distance calculation, and nearby range
+queries.
 
 ### Problems Solved
 
@@ -1097,7 +1165,9 @@ assert !day3;
 
 ### Design Rationale
 
-Provide JVM local cache capability independent of Redis (built on the JSR-107 standard, with Caffeine / Ehcache / cache2k as providers). Unlike L2, this local cache is a **business-explicit** independent region (`spring.data.local`); L2 is a transparent acceleration layer that `GlobalCache` read paths pass through automatically.
+Provide JVM local cache capability independent of Redis (built on the JSR-107 standard, with Caffeine / Ehcache /
+cache2k as providers). Unlike L2, this local cache is a **business-explicit** independent region (`spring.data.local`);
+L2 is a transparent acceleration layer that `GlobalCache` read paths pass through automatically.
 
 ### Problems Solved
 
@@ -1153,7 +1223,8 @@ spring.data.local:
 
 Wrap Redis Pub/Sub, used primarily for two scenarios:
 
-1. **Keyspace Notification**: `CacheSyncListener` subscribes to Redis's `__keyevent@*__` events for multi-instance L2 cache sync; business-defined listeners use `GlobalCache.event().subscribeKeyEvent(pattern, listener)`.
+1. **Keyspace Notification**: `CacheSyncListener` subscribes to Redis's `__keyevent@*__` events for multi-instance L2
+   cache sync; business-defined listeners use `GlobalCache.event().subscribeKeyEvent(pattern, listener)`.
 2. **Business topic Pub/Sub**: lightweight broadcasting via `GlobalCache.notification().publish(topic, message)`.
 
 ### Problems Solved
@@ -1181,12 +1252,14 @@ notify-keyspace-events KEA
 
 ### Design Wins
 
-- **L2 consistency**: `CacheSyncListener` receives write / delete notifications from other instances and invalidates the local cache automatically.
+- **L2 consistency**: `CacheSyncListener` receives write / delete notifications from other instances and invalidates the
+  local cache automatically.
 - **Lightweight broadcasting**: scenarios without persistent messaging can use Pub/Sub, which is lighter than Stream.
 
 ### Note
 
-Pub/Sub is a "fire-and-forget" mode: if the consumer is offline, the message is lost. For reliable messaging, use **`StreamMQ`** (`atlas-richie-component-redis-streammq`).
+Pub/Sub is a "fire-and-forget" mode: if the consumer is offline, the message is lost. For reliable messaging, use **
+`StreamMQ`** (`atlas-richie-component-redis-streammq`).
 
 ---
 
@@ -1194,11 +1267,14 @@ Pub/Sub is a "fire-and-forget" mode: if the consumer is offline, the message is 
 
 ### Design Rationale
 
-`MigrationWindowValidator` scans the fields annotated with `@MigrationWindow` in `AtlasRedisProperties` at Spring startup and checks whether the deadline has passed. If the deadline has passed and the value is still `false`, an ERROR log is emitted and the application is prevented from starting.
+`MigrationWindowValidator` scans the fields annotated with `@MigrationWindow` in `AtlasRedisProperties` at Spring
+startup and checks whether the deadline has passed. If the deadline has passed and the value is still `false`, an ERROR
+log is emitted and the application is prevented from starting.
 
 ### Problems Solved
 
-- Configuration defaults tend to be the "safest" option (e.g., `perf.enabled: false`), but if never turned on they never deliver value.
+- Configuration defaults tend to be the "safest" option (e.g., `perf.enabled: false`), but if never turned on they never
+  deliver value.
 - The "soft switch nobody ever flips" problem: a hard deadline forces teams to push configuration migration forward.
 
 ### Configuration
@@ -1223,28 +1299,39 @@ spring.data.redis.perf:
 
 ### Design Wins
 
-- **Forced execution**: failing to migrate before the deadline prevents the application from starting, ensuring configuration governance does not get left behind.
-- **Smooth canary**: before the deadline, you can roll out gradually (warn first, then block), without forcing a hard cutover.
-- **Fail-fast escape**: if startup fails after the deadline, ops is immediately aware and can ship the config in under a minute.
+- **Forced execution**: failing to migrate before the deadline prevents the application from starting, ensuring
+  configuration governance does not get left behind.
+- **Smooth canary**: before the deadline, you can roll out gradually (warn first, then block), without forcing a hard
+  cutover.
+- **Fail-fast escape**: if startup fails after the deadline, ops is immediately aware and can ship the config in under a
+  minute.
 
 ### Note
 
-For production services where startup failures have a large blast radius, complete the canary validation and configuration migration **before** the deadline, rather than waiting for the startup failure and then changing the config.
+For production services where startup failures have a large blast radius, complete the canary validation and
+configuration migration **before** the deadline, rather than waiting for the startup failure and then changing the
+config.
 
 ---
 
-## 22. Bounded Queue queue()
+## 22. Bounded Queue queue ()
 
 ### Design Rationale
 
-A **bounded FIFO queue** (`BoundedQueue`) built on top of the Redis List. A companion meta key (`{key}:meta`) persists `maxLen`, and the write path atomically reads the meta and maintains the List length via Lua. Compared with the removed unbounded List API, the core is **capacity governance** plus a **JDK Queue-style API with clear semantics**.
+A **bounded FIFO queue** (`BoundedQueue`) built on top of the Redis List. A companion meta key (`{key}:meta`) persists
+`maxLen`, and the write path atomically reads the meta and maintains the List length via Lua. Compared with the removed
+unbounded List API, the core is **capacity governance** plus a **JDK Queue-style API with clear semantics**.
 
 **Positioning (important)**:
 
-- **Active pull**: business code must call `poll()` / `drain(count)` to consume. Nothing is consumed without a pull, and there is no push, no consumer group.
-- **Traffic-shaping buffer**: high-load `offer` to buffer; workers pull at their own pace. When full, the **head is dropped** (oldest entry) so the system is not dragged down.
-- **Lightweight fallback**: when cloud PaaS Redis does not support the full Stream feature set and you do not want to bring in RocketMQ / RabbitMQ, this is a List-based option.
-- **Not a message queue**: for reliable delivery, ACK, dead-letter, and consumer monitoring, use **`StreamMQ`** (`atlas-richie-component-redis-streammq`).
+- **Active pull**: business code must call `poll()` / `drain(count)` to consume. Nothing is consumed without a pull, and
+  there is no push, no consumer group.
+- **Traffic-shaping buffer**: high-load `offer` to buffer; workers pull at their own pace. When full, the **head is
+  dropped** (oldest entry) so the system is not dragged down.
+- **Lightweight fallback**: when cloud PaaS Redis does not support the full Stream feature set and you do not want to
+  bring in RocketMQ / RabbitMQ, this is a List-based option.
+- **Not a message queue**: for reliable delivery, ACK, dead-letter, and consumer monitoring, use **`StreamMQ`**
+  (`atlas-richie-component-redis-streammq`).
 
 **Redis data model**:
 
@@ -1279,26 +1366,33 @@ poll / peek / peekTail / drain
         └── deserialization failure → WARN + null (for poll, the element has already been removed from the List)
 ```
 
-**Core classes**: `BoundedQueueFunction` → `RedisBoundedQueueManager` → `BoundedQueue`; sharing `BoundedListRedisSupport`, `BoundedListRedisScripts`, `BoundedListCapacityLimits`.
+**Core classes**: `BoundedQueueFunction` → `RedisBoundedQueueManager` → `BoundedQueue`; sharing
+`BoundedListRedisSupport`, `BoundedListRedisScripts`, `BoundedListCapacityLimits`.
 
 ### Problems Solved
 
-- The native List API has **no maxLen**, so under high concurrency the List grows without bound → big keys, blocking, memory risk.
-- `addListItem` + `leftPop` semantics are scattered and mixed with the "cache the whole List" use case, making team-wide governance hard.
-- Need **predictable traffic shaping**: when overloaded, drop the oldest task rather than dragging Redis or the JVM down.
-- In PaaS environments where Stream capability is limited, a **lightweight async channel over existing Redis** is still needed (accepts active pull and at-most-once semantics).
-- Misuses such as `maxLen` mismatch across instances on multi-instance `getOrCreate`, sharing a key with `rawList()`, or non-List types occupying the key, must be caught at creation time.
+- The native List API has **no maxLen**, so under high concurrency the List grows without bound → big keys, blocking,
+  memory risk.
+- `addListItem` + `leftPop` semantics are scattered and mixed with the "cache the whole List" use case, making team-wide
+  governance hard.
+- Need **predictable traffic shaping**: when overloaded, drop the oldest task rather than dragging Redis or the JVM
+  down.
+- In PaaS environments where Stream capability is limited, a **lightweight async channel over existing Redis** is still
+  needed (accepts active pull and at-most-once semantics).
+- Misuses such as `maxLen` mismatch across instances on multi-instance `getOrCreate`, sharing a key with `rawList()`, or
+  non-List types occupying the key, must be caught at creation time.
 
 ### Configuration
 
-Shares the `spring.data.redis.*` connection with the List; there is **no independent `queue.*` switch**. Capacity is constrained at creation time by `maxLen` and platform constants:
+Shares the `spring.data.redis.*` connection with the List; there is **no independent `queue.*` switch**. Capacity is
+constrained at creation time by `maxLen` and platform constants:
 
-| Constant | Value | Meaning |
-|----------|-------|---------|
-| `LIST_BIGKEY_RECOMMENDED_MAX_ELEMENTS` | 5000 | Recommended upper bound for business Lists in README |
-| `BOUNDED_MAX_LEN_CEILING` | 4999 | Upper bound of legal `maxLen` (strictly below the big-key red line) |
-| `MIN_MAX_LEN` | 1 | Minimum capacity |
-| `MAX_BATCH_COUNT` | 20 | Single-call upper bound for `drain(count)` |
+| Constant                               | Value | Meaning                                                             |
+|----------------------------------------|-------|---------------------------------------------------------------------|
+| `LIST_BIGKEY_RECOMMENDED_MAX_ELEMENTS` | 5000  | Recommended upper bound for business Lists in README                |
+| `BOUNDED_MAX_LEN_CEILING`              | 4999  | Upper bound of legal `maxLen` (strictly below the big-key red line) |
+| `MIN_MAX_LEN`                          | 1     | Minimum capacity                                                    |
+| `MAX_BATCH_COUNT`                      | 20    | Single-call upper bound for `drain(count)`                          |
 
 ```yaml
 spring.data.redis:
@@ -1309,18 +1403,25 @@ spring.data.redis:
 
 ### Recommended Configuration
 
-- **maxLen**: estimate by peak buffer volume. Start with a small capacity (e.g., 500 to 2000) and only call `grow()` when necessary. It doubles at most once up to the cap; do not jump straight to 4999.
-- **Consumer side**: scheduled tasks or dedicated workers should **actively** `poll` / `drain(≤20)`. For multi-instance competing consumers, evaluate whether "first to grab consumes" is acceptable.
-- **Key convention**: `{business}:bq:{scenario}:{id}`. **Do not** share the key with `rawList()`, Stream keys, or String cache.
+- **maxLen**: estimate by peak buffer volume. Start with a small capacity (e.g., 500 to 2000) and only call `grow()`
+  when necessary. It doubles at most once up to the cap; do not jump straight to 4999.
+- **Consumer side**: scheduled tasks or dedicated workers should **actively** `poll` / `drain(≤20)`. For multi-instance
+  competing consumers, evaluate whether "first to grab consumes" is acceptable.
+- **Key convention**: `{business}:bq:{scenario}:{id}`. **Do not** share the key with `rawList()`, Stream keys, or String
+  cache.
 - **TTL**: short-lived buffers can call `expire(ms)` (both list and meta keys get PEXPIRE atomically).
-- **Stable types**: the `Class<T>` of elements must match the serialization format at write time, to avoid deserialization WARN and silent drops.
+- **Stable types**: the `Class<T>` of elements must match the serialization format at write time, to avoid
+  deserialization WARN and silent drops.
 
 ### Design Wins
 
 - **Hard capacity ceiling**: capped at 4999, aligned with List big-key governance, avoiding unbounded Lists.
-- **Atomic write**: `offer` runs in a single Lua script (RPUSH + LTRIM), so length and meta stay consistent under concurrency.
-- **Clear traffic-shaping semantics**: when full, drop the head, suitable for scenarios where "dropping the old task is better than taking the system down".
-- **Creation-time validation**: `TYPE` only allows `none` / `list`; `setIfAbsent` only counts `TRUE` as success; `getOrCreate` checks `maxLen` consistency.
+- **Atomic write**: `offer` runs in a single Lua script (RPUSH + LTRIM), so length and meta stay consistent under
+  concurrency.
+- **Clear traffic-shaping semantics**: when full, drop the head, suitable for scenarios where "dropping the old task is
+  better than taking the system down".
+- **Creation-time validation**: `TYPE` only allows `none` / `list`; `setIfAbsent` only counts `TRUE` as success;
+  `getOrCreate` checks `maxLen` consistency.
 - **Observability**: the read path emits a unified WARN on deserialization failure (including key, operation, failure).
 - **Clean layering with Stream**: does not compete with Stream's "real MQ" positioning, reducing misuse.
 
@@ -1348,17 +1449,21 @@ boolean grown = GlobalCache.queue().grow("order:bq:retry");
 
 ---
 
-## 23. Bounded Stack stack()
+## 23. Bounded Stack stack ()
 
 ### Design Rationale
 
-A **bounded LIFO stack** (`BoundedStack`) built on top of the Redis List, sharing the meta key pattern (`{key}:meta`) and `BoundedListCapacityLimits` / `BoundedListRedisScripts` / `BoundedListRedisSupport` with the queue, but with **different overflow policy and consumption semantics**.
+A **bounded LIFO stack** (`BoundedStack`) built on top of the Redis List, sharing the meta key pattern (`{key}:meta`)
+and `BoundedListCapacityLimits` / `BoundedListRedisScripts` / `BoundedListRedisSupport` with the queue, but with
+**different overflow policy and consumption semantics**.
 
 **Positioning**:
 
 - Another **bounded List utility**, **actively pulled** (`pop` / `latest`), **not** a message queue.
-- Suitable for LIFO scenarios that only care about the latest N entries (recent operation log, preview of the latest pending batch, etc.).
-- Compared with `queue()`: when full, the stack **rejects the push** (returns `false`) and does not auto-evict old elements.
+- Suitable for LIFO scenarios that only care about the latest N entries (recent operation log, preview of the latest
+  pending batch, etc.).
+- Compared with `queue()`: when full, the stack **rejects the push** (returns `false`) and does not auto-evict old
+  elements.
 
 **Redis data model** (same as the queue):
 
@@ -1383,32 +1488,40 @@ peek()     → LINDEX -1
 latest(n)  → LRANGE -n,-1 (n ∈ [1,20], read-only, does not delete)
 ```
 
-**Growth**: only the meta is updated (`grow` Lua). Unlike the queue, the stack does not run LTRIM after grow; when not full, LLEN ≤ maxLen already holds.
+**Growth**: only the meta is updated (`grow` Lua). Unlike the queue, the stack does not run LTRIM after grow; when not
+full, LLEN ≤ maxLen already holds.
 
 **Core classes**: `BoundedStackFunction` → `RedisBoundedStackManager` → `BoundedStack`.
 
 ### Problems Solved
 
-- Need a **fixed-depth** LIFO structure, where overflow should **fail explicitly** rather than silently overwrite (contrasting with the queue's "drop the oldest").
+- Need a **fixed-depth** LIFO structure, where overflow should **fail explicitly** rather than silently overwrite
+  (contrasting with the queue's "drop the oldest").
 - The native `rightPush` / `rightPop` has no `maxLen` and cannot express "keep at most the latest N entries".
-- `latest(count)` is a read-only batch peek at the top, avoiding the need to `pop` (and thus damage the data) just to glance at the top.
+- `latest(count)` is a read-only batch peek at the top, avoiding the need to `pop` (and thus damage the data) just to
+  glance at the top.
 
 ### Configuration
 
-Same as [§22 Bounded Queue](#22-bounded-queue-queue): no independent configuration item, `maxLen` is constrained by `BoundedListCapacityLimits`.
+Same as [§22 Bounded Queue](#22-bounded-queue-queue): no independent configuration item, `maxLen` is constrained by
+`BoundedListCapacityLimits`.
 
 ### Recommended Configuration
 
-- **Scenario selection**: only use `stack()` when the business semantics are LIFO. Use `queue()` for FIFO traffic shaping.
+- **Scenario selection**: only use `stack()` when the business semantics are LIFO. Use `queue()` for FIFO traffic
+  shaping.
 - **maxLen**: usually smaller than the queue (e.g., 50 to 500), representing a "latest N entries" window.
-- **Handling a full stack**: when `push` returns `false`, the business side should degrade (discard this entry, alert, or call `grow()` and retry).
+- **Handling a full stack**: when `push` returns `false`, the business side should degrade (discard this entry, alert,
+  or call `grow()` and retry).
 - **latest**: use `latest(count)` for preview, `pop()` for actual consumption. `count` must not exceed 20.
 
 ### Design Wins
 
-- **Reject on full**: protects the N entries already on the stack from being silently overwritten. Predictable semantics.
-- **O(1) top operations**: `peek` / `pop` / `push` all touch the ends of the List.
-- **Shared governance infrastructure**: meta, grow, expire, destroy, type checks, and deserialization WARN are all shared with the queue.
+- **Reject on full**: protects the N entries already on the stack from being silently overwritten. Predictable
+  semantics.
+- **O (1) top operations**: `peek` / `pop` / `push` all touch the ends of the List.
+- **Shared governance infrastructure**: meta, grow, expire, destroy, type checks, and deserialization WARN are all
+  shared with the queue.
 - **API aligned with JDK Deque**: reduces the learning curve when migrating from a local stack to a distributed one.
 
 ### Test Cases
@@ -1433,45 +1546,45 @@ List<Event> recent = stack.latest(5);
 Event popped = stack.pop();
 ```
 
-### queue() vs stack() Selection Guide
+### queue () vs stack () Selection Guide
 
-| Dimension | `queue()` FIFO | `stack()` LIFO |
-|-----------|----------------|----------------|
-| Overflow policy | Drop the oldest (LTRIM) | `push` fails when full |
-| Typical scenario | Traffic shaping, lightweight task buffering | Latest N entries, stack-style processing |
-| Consumption | `poll` / `drain` | `pop` / `latest` |
-| Compared with Stream MQ | Complementary, not a replacement | Complementary, not a replacement |
-| Active pull | Yes | Yes |
+| Dimension               | `queue()` FIFO                              | `stack()` LIFO                           |
+|-------------------------|---------------------------------------------|------------------------------------------|
+| Overflow policy         | Drop the oldest (LTRIM)                     | `push` fails when full                   |
+| Typical scenario        | Traffic shaping, lightweight task buffering | Latest N entries, stack-style processing |
+| Consumption             | `poll` / `drain`                            | `pop` / `latest`                         |
+| Compared with Stream MQ | Complementary, not a replacement            | Complementary, not a replacement         |
+| Active pull             | Yes                                         | Yes                                      |
 
 ---
 
 ## 24. Feature Summary
 
-| # | Feature | Core class | Pattern | Config prefix | Complexity governance |
-|---|---------|-----------|---------|---------------|----------------------|
-| 1 | KV / String storage | `RedisStringManager` | Facade + delegate | `spring.data.redis` | O(1) |
-| 2 | Hash operations | `RedisHashManager` | Facade + delegate | `spring.data.redis` | O(1) |
-| 3 | List operations (native) | `RedisListManager` | Facade + delegate (deprecated step by step) | `spring.data.redis` | O(1) / O(n) |
-| 22 | Bounded queue queue() | `RedisBoundedQueueManager` / `BoundedQueue` | Bounded FIFO + meta + Lua | `spring.data.redis` | O(1) + SCRIPT |
-| 23 | Bounded stack stack() | `RedisBoundedStackManager` / `BoundedStack` | Bounded LIFO + meta + Lua | `spring.data.redis` | O(1) + SCRIPT |
-| 4 | Set operations | `RedisSetManager` | Facade + delegate | `spring.data.redis` | O(1) |
-| 5 | ZSet operations | `RedisZSetManager` | Facade + delegate | `spring.data.redis` | O(log n) |
-| 6 | Key management | `RedisKeyManager` | Facade + delegate | `spring.data.redis` | O(1) / O(n) |
-| 7 | Batch operations | `RedisStringManager` | Pipeline batch | `spring.data.redis` | (inherits) |
-| 8 | Distributed lock | `RedisLockManager` | Three-layer lock + Redisson | `spring.data.redis` | — |
-| 9 | Cache stampede prevention | `RedisStringManager` | L2 → Bloom → Redis → Lock → DB | `platform.cache.bloom-filter` | (inherits) |
-| 10 | L2 secondary cache | `LocalCache` + `CacheSyncListener` | Local cache + keyspace sync | `spring.data.redis.enable-l2-caching` | — |
-| 11 | Bloom filter | `BloomFilterFacade` | Strategy pattern (Guava / Redisson) | `platform.cache.bloom-filter` | — |
-| 12 | Performance guard | `RedisPerfGuard` | Decorator + complexity tiering | `spring.data.redis.perf` | Runtime governance |
-| 13 | Multi-Redis routing | `MultiRedisTemplate` | Routing table + named key | `spring.data.redis.slaves` | — |
-| 14 | Lua scripts | `RedisLuaManager` | Script executor | — | SCRIPT_OR_UNKNOWN |
-| 15 | Rate limiting | `RedisLimiterManager` | Sliding window + Lua | — | SCRIPT_OR_UNKNOWN |
-| 16 | GEO | `RedisGeoManager` | Wraps GEO commands | — | O(log n) |
-| 17 | HyperLogLog | `RedisHyperLogManager` | Wraps PF commands | — | O(1) |
-| 18 | Bitmap | `RedisBitmapManager` | Wraps BIT commands | — | O(1) |
-| 19 | Local cache | `LocalCacheManager` + `LocalCache` | JSR-107 standard | `spring.data.local` | — |
-| 20 | Pub/Sub | `RedisEventManager` + `NotificationFunction` | Pub/Sub | — | — |
-| 21 | Migration window | `MigrationWindowValidator` | Startup-time forced check | `spring.data.redis.perf.*` | — |
+| #  | Feature                   | Core class                                   | Pattern                                     | Config prefix                         | Complexity governance |
+|----|---------------------------|----------------------------------------------|---------------------------------------------|---------------------------------------|-----------------------|
+| 1  | KV / String storage       | `RedisStringManager`                         | Facade + delegate                           | `spring.data.redis`                   | O(1)                  |
+| 2  | Hash operations           | `RedisHashManager`                           | Facade + delegate                           | `spring.data.redis`                   | O(1)                  |
+| 3  | List operations (native)  | `RedisListManager`                           | Facade + delegate (deprecated step by step) | `spring.data.redis`                   | O(1) / O(n)           |
+| 22 | Bounded queue queue()     | `RedisBoundedQueueManager` / `BoundedQueue`  | Bounded FIFO + meta + Lua                   | `spring.data.redis`                   | O(1) + SCRIPT         |
+| 23 | Bounded stack stack()     | `RedisBoundedStackManager` / `BoundedStack`  | Bounded LIFO + meta + Lua                   | `spring.data.redis`                   | O(1) + SCRIPT         |
+| 4  | Set operations            | `RedisSetManager`                            | Facade + delegate                           | `spring.data.redis`                   | O(1)                  |
+| 5  | ZSet operations           | `RedisZSetManager`                           | Facade + delegate                           | `spring.data.redis`                   | O(log n)              |
+| 6  | Key management            | `RedisKeyManager`                            | Facade + delegate                           | `spring.data.redis`                   | O(1) / O(n)           |
+| 7  | Batch operations          | `RedisStringManager`                         | Pipeline batch                              | `spring.data.redis`                   | (inherits)            |
+| 8  | Distributed lock          | `RedisLockManager`                           | Three-layer lock + Redisson                 | `spring.data.redis`                   | —                     |
+| 9  | Cache stampede prevention | `RedisStringManager`                         | L2 → Bloom → Redis → Lock → DB              | `platform.cache.bloom-filter`         | (inherits)            |
+| 10 | L2 secondary cache        | `LocalCache` + `CacheSyncListener`           | Local cache + keyspace sync                 | `spring.data.redis.enable-l2-caching` | —                     |
+| 11 | Bloom filter              | `BloomFilterFacade`                          | Strategy pattern (Guava / Redisson)         | `platform.cache.bloom-filter`         | —                     |
+| 12 | Performance guard         | `RedisPerfGuard`                             | Decorator + complexity tiering              | `spring.data.redis.perf`              | Runtime governance    |
+| 13 | Multi-Redis routing       | `MultiRedisTemplate`                         | Routing table + named key                   | `spring.data.redis.slaves`            | —                     |
+| 14 | Lua scripts               | `RedisLuaManager`                            | Script executor                             | —                                     | SCRIPT_OR_UNKNOWN     |
+| 15 | Rate limiting             | `RedisLimiterManager`                        | Sliding window + Lua                        | —                                     | SCRIPT_OR_UNKNOWN     |
+| 16 | GEO                       | `RedisGeoManager`                            | Wraps GEO commands                          | —                                     | O(log n)              |
+| 17 | HyperLogLog               | `RedisHyperLogManager`                       | Wraps PF commands                           | —                                     | O(1)                  |
+| 18 | Bitmap                    | `RedisBitmapManager`                         | Wraps BIT commands                          | —                                     | O(1)                  |
+| 19 | Local cache               | `LocalCacheManager` + `LocalCache`           | JSR-107 standard                            | `spring.data.local`                   | —                     |
+| 20 | Pub/Sub                   | `RedisEventManager` + `NotificationFunction` | Pub/Sub                                     | —                                     | —                     |
+| 21 | Migration window          | `MigrationWindowValidator`                   | Startup-time forced check                   | `spring.data.redis.perf.*`            | —                     |
 
 ### Diagrams
 
@@ -1481,23 +1594,25 @@ From the source code, there is a `principle.jpg` in the resources directory; it 
 
 ## Capability Matrix: Coverage
 
-| Scenario | Recommended feature | Configuration highlights |
-|----------|---------------------|--------------------------|
-| Fast KV access | String / Hash | Basic Redis connection |
-| Hot read acceleration | L2 + stampede prevention | `enable-l2-caching: true` + Bloom |
-| Concurrent dedup write | Locked read | `*WithLock` methods |
-| High-contention locks | Distributed lock + local lock | `enable-local-lock: true` |
-| Leaderboard | ZSet | No extra configuration |
-| Dedup statistics | Set / HyperLogLog | Use Set for small data, HLL for large data |
-| Rate limiting | Sliding window | Custom threshold |
-| Nearby search | GEO | No extra configuration |
-| Sign-in / check-in | Bitmap | No extra configuration |
-| Atomic operations | Lua | Script resource management |
-| Cross-instance cache consistency | L2 + keyspace notification | Redis must enable `notify-keyspace-events KEA` |
-| Performance governance | PerfGuard | `perf.enabled: true` + canary validation |
-| Forced config migration | MigrationWindow | Enable configuration before the deadline |
-| Traffic shaping / lightweight buffering | queue() | maxLen 1 to 4999; active poll/drain; do not treat as MQ |
-| Latest N entries LIFO | stack() | `push` fails when full; `latest` count ≤ 20 |
-| Reliable message queue | Redis Stream | See the Stream docs, not covered in this chapter |
+| Scenario                                | Recommended feature           | Configuration highlights                                |
+|-----------------------------------------|-------------------------------|---------------------------------------------------------|
+| Fast KV access                          | String / Hash                 | Basic Redis connection                                  |
+| Hot read acceleration                   | L2 + stampede prevention      | `enable-l2-caching: true` + Bloom                       |
+| Concurrent dedup write                  | Locked read                   | `*WithLock` methods                                     |
+| High-contention locks                   | Distributed lock + local lock | `enable-local-lock: true`                               |
+| Leaderboard                             | ZSet                          | No extra configuration                                  |
+| Dedup statistics                        | Set / HyperLogLog             | Use Set for small data, HLL for large data              |
+| Rate limiting                           | Sliding window                | Custom threshold                                        |
+| Nearby search                           | GEO                           | No extra configuration                                  |
+| Sign-in / check-in                      | Bitmap                        | No extra configuration                                  |
+| Atomic operations                       | Lua                           | Script resource management                              |
+| Cross-instance cache consistency        | L2 + keyspace notification    | Redis must enable `notify-keyspace-events KEA`          |
+| Performance governance                  | PerfGuard                     | `perf.enabled: true` + canary validation                |
+| Forced config migration                 | MigrationWindow               | Enable configuration before the deadline                |
+| Traffic shaping / lightweight buffering | queue()                       | maxLen 1 to 4999; active poll/drain; do not treat as MQ |
+| Latest N entries LIFO                   | stack()                       | `push` fails when full; `latest` count ≤ 20             |
+| Reliable message queue                  | Redis Stream                  | See the Stream docs, not covered in this chapter        |
 
-> For a quick README reference on bounded queues / stacks and the comparison with Stream, see the `../../../atlas-richie-component-document-parser/src/main/java/cn/richie696/component/parser/internal/README.md` at the project root (sections "Redis Stream" and "Bounded Queue for Big Keys").
+> For a quick README reference on bounded queues / stacks and the comparison with Stream, see the
+> `../../../atlas-richie-component-document-parser/src/main/java/cn/richie696/component/parser/internal/README.md` at the
+> project root (sections "Redis Stream" and "Bounded Queue for Big Keys").

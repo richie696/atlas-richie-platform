@@ -16,11 +16,7 @@
 package cn.richie696.component.parser.config;
 
 import cn.richie696.component.parser.DocumentReader;
-import cn.richie696.component.parser.internal.FesodDocumentParser;
-import cn.richie696.component.parser.internal.ParserRouter;
-import cn.richie696.component.parser.internal.TextFastPathParser;
-import cn.richie696.component.parser.internal.TikaDocumentParser;
-import cn.richie696.component.parser.internal.UrlFetcher;
+import cn.richie696.component.parser.internal.*;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

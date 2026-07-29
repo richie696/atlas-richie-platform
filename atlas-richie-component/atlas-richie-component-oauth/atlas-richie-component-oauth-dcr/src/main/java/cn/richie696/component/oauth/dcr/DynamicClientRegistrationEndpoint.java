@@ -74,7 +74,7 @@ public class DynamicClientRegistrationEndpoint {
     /**
      * 处理客户端注册请求
      *
-     * @param request    注册请求
+     * @param request     注册请求
      * @param httpRequest HTTP 请求
      * @return 注册响应
      */
@@ -157,8 +157,8 @@ public class DynamicClientRegistrationEndpoint {
     /**
      * 更新已注册的客户端
      *
-     * @param clientId   客户端 ID
-     * @param request    更新请求
+     * @param clientId    客户端 ID
+     * @param request     更新请求
      * @param httpRequest HTTP 请求
      * @return 更新后的响应
      */

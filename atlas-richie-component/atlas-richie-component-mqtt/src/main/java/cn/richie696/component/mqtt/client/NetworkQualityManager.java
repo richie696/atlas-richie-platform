@@ -113,10 +113,10 @@ public class NetworkQualityManager {
      * 构造网络质量管理器
      *
      * @param networkQualityMonitor 网络质量监控器
-     * @param properties MQTT客户端配置
+     * @param properties            MQTT客户端配置
      */
     public NetworkQualityManager(NetworkQualityMonitor networkQualityMonitor,
-                               MqttClientProperties properties) {
+                                 MqttClientProperties properties) {
         this.networkQualityMonitor = networkQualityMonitor;
         this.properties = properties;
     }
@@ -140,7 +140,6 @@ public class NetworkQualityManager {
      * <strong>功能说明：</strong>
      * 设置客户端ID，用于事件发布和过滤。
      * 该方法应该在MQTT客户端初始化完成后调用。
-     * 
      *
      * @param clientId 客户端ID
      */

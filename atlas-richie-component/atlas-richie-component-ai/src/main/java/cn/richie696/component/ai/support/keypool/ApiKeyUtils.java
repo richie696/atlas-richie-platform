@@ -62,7 +62,9 @@ public final class ApiKeyUtils {
         return Collections.emptySet();
     }
 
-    /** Rerank 配置专用。 */
+    /**
+     * Rerank 配置专用。
+     */
     public static Set<String> resolveKeys(RerankModelConfig cfg) {
         if (cfg == null) {
             return Collections.emptySet();
@@ -77,7 +79,9 @@ public final class ApiKeyUtils {
         return Collections.emptySet();
     }
 
-    /** Image 配置专用。 */
+    /**
+     * Image 配置专用。
+     */
     public static Set<String> resolveKeys(ImageModelConfig cfg) {
         if (cfg == null) {
             return Collections.emptySet();
@@ -92,7 +96,9 @@ public final class ApiKeyUtils {
         return Collections.emptySet();
     }
 
-    /** Image Embedding (CLIP-equivalent) 配置专用。 */
+    /**
+     * Image Embedding (CLIP-equivalent) 配置专用。
+     */
     public static Set<String> resolveKeys(ImageEmbeddingModelConfig cfg) {
         if (cfg == null) {
             return Collections.emptySet();

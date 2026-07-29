@@ -15,28 +15,20 @@
  */
 package cn.richie696.component.ai.service.impl;
 
-import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
-
-import cn.richie696.component.ai.config.multimodal.stt.SttProvider;
-
-import cn.richie696.component.ai.config.multimodal.tts.TtsProvider;
-
-import cn.richie696.component.ai.config.multimodal.stt.SttModelConfig;
-
-import cn.richie696.component.ai.config.multimodal.rerank.RerankProvider;
-
-import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
-
-import cn.richie696.component.ai.config.multimodal.image.ImageEmbeddingModelConfig;
-import cn.richie696.component.ai.config.multimodal.image.ImageEmbeddingProvider;
-import cn.richie696.component.ai.config.multimodal.image.ImageModelConfig;
-
-import cn.richie696.component.ai.config.multimodal.image.ImageProvider;
-import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
-
 import cn.richie696.component.ai.api.RerankModel;
 import cn.richie696.component.ai.api.image.ImageEmbeddingModel;
 import cn.richie696.component.ai.config.AiModelProperties;
+import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
+import cn.richie696.component.ai.config.multimodal.image.ImageEmbeddingModelConfig;
+import cn.richie696.component.ai.config.multimodal.image.ImageEmbeddingProvider;
+import cn.richie696.component.ai.config.multimodal.image.ImageModelConfig;
+import cn.richie696.component.ai.config.multimodal.image.ImageProvider;
+import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
+import cn.richie696.component.ai.config.multimodal.rerank.RerankProvider;
+import cn.richie696.component.ai.config.multimodal.stt.SttModelConfig;
+import cn.richie696.component.ai.config.multimodal.stt.SttProvider;
+import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
+import cn.richie696.component.ai.config.multimodal.tts.TtsProvider;
 import cn.richie696.component.ai.provider.bailian.BailianImageEmbeddingAdapter;
 import cn.richie696.component.ai.provider.bailian.BailianRerankModel;
 import cn.richie696.component.ai.provider.doubao.DoubaoTextToSpeechModel;

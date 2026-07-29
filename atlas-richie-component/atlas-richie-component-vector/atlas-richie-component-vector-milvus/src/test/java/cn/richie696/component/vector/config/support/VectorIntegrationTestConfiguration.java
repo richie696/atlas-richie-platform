@@ -15,13 +15,13 @@
  */
 package cn.richie696.component.vector.config.support;
 
+import cn.richie696.component.ai.api.RerankModel;
+import cn.richie696.component.ai.api.RerankRequest;
+import cn.richie696.component.ai.api.RerankResponse;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cn.richie696.component.ai.api.RerankModel;
-import cn.richie696.component.ai.api.RerankRequest;
-import cn.richie696.component.ai.api.RerankResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -65,16 +65,24 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 public class VectorIntegrationTestConfiguration {
 
-    /** 环境变量：DashScope 兼容模式 baseUrl（含 scheme+host+path 前缀，不带尾斜杠）。 */
+    /**
+     * 环境变量：DashScope 兼容模式 baseUrl（含 scheme+host+path 前缀，不带尾斜杠）。
+     */
     private static final String ENV_BASE_URL = "DASHSCOPE_BASE_URL";
 
-    /** 环境变量：DashScope API Key（Bearer Token）。 */
+    /**
+     * 环境变量：DashScope API Key（Bearer Token）。
+     */
     private static final String ENV_API_KEY = "DASHSCOPE_API_KEY";
 
-    /** 环境变量：嵌入模型名（例如 {@code text-embedding-v3}）。 */
+    /**
+     * 环境变量：嵌入模型名（例如 {@code text-embedding-v3}）。
+     */
     private static final String ENV_MODEL = "DASHSCOPE_EMBEDDING_MODEL";
 
-    /** 环境变量：嵌入向量维度（与 {@link #ENV_MODEL} 强绑定，例如 {@code 1536}）。 */
+    /**
+     * 环境变量：嵌入向量维度（与 {@link #ENV_MODEL} 强绑定，例如 {@code 1536}）。
+     */
     private static final String ENV_DIM = "DASHSCOPE_EMBEDDING_DIM";
 
     /**
@@ -302,7 +310,9 @@ public class VectorIntegrationTestConfiguration {
             return out;
         }
 
-        /** DashScope / OpenAI-兼容模式 embeddings 响应的最小 DTO。 */
+        /**
+         * DashScope / OpenAI-兼容模式 embeddings 响应的最小 DTO。
+         */
         @JsonIgnoreProperties(ignoreUnknown = true)
         static final class DashScopeEmbedResponse {
 

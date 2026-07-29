@@ -111,8 +111,14 @@ public class FtpClientPool extends GenericObjectPool<FTPClient> {
         @Override
         public void destroyObject(PooledObject<FTPClient> p) {
             var client = p.getObject();
-            try { client.logout(); } catch (IOException ignored) { }
-            try { client.disconnect(); } catch (IOException ignored) { }
+            try {
+                client.logout();
+            } catch (IOException ignored) {
+            }
+            try {
+                client.disconnect();
+            } catch (IOException ignored) {
+            }
         }
     }
 

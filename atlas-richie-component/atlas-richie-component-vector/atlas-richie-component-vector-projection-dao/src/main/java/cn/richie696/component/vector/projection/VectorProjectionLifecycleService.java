@@ -38,14 +38,14 @@ public interface VectorProjectionLifecycleService {
      * {@link VectorProjectionReference} 上已有的 ACTIVE 版本不会被本方法影响，新版本需要
      * 在写入完成后通过 {@link #activate} 才接管检索。
      *
-     * @param reference 业务文档的稳定引用，三元组 (tenantId, knowledgeBaseId, documentRef)；
-     *                  不允许为空或纯空白。
+     * @param reference     业务文档的稳定引用，三元组 (tenantId, knowledgeBaseId, documentRef)；
+     *                      不允许为空或纯空白。
      * @param specification 本次重建的不可变规格，三元组 (sourceVersion, indexName, embeddingSpaceId)；
      *                      不允许为空或纯空白。
      * @return 新建的投影版本快照，包含 versionId 与状态 PREPARING。
      * @throws IllegalArgumentException 当 reference 或 specification 任一字段为空时。
-     * @throws IllegalStateException 当同 reference 已存在同规格处于 PREPARING/WRITING 的版本时，
-     *                               由实现选择拒绝或允许重复创建。
+     * @throws IllegalStateException    当同 reference 已存在同规格处于 PREPARING/WRITING 的版本时，
+     *                                  由实现选择拒绝或允许重复创建。
      */
     VectorProjectionVersion beginRebuild(VectorProjectionReference reference, VectorProjectionSpecification specification);
 
@@ -58,11 +58,11 @@ public interface VectorProjectionLifecycleService {
      * 等待期可作为读流量切换、业务回滚与对账窗口，到期后由
      * {@link VectorProjectionCleanupService#cleanupDueProjections(int)} 回收。
      *
-     * @param versionId 目标版本的唯一标识；必须由 {@link #beginRebuild} 生成且当前为 READY。
+     * @param versionId    目标版本的唯一标识；必须由 {@link #beginRebuild} 生成且当前为 READY。
      * @param cleanupDelay 旧 ACTIVE 版本进入 RETIRING 后，延迟多长时间才允许清理；不能为 null。
      * @throws IllegalArgumentException 当 versionId 为空或 cleanupDelay 为 null 时。
-     * @throws IllegalStateException 当版本不存在，或当前状态不允许激活（如仍处于 WRITING、
-     *                               已是 FAILED / CLEANED）。
+     * @throws IllegalStateException    当版本不存在，或当前状态不允许激活（如仍处于 WRITING、
+     *                                  已是 FAILED / CLEANED）。
      */
     void activate(String versionId, Duration cleanupDelay);
 
@@ -74,9 +74,9 @@ public interface VectorProjectionLifecycleService {
      * 重建仍可生成新的 projection version，互不影响。
      *
      * @param versionId 失败版本的唯一标识；不能为空。
-     * @param reason 失败原因描述，建议为可定位到具体步骤的短语（不要写入敏感信息）；不能为空。
+     * @param reason    失败原因描述，建议为可定位到具体步骤的短语（不要写入敏感信息）；不能为空。
      * @throws IllegalArgumentException 当 versionId 或 reason 为空 / 纯空白时。
-     * @throws IllegalStateException 当版本不存在或已处于终态（CLEANED）。
+     * @throws IllegalStateException    当版本不存在或已处于终态（CLEANED）。
      */
     void markFailed(String versionId, String reason);
 
@@ -89,7 +89,7 @@ public interface VectorProjectionLifecycleService {
      *
      * @param versionId 待查询的版本标识；不能为空。
      * @return 命中时返回版本快照的 {@link Optional}；未命中或已清理后返回
-     *         {@link Optional#empty()}。
+     * {@link Optional#empty()}。
      * @throws IllegalArgumentException 当 versionId 为空时。
      */
     Optional<VectorProjectionVersion> findVersion(String versionId);

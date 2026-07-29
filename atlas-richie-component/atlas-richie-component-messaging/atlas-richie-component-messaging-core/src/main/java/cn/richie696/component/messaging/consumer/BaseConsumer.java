@@ -20,9 +20,9 @@ import cn.richie696.component.messaging.event.MessageEvent;
 import cn.richie696.component.messaging.filter.CanaryMessageFilter;
 import cn.richie696.component.messaging.filter.handler.MessageHandlerService;
 import cn.richie696.component.messaging.service.MessageService;
+import jakarta.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
-import jakarta.annotation.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 

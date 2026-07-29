@@ -280,7 +280,7 @@ public final class MqttEventBus {
      * <p>
      * 使用多播模式，支持多个订阅者同时接收网络质量事件。
      * 配置了背压缓冲，当订阅者处理速度跟不上时，最多缓存1000个事件。
-     * 
+     *
      */
     private static final Sinks.Many<NetworkQualityEvent> networkQualitySink =
             Sinks.many()
@@ -404,9 +404,9 @@ public final class MqttEventBus {
      *   <li>统一日志记录和错误处理</li>
      * </ul>
      *
-     * @param <T> 事件类型
-     * @param event 要发布的事件对象
-     * @param emitResult Sinks.EmitResult结果
+     * @param <T>           事件类型
+     * @param event         要发布的事件对象
+     * @param emitResult    Sinks.EmitResult结果
      * @param eventTypeName 事件类型名称，用于日志记录
      * @return 发布结果
      */

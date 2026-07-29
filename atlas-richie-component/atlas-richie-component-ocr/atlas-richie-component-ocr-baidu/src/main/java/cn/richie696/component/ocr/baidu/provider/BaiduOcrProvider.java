@@ -18,18 +18,9 @@ package cn.richie696.component.ocr.baidu.provider;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.core.HttpResponse;
 import cn.richie696.component.ocr.baidu.config.BaiduOcrProperties;
-import cn.richie696.component.ocr.baidu.protocol.BaiduOcrEnvelope;
-import cn.richie696.component.ocr.baidu.protocol.BaiduOcrPayload;
-import cn.richie696.component.ocr.baidu.protocol.BaiduRequest;
-import cn.richie696.component.ocr.baidu.protocol.BaiduResponse;
-import cn.richie696.component.ocr.baidu.protocol.BaiduTokenResponse;
-import cn.richie696.component.ocr.model.Languages;
-import cn.richie696.component.ocr.model.OcrBlock;
-import cn.richie696.component.ocr.model.OcrImage;
-import cn.richie696.component.ocr.model.OcrLine;
-import cn.richie696.component.ocr.model.OcrOptions;
-import cn.richie696.component.ocr.model.OcrResult;
+import cn.richie696.component.ocr.baidu.protocol.*;
 import cn.richie696.component.ocr.exception.OcrException;
+import cn.richie696.component.ocr.model.*;
 import cn.richie696.component.ocr.provider.AbstractOcrProvider;
 
 import java.io.InputStream;
@@ -37,11 +28,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 百度智能云 OCR Provider 实现。
@@ -65,21 +55,35 @@ import java.util.Map;
  */
 public class BaiduOcrProvider extends AbstractOcrProvider<BaiduRequest, BaiduResponse> {
 
-    /** 默认百度智能云 OCR API 根端点。 */
+    /**
+     * 默认百度智能云 OCR API 根端点。
+     */
     private static final String DEFAULT_ENDPOINT = "https://aip.baidubce.com";
-    /** 默认请求超时时间，单位毫秒。 */
+    /**
+     * 默认请求超时时间，单位毫秒。
+     */
     private static final long DEFAULT_TIMEOUT_MS = 30_000L;
-    /** access_token 提前刷新余量（30 天有效期，提前 5 分钟刷）。 */
+    /**
+     * access_token 提前刷新余量（30 天有效期，提前 5 分钟刷）。
+     */
     private static final long TOKEN_REFRESH_MARGIN_MS = 5L * 60L * 1000L;
 
-    /** 调用百度 OCR 与 OAuth2 接口的共享客户端（不是 vendor 配置，不走 props）。 */
+    /**
+     * 调用百度 OCR 与 OAuth2 接口的共享客户端（不是 vendor 配置，不走 props）。
+     */
     private final HttpClient httpClient;
-    /** 百度 OCR vendor 配置 Properties —— 每次调用 lazy 读取。 */
+    /**
+     * 百度 OCR vendor 配置 Properties —— 每次调用 lazy 读取。
+     */
     private final BaiduOcrProperties props;
 
-    /** 当前缓存的百度 OAuth2 access_token（运行时缓存，不是 vendor 配置）。 */
+    /**
+     * 当前缓存的百度 OAuth2 access_token（运行时缓存，不是 vendor 配置）。
+     */
     private volatile String accessToken;
-    /** 当前 access_token 的过期时间（运行时缓存）。 */
+    /**
+     * 当前 access_token 的过期时间（运行时缓存）。
+     */
     private volatile Instant tokenExpiresAt = Instant.EPOCH;
 
     /**
@@ -90,7 +94,7 @@ public class BaiduOcrProvider extends AbstractOcrProvider<BaiduRequest, BaiduRes
      * timeout-ms）在每次调用时通过 {@code liveXxx()} 实时读取，便于业务侧通过 Spring Cloud
      * {@code @RefreshScope} / Nacos Config Listener 实现热更新。
      *
-     * @param props 百度智能云 OCR 配置（endpoint / timeout-ms / api-key / secret-key），不能为 {@code null}
+     * @param props      百度智能云 OCR 配置（endpoint / timeout-ms / api-key / secret-key），不能为 {@code null}
      * @param httpClient 调用百度 OCR 识别端点和 OAuth2 Token 端点的共享 HTTP 客户端，不能为 {@code null}
      * @throws OcrException.ConfigMissing 缺少 {@code credentials.api-key} 或
      *                                    {@code credentials.secret-key} 时抛出

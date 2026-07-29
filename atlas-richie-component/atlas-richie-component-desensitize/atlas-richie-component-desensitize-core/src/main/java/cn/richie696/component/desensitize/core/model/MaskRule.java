@@ -19,8 +19,8 @@ package cn.richie696.component.desensitize.core.model;
  * 单条脱敏规则（可由配置或注解推导）。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public record MaskRule(
         MaskType type,
@@ -37,7 +37,7 @@ public record MaskRule(
      * @param maskChar 掩码字符
      * @return 默认规则
      */
-    public static MaskRule of(MaskType type, char maskChar) {
+    public static MaskRule of (MaskType type,char maskChar){
         return new MaskRule(type, defaultKeepLeft(type), defaultKeepRight(type), maskChar, null);
     }
 
@@ -47,7 +47,7 @@ public record MaskRule(
      * @param type 脱敏类型
      * @return 默认左侧保留位数
      */
-    public static int defaultKeepLeft(MaskType type) {
+    public static int defaultKeepLeft (MaskType type){
         return switch (type) {
             case PHONE -> 3;
             case ID_CARD -> 6;
@@ -64,7 +64,7 @@ public record MaskRule(
      * @param type 脱敏类型
      * @return 默认右侧保留位数
      */
-    public static int defaultKeepRight(MaskType type) {
+    public static int defaultKeepRight (MaskType type){
         return switch (type) {
             case PHONE, BANK_CARD -> 4;
             case ID_CARD -> 4;

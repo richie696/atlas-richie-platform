@@ -15,21 +15,16 @@
  */
 package cn.richie696.component.ai.provider.hunyuan;
 
-import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
-
 import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
 import cn.richie696.component.ai.provider.sign.Tc3Signer;
 import cn.richie696.context.utils.data.JsonUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * 腾讯混元 TTS / STT 适配器的纯单元测试。

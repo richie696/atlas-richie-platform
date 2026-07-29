@@ -55,7 +55,7 @@ import java.time.Duration;
  * @since 1.0.0
  */
 @Data
-@ConfigurationProperties(prefix = "platform.concurrency.circuit-breaker")
+@ConfigurationProperties(prefix = "platform.component.concurrency.circuit-breaker")
 public class CircuitBreakerProperties {
 
     /**

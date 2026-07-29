@@ -15,27 +15,20 @@
  */
 package cn.richie696.component.ai.provider.doubao;
 
-import cn.richie696.context.utils.data.JsonUtils;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.core.HttpResponse;
+import cn.richie696.context.utils.data.JsonUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.audio.tts.Speech;
-import org.springframework.ai.audio.tts.TextToSpeechMessage;
-import org.springframework.ai.audio.tts.TextToSpeechModel;
-import org.springframework.ai.audio.tts.TextToSpeechPrompt;
-import org.springframework.ai.audio.tts.TextToSpeechResponse;
+import org.springframework.ai.audio.tts.*;
 import reactor.core.publisher.Flux;
 
-import java.util.Base64;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * 字节跳动豆包（火山引擎 OpenSpeech）语音合成（TTS）模型适配器，实现 Spring AI 标准 {@link TextToSpeechModel}。
@@ -74,20 +67,30 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 public class DoubaoTextToSpeechModel implements TextToSpeechModel {
 
-    /** 豆包 OpenSpeech 单向流式 TTS REST 端点。 */
+    /**
+     * 豆包 OpenSpeech 单向流式 TTS REST 端点。
+     */
     public static final String DEFAULT_TTS_URL =
             "https://openspeech.bytedance.com/api/v3/tts/unidirectional";
 
-    /** 默认音频编码格式。 */
+    /**
+     * 默认音频编码格式。
+     */
     public static final String DEFAULT_AUDIO_ENCODING = "mp3";
 
-    /** 业务侧 {@code user.uid} 字段占位（豆包仅用于审计，可固定）。 */
+    /**
+     * 业务侧 {@code user.uid} 字段占位（豆包仅用于审计，可固定）。
+     */
     public static final String DEFAULT_UID = "doubao-tts";
 
-    /** 业务侧 {@code request.operation} 固定为 {@code query}（同步语义）。 */
+    /**
+     * 业务侧 {@code request.operation} 固定为 {@code query}（同步语义）。
+     */
     public static final String DEFAULT_OPERATION = "query";
 
-    /** 豆包 TTS 成功返回码。 */
+    /**
+     * 豆包 TTS 成功返回码。
+     */
     public static final int CODE_SUCCESS = 3000;
 
     private final AbstractAudioModelConfig cfg;

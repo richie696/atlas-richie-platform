@@ -18,6 +18,9 @@ package cn.richie696.component.cache.function;
 import tools.jackson.core.type.TypeReference;
 
 import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * ZSet类型缓存API管理器接口，封装了Redis中ZSet有序集合的常用操作。
@@ -129,11 +132,11 @@ public interface ZSetFunction extends CacheFunction {
     /**
      * 以Score值降序排列获取指定范围元素的方法
      *
-     * @param key      资源KEY
-     * @param minScore 最小排序值
-     * @param maxScore 最大排序值
+     * @param key       资源KEY
+     * @param minScore  最小排序值
+     * @param maxScore  最大排序值
      * @param reference 目标类型引用
-     * @param <T>      接收返回值使用的泛型类型
+     * @param <T>       接收返回值使用的泛型类型
      * @return 返回指定范围内的元素列表
      */
     <T> Set<T> reverseRangeByScore(String key, double minScore, double maxScore, TypeReference<T> reference);

@@ -15,12 +15,11 @@
  */
 package cn.richie696.component.vector.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class IndexInfoTest {
 

@@ -18,6 +18,8 @@ package cn.richie696.component.web.core.spi;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.lang.AutoCloseable;
+import java.util.Set;
 
 /**
  * 容器无关的请求上下文（SPI 层）。

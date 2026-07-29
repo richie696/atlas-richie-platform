@@ -19,7 +19,6 @@ package cn.richie696.component.statemachine.persistence.async;
  * 异步线程池存储管理器常量
  * <p>
  * 仅限当前包访问，包含线程池、线程名称、键分隔符等常量定义。
- * 
  *
  * @author richie696
  * @since 1.0.0

@@ -46,7 +46,9 @@ import org.springframework.stereotype.Component;
 @ConditionalOnExpression("'${platform.cache.cache-provider:REDIS}'=='REDIS'")
 public class RedisEventManager implements EventFunction {
 
-    /** Redis 消息监听容器 */
+    /**
+     * Redis 消息监听容器
+     */
     private final RedisMessageListenerContainer container;
 
     private final RedisPerfGuard redisPerfGuard;
@@ -54,10 +56,9 @@ public class RedisEventManager implements EventFunction {
     /**
      * 订阅指定模式的Key事件。
      *
-     * @param pattern 事件模式（如__keyevent@0__:expired）
+     * @param pattern  事件模式（如__keyevent@0__:expired）
      * @param listener 消息监听器，收到事件时回调
-     * @apiNote
-     * <p><b>时间复杂度</b>：应用侧注册监听为 {@code O(1)}；后续事件流负载与键空间与订阅模式相关。
+     * @apiNote <p><b>时间复杂度</b>：应用侧注册监听为 {@code O(1)}；后续事件流负载与键空间与订阅模式相关。
      * <p><b>严禁</b>：过于宽泛的 pattern 导致服务端事件风暴。
      * <p><b>可用</b>：缓存失效联动、运维事件等。
      * <p><b>注意</b>：Keyspace 通知需服务端开启相关配置；回调内勿阻塞。

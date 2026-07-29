@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.storage.converter;
 
-import com.obs.services.model.StorageClassEnum;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
 import cn.richie696.component.storage.enums.StorageTypeEnum;
 import cn.richie696.component.storage.exception.StorageTypeUnsupportedException;
+import com.obs.services.model.StorageClassEnum;
 import jakarta.annotation.Nonnull;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;

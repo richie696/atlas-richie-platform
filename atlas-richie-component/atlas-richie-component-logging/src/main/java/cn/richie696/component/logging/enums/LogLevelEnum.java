@@ -23,18 +23,28 @@ package cn.richie696.component.logging.enums;
  * @since 2025-01-03 17:53:01
  */
 public enum LogLevelEnum {
-    /** TRACE 级别 */
+    /**
+     * TRACE 级别
+     */
     TRACE,
 
-    /** DEBUG 级别 */
+    /**
+     * DEBUG 级别
+     */
     DEBUG,
 
-    /** INFO 级别 */
+    /**
+     * INFO 级别
+     */
     INFO,
 
-    /** WARN 级别 */
+    /**
+     * WARN 级别
+     */
     WARN,
 
-    /** ERROR 级别 */
+    /**
+     * ERROR 级别
+     */
     ERROR
 }

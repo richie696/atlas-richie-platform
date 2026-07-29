@@ -22,19 +22,13 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.Duration;
-import java.util.ArrayList;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.lang.AutoCloseable;
 import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Server-Sent Events 管理器（DESIGN §4.4 长连接支持）。
@@ -87,9 +81,13 @@ public class SseManager implements SmartLifecycle, AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(SseManager.class);
 
-    /** 默认 emitter 超时（1 小时）。 */
+    /**
+     * 默认 emitter 超时（1 小时）。
+     */
     static final Duration DEFAULT_TIMEOUT = Duration.ofHours(1);
-    /** 默认心跳间隔（15 秒），远小于常见代理 idle timeout（60s）。 */
+    /**
+     * 默认心跳间隔（15 秒），远小于常见代理 idle timeout（60s）。
+     */
     static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofSeconds(15);
 
     private final ConcurrentMap<String, SseConnection> connections = new ConcurrentHashMap<>();
@@ -109,7 +107,9 @@ public class SseManager implements SmartLifecycle, AutoCloseable {
         this(metrics, DEFAULT_TIMEOUT, DEFAULT_HEARTBEAT_INTERVAL);
     }
 
-    /** 主构造器（测试可见）。 */
+    /**
+     * 主构造器（测试可见）。
+     */
     SseManager(WebMetrics metrics, Duration timeout, Duration heartbeatInterval) {
         this.metrics = metrics == null ? WebMetrics.noop() : metrics;
         this.timeout = timeout == null ? DEFAULT_TIMEOUT : timeout;

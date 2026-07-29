@@ -23,10 +23,14 @@ package cn.richie696.component.logging.enums;
  */
 public enum DbInstanceTypeEnum {
 
-    /** 引用（共享）数据源 */
+    /**
+     * 引用（共享）数据源
+     */
     REF,
 
-    /** 独立数据源 */
+    /**
+     * 独立数据源
+     */
     STANDALONE
 
 }

@@ -15,13 +15,13 @@
  */
 package cn.richie696.component.mfa.management.manager;
 
-import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.mfa.core.config.MfaProperties;
 import cn.richie696.component.mfa.core.entity.MfaTrustedDevice;
 import cn.richie696.component.mfa.core.support.MfaTenantSupport;
 import cn.richie696.component.mfa.core.util.MfaKeyUtils;
 import cn.richie696.component.mfa.management.mapper.MfaTrustedDeviceMapper;
+import cn.richie696.contract.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -75,16 +75,16 @@ public class TrustedDeviceManager {
      *   <li>预期性能提升：约50%（当两个查询耗时相同时）</li>
      * </ul>
      *
-     * @param tenantId 租户ID（可为null）
-     * @param userId 用户ID
-     * @param deviceId 设备ID（设备指纹）
-     * @param deviceName 设备名称（用于显示）
+     * @param tenantId          租户ID（可为null）
+     * @param userId            用户ID
+     * @param deviceId          设备ID（设备指纹）
+     * @param deviceName        设备名称（用于显示）
      * @param deviceFingerprint 设备指纹（原始指纹的哈希，可选，用于审计）
      * @return 注册的可信设备
      */
     @Transactional
     public MfaTrustedDevice registerTrustedDevice(String tenantId, String userId, String deviceId,
-                                                    String deviceName, String deviceFingerprint) {
+                                                  String deviceName, String deviceFingerprint) {
         // 1. 检查是否启用可信设备功能
         if (!properties.getSecurity().getTrustedDevice().isEnabled()) {
             log.warn("可信设备功能未启用，tenantId: {}, userId: {}", tenantId, userId);
@@ -96,9 +96,9 @@ public class TrustedDeviceManager {
         try (var scope = StructuredTaskScope.open()) {
             // 并行查询：设备数量限制和设备是否存在（两个独立的数据库查询，无数据依赖）
             var deviceCountTask = scope.fork(() ->
-                trustedDeviceMapper.countByTenantAndUser(actualTenantId, userId));
+                    trustedDeviceMapper.countByTenantAndUser(actualTenantId, userId));
             var existingDeviceTask = scope.fork(() ->
-                trustedDeviceMapper.selectByDeviceId(actualTenantId, userId, deviceId));
+                    trustedDeviceMapper.selectByDeviceId(actualTenantId, userId, deviceId));
 
             scope.join(); // JDK 25: 全部成功则返回，任一失败则抛出 FailedException
 
@@ -112,7 +112,7 @@ public class TrustedDeviceManager {
             int maxDevices = properties.getSecurity().getTrustedDevice().getMaxDevices();
             if (deviceCount != null && deviceCount >= maxDevices) {
                 log.warn("用户可信设备数量已达上限，tenantId: {}, userId: {}, count: {}, max: {}",
-                    tenantId, userId, deviceCount, maxDevices);
+                        tenantId, userId, deviceCount, maxDevices);
                 throw new BusinessException("可信设备数量已达上限，最多支持%d个设备".formatted(maxDevices));
             }
 
@@ -120,7 +120,7 @@ public class TrustedDeviceManager {
             if (existing != null) {
                 // 设备已存在，更新信任时间
                 log.info("设备已存在，更新信任时间，tenantId: {}, userId: {}, deviceId: {}",
-                    tenantId, userId, deviceId);
+                        tenantId, userId, deviceId);
 
                 existing.setTrustedUntil(calculateTrustUntil());
                 existing.setLastUsedTime(OffsetDateTime.now(ZoneOffset.UTC));
@@ -153,7 +153,7 @@ public class TrustedDeviceManager {
             trustedDeviceMapper.insert(device);
 
             log.info("可信设备注册成功，tenantId: {}, userId: {}, deviceId: {}, deviceName: {}",
-                tenantId, userId, deviceId, deviceName);
+                    tenantId, userId, deviceId, deviceName);
 
             // 6. 同步到缓存
             syncToCache(device);
@@ -162,11 +162,11 @@ public class TrustedDeviceManager {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("并行查询可信设备被中断，tenantId: {}, userId: {}, deviceId: {}",
-                tenantId, userId, deviceId, e);
+                    tenantId, userId, deviceId, e);
             throw new RuntimeException("注册可信设备失败", e);
         } catch (StructuredTaskScope.FailedException e) {
             log.error("并行查询可信设备执行失败，tenantId: {}, userId: {}, deviceId: {}",
-                tenantId, userId, deviceId, e);
+                    tenantId, userId, deviceId, e);
             throw new RuntimeException("注册可信设备失败", e.getCause() != null ? e.getCause() : e);
         }
     }
@@ -200,7 +200,7 @@ public class TrustedDeviceManager {
         // 2. 先从缓存查询
         String actualTenantId = tenantSupport.isTenantEnabled() ? tenantId : null;
         String cacheKey = MfaKeyUtils.getTrustedDeviceCacheKey(
-            actualTenantId, userId, deviceId, tenantSupport.isTenantEnabled());
+                actualTenantId, userId, deviceId, tenantSupport.isTenantEnabled());
 
         MfaTrustedDevice cached = GlobalCache.struct().get(cacheKey, MfaTrustedDevice.class);
         if (cached != null) {
@@ -249,7 +249,7 @@ public class TrustedDeviceManager {
             syncToCache(device);
 
             log.debug("更新设备最后使用时间，tenantId: {}, userId: {}, deviceId: {}",
-                tenantId, userId, deviceId);
+                    tenantId, userId, deviceId);
         }
     }
 
@@ -302,7 +302,7 @@ public class TrustedDeviceManager {
         MfaTrustedDevice device = trustedDeviceMapper.selectByDeviceId(actualTenantId, userId, deviceId);
         if (device == null) {
             log.warn("可信设备不存在，无法撤销，tenantId: {}, userId: {}, deviceId: {}",
-                tenantId, userId, deviceId);
+                    tenantId, userId, deviceId);
             throw new BusinessException("可信设备不存在");
         }
 
@@ -323,7 +323,7 @@ public class TrustedDeviceManager {
         }
 
         log.info("可信设备撤销成功，tenantId: {}, userId: {}, deviceId: {}",
-            tenantId, userId, deviceId);
+                tenantId, userId, deviceId);
     }
 
     /**
@@ -352,7 +352,7 @@ public class TrustedDeviceManager {
         }
 
         log.info("撤销所有可信设备成功，tenantId: {}, userId: {}, count: {}",
-            tenantId, userId, count);
+                tenantId, userId, count);
         return count;
     }
 
@@ -361,10 +361,10 @@ public class TrustedDeviceManager {
      * <p>
      * 允许条件：当前设备为主管理设备；或当前无主设备时，当前设备为任意一台可信设备（便于主设备被撤销后由其余设备重新指定主设备）。
      *
-     * @param tenantId          租户ID（可选）
-     * @param userId            用户ID
+     * @param tenantId           租户ID（可选）
+     * @param userId             用户ID
      * @param newPrimaryDeviceId 要设为主设备的设备ID
-     * @param currentDeviceId   当前请求设备ID（主设备或当无主设备时为任意可信设备）
+     * @param currentDeviceId    当前请求设备ID（主设备或当无主设备时为任意可信设备）
      */
     @Transactional
     public void setPrimaryDevice(String tenantId, String userId, String newPrimaryDeviceId, String currentDeviceId) {
@@ -474,10 +474,10 @@ public class TrustedDeviceManager {
      */
     private void syncToCache(MfaTrustedDevice device) {
         String cacheKey = MfaKeyUtils.getTrustedDeviceCacheKey(
-            device.getTenantId(),
-            device.getUserId(),
-            device.getDeviceId(),
-            tenantSupport.isTenantEnabled()
+                device.getTenantId(),
+                device.getUserId(),
+                device.getDeviceId(),
+                tenantSupport.isTenantEnabled()
         );
 
         // 计算TTL（信任过期时间 - 当前时间）
@@ -485,7 +485,7 @@ public class TrustedDeviceManager {
         if (ttl > 0) {
             GlobalCache.struct().set(cacheKey, device, ttl);
             log.debug("可信设备信息同步到缓存成功，tenantId: {}, userId: {}, deviceId: {}",
-                device.getTenantId(), device.getUserId(), device.getDeviceId());
+                    device.getTenantId(), device.getUserId(), device.getDeviceId());
 
             // 同步维护设备ID列表（供 validation 模块查询设备数量）
             syncDeviceIdToList(device);
@@ -512,10 +512,10 @@ public class TrustedDeviceManager {
      */
     private void removeFromCache(String tenantId, String userId, String deviceId) {
         String cacheKey = MfaKeyUtils.getTrustedDeviceCacheKey(
-            tenantId, userId, deviceId, tenantSupport.isTenantEnabled());
+                tenantId, userId, deviceId, tenantSupport.isTenantEnabled());
         GlobalCache.key().removeCache(cacheKey);
         log.debug("可信设备信息从缓存删除成功，tenantId: {}, userId: {}, deviceId: {}",
-            tenantId, userId, deviceId);
+                tenantId, userId, deviceId);
 
         // 从设备ID列表中移除
         removeDeviceIdFromList(tenantId, userId, deviceId);
@@ -533,14 +533,14 @@ public class TrustedDeviceManager {
      */
     private void syncDeviceIdToList(MfaTrustedDevice device) {
         String listKey = MfaKeyUtils.getTrustedDeviceListKey(
-            device.getTenantId(), device.getUserId(), tenantSupport.isTenantEnabled());
+                device.getTenantId(), device.getUserId(), tenantSupport.isTenantEnabled());
 
         // 计算TTL（信任过期时间 - 当前时间）
         long ttl = Duration.between(OffsetDateTime.now(ZoneOffset.UTC), device.getTrustedUntil()).toMillis();
         if (ttl > 0) {
             GlobalCache.collection().add(listKey, device.getDeviceId());
             log.debug("设备ID已添加到列表，tenantId: {}, userId: {}, deviceId: {}",
-                device.getTenantId(), device.getUserId(), device.getDeviceId());
+                    device.getTenantId(), device.getUserId(), device.getDeviceId());
         }
     }
 
@@ -555,9 +555,9 @@ public class TrustedDeviceManager {
      */
     private void removeDeviceIdFromList(String tenantId, String userId, String deviceId) {
         String listKey = MfaKeyUtils.getTrustedDeviceListKey(
-            tenantId, userId, tenantSupport.isTenantEnabled());
+                tenantId, userId, tenantSupport.isTenantEnabled());
         GlobalCache.collection().remove(listKey, deviceId);
         log.debug("设备ID已从列表移除，tenantId: {}, userId: {}, deviceId: {}",
-            tenantId, userId, deviceId);
+                tenantId, userId, deviceId);
     }
 }

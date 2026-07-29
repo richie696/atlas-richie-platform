@@ -38,7 +38,9 @@ import java.util.Collections;
 //@ConditionalOnBean(MybatisPlusTenantAutoConfiguration.class)
 public class IdBuilderAutoConfiguration {
 
-    /** Redis 模板，用于执行 Lua 获取 workerId */
+    /**
+     * Redis 模板，用于执行 Lua 获取 workerId
+     */
     private final StringRedisTemplate redisTemplate;
 
     private static final String WORK_ID_KEY = "snowflake:workId";
@@ -71,11 +73,11 @@ public class IdBuilderAutoConfiguration {
     public IdBuilder idBuilder() {
         String luaScript =
                 " local machineCode = tonumber(redis.call('GET', KEYS[1])) " +
-                " if not machineCode or machineCode >= "+ MAX_MACHINE_CODE +
-                " then machineCode = 0 " +
-                " end;  " +
-                " redis.call('SET', KEYS[1], machineCode + 1); " +
-                " return machineCode ";
+                        " if not machineCode or machineCode >= " + MAX_MACHINE_CODE +
+                        " then machineCode = 0 " +
+                        " end;  " +
+                        " redis.call('SET', KEYS[1], machineCode + 1); " +
+                        " return machineCode ";
         Long workerId = redisTemplate.execute(new DefaultRedisScript<>(luaScript, Long.class), Collections.singletonList(WORK_ID_KEY));
         if (null == workerId) {
             log.error("get workerId from redis error,random generate one");

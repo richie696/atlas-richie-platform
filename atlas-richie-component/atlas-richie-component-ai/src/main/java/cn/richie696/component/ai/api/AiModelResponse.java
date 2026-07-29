@@ -37,32 +37,46 @@ import java.util.Map;
 @Data
 public class AiModelResponse<T extends AiModelResponse<T>> {
 
-    /** 是否成功（true = 调用成功且结果可用）。 */
+    /**
+     * 是否成功（true = 调用成功且结果可用）。
+     */
     protected boolean success;
 
-    /** 错误码（成功时为 null）。 */
+    /**
+     * 错误码（成功时为 null）。
+     */
     protected String errorCode;
 
-    /** 错误消息（成功时为 null）。 */
+    /**
+     * 错误消息（成功时为 null）。
+     */
     protected String errorMessage;
 
-    /** ISO-8601 时间戳,记录调用结束时间。 */
+    /**
+     * ISO-8601 时间戳,记录调用结束时间。
+     */
     protected String time;
 
-    /** 调用耗时(毫秒),记录从发起到收到完整响应的时间。 */
+    /**
+     * 调用耗时(毫秒),记录从发起到收到完整响应的时间。
+     */
     protected long duration;
 
-    /** 扩展元数据,由各能力层或具体厂商按需注入。 */
+    /**
+     * 扩展元数据,由各能力层或具体厂商按需注入。
+     */
     protected Map<String, Object> metadata;
 
-    /** 原始响应 JSON（用于调试 / 审计,生产环境按需开启）。 */
+    /**
+     * 原始响应 JSON（用于调试 / 审计,生产环境按需开启）。
+     */
     protected String rawResponse;
 
     /**
      * 构建成功响应。
      *
-     * @param <T>  子类类型
-     * @param self 子类实例（已由子类 {@code new} 并设置专有字段）
+     * @param <T>   子类类型
+     * @param self  子类实例（已由子类 {@code new} 并设置专有字段）
      * @param clock 时钟（外部注入以便单测锁时间,生产传 {@link Clock#systemUTC()})
      * @return 填充好的子类实例
      */
@@ -78,11 +92,11 @@ public class AiModelResponse<T extends AiModelResponse<T>> {
     /**
      * 构建失败响应。
      *
-     * @param <T>         子类类型
-     * @param self        子类实例
-     * @param errorCode   错误码（非 null）
+     * @param <T>          子类类型
+     * @param self         子类实例
+     * @param errorCode    错误码（非 null）
      * @param errorMessage 错误描述
-     * @param clock       时钟
+     * @param clock        时钟
      * @return 填充好的子类实例
      */
     @SuppressWarnings("unchecked")

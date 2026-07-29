@@ -15,19 +15,17 @@
  */
 package cn.richie696.component.ai.provider.pangu;
 
-import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
-
 import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
-
+import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.core.HttpRequest;
 import cn.richie696.context.utils.data.JsonUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
-import org.springframework.ai.audio.tts.TextToSpeechPrompt;
-import org.springframework.ai.audio.tts.TextToSpeechResponse;
 import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
 import org.springframework.ai.audio.transcription.AudioTranscriptionResponse;
+import org.springframework.ai.audio.tts.TextToSpeechPrompt;
+import org.springframework.ai.audio.tts.TextToSpeechResponse;
 import org.springframework.core.io.ByteArrayResource;
 
 import java.nio.charset.StandardCharsets;
@@ -36,12 +34,8 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * 盘古 TTS/STT 适配器的无网络单元测试。
@@ -119,7 +113,9 @@ class PanguSpeechModelTest {
         return new RequestFixture(httpClient, request);
     }
 
-    /** HTTP 桩组合。 */
+    /**
+     * HTTP 桩组合。
+     */
     private record RequestFixture(HttpClient httpClient, HttpRequest request) {
     }
 }

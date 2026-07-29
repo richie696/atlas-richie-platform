@@ -24,14 +24,7 @@ import cn.richie696.component.desensitize.core.registry.MaskRuleRegistry;
 import cn.richie696.component.desensitize.core.registry.SensitiveKeyRegistry;
 import cn.richie696.component.desensitize.core.service.DefaultMaskingService;
 import cn.richie696.component.desensitize.core.service.MaskingService;
-import cn.richie696.component.desensitize.core.strategy.AddressMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.BankCardMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.EmailMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.IdCardMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.MaskingStrategyRegistry;
-import cn.richie696.component.desensitize.core.strategy.NameMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.PasswordMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.PhoneMaskingStrategy;
+import cn.richie696.component.desensitize.core.strategy.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
@@ -43,12 +36,13 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * JacksonDesensitizeIntegrationTest 测试类。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 class JacksonDesensitizeTest {
 

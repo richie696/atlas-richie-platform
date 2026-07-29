@@ -43,7 +43,7 @@ public class StateHistory {
      * 业务对象ID
      * <p>
      * 使用 Long 类型以支持与业务表的数值型主键直接关联查询，避免类型转换带来的性能损失。
-     * 
+     *
      */
     private Long businessId;
 
@@ -91,7 +91,7 @@ public class StateHistory {
      * 默认构造函数
      * <p>
      * 创建时间自动设置为当前时间。
-     * 
+     *
      */
     public StateHistory() {
         this.createTime = LocalDateTime.now();
@@ -101,7 +101,6 @@ public class StateHistory {
      * 构造函数
      * <p>
      * 创建状态历史记录对象，创建时间自动设置为当前时间。
-     * 
      *
      * @param stateMachineName 状态机名称
      * @param businessId       业务对象ID

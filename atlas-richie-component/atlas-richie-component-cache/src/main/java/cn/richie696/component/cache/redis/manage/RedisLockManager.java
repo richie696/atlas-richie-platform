@@ -45,7 +45,9 @@ public class RedisLockManager implements LockFunction {
 
     private final AtlasRedisProperties redisProperties;
 
-    /** 本地锁阻塞等待时每次重试前的等待时间（毫秒），避免忙等 */
+    /**
+     * 本地锁阻塞等待时每次重试前的等待时间（毫秒），避免忙等
+     */
     private static final long PESSIMISTIC_LOCK_WAIT_MS = 20L;
 
     // --------------- LockFunction 公开接口 ---------------
@@ -186,7 +188,9 @@ public class RedisLockManager implements LockFunction {
 
     // --------------- 工具方法 ---------------
 
-    /** 业务 key 转成 Redis 上锁用的 key（与数据 key 隔离，避免冲突） */
+    /**
+     * 业务 key 转成 Redis 上锁用的 key（与数据 key 隔离，避免冲突）
+     */
     private String getLockKeyString(String key) {
         return LOCK_KEY + key;
     }

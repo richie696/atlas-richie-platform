@@ -54,15 +54,14 @@ public interface KnowledgeBaseVectorService {
      * @param request         检索参数；{@code accessScope} 必须非空且 {@code query} 必须非空；
      *                        详见 {@link KnowledgeSearchRequest} 的紧凑构造器
      * @return 检索结果；候选数为 0 时返回空 {@code citations} 但仍携带 diagnostics
-     * @throws IllegalArgumentException                              {@code knowledgeBaseId}
-     *                                                                为空或 {@code request}
-     *                                                                内部校验失败时抛出
-     * @throws UnsupportedOperationException                          请求 hybrid 但当前 provider
-     *                                                                未实现
-     *                                                                {@link cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations}
-     *                                                                时抛出
-     * @throws cn.richie696.component.vector.exceptions.UnsupportedModalityException
-     *                                                                当请求以图像内容检索但 provider 未配置 image 嵌入模型时抛出
+     * @throws IllegalArgumentException                                              {@code knowledgeBaseId}
+     *                                                                               为空或 {@code request}
+     *                                                                               内部校验失败时抛出
+     * @throws UnsupportedOperationException                                         请求 hybrid 但当前 provider
+     *                                                                               未实现
+     *                                                                               {@link cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations}
+     *                                                                               时抛出
+     * @throws cn.richie696.component.vector.exceptions.UnsupportedModalityException 当请求以图像内容检索但 provider 未配置 image 嵌入模型时抛出
      */
     RetrievalResult search(String knowledgeBaseId, KnowledgeSearchRequest request);
 }

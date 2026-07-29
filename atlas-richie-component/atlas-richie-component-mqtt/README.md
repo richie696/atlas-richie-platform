@@ -3,70 +3,73 @@
 ## 📖 Table of Contents
 
 - [🎯 Component Overview](#-component-overview)
-  - [Key Features](#key-features)
+    - [Key Features](#key-features)
 - [🏗️ Architecture Design](#️-architecture-design)
-  - [Event-Driven Architecture](#event-driven-architecture)
-  - [Core Component Architecture](#core-component-architecture)
-  - [Event Stream Design](#event-stream-design)
-  - [Component Lifecycle](#component-lifecycle)
-  - [Layer Responsibilities](#layer-responsibilities)
-  - [Publisher Flow Diagram](#publisher-flow-diagram)
-  - [Subscriber Flow Diagram](#subscriber-flow-diagram)
+    - [Event-Driven Architecture](#event-driven-architecture)
+    - [Core Component Architecture](#core-component-architecture)
+    - [Event Stream Design](#event-stream-design)
+    - [Component Lifecycle](#component-lifecycle)
+    - [Layer Responsibilities](#layer-responsibilities)
+    - [Publisher Flow Diagram](#publisher-flow-diagram)
+    - [Subscriber Flow Diagram](#subscriber-flow-diagram)
 - [📎 🔄 MQTT 5.0 vs 3.1.1 Protocol Comparison](#-🔄-mqtt-50-vs-311-protocol-comparison)
-  - [Protocol Architecture Comparison](#protocol-architecture-comparison)
-  - [Feature Comparison](#feature-comparison)
-  - [Weak-Network Comparison](#weak-network-comparison)
-  - [Before/After Upgrade Comparison](#beforeafter-upgrade-comparison)
+    - [Protocol Architecture Comparison](#protocol-architecture-comparison)
+    - [Feature Comparison](#feature-comparison)
+    - [Weak-Network Comparison](#weak-network-comparison)
+    - [Before/After Upgrade Comparison](#beforeafter-upgrade-comparison)
 - [📎 🌐 Weak-Network Optimization](#-🌐-weak-network-optimization)
-  - [Network Monitoring and Fast Recovery Principles](#network-monitoring-and-fast-recovery-principles)
-  - [Network Monitoring Mechanism](#network-monitoring-mechanism)
-  - [Fast Reconnect Mechanism](#fast-reconnect-mechanism)
-  - [Monitor Service Configuration](#monitor-service-configuration)
+    - [Network Monitoring and Fast Recovery Principles](#network-monitoring-and-fast-recovery-principles)
+    - [Network Monitoring Mechanism](#network-monitoring-mechanism)
+    - [Fast Reconnect Mechanism](#fast-reconnect-mechanism)
+    - [Monitor Service Configuration](#monitor-service-configuration)
 - [📎 💀 Will Message Support](#-💀-will-message-support)
-  - [Will Message Overview](#will-message-overview)
-  - [KDS Box Business Value](#kds-box-business-value)
-  - [Will Message Configuration Examples](#will-message-configuration-examples)
-  - [Cloud Processing Recommendations](#cloud-processing-recommendations)
+    - [Will Message Overview](#will-message-overview)
+    - [KDS Box Business Value](#kds-box-business-value)
+    - [Will Message Configuration Examples](#will-message-configuration-examples)
+    - [Cloud Processing Recommendations](#cloud-processing-recommendations)
 - [🚀 Quick Start Guide](#-quick-start-guide)
-  - [1. Add Dependency](#1-add-dependency)
-  - [2. Configuration File](#2-configuration-file)
-  - [3. Basic Usage](#3-basic-usage)
-  - [4. Event Subscription](#4-event-subscription)
-  - [5. Manual Initialization](#5-manual-initialization)
-  - [6. Advanced Configuration Examples](#6-advanced-configuration-examples)
+    - [1. Add Dependency](#1-add-dependency)
+    - [2. Configuration File](#2-configuration-file)
+    - [3. Basic Usage](#3-basic-usage)
+    - [4. Event Subscription](#4-event-subscription)
+    - [5. Manual Initialization](#5-manual-initialization)
+    - [6. Advanced Configuration Examples](#6-advanced-configuration-examples)
 - [📚 Interface Reference](#-interface-reference)
-  - [Event Subscription and Handling](#event-subscription-and-handling)
-  - [Message Publish and Subscribe Flow Diagram](#message-publish-and-subscribe-flow-diagram)
-  - [Public Interface Methods](#public-interface-methods)
-  - [Automatic Handling Methods](#automatic-handling-methods)
+    - [Event Subscription and Handling](#event-subscription-and-handling)
+    - [Message Publish and Subscribe Flow Diagram](#message-publish-and-subscribe-flow-diagram)
+    - [Public Interface Methods](#public-interface-methods)
+    - [Automatic Handling Methods](#automatic-handling-methods)
 - [🔧 Core Capabilities](#-core-capabilities)
-  - [Scenario 1: Device Status Reporting](#scenario-1-device-status-reporting)
-  - [Scenario 2: Dynamic Configuration Push](#scenario-2-dynamic-configuration-push)
-  - [Scenario 3: High-Availability Message Processing](#scenario-3-high-availability-message-processing)
-  - [Scenario 4: Fault Recovery Handling](#scenario-4-fault-recovery-handling)
+    - [Scenario 1: Device Status Reporting](#scenario-1-device-status-reporting)
+    - [Scenario 2: Dynamic Configuration Push](#scenario-2-dynamic-configuration-push)
+    - [Scenario 3: High-Availability Message Processing](#scenario-3-high-availability-message-processing)
+    - [Scenario 4: Fault Recovery Handling](#scenario-4-fault-recovery-handling)
 - [⚙️ Configuration Reference](#️-configuration-reference)
-  - [Core Configuration Parameters](#core-configuration-parameters)
-  - [MQTT 5.0-Specific Configuration Details](#mqtt-50-specific-configuration-details)
-  - [Fast Recovery Configuration Details](#fast-recovery-configuration-details)
+    - [Core Configuration Parameters](#core-configuration-parameters)
+    - [MQTT 5.0-Specific Configuration Details](#mqtt-50-specific-configuration-details)
+    - [Fast Recovery Configuration Details](#fast-recovery-configuration-details)
 - [🔧 Troubleshooting](#-troubleshooting)
-  - [Fault Diagnosis Flow Diagram](#fault-diagnosis-flow-diagram)
-  - [Common Issues and Solutions](#common-issues-and-solutions)
-  - [Monitoring Metrics](#monitoring-metrics)
-  - [Log Configuration](#log-configuration)
+    - [Fault Diagnosis Flow Diagram](#fault-diagnosis-flow-diagram)
+    - [Common Issues and Solutions](#common-issues-and-solutions)
+    - [Monitoring Metrics](#monitoring-metrics)
+    - [Log Configuration](#log-configuration)
 - [📎 ⏱️ Sequence Diagram Reference](#-⏱️-sequence-diagram-reference)
-  - [Client Initialization Sequence](#client-initialization-sequence)
-  - [Client Connection Establishment Sequence](#client-connection-establishment-sequence)
-  - [Message Publishing Sequence](#message-publishing-sequence)
-  - [Message Subscription Sequence](#message-subscription-sequence)
-  - [Background Keepalive and Monitoring Sequence](#background-keepalive-and-monitoring-sequence)
-  - [Fast Reconnect Sequence](#fast-reconnect-sequence)
-  - [Network Quality Monitoring Sequence](#network-quality-monitoring-sequence)
-  - [Event Bus Communication Sequence](#event-bus-communication-sequence)
-  - [Will Message Handling Sequence](#will-message-handling-sequence)
-  - [Network Switch Sequence](#network-switch-sequence)
+    - [Client Initialization Sequence](#client-initialization-sequence)
+    - [Client Connection Establishment Sequence](#client-connection-establishment-sequence)
+    - [Message Publishing Sequence](#message-publishing-sequence)
+    - [Message Subscription Sequence](#message-subscription-sequence)
+    - [Background Keepalive and Monitoring Sequence](#background-keepalive-and-monitoring-sequence)
+    - [Fast Reconnect Sequence](#fast-reconnect-sequence)
+    - [Network Quality Monitoring Sequence](#network-quality-monitoring-sequence)
+    - [Event Bus Communication Sequence](#event-bus-communication-sequence)
+    - [Will Message Handling Sequence](#will-message-handling-sequence)
+    - [Network Switch Sequence](#network-switch-sequence)
+
 ## 🎯 Component Overview
 
-RichieMQTT 5.0 Client Component is a commercial-grade MQTT client built on HiveMQ 1.3.7. It uses an **event-driven architecture** and is specifically optimized for fast recovery after long disconnections. The component supports every new MQTT 5.0 feature, including session expiry, message expiry, topic aliases, user properties, and will messages.
+RichieMQTT 5.0 Client Component is a commercial-grade MQTT client built on HiveMQ 1.3.7. It uses an **event-driven
+architecture** and is specifically optimized for fast recovery after long disconnections. The component supports every
+new MQTT 5.0 feature, including session expiry, message expiry, topic aliases, user properties, and will messages.
 
 ### Key Features
 
@@ -79,7 +82,8 @@ RichieMQTT 5.0 Client Component is a commercial-grade MQTT client built on HiveM
 - ✅ **Smart monitoring**: Real-time monitoring of network reachability and connection state
 - ✅ **Commercial-grade stability**: Reconnect and error handling optimized for production
 - ✅ **Will message support**: Notifies the cloud automatically when a device goes offline abnormally
-- ✅ **Separation of concerns**: Technical exceptions are handled automatically; business events are fully exposed to callers
+- ✅ **Separation of concerns**: Technical exceptions are handled automatically; business events are fully exposed to
+  callers
 - ✅ **Event loop protection**: Prevents events from cycling inside the component
 - ✅ **Resource optimization**: Uses try-with-resources to avoid resource leaks
 - ✅ **Code simplification**: Removes unused variables and features to improve code quality
@@ -88,7 +92,8 @@ RichieMQTT 5.0 Client Component is a commercial-grade MQTT client built on HiveM
 
 ### Event-Driven Architecture
 
-The RichieMQTT 5.0 component uses an **event-driven architecture** based on the Reactor reactive programming model, with an event bus enabling loosely coupled communication between components. The design offers the following advantages:
+The RichieMQTT 5.0 component uses an **event-driven architecture** based on the Reactor reactive programming model, with
+an event bus enabling loosely coupled communication between components. The design offers the following advantages:
 
 - **Loose coupling**: Components communicate through events, reducing direct dependencies
 - **Reactive programming**: Reactor-based Flux event streams with backpressure support
@@ -142,26 +147,30 @@ graph TB
 ### Event Stream Design
 
 #### Connection State Event Stream (`connectionStateFlow`)
+
 - **Event type**: `ConnectionStateEvent`
 - **Subscription purpose**: Monitor connection state changes, handle technical exceptions
 - **Event content**: Connection state, client ID, timestamp, reason code
 - **Handling strategy**:
-  - Technical exceptions (`ABNORMAL_DISCONNECT`, `SESSION_EXPIRED`) handled automatically
-  - Business events (`CONNECTED`, `DISCONNECTED`, etc.) exposed to callers
+    - Technical exceptions (`ABNORMAL_DISCONNECT`, `SESSION_EXPIRED`) handled automatically
+    - Business events (`CONNECTED`, `DISCONNECTED`, etc.) exposed to callers
 
 #### Message Event Stream (`messageFlow`)
+
 - **Event type**: `MessageEvent`
 - **Subscription purpose**: Monitor message delivery status
 - **Event content**: Message ID, topic, QoS, timestamp, status
 - **Handling strategy**: Fully exposed to callers, supports business logic handling
 
 #### Heartbeat Event Stream (`heartbeatFlow`)
+
 - **Event type**: `HeartbeatEvent`
 - **Subscription purpose**: Monitor heartbeat status
 - **Event content**: Heartbeat time, latency, status
 - **Handling strategy**: Used for internal monitoring, supports external subscriptions
 
 #### Network Quality Event Stream (`networkQualityFlow`)
+
 - **Event type**: `NetworkQualityEvent`
 - **Subscription purpose**: Monitor network quality
 - **Event content**: Latency, packet loss rate, network type
@@ -195,6 +204,7 @@ graph LR
 ```
 
 #### Initialization Phase
+
 - **Spring auto injection**: Component is managed by Spring container
 - **Constructor execution**: Creates necessary managers and clients
 - **Configuration validation**: Validates MQTT server configuration
@@ -202,6 +212,7 @@ graph LR
 - **Event subscription**: Subscribes to required technical exception events
 
 #### Operation Phase
+
 - **Connection management**: Maintains MQTT connection state, handles technical exceptions
 - **Message handling**: Handles message publishing, subscription, deduplication, etc.
 - **Network monitoring**: Monitors network reachability, triggers reconnection
@@ -209,6 +220,7 @@ graph LR
 - **Event publishing**: Publishes status events to notify subscribers
 
 #### Cleanup Phase
+
 - **Disconnect**: Gracefully disconnects the MQTT connection
 - **Cleanup events**: Cleans up all event streams and subscriptions
 - **Shutdown services**: Stops monitoring services and thread pools
@@ -306,59 +318,68 @@ flowchart TB
     Security -.->|"Protection"| Protocol
     Security -.->|"Protection"| Server
 ```
+
 ### Layer Responsibilities
 
 #### Client Layer
+
 - **Application Layer**: Business logic processing, message format conversion
 - **Business Layer**: Message routing, filtering, transformation
 - **Config Layer**: Client configuration management, dynamic config push
 
 #### Connection Layer
+
 - **Network monitoring**: Real-time detection of network reachability, 5-second interval
 - **Connection monitoring**: Monitors MQTT connection state, 10-second interval
 - **Fast reconnect**: Automatic retry mechanism (exponential backoff + random jitter)
-  - Supports infinite retry mode (configure `max-fast-reconnect-attempts <= 0`)
-  - Supports finite retry mode (configure `max-fast-reconnect-attempts > 0`)
-  - Retry interval grows exponentially (1x, 2x, 4x...), capped at 5 minutes
-  - Each retry interval adds 20%~100% random jitter to avoid simultaneous retries from multiple clients
+    - Supports infinite retry mode (configure `max-fast-reconnect-attempts <= 0`)
+    - Supports finite retry mode (configure `max-fast-reconnect-attempts > 0`)
+    - Retry interval grows exponentially (1x, 2x, 4x...), capped at 5 minutes
+    - Each retry interval adds 20%~100% random jitter to avoid simultaneous retries from multiple clients
 
 #### MQTT Protocol Layer
+
 - **Session management**: MQTT 5.0 session expiry mechanism, supports 2-hour session persistence
 - **Message delivery**: QoS 0/1/2 delivery with message expiry support
 - **Topic subscription**: Topic aliases supported, up to 10 topic aliases
 
 #### RichieMQTT Component Implementation
+
 - **HiveMqMqttClient**: MQTT 5.0 client implementation based on HiveMQ 1.3.7
 - **Manual initialization interface**: Supports manual initialization via server-pushed configuration
 - **Network switch mechanism**: Dynamic public/VPC network switching
 - **Network type broadcast**: Broadcasts the current network type once per second via the event bus
-  - Uses virtual threads for better performance
-  - Supports graceful shutdown and resource cleanup
-  - Broadcast frequency: once per second
+    - Uses virtual threads for better performance
+    - Supports graceful shutdown and resource cleanup
+    - Broadcast frequency: once per second
 
 #### Message Handling Layer
+
 - **Message publishing**: Supports retained messages and retry mechanism
 - **Message subscription**: Supports batch subscription and topic listener management
-  - **Normal subscription**: Exact-match lookup based on `LISTENER_CACHE`
-  - **Shared subscription**: Wildcard match based on `SHARED_LISTENER_CACHE` (MQTT 5.0 feature)
+    - **Normal subscription**: Exact-match lookup based on `LISTENER_CACHE`
+    - **Shared subscription**: Wildcard match based on `SHARED_LISTENER_CACHE` (MQTT 5.0 feature)
 - **Message dispatch**: Event bus-based message dispatching
-  - Subscribes to `MqttEventBus.messageFlow` (only once, to prevent duplicate subscriptions)
-  - Automatically routes messages to the corresponding business callback
-  - Supports automatic matching for both normal and shared subscriptions
-  - Supports wildcard matching (`+` single-level wildcard, `#` multi-level wildcard)
+    - Subscribes to `MqttEventBus.messageFlow` (only once, to prevent duplicate subscriptions)
+    - Automatically routes messages to the corresponding business callback
+    - Supports automatic matching for both normal and shared subscriptions
+    - Supports wildcard matching (`+` single-level wildcard, `#` multi-level wildcard)
 - **Message filtering**: Topic-based message filtering and routing
 
 #### Server Layer
+
 - **MQTT Broker**: Server that supports the MQTT 5.0 protocol
 - **Session storage**: Persistent client session state
 - **Message queue**: Offline message queue management
 
 #### Storage Layer
+
 - **Message persistence**: Local persistence for important messages
 - **Session state**: Local cache of client session state
 - **Configuration storage**: Local storage of client configuration
 
 #### Security Layer
+
 - **Identity authentication**: Username/password authentication
 - **Data encryption**: TLS/SSL encryption in transit
 - **Access control**: Topic-based access permission control
@@ -416,7 +437,9 @@ graph TD
 ```
 
 ### Subscriber Flow Diagram
+
 [View full size](https://mermaid-live.nodejs.cn/view#pako:eNqNlt1S20YUx1_Fo2tgwMgGfNEZsAEb4mADaRIWXwi8gKZgE1lOmhpmTAnBED5MQzKQAA4EaqYBTJsWmDjAy7Ar-S262rOO5UJmqguNpP3t-Dr_2VVKGo5HseSRRjVlcszR7xuMOdjVisiXdWP9kGQLZPEw4qit_cHRhvomNTU2as7_wb7Rz4dk7sCvPsXBJ8Enuu4dV3FMj8D0Nj7Bi-jOi1L6A5m_pG9O6ULe3F0SgJcDvlRpbtm4PKEbBZL9nfliHqcB8FnAFBuYcrQjYz1HM1lyskcz58anQsAXsUNs6pRjABnF13Q7J0bauf0OpMZUvQ9rT9VhTDLbJP-KLL0VSAdHOhHJvCfFL8Fwf7_DVVf_zYmgOjnlR-bJFQvUvN6hKwdk9VeWjwD8HAggGLLM0K1lsrhLNg8FEeBEVwoIyNVKZzEncu2q5NqNoOLG-zW6kgdLETvFk72HSvPLZuENWBTj97ibYAqG6NGuVXPuzDybK21mhbNgxUzA_oW7v8_yPCWXwjDZ_9P8u2y-m5vv4RW9j_Vnce2nYJw9xzXjcs0obkHEVXCIw954LIaHdTUeEzwYv4MPl_lEcgJrfqxo-hBWdHI9a55_rqoF3HvRzcU79tE8nWXC0fComtCxVp4Pou1DllBfLtGzDJ0pkP0XRvZlZWn6ONOPwEI03pccSgxr6hA2T_ZKG3M3F8XS3oZg-zn7QCgB7LEkSPaoYu8BZ35ExvECuZoTPjOn5tVVVeAPUZVO6MphKT0DNET9CI0pseg4DuJEQhnFELYAwMQjzj1GwsdKkS07_ZimufJ6PebAQAokwEbJ_jLAQggDlWVvbWWV3CNfZ-1YxI5xvbS1oZvrbXK88S0x4-tr9lpuetH1XmReHpFVJopNWJ__Vt0rut8n1q-ULppXa0BV1SmRHIJtaVCCTcfeFoMSQNbVA-JsQLSw6jLyv1mV-OcVCDNiwxqAc6ZgSOw7qwW2QNM2zFnJuacR0Q_zrCtgxs3FMsOZViK3cF7JHlkUnJz_BTq325Vtdl3IzDPXa-T6Uymds5r2esdu1AWhuq1Wp29P7xBkpU7WFYKW4yVoqBc1yB1UbRGcgxqEnNX70fFHcnFhizVkq0GoUcR6K8pQIxiT_2-UYWj0BkRO3tGtnGUzPQMNbuPDEGPYmRK9f3vP5JgtxvCdMeJY9Dt6EgKY2WN6B-XZ9dTOzhwbAHKC1uzoQCNKQu_Fw7CvPVT1sV6sa89t8XeIs4UdLnevbqc4VvwpGPpOgn5_RVmBQFWN6UKabi3cqrSYwUvS1cXOxLxRPIYTwUYF4Ejq7kYiP97PlhjWzyqVk2rYT4EalTy6lsQ1EttSJxTrVUpZyKCkj-EJPCh52GMUjyjJcd0q4TSbNqnEBuLxifJMLZ4cHZM8I8p4gr0lJ6OKjn2qwpaigjB_1tadjOmSx8UtSJ6U9LPkqW10s2NZlhubnQ31slOub6qRnkseZ3Od3NLkdspu2emSnc0t0zXSL9ynXNfgbml2Ncsul9vV1OJqqZFw1Dp3gvCjw_93pv8FzQ34qA)
+
 ```mermaid
 graph TD
     A[Application Startup] --> B[Spring Injects HiveMqMqttClient]
@@ -559,86 +582,88 @@ graph TB
 
 ### Feature Comparison
 
-| Feature            | MQTT 3.1.1       | MQTT 5.0                  | Advantage                          |
-|--------------------|------------------|---------------------------|------------------------------------|
-| **Connection Management** | Basic options     | Session expiry, reason codes | More precise connection state control |
-| **Message Delivery**  | QoS 0/1/2        | QoS 0/1/2 + Message Expiry | Prevents expired message delivery    |
-| **Topic Subscription**| Basic subscription | Topic aliases, subscription options | Reduces network overhead       |
-| **User Properties**  | Not supported    | Supported                 | Richer metadata transfer             |
-| **Error Handling**   | Basic error codes | Detailed codes + reason strings | More precise error diagnostics  |
-| **Flow Control**     | Not supported    | Receive Maximum control   | Prevents client overload              |
-| **Message Format**   | Fixed format     | Variable-length properties | More flexible message structure     |
+| Feature                   | MQTT 3.1.1         | MQTT 5.0                            | Advantage                             |
+|---------------------------|--------------------|-------------------------------------|---------------------------------------|
+| **Connection Management** | Basic options      | Session expiry, reason codes        | More precise connection state control |
+| **Message Delivery**      | QoS 0/1/2          | QoS 0/1/2 + Message Expiry          | Prevents expired message delivery     |
+| **Topic Subscription**    | Basic subscription | Topic aliases, subscription options | Reduces network overhead              |
+| **User Properties**       | Not supported      | Supported                           | Richer metadata transfer              |
+| **Error Handling**        | Basic error codes  | Detailed codes + reason strings     | More precise error diagnostics        |
+| **Flow Control**          | Not supported      | Receive Maximum control             | Prevents client overload              |
+| **Message Format**        | Fixed format       | Variable-length properties          | More flexible message structure       |
 
 ### Weak-Network Comparison
 
-| Scenario           | MQTT 3.1.1                                   | MQTT 5.0                                         | Recommendation                                                 |
-|--------------------|----------------------------------------------|--------------------------------------------------|----------------------------------------------------------------|
-| **Short Outage**   | Auto reconnect<br>⭐⭐                          | Session keep + auto reconnect<br>⭐⭐⭐⭐⭐             | MQTT 5.0 is better                                             |
-| **Long Outage**    | Session loss<br>⭐⭐⭐                            | Session expiry mechanism<br>⭐⭐⭐⭐⭐                  | MQTT 5.0 is better                                             |
-| **Network Switch** | Reconnect<br>⭐⭐⭐                                | Connection reuse<br>⭐⭐⭐⭐⭐                          | MQTT 5.0 is better                                             |
-| **Message Loss**   | Possible loss<br>⭐⭐⭐                            | Message expiry protection<br>⭐⭐⭐⭐⭐                | MQTT 5.0 is better                                             |
-| **Network Efficiency** | Full topic name transfer<br>Fixed format<br>No flow control<br>⭐⭐⭐ | Topic aliases<br>Variable properties<br>Receive Maximum control<br>⭐⭐⭐⭐⭐ | 60% less overhead<br>More flexible format<br>Prevents congestion<br>**MQTT 5.0 is better** |
-| **Error Handling** | Basic codes<br>Simple auth failures<br>Basic protocol errors<br>⭐⭐ | Detailed codes + reason strings<br>Detailed auth reasons + retry hints<br>Detailed protocol errors + hints<br>⭐⭐⭐⭐⭐ | More precise fault localization<br>Better UX<br>Better debugging<br>**MQTT 5.0 is better** |
-| **Resource Usage** | Basic message cache<br>Basic message handling<br>Fixed format transfer<br>⭐⭐⭐⭐⭐ | Session state + message queue<br>Dedup + property parsing<br>Optimized transfer but more protocol complexity<br>⭐⭐⭐ | +20-30% memory<br>+15-25% CPU<br>-40-60% bandwidth<br>**MQTT 3.1.1 is better** |
-| **Compatibility**  | All MQTT servers<br>All MQTT clients<br>Mature toolchain<br>⭐⭐⭐⭐⭐ | Some servers<br>Requires 5.0 client<br>Toolchain maturing<br>⭐⭐⭐ | 3.1.1 has broader compatibility<br>5.0 is more powerful<br>3.1.1 ecosystem is more mature<br>**MQTT 3.1.1 is better** |
+| Scenario               | MQTT 3.1.1                                                                           | MQTT 5.0                                                                                                                 | Recommendation                                                                                                        |
+|------------------------|--------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| **Short Outage**       | Auto reconnect<br>⭐⭐                                                               | Session keep + auto reconnect<br>⭐⭐⭐⭐⭐                                                                              | MQTT 5.0 is better                                                                                                    |
+| **Long Outage**        | Session loss<br>⭐⭐⭐                                                               | Session expiry mechanism<br>⭐⭐⭐⭐⭐                                                                                   | MQTT 5.0 is better                                                                                                    |
+| **Network Switch**     | Reconnect<br>⭐⭐⭐                                                                  | Connection reuse<br>⭐⭐⭐⭐⭐                                                                                           | MQTT 5.0 is better                                                                                                    |
+| **Message Loss**       | Possible loss<br>⭐⭐⭐                                                              | Message expiry protection<br>⭐⭐⭐⭐⭐                                                                                  | MQTT 5.0 is better                                                                                                    |
+| **Network Efficiency** | Full topic name transfer<br>Fixed format<br>No flow control<br>⭐⭐⭐                | Topic aliases<br>Variable properties<br>Receive Maximum control<br>⭐⭐⭐⭐⭐                                            | 60% less overhead<br>More flexible format<br>Prevents congestion<br>**MQTT 5.0 is better**                            |
+| **Error Handling**     | Basic codes<br>Simple auth failures<br>Basic protocol errors<br>⭐⭐                 | Detailed codes + reason strings<br>Detailed auth reasons + retry hints<br>Detailed protocol errors + hints<br>⭐⭐⭐⭐⭐ | More precise fault localization<br>Better UX<br>Better debugging<br>**MQTT 5.0 is better**                            |
+| **Resource Usage**     | Basic message cache<br>Basic message handling<br>Fixed format transfer<br>⭐⭐⭐⭐⭐ | Session state + message queue<br>Dedup + property parsing<br>Optimized transfer but more protocol complexity<br>⭐⭐⭐   | +20-30% memory<br>+15-25% CPU<br>-40-60% bandwidth<br>**MQTT 3.1.1 is better**                                        |
+| **Compatibility**      | All MQTT servers<br>All MQTT clients<br>Mature toolchain<br>⭐⭐⭐⭐⭐               | Some servers<br>Requires 5.0 client<br>Toolchain maturing<br>⭐⭐⭐                                                      | 3.1.1 has broader compatibility<br>5.0 is more powerful<br>3.1.1 ecosystem is more mature<br>**MQTT 3.1.1 is better** |
 
 ### Before/After Upgrade Comparison
 
 #### Performance Improvement Comparison
 
-| Performance Metric       | MQTT 3.1.1 | MQTT 5.0                  | Improvement | Description                              |
-|--------------------------|------------|---------------------------|-------------|------------------------------------------|
-| **Connection Recovery Time** | 30-60s      | 1-3s                      | **95%+**    | Fast reconnect after network recovery     |
-| **Session Retention Time**   | None        | 2 hours                   | **100%**    | Session state preserved during outage     |
-| **Message Delivery Reliability** | QoS 0/1/2 | QoS 0/1/2 + Message Expiry | **100%**    | Prevents expired message delivery         |
-| **Network Switch Time**       | Reconnect   | Connection reuse          | **90%+**    | No need to re-establish connection         |
-| **Error Diagnostic Precision**| Basic codes | Detailed codes + reason strings | **300%+** | More precise fault localization         |
-| **Topic Transfer Efficiency** | Full topic  | Topic aliases              | **60%+**    | Reduces network overhead                  |
-| **Flow Control Capability**   | None        | Receive Maximum control    | **100%**    | Prevents client overload                  |
-| **Message Format Flexibility**| Fixed       | Variable-length properties | **200%+**   | More flexible message structure           |
+| Performance Metric               | MQTT 3.1.1  | MQTT 5.0                        | Improvement | Description                           |
+|----------------------------------|-------------|---------------------------------|-------------|---------------------------------------|
+| **Connection Recovery Time**     | 30-60s      | 1-3s                            | **95%+**    | Fast reconnect after network recovery |
+| **Session Retention Time**       | None        | 2 hours                         | **100%**    | Session state preserved during outage |
+| **Message Delivery Reliability** | QoS 0/1/2   | QoS 0/1/2 + Message Expiry      | **100%**    | Prevents expired message delivery     |
+| **Network Switch Time**          | Reconnect   | Connection reuse                | **90%+**    | No need to re-establish connection    |
+| **Error Diagnostic Precision**   | Basic codes | Detailed codes + reason strings | **300%+**   | More precise fault localization       |
+| **Topic Transfer Efficiency**    | Full topic  | Topic aliases                   | **60%+**    | Reduces network overhead              |
+| **Flow Control Capability**      | None        | Receive Maximum control         | **100%**    | Prevents client overload              |
+| **Message Format Flexibility**   | Fixed       | Variable-length properties      | **200%+**   | More flexible message structure       |
 
 #### Production Environment Comparison
 
-| Production Scenario          | MQTT 3.1.1     | MQTT 5.0       | Production Value              |
-|------------------------------|----------------|----------------|-------------------------------|
-| **Long Outage Recovery**     | Reconnect + auth | Session keep + fast recovery | +95% service availability  |
-| **Unstable Network**         | Frequent reconnects | Smart reconnect + session keep | Significantly better UX  |
-| **Large-Scale Device Access**| Complex connection management | Flow control + session management | Better system stability  |
-| **Message Reliability Needs**| Possible loss  | Message expiry + QoS guarantee | Data integrity assurance   |
-| **Ops Fault Diagnosis**      | Limited error info | Detailed codes + reasons | +80% diagnostic efficiency |
-| **Network Resource Optimization** | Fixed overhead | Topic aliases + flow control | +60% bandwidth utilization |
+| Production Scenario               | MQTT 3.1.1                    | MQTT 5.0                          | Production Value           |
+|-----------------------------------|-------------------------------|-----------------------------------|----------------------------|
+| **Long Outage Recovery**          | Reconnect + auth              | Session keep + fast recovery      | +95% service availability  |
+| **Unstable Network**              | Frequent reconnects           | Smart reconnect + session keep    | Significantly better UX    |
+| **Large-Scale Device Access**     | Complex connection management | Flow control + session management | Better system stability    |
+| **Message Reliability Needs**     | Possible loss                 | Message expiry + QoS guarantee    | Data integrity assurance   |
+| **Ops Fault Diagnosis**           | Limited error info            | Detailed codes + reasons          | +80% diagnostic efficiency |
+| **Network Resource Optimization** | Fixed overhead                | Topic aliases + flow control      | +60% bandwidth utilization |
 
 #### Technical Architecture Comparison
 
-| Architecture Feature       | MQTT 3.1.1          | MQTT 5.0                 | Technical Advantage              |
-|----------------------------|---------------------|--------------------------|----------------------------------|
-| **Protocol Extensibility** | Limited             | User properties + variable format | Better protocol extensibility   |
-| **Connection Management**  | Basic               | Session expiry + reason codes     | More precise connection control  |
-| **Message Delivery**       | Basic QoS           | QoS + message expiry + priority   | Richer delivery mechanisms       |
-| **Error Handling**         | Simple codes        | Detailed codes + reason strings   | Better error handling            |
-| **Flow Control**           | No mechanism        | Receive Maximum + shared subscriptions | Smarter flow management     |
-| **Session Management**     | Clean Session       | Session expiry + state persistence | More flexible session management |
+| Architecture Feature       | MQTT 3.1.1    | MQTT 5.0                               | Technical Advantage              |
+|----------------------------|---------------|----------------------------------------|----------------------------------|
+| **Protocol Extensibility** | Limited       | User properties + variable format      | Better protocol extensibility    |
+| **Connection Management**  | Basic         | Session expiry + reason codes          | More precise connection control  |
+| **Message Delivery**       | Basic QoS     | QoS + message expiry + priority        | Richer delivery mechanisms       |
+| **Error Handling**         | Simple codes  | Detailed codes + reason strings        | Better error handling            |
+| **Flow Control**           | No mechanism  | Receive Maximum + shared subscriptions | Smarter flow management          |
+| **Session Management**     | Clean Session | Session expiry + state persistence     | More flexible session management |
 
 #### Upgrade Benefits Summary
 
 **Performance Improvements**:
+
 - ✅ Connection recovery time reduced from 30-60s to 1-3s, a 95%+ improvement
 - ✅ Session retention improved from 0 to 2 hours, achieving 100% session preservation
 - ✅ Network switch time reduced by 90%+, supports connection reuse
 - ✅ Error diagnostic precision improved by 300%+, supports detailed error codes
 
 **Production Value**:
+
 - ✅ Service availability up by 95%, supports long-outage fast recovery
 - ✅ Significantly better UX, reduces impact of unstable networks
 - ✅ Improved system stability, supports large-scale device access
 - ✅ Data integrity guaranteed, prevents message loss
 
 **Technical Advantages**:
+
 - ✅ More extensible protocol, supports user properties and variable formats
 - ✅ More precise connection control, supports session expiry and reason codes
 - ✅ Richer message delivery mechanisms, supports message expiry and priority
 - ✅ Better error handling, supports detailed error diagnostics
-
 
 ## 📎 🌐 Weak-Network Optimization
 
@@ -768,7 +793,8 @@ private boolean checkNetworkConnectivity() {
 
 #### Automatic Retry Mechanism
 
-The connection manager implements an **exponential backoff + random jitter** automatic retry mechanism, supporting infinite retry mode:
+The connection manager implements an **exponential backoff + random jitter** automatic retry mechanism, supporting
+infinite retry mode:
 
 ```java
 // Fast reconnect configuration (read from configuration file)
@@ -830,7 +856,8 @@ heartbeatService.scheduleWithFixedDelay(() -> {
 
 ### Will Message Overview
 
-The Last Will and Testament (LWT) is an important MQTT feature. When a client disconnects abnormally, the broker automatically publishes a preconfigured will message so the cloud can detect the offline device in time.
+The Last Will and Testament (LWT) is an important MQTT feature. When a client disconnects abnormally, the broker
+automatically publishes a preconfigured will message so the cloud can detect the offline device in time.
 
 #### Working Principle
 
@@ -1056,6 +1083,7 @@ mqttClient.changeServer(NetworkTypeEnum.VPC);
 ### 6) Advanced Configuration Examples
 
 #### Production Environment Configuration
+
 ```yaml
 platform:
   component:
@@ -1071,6 +1099,7 @@ platform:
 ```
 
 #### Development Environment Configuration
+
 ```yaml
 platform:
   component:
@@ -1086,6 +1115,7 @@ platform:
 ```
 
 #### Weak-Network Environment Configuration
+
 ```yaml
 platform:
   component:
@@ -1107,6 +1137,7 @@ platform:
 ### Event Subscription and Handling
 
 #### Connection State Event Handling
+
 ```java
 @Component
 public class ConnectionEventHandler {
@@ -1154,6 +1185,7 @@ public class ConnectionEventHandler {
 ```
 
 #### Network Quality Event Handling
+
 ```java
 @Component
 public class NetworkQualityHandler {
@@ -1193,6 +1225,7 @@ public class NetworkQualityHandler {
 ```
 
 #### Heartbeat Event Handling
+
 ```java
 @Component
 public class HeartbeatHandler {
@@ -1287,21 +1320,24 @@ graph TB
 ### Public Interface Methods
 
 #### 1. `initialClient(MqttServerInfo serverInfo)`
-**Purpose**: Manually initialize the MQTT client
-**Parameters**: An object containing complete server configuration
-**Functionality**: 
+
+**Purpose**: Manually initialize the MQTT client **Parameters**: An object containing complete server configuration
+**Functionality**:
+
 - Sets server addresses (public/VPC)
 - Configures authentication (username/password)
 - Sets device ID and group ID
 - Configures network type and server type
 - Automatically starts the connection service
 
-**Usage scenarios**: 
+**Usage scenarios**:
+
 - When the client starts and fetches configuration from a service interface
 - When configuration changes and re-initialization is needed
 - When the network switches and reconfiguration is required
 
 **Example**:
+
 ```java
 @Service
 public class MqttConfigService {
@@ -1327,15 +1363,17 @@ public class MqttConfigService {
 ```
 
 #### 2. `initialClient(MqttServerInfo serverInfo, boolean enable)`
-**Purpose**: Manual initialization with an enable flag
-**Parameters**: Server configuration + enable flag
+
+**Purpose**: Manual initialization with an enable flag **Parameters**: Server configuration + enable flag
 **Functionality**: Can control whether the MQTT connection is enabled immediately
 
 **Usage scenarios**:
+
 - Scenarios requiring delayed startup
 - Decide whether to enable after configuration validation
 
 **Example**:
+
 ```java
 @Service
 public class MqttInitializationService {
@@ -1366,16 +1404,18 @@ public class MqttInitializationService {
 ```
 
 #### 3. `changeServer(NetworkTypeEnum networkType, String host, int port)`
-**Purpose**: Dynamically switch the server address
-**Parameters**: Network type + new host + port
-**Functionality**: Swap the MQTT server at runtime
+
+**Purpose**: Dynamically switch the server address **Parameters**: Network type + new host + port **Functionality**:
+Swap the MQTT server at runtime
 
 **Usage scenarios**:
+
 - Server address changes
 - Load balancing
 - Failover
 
 **Example**:
+
 ```java
 @Service
 public class ServerSwitchService {
@@ -1398,15 +1438,17 @@ public class ServerSwitchService {
 ```
 
 #### 4. `changeServer(NetworkTypeEnum networkType)`
-**Purpose**: Switch the network type
-**Parameters**: Target network type
-**Functionality**: Switch between already-configured servers
+
+**Purpose**: Switch the network type **Parameters**: Target network type **Functionality**: Switch between
+already-configured servers
 
 **Usage scenarios**:
+
 - Public/VPC network switching
 - Network quality optimization
 
 **Example**:
+
 ```java
 @Service
 public class NetworkOptimizationService {
@@ -1437,16 +1479,18 @@ public class NetworkOptimizationService {
 ```
 
 #### 5. `doPublish(String topic, byte[] value)`
-**Purpose**: Publish a message
-**Parameters**: Topic + message content
-**Functionality**: Publish a message to the specified topic
+
+**Purpose**: Publish a message **Parameters**: Topic + message content **Functionality**: Publish a message to the
+specified topic
 
 **Usage scenarios**:
+
 - Business message publishing
 - Status reporting
 - Command push
 
 **Example**:
+
 ```java
 @Service
 public class MessagePublishService {
@@ -1481,16 +1525,18 @@ public class MessagePublishService {
 ```
 
 #### 6. `doPublish(String topic, byte[] value, boolean retained)`
-**Purpose**: Publish a retained message
-**Parameters**: Topic + message content + retain flag
-**Functionality**: Publishes a message that the server retains
+
+**Purpose**: Publish a retained message **Parameters**: Topic + message content + retain flag **Functionality**:
+Publishes a message that the server retains
 
 **Usage scenarios**:
+
 - Device status retention
 - Configuration retention
 - Last known state
 
 **Example**:
+
 ```java
 @Service
 public class RetainedMessageService {
@@ -1519,16 +1565,19 @@ public class RetainedMessageService {
 ```
 
 #### 7. `registerConsumer(String topic, Consumer<ConsumerMessage> callback)`
-**Purpose**: Register a normal subscription message listener
-**Parameters**: Topic + callback function
-**Functionality**: Subscribes to a topic and processes incoming messages (supports wildcards: `+` single-level, `#` multi-level)
+
+**Purpose**: Register a normal subscription message listener **Parameters**: Topic + callback function
+**Functionality**: Subscribes to a topic and processes incoming messages (supports wildcards: `+` single-level, `#`
+multi-level)
 
 **Usage scenarios**:
+
 - Business message processing
 - Command reception
 - Status monitoring
 
 **Example**:
+
 ```java
 @Component
 public class MessageConsumerService {
@@ -1601,22 +1650,27 @@ public class MessageConsumerService {
 ```
 
 #### 7.1. `registerSharedConsumer(String sharedTopic, Consumer<ConsumerMessage> callback)`
+
 **Purpose**: Register a shared subscription message listener (MQTT 5.0 feature)
 **Parameters**: Full shared subscription topic (format: `$share/{groupId}/businessTopic`) + callback function
-**Functionality**: Subscribes to a shared topic and processes incoming messages; supports load balancing and message distribution
+**Functionality**: Subscribes to a shared topic and processes incoming messages; supports load balancing and message
+distribution
 
 **Shared subscription format requirements**:
+
 - Must start with `$share/`
 - Format: `$share/{groupId}/businessTopic`
 - Business topic must include the `/+/` wildcard (to match unique identifiers)
 - Example: `$share/GID_AGENT_DEVICE/device/+/status`
 
 **Usage scenarios**:
+
 - Multi-client load balancing
 - Scenarios requiring message distribution
 - High-availability message processing
 
 **Example**:
+
 ```java
 @Component
 public class SharedSubscriptionService {
@@ -1651,22 +1705,26 @@ public class SharedSubscriptionService {
 ```
 
 **Notes**:
+
 - Shared subscriptions are an MQTT 5.0 feature; MQTT 3.1.1 does not support them
 - The full shared subscription topic (including `$share/{groupId}` prefix) must be passed in
 - The business topic must contain the `/+/` wildcard
-- When a message arrives, the actual topic is a specific value; the component matches the corresponding callback via wildcard
+- When a message arrives, the actual topic is a specific value; the component matches the corresponding callback via
+  wildcard
 
 #### 8. `unregisterConsumer(String topic)`
-**Purpose**: Unregister a normal subscription message listener
-**Parameters**: Topic
-**Functionality**: Cancels the subscription for the specified topic
+
+**Purpose**: Unregister a normal subscription message listener **Parameters**: Topic **Functionality**: Cancels the
+subscription for the specified topic
 
 **Usage scenarios**:
+
 - Dynamic subscription cancellation
 - Resource cleanup
 - Permission changes
 
 **Example**:
+
 ```java
 @Service
 public class ConsumerManagementService {
@@ -1703,16 +1761,19 @@ public class ConsumerManagementService {
 ```
 
 #### 8.1. `unregisterSharedConsumer(String sharedTopic)`
-**Purpose**: Unregister a shared subscription message listener
-**Parameters**: Full shared subscription topic (format: `$share/{groupId}/businessTopic`)
+
+**Purpose**: Unregister a shared subscription message listener **Parameters**: Full shared subscription topic (format:
+`$share/{groupId}/businessTopic`)
 **Functionality**: Cancels the shared subscription for the specified topic
 
 **Usage scenarios**:
+
 - Dynamic shared subscription cancellation
 - Resource cleanup
 - Load balancing adjustments
 
 **Example**:
+
 ```java
 @Service
 public class SharedSubscriptionManagementService {
@@ -1729,15 +1790,17 @@ public class SharedSubscriptionManagementService {
 ```
 
 #### 9. `reinitialize()`
-**Purpose**: Reinitialize the client
-**Functionality**: Re-establishes the MQTT connection
+
+**Purpose**: Reinitialize the client **Functionality**: Re-establishes the MQTT connection
 
 **Usage scenarios**:
+
 - Recover from connection anomalies
 - Major configuration changes
 - Troubleshooting
 
 **Example**:
+
 ```java
 @Service
 public class ClientRecoveryService {
@@ -1772,13 +1835,15 @@ public class ClientRecoveryService {
 ### Automatic Handling Methods
 
 #### 1. Network Monitoring
-**Trigger**: Automatically every 5 seconds
-**Functionality**: 
+
+**Trigger**: Automatically every 5 seconds **Functionality**:
+
 - Checks network connectivity
 - Auto-reconnects on network recovery
 - Updates the network status flag
 
 **Monitoring logic**:
+
 ```java
 // Network monitor service - 5 second interval
 networkMonitorService.scheduleWithFixedDelay(() -> {
@@ -1790,13 +1855,15 @@ networkMonitorService.scheduleWithFixedDelay(() -> {
 ```
 
 #### 2. Connection Monitoring
-**Trigger**: Automatically every 10 seconds
-**Functionality**:
+
+**Trigger**: Automatically every 10 seconds **Functionality**:
+
 - Monitors the MQTT connection state
 - Auto-reconnects on disconnection
 - Maintains the connection state flag
 
 **Monitoring logic**:
+
 ```java
 // Connection monitor service - 10 second interval
 connectionMonitorService.scheduleWithFixedDelay(() -> {
@@ -1807,14 +1874,16 @@ connectionMonitorService.scheduleWithFixedDelay(() -> {
 ```
 
 #### 3. Fast Reconnect
-**Trigger**: When the network recovers or the connection drops
-**Functionality**:
+
+**Trigger**: When the network recovers or the connection drops **Functionality**:
+
 - Automatic retry mechanism (exponential backoff + random jitter)
 - Supports infinite retry mode (configure `max-fast-reconnect-attempts <= 0`)
 - Supports finite retry mode (configure `max-fast-reconnect-attempts > 0`)
 - Preserves session state
 
 **Reconnect logic**:
+
 ```java
 // Fast reconnect configuration (read from configuration file)
 fast-recovery:
@@ -1829,13 +1898,15 @@ fast-recovery:
 ```
 
 #### 4. Heartbeat Maintenance
-**Trigger**: Scheduled task
-**Functionality**:
+
+**Trigger**: Scheduled task **Functionality**:
+
 - Sends heartbeat messages
 - Detects connection health
 - Maintains connection liveness
 
 **Heartbeat logic**:
+
 ```java
 // Heartbeat service - 30 second interval
 heartbeatService.scheduleWithFixedDelay(() -> {
@@ -1846,8 +1917,9 @@ heartbeatService.scheduleWithFixedDelay(() -> {
 ```
 
 #### 5. Message Handling
-**Trigger**: When an MQTT message is received
-**Functionality**:
+
+**Trigger**: When an MQTT message is received **Functionality**:
+
 - Event bus-based message dispatch
 - Supports automatic matching for normal and shared subscriptions
 - Supports wildcard matching (`+` single-level, `#` multi-level)
@@ -1856,6 +1928,7 @@ heartbeatService.scheduleWithFixedDelay(() -> {
 - Error handling and logging
 
 **Handling logic**:
+
 ```java
 // Message dispatch flow (event bus based)
 // 1. Subscribe to the message event stream on init (only once, to prevent duplicate subscriptions)
@@ -3215,30 +3288,36 @@ platform:
 ### `MQTT` 5.0-Specific Configuration Details
 
 #### Session Management Configuration
+
 - `keep-session`: Whether to preserve session state (inverse of `cleanStart`)
 - `session-expiry-interval`: Session expiry time, supports long-outage recovery
 
 #### Message Reliability Configuration
+
 - `message-expiry-interval`: Message expiry time, prevents expired message delivery
 - `enable-will-message`: Enable will message for timely offline detection
 
 #### Network Optimization Configuration
+
 - `enable-user-properties`: Enable user properties for richer metadata
 
 ### Fast Recovery Configuration Details
 
 #### Network Monitoring Configuration
+
 - `enabled`: Whether to enable fast recovery mode
 - `network-check-interval`: Network check interval, 5 seconds recommended
 - `connection-monitor-interval`: Connection monitor interval, 10 seconds recommended
 - `keep-alive-interval`: Heartbeat interval, 30 seconds recommended
 
 #### Reconnect Mechanism Configuration
+
 - `fast-reconnect-interval`: Fast reconnect interval, 1000 ms recommended
 - `max-fast-reconnect-attempts`: Max reconnect attempts, 10 recommended
 - `network-connect-timeout`: Network connect timeout, 3000 ms recommended
 
 #### Monitor Switch Configuration
+
 - `enable-network-monitor`: Whether to enable network monitoring
 - `enable-connection-monitor`: Whether to enable connection monitoring
 - `enable-fast-reconnect`: Whether to enable fast reconnect
@@ -3312,14 +3391,15 @@ graph TB
 
 #### 1. Connection Failure
 
-**Symptoms**: Client cannot connect to the MQTT server
-**Possible causes**:
+**Symptoms**: Client cannot connect to the MQTT server **Possible causes**:
+
 - Network unreachable
 - Incorrect server address
 - Wrong credentials
 - Firewall blocking
 
 **Solution**:
+
 ```java
 // Check network connectivity
 boolean networkOk = mqttClient.checkNetworkConnectivity();
@@ -3338,13 +3418,14 @@ mqttClient.reinitialize();
 
 #### 2. Message Loss
 
-**Symptoms**: Published messages receive no acknowledgment
-**Possible causes**:
+**Symptoms**: Published messages receive no acknowledgment **Possible causes**:
+
 - Unstable network
 - Improper QoS setting
 - High server load
 
 **Solution**:
+
 ```java
 // Use QoS 1 to ensure message delivery
 mqttClient.doPublish(topic, message, false);
@@ -3361,13 +3442,14 @@ if (!mqttClient.isConnected()) {
 
 #### 3. Subscription Failure
 
-**Symptoms**: Unable to receive messages from the subscribed topic
-**Possible causes**:
+**Symptoms**: Unable to receive messages from the subscribed topic **Possible causes**:
+
 - Malformed topic
 - Insufficient permissions
 - Wrong subscription timing
 
 **Solution**:
+
 ```java
 // Ensure subscription happens after the connection is established
 if (mqttClient.isConnected()) {
@@ -3386,13 +3468,14 @@ if (!isValidTopic(topic)) {
 
 #### 4. Frequent Reconnection
 
-**Symptoms**: Client keeps disconnecting and reconnecting
-**Possible causes**:
+**Symptoms**: Client keeps disconnecting and reconnecting **Possible causes**:
+
 - Unstable network
 - Heartbeat interval too short
 - High server load
 
 **Solution**:
+
 ```java
 // Adjust heartbeat interval
 mqttClient.setKeepAliveInterval(60); // Increase to 60 seconds
@@ -3409,13 +3492,14 @@ if (mqttClient.getNetworkQuality() < 0.8) {
 
 #### 5. Memory Leak
 
-**Symptoms**: Application memory usage keeps growing
-**Possible causes**:
+**Symptoms**: Application memory usage keeps growing **Possible causes**:
+
 - Listeners not properly unregistered
 - Message queue not cleaned up
 - Connection not properly closed
 
 **Solution**:
+
 ```java
 // Properly unregister listeners
 @Override
@@ -3479,18 +3563,21 @@ graph TB
 ```
 
 #### Connection State Metrics
+
 - `isConnected`: Current connection state
 - `lastConnectedTime`: Last successful connection time
 - `networkAvailable`: Network availability
 - `reconnectCount`: Reconnect count
 
 #### Performance Metrics
+
 - `messagePublishRate`: Message publish rate
 - `messageReceiveRate`: Message receive rate
 - `averageLatency`: Average latency
 - `errorRate`: Error rate
 
 #### Resource Metrics
+
 - `memoryUsage`: Memory usage
 - `threadCount`: Thread count
 - `connectionPoolSize`: Connection pool size

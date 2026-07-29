@@ -17,8 +17,8 @@ package cn.richie696.component.tenant.strategy;
 
 import cn.richie696.component.tenant.config.MultiTenancyProperties;
 import cn.richie696.component.tenant.context.TenantContext;
-import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.component.tenant.spi.TenantInfoProvider;
+import cn.richie696.contract.exception.BusinessException;
 
 /**
  * 策略抽象基类，提供公共校验和辅助方法。

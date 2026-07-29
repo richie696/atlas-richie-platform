@@ -16,11 +16,10 @@
 package cn.richie696.component.ai.support;
 
 import cn.richie696.component.ai.config.chat.AiChatModelOptions;
-
 import cn.richie696.component.ai.model.AiRequest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AiChatOptionsResolverTest {
 

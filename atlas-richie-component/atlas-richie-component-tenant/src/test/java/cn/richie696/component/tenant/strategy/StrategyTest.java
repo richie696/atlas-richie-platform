@@ -20,18 +20,14 @@ import cn.richie696.component.tenant.context.DataSourceContextHolder;
 import cn.richie696.component.tenant.context.TableSuffixHolder;
 import cn.richie696.component.tenant.context.TenantContext;
 import cn.richie696.component.tenant.context.ThreadLocalHolder;
-import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.component.tenant.exception.TenantErrorCode;
 import cn.richie696.component.tenant.model.IsolationMode;
 import cn.richie696.component.tenant.model.TenantInfo;
 import cn.richie696.component.tenant.model.TenantStatus;
 import cn.richie696.component.tenant.spi.TenantInfoProvider;
+import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.contract.model.TenantPrincipal;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -46,8 +42,15 @@ class StrategyTest {
     void setUp() {
         props = new MultiTenancyProperties();
         provider = new TenantInfoProvider() {
-            @Override public TenantInfo getTenantInfo(Long tenantId) { return null; }
-            @Override public boolean exists(Long tenantId) { return false; }
+            @Override
+            public TenantInfo getTenantInfo(Long tenantId) {
+                return null;
+            }
+
+            @Override
+            public boolean exists(Long tenantId) {
+                return false;
+            }
         };
         TenantContext.init(new ThreadLocalHolder());
     }
@@ -74,17 +77,26 @@ class StrategyTest {
     class Column {
         ColumnStrategy strategy = new ColumnStrategy(props, provider);
 
-        @Test void supportsColumn() { assertThat(strategy.supports(IsolationMode.COLUMN)).isTrue(); }
-        @Test void notSupportsTable() { assertThat(strategy.supports(IsolationMode.TABLE)).isFalse(); }
+        @Test
+        void supportsColumn() {
+            assertThat(strategy.supports(IsolationMode.COLUMN)).isTrue();
+        }
 
-        @Test void beforeSqlExecuteWithValidContext() {
+        @Test
+        void notSupportsTable() {
+            assertThat(strategy.supports(IsolationMode.TABLE)).isFalse();
+        }
+
+        @Test
+        void beforeSqlExecuteWithValidContext() {
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 strategy.beforeSqlExecute(null, tenantInfo(IsolationMode.COLUMN));
                 // no exception = pass
             });
         }
 
-        @Test void beforeSqlExecuteWithoutContextThrows() {
+        @Test
+        void beforeSqlExecuteWithoutContextThrows() {
             assertThatThrownBy(() -> strategy.beforeSqlExecute(null, tenantInfo(IsolationMode.COLUMN)))
                     .isInstanceOf(BusinessException.class);
         }
@@ -95,17 +107,26 @@ class StrategyTest {
     class Table {
         TableStrategy strategy = new TableStrategy(props, provider);
 
-        @Test void supportsTable() { assertThat(strategy.supports(IsolationMode.TABLE)).isTrue(); }
-        @Test void notSupportsColumn() { assertThat(strategy.supports(IsolationMode.COLUMN)).isFalse(); }
+        @Test
+        void supportsTable() {
+            assertThat(strategy.supports(IsolationMode.TABLE)).isTrue();
+        }
 
-        @Test void beforeSqlExecuteSetsTableSuffix() {
+        @Test
+        void notSupportsColumn() {
+            assertThat(strategy.supports(IsolationMode.COLUMN)).isFalse();
+        }
+
+        @Test
+        void beforeSqlExecuteSetsTableSuffix() {
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 strategy.beforeSqlExecute(null, tenantInfo(IsolationMode.TABLE));
                 assertThat(TableSuffixHolder.get()).isEqualTo("_1001");
             });
         }
 
-        @Test void rejectsNullTableSuffix() {
+        @Test
+        void rejectsNullTableSuffix() {
             TenantInfo info = tenantInfo(IsolationMode.TABLE).setTableSuffix(null);
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 assertThatThrownBy(() -> strategy.beforeSqlExecute(null, info))
@@ -115,7 +136,8 @@ class StrategyTest {
             });
         }
 
-        @Test void rejectsEmptyTableSuffix() {
+        @Test
+        void rejectsEmptyTableSuffix() {
             TenantInfo info = tenantInfo(IsolationMode.TABLE).setTableSuffix("");
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 assertThatThrownBy(() -> strategy.beforeSqlExecute(null, info))
@@ -125,7 +147,8 @@ class StrategyTest {
             });
         }
 
-        @Test void rejectsSqlInjectionTableSuffix() {
+        @Test
+        void rejectsSqlInjectionTableSuffix() {
             TenantInfo info = tenantInfo(IsolationMode.TABLE).setTableSuffix("_1001; DROP TABLE users;--");
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 assertThatThrownBy(() -> strategy.beforeSqlExecute(null, info))
@@ -135,7 +158,8 @@ class StrategyTest {
             });
         }
 
-        @Test void rejectsTableSuffixWithSpecialChars() {
+        @Test
+        void rejectsTableSuffixWithSpecialChars() {
             TenantInfo info = tenantInfo(IsolationMode.TABLE).setTableSuffix("_1001' OR '1'='1");
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 assertThatThrownBy(() -> strategy.beforeSqlExecute(null, info))
@@ -145,7 +169,8 @@ class StrategyTest {
             });
         }
 
-        @Test void acceptsValidAlphanumericSuffix() {
+        @Test
+        void acceptsValidAlphanumericSuffix() {
             TenantInfo info = tenantInfo(IsolationMode.TABLE).setTableSuffix("abc_123_XYZ");
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 strategy.beforeSqlExecute(null, info);
@@ -159,17 +184,26 @@ class StrategyTest {
     class Database {
         DatabaseStrategy strategy = new DatabaseStrategy(props, provider);
 
-        @Test void supportsDatabase() { assertThat(strategy.supports(IsolationMode.DATABASE)).isTrue(); }
-        @Test void notSupportsSchema() { assertThat(strategy.supports(IsolationMode.SCHEMA)).isFalse(); }
+        @Test
+        void supportsDatabase() {
+            assertThat(strategy.supports(IsolationMode.DATABASE)).isTrue();
+        }
 
-        @Test void beforeSqlExecuteSetsDataSourceKey() {
+        @Test
+        void notSupportsSchema() {
+            assertThat(strategy.supports(IsolationMode.SCHEMA)).isFalse();
+        }
+
+        @Test
+        void beforeSqlExecuteSetsDataSourceKey() {
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 strategy.beforeSqlExecute(null, tenantInfo(IsolationMode.DATABASE));
                 assertThat(DataSourceContextHolder.get()).isEqualTo("ds_1001");
             });
         }
 
-        @Test void beforeSqlExecuteWithNullDataSourceThrows() {
+        @Test
+        void beforeSqlExecuteWithNullDataSourceThrows() {
             TenantInfo info = tenantInfo(IsolationMode.DATABASE).setDataSourceName(null);
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 assertThatThrownBy(() -> strategy.beforeSqlExecute(null, info))
@@ -183,10 +217,18 @@ class StrategyTest {
     class Schema {
         SchemaStrategy strategy = new SchemaStrategy(props, provider);
 
-        @Test void supportsSchema() { assertThat(strategy.supports(IsolationMode.SCHEMA)).isTrue(); }
-        @Test void notSupportsDatabase() { assertThat(strategy.supports(IsolationMode.DATABASE)).isFalse(); }
+        @Test
+        void supportsSchema() {
+            assertThat(strategy.supports(IsolationMode.SCHEMA)).isTrue();
+        }
 
-@Test void invalidSchemaNameThrows() {
+        @Test
+        void notSupportsDatabase() {
+            assertThat(strategy.supports(IsolationMode.DATABASE)).isFalse();
+        }
+
+        @Test
+        void invalidSchemaNameThrows() {
             TenantInfo info = tenantInfo(IsolationMode.SCHEMA).setSchemaName("bad;schema");
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 assertThatThrownBy(() -> strategy.beforeSqlExecute(null, info))
@@ -196,7 +238,8 @@ class StrategyTest {
             });
         }
 
-        @Test void nullSchemaNameThrows() {
+        @Test
+        void nullSchemaNameThrows() {
             TenantInfo info = tenantInfo(IsolationMode.SCHEMA).setSchemaName(null);
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 assertThatThrownBy(() -> strategy.beforeSqlExecute(null, info))
@@ -217,11 +260,13 @@ class StrategyTest {
                     new DatabaseStrategy(props, provider));
         }
 
-        @Test void supportsHybrid() {
+        @Test
+        void supportsHybrid() {
             assertThat(newHybridStrategy().supports(IsolationMode.HYBRID)).isTrue();
         }
 
-        @Test void delegatesToColumnStrategy() {
+        @Test
+        void delegatesToColumnStrategy() {
             HybridStrategy strategy = newHybridStrategy();
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 TenantInfo info = tenantInfo(IsolationMode.COLUMN);
@@ -230,7 +275,8 @@ class StrategyTest {
             });
         }
 
-        @Test void delegatesToDatabaseStrategy() {
+        @Test
+        void delegatesToDatabaseStrategy() {
             HybridStrategy strategy = newHybridStrategy();
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 TenantInfo info = tenantInfo(IsolationMode.DATABASE);
@@ -239,7 +285,8 @@ class StrategyTest {
             });
         }
 
-        @Test void delegatesToTableStrategy() {
+        @Test
+        void delegatesToTableStrategy() {
             HybridStrategy strategy = newHybridStrategy();
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 TenantInfo info = tenantInfo(IsolationMode.TABLE);
@@ -248,7 +295,8 @@ class StrategyTest {
             });
         }
 
-        @Test void rejectsHybridTargetMode() {
+        @Test
+        void rejectsHybridTargetMode() {
             HybridStrategy strategy = newHybridStrategy();
             TenantContext.runWithTenant(new TenantPrincipal().setTenantId(1001L), () -> {
                 TenantInfo info = tenantInfo(IsolationMode.HYBRID);

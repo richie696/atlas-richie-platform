@@ -15,13 +15,11 @@
  */
 package cn.richie696.component.ai.provider.doubao;
 
-import cn.richie696.component.ai.config.multimodal.rerank.RerankProvider;
-
-import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
-
 import cn.richie696.component.ai.api.RerankRequest;
 import cn.richie696.component.ai.api.RerankResponse;
 import cn.richie696.component.ai.api.RerankResult;
+import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
+import cn.richie696.component.ai.config.multimodal.rerank.RerankProvider;
 import cn.richie696.component.ai.provider.support.MultimodalModelFactory;
 import cn.richie696.component.http.core.HttpClient;
 import org.junit.jupiter.api.Test;
@@ -33,12 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -280,7 +273,7 @@ class DoubaoVikingRerankModelTest {
                             "URI must contain rerank path");
                     // Host 头由 JDK HttpClient 自动设；验证 URI 包含正确主机
                     assertTrue(req.uri().getHost().contains(
-                            "api-knowledgebase.mlp.cn-beijing.volces.com"),
+                                    "api-knowledgebase.mlp.cn-beijing.volces.com"),
                             "URI host must contain default host");
                     assertTrue(req.headers().firstValue("X-Date").isPresent());
                     assertTrue(req.headers().firstValue("X-Content-Sha256").isPresent());
@@ -411,12 +404,16 @@ class DoubaoVikingRerankModelTest {
         return cfg;
     }
 
-    /** 建一个默认 mock JDK HttpClient（发送任何请求都返回 200 OK + 空结果）。 */
+    /**
+     * 建一个默认 mock JDK HttpClient（发送任何请求都返回 200 OK + 空结果）。
+     */
     private static java.net.http.HttpClient mockJdkClient() {
         return buildMockJdk(200, "{\"code\":0,\"data\":{\"scores\":[]}}");
     }
 
-    /** 建 mock JDK HttpClient 返回指定状态码和响应体。 */
+    /**
+     * 建 mock JDK HttpClient 返回指定状态码和响应体。
+     */
     private static java.net.http.HttpClient buildMockJdk(int status, String body) {
         @SuppressWarnings("unchecked")
         java.net.http.HttpClient mockClient = mock(java.net.http.HttpClient.class);

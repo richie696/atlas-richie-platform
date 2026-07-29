@@ -24,7 +24,7 @@ import cn.richie696.component.ocr.model.OcrOptions;
  * 配置方式: 由 {@code platform.component.ocr.tencent.*} 决定 endpoint、region、action 与 TC3 凭据。</p>
  *
  * @param imageBase64 不带 {@code data:} URI 前缀的图片字节 Base64
- * @param options 调用侧 OCR 选项，会随请求上下文一起保留给 Provider 使用
+ * @param options     调用侧 OCR 选项，会随请求上下文一起保留给 Provider 使用
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-10

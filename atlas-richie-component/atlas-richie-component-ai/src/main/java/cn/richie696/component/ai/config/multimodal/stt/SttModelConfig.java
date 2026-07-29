@@ -28,6 +28,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class SttModelConfig extends AbstractAudioModelConfig {
 
-    /** 厂商(枚举)— 见 {@link SttProvider}。 */
+    /**
+     * 厂商(枚举)— 见 {@link SttProvider}。
+     */
     private SttProvider provider;
 }

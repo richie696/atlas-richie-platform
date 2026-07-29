@@ -42,10 +42,14 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationPropertiesScan("cn.richie696.component.logging.config")
 public class OperateLogAutoConfiguration {
 
-    /** 供各组件注册 changelog 的注册表 */
+    /**
+     * 供各组件注册 changelog 的注册表
+     */
     private final ChangeLogRegistry changeLogRegistry;
 
-    /** 操作日志配置 */
+    /**
+     * 操作日志配置
+     */
     private final OperateLogProperties properties;
 
     /**

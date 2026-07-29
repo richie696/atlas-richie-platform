@@ -36,7 +36,6 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,9 +58,9 @@ import java.util.Map;
  * 应用为 Reactive Web 环境时生效。</p>
  *
  * @author richie696
- * @since 1.0.0
  * @see TenantContextKeys
  * @see ReactorTenantContext
+ * @since 1.0.0
  */
 @Order(TenantWebFilter.ORDER)
 public class TenantWebFilter implements WebFilter {
@@ -104,23 +103,23 @@ public class TenantWebFilter implements WebFilter {
         }
 
         return resolveTenant(exchange)
-            .flatMap(principal ->
-                chain.filter(exchange)
-                    .contextWrite(ctx -> ctx.put(TenantContextKeys.TENANT_KEY, principal))
-                    .then(Mono.just(true))
-            )
-            .switchIfEmpty(Mono.defer(() -> {
-                if (properties.isEnforceAuthTenant() && !isSuperAdminPath(requestPath)) {
-                    return writeError(exchange, TenantErrorCode.TENANT_AUTH_MISSING_TOKEN, requestPath)
-                        .then(Mono.just(true));
-                }
-                return chain.filter(exchange).then(Mono.just(true));
-            }))
-            .onErrorResume(this::isTenantException, ex ->
-                writeError(exchange, ((TenantValidationException) ex).getErrorCode(),
-                    ((TenantValidationException) ex).getArgs())
-                    .then(Mono.just(true)))
-            .then();
+                .flatMap(principal ->
+                        chain.filter(exchange)
+                                .contextWrite(ctx -> ctx.put(TenantContextKeys.TENANT_KEY, principal))
+                                .then(Mono.just(true))
+                )
+                .switchIfEmpty(Mono.defer(() -> {
+                    if (properties.isEnforceAuthTenant() && !isSuperAdminPath(requestPath)) {
+                        return writeError(exchange, TenantErrorCode.TENANT_AUTH_MISSING_TOKEN, requestPath)
+                                .then(Mono.just(true));
+                    }
+                    return chain.filter(exchange).then(Mono.just(true));
+                }))
+                .onErrorResume(this::isTenantException, ex ->
+                        writeError(exchange, ((TenantValidationException) ex).getErrorCode(),
+                                ((TenantValidationException) ex).getArgs())
+                                .then(Mono.just(true)))
+                .then();
     }
 
     /**
@@ -139,21 +138,21 @@ public class TenantWebFilter implements WebFilter {
             Long tenantId = principal.getTenantId();
             if (tenantId == null || tenantId <= 0) {
                 return Mono.error(new TenantValidationException(
-                    TenantErrorCode.TENANT_AUTH_INVALID_FORMAT, tenantId));
+                        TenantErrorCode.TENANT_AUTH_INVALID_FORMAT, tenantId));
             }
 
             TenantInfo tenantInfo = tenantInfoProvider.getTenantInfo(tenantId);
             if (tenantInfo == null) {
                 return Mono.error(new TenantValidationException(
-                    TenantErrorCode.TENANT_IDENTITY_NOT_FOUND, tenantId));
+                        TenantErrorCode.TENANT_IDENTITY_NOT_FOUND, tenantId));
             }
             if (tenantInfo.getStatus() == TenantStatus.EXPIRED) {
                 return Mono.error(new TenantValidationException(
-                    TenantErrorCode.TENANT_AUTH_EXPIRED, tenantId));
+                        TenantErrorCode.TENANT_AUTH_EXPIRED, tenantId));
             }
             if (tenantInfo.getStatus() == TenantStatus.MIGRATING) {
                 return Mono.error(new TenantValidationException(
-                    TenantErrorCode.TENANT_MIGRATING, tenantId));
+                        TenantErrorCode.TENANT_MIGRATING, tenantId));
             }
 
             return Mono.just(principal);
@@ -162,10 +161,10 @@ public class TenantWebFilter implements WebFilter {
 
     private TenantPrincipal resolveFromJwt(ServerWebExchange exchange) {
         String token = exchange.getRequest().getHeaders()
-            .getFirst(GlobalConstants.X_ACCESS_TOKEN);
+                .getFirst(GlobalConstants.X_ACCESS_TOKEN);
         if (token == null || token.isEmpty()) {
             token = exchange.getRequest().getHeaders()
-                .getFirst(JwtUtils.X_ACCESS_TOKEN);
+                    .getFirst(JwtUtils.X_ACCESS_TOKEN);
         }
         if (token == null || token.isEmpty()) {
             return null;
@@ -183,10 +182,10 @@ public class TenantWebFilter implements WebFilter {
 
     private TenantPrincipal resolveFromHeader(ServerWebExchange exchange) {
         String tenantIdStr = exchange.getRequest().getHeaders()
-            .getFirst(properties.getTenantIdHeader());
+                .getFirst(properties.getTenantIdHeader());
         if (tenantIdStr == null || tenantIdStr.isEmpty()) {
             tenantIdStr = exchange.getRequest().getHeaders()
-                .getFirst(GlobalConstants.X_TENANT_ID);
+                    .getFirst(GlobalConstants.X_TENANT_ID);
         }
         if (tenantIdStr == null || tenantIdStr.isEmpty()) {
             return null;
@@ -196,7 +195,7 @@ public class TenantWebFilter implements WebFilter {
             return new TenantPrincipal().setTenantId(tenantId);
         } catch (NumberFormatException e) {
             log.warn("Invalid tenant ID header value: {} = '{}'",
-                properties.getTenantIdHeader(), tenantIdStr);
+                    properties.getTenantIdHeader(), tenantIdStr);
             return null;
         }
     }
@@ -231,19 +230,19 @@ public class TenantWebFilter implements WebFilter {
     }
 
     private static Mono<Void> writeError(ServerWebExchange exchange,
-                                          TenantErrorCode errorCode,
-                                          Object... args) {
+                                         TenantErrorCode errorCode,
+                                         Object... args) {
         exchange.getResponse().setStatusCode(HttpStatus.valueOf(errorCode.getHttpStatus()));
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
         byte[] jsonBytes = serializeJson(errorCode.format(args));
         return exchange.getResponse()
-            .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(jsonBytes)));
+                .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(jsonBytes)));
     }
 
     private static byte[] serializeJson(String msg) {
         try {
             com.fasterxml.jackson.databind.ObjectMapper mapper =
-                new com.fasterxml.jackson.databind.ObjectMapper();
+                    new com.fasterxml.jackson.databind.ObjectMapper();
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("code", "TENANT_ERROR");
             body.put("msg", msg);

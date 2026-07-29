@@ -40,7 +40,9 @@ import java.util.concurrent.atomic.AtomicReference;
 @Component
 public class LocalCache {
 
-    /** 默认构造函数，供 Spring 实例化使用。 */
+    /**
+     * 默认构造函数，供 Spring 实例化使用。
+     */
     public LocalCache() {
     }
 
@@ -295,7 +297,7 @@ public class LocalCache {
      * @param cacheName 分级缓存名称
      * @param key       缓存 key
      * @param timeout   过期时长
-     * @param unit       时间单位
+     * @param unit      时间单位
      */
     public static void expiry(CacheName cacheName, String key, long timeout, TimeUnit unit) {
         MANAGE.get().setExpiry(cacheName, key, timeout, unit);

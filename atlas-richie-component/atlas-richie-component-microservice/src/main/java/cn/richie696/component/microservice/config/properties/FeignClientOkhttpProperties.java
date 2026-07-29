@@ -18,6 +18,7 @@ package cn.richie696.component.microservice.config.properties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.cloud.openfeign.support.FeignHttpClientProperties;
 import org.springframework.context.annotation.Primary;
 
@@ -31,7 +32,7 @@ import org.springframework.context.annotation.Primary;
 @Data
 @Primary
 @EqualsAndHashCode(callSuper = true)
-@ConfigurationProperties(prefix = "spring.cloud.openfeign.httpclient")
+@ConfigurationProperties(prefix = "platform.component.microservice.feign.okhttp")
 public class FeignClientOkhttpProperties extends FeignHttpClientProperties {
 
     /**
@@ -40,7 +41,10 @@ public class FeignClientOkhttpProperties extends FeignHttpClientProperties {
     public FeignClientOkhttpProperties() {
     }
 
-    /** OkHttp 扩展配置（读/写/连接/调用超时、日志级别、缓存、SSL 等） */
+    /**
+     * OkHttp 扩展配置（读/写/连接/调用超时、日志级别、缓存、SSL 等）
+     */
+    @NestedConfigurationProperty
     private OkhttpExtension okHttp = new OkhttpExtension();
 
 }

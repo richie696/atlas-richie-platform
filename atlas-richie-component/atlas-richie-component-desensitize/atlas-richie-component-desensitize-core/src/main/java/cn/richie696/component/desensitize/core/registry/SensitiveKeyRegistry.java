@@ -19,8 +19,7 @@ import cn.richie696.component.desensitize.core.config.DesensitizeProperties;
 import cn.richie696.component.desensitize.core.model.MaskScene;
 import cn.richie696.component.desensitize.core.model.MaskType;
 
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -29,8 +28,8 @@ import java.util.Optional;
  * Map 键名 → {@link MaskType}，支持全局与分场景覆盖。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class SensitiveKeyRegistry {
 
@@ -61,7 +60,7 @@ public class SensitiveKeyRegistry {
     /**
      * 按键名与场景解析脱敏类型。
      *
-     * @param key 字段键名
+     * @param key   字段键名
      * @param scene 脱敏场景
      * @return 脱敏类型（若存在）
      */

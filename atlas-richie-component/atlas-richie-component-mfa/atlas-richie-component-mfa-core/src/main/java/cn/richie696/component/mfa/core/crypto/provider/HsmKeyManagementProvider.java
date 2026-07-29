@@ -38,9 +38,9 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(
-    prefix = "platform.component.mfa.security.key-management",
-    name = "provider",
-    havingValue = "hsm"
+        prefix = "platform.component.mfa.security.key-management",
+        name = "provider",
+        havingValue = "hsm"
 )
 public class HsmKeyManagementProvider implements KeyManagementProvider {
 

@@ -18,9 +18,7 @@ package cn.richie696.component.storage.config;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 class CosStorageEngineProviderTest {
 

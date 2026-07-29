@@ -23,7 +23,9 @@ import java.util.Objects;
  * @version 1.0
  * @since 2025-07-01
  */
-public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, VectorFilter.ContainsAny, VectorFilter.Range,
+public sealed
+
+interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, VectorFilter.ContainsAny, VectorFilter.Range,
         VectorFilter.Exists, VectorFilter.Not, VectorFilter.And, VectorFilter.Or {
 
     /**
@@ -78,7 +80,9 @@ public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, V
      * @return AND 节点
      * @throws IllegalArgumentException 当 {@code filters} 为空时
      */
-    static And and(VectorFilter... filters) { return new And(nonEmpty(filters)); }
+    static And and(VectorFilter... filters) {
+        return new And(nonEmpty(filters));
+    }
 
     /**
      * 组合 OR：任一子过滤成立即可。
@@ -87,7 +91,9 @@ public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, V
      * @return OR 节点
      * @throws IllegalArgumentException 当 {@code filters} 为空时
      */
-    static Or or(VectorFilter... filters) { return new Or(nonEmpty(filters)); }
+    static Or or(VectorFilter... filters) {
+        return new Or(nonEmpty(filters));
+    }
 
     /**
      * 区间过滤：{@code greaterThanOrEqual <= field <= lessThanOrEqual}。
@@ -95,9 +101,9 @@ public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, V
      * <p>两个边界至少要有一个非 {@code null}；编译器在两端都给出时使用 {@code AND} 合并，
      * 单边时省略缺失端。</p>
      *
-     * @param field                字段名（必填非空）
-     * @param greaterThanOrEqual   下界（含），{@code null} 表示无下界
-     * @param lessThanOrEqual      上界（含），{@code null} 表示无上界
+     * @param field              字段名（必填非空）
+     * @param greaterThanOrEqual 下界（含），{@code null} 表示无下界
+     * @param lessThanOrEqual    上界（含），{@code null} 表示无上界
      * @return Range 节点
      * @throws IllegalArgumentException 当上下界同时为 {@code null} 时
      */
@@ -114,7 +120,9 @@ public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, V
      * @param field 字段名（必填非空）
      * @return Exists 节点
      */
-    static Exists exists(String field) { return new Exists(requireField(field)); }
+    static Exists exists(String field) {
+        return new Exists(requireField(field));
+    }
 
     /**
      * 取反节点：包住任意子过滤。
@@ -123,7 +131,9 @@ public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, V
      * @return Not 节点
      * @throws NullPointerException 当 {@code filter} 为 {@code null} 时
      */
-    static Not not(VectorFilter filter) { return new Not(Objects.requireNonNull(filter, "filter must not be null")); }
+    static Not not(VectorFilter filter) {
+        return new Not(Objects.requireNonNull(filter, "filter must not be null"));
+    }
 
     /**
      * 等值节点 — 表达 {@code field == value}。
@@ -133,12 +143,14 @@ public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, V
      *
      * @param field 字段名（必填非空，紧凑校验在 {@link VectorFilter#eq(String, Object)} 工厂中）。
      * @param value 比较值（必填非 {@code null}）。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
      */
-    record Eq(String field, Object value) implements VectorFilter { }
+    record Eq(String field, Object value) implements
+
+    VectorFilter {
+    }
 
     /**
      * 集合归属节点 — 表达 {@code field IN (values...)}。
@@ -148,12 +160,14 @@ public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, V
      *
      * @param field  字段名（必填非空）。
      * @param values 候选值集合（不可变快照；工厂校验非空）。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
      */
-    record In(String field, List<?> values) implements VectorFilter { }
+    record In(String field, List<?> values) implements
+
+    VectorFilter {
+    }
 
     /**
      * 集合交集节点 — 表达"集合字段与给定值集合存在交集"。
@@ -164,12 +178,14 @@ public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, V
      *
      * @param field  字段名（必填非空）。
      * @param values 候选值集合（不可变快照；工厂校验非空）。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
      */
-    record ContainsAny(String field, List<?> values) implements VectorFilter { }
+    record ContainsAny(String field, List<?> values) implements
+
+    VectorFilter {
+    }
 
     /**
      * 区间节点 — 表达 {@code greaterThanOrEqual <= field <= lessThanOrEqual}。
@@ -178,15 +194,17 @@ public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, V
      * 单边时省略缺失端。注意：部分 provider 不支持区间语义，编译器在该场景下抛
      * {@link UnsupportedOperationException}。</p>
      *
-     * @param field               字段名（必填非空）。
-     * @param greaterThanOrEqual  下界（含），{@code null} 表示无下界。
-     * @param lessThanOrEqual     上界（含），{@code null} 表示无上界。
-     *
+     * @param field              字段名（必填非空）。
+     * @param greaterThanOrEqual 下界（含），{@code null} 表示无下界。
+     * @param lessThanOrEqual    上界（含），{@code null} 表示无上界。
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
      */
-    record Range(String field, Object greaterThanOrEqual, Object lessThanOrEqual) implements VectorFilter { }
+    record Range(String field, Object greaterThanOrEqual, Object lessThanOrEqual) implements
+
+    VectorFilter {
+    }
 
     /**
      * 存在性节点 — 表达 {@code field != null}。
@@ -194,12 +212,14 @@ public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, V
      * <p>用于"记录是否有指定字段"判断；不关心字段值具体是什么。</p>
      *
      * @param field 字段名（必填非空）。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
      */
-    record Exists(String field) implements VectorFilter { }
+    record Exists(String field) implements
+
+    VectorFilter {
+    }
 
     /**
      * 取反节点 — 包住任意子过滤。
@@ -208,12 +228,14 @@ public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, V
      * 白名单排除或黑名单匹配。</p>
      *
      * @param filter 被取反的子过滤（必填非 {@code null}）。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
      */
-    record Not(VectorFilter filter) implements VectorFilter { }
+    record Not(VectorFilter filter) implements
+
+    VectorFilter {
+    }
 
     /**
      * AND 组合节点 — 所有子过滤同时成立。
@@ -221,12 +243,14 @@ public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, V
      * <p>最常用的组合节点；多个条件并列要求。深度不限制，但过深时应考虑业务侧抽象。</p>
      *
      * @param filters 子过滤集合（不可变快照；工厂校验至少一个）。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
      */
-    record And(List<VectorFilter> filters) implements VectorFilter { }
+    record And(List<VectorFilter> filters) implements
+
+    VectorFilter {
+    }
 
     /**
      * OR 组合节点 — 任一子过滤成立即可。
@@ -234,12 +258,14 @@ public sealed interface VectorFilter permits VectorFilter.Eq, VectorFilter.In, V
      * <p>用于"要么命中 A 要么命中 B"的兜底查询；同样深度不限。</p>
      *
      * @param filters 子过滤集合（不可变快照；工厂校验至少一个）。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
      */
-    record Or(List<VectorFilter> filters) implements VectorFilter { }
+    record Or(List<VectorFilter> filters) implements
+
+    VectorFilter {
+    }
 
     private static String requireField(String field) {
         if (field == null || field.isBlank()) {

@@ -9,7 +9,8 @@
 - ✅ **AWS S3 兼容** - 完整支持 AWS S3 API
 - ✅ **多种存储类型** - 支持标准、低频、归档、智能分层等
 - ✅ **断点续传** - 支持大文件断点续传
-- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非 Spring 环境
+- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非
+  Spring 环境
 - ✅ **自动配置** - Spring Boot 自动配置
 
 ## 双模式架构
@@ -44,13 +45,13 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 每个实现包都提供 `StorageEngineProvider` SPI 实现，`S3StorageEngineProvider` 负责：
 
-| 方法 | 说明 |
-|------|------|
-| `supportedEngineType()` | 返回 `StorageEngineEnum.AWS_S3` |
-| `create(properties)` | 从配置创建 `S3Client` 和 `S3StorageEngine` |
-| `validate(properties)` | 校验 endpoint / accessKeyId / accessKeySecret / bucketName 必填 |
-| `afterPropertiesSet(engine)` | 手动模式下触发桶探测与前缀校验 |
-| `destroy(engine)` | 释放客户端资源 |
+| 方法                         | 说明                                                            |
+|------------------------------|-----------------------------------------------------------------|
+| `supportedEngineType()`      | 返回 `StorageEngineEnum.AWS_S3`                                 |
+| `create(properties)`         | 从配置创建 `S3Client` 和 `S3StorageEngine`                      |
+| `validate(properties)`       | 校验 endpoint / accessKeyId / accessKeySecret / bucketName 必填 |
+| `afterPropertiesSet(engine)` | 手动模式下触发桶探测与前缀校验                                  |
+| `destroy(engine)`            | 释放客户端资源                                                  |
 
 自动模式下 Provider 在 `S3AutoConfiguration` 中注册为 Bean；手动模式下由 Registry 通过 SPI 发现。
 
@@ -58,24 +59,24 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 引擎创建前会通过 `ConfigValidation` 工具类校验必填参数，校验失败时抛出 `IllegalArgumentException`：
 
-| 参数 | 校验规则 |
-|------|---------|
-| endpoint | 非空 |
-| accessKeyId | 非空 |
-| accessKeySecret | 非空 |
-| bucketName | 非空 |
+| 参数            | 校验规则 |
+|-----------------|----------|
+| endpoint        | 非空     |
+| accessKeyId     | 非空     |
+| accessKeySecret | 非空     |
+| bucketName      | 非空     |
 
 ## 直传策略 (DirectUploadPolicy)
 
 AWS S3 引擎支持通过预签名 URL 实现客户端直传到对象存储，减少服务端流量压力：
 
-| 字段 | 说明 |
-|------|------|
-| uploadUrl | 预签名上传 URL |
-| method | HTTP 方法（PUT） |
-| headers | 签名头信息 |
-| expireAt | 策略过期时间 |
-| success | 策略是否可用 |
+| 字段      | 说明             |
+|-----------|------------------|
+| uploadUrl | 预签名上传 URL   |
+| method    | HTTP 方法（PUT） |
+| headers   | 签名头信息       |
+| expireAt  | 策略过期时间     |
+| success   | 策略是否可用     |
 
 ```java
 DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
@@ -160,25 +161,25 @@ public class FileService {
 
 AWS S3 与其他云存储的主要配置差异：
 
-| 配置项 | AWS S3 | 其他云存储 |
-|--------|--------|-----------|
-| **engine 值** | `AWS_S3` | 各不相同 |
-| **endpoint 格式** | `s3.region.amazonaws.com` | 各云服务商格式不同 |
-| **region 格式** | AWS 区域代码（如 `us-east-1`） | 各云服务商格式不同 |
-| **访问密钥名称** | Access Key ID / Secret Access Key | 各云服务商命名不同 |
-| **存储类型** | 支持最多（15+种） | 支持较少 |
-| **特殊存储类型** | 支持 GLACIER、SNOW、Outposts | 不支持 |
+| 配置项            | AWS S3                            | 其他云存储         |
+|-------------------|-----------------------------------|--------------------|
+| **engine 值**     | `AWS_S3`                          | 各不相同           |
+| **endpoint 格式** | `s3.region.amazonaws.com`         | 各云服务商格式不同 |
+| **region 格式**   | AWS 区域代码（如 `us-east-1`）    | 各云服务商格式不同 |
+| **访问密钥名称**  | Access Key ID / Secret Access Key | 各云服务商命名不同 |
+| **存储类型**      | 支持最多（15+种）                 | 支持较少           |
+| **特殊存储类型**  | 支持 GLACIER、SNOW、Outposts      | 不支持             |
 
 ### endpoint 配置
 
 AWS S3 的 endpoint 格式：
 
 - **标准格式**: `s3.region.amazonaws.com`
-  - 示例：`s3.us-east-1.amazonaws.com`
-  - 示例：`s3.ap-southeast-1.amazonaws.com`
+    - 示例：`s3.us-east-1.amazonaws.com`
+    - 示例：`s3.ap-southeast-1.amazonaws.com`
 
 - **兼容格式**: `s3-region.amazonaws.com`
-  - 示例：`s3-us-east-1.amazonaws.com`
+    - 示例：`s3-us-east-1.amazonaws.com`
 
 - **S3 加速端点**: `s3-accelerate.amazonaws.com`（需要启用传输加速）
 
@@ -186,17 +187,17 @@ AWS S3 的 endpoint 格式：
 
 AWS S3 支持的区域代码：
 
-| 区域 | 代码 |
-|------|------|
-| 美国东部（弗吉尼亚北部） | `us-east-1` |
-| 美国东部（俄亥俄） | `us-east-2` |
-| 美国西部（加利福尼亚北部） | `us-west-1` |
-| 美国西部（俄勒冈） | `us-west-2` |
-| 亚太地区（新加坡） | `ap-southeast-1` |
-| 亚太地区（东京） | `ap-northeast-1` |
-| 欧洲（爱尔兰） | `eu-west-1` |
-| 中国（北京） | `cn-north-1` |
-| 中国（宁夏） | `cn-northwest-1` |
+| 区域                       | 代码             |
+|----------------------------|------------------|
+| 美国东部（弗吉尼亚北部）   | `us-east-1`      |
+| 美国东部（俄亥俄）         | `us-east-2`      |
+| 美国西部（加利福尼亚北部） | `us-west-1`      |
+| 美国西部（俄勒冈）         | `us-west-2`      |
+| 亚太地区（新加坡）         | `ap-southeast-1` |
+| 亚太地区（东京）           | `ap-northeast-1` |
+| 欧洲（爱尔兰）             | `eu-west-1`      |
+| 中国（北京）               | `cn-north-1`     |
+| 中国（宁夏）               | `cn-northwest-1` |
 
 > **注意**: 中国区域需要单独的 AWS 账户和访问凭证。
 
@@ -204,21 +205,21 @@ AWS S3 支持的区域代码：
 
 AWS S3 支持丰富的存储类型：
 
-| 存储类型 | 说明 | 适用场景 |
-|---------|------|---------|
-| `STANDARD` | 标准存储 | 频繁访问的数据 |
-| `STANDARD_IA` | 标准-不频繁访问 | 不经常访问但需要快速访问的数据 |
-| `ONEZONE_IA` | 单区-不频繁访问 | 不经常访问且可容忍单区故障的数据 |
-| `ARCHIVE` | 归档存储 | 长期保存、很少访问的数据 |
-| `ARCHIVE_FR` | 归档闪回存储 | 需要快速检索的归档数据 |
-| `COLD_ARCHIVE` | 冷归档存储 | 极长期保存、极少访问的数据 |
-| `DEEP_COLD_ARCHIVE` | 深冷归档存储 | 极长期保存、几乎不访问的数据 |
-| `INTELLIGENT_TIERING` | 智能分层 | 访问模式未知或变化的数据 |
-| `REDUCED_REDUNDANCY` | 降低冗余存储 | 可重新生成的数据（已不推荐） |
-| `GLACIER` | 冰川存储 | 长期归档（需要恢复时间） |
-| `GLACIER_IR` | 冰川即时存取 | 需要即时访问的归档数据 |
-| `SNOW` | 雪存储 | 边缘设备数据迁移 |
-| `Outposts` | 本地存储 | AWS Outposts 本地存储 |
+| 存储类型              | 说明            | 适用场景                         |
+|-----------------------|-----------------|----------------------------------|
+| `STANDARD`            | 标准存储        | 频繁访问的数据                   |
+| `STANDARD_IA`         | 标准-不频繁访问 | 不经常访问但需要快速访问的数据   |
+| `ONEZONE_IA`          | 单区-不频繁访问 | 不经常访问且可容忍单区故障的数据 |
+| `ARCHIVE`             | 归档存储        | 长期保存、很少访问的数据         |
+| `ARCHIVE_FR`          | 归档闪回存储    | 需要快速检索的归档数据           |
+| `COLD_ARCHIVE`        | 冷归档存储      | 极长期保存、极少访问的数据       |
+| `DEEP_COLD_ARCHIVE`   | 深冷归档存储    | 极长期保存、几乎不访问的数据     |
+| `INTELLIGENT_TIERING` | 智能分层        | 访问模式未知或变化的数据         |
+| `REDUCED_REDUNDANCY`  | 降低冗余存储    | 可重新生成的数据（已不推荐）     |
+| `GLACIER`             | 冰川存储        | 长期归档（需要恢复时间）         |
+| `GLACIER_IR`          | 冰川即时存取    | 需要即时访问的归档数据           |
+| `SNOW`                | 雪存储          | 边缘设备数据迁移                 |
+| `Outposts`            | 本地存储        | AWS Outposts 本地存储            |
 
 ### 访问凭证
 
@@ -229,7 +230,7 @@ AWS S3 使用 Access Key ID 和 Secret Access Key 进行身份验证：
 3. 创建用户并分配 S3 访问权限
 4. 生成访问密钥对
 
-> **安全提示**: 
+> **安全提示**:
 > - 不要将访问密钥提交到代码仓库
 > - 使用环境变量或密钥管理服务（如 AWS Secrets Manager）
 > - 定期轮换访问密钥
@@ -270,24 +271,24 @@ DownloadResponse<byte[]> response = storageEngine.getResumableObject(
 ## 最佳实践
 
 1. **区域选择**
-   - 选择距离用户最近的区域，降低延迟
-   - 考虑数据合规要求（如 GDPR）
+    - 选择距离用户最近的区域，降低延迟
+    - 考虑数据合规要求（如 GDPR）
 
 2. **存储类型选择**
-   - 频繁访问：`STANDARD`
-   - 偶尔访问：`STANDARD_IA` 或 `ONEZONE_IA`
-   - 长期归档：`ARCHIVE` 或 `COLD_ARCHIVE`
-   - 访问模式未知：`INTELLIGENT_TIERING`
+    - 频繁访问：`STANDARD`
+    - 偶尔访问：`STANDARD_IA` 或 `ONEZONE_IA`
+    - 长期归档：`ARCHIVE` 或 `COLD_ARCHIVE`
+    - 访问模式未知：`INTELLIGENT_TIERING`
 
 3. **访问凭证管理**
-   - 使用 IAM 角色（在 EC2/ECS/Lambda 上）
-   - 使用环境变量或密钥管理服务
-   - 最小权限原则
+    - 使用 IAM 角色（在 EC2/ECS/Lambda 上）
+    - 使用环境变量或密钥管理服务
+    - 最小权限原则
 
 4. **成本优化**
-   - 使用生命周期策略自动转换存储类型
-   - 删除不需要的对象版本
-   - 使用 `INTELLIGENT_TIERING` 自动优化成本
+    - 使用生命周期策略自动转换存储类型
+    - 删除不需要的对象版本
+    - 使用 `INTELLIGENT_TIERING` 自动优化成本
 
 ## 常见问题
 

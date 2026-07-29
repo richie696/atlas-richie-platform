@@ -54,8 +54,8 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/desensitize/logging/logback/**</include>
-                        <include>com/richie/component/desensitize/logging/service/**</include>
+                        <include>cn/richie696/component/desensitize/logging/logback/**</include>
+                        <include>cn/richie696/component/desensitize/logging/service/**</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -63,8 +63,8 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/desensitize/logging/logback/**</include>
-                                <include>com/richie/component/desensitize/logging/service/**</include>
+                                <include>cn/richie696/component/desensitize/logging/logback/**</include>
+                                <include>cn/richie696/component/desensitize/logging/service/**</include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

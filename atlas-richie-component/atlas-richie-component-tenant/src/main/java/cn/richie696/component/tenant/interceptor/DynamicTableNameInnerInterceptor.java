@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
  * @since 2.0
  */
 @Intercepts({
-    @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class})
+        @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class})
 })
 public class DynamicTableNameInnerInterceptor implements Interceptor {
 
@@ -115,7 +115,7 @@ public class DynamicTableNameInnerInterceptor implements Interceptor {
             }
         } catch (Exception e) {
             log.warn("Failed to rewrite table names for tenant suffix '{}', proceeding with original SQL: {}",
-                suffix, e.getMessage());
+                    suffix, e.getMessage());
         }
 
         return invocation.proceed();
@@ -127,8 +127,8 @@ public class DynamicTableNameInnerInterceptor implements Interceptor {
     private String rewriteTableNames(String sql, String suffix) throws Exception {
         Statement statement = net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(sql);
         Set<String> ignoreTables = properties.getIgnoreTables().stream()
-            .map(String::toLowerCase)
-            .collect(Collectors.toSet());
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
 
         if (statement instanceof Select select) {
             rewriteSelect(select, suffix, ignoreTables);

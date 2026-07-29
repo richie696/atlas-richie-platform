@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import cn.richie696.component.web.core.reload.DefaultHotReloadRegistry;
 
 /**
  * {@link HotReloadCloudBridge} 测试（不依赖 spring-cloud-context）。
@@ -40,9 +41,19 @@ class HotReloadCloudBridgeTest {
         registry = new DefaultHotReloadRegistry();
         bridge = new HotReloadCloudBridge(registry);
         registry.register("config", new Reloadable<String>() {
-            @Override public String currentState() { return "v1"; }
-            @Override public void accept(String newState) {}
-            @Override public String name() { return "config"; }
+            @Override
+            public String currentState() {
+                return "v1";
+            }
+
+            @Override
+            public void accept(String newState) {
+            }
+
+            @Override
+            public String name() {
+                return "config";
+            }
         });
     }
 
@@ -121,7 +132,8 @@ class HotReloadCloudBridgeTest {
 
     @Test
     void extractKeys_unrelatedEvent_returnsNull() {
-        ApplicationEvent event = new ApplicationEvent("source") {};
+        ApplicationEvent event = new ApplicationEvent("source") {
+        };
         Set<String> extracted = HotReloadCloudBridge.extractKeys(event);
         assertThat(extracted).isNull();
     }

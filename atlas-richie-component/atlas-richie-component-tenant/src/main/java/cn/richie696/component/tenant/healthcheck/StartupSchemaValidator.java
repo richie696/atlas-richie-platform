@@ -16,9 +16,9 @@
 package cn.richie696.component.tenant.healthcheck;
 
 import cn.richie696.component.tenant.config.MultiTenancyProperties;
-import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.component.tenant.exception.TenantErrorCode;
 import cn.richie696.component.tenant.model.IsolationMode;
+import cn.richie696.contract.exception.BusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -99,11 +99,11 @@ public class StartupSchemaValidator implements ApplicationRunner {
             validateSchemaTables(meta);
         } catch (SQLException e) {
             throw new BusinessException(
-                "Failed to query database metadata for startup schema validation", e);
+                    "Failed to query database metadata for startup schema validation", e);
         }
 
         log.info("[多租户] 启动期 Schema 校验通过: ignoreTables={}, schemaTables={}",
-            properties.getIgnoreTables(), properties.getStartupValidation().getSchemaTables());
+                properties.getIgnoreTables(), properties.getStartupValidation().getSchemaTables());
     }
 
     private void validateIgnoreTables(DatabaseMetaData meta) throws SQLException {
@@ -117,7 +117,7 @@ public class StartupSchemaValidator implements ApplicationRunner {
                 String message = "Table '" + tableName + "' listed in multi-tenancy.ignore-tables does not exist";
                 log.error("[多租户] {}", message);
                 throw new BusinessException(
-                    TenantErrorCode.TENANT_IGNORE_TABLE_NOT_FOUND.name(), message);
+                        TenantErrorCode.TENANT_IGNORE_TABLE_NOT_FOUND.name(), message);
             }
         }
     }
@@ -133,10 +133,10 @@ public class StartupSchemaValidator implements ApplicationRunner {
             Set<String> columns = collectColumnNames(meta, tableName);
             if (!columns.contains(tenantColumn.toLowerCase())) {
                 String message = "Table '" + tableName + "' is missing tenant_id column '"
-                    + tenantColumn + "' required by multi-tenancy";
+                        + tenantColumn + "' required by multi-tenancy";
                 log.error("[多租户] {}", message);
                 throw new BusinessException(
-                    TenantErrorCode.TENANT_TENANT_ID_COLUMN_MISSING.name(), message);
+                        TenantErrorCode.TENANT_TENANT_ID_COLUMN_MISSING.name(), message);
             }
         }
     }

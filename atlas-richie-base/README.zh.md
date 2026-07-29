@@ -60,18 +60,18 @@ atlas-richie-base/
 ├── pom.xml                          # 聚合 POM，补充 Spring AI / AgentScope 等 BOM import
 ├── atlas-richie-dependencies/       # 依赖与插件版本 BOM（packaging=pom）
 ├── atlas-richie-contract/           # 跨服务契约（packaging=jar）
-│   └── src/main/java/com/richie/contract/
+│   └── src/main/java/cn/richie696/contract/
 │       ├── constant/                # 全局常量
 │       ├── exception/               # 平台异常体系
 │       ├── model/                   # API 响应、用户主体、分页、流消息标记
 │       └── gateway/                 # 网关跨服务配置契约
 ├── atlas-richie-context/            # 运行时能力（packaging=jar）
-│   └── src/main/java/com/richie/context/
+│   └── src/main/java/cn/richie696/context/
 │       ├── common/api/              # 上下文 Holder、Spring 工具
 │       ├── common/api/domain/        # MyBatis-Plus 领域基类
 │       └── utils/                   # data / security / spring / web / time
 └── atlas-richie-testing-support/    # 集成测试基础设施（packaging=jar）
-    └── src/main/java/com/richie/testing/
+    └── src/main/java/cn/richie696/testing/
         ├── container/               # 容器复用模式枚举
         ├── docker/                  # Testcontainers 环境配置
         ├── env/                     # 集成测试策略（CI/本地）

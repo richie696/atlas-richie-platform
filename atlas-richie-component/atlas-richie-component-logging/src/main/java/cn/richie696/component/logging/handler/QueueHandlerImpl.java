@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.logging.handler;
 
-import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.component.messaging.event.MessageEvent;
+import cn.richie696.context.utils.data.JsonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -40,7 +40,9 @@ import java.util.Objects;
 @Service
 class QueueHandlerImpl implements QueueHandler {
 
-    /** Spring Cloud Stream 桥接器，用于发送消息 */
+    /**
+     * Spring Cloud Stream 桥接器，用于发送消息
+     */
     private final StreamBridge streamBridge;
 
     @Override

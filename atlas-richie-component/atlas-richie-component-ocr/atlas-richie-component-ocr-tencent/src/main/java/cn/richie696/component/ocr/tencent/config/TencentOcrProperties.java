@@ -90,9 +90,13 @@ public class TencentOcrProperties {
      */
     @Data
     public static class Credentials {
-        /** 腾讯云 API 密钥 Id。 */
+        /**
+         * 腾讯云 API 密钥 Id。
+         */
         private String secretId;
-        /** 腾讯云 API 密钥 Key。 */
+        /**
+         * 腾讯云 API 密钥 Key。
+         */
         private String secretKey;
     }
 }

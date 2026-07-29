@@ -43,9 +43,9 @@ import java.util.Base64;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(
-    prefix = "platform.component.mfa.security.key-management.kms",
-    name = "provider",
-    havingValue = "tencent"
+        prefix = "platform.component.mfa.security.key-management.kms",
+        name = "provider",
+        havingValue = "tencent"
 )
 public class TencentKmsEngine implements CloudKmsEngine {
 

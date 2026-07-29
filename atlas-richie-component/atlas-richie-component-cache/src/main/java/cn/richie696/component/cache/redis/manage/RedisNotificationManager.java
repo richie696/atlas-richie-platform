@@ -39,7 +39,9 @@ import org.springframework.stereotype.Component;
 @ConditionalOnExpression("'${platform.cache.cache-provider:REDIS}'=='REDIS'")
 public class RedisNotificationManager implements NotificationFunction {
 
-    /** Redis 模板（JSON 序列化） */
+    /**
+     * Redis 模板（JSON 序列化）
+     */
     @Qualifier("jsonTemplate")
     private final MultiRedisTemplate<Object> redisTemplate;
 

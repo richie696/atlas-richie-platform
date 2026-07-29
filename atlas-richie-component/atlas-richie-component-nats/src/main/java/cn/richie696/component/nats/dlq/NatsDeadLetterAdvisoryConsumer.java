@@ -17,14 +17,7 @@ package cn.richie696.component.nats.dlq;
 
 import cn.richie696.component.nats.config.NatsProperties;
 import cn.richie696.context.utils.data.JsonUtils;
-import io.nats.client.Connection;
-import io.nats.client.Dispatcher;
-import io.nats.client.JetStream;
-import io.nats.client.JetStreamApiException;
-import io.nats.client.JetStreamManagement;
-import io.nats.client.Message;
-import io.nats.client.PushSubscribeOptions;
-import io.nats.client.Subscription;
+import io.nats.client.*;
 import io.nats.client.api.MessageInfo;
 import io.nats.client.impl.Headers;
 import org.slf4j.Logger;
@@ -102,13 +95,19 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
      */
     private static final String ADVISORY_SUBJECT_PREFIX = "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.";
 
-    /** advisory 订阅后 flush 超时。 */
+    /**
+     * advisory 订阅后 flush 超时。
+     */
     private static final Duration FLUSH_TIMEOUT = Duration.ofSeconds(5);
 
-    /** dispatcher drain 内部超时(单条消息处理预算)。 */
+    /**
+     * dispatcher drain 内部超时(单条消息处理预算)。
+     */
     private static final Duration DISPATCHER_DRAIN_TIMEOUT = Duration.ofSeconds(2);
 
-    /** dispatcher drain 整体等待超时。 */
+    /**
+     * dispatcher drain 整体等待超时。
+     */
     private static final Duration DISPATCHER_DRAIN_AWAIT = Duration.ofSeconds(5);
 
     private final Connection connection;

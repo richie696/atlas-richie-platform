@@ -1,21 +1,9 @@
 package cn.richie696.component.vector.projection.impl;
 
-import cn.richie696.component.vector.projection.VectorProjectionCleanupService;
 import cn.richie696.component.vector.knowledge.ActiveProjectionVersionResolver;
-import cn.richie696.component.vector.projection.VectorProjectionLifecycleService;
-import cn.richie696.component.vector.projection.VectorProjectionReference;
-import cn.richie696.component.vector.projection.VectorProjectionSpecification;
-import cn.richie696.component.vector.projection.VectorProjectionState;
-import cn.richie696.component.vector.projection.VectorProjectionVersion;
+import cn.richie696.component.vector.projection.*;
 import cn.richie696.component.vector.projection.config.VectorProjectionDaoProperties;
-import cn.richie696.component.vector.projection.persistence.VectorProjectionEntity;
-import cn.richie696.component.vector.projection.persistence.VectorProjectionMapper;
-import cn.richie696.component.vector.projection.persistence.VectorProjectionOutboxEntity;
-import cn.richie696.component.vector.projection.persistence.VectorProjectionOutboxMapper;
-import cn.richie696.component.vector.projection.persistence.VectorProjectionRecordEntity;
-import cn.richie696.component.vector.projection.persistence.VectorProjectionRecordMapper;
-import cn.richie696.component.vector.projection.persistence.VectorProjectionVersionEntity;
-import cn.richie696.component.vector.projection.persistence.VectorProjectionVersionMapper;
+import cn.richie696.component.vector.projection.persistence.*;
 import cn.richie696.component.vector.service.VectorRecordDeleteOperations;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -31,6 +19,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Set;
 
 /**
  * 基于关系库的向量投影状态机及延迟清理默认实现。
@@ -166,7 +155,7 @@ public class DefaultVectorProjectionService implements VectorProjectionLifecycle
      * 失败语义：方法由 {@link Transactional} 标注，任何异常都会让 projection 插入 / version 插入
      * 整段回滚；版本号与候选版本不会泄露到关系库。
      *
-     * @param reference    投影的业务定位（tenant / knowledgeBase / documentRef）
+     * @param reference     投影的业务定位（tenant / knowledgeBase / documentRef）
      * @param specification 投影技术规格（sourceVersion / indexName / embeddingSpaceId）
      * @return 投影版本快照，下游调用方应把它作为后续 {@link #activate}、{@link DefaultVectorProjectionWriter#write} 的输入
      * @throws IllegalArgumentException reference 或 specification 为 null
@@ -686,7 +675,9 @@ public class DefaultVectorProjectionService implements VectorProjectionLifecycle
      * @param value 原始整数值
      * @return 非 null 整数
      */
-    private static int nullToZero(Integer value) { return value == null ? 0 : value; }
+    private static int nullToZero(Integer value) {
+        return value == null ? 0 : value;
+    }
 
     /**
      * 把数据库的 {@link LocalDateTime} 转换为 UTC {@link Instant} —— 便于跨时区业务消费。
@@ -694,7 +685,9 @@ public class DefaultVectorProjectionService implements VectorProjectionLifecycle
      * @param value 原始时间字段
      * @return UTC 时间戳；{@code value} 为 {@code null} 时返回 {@code null}
      */
-    private static Instant toInstant(LocalDateTime value) { return value == null ? null : value.toInstant(ZoneOffset.UTC); }
+    private static Instant toInstant(LocalDateTime value) {
+        return value == null ? null : value.toInstant(ZoneOffset.UTC);
+    }
 
     /**
      * 把失败原因规范化为可持久化字符串 —— 空值兜底为 {@code "unknown"}，超长文本截断至 1000 字符。

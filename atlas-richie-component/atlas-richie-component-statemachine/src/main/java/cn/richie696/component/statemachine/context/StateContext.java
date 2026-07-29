@@ -28,7 +28,6 @@ import java.util.Map;
  * 状态转换过程中的上下文对象，包含当前状态、前一状态、触发事件、转换规则等信息。
  * 可以在 SpEL 表达式中通过 context 变量访问这些信息。
  *
- *
  * @author richie696
  * @since 1.0.0
  */
@@ -77,7 +76,7 @@ public class StateContext {
      * 默认构造函数
      * <p>
      * 创建时间和更新时间自动设置为当前时间。
-     * 
+     *
      */
     public StateContext() {
     }
@@ -95,7 +94,7 @@ public class StateContext {
      * 构造函数
      *
      * @param currentState 当前状态
-     * @param event         触发事件
+     * @param event        触发事件
      */
     public StateContext(String currentState, String event) {
         this.currentState = currentState;
@@ -106,7 +105,6 @@ public class StateContext {
      * 设置属性
      * <p>
      * 设置上下文属性，这些属性可以在 SpEL 表达式中通过 context.attributes['key'] 访问。
-     *
      *
      * @param key   属性键
      * @param value 属性值
@@ -119,7 +117,6 @@ public class StateContext {
      * 获取属性
      * <p>
      * 获取上下文属性，如果属性不存在则返回 null。
-     * 
      *
      * @param key 属性键
      * @return 属性值，如果不存在则返回 null
@@ -132,7 +129,6 @@ public class StateContext {
      * 获取属性（带默认值）
      * <p>
      * 获取上下文属性，如果属性不存在则返回默认值。
-     * 
      *
      * @param key          属性键
      * @param defaultValue 默认值
@@ -156,7 +152,7 @@ public class StateContext {
      * 更新修改时间
      * <p>
      * 将 updateTime 更新为当前时间。
-     * 
+     *
      */
     public void updateTime() {
         this.updateTime = LocalDateTime.now();

@@ -77,9 +77,9 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
     /**
      * 拦截 RestClient 请求：打印请求/响应信息（去重），并包装响应体以支持多次读取。
      *
-     * @param request     HTTP 请求
-     * @param body        请求体
-     * @param execution   执行链
+     * @param request   HTTP 请求
+     * @param body      请求体
+     * @param execution 执行链
      * @return 响应（可能为包装类以支持多次读取 body）
      * @throws IOException 执行或读取响应时发生 IO 异常
      */
@@ -224,38 +224,40 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
     }
 
     /**
-         * 缓存响应体的 ClientHttpResponse 包装器
-         */
-        private record CachedBodyClientHttpResponse(ClientHttpResponse response,
-                                                    byte[] cachedBody) implements ClientHttpResponse {
+     * 缓存响应体的 ClientHttpResponse 包装器
+     */
+    private record CachedBodyClientHttpResponse(ClientHttpResponse response,
+                                                byte[] cachedBody) implements
+
+    ClientHttpResponse {
 
         @Override
-            @Nonnull
-            public HttpStatusCode getStatusCode() throws IOException {
-                return response.getStatusCode();
-            }
-
-            @Override
-            @Nonnull
-            public String getStatusText() throws IOException {
-                return response.getStatusText();
-            }
-
-            @Override
-            public void close() {
-                response.close();
-            }
-
-            @Override
-            @Nonnull
-            public InputStream getBody() throws IOException {
-                return cachedBody != null ? new ByteArrayInputStream(cachedBody) : new ByteArrayInputStream(new byte[0]);
-            }
-
-            @Override
-            @Nonnull
-            public HttpHeaders getHeaders() {
-                return response.getHeaders();
-            }
+        @Nonnull
+        public HttpStatusCode getStatusCode () throws IOException {
+            return response.getStatusCode();
         }
+
+        @Override
+        @Nonnull
+        public String getStatusText () throws IOException {
+            return response.getStatusText();
+        }
+
+        @Override
+        public void close () {
+            response.close();
+        }
+
+        @Override
+        @Nonnull
+        public InputStream getBody () throws IOException {
+            return cachedBody != null ? new ByteArrayInputStream(cachedBody) : new ByteArrayInputStream(new byte[0]);
+        }
+
+        @Override
+        @Nonnull
+        public HttpHeaders getHeaders () {
+            return response.getHeaders();
+        }
+    }
 }

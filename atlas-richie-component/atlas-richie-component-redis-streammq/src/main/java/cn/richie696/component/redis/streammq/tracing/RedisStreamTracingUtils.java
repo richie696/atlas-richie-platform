@@ -27,7 +27,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import java.lang.AutoCloseable;
 
 /**
  * Redis Stream OpenTelemetry 链路追踪工具类
@@ -43,17 +43,22 @@ import org.springframework.stereotype.Component;
  * @version 1.0.0
  * @since 2025-09-15
  */
-@Component
 @Slf4j
 public class RedisStreamTracingUtils {
 
-    /** 全局 OpenTelemetry 实例（init 后赋值） */
+    /**
+     * 全局 OpenTelemetry 实例（init 后赋值）
+     */
     private static OpenTelemetry openTelemetry;
 
-    /** Redis Stream 使用的 Tracer */
+    /**
+     * Redis Stream 使用的 Tracer
+     */
     private static Tracer tracer;
 
-    /** 应用内注入的 OpenTelemetry，作为 fallback */
+    /**
+     * 应用内注入的 OpenTelemetry，作为 fallback
+     */
     @Autowired
     private OpenTelemetry autowiredOpenTelemetry;
 
@@ -80,7 +85,7 @@ public class RedisStreamTracingUtils {
     /**
      * 创建一个用于消息发布的 Span
      *
-     * @param streamKey Stream 的键
+     * @param streamKey   Stream 的键
      * @param messageType 消息类型
      * @return TracingScope 包含创建的 Span 和 Scope
      */
@@ -103,9 +108,9 @@ public class RedisStreamTracingUtils {
      * 创建一个用于消息消费的 Span，并继承上游上下文
      *
      * @param messageWrapper 可追踪的消息包装器
-     * @param streamKey Stream 键
-     * @param group 消费者组
-     * @param operationName 操作名称
+     * @param streamKey      Stream 键
+     * @param group          消费者组
+     * @param operationName  操作名称
      * @return TracingScope 包含创建的 Span 和 Scope
      */
     public static TracingScope createConsumerSpan(TraceableMessageWrapper messageWrapper, String streamKey, String group, String operationName) {
@@ -146,7 +151,7 @@ public class RedisStreamTracingUtils {
     /**
      * 记录异常到 Span
      *
-     * @param span 要记录的 Span
+     * @param span      要记录的 Span
      * @param throwable 异常对象
      */
     public static void recordError(Span span, Throwable throwable) {
@@ -159,49 +164,49 @@ public class RedisStreamTracingUtils {
     /**
      * 记录重试事件到 Span
      *
-     * @param span 要记录的 Span
-     * @param attempt 重试次数
+     * @param span        要记录的 Span
+     * @param attempt     重试次数
      * @param maxAttempts 最大重试次数
      */
     public static void recordRetryEvent(Span span, int attempt, int maxAttempts) {
         if (span != null) {
             span.addEvent("retry.attempt",
-                io.opentelemetry.api.common.Attributes.of(
-                    io.opentelemetry.api.common.AttributeKey.longKey("retry.attempt"), (long) attempt,
-                    io.opentelemetry.api.common.AttributeKey.longKey("retry.max_attempts"), (long) maxAttempts
-                ));
+                    io.opentelemetry.api.common.Attributes.of(
+                            io.opentelemetry.api.common.AttributeKey.longKey("retry.attempt"), (long) attempt,
+                            io.opentelemetry.api.common.AttributeKey.longKey("retry.max_attempts"), (long) maxAttempts
+                    ));
         }
     }
 
     /**
      * 记录消息处理成功事件到 Span
      *
-     * @param span 要记录的 Span
+     * @param span             要记录的 Span
      * @param processingTimeMs 处理时间（毫秒）
      */
     public static void recordSuccessEvent(Span span, long processingTimeMs) {
         if (span != null) {
             span.addEvent("message.processed.success",
-                io.opentelemetry.api.common.Attributes.of(
-                    io.opentelemetry.api.common.AttributeKey.longKey("processing.time_ms"), processingTimeMs
-                ));
+                    io.opentelemetry.api.common.Attributes.of(
+                            io.opentelemetry.api.common.AttributeKey.longKey("processing.time_ms"), processingTimeMs
+                    ));
         }
     }
 
     /**
      * 记录消息处理失败事件到 Span
      *
-     * @param span 要记录的 Span
-     * @param errorType 错误类型
+     * @param span         要记录的 Span
+     * @param errorType    错误类型
      * @param errorMessage 错误消息
      */
     public static void recordFailureEvent(Span span, String errorType, String errorMessage) {
         if (span != null) {
             span.addEvent("message.processed.failure",
-                io.opentelemetry.api.common.Attributes.of(
-                    io.opentelemetry.api.common.AttributeKey.stringKey("error.type"), errorType,
-                    io.opentelemetry.api.common.AttributeKey.stringKey("error.message"), errorMessage
-                ));
+                    io.opentelemetry.api.common.Attributes.of(
+                            io.opentelemetry.api.common.AttributeKey.stringKey("error.type"), errorType,
+                            io.opentelemetry.api.common.AttributeKey.stringKey("error.message"), errorMessage
+                    ));
         }
     }
 
@@ -211,10 +216,14 @@ public class RedisStreamTracingUtils {
     @Getter
     public static class TracingScope implements AutoCloseable {
 
-        /** 当前 Span */
+        /**
+         * 当前 Span
+         */
         private final Span span;
 
-        /** 当前 Scope（用于 makeCurrent） */
+        /**
+         * 当前 Scope（用于 makeCurrent）
+         */
         private final Scope scope;
 
         /**

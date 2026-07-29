@@ -38,19 +38,25 @@ import java.util.Map;
  */
 public final class RedisStreamControlBus {
 
-    private RedisStreamControlBus() {}
+    private RedisStreamControlBus() {
+    }
 
     /**
      * 控制事件
      */
-    public sealed interface ControlEvent permits PollerStatusQuery, PollerStatusResponse {}
+    public sealed
+
+    interface ControlEvent permits PollerStatusQuery, PollerStatusResponse {
+    }
 
     /**
      * 拉取器状态查询事件
      *
      * @param correlationId 关联 ID，用于匹配请求与响应
      */
-    public record PollerStatusQuery(String correlationId) implements ControlEvent {
+    public record PollerStatusQuery(String correlationId) implements
+
+    ControlEvent {
     }
 
     /**
@@ -59,10 +65,14 @@ public final class RedisStreamControlBus {
      * @param correlationId 关联 ID
      * @param snapshot      拉取器状态快照
      */
-    public record PollerStatusResponse(String correlationId, Map<String, Object> snapshot) implements ControlEvent {
+    public record PollerStatusResponse(String correlationId, Map<String, Object> snapshot) implements
+
+    ControlEvent {
     }
 
-    /** 控制事件多播 Sink（背压缓冲） */
+    /**
+     * 控制事件多播 Sink（背压缓冲）
+     */
     private static final Sinks.Many<ControlEvent> controlSink =
             Sinks.many().multicast().onBackpressureBuffer();
 

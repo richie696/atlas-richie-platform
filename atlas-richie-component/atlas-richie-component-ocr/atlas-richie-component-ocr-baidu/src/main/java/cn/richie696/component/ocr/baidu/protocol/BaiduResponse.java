@@ -23,7 +23,7 @@ package cn.richie696.component.ocr.baidu.protocol;
  *
  * <p>响应体以 typed {@link BaiduOcrEnvelope} 暴露，不再使用 {@code JsonNode} 树遍历。
  *
- * @param body 已 typed 反序列化的百度 OCR 响应 envelope，不能为 {@code null}
+ * @param body      已 typed 反序列化的百度 OCR 响应 envelope，不能为 {@code null}
  * @param latencyMs 从请求发出到客户端收到响应的墙钟耗时，单位毫秒
  */
 public record BaiduResponse(

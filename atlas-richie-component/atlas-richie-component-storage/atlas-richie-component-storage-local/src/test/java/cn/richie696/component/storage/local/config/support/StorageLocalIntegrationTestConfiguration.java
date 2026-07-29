@@ -15,7 +15,6 @@
  */
 package cn.richie696.component.storage.local.config.support;
 
-import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.cache.config.CacheAutoConfiguration;
 import cn.richie696.component.cache.local.config.LocalCacheAutoConfiguration;
@@ -23,6 +22,7 @@ import cn.richie696.component.cache.redis.config.base.RedisBaseAutoConfiguration
 import cn.richie696.component.liquibase.config.LiquibaseAutoConfiguration;
 import cn.richie696.component.storage.bean.LocalConfig;
 import cn.richie696.component.storage.config.StorageProperties;
+import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

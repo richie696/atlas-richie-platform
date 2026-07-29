@@ -60,18 +60,18 @@ atlas-richie-base/
 ├── pom.xml                          # Aggregator POM; imports Spring AI / AgentScope BOMs
 ├── atlas-richie-dependencies/       # Dependency and plugin version BOM (packaging=pom)
 ├── atlas-richie-contract/           # Cross-service contracts (packaging=jar)
-│   └── src/main/java/com/richie/contract/
+│   └── src/main/java/cn/richie696/contract/
 │       ├── constant/                # Global constants
 │       ├── exception/               # Platform exception hierarchy
 │       ├── model/                   # API response, user principal, pagination, stream marker
 │       └── gateway/                 # Gateway cross-service configuration contracts
 ├── atlas-richie-context/            # Runtime capabilities (packaging=jar)
-│   └── src/main/java/com/richie/context/
+│   └── src/main/java/cn/richie696/context/
 │       ├── common/api/              # Context holders, Spring helpers
 │       ├── common/api/domain/        # MyBatis-Plus domain base classes
 │       └── utils/                   # data / security / spring / web / time
 └── atlas-richie-testing-support/    # Integration testing infrastructure (packaging=jar)
-    └── src/main/java/com/richie/testing/
+    └── src/main/java/cn/richie696/testing/
         ├── container/               # Reusable container mode enum
         ├── docker/                  # Testcontainers environment setup
         ├── env/                     # Integration test policies (CI/local)

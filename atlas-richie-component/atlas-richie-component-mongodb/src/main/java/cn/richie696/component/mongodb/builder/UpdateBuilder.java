@@ -26,6 +26,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+
 import java.time.Instant;
 import java.util.Collection;
 
@@ -188,7 +189,8 @@ public class UpdateBuilder<T> {
             long result = mongoTemplate.updateMulti(query, update, entityClass).getModifiedCount();
             if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
             if (sample != null) metricsRecorder.stop(sample, "update", collection, true);
-            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "update", System.currentTimeMillis() - start);
+            if (slowQueryLogger != null)
+                slowQueryLogger.logIfSlow(collection, "update", System.currentTimeMillis() - start);
             return result;
         } catch (Throwable t) {
             if (sample != null) metricsRecorder.stop(sample, "update", collection, false);
@@ -216,7 +218,8 @@ public class UpdateBuilder<T> {
             T result = mongoTemplate.findAndModify(query, update, FindAndModifyOptions.options().returnNew(true), entityClass);
             if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
             if (sample != null) metricsRecorder.stop(sample, "update", collection, true);
-            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "update", System.currentTimeMillis() - start);
+            if (slowQueryLogger != null)
+                slowQueryLogger.logIfSlow(collection, "update", System.currentTimeMillis() - start);
             return result;
         } catch (Throwable t) {
             if (sample != null) metricsRecorder.stop(sample, "update", collection, false);

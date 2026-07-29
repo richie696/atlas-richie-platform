@@ -39,7 +39,9 @@ public final class RedisStringPayloadInspector {
     private RedisStringPayloadInspector() {
     }
 
-    /** 对 String 写入值的告警级别。 */
+    /**
+     * 对 String 写入值的告警级别。
+     */
     public enum Severity {
         OK,
         WARN,
@@ -54,7 +56,7 @@ public final class RedisStringPayloadInspector {
      */
     public record Inspection(Severity severity, String detail) {
 
-        static Inspection ok() {
+        static Inspection ok () {
             return new Inspection(Severity.OK, "");
         }
     }

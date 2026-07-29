@@ -56,7 +56,7 @@ public record UrlFetchPolicy(
     /**
      * 默认策略:拒绝 HTTP / 内网 IP,200MB 上限,默认超时。
      */
-    public static UrlFetchPolicy defaults() {
+    public static UrlFetchPolicy defaults () {
         return new UrlFetchPolicy(
                 false, false, true,
                 200L * 1024 * 1024,
@@ -71,7 +71,7 @@ public record UrlFetchPolicy(
      * <p>
      * Phase 5 集成 UrlFetcher 时实现完整 CIDR 校验,Phase 1 占位。
      */
-    public record CidrBlock(String cidr) {
+    public record CidrBlock (String cidr){
         public CidrBlock {
             if (cidr == null || cidr.isBlank()) {
                 throw new IllegalArgumentException("cidr must not be blank");
@@ -83,7 +83,7 @@ public record UrlFetchPolicy(
          * <p>
          * Phase 1 占位实现,Phase 5 接入 UrlFetcher 时实现完整 IPv4/IPv6 CIDR 校验。
          */
-        public boolean contains(InetAddress addr) {
+        public boolean contains (InetAddress addr){
             return false;
         }
     }

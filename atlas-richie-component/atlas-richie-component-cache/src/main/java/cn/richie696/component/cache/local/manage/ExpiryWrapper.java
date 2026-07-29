@@ -27,17 +27,21 @@ import lombok.Setter;
 @Getter
 public class ExpiryWrapper<T> {
 
-    /** 包装的缓存值 */
+    /**
+     * 包装的缓存值
+     */
     private final T value;
 
-    /** 过期时间戳（毫秒） */
+    /**
+     * 过期时间戳（毫秒）
+     */
     @Setter
     private long expiryTime;
 
     /**
      * 构造带过期时间的包装。
      *
-     * @param value     缓存值
+     * @param value      缓存值
      * @param expiryTime 过期时间戳（毫秒）
      */
     public ExpiryWrapper(T value, long expiryTime) {

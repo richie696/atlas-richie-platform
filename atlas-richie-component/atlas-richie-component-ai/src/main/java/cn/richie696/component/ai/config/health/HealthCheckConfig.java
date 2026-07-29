@@ -25,9 +25,13 @@ import lombok.Data;
 @Data
 public class HealthCheckConfig {
 
-    /** probe 时是否发起真实 LLM 调用(false 则仅检查 ChatClient 是否存在)。 */
+    /**
+     * probe 时是否发起真实 LLM 调用(false 则仅检查 ChatClient 是否存在)。
+     */
     private boolean liveProbe = true;
 
-    /** live probe 使用的最大输出 token。 */
+    /**
+     * live probe 使用的最大输出 token。
+     */
     private int probeMaxTokens = 1;
 }

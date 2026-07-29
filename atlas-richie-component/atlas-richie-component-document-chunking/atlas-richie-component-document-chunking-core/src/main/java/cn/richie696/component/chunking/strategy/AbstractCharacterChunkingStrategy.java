@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/** 以字符窗口切片的策略基类，统一处理 overlap、坐标和小尾段。 */
+/**
+ * 以字符窗口切片的策略基类，统一处理 overlap、坐标和小尾段。
+ */
 abstract class AbstractCharacterChunkingStrategy implements StreamingChunkingStrategy {
 
     private final ChunkingStrategySupport support;
@@ -48,10 +50,14 @@ abstract class AbstractCharacterChunkingStrategy implements StreamingChunkingStr
         return support.result(content, rule, normalized, signals);
     }
 
-    /** 返回不超过 limit 的边界结束坐标；无自然边界时返回 limit。 */
+    /**
+     * 返回不超过 limit 的边界结束坐标；无自然边界时返回 limit。
+     */
     public abstract int boundaryAtOrBefore(CharSequence text, ChunkingRule rule, int limit);
 
-    /** FIXED 天生硬切，不应把它标记为“未找到自然边界”。 */
+    /**
+     * FIXED 天生硬切，不应把它标记为“未找到自然边界”。
+     */
     protected boolean reportsMissingBoundary() {
         return true;
     }

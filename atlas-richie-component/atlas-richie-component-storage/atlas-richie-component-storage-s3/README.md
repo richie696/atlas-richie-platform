@@ -2,14 +2,16 @@
 
 ## Overview
 
-`richie-component-storage-s3` is the AWS S3 object storage implementation, built on AWS SDK for Java 2.x to provide the full S3 storage capability.
+`richie-component-storage-s3` is the AWS S3 object storage implementation, built on AWS SDK for Java 2.x to provide the
+full S3 storage capability.
 
 ## Core Features
 
 - ✅ **AWS S3 compatible** - full support for the AWS S3 API
 - ✅ **Multiple storage classes** - supports Standard, Infrequent Access, Archive, Intelligent Tiering, and more
 - ✅ **Resumable upload/download** - supports resumable transfer for large files
-- ✅ **Dual-mode architecture** - supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to Spring Boot auto-configuration and non-Spring environments
+- ✅ **Dual-mode architecture** - supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to
+  Spring Boot auto-configuration and non-Spring environments
 - ✅ **Auto-configuration** - Spring Boot auto-configuration
 
 ## Dual-Mode Architecture
@@ -42,40 +44,44 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 ## StorageEngineProvider
 
-Each implementation package provides a `StorageEngineProvider` SPI implementation. `S3StorageEngineProvider` is responsible for:
+Each implementation package provides a `StorageEngineProvider` SPI implementation. `S3StorageEngineProvider` is
+responsible for:
 
-| Method | Description |
-|------|------|
-| `supportedEngineType()` | Returns `StorageEngineEnum.AWS_S3` |
-| `create(properties)` | Creates the `S3Client` and `S3StorageEngine` from the configuration |
-| `validate(properties)` | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
-| `afterPropertiesSet(engine)` | Triggers bucket probing and prefix validation in manual mode |
-| `destroy(engine)` | Releases client resources |
+| Method                       | Description                                                                       |
+|------------------------------|-----------------------------------------------------------------------------------|
+| `supportedEngineType()`      | Returns `StorageEngineEnum.AWS_S3`                                                |
+| `create(properties)`         | Creates the `S3Client` and `S3StorageEngine` from the configuration               |
+| `validate(properties)`       | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
+| `afterPropertiesSet(engine)` | Triggers bucket probing and prefix validation in manual mode                      |
+| `destroy(engine)`            | Releases client resources                                                         |
 
-In auto mode, the Provider is registered as a Bean in `S3AutoConfiguration`; in manual mode, it is discovered by the Registry through SPI.
+In auto mode, the Provider is registered as a Bean in `S3AutoConfiguration`; in manual mode, it is discovered by the
+Registry through SPI.
 
 ## Parameter Validation (ConfigValidation)
 
-Before creating the engine, the `ConfigValidation` utility validates required parameters. If validation fails, an `IllegalArgumentException` is thrown:
+Before creating the engine, the `ConfigValidation` utility validates required parameters. If validation fails, an
+`IllegalArgumentException` is thrown:
 
-| Parameter | Validation rule |
-|------|---------|
-| endpoint | Non-empty |
-| accessKeyId | Non-empty |
-| accessKeySecret | Non-empty |
-| bucketName | Non-empty |
+| Parameter       | Validation rule |
+|-----------------|-----------------|
+| endpoint        | Non-empty       |
+| accessKeyId     | Non-empty       |
+| accessKeySecret | Non-empty       |
+| bucketName      | Non-empty       |
 
 ## Direct Upload Policy (DirectUploadPolicy)
 
-The AWS S3 engine supports client-side direct upload to object storage through presigned URLs, reducing server-side traffic pressure:
+The AWS S3 engine supports client-side direct upload to object storage through presigned URLs, reducing server-side
+traffic pressure:
 
-| Field | Description |
-|------|------|
-| uploadUrl | Presigned upload URL |
-| method | HTTP method (PUT) |
-| headers | Signature headers |
-| expireAt | Policy expiration time |
-| success | Whether the policy is usable |
+| Field     | Description                  |
+|-----------|------------------------------|
+| uploadUrl | Presigned upload URL         |
+| method    | HTTP method (PUT)            |
+| headers   | Signature headers            |
+| expireAt  | Policy expiration time       |
+| success   | Whether the policy is usable |
 
 ```java
 DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
@@ -160,25 +166,25 @@ public class FileService {
 
 The main configuration differences between AWS S3 and other cloud storage services:
 
-| Configuration | AWS S3 | Other cloud storage |
-|--------|--------|-----------|
-| **engine value** | `AWS_S3` | Varies |
-| **endpoint format** | `s3.region.amazonaws.com` | Varies by cloud provider |
-| **region format** | AWS region code (e.g., `us-east-1`) | Varies by cloud provider |
-| **Credential name** | Access Key ID / Secret Access Key | Varies by cloud provider |
-| **Storage classes** | The most extensive (15+) | Fewer |
-| **Special storage classes** | Supports GLACIER, SNOW, Outposts | Not supported |
+| Configuration               | AWS S3                              | Other cloud storage      |
+|-----------------------------|-------------------------------------|--------------------------|
+| **engine value**            | `AWS_S3`                            | Varies                   |
+| **endpoint format**         | `s3.region.amazonaws.com`           | Varies by cloud provider |
+| **region format**           | AWS region code (e.g., `us-east-1`) | Varies by cloud provider |
+| **Credential name**         | Access Key ID / Secret Access Key   | Varies by cloud provider |
+| **Storage classes**         | The most extensive (15+)            | Fewer                    |
+| **Special storage classes** | Supports GLACIER, SNOW, Outposts    | Not supported            |
 
 ### endpoint Configuration
 
 The AWS S3 endpoint format:
 
 - **Standard format**: `s3.region.amazonaws.com`
-  - Example: `s3.us-east-1.amazonaws.com`
-  - Example: `s3.ap-southeast-1.amazonaws.com`
+    - Example: `s3.us-east-1.amazonaws.com`
+    - Example: `s3.ap-southeast-1.amazonaws.com`
 
 - **Compatible format**: `s3-region.amazonaws.com`
-  - Example: `s3-us-east-1.amazonaws.com`
+    - Example: `s3-us-east-1.amazonaws.com`
 
 - **S3 Transfer Acceleration endpoint**: `s3-accelerate.amazonaws.com` (requires Transfer Acceleration to be enabled)
 
@@ -186,17 +192,17 @@ The AWS S3 endpoint format:
 
 Region codes supported by AWS S3:
 
-| Region | Code |
-|------|------|
-| US East (N. Virginia) | `us-east-1` |
-| US East (Ohio) | `us-east-2` |
-| US West (N. California) | `us-west-1` |
-| US West (Oregon) | `us-west-2` |
+| Region                   | Code             |
+|--------------------------|------------------|
+| US East (N. Virginia)    | `us-east-1`      |
+| US East (Ohio)           | `us-east-2`      |
+| US West (N. California)  | `us-west-1`      |
+| US West (Oregon)         | `us-west-2`      |
 | Asia Pacific (Singapore) | `ap-southeast-1` |
-| Asia Pacific (Tokyo) | `ap-northeast-1` |
-| Europe (Ireland) | `eu-west-1` |
-| China (Beijing) | `cn-north-1` |
-| China (Ningxia) | `cn-northwest-1` |
+| Asia Pacific (Tokyo)     | `ap-northeast-1` |
+| Europe (Ireland)         | `eu-west-1`      |
+| China (Beijing)          | `cn-north-1`     |
+| China (Ningxia)          | `cn-northwest-1` |
 
 > **Note**: China regions require a separate AWS account and credentials.
 
@@ -204,21 +210,21 @@ Region codes supported by AWS S3:
 
 AWS S3 supports a rich set of storage classes:
 
-| Storage class | Description | Use case |
-|---------|------|---------|
-| `STANDARD` | Standard storage | Frequently accessed data |
-| `STANDARD_IA` | Standard - Infrequent Access | Data accessed infrequently but requiring rapid access |
-| `ONEZONE_IA` | One Zone - Infrequent Access | Infrequently accessed data that can tolerate single-zone failure |
-| `ARCHIVE` | Archive storage | Long-term retention, rarely accessed data |
-| `ARCHIVE_FR` | Archive with Flash Retrieval | Archive data requiring fast retrieval |
-| `COLD_ARCHIVE` | Cold archive storage | Very long-term retention, extremely rarely accessed data |
-| `DEEP_COLD_ARCHIVE` | Deep cold archive storage | Very long-term retention, almost never accessed data |
-| `INTELLIGENT_TIERING` | Intelligent tiering | Data with unknown or changing access patterns |
-| `REDUCED_REDUNDANCY` | Reduced redundancy storage | Reproducible data (no longer recommended) |
-| `GLACIER` | Glacier storage | Long-term archive (requires retrieval time) |
-| `GLACIER_IR` | Glacier Instant Retrieval | Archive data requiring instant access |
-| `SNOW` | Snow storage | Edge device data migration |
-| `Outposts` | On-premises storage | AWS Outposts on-premises storage |
+| Storage class         | Description                  | Use case                                                         |
+|-----------------------|------------------------------|------------------------------------------------------------------|
+| `STANDARD`            | Standard storage             | Frequently accessed data                                         |
+| `STANDARD_IA`         | Standard - Infrequent Access | Data accessed infrequently but requiring rapid access            |
+| `ONEZONE_IA`          | One Zone - Infrequent Access | Infrequently accessed data that can tolerate single-zone failure |
+| `ARCHIVE`             | Archive storage              | Long-term retention, rarely accessed data                        |
+| `ARCHIVE_FR`          | Archive with Flash Retrieval | Archive data requiring fast retrieval                            |
+| `COLD_ARCHIVE`        | Cold archive storage         | Very long-term retention, extremely rarely accessed data         |
+| `DEEP_COLD_ARCHIVE`   | Deep cold archive storage    | Very long-term retention, almost never accessed data             |
+| `INTELLIGENT_TIERING` | Intelligent tiering          | Data with unknown or changing access patterns                    |
+| `REDUCED_REDUNDANCY`  | Reduced redundancy storage   | Reproducible data (no longer recommended)                        |
+| `GLACIER`             | Glacier storage              | Long-term archive (requires retrieval time)                      |
+| `GLACIER_IR`          | Glacier Instant Retrieval    | Archive data requiring instant access                            |
+| `SNOW`                | Snow storage                 | Edge device data migration                                       |
+| `Outposts`            | On-premises storage          | AWS Outposts on-premises storage                                 |
 
 ### Access Credentials
 
@@ -270,38 +276,41 @@ DownloadResponse<byte[]> response = storageEngine.getResumableObject(
 ## Best Practices
 
 1. **Region selection**
-   - Choose the region closest to your users to reduce latency
-   - Consider data compliance requirements (e.g., GDPR)
+    - Choose the region closest to your users to reduce latency
+    - Consider data compliance requirements (e.g., GDPR)
 
 2. **Storage class selection**
-   - Frequently accessed: `STANDARD`
-   - Occasionally accessed: `STANDARD_IA` or `ONEZONE_IA`
-   - Long-term archive: `ARCHIVE` or `COLD_ARCHIVE`
-   - Unknown access pattern: `INTELLIGENT_TIERING`
+    - Frequently accessed: `STANDARD`
+    - Occasionally accessed: `STANDARD_IA` or `ONEZONE_IA`
+    - Long-term archive: `ARCHIVE` or `COLD_ARCHIVE`
+    - Unknown access pattern: `INTELLIGENT_TIERING`
 
 3. **Access credential management**
-   - Use IAM roles (on EC2/ECS/Lambda)
-   - Use environment variables or a secret management service
-   - Follow the principle of least privilege
+    - Use IAM roles (on EC2/ECS/Lambda)
+    - Use environment variables or a secret management service
+    - Follow the principle of least privilege
 
 4. **Cost optimization**
-   - Use lifecycle policies to transition storage classes automatically
-   - Remove unnecessary object versions
-   - Use `INTELLIGENT_TIERING` to optimize costs automatically
+    - Use lifecycle policies to transition storage classes automatically
+    - Remove unnecessary object versions
+    - Use `INTELLIGENT_TIERING` to optimize costs automatically
 
 ## FAQ
 
 ### Q: How do I configure S3 Transfer Acceleration?
 
-A: Enable Transfer Acceleration for the bucket in the AWS console, then use `s3-accelerate.amazonaws.com` as the endpoint.
+A: Enable Transfer Acceleration for the bucket in the AWS console, then use `s3-accelerate.amazonaws.com` as the
+endpoint.
 
 ### Q: How do I configure the China regions?
 
-A: The China regions require a separate AWS account. The endpoint format is `s3.cn-north-1.amazonaws.com` or `s3.cn-northwest-1.amazonaws.com`.
+A: The China regions require a separate AWS account. The endpoint format is `s3.cn-north-1.amazonaws.com` or
+`s3.cn-northwest-1.amazonaws.com`.
 
 ### Q: Are other S3-compatible services supported?
 
-A: In theory, yes, but you must ensure the endpoint and region are configured correctly. We recommend using a dedicated implementation (e.g., MinIO).
+A: In theory, yes, but you must ensure the endpoint and region are configured correctly. We recommend using a dedicated
+implementation (e.g., MinIO).
 
 ### Q: How do I set object access permissions?
 

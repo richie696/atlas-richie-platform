@@ -190,7 +190,7 @@ public class NatsBus {
      * @return CompletableFuture 响应
      */
     public <T, R> CompletableFuture<R> requestAsync(String subject, T request,
-                                                     Class<R> responseType, Duration timeout) {
+                                                    Class<R> responseType, Duration timeout) {
         byte[] data = serializer.serialize(request);
         Headers headers = new Headers();
         headerInjector.inject(headers);

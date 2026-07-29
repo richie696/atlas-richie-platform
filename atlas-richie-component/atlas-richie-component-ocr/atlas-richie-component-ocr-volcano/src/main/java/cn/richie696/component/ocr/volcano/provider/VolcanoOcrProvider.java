@@ -17,20 +17,15 @@ package cn.richie696.component.ocr.volcano.provider;
 
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.core.HttpResponse;
-import cn.richie696.component.ocr.model.OcrBlock;
-import cn.richie696.component.ocr.model.OcrImage;
-import cn.richie696.component.ocr.model.OcrLine;
-import cn.richie696.component.ocr.model.OcrOptions;
-import cn.richie696.component.ocr.model.OcrResult;
-import cn.richie696.component.ocr.model.Point;
+import cn.richie696.component.ocr.exception.OcrException;
+import cn.richie696.component.ocr.model.*;
+import cn.richie696.component.ocr.provider.AbstractOcrProvider;
 import cn.richie696.component.ocr.volcano.config.VolcanoOcrProperties;
 import cn.richie696.component.ocr.volcano.protocol.VolcanoOcrEnvelope;
 import cn.richie696.component.ocr.volcano.protocol.VolcanoOcrPayload;
 import cn.richie696.component.ocr.volcano.protocol.VolcanoRequest;
 import cn.richie696.component.ocr.volcano.protocol.VolcanoResponse;
 import cn.richie696.context.utils.data.JsonUtils;
-import cn.richie696.component.ocr.exception.OcrException;
-import cn.richie696.component.ocr.provider.AbstractOcrProvider;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -42,10 +37,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HexFormat;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
 
@@ -69,28 +61,50 @@ import java.util.Map;
  */
 public class VolcanoOcrProvider extends AbstractOcrProvider<VolcanoRequest, VolcanoResponse> {
 
-    /** 默认火山引擎视觉智能 HTTP JSON 服务端点。 */
+    /**
+     * 默认火山引擎视觉智能 HTTP JSON 服务端点。
+     */
     private static final String DEFAULT_ENDPOINT = "https://visual.volcengineapi.com";
-    /** 默认请求超时时间，单位毫秒。 */
+    /**
+     * 默认请求超时时间，单位毫秒。
+     */
     private static final long DEFAULT_TIMEOUT_MS = 30_000L;
-    /** 默认火山引擎服务地域。 */
+    /**
+     * 默认火山引擎服务地域。
+     */
     private static final String DEFAULT_REGION = "cn-north-1";
-    /** 火山引擎视觉智能签名服务名。 */
+    /**
+     * 火山引擎视觉智能签名服务名。
+     */
     private static final String SERVICE = "cv";
-    /** 火山引擎请求签名算法名称。 */
+    /**
+     * 火山引擎请求签名算法名称。
+     */
     private static final String ALGORITHM = "AWS4-HMAC-SHA256";
-    /** 调用火山引擎 OCR HTTP 接口的共享客户端。 */
+    /**
+     * 调用火山引擎 OCR HTTP 接口的共享客户端。
+     */
     private final HttpClient httpClient;
 
-    /** 当前 Provider 使用的火山引擎服务端点。 */
+    /**
+     * 当前 Provider 使用的火山引擎服务端点。
+     */
     private final String endpoint;
-    /** 当前 Provider 的请求超时时间，单位毫秒。 */
+    /**
+     * 当前 Provider 的请求超时时间，单位毫秒。
+     */
     private final long timeoutMs;
-    /** 当前 Provider 使用的火山引擎服务地域。 */
+    /**
+     * 当前 Provider 使用的火山引擎服务地域。
+     */
     private final String region;
-    /** 火山引擎 API 访问密钥 Id。 */
+    /**
+     * 火山引擎 API 访问密钥 Id。
+     */
     private final String accessKey;
-    /** 火山引擎 API 访问密钥 Secret。 */
+    /**
+     * 火山引擎 API 访问密钥 Secret。
+     */
     private final String secretKey;
 
     /**
@@ -99,7 +113,7 @@ public class VolcanoOcrProvider extends AbstractOcrProvider<VolcanoRequest, Volc
      * <p>vendor 配置由构造器注入 typed VolcanoOcrProperties POJO：
      * 父类构造在此处调用。
      *
-     * @param props 配置属性，必填的 {@code credentials.access-key} 与 {@code credentials.secret-key} 缺失时会拒绝构造
+     * @param props      配置属性，必填的 {@code credentials.access-key} 与 {@code credentials.secret-key} 缺失时会拒绝构造
      * @param httpClient 调用火山引擎视觉智能 HTTP JSON 端点的共享 HTTP 客户端，不能为 {@code null}
      * @throws OcrException.ConfigMissing 缺少 {@code credentials.access-key} 或
      *                                    {@code credentials.secret-key} 时抛出

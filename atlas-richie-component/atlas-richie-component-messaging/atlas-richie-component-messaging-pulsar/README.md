@@ -55,12 +55,12 @@ spring:
 
 ### Apache Pulsar Binder 配置
 
-| 配置项                                     | 说明            | 默认值                       |
-|-----------------------------------------|---------------|---------------------------|
+| 配置项                                  | 说明            | 默认值                    |
+|-----------------------------------------|-----------------|---------------------------|
 | `spring.pulsar.client.service-url`      | Pulsar 服务 URL | `pulsar://localhost:6650` |
-| `spring.pulsar.client.authentication.*` | 认证配置          | -                         |
-| `spring.pulsar.producer.*`              | 生产者配置         | -                         |
-| `spring.pulsar.consumer.*`              | 消费者配置         | -                         |
+| `spring.pulsar.client.authentication.*` | 认证配置        | -                         |
+| `spring.pulsar.producer.*`              | 生产者配置      | -                         |
+| `spring.pulsar.consumer.*`              | 消费者配置      | -                         |
 
 ### 详细配置
 

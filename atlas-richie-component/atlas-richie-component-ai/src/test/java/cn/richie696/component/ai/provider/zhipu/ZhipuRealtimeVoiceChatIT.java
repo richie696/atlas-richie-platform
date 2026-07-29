@@ -16,7 +16,6 @@
 package cn.richie696.component.ai.provider.zhipu;
 
 import cn.richie696.component.ai.api.voicechat.StsTicket;
-
 import cn.richie696.component.ai.api.voicechat.VoiceChatConfig;
 import cn.richie696.component.ai.api.voicechat.VoiceChatEvent;
 import cn.richie696.component.ai.api.voicechat.VoiceConversation;
@@ -35,10 +34,8 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
+import java.util.Map;
 
 /**
  * Zhipu Realtime Voice Chat 真机集成测试 (Failsafe IT, 需凭证)。
@@ -71,10 +68,26 @@ class ZhipuRealtimeVoiceChatIT {
         public StsTicket sign(VendorStsContext ctx) {
             throw new IllegalStateException("simulated STS failure");
         }
-        @Override public StsTicket sign(String vendor, String capability, String model) { throw new IllegalStateException("simulated STS failure"); }
-        @Override public StsTicket sign(String vendor, String capability, String model, int ttlSeconds, java.util.Map<String, Object> attributes) { throw new IllegalStateException("simulated STS failure"); }
-        @Override public java.util.List<String> listRegisteredVendors() { return java.util.List.of(); }
-        @Override public int signerCount() { return 0; }
+
+        @Override
+        public StsTicket sign(String vendor, String capability, String model) {
+            throw new IllegalStateException("simulated STS failure");
+        }
+
+        @Override
+        public StsTicket sign(String vendor, String capability, String model, int ttlSeconds, java.util.Map<String, Object> attributes) {
+            throw new IllegalStateException("simulated STS failure");
+        }
+
+        @Override
+        public java.util.List<String> listRegisteredVendors() {
+            return java.util.List.of();
+        }
+
+        @Override
+        public int signerCount() {
+            return 0;
+        }
     }
 
     private static final int WAIT_SECONDS = 30;
@@ -143,7 +156,8 @@ class ZhipuRealtimeVoiceChatIT {
                             firstAudioOrTranscript.compareAndSet(null, event);
                         }
                         case ERROR -> errorEvent.set(event);
-                        default -> { }
+                        default -> {
+                        }
                     }
                 }
 
@@ -162,8 +176,8 @@ class ZhipuRealtimeVoiceChatIT {
             //    Zhipu Realtime 协议首个上行消息即 session.created
             boolean sessionOk = sessionCreatedLatch.await(WAIT_SECONDS, TimeUnit.SECONDS)
                     || receivedTypes.stream().anyMatch(t ->
-                            t == VoiceChatEvent.Type.AUDIO_CHUNK
-                                    || t == VoiceChatEvent.Type.TRANSCRIPT_PARTIAL);
+                    t == VoiceChatEvent.Type.AUDIO_CHUNK
+                            || t == VoiceChatEvent.Type.TRANSCRIPT_PARTIAL);
 
             if (!sessionOk) {
                 // 检查是否有 ERROR 事件 — 给用户更直观的失败原因

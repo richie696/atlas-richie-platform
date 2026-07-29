@@ -29,10 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * {@link BailianImageEmbeddingAdapter} 的纯单元测试（hermetic —— 不发起真实 DashScope 调用）。
@@ -156,7 +153,9 @@ class BailianImageEmbeddingAdapterTest {
 
     // -------- helpers --------
 
-    /** HTTP 桩组合:把假 JSON 反序列化为 {@link BailianImageEmbeddingAdapter.EmbeddingRawResponse}。 */
+    /**
+     * HTTP 桩组合:把假 JSON 反序列化为 {@link BailianImageEmbeddingAdapter.EmbeddingRawResponse}。
+     */
     private static RequestFixture fixture(String json) {
         HttpClient httpClient = mock(HttpClient.class);
         HttpRequest request = mock(HttpRequest.class);
@@ -169,7 +168,9 @@ class BailianImageEmbeddingAdapterTest {
         return new RequestFixture(httpClient, request);
     }
 
-    /** HTTP 桩组合。 */
+    /**
+     * HTTP 桩组合。
+     */
     private record RequestFixture(HttpClient httpClient, HttpRequest request) {
     }
 }

@@ -78,9 +78,11 @@ class StateMachineEngineTest {
     private StateMachineModel stateMachine;
 
     // 测试用的枚举
-    enum TestStateMachine { order }
-    enum TestEvent { CONFIRM, CANCEL }
-    enum TestState { PENDING, CONFIRMED, CANCELLED }
+    enum TestStateMachine {order}
+
+    enum TestEvent {CONFIRM, CANCEL}
+
+    enum TestState {PENDING, CONFIRMED, CANCELLED}
 
     @BeforeEach
     void setUp() {

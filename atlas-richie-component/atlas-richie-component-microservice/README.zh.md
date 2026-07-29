@@ -5,36 +5,37 @@
 ## 📖 目录
 
 - [✨ 功能特性](#✨-功能特性)
-  - [核心能力](#核心能力)
-  - [高级特性](#高级特性)
+    - [核心能力](#核心能力)
+    - [高级特性](#高级特性)
 - [🚀 快速开始](#🚀-快速开始)
-  - [1. 添加依赖](#1-添加依赖)
-  - [2. 配置微服务组件](#2-配置微服务组件)
-  - [3. 使用 OpenFeign](#3-使用-openfeign)
-  - [4. 使用 RestClient](#4-使用-restclient)
+    - [1. 添加依赖](#1-添加依赖)
+    - [2. 配置微服务组件](#2-配置微服务组件)
+    - [3. 使用 OpenFeign](#3-使用-openfeign)
+    - [4. 使用 RestClient](#4-使用-restclient)
 - [🔧 核心功能](#🔧-核心功能)
-  - [1. OpenFeign 配置](#1-openfeign-配置)
-  - [2. RestClient 配置](#2-restclient-配置)
-  - [3. 连接池管理](#3-连接池管理)
-  - [4. SSL/TLS 配置](#4-ssl/tls-配置)
+    - [1. OpenFeign 配置](#1-openfeign-配置)
+    - [2. RestClient 配置](#2-restclient-配置)
+    - [3. 连接池管理](#3-连接池管理)
+    - [4. SSL/TLS 配置](#4-ssl/tls-配置)
 - [⚙️ 配置说明](#⚙️-配置说明)
-  - [基础配置](#基础配置)
-  - [连接池配置](#连接池配置)
-  - [OkHttp 配置](#okhttp-配置)
+    - [基础配置](#基础配置)
+    - [连接池配置](#连接池配置)
+    - [OkHttp 配置](#okhttp-配置)
 - [🎯 最佳实践](#🎯-最佳实践)
-  - [1. OpenFeign 使用](#1-openfeign-使用)
-  - [2. RestClient 使用](#2-restclient-使用)
-  - [3. 请求头管理](#3-请求头管理)
-  - [4. 超时配置](#4-超时配置)
-  - [5. 连接池优化](#5-连接池优化)
+    - [1. OpenFeign 使用](#1-openfeign-使用)
+    - [2. RestClient 使用](#2-restclient-使用)
+    - [3. 请求头管理](#3-请求头管理)
+    - [4. 超时配置](#4-超时配置)
+    - [5. 连接池优化](#5-连接池优化)
 - [❓ 常见问题](#❓-常见问题)
-  - [Q1: 如何选择 OpenFeign 还是 RestClient？](#q1-如何选择-openfeign-还是-restclient？)
-  - [Q2: 请求头没有传递怎么办？](#q2-请求头没有传递怎么办？)
-  - [Q3: 如何自定义请求拦截器？](#q3-如何自定义请求拦截器？)
-  - [Q4: 如何配置多个 Feign 客户端？](#q4-如何配置多个-feign-客户端？)
-  - [Q5: 如何启用请求日志？](#q5-如何启用请求日志？)
-  - [Q6: 连接池配置如何优化？](#q6-连接池配置如何优化？)
+    - [Q1: 如何选择 OpenFeign 还是 RestClient？](#q1-如何选择-openfeign-还是-restclient？)
+    - [Q2: 请求头没有传递怎么办？](#q2-请求头没有传递怎么办？)
+    - [Q3: 如何自定义请求拦截器？](#q3-如何自定义请求拦截器？)
+    - [Q4: 如何配置多个 Feign 客户端？](#q4-如何配置多个-feign-客户端？)
+    - [Q5: 如何启用请求日志？](#q5-如何启用请求日志？)
+    - [Q6: 连接池配置如何优化？](#q6-连接池配置如何优化？)
 - [📎 📝 总结](#📎-📝-总结)
+
 ---
 
 ## ✨ 功能特性
@@ -250,34 +251,34 @@ spring:
 
 ### 基础配置
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
+| 配置项                                  | 类型    | 默认值 | 说明                   |
+|-----------------------------------------|---------|--------|------------------------|
 | `spring.cloud.openfeign.okhttp.enabled` | boolean | `true` | 是否启用 OkHttp 客户端 |
 
 ### 连接池配置
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `spring.cloud.openfeign.httpclient.max-connections` | int | `200` | 最大连接数 |
-| `spring.cloud.openfeign.httpclient.max-connections-per-route` | int | `50` | 每个路由最大连接数 |
-| `spring.cloud.openfeign.httpclient.time-to-live` | long | `5` | 连接保持时间 |
-| `spring.cloud.openfeign.httpclient.time-to-live-unit` | String | `minutes` | 时间单位 |
+| 配置项                                                        | 类型   | 默认值    | 说明               |
+|---------------------------------------------------------------|--------|-----------|--------------------|
+| `spring.cloud.openfeign.httpclient.max-connections`           | int    | `200`     | 最大连接数         |
+| `spring.cloud.openfeign.httpclient.max-connections-per-route` | int    | `50`      | 每个路由最大连接数 |
+| `spring.cloud.openfeign.httpclient.time-to-live`              | long   | `5`       | 连接保持时间       |
+| `spring.cloud.openfeign.httpclient.time-to-live-unit`         | String | `minutes` | 时间单位           |
 
 ### `OkHttp` 配置
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `spring.cloud.openfeign.httpclient.ok-http.protocols` | List<String> | `[HTTP_2]` | HTTP 协议版本 |
-| `spring.cloud.openfeign.httpclient.ok-http.read-timeout` | String | `20s` | 读取超时 |
-| `spring.cloud.openfeign.httpclient.ok-http.connect-timeout` | String | `8s` | 连接超时 |
-| `spring.cloud.openfeign.httpclient.ok-http.write-timeout` | String | `15s` | 写入超时 |
-| `spring.cloud.openfeign.httpclient.ok-http.call-timeout` | String | `50s` | 调用超时 |
-| `spring.cloud.openfeign.httpclient.ok-http.level` | String | `BASIC` | 日志级别：`NONE`、`BASIC`、`HEADERS`、`BODY` |
-| `spring.cloud.openfeign.httpclient.ok-http.enable-cache` | boolean | `false` | 是否启用缓存 |
-| `spring.cloud.openfeign.httpclient.ok-http.cache-path` | String | `/tmp/okhttp3/cache/` | 缓存路径 |
-| `spring.cloud.openfeign.httpclient.ok-http.cache-size` | int | `100` | 缓存大小（MB） |
-| `spring.cloud.openfeign.httpclient.ok-http.insecure-trust-all` | boolean | `false` | 是否跳过所有证书校验 |
-| `spring.cloud.openfeign.httpclient.ok-http.hostname-verification` | boolean | `true` | 是否启用主机名校验 |
+| 配置项                                                            | 类型         | 默认值                | 说明                                         |
+|-------------------------------------------------------------------|--------------|-----------------------|----------------------------------------------|
+| `spring.cloud.openfeign.httpclient.ok-http.protocols`             | List<String> | `[HTTP_2]`            | HTTP 协议版本                                |
+| `spring.cloud.openfeign.httpclient.ok-http.read-timeout`          | String       | `20s`                 | 读取超时                                     |
+| `spring.cloud.openfeign.httpclient.ok-http.connect-timeout`       | String       | `8s`                  | 连接超时                                     |
+| `spring.cloud.openfeign.httpclient.ok-http.write-timeout`         | String       | `15s`                 | 写入超时                                     |
+| `spring.cloud.openfeign.httpclient.ok-http.call-timeout`          | String       | `50s`                 | 调用超时                                     |
+| `spring.cloud.openfeign.httpclient.ok-http.level`                 | String       | `BASIC`               | 日志级别：`NONE`、`BASIC`、`HEADERS`、`BODY` |
+| `spring.cloud.openfeign.httpclient.ok-http.enable-cache`          | boolean      | `false`               | 是否启用缓存                                 |
+| `spring.cloud.openfeign.httpclient.ok-http.cache-path`            | String       | `/tmp/okhttp3/cache/` | 缓存路径                                     |
+| `spring.cloud.openfeign.httpclient.ok-http.cache-size`            | int          | `100`                 | 缓存大小（MB）                               |
+| `spring.cloud.openfeign.httpclient.ok-http.insecure-trust-all`    | boolean      | `false`               | 是否跳过所有证书校验                         |
+| `spring.cloud.openfeign.httpclient.ok-http.hostname-verification` | boolean      | `true`                | 是否启用主机名校验                           |
 
 ---
 
@@ -401,20 +402,22 @@ spring:
 
 ### `Q1` — 如何选择 `OpenFeign` 还是 `RestClient`？
 
-**A:** 
+**A:**
+
 - **OpenFeign**：适合声明式 API，代码更简洁，支持降级处理
 - **RestClient**：适合程序式调用，更灵活，Spring 6.0+ 推荐使用
 
 ### `Q2` — 请求头没有传递怎么办？
 
-**A:** 
+**A:**
+
 - 确保请求头在原始请求中存在
 - 检查 `IgnoreHeaderContent.IGNORE_HEADERS` 是否包含该请求头
 - 查看日志确认拦截器是否正常工作
 
 ### `Q3` — 如何自定义请求拦截器？
 
-**A:** 
+**A:**
 
 ```java
 @Configuration
@@ -430,7 +433,7 @@ public class CustomFeignConfiguration {
 
 ### `Q4` — 如何配置多个 `Feign` 客户端？
 
-**A:** 
+**A:**
 
 ```java
 @FeignClient(name = "user-service", url = "http://user-service")
@@ -446,7 +449,7 @@ public interface OrderServiceClient {
 
 ### `Q5` — 如何启用请求日志？
 
-**A:** 
+**A:**
 
 ```yaml
 spring:
@@ -459,7 +462,8 @@ spring:
 
 ### `Q6` — 连接池配置如何优化？
 
-**A:** 
+**A:**
+
 - 根据并发请求数调整 `max-connections`
 - 根据目标服务限制调整 `max-connections-per-route`
 - 根据网络环境调整 `time-to-live`

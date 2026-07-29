@@ -69,7 +69,7 @@ class RestClientLoggingInterceptorTest {
         when(execution.execute(any(), any())).thenThrow(new IOException("boom"));
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
-                interceptor.intercept(request, "{\"x\":1}".getBytes(), execution))
+                        interceptor.intercept(request, "{\"x\":1}".getBytes(), execution))
                 .isInstanceOf(IOException.class);
     }
 }

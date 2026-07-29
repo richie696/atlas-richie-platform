@@ -63,14 +63,14 @@ spring:
 
 ### RabbitMQ Binder 配置
 
-| 配置项                                                                     | 说明          | 默认值         |
-|-------------------------------------------------------------------------|-------------|-------------|
-| `spring.cloud.stream.rabbit.bindings.*.consumer.binding-routing-key`    | 消费者路由键      | -           |
-| `spring.cloud.stream.rabbit.bindings.*.producer.routing-key-expression` | 生产者路由键表达式   | -           |
-| `spring.cloud.stream.rabbit.connectionFactory.host`                     | RabbitMQ 主机 | `localhost` |
-| `spring.cloud.stream.rabbit.connectionFactory.port`                     | RabbitMQ 端口 | `5672`      |
-| `spring.cloud.stream.rabbit.connectionFactory.username`                 | 用户名         | `guest`     |
-| `spring.cloud.stream.rabbit.connectionFactory.password`                 | 密码          | `guest`     |
+| 配置项                                                                  | 说明               | 默认值      |
+|-------------------------------------------------------------------------|--------------------|-------------|
+| `spring.cloud.stream.rabbit.bindings.*.consumer.binding-routing-key`    | 消费者路由键       | -           |
+| `spring.cloud.stream.rabbit.bindings.*.producer.routing-key-expression` | 生产者路由键表达式 | -           |
+| `spring.cloud.stream.rabbit.connectionFactory.host`                     | RabbitMQ 主机      | `localhost` |
+| `spring.cloud.stream.rabbit.connectionFactory.port`                     | RabbitMQ 端口      | `5672`      |
+| `spring.cloud.stream.rabbit.connectionFactory.username`                 | 用户名             | `guest`     |
+| `spring.cloud.stream.rabbit.connectionFactory.password`                 | 密码               | `guest`     |
 
 ### 详细配置
 

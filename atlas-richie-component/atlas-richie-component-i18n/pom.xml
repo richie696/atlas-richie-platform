@@ -59,9 +59,9 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/i18n/handle/**</include>
-                                <include>com/richie/component/i18n/resolver/DefaultI18nResolver</include>
-                                <include>com/richie/component/i18n/aspect/I18nDictAspect</include>
+                                <include>cn/richie696/component/i18n/handle/**</include>
+                                <include>cn/richie696/component/i18n/resolver/DefaultI18nResolver</include>
+                                <include>cn/richie696/component/i18n/aspect/I18nDictAspect</include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

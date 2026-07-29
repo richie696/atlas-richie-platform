@@ -55,8 +55,8 @@ public final class BearerStsSigner implements StsSigner {
     private final String defaultEndpoint;
 
     /**
-     * @param vendor         厂商标识,见 {@code StsTicket#VENDOR_*}
-     * @param apiKey         长时凭证 API Key
+     * @param vendor          厂商标识,见 {@code StsTicket#VENDOR_*}
+     * @param apiKey          长时凭证 API Key
      * @param defaultEndpoint 缺省 WS 端点 URL
      */
     public BearerStsSigner(String vendor, String apiKey, String defaultEndpoint) {

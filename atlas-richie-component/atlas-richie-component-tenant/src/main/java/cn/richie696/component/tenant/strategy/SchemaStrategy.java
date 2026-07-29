@@ -17,11 +17,11 @@ package cn.richie696.component.tenant.strategy;
 
 import cn.richie696.component.tenant.config.MultiTenancyProperties;
 import cn.richie696.component.tenant.context.TenantContext;
-import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.component.tenant.exception.TenantErrorCode;
 import cn.richie696.component.tenant.model.IsolationMode;
 import cn.richie696.component.tenant.model.TenantInfo;
 import cn.richie696.component.tenant.spi.TenantInfoProvider;
+import cn.richie696.contract.exception.BusinessException;
 import org.apache.ibatis.plugin.Invocation;
 
 import java.sql.Connection;
@@ -105,9 +105,9 @@ public class SchemaStrategy extends AbstractTenancyStrategy {
     private void ensureTransactional(Connection conn) throws SQLException {
         if (conn.getAutoCommit()) {
             throw new BusinessException(
-                TenantErrorCode.TENANT_SCHEMA_REQUIRES_TRANSACTION.name(),
-                "Connection autoCommit=true; SET LOCAL search_path would be silently ignored. "
-                    + "Wrap the call in @Transactional or use TransactionTemplate.");
+                    TenantErrorCode.TENANT_SCHEMA_REQUIRES_TRANSACTION.name(),
+                    "Connection autoCommit=true; SET LOCAL search_path would be silently ignored. "
+                            + "Wrap the call in @Transactional or use TransactionTemplate.");
         }
     }
 

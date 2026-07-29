@@ -15,9 +15,7 @@
  */
 package cn.richie696.component.vector.config;
 
-import io.weaviate.client.Config;
 import io.weaviate.client.WeaviateClient;
-import io.weaviate.client.v1.auth.exception.AuthException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,9 +26,6 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class WeaviateVectorAutoConfigurationTest {

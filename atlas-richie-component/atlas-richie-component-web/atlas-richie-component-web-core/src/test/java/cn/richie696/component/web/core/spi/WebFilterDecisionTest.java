@@ -15,9 +15,8 @@
  */
 package cn.richie696.component.web.core.spi;
 
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 /**
  * {@link WebFilterDecision} 的基本契约测试。

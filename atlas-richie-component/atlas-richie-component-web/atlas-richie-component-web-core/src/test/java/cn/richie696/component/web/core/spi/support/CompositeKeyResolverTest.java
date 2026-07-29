@@ -29,15 +29,29 @@ class CompositeKeyResolverTest {
 
     private static KeyDimension dim(String name, String value) {
         return new KeyDimension() {
-            @Override public String name() { return name; }
-            @Override public String extract(WebRequestContext ctx) { return value; }
+            @Override
+            public String name() {
+                return name;
+            }
+
+            @Override
+            public String extract(WebRequestContext ctx) {
+                return value;
+            }
         };
     }
 
     private static KeyDimension dimNull(String name) {
         return new KeyDimension() {
-            @Override public String name() { return name; }
-            @Override public String extract(WebRequestContext ctx) { return null; }
+            @Override
+            public String name() {
+                return name;
+            }
+
+            @Override
+            public String extract(WebRequestContext ctx) {
+                return null;
+            }
         };
     }
 

@@ -30,11 +30,11 @@ import java.util.List;
  *   <li>{@link TextDetection} —— {@code TextDetections} 数组元素（{@code DetectedText} / {@code Confidence} / {@code Polygon}）</li>
  * </ul>
  *
+ * @param response  顶层 envelope
+ * @param requestId 唯一请求标识
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-12
- * @param response 顶层 envelope
- * @param requestId 唯一请求标识
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record TencentOcrEnvelope(
@@ -51,9 +51,10 @@ public record TencentOcrEnvelope(
      * @param textDetections 文本检测结果
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Response(
+    public record Response (
             @JsonProperty("Error") ErrorBody error,
-            @JsonProperty("TextDetections") List<TextDetection> textDetections) {}
+            @JsonProperty("TextDetections") List < TextDetection > textDetections){
+    }
 
     /**
      * 腾讯云错误信息结构体。
@@ -65,9 +66,10 @@ public record TencentOcrEnvelope(
      * @param message 错误描述
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record ErrorBody(
+    public record ErrorBody (
             @JsonProperty("Code") String code,
-            @JsonProperty("Message") String message) {}
+            @JsonProperty("Message") String message){
+    }
 
     /**
      * 腾讯云文本检测结果结构体。
@@ -80,10 +82,11 @@ public record TencentOcrEnvelope(
      * @param polygon 文本顶点坐标
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record TextDetection(
+    public record TextDetection (
             @JsonProperty("DetectedText") String detectedText,
             @JsonProperty("Confidence") Double confidence,
-            @JsonProperty("Polygon") List<PolygonPoint> polygon) {}
+            @JsonProperty("Polygon") List < PolygonPoint > polygon){
+    }
 
     /**
      * 腾讯云单顶点 {@code {X, Y}}
@@ -95,7 +98,8 @@ public record TencentOcrEnvelope(
      * @param y Y 坐标
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record PolygonPoint(
+    public record PolygonPoint (
             @JsonProperty("X") Integer x,
-            @JsonProperty("Y") Integer y) {}
+            @JsonProperty("Y") Integer y){
+    }
 }

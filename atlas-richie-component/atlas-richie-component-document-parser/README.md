@@ -1,6 +1,7 @@
 # Atlas Richie Document Parser Component (atlas-richie-component-document-parser)
 
-> **One-line value**: A single `DocumentReader` entry point that parses **PDF / Word / Excel / PPT / ODF / TXT / Markdown** with built-in SSRF defense, structured segments, and a streaming event API for RAG pipelines.
+> **One-line value**: A single `DocumentReader` entry point that parses **PDF / Word / Excel / PPT / ODF / TXT /
+Markdown** with built-in SSRF defense, structured segments, and a streaming event API for RAG pipelines.
 
 ---
 
@@ -9,42 +10,42 @@
 - [📋 Overview](#-overview)
 - [✨ Core Capabilities](#-core-capabilities)
 - [🏗️ Architecture](#-architecture)
-  - [Module Structure](#module-structure)
-  - [Format → Parser Routing](#format--parser-routing)
+    - [Module Structure](#module-structure)
+    - [Format → Parser Routing](#format--parser-routing)
 - [🚀 Quick Start](#-quick-start)
-  - [1. Add the Dependency](#1-add-the-dependency)
-  - [2. Write Code](#2-write-code)
-  - [3. Access Parsed Segments](#3-access-parsed-segments)
+    - [1. Add the Dependency](#1-add-the-dependency)
+    - [2. Write Code](#2-write-code)
+    - [3. Access Parsed Segments](#3-access-parsed-segments)
 - [🌊 Streaming Async API](#-streaming-async-api)
-  - [Why Streaming?](#why-streaming)
-  - [ParseEvent Types](#parseevent-types)
-  - [Image Handling Philosophy](#image-handling-philosophy)
-  - [When Images Have No Wrapper](#when-images-have-no-wrapper)
-  - [Strict Mode (opt-in)](#strict-mode-opt-in)
+    - [Why Streaming?](#why-streaming)
+    - [ParseEvent Types](#parseevent-types)
+    - [Image Handling Philosophy](#image-handling-philosophy)
+    - [When Images Have No Wrapper](#when-images-have-no-wrapper)
+    - [Strict Mode (opt-in)](#strict-mode-opt-in)
 - [🛡️ URL Three Lines of Defense](#-url-three-lines-of-defense)
-  - [Defense 1 — SSRF (URL / Host / IP Validation)](#defense-1--ssrf-url--host--ip-validation)
-  - [Defense 2 — HTTP HEAD Protocol Layer](#defense-2--http-head-protocol-layer)
-  - [Defense 3 — Content Sniffing](#defense-3--content-sniffing)
+    - [Defense 1 — SSRF (URL / Host / IP Validation)](#defense-1--ssrf-url--host--ip-validation)
+    - [Defense 2 — HTTP HEAD Protocol Layer](#defense-2--http-head-protocol-layer)
+    - [Defense 3 — Content Sniffing](#defense-3--content-sniffing)
 - [🖼️ Image-Only PDF Detection](#-image-only-pdf-detection)
-  - [Heuristic](#heuristic)
-  - [Exception Payload](#exception-payload)
+    - [Heuristic](#heuristic)
+    - [Exception Payload](#exception-payload)
 - [⚙️ Configuration Reference](#-configuration-reference)
-  - [1. Top-Level (`platform.component.parser`)](#1-top-level-platformcomponentparser)
-  - [2. URL Fetch Policy (`platform.component.parser.url`)](#2-url-fetch-policy-platformcomponentparserurl)
-  - [3. PDF Processing (`platform.component.parser.pdf`)](#3-pdf-processing-platformcomponentparserpdf)
-  - [4. Excel Processing (`platform.component.parser.excel`)](#4-excel-processing-platformcomponentparserexcel)
+    - [1. Top-Level (`platform.component.parser`)](#1-top-level-platformcomponentparser)
+    - [2. URL Fetch Policy (`platform.component.parser.url`)](#2-url-fetch-policy-platformcomponentparserurl)
+    - [3. PDF Processing (`platform.component.parser.pdf`)](#3-pdf-processing-platformcomponentparserpdf)
+    - [4. Excel Processing (`platform.component.parser.excel`)](#4-excel-processing-platformcomponentparserexcel)
 - [⚠️ Exception Reference](#-exception-reference)
 - [🎯 Best Practices](#-best-practices)
-  - [Choosing the Right Entry Point](#choosing-the-right-entry-point)
-  - [Segment Granularity for RAG](#segment-granularity-for-rag)
-  - [URL Hardening](#url-hardening)
-  - [Memory & Throughput](#memory--throughput)
+    - [Choosing the Right Entry Point](#choosing-the-right-entry-point)
+    - [Segment Granularity for RAG](#segment-granularity-for-rag)
+    - [URL Hardening](#url-hardening)
+    - [Memory & Throughput](#memory--throughput)
 - [❓ FAQ](#-faq)
-  - [Why is there no OC](#why-is-there-no-ocrvlm-in-the-component)
-  - [What happens when my PDF is a scanned image?](#what-happens-when-my-pdf-is-a-scanned-image)
-  - [TXT/Markdown goes through Tika — can I bypass it?](#txtmarkdown-goes-through-tika--can-i-bypass-it)
-  - [Can I parse a remote Excel without downloading it first?](#can-i-parse-a-remote-excel-without-downloading-it-first)
-  - [How do I parse the same file 100 times in parallel?](#how-do-i-parse-the-same-file-100-times-in-parallel)
+    - [Why is there no OC](#why-is-there-no-ocrvlm-in-the-component)
+    - [What happens when my PDF is a scanned image?](#what-happens-when-my-pdf-is-a-scanned-image)
+    - [TXT/Markdown goes through Tika — can I bypass it?](#txtmarkdown-goes-through-tika--can-i-bypass-it)
+    - [Can I parse a remote Excel without downloading it first?](#can-i-parse-a-remote-excel-without-downloading-it-first)
+    - [How do I parse the same file 100 times in parallel?](#how-do-i-parse-the-same-file-100-times-in-parallel)
 - [📅 Implementation Status](#-implementation-status)
 - [📕 Related Documentation](#-related-documentation)
 
@@ -52,7 +53,9 @@
 
 ## 📋 Overview
 
-`atlas-richie-component-document-parser` is the unified document-parsing component of the Atlas Richie platform. It exposes a single `DocumentReader` facade so business code never depends on Apache Tika, Apache Fesod, PDFBox, or POI directly.
+`atlas-richie-component-document-parser` is the unified document-parsing component of the Atlas Richie platform. It
+exposes a single `DocumentReader` facade so business code never depends on Apache Tika, Apache Fesod, PDFBox, or POI
+directly.
 
 **Underlying engines**:
 
@@ -64,22 +67,29 @@
 | Apache POI 5.5.1                                    | Word / PPT / xlsx images                                             |
 | Jsoup 1.18.1                                        | `<img>` scanning in Tika XHTML output                                |
 
-**Design contract**: all implementation details live in `internal/`. Replacing Tika or Fesod touches `internal/` only — public API and Spring configuration are unchanged.
+**Design contract**: all implementation details live in `internal/`. Replacing Tika or Fesod touches `internal/` only —
+public API and Spring configuration are unchanged.
 
 ---
 
 ## ✨ Core Capabilities
 
-- **Single facade** — `DocumentReader.read(...)` with 4 overloads: `File` / `InputStream` / `URL` / `String` (auto-detect).
+- **Single facade** — `DocumentReader.read(...)` with 4 overloads: `File` / `InputStream` / `URL` / `String`
+  (auto-detect).
 - **Format auto-detection** — content sniffing via Tika magic bytes, with extension-name fallback when sniffing fails.
-- **Structured segments** — each `DocumentSegment` carries `pageNumber`, `sectionPath`, and a metadata map, optimized for RAG chunk retrieval.
-- **SSRF defense** — `UrlFetcher` enforces three layers (IP blocklist → HEAD validation → content sniffing) before any byte is read.
+- **Structured segments** — each `DocumentSegment` carries `pageNumber`, `sectionPath`, and a metadata map, optimized
+  for RAG chunk retrieval.
+- **SSRF defense** — `UrlFetcher` enforces three layers (IP blocklist → HEAD validation → content sniffing) before any
+  byte is read.
 - **DNS-rebinding protection** — host resolution → IP validation → connect, with no TOCTOU window.
 - **Cross-host redirect blocking** — 30x responses only followed if `Location` host equals original host (≤ 5 hops).
-- **Image-only PDF detection** — explicit failure with `ImageOnlyPdfException` (strict mode) rather than silently returning empty text.
-- **Streaming Excel** — Fesod reads one sheet at a time at O(1) memory; large `.xlsx` files stay bounded.
-- **Streaming event API** — `parseStream(...)` emits `ParseEvent` records as parsing progresses, suitable for "parse → embed → store" pipelines.
-- **Image extraction (Phase 8)** — `ParseEvent.ImageStreaming` returns embedded image bytes for caller-side OCR / storage / VLM.
+- **Image-only PDF detection** — explicit failure with `ImageOnlyPdfException` (strict mode) rather than silently
+  returning empty text.
+- **Streaming Excel** — Fesod reads one sheet at a time at O (1) memory; large `.xlsx` files stay bounded.
+- **Streaming event API** — `parseStream(...)` emits `ParseEvent` records as parsing progresses, suitable for "parse →
+  embed → store" pipelines.
+- **Image extraction (Phase 8)** — `ParseEvent.ImageStreaming` returns embedded image bytes for caller-side OCR /
+  storage / VLM.
 
 ---
 
@@ -123,26 +133,28 @@ cn.richie696.component.parser/
 
 ### Format → Parser Routing
 
-| Extension                      | Format                               | Routed To                                                          | Reason                                                                                                                                                                    |
-|--------------------------------|--------------------------------------|--------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `.pdf`                         | `PDF`                                | `TikaDocumentParser`                                               | Binary PDF, parsed via Tika + PDFBox                                                                                                                                      |
-| `.docx`                        | `DOCX`                               | `TikaDocumentParser`                                               | Modern Word, parsed via Tika + POI                                                                                                                                        |
-| `.doc`                         | `DOC`                                | `TikaDocumentParser`                                               | Legacy Word, parsed via Tika + POI                                                                                                                                        |
-| `.pptx`                        | `PPTX`                               | `TikaDocumentParser`                                               | Modern PowerPoint, parsed via Tika + POI                                                                                                                                  |
-| `.ppt`                         | `PPT`                                | `TikaDocumentParser`                                               | Legacy PowerPoint, parsed via Tika + POI                                                                                                                                  |
-| `.xlsx`                        | `XLSX`                               | `FesodDocumentParser`                                              | Modern Excel, project-mandated Fesod                                                                                                                                      |
-| `.xls`                         | `XLS`                                | `FesodDocumentParser`                                              | Legacy Excel, project-mandated Fesod                                                                                                                                      |
-| `.ods`                         | `ODS`                                | `FesodDocumentParser`                                              | OpenDocument Spreadsheet, via POI `WorkbookFactory` auto-detect                                                                                                           |
-| `.odt`                         | `ODT`                                | `TikaDocumentParser`                                               | OpenDocument Text, via Tika                                                                                                                                               |
-| `.odp`                         | `ODP`                                | `TikaDocumentParser`                                               | OpenDocument Presentation, via Tika                                                                                                                                       |
-| `.rtf`                         | `RTF`                                | `TikaDocumentParser`                                               | Rich Text Format, via Tika                                                                                                                                                |
-| `.txt`                         | `TXT`                                | `TikaDocumentParser`                                               | Plain text (UTF-8 / BOM / encoding detection)                                                                                                                             |
-| `.md` / `.markdown`            | `MD`                                 | `TikaDocumentParser`                                               | Markdown — also takes the in-house fast-path                                                                                                                              |
-| `.html` / `.htm`               | `HTML`                               | `TikaDocumentParser`                                               | HTML, parsed as XHTML via Tika + Jsoup                                                                                                                                    |
-| `.xml`                         | `XML`                                | `TikaDocumentParser`                                               | XML, parsed via Tika                                                                                                                                                      |
-| UNKNOWN                        | `UNKNOWN`                            | (throws `FormatNotSupportedException`)                             | Caller should provide a file with a recognized extension                                                                                                                  |
+| Extension           | Format    | Routed To                              | Reason                                                          |
+|---------------------|-----------|----------------------------------------|-----------------------------------------------------------------|
+| `.pdf`              | `PDF`     | `TikaDocumentParser`                   | Binary PDF, parsed via Tika + PDFBox                            |
+| `.docx`             | `DOCX`    | `TikaDocumentParser`                   | Modern Word, parsed via Tika + POI                              |
+| `.doc`              | `DOC`     | `TikaDocumentParser`                   | Legacy Word, parsed via Tika + POI                              |
+| `.pptx`             | `PPTX`    | `TikaDocumentParser`                   | Modern PowerPoint, parsed via Tika + POI                        |
+| `.ppt`              | `PPT`     | `TikaDocumentParser`                   | Legacy PowerPoint, parsed via Tika + POI                        |
+| `.xlsx`             | `XLSX`    | `FesodDocumentParser`                  | Modern Excel, project-mandated Fesod                            |
+| `.xls`              | `XLS`     | `FesodDocumentParser`                  | Legacy Excel, project-mandated Fesod                            |
+| `.ods`              | `ODS`     | `FesodDocumentParser`                  | OpenDocument Spreadsheet, via POI `WorkbookFactory` auto-detect |
+| `.odt`              | `ODT`     | `TikaDocumentParser`                   | OpenDocument Text, via Tika                                     |
+| `.odp`              | `ODP`     | `TikaDocumentParser`                   | OpenDocument Presentation, via Tika                             |
+| `.rtf`              | `RTF`     | `TikaDocumentParser`                   | Rich Text Format, via Tika                                      |
+| `.txt`              | `TXT`     | `TikaDocumentParser`                   | Plain text (UTF-8 / BOM / encoding detection)                   |
+| `.md` / `.markdown` | `MD`      | `TikaDocumentParser`                   | Markdown — also takes the in-house fast-path                    |
+| `.html` / `.htm`    | `HTML`    | `TikaDocumentParser`                   | HTML, parsed as XHTML via Tika + Jsoup                          |
+| `.xml`              | `XML`     | `TikaDocumentParser`                   | XML, parsed via Tika                                            |
+| UNKNOWN             | `UNKNOWN` | (throws `FormatNotSupportedException`) | Caller should provide a file with a recognized extension        |
 
-> **ODS is the exception within OpenDocument**: `.ods` goes through `FesodDocumentParser` (streaming, O(1) memory per sheet, Apache governance), while `.odt` and `.odp` go through Tika. The same Microsoft vs OpenDocument "every spreadsheet inside Fesod" rule that applies to .xlsx / .xls is extended to ODS for consistency.
+> **ODS is the exception within OpenDocument**: `.ods` goes through `FesodDocumentParser` (streaming, O (1) memory per
+> sheet, Apache governance), while `.odt` and `.odp` go through Tika. The same Microsoft vs OpenDocument "every
+> spreadsheet inside Fesod" rule that applies to .xlsx / .xls is extended to ODS for consistency.
 >
 > **Swapping engines never changes the dispatch table** — only the implementation inside `internal/` is touched.
 
@@ -174,7 +186,8 @@ Transitive dependencies (managed via `atlas-richie-dependencies` BOM):
 
 ### 2. Write Code
 
-`DocumentReader` is auto-configured by `@EnableConfigurationProperties(ParserProperties.class)` + `ParserAutoConfiguration`. In a Spring Boot application, inject it directly:
+`DocumentReader` is auto-configured by `@EnableConfigurationProperties(ParserProperties.class)` +
+`ParserAutoConfiguration`. In a Spring Boot application, inject it directly:
 
 ```java
 @Service
@@ -244,7 +257,9 @@ The `ParseListener` (used by `parseStream`) is the receiving end for streamed ev
 
 ### Why Streaming?
 
-For batch ingestion — say, "external system pushes 100 PDFs, embed each segment as soon as it is parsed" — the synchronous `parse(...)` blocks until the entire document is read. `parseStream(source, listener)` solves this by emitting `ParseEvent` records as parsing progresses.
+For batch ingestion — say, "external system pushes 100 PDFs, embed each segment as soon as it is parsed" — the
+synchronous `parse(...)` blocks until the entire document is read. `parseStream(source, listener)` solves this by
+emitting `ParseEvent` records as parsing progresses.
 
 ### ParseEvent Types
 
@@ -257,7 +272,8 @@ For batch ingestion — say, "external system pushes 100 PDFs, embed each segmen
 | `Finished`       | Parsing completes successfully | `ParsedDocument summary`, `int totalSegments`, `int totalImages` |
 | `Failed`         | Parsing fails                  | `DocumentParseException error` (no throw)                        |
 
-All four types are emitted through a single `ParseListener.onEvent(ParseEvent event)` method. Switch-pattern consumption:
+All four types are emitted through a single `ParseListener.onEvent(ParseEvent event)` method. Switch-pattern
+consumption:
 
 ```java
 reader.readStreaming(
@@ -275,11 +291,13 @@ reader.readStreaming(
 );
 ```
 
-> **Failures never throw** — they are wrapped in `ParseEvent.Failed`. This is by design: one bad document in a batch must not abort the rest.
+> **Failures never throw** — they are wrapped in `ParseEvent.Failed`. This is by design: one bad document in a batch
+> must not abort the rest.
 
 ### Image Handling Philosophy
 
-The component does **not** perform OCR / VLM. It returns embedded images as raw bytes via `ParseEvent.ImageStreaming`. The caller decides the downstream:
+The component does **not** perform OCR / VLM. It returns embedded images as raw bytes via `ParseEvent.ImageStreaming`.
+The caller decides the downstream:
 
 - OCR service: Tesseract, Alibaba Cloud OCR, Qwen-VL …
 - Object storage: S3 / OSS / MinIO …
@@ -292,7 +310,8 @@ PDF / Word / PPT image bytes are extracted via:
 
 ### When Images Have No Wrapper
 
-Tika sometimes wraps images as raw PDF XObjects without producing `<img>` tags in its XHTML output. In that case, a **synthetic placeholder** `ImageStreaming` event is emitted:
+Tika sometimes wraps images as raw PDF XObjects without producing `<img>` tags in its XHTML output. In that case, a
+**synthetic placeholder** `ImageStreaming` event is emitted:
 
 ```json
 {
@@ -308,11 +327,13 @@ Tika sometimes wraps images as raw PDF XObjects without producing `<img>` tags i
 }
 ```
 
-This signals "the page is image-only, run OCR / VLM on the source PDF". The placeholder carries no actual bytes — the caller triggers downstream OCR / VLM.
+This signals "the page is image-only, run OCR / VLM on the source PDF". The placeholder carries no actual bytes — the
+caller triggers downstream OCR / VLM.
 
 ### Strict Mode (opt-in)
 
-The default behavior is to emit a synthetic `ImageStreaming` when a scanned-image heuristic triggers. If the business wants explicit failure instead, enable **strict mode**:
+The default behavior is to emit a synthetic `ImageStreaming` when a scanned-image heuristic triggers. If the business
+wants explicit failure instead, enable **strict mode**:
 
 ```yaml
 platform:
@@ -323,39 +344,49 @@ platform:
           enabled: true   # default false — throw ImageOnlyPdfException
 ```
 
-In strict mode, `parse()` throws `ImageOnlyPdfException`; `parseStream()` emits `ParseEvent.Failed` carrying the exception.
+In strict mode, `parse()` throws `ImageOnlyPdfException`; `parseStream()` emits `ParseEvent.Failed` carrying the
+exception.
 
 ---
 
 ## 🛡️ URL Three Lines of Defense
 
-`UrlFetcher` enforces SSRF protection before any byte is fetched from a remote URL. Each defense is independently configurable.
+`UrlFetcher` enforces SSRF protection before any byte is fetched from a remote URL. Each defense is independently
+configurable.
 
 ### Defense 1 — SSRF (URL / Host / IP Validation)
 
 - **Scheme**: HTTPS required by default; HTTP allowed only if `allow-http: true`.
 - **DNS resolution + IP validation**: resolved IP must NOT be in:
-  - `127.0.0.0/8` (loopback), `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`
-  - IPv6: `::1`, `fc00::/7` (unique-local), link-local, site-local
-- **DNS-rebinding protection**: IP validation happens **immediately** after DNS resolution, on the same code path that opens the connection — eliminating the TOCTOU gap.
+    - `127.0.0.0/8` (loopback), `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`
+    - IPv6: `::1`, `fc00::/7` (unique-local), link-local, site-local
+- **DNS-rebinding protection**: IP validation happens **immediately** after DNS resolution, on the same code path that
+  opens the connection — eliminating the TOCTOU gap.
 
 ### Defense 2 — HTTP HEAD Protocol Layer
 
-- **Content-Type whitelist**: PDF / DOCX / DOC / XLSX / XLS / PPTX / PPT / ODT / ODS / ODP / RTF / plain text (`text/plain`) / Markdown (`text/markdown`) / HTML (`text/html`) / XML (`application/xml`, `text/xml`) / `application/octet-stream` (fallback).
+- **Content-Type whitelist**: PDF / DOCX / DOC / XLSX / XLS / PPTX / PPT / ODT / ODS / ODP / RTF / plain text
+  (`text/plain`) / Markdown (`text/markdown`) / HTML (`text/html`) / XML (`application/xml`, `text/xml`) /
+  `application/octet-stream` (fallback).
 - **Content-Length cap**: rejects responses with `Content-Length > max-bytes` (default **200 MB**).
-- **Cross-host redirect blocking**: 30x responses followed **only** when `Location` host equals the original host, up to **5 hops**.
+- **Cross-host redirect blocking**: 30x responses followed **only** when `Location` host equals the original host, up to
+  **5 hops**.
 
 ### Defense 3 — Content Sniffing
 
-- **Tika Detector magic bytes**: after download, the byte stream is sniffed via `FormatDetector.detectFormat`. If the sniffed format disagrees with the declared `Content-Type` (and the declared type isn't `application/octet-stream`), `FormatNotSupportedException` is thrown.
+- **Tika Detector magic bytes**: after download, the byte stream is sniffed via `FormatDetector.detectFormat`. If the
+  sniffed format disagrees with the declared `Content-Type` (and the declared type isn't `application/octet-stream`),
+  `FormatNotSupportedException` is thrown.
 
-If any defense fails, the connection is refused and **no bytes are returned to the parser** — the URL is treated as if it does not exist.
+If any defense fails, the connection is refused and **no bytes are returned to the parser** — the URL is treated as if
+it does not exist.
 
 ---
 
 ## 🖼️ Image-Only PDF Detection
 
-PDFs created from scanners contain image pages with no selectable text. Returning an empty `ParsedDocument` silently breaks downstream RAG pipelines. The component detects this and reacts explicitly.
+PDFs created from scanners contain image pages with no selectable text. Returning an empty `ParsedDocument` silently
+breaks downstream RAG pipelines. The component detects this and reacts explicitly.
 
 ### Heuristic
 
@@ -388,7 +419,8 @@ public class ImageOnlyPdfException extends DocumentParseException {
 
 These let the caller decide whether to OCR the file, run VLM, or skip.
 
-> **Why not OCR automatically?** OCR is expensive, often requires a cloud API key, and is not always necessary. Surfacing `ImageOnlyPdfException` keeps the parser component focused and lets the business wire OCR / VLM explicitly.
+> **Why not OCR automatically?** OCR is expensive, often requires a cloud API key, and is not always necessary.
+> Surfacing `ImageOnlyPdfException` keeps the parser component focused and lets the business wire OCR / VLM explicitly.
 
 ---
 
@@ -459,7 +491,8 @@ try {
 }
 ```
 
-`ParseEvent.Failed` carries the same exceptions inside streaming pipelines — handle them by checking the event type rather than try/catch.
+`ParseEvent.Failed` carries the same exceptions inside streaming pipelines — handle them by checking the event type
+rather than try/catch.
 
 ---
 
@@ -467,31 +500,36 @@ try {
 
 ### Choosing the Right Entry Point
 
-| Scenario                                         | Recommended                                   |
-|--------------------------------------------------|-----------------------------------------------|
-| Local known file                                 | `reader.read(File)`                          |
-| Stream from a download / upload pipeline         | `reader.read(InputStream, name)`             |
+| Scenario                                         | Recommended                                 |
+|--------------------------------------------------|---------------------------------------------|
+| Local known file                                 | `reader.read(File)`                         |
+| Stream from a download / upload pipeline         | `reader.read(InputStream, name)`            |
 | Remote HTTPS / HTTP file                         | `reader.read(URL)` or `reader.read(String)` |
-| Batch / pipeline that needs fine-grained control | `reader.readStreaming(...)`                     |
+| Batch / pipeline that needs fine-grained control | `reader.readStreaming(...)`                 |
 
 ### Segment Granularity for RAG
 
 - Per-page segments work well for prose documents (PDF / Word).
-- Per-row segments work well for spreadsheets — Fesod emits one `DocumentSegment` per row, each with `sectionPath = "/Employees/Row[N]"`.
+- Per-row segments work well for spreadsheets — Fesod emits one `DocumentSegment` per row, each with
+  `sectionPath = "/Employees/Row[N]"`.
 - Per-section segments are produced for HTML / Markdown (H1 / H2 boundaries).
 - Tune the chunk size by post-processing segments (sliding window / sentence aggregation) before embedding.
 
 ### URL Hardening
 
-- Keep `allow-http: false` and `allow-private-ip: false` in production — both should be `true` only in development or tests against a local server.
-- Set `max-bytes` based on the largest legitimate document your business handles. The default 200 MB protects against malicious large-file DoS.
-- Pin `connect-timeout` (e.g. 5s) and `read-timeout` (e.g. 60s). Without these, a slow remote endpoint can hold threads indefinitely.
+- Keep `allow-http: false` and `allow-private-ip: false` in production — both should be `true` only in development or
+  tests against a local server.
+- Set `max-bytes` based on the largest legitimate document your business handles. The default 200 MB protects against
+  malicious large-file DoS.
+- Pin `connect-timeout` (e.g. 5s) and `read-timeout` (e.g. 60s). Without these, a slow remote endpoint can hold threads
+  indefinitely.
 
 ### Memory & Throughput
 
 - For large Excel files, rely on Fesod's streaming — never load the whole `.xlsx` into memory.
 - In a batch with hundreds of files, use `parseStream(...)` + a thread pool per file instead of one shared thread.
-- For PDF image-heavy documents, downsize before parsing when feasible: PDFBox can render at lower DPI to a `BufferedImage`, then run Tika on the rendered pages.
+- For PDF image-heavy documents, downsize before parsing when feasible: PDFBox can render at lower DPI to a
+  `BufferedImage`, then run Tika on the rendered pages.
 
 ---
 
@@ -499,19 +537,26 @@ try {
 
 ### Why is there no OCR/VLM in the component?
 
-OCR / VLM is a business-specific decision — some teams use Tesseract locally, others call Alibaba Cloud OCR, others use Qwen-VL. Embedding any of these would force one default on everyone. By emitting `ParseEvent.ImageStreaming`, the component hands the bytes to the caller and lets them plug in whichever engine fits.
+OCR / VLM is a business-specific decision — some teams use Tesseract locally, others call Alibaba Cloud OCR, others use
+Qwen-VL. Embedding any of these would force one default on everyone. By emitting `ParseEvent.ImageStreaming`, the
+component hands the bytes to the caller and lets them plug in whichever engine fits.
 
 ### What happens when my PDF is a scanned image?
 
-Default behavior (non-strict mode) emits a synthetic `ImageStreaming` placeholder so the pipeline knows the page is image-only. Enable strict mode (`pdf.image-only-detection.enabled: true`) to throw `ImageOnlyPdfException` instead.
+Default behavior (non-strict mode) emits a synthetic `ImageStreaming` placeholder so the pipeline knows the page is
+image-only. Enable strict mode (`pdf.image-only-detection.enabled: true`) to throw `ImageOnlyPdfException` instead.
 
 ### TXT/Markdown goes through Tika — can I bypass it?
 
-Yes — `TextFastPathParser` (in `internal/`) reads plain TXT / Markdown directly, bypassing Tika. The router picks fast-path when Tika Detector identifies the file as plain text. Switching fast-path on by default is configurable but currently always-on.
+Yes — `TextFastPathParser` (in `internal/`) reads plain TXT / Markdown directly, bypassing Tika. The router picks
+fast-path when Tika Detector identifies the file as plain text. Switching fast-path on by default is configurable but
+currently always-on.
 
 ### Can I parse a remote Excel without downloading it first?
 
-Yes — `reader.read(URL)` runs through `UrlFetcher` and pipes the response bytes straight into Fesod. The three lines of defense apply (Head validation gates Excel by `Content-Type` whitelist, max-bytes caps the body, content sniffing verifies it is genuinely an Excel file).
+Yes — `reader.read(URL)` runs through `UrlFetcher` and pipes the response bytes straight into Fesod. The three lines of
+defense apply (Head validation gates Excel by `Content-Type` whitelist, max-bytes caps the body, content sniffing
+verifies it is genuinely an Excel file).
 
 ### How do I parse the same file 100 times in parallel?
 

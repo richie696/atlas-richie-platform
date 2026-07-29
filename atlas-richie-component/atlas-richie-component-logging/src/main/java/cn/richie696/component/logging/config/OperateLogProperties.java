@@ -69,8 +69,8 @@ public class OperateLogProperties {
     /**
      * 是否限制响应参数体大小（默认不限制，如果为 true，请配置
      * { @snippet
-     *  responseBodyMaxLength 参数，此参数默认字符长度 200
-     *  }
+     * responseBodyMaxLength 参数，此参数默认字符长度 200
+     * }
      */
     private boolean responseBodySizeLimit = false;
 

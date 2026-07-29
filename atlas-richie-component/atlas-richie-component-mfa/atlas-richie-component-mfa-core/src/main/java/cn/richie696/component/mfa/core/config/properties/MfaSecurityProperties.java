@@ -17,6 +17,7 @@ package cn.richie696.component.mfa.core.config.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * 安全策略配置属性
@@ -37,6 +38,7 @@ public class MfaSecurityProperties {
      * <p>
      * 控制使用哪种后端（Vault / 云 KMS / HSM / 本地）以及各自的具体配置
      */
+    @NestedConfigurationProperty
     private MfaKeyManagementProperties keyManagement = new MfaKeyManagementProperties();
 
     /**
@@ -51,6 +53,7 @@ public class MfaSecurityProperties {
      * <p>
      * 控制是否启用可信设备、最大设备数量、默认信任天数等
      */
+    @NestedConfigurationProperty
     private MfaTrustedDeviceProperties trustedDevice = new MfaTrustedDeviceProperties();
 
     /**

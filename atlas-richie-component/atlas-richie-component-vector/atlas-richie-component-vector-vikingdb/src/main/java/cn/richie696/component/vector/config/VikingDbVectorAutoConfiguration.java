@@ -14,14 +14,16 @@ import com.volcengine.vikingdb.runtime.vector.service.VectorService;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.TokenCountBatchingStrategy;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.util.Assert;
 
-/** VikingDB 的平台配置到 Atlas Richie AI VectorStore 的适配装配。 */
+/**
+ * VikingDB 的平台配置到 Atlas Richie AI VectorStore 的适配装配。
+ */
 @AutoConfiguration
 @EnableConfigurationProperties({VectorProperties.class, VikingDbConfig.class})
 @Import(VikingDbVectorServiceImpl.class)

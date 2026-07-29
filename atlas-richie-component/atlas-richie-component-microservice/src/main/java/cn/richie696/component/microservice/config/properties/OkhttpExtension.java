@@ -33,7 +33,7 @@ import java.time.Duration;
  */
 @Data
 @Primary
-@ConfigurationProperties(prefix = "spring.cloud.openfeign.httpclient.okhttp")
+@ConfigurationProperties(prefix = "platform.component.microservice.feign.okhttp.extension")
 public class OkhttpExtension {
 
     /**

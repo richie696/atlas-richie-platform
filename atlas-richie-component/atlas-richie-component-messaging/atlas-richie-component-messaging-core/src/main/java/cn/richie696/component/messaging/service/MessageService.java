@@ -51,8 +51,8 @@ public interface MessageService {
      * @param topicAlias        发送消息的Topic别名（建议使用枚举进行定义，不要硬编码字符串）
      * @param message           发送的具体消息
      * @param outputContentType 输出的消息体类型
-     * @see org.springframework.util.MimeTypeUtils 输出类型可使用“MimeTypeUtils”中的常量类型
      * @return 返回发送结果（true：发送成功，false：发送失败）
+     * @see org.springframework.util.MimeTypeUtils 输出类型可使用“MimeTypeUtils”中的常量类型
      */
     boolean sendMessage(String topicAlias, Object message, MimeType outputContentType);
 
@@ -60,11 +60,11 @@ public interface MessageService {
      * 可自定义消息键的消息队列发送方法（多MQ服务时使用）
      *
      * @param topicAlias        发送消息的Topic别名（建议使用枚举进行定义，不要硬编码字符串）
-     * @param binderName    绑定器名称（多MQ服务时使用）
+     * @param binderName        绑定器名称（多MQ服务时使用）
      * @param message           发送的具体消息
      * @param outputContentType 输出的消息体类型
-     * @see org.springframework.util.MimeTypeUtils 输出类型可使用“MimeTypeUtils”中的常量类型
      * @return 返回发送结果（true：发送成功，false：发送失败）
+     * @see org.springframework.util.MimeTypeUtils 输出类型可使用“MimeTypeUtils”中的常量类型
      */
     boolean sendMessage(String topicAlias, String binderName, Object message, MimeType outputContentType);
 
@@ -73,7 +73,7 @@ public interface MessageService {
      *
      * @param topicAlias 发送消息的Topic别名（建议使用枚举进行定义，不要硬编码字符串）
      * @param message    发送的具体消息
-     * @param delayTime 延迟时间（单位：毫秒）
+     * @param delayTime  延迟时间（单位：毫秒）
      * @return 返回发送结果（true：发送成功，false：发送失败）
      */
     boolean sendDelayMessage(String topicAlias, Object message, long delayTime);
@@ -84,7 +84,7 @@ public interface MessageService {
      * @param topicAlias 发送消息的Topic别名（建议使用枚举进行定义，不要硬编码字符串）
      * @param binderName 绑定器名称（多MQ服务时使用）
      * @param message    发送的具体消息
-     * @param delayTime 延迟时间（单位：毫秒）
+     * @param delayTime  延迟时间（单位：毫秒）
      * @return 返回发送结果（true：发送成功，false：发送失败）
      */
     boolean sendDelayMessage(String topicAlias, String binderName, Object message, long delayTime);
@@ -95,9 +95,9 @@ public interface MessageService {
      * @param topicAlias        发送消息的Topic别名（建议使用枚举进行定义，不要硬编码字符串）
      * @param message           发送的具体消息
      * @param outputContentType 输出的消息体类型
-     * @param delayTime 延迟时间（单位：毫秒）
-     * @see org.springframework.util.MimeTypeUtils 输出类型可使用“MimeTypeUtils”中的常量类型
+     * @param delayTime         延迟时间（单位：毫秒）
      * @return 返回发送结果（true：发送成功，false：发送失败）
+     * @see org.springframework.util.MimeTypeUtils 输出类型可使用“MimeTypeUtils”中的常量类型
      */
     boolean sendDelayMessage(String topicAlias, Object message, MimeType outputContentType, long delayTime);
 
@@ -105,12 +105,12 @@ public interface MessageService {
      * 可自定义消息键的消息队列发送方法（多MQ服务时使用）
      *
      * @param topicAlias        发送消息的Topic别名（建议使用枚举进行定义，不要硬编码字符串）
-     * @param binderName    绑定器名称（多MQ服务时使用）
-     * @param body           发送的具体消息
+     * @param binderName        绑定器名称（多MQ服务时使用）
+     * @param body              发送的具体消息
      * @param outputContentType 输出的消息体类型
-     * @param delayTime 延迟时间（单位：毫秒）
-     * @see org.springframework.util.MimeTypeUtils 输出类型可使用“MimeTypeUtils”中的常量类型
+     * @param delayTime         延迟时间（单位：毫秒）
      * @return 返回发送结果（true：发送成功，false：发送失败）
+     * @see org.springframework.util.MimeTypeUtils 输出类型可使用“MimeTypeUtils”中的常量类型
      */
     boolean sendDelayMessage(String topicAlias, String binderName, Object body, MimeType outputContentType, long delayTime);
 }

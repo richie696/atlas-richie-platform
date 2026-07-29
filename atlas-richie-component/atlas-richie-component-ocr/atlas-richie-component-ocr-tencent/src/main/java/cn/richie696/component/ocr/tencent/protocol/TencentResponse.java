@@ -20,11 +20,11 @@ package cn.richie696.component.ocr.tencent.protocol;
  *
  * <p>响应体以 typed {@link TencentOcrEnvelope} 暴露，不再使用 {@code JsonNode} 树遍历。
  *
+ * @param body      已 typed 反序列化的腾讯云 OCR 响应 envelope
+ * @param latencyMs 从请求发出到客户端收到响应的墙钟耗时
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-10
- * @param body 已 typed 反序列化的腾讯云 OCR 响应 envelope
- * @param latencyMs 从请求发出到客户端收到响应的墙钟耗时
  */
 public record TencentResponse(
         TencentOcrEnvelope body,

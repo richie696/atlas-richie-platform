@@ -37,7 +37,9 @@ import java.util.Set;
  */
 public final class OcrOptions {
 
-    /** 默认置信度阈值（{@link OcrResult#highConfidenceText()} 无参重载使用） */
+    /**
+     * 默认置信度阈值（{@link OcrResult#highConfidenceText()} 无参重载使用）
+     */
     public static final float DEFAULT_CONFIDENCE_THRESHOLD = 0.6f;
 
     private final Set<Languages> languages;
@@ -66,7 +68,9 @@ public final class OcrOptions {
      *
      * @return 识别语言集合（永远非 null 非空, 不可变 EnumSet）
      */
-    public Set<Languages> languages() { return languages; }
+    public Set<Languages> languages() {
+        return languages;
+    }
 
     /**
      * 取首个语言 —— 单语言 vendor 的便捷入口. 不抛异常, 默认 fallback 到
@@ -81,50 +85,62 @@ public final class OcrOptions {
     /**
      * @return 图像 DPI（取值区间 [72, 1200]）
      */
-    public int dpi() { return dpi; }
+    public int dpi() {
+        return dpi;
+    }
 
     /**
      * @return 是否自动检测图像方向
      */
-    public boolean detectOrientation() { return detectOrientation; }
+    public boolean detectOrientation() {
+        return detectOrientation;
+    }
 
     /**
      * @return 是否启用表格识别
      */
-    public boolean tableRecognition() { return tableRecognition; }
+    public boolean tableRecognition() {
+        return tableRecognition;
+    }
 
     /**
      * @return 是否启用手写体识别
      */
-    public boolean handwriting() { return handwriting; }
+    public boolean handwriting() {
+        return handwriting;
+    }
 
     /**
      * @return 是否输出坐标框（{@link OcrBlock#box()} / {@link OcrLine#box()}）
      */
-    public boolean outputBoundingBoxes() { return outputBoundingBoxes; }
+    public boolean outputBoundingBoxes() {
+        return outputBoundingBoxes;
+    }
 
     /**
      * @return 置信度阈值（取值区间 [0.0, 1.0], 默认 {@link #DEFAULT_CONFIDENCE_THRESHOLD}）
      */
-    public float confidenceThreshold() { return confidenceThreshold; }
+    public float confidenceThreshold() {
+        return confidenceThreshold;
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof OcrOptions that)) return false;
         return dpi == that.dpi
-            && detectOrientation == that.detectOrientation
-            && tableRecognition == that.tableRecognition
-            && handwriting == that.handwriting
-            && outputBoundingBoxes == that.outputBoundingBoxes
-            && Float.compare(confidenceThreshold, that.confidenceThreshold) == 0
-            && Objects.equals(languages, that.languages);
+                && detectOrientation == that.detectOrientation
+                && tableRecognition == that.tableRecognition
+                && handwriting == that.handwriting
+                && outputBoundingBoxes == that.outputBoundingBoxes
+                && Float.compare(confidenceThreshold, that.confidenceThreshold) == 0
+                && Objects.equals(languages, that.languages);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(languages, dpi, detectOrientation,
-            tableRecognition, handwriting, outputBoundingBoxes, confidenceThreshold);
+                tableRecognition, handwriting, outputBoundingBoxes, confidenceThreshold);
     }
 
     @Override
@@ -154,10 +170,10 @@ public final class OcrOptions {
      */
     public static OcrOptions scanDocument() {
         return builder()
-            .detectOrientation(true)
-            .tableRecognition(true)
-            .outputBoundingBoxes(true)
-            .build();
+                .detectOrientation(true)
+                .tableRecognition(true)
+                .outputBoundingBoxes(true)
+                .build();
     }
 
     /**
@@ -165,10 +181,10 @@ public final class OcrOptions {
      */
     public static OcrOptions mobilePhoto() {
         return builder()
-            .detectOrientation(true)
-            .tableRecognition(false)
-            .outputBoundingBoxes(true)
-            .build();
+                .detectOrientation(true)
+                .tableRecognition(false)
+                .outputBoundingBoxes(true)
+                .build();
     }
 
     /**
@@ -176,9 +192,9 @@ public final class OcrOptions {
      */
     public static OcrOptions handwrittenForm() {
         return builder()
-            .handwriting(true)
-            .outputBoundingBoxes(true)
-            .build();
+                .handwriting(true)
+                .outputBoundingBoxes(true)
+                .build();
     }
 
     // --- Builder ---
@@ -192,7 +208,8 @@ public final class OcrOptions {
         private boolean outputBoundingBoxes = true;
         private float confidenceThreshold = DEFAULT_CONFIDENCE_THRESHOLD;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         /**
          * 设置识别语言 —— 业务侧可传多语言. 重置之前的设置.

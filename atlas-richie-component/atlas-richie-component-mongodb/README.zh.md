@@ -20,46 +20,47 @@
 
 - [📖 概述](#📖-概述)
 - [📎 5 分钟上手](#📎-5-分钟上手)
-  - [第 1 步：定义实体](#第-1-步：定义实体)
-  - [第 2 步：注入 `Mongodb`](#第-2-步：注入-mongodb)
-  - [第 3 步：CRUD](#第-3-步：crud)
+    - [第 1 步：定义实体](#第-1-步：定义实体)
+    - [第 2 步：注入 `Mongodb`](#第-2-步：注入-mongodb)
+    - [第 3 步：CRUD](#第-3-步：crud)
 - [🔧 核心能力](#🔧-核心能力)
-  - [`Mongodb` 主类方法](#mongodb-主类方法)
-  - [`QueryBuilder` 链式条件](#querybuilder-链式条件)
-  - [`UpdateBuilder` 链式字段操作](#updatebuilder-链式字段操作)
-  - [`DeleteBuilder` 链式删除](#deletebuilder-链式删除)
-  - [`IndexBuilder` 启动自动建索引](#indexbuilder-启动自动建索引)
+    - [`Mongodb` 主类方法](#mongodb-主类方法)
+    - [`QueryBuilder` 链式条件](#querybuilder-链式条件)
+    - [`UpdateBuilder` 链式字段操作](#updatebuilder-链式字段操作)
+    - [`DeleteBuilder` 链式删除](#deletebuilder-链式删除)
+    - [`IndexBuilder` 启动自动建索引](#indexbuilder-启动自动建索引)
 - [📎 横切注解](#📎-横切注解)
-  - [`@SoftDelete`（类级别）](#@softdelete（类级别）)
-  - [`@TenantScoped`（类级别）](#@tenantscoped（类级别）)
-  - [`@AuditFields`（类级别）](#@auditfields（类级别）)
-  - [`@ExpireAfter`（字段级别）](#@expireafter（字段级别）)
+    - [`@SoftDelete`（类级别）](#@softdelete（类级别）)
+    - [`@TenantScoped`（类级别）](#@tenantscoped（类级别）)
+    - [`@AuditFields`（类级别）](#@auditfields（类级别）)
+    - [`@ExpireAfter`（字段级别）](#@expireafter（字段级别）)
 - [📎 可观测性](#📎-可观测性)
-  - [OpenTelemetry 链路追踪](#opentelemetry-链路追踪)
-  - [Micrometer 指标](#micrometer-指标)
-  - [慢查询日志](#慢查询日志)
-  - [Actuator 端点](#actuator-端点)
+    - [OpenTelemetry 链路追踪](#opentelemetry-链路追踪)
+    - [Micrometer 指标](#micrometer-指标)
+    - [慢查询日志](#慢查询日志)
+    - [Actuator 端点](#actuator-端点)
 - [📎 熔断降级](#📎-熔断降级)
-  - [工作原理](#工作原理)
-  - [资源列表](#资源列表)
-  - [默认阈值](#默认阈值)
-  - [Nacos 热加载](#nacos-热加载)
-  - [自定义降级逻辑](#自定义降级逻辑)
-  - [注意事项](#注意事项)
+    - [工作原理](#工作原理)
+    - [资源列表](#资源列表)
+    - [默认阈值](#默认阈值)
+    - [Nacos 热加载](#nacos-热加载)
+    - [自定义降级逻辑](#自定义降级逻辑)
+    - [注意事项](#注意事项)
 - [🏗️ 架构与模块布局](#🏗️-架构与模块布局)
 - [⚙️ 配置参考](#⚙️-配置参考)
-  - [基础连接](#基础连接)
-  - [连接池](#连接池)
-  - [熔断（可选）](#熔断（可选）)
+    - [基础连接](#基础连接)
+    - [连接池](#连接池)
+    - [熔断（可选）](#熔断（可选）)
 - [📎 从旧 MongodbService 迁移](#📎-从旧-mongodbservice-迁移)
-  - [旧 API](#旧-api)
-  - [新 API](#新-api)
-  - [迁移对照](#迁移对照)
-  - [兼容性](#兼容性)
+    - [旧 API](#旧-api)
+    - [新 API](#新-api)
+    - [迁移对照](#迁移对照)
+    - [兼容性](#兼容性)
 - [📎 版本与兼容性](#📎-版本与兼容性)
 - [📎 测试基础设施](#📎-测试基础设施)
 - [📎 监听器（高级）](#📎-监听器（高级）)
 - [📎 反馈与支持](#📎-反馈与支持)
+
 ---
 
 ## 📎 5 分钟上手
@@ -136,19 +137,19 @@ mongodb.delete(User.class).eq(User::getId, userId).force().execute();  // 物理
 
 ### `Mongodb` 主类方法
 
-| 方法 | 返回 | 说明 |
-|---|---|---|
-| `query(Class<T>)` | `QueryBuilder<T>` | 链式查询 |
-| `update(Class<T>)` | `UpdateBuilder<T>` | 链式更新 |
-| `delete(Class<T>)` | `DeleteBuilder<T>` | 链式删除 |
-| `insert(T)` | `T` | 插入（重复键抛 `DuplicateKeyException`） |
-| `insertAll(List<T>)` | `List<T>` | 批量插入 |
-| `save(T)` | `T` | Upsert by `@Id` |
-| `findById(Class<T>, id)` | `T` | 按 ID 查（可为 null） |
-| `findByIdOrThrow(Class<T>, id, Supplier)` | `T` | 按 ID 查，找不到时抛业务异常 |
-| `existsById(Class<T>, id)` | `boolean` | 按 ID 判断存在 |
-| `deleteById(Class<T>, id)` | `void` | 按 ID 物理删除（不走 builder） |
-| `dropCollection(Class<T>)` | `void` | 删除集合（危险操作，被熔断保护） |
+| 方法                                      | 返回               | 说明                                     |
+|-------------------------------------------|--------------------|------------------------------------------|
+| `query(Class<T>)`                         | `QueryBuilder<T>`  | 链式查询                                 |
+| `update(Class<T>)`                        | `UpdateBuilder<T>` | 链式更新                                 |
+| `delete(Class<T>)`                        | `DeleteBuilder<T>` | 链式删除                                 |
+| `insert(T)`                               | `T`                | 插入（重复键抛 `DuplicateKeyException`） |
+| `insertAll(List<T>)`                      | `List<T>`          | 批量插入                                 |
+| `save(T)`                                 | `T`                | Upsert by `@Id`                          |
+| `findById(Class<T>, id)`                  | `T`                | 按 ID 查（可为 null）                    |
+| `findByIdOrThrow(Class<T>, id, Supplier)` | `T`                | 按 ID 查，找不到时抛业务异常             |
+| `existsById(Class<T>, id)`                | `boolean`          | 按 ID 判断存在                           |
+| `deleteById(Class<T>, id)`                | `void`             | 按 ID 物理删除（不走 builder）           |
+| `dropCollection(Class<T>)`                | `void`             | 删除集合（危险操作，被熔断保护）         |
 
 ### `QueryBuilder` 链式条件
 
@@ -259,6 +260,7 @@ public class User { @SoftDelete("isRemoved") private Boolean isRemoved; }
 ```
 
 行为：
+
 - `QueryBuilder` / `DeleteBuilder` 自动加 `deleted = false` 过滤条件
 - 业务方调用 `.force()` 跳过过滤，物理删除
 - `Mongodb` 主类 `deleteById()` 不受此影响（永远是物理删除）
@@ -272,6 +274,7 @@ public class User { @TenantScoped("orgId") private String orgId; }
 ```
 
 行为：
+
 - `QueryBuilder` / `UpdateBuilder` / `DeleteBuilder` 自动加 `tenantId = 当前租户` 条件
 - 业务方调用 `.bypassTenant()` 跳过过滤（跨租户场景）
 - 插入时自动填 tenantId（从 `TenantContext` 读取）
@@ -303,6 +306,7 @@ public class User {
 ```
 
 行为：
+
 - `insert` / `save` 时自动填 `createdAt` / `updatedAt` = 当前时间，`createdBy` / `updatedBy` = 当前登录用户
 - `update` 时自动追加 `updatedAt` = 当前时间，`updatedBy` = 当前登录用户
 - 当前用户从 Spring Security `SecurityContextHolder` 读取，无 Security 时回退到 `"system"`
@@ -324,21 +328,21 @@ private String resetToken;
 
 每次 `Mongodb` 公共方法调用都创建一个 OTel Span（`SpanKind.CLIENT`），属性：
 
-| 属性 | 示例值 | 来源 |
-|---|---|---|
-| `db.system` | `mongodb` | 常量 |
-| `db.operation` | `query` / `update` / `insert` / `delete` / `save` | 操作类型 |
-| `db.mongodb.collection` | `users` | `@Document.collection` |
-| `db.statement` | `eq(age, 18).list()` | 截断至 1KB |
+| 属性                    | 示例值                                            | 来源                   |
+|-------------------------|---------------------------------------------------|------------------------|
+| `db.system`             | `mongodb`                                         | 常量                   |
+| `db.operation`          | `query` / `update` / `insert` / `delete` / `save` | 操作类型               |
+| `db.mongodb.collection` | `users`                                           | `@Document.collection` |
+| `db.statement`          | `eq(age, 18).list()`                              | 截断至 1KB             |
 
 降级时（被 Sentinel 熔断）Span 标记为 `StatusCode.ERROR`，事件包含 `sentinel.degrade.reason`。
 
 ### `Micrometer` 指标
 
-| 指标 | 类型 | 标签 |
-|---|---|---|
-| `mongodb.operation.duration` | Timer | `operation`, `collection`, `result` |
-| `mongodb.errors` | Counter | `operation`, `collection`, `error_type` |
+| 指标                         | 类型    | 标签                                    |
+|------------------------------|---------|-----------------------------------------|
+| `mongodb.operation.duration` | Timer   | `operation`, `collection`, `result`     |
+| `mongodb.errors`             | Counter | `operation`, `collection`, `error_type` |
 
 ### 慢查询日志
 
@@ -367,6 +371,7 @@ management:
 ```
 
 访问：
+
 - `GET /actuator/health` — Mongo 健康检查（由 `MongoHealthIndicator` 提供）
 - `GET /actuator/metrics/mongodb.operation.duration` — 指标详情
 - `GET /actuator/prometheus` — Prometheus 抓取（需 `micrometer-registry-prometheus` 依赖，已默认包含）
@@ -375,7 +380,7 @@ management:
 
 ## 📎 熔断降级
 
-集成 Alibaba Sentinel 1.8.6，实现**业务级慢调用熔断**（不是网关层的安全访问熔断）。
+集成 Alibaba Sentinel 1.8.6，实现 **业务级慢调用熔断**（不是网关层的安全访问熔断）。
 
 ### 工作原理
 
@@ -387,31 +392,32 @@ management:
 
 ### 资源列表
 
-| 资源名 | 对应方法 |
-|---|---|
-| `mongodb.query` | `query()` |
-| `mongodb.update` | `update()` |
-| `mongodb.delete` | `delete()` |
-| `mongodb.insert` | `insert()` / `insertAll()` |
-| `mongodb.save` | `save()` |
-| `mongodb.findById` | `findById()` / `findByIdOrThrow()` |
-| `mongodb.existsById` | `existsById()` |
-| `mongodb.deleteById` | `deleteById()` |
-| `mongodb.dropCollection` | `dropCollection()` |
+| 资源名                   | 对应方法                           |
+|--------------------------|------------------------------------|
+| `mongodb.query`          | `query()`                          |
+| `mongodb.update`         | `update()`                         |
+| `mongodb.delete`         | `delete()`                         |
+| `mongodb.insert`         | `insert()` / `insertAll()`         |
+| `mongodb.save`           | `save()`                           |
+| `mongodb.findById`       | `findById()` / `findByIdOrThrow()` |
+| `mongodb.existsById`     | `existsById()`                     |
+| `mongodb.deleteById`     | `deleteById()`                     |
+| `mongodb.dropCollection` | `dropCollection()`                 |
 
 ### 默认阈值
 
-| 参数 | 默认值 | 说明 |
-|---|---|---|
-| `maxRt` | 100ms | 慢请求判定阈值（MongoDB Atlas + `slowms` 行业标准） |
-| `slowRatioThreshold` | 0.5 | 慢请求比例（50%） |
-| `timeWindow` | 10s | 熔断持续时间 |
-| `minRequestAmount` | 10 | 触发熔断的最小请求数 |
-| `statIntervalMs` | 1000ms | 统计窗口 |
+| 参数                 | 默认值 | 说明                                                |
+|----------------------|--------|-----------------------------------------------------|
+| `maxRt`              | 100ms  | 慢请求判定阈值（MongoDB Atlas + `slowms` 行业标准） |
+| `slowRatioThreshold` | 0.5    | 慢请求比例（50%）                                   |
+| `timeWindow`         | 10s    | 熔断持续时间                                        |
+| `minRequestAmount`   | 10     | 触发熔断的最小请求数                                |
+| `statIntervalMs`     | 1000ms | 统计窗口                                            |
 
 ### `Nacos` 热加载
 
 在 Nacos 控制台创建配置：
+
 - **Data ID**: `mongodb-sentinel-degrade-rules`
 - **Group**: `DEFAULT_GROUP`
 - **格式**: JSON（数组形式）
@@ -440,6 +446,7 @@ management:
 ```
 
 字段说明：
+
 - `grade: 3` — 慢请求比例模式
 - `count` — 慢请求 RT 阈值（毫秒）
 - `slowRatioThreshold` — 慢请求比例（0.5 = 50%）
@@ -482,7 +489,7 @@ public class UserService {
 
 ### 注意事项
 
-1. 熔断只针对业务级慢查询，**不解决**网络层问题（连接超时、DNS 失败等走 Mongo 驱动原生重试）
+1. 熔断只针对业务级慢查询， **不解决**网络层问题（连接超时、DNS 失败等走 Mongo 驱动原生重试）
 2. `dropCollection` 是危险操作，框架已设 `minRequestAmount=1`（1 次慢即熔断）
 3. 降级返回空结果时，业务代码应能正确处理空（`isEmpty()` 等）
 4. Nacos 规则修改后自动热加载，无需重启
@@ -491,12 +498,12 @@ public class UserService {
 
 ## 🏗️ 架构与模块布局
 
-| 异常 | 触发场景 | 业务处理建议 |
-|---|---|---|
-| `MongodbException` | 基类异常 | 通用兜底 |
-| `DuplicateKeyException` | 唯一键冲突 | 提示用户 "记录已存在" 或重命名后重试 |
-| `ConnectionException` | 连接/网络问题 | 提示 "服务暂不可用，请稍后重试" |
-| `TransactionException` | 事务回滚 | 提示用户 "操作失败，请重试" |
+| 异常                    | 触发场景      | 业务处理建议                         |
+|-------------------------|---------------|--------------------------------------|
+| `MongodbException`      | 基类异常      | 通用兜底                             |
+| `DuplicateKeyException` | 唯一键冲突    | 提示用户 "记录已存在" 或重命名后重试 |
+| `ConnectionException`   | 连接/网络问题 | 提示 "服务暂不可用，请稍后重试"      |
+| `TransactionException`  | 事务回滚      | 提示用户 "操作失败，请重试"          |
 
 **降级不抛异常**（被 Sentinel 熔断时返回空结果），业务代码无需 try-catch。
 
@@ -506,24 +513,24 @@ public class UserService {
 
 ### 基础连接
 
-| 配置项 | 默认值 | 说明 |
-|---|---|---|
-| `platform.component.mongodb.uri` | - | MongoDB 连接 URI（优先级最高） |
-| `platform.component.mongodb.host` | localhost | 主机名 |
-| `platform.component.mongodb.port` | 27017 | 端口 |
-| `platform.component.mongodb.database` | example | 数据库名 |
-| `platform.component.mongodb.username` | - | 用户名 |
-| `platform.component.mongodb.password` | - | 密码 |
-| `platform.component.mongodb.auth-database` | admin | 认证数据库 |
+| 配置项                                     | 默认值    | 说明                           |
+|--------------------------------------------|-----------|--------------------------------|
+| `platform.component.mongodb.uri`           | -         | MongoDB 连接 URI（优先级最高） |
+| `platform.component.mongodb.host`          | localhost | 主机名                         |
+| `platform.component.mongodb.port`          | 27017     | 端口                           |
+| `platform.component.mongodb.database`      | example   | 数据库名                       |
+| `platform.component.mongodb.username`      | -         | 用户名                         |
+| `platform.component.mongodb.password`      | -         | 密码                           |
+| `platform.component.mongodb.auth-database` | admin     | 认证数据库                     |
 
 ### 连接池
 
-| 配置项 | 默认值 | 说明 |
-|---|---|---|
-| `platform.component.mongodb.max-connection-pool-size` | 100 | 最大连接数 |
-| `platform.component.mongodb.min-connection-pool-size` | 0 | 最小连接数 |
-| `platform.component.mongodb.connect-timeout-ms` | 10000 | 连接超时（毫秒）|
-| `platform.component.mongodb.socket-timeout-ms` | 10000 | 读取超时（毫秒） |
+| 配置项                                                | 默认值 | 说明             |
+|-------------------------------------------------------|--------|------------------|
+| `platform.component.mongodb.max-connection-pool-size` | 100    | 最大连接数       |
+| `platform.component.mongodb.min-connection-pool-size` | 0      | 最小连接数       |
+| `platform.component.mongodb.connect-timeout-ms`       | 10000  | 连接超时（毫秒） |
+| `platform.component.mongodb.socket-timeout-ms`        | 10000  | 读取超时（毫秒） |
 
 ### 熔断（可选）
 
@@ -578,22 +585,22 @@ mongodb.update(User.class)
 
 ### 迁移对照
 
-| 旧 `MongodbService` 方法 | 新 `Mongodb` 等价 |
-|---|---|
-| `find(Query, coll, Class)` | `mongodb.query(Class).list()` 链式 |
-| `findOne(Query, coll, Class)` | `mongodb.query(Class).one()` |
-| `updateOne(Query, Update, coll, Class)` | `mongodb.update(Class).set(...).execute()` |
-| `delete(Query, coll, Class)` | `mongodb.delete(Class).execute()` |
-| `count(Query, coll, Class)` | `mongodb.query(Class).count()` |
-| `insert(coll, doc)` | `mongodb.insert(doc)` |
-| `insertMany(coll, docs)` | `mongodb.insertAll(docs)` |
-| `findById(coll, id, Class)` | `mongodb.findById(Class, id)` |
-| `createIndex(coll, Index)` | `@Indexed` 注解 + `IndexBuilder` |
-| `aggregate(Aggregation, coll, Class)` | 暂未封装，业务方用 `MongoTemplate` |
-| `executeInTransaction(Supplier)` | 暂未封装，业务方用 `MongoTransactionManager` |
-| `bulkWrite(coll, ops)` | 暂未封装，业务方用 `MongoTemplate` |
-| `storeFileToGridFS(...)` | 暂未封装，业务方用 `GridFsTemplate` |
-| `watchChangeStream(...)` | 暂未封装，业务方用 `MongoTemplate` |
+| 旧 `MongodbService` 方法                | 新 `Mongodb` 等价                            |
+|-----------------------------------------|----------------------------------------------|
+| `find(Query, coll, Class)`              | `mongodb.query(Class).list()` 链式           |
+| `findOne(Query, coll, Class)`           | `mongodb.query(Class).one()`                 |
+| `updateOne(Query, Update, coll, Class)` | `mongodb.update(Class).set(...).execute()`   |
+| `delete(Query, coll, Class)`            | `mongodb.delete(Class).execute()`            |
+| `count(Query, coll, Class)`             | `mongodb.query(Class).count()`               |
+| `insert(coll, doc)`                     | `mongodb.insert(doc)`                        |
+| `insertMany(coll, docs)`                | `mongodb.insertAll(docs)`                    |
+| `findById(coll, id, Class)`             | `mongodb.findById(Class, id)`                |
+| `createIndex(coll, Index)`              | `@Indexed` 注解 + `IndexBuilder`             |
+| `aggregate(Aggregation, coll, Class)`   | 暂未封装，业务方用 `MongoTemplate`           |
+| `executeInTransaction(Supplier)`        | 暂未封装，业务方用 `MongoTransactionManager` |
+| `bulkWrite(coll, ops)`                  | 暂未封装，业务方用 `MongoTemplate`           |
+| `storeFileToGridFS(...)`                | 暂未封装，业务方用 `GridFsTemplate`          |
+| `watchChangeStream(...)`                | 暂未封装，业务方用 `MongoTemplate`           |
 
 ### 兼容性
 
@@ -605,14 +612,14 @@ mongodb.update(User.class)
 
 ## 📎 版本与兼容性
 
-| 维度 | 说明 |
-|---|---|
-| Java | 17+ |
-| Spring Boot | 3.x（4.0.x 验证） |
-| MongoDB | 4.0+（事务支持需 4.0+） |
-| OTel | 自动检测项目里的 `GlobalOpenTelemetry` |
-| Sentinel | 1.8.6 |
-| 旧 MongodbService | 保留至 2.0 之前 |
+| 维度              | 说明                                   |
+|-------------------|----------------------------------------|
+| Java              | 17+                                    |
+| Spring Boot       | 3.x（4.0.x 验证）                      |
+| MongoDB           | 4.0+（事务支持需 4.0+）                |
+| OTel              | 自动检测项目里的 `GlobalOpenTelemetry` |
+| Sentinel          | 1.8.6                                  |
+| 旧 MongodbService | 保留至 2.0 之前                        |
 
 ---
 
@@ -629,6 +636,7 @@ class MyServiceIT {
 ```
 
 依赖：
+
 - `org.testcontainers:mongodb`
 - `cn.richie696.testing:testing-testcontainers`（项目基础包）
 

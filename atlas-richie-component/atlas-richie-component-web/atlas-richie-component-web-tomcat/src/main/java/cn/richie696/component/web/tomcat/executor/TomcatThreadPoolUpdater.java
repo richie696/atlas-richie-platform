@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.web.tomcat.executor;
 
+import jakarta.annotation.Nullable;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardThreadExecutor;
 import org.apache.coyote.AbstractProtocol;
@@ -26,7 +27,6 @@ import org.springframework.boot.tomcat.TomcatWebServer;
 import org.springframework.boot.web.server.WebServer;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.Environment;
-import jakarta.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;

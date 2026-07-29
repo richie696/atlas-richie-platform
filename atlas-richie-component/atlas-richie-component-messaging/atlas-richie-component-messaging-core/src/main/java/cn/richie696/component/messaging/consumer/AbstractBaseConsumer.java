@@ -15,19 +15,19 @@
  */
 package cn.richie696.component.messaging.consumer;
 
-import cn.richie696.context.common.api.HeaderContextHolder;
 import cn.richie696.component.messaging.config.MessagingProperties;
 import cn.richie696.component.messaging.event.MessageEvent;
 import cn.richie696.component.messaging.filter.CanaryMessageFilter;
 import cn.richie696.component.messaging.filter.handler.MessageHandlerService;
 import cn.richie696.component.messaging.service.MessageService;
 import cn.richie696.component.messaging.service.impl.MessageServiceImpl;
+import cn.richie696.context.common.api.HeaderContextHolder;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.i18n.LocaleContextHolder;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.springframework.messaging.Message;
 
 import java.util.Locale;

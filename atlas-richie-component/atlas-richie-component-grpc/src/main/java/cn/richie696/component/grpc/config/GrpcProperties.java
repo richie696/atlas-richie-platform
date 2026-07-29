@@ -17,6 +17,7 @@ package cn.richie696.component.grpc.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -30,9 +31,10 @@ import java.util.Set;
  * @since 1.0.0
  */
 @Data
-@ConfigurationProperties(prefix = "platform.grpc")
+@ConfigurationProperties(prefix = "platform.component.grpc")
 public class GrpcProperties {
 
+    @NestedConfigurationProperty
     private Server server = new Server();
     private Client client = new Client();
     private HeaderPropagation headerPropagation = new HeaderPropagation();

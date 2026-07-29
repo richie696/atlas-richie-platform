@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.ai.support;
 
-import com.anthropic.models.messages.Model;
 import cn.richie696.component.ai.config.chat.AiChatModelOptions;
 import cn.richie696.component.ai.config.chat.LlmProvider;
 import cn.richie696.component.ai.model.AiRequest;
+import com.anthropic.models.messages.Model;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.deepseek.DeepSeekChatOptions;
@@ -40,7 +40,7 @@ public class AiChatOptionsResolver {
      * 将请求级参数覆盖到模型默认参数之上（请求中非 null 字段优先）。
      */
     public AiChatModelOptions mergeOptions(AiChatModelOptions base,
-                                                         AiRequest.ModelOptions requestOverride) {
+                                           AiRequest.ModelOptions requestOverride) {
         if (requestOverride == null) {
             return base;
         }

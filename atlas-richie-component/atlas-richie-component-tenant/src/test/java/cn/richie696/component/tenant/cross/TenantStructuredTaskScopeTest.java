@@ -18,11 +18,7 @@ package cn.richie696.component.tenant.cross;
 import cn.richie696.component.tenant.context.ScopedValueHolder;
 import cn.richie696.component.tenant.context.TenantContext;
 import cn.richie696.contract.model.TenantPrincipal;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -155,7 +151,7 @@ class TenantStructuredTaskScopeTest {
             var scope = TenantStructuredTaskScope.<Integer>awaitAll();
             scope.close();
             assertThatThrownBy(() -> scope.fork(() -> 1))
-                .isInstanceOf(IllegalStateException.class);
+                    .isInstanceOf(IllegalStateException.class);
         }
     }
 }

@@ -27,13 +27,11 @@ import cn.richie696.component.parser.model.ParsedSection;
 import cn.richie696.component.parser.model.ReadEvent;
 import cn.richie696.component.parser.model.ReadSummary;
 
-import java.util.ArrayDeque;
-import java.util.HashMap;
+import java.util.*;
+import java.util.concurrent.Flow;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Flow;
 
 /**
  * {@link OcrDocumentEnrichmentAdapter} 的默认实现。

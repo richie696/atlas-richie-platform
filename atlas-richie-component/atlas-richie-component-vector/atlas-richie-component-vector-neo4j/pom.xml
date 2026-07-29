@@ -55,7 +55,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/vector/config/*</include>
+                        <include>cn/richie696/component/vector/config/*</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -63,7 +63,7 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/vector/config/*</include>
+                                <include>cn/richie696/component/vector/config/*</include>
                             </includes>
                             <rules>
                                 <rule>

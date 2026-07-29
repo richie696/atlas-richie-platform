@@ -17,7 +17,6 @@ package cn.richie696.component.web.core.metrics;
 
 import cn.richie696.component.concurrency.algorithm.CircuitBreaker;
 import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 

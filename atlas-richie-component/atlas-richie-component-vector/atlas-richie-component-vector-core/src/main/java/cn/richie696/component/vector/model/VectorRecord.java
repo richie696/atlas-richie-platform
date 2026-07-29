@@ -54,13 +54,19 @@ public class VectorRecord {
      */
     private String id;
 
-    /** 业务源文档 ID；用于版本化重建、按文档定位和引用回溯。 */
+    /**
+     * 业务源文档 ID；用于版本化重建、按文档定位和引用回溯。
+     */
     private String documentId;
 
-    /** 当前文档版本内的切片序号。 */
+    /**
+     * 当前文档版本内的切片序号。
+     */
     private Integer chunkNo;
 
-    /** 业务文档或投影的版本号。 */
+    /**
+     * 业务文档或投影的版本号。
+     */
     private Long version;
 
     /**

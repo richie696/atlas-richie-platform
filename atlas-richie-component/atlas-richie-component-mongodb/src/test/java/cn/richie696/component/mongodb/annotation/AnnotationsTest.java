@@ -16,7 +16,9 @@
 package cn.richie696.component.mongodb.annotation;
 
 import org.junit.jupiter.api.Test;
+
 import java.lang.reflect.Field;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AnnotationsTest {

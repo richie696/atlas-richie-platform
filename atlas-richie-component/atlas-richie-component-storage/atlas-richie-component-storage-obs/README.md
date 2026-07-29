@@ -2,7 +2,9 @@
 
 ## Overview
 
-`richie-component-storage-obs` is the implementation of Huawei Cloud Object Storage Service (OBS), built on the Huawei Cloud OBS SDK to deliver complete OBS storage capabilities, with support for advanced features such as lifecycle management and cross-region replication.
+`richie-component-storage-obs` is the implementation of Huawei Cloud Object Storage Service (OBS), built on the Huawei
+Cloud OBS SDK to deliver complete OBS storage capabilities, with support for advanced features such as lifecycle
+management and cross-region replication.
 
 ## Core Features
 
@@ -10,7 +12,8 @@
 - ✅ **Multiple Storage Tiers** - Standard, Infrequent Access, Archive, and Deep Archive
 - ✅ **Lifecycle Management** - Automatic storage tier transitions
 - ✅ **Resumable Upload** - Resumable upload support for large files
-- ✅ **Dual-Mode Architecture** - Supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to Spring Boot auto-configuration and non-Spring environments
+- ✅ **Dual-Mode Architecture** - Supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to
+  Spring Boot auto-configuration and non-Spring environments
 - ✅ **Auto-Configuration** - Spring Boot auto-configuration
 
 ## Dual-Mode Architecture
@@ -42,39 +45,43 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 ## StorageEngineProvider
 
-Each implementation package provides a `StorageEngineProvider` SPI implementation. `ObsStorageEngineProvider` is responsible for:
+Each implementation package provides a `StorageEngineProvider` SPI implementation. `ObsStorageEngineProvider` is
+responsible for:
 
-| Method | Description |
-|------|------|
-| `supportedEngineType()` | Returns `StorageEngineEnum.HUAWEI_OBS` |
-| `create(properties)` | Creates an engine instance from configuration |
-| `validate(properties)` | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
-| `destroy(engine)` | Releases resources |
+| Method                  | Description                                                                       |
+|-------------------------|-----------------------------------------------------------------------------------|
+| `supportedEngineType()` | Returns `StorageEngineEnum.HUAWEI_OBS`                                            |
+| `create(properties)`    | Creates an engine instance from configuration                                     |
+| `validate(properties)`  | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
+| `destroy(engine)`       | Releases resources                                                                |
 
-In auto mode, the Provider is registered as a Bean in `ObsAutoConfiguration`. In manual mode, it is discovered by the Registry through SPI.
+In auto mode, the Provider is registered as a Bean in `ObsAutoConfiguration`. In manual mode, it is discovered by the
+Registry through SPI.
 
 ## Config Validation
 
-Before the engine is created, the `ConfigValidation` utility validates the required parameters. If validation fails, an `IllegalArgumentException` is thrown:
+Before the engine is created, the `ConfigValidation` utility validates the required parameters. If validation fails, an
+`IllegalArgumentException` is thrown:
 
-| Parameter | Validation Rule |
-|------|---------|
-| endpoint | Non-empty |
-| accessKeyId | Non-empty |
-| accessKeySecret | Non-empty |
-| bucketName | Non-empty |
+| Parameter       | Validation Rule |
+|-----------------|-----------------|
+| endpoint        | Non-empty       |
+| accessKeyId     | Non-empty       |
+| accessKeySecret | Non-empty       |
+| bucketName      | Non-empty       |
 
 ## Direct Upload Policy
 
-The OBS engine supports client-side direct upload to object storage through presigned URLs, reducing server-side traffic pressure:
+The OBS engine supports client-side direct upload to object storage through presigned URLs, reducing server-side traffic
+pressure:
 
-| Field | Description |
-|------|------|
-| uploadUrl | Presigned upload URL |
-| method | HTTP method (PUT) |
-| headers | Signature headers |
-| expireAt | Policy expiration time |
-| success | Whether the policy is usable |
+| Field     | Description                  |
+|-----------|------------------------------|
+| uploadUrl | Presigned upload URL         |
+| method    | HTTP method (PUT)            |
+| headers   | Signature headers            |
+| expireAt  | Policy expiration time       |
+| success   | Whether the policy is usable |
 
 ```java
 DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
@@ -157,27 +164,27 @@ public class FileService {
 
 The main configuration differences between Huawei Cloud OBS and other cloud storage providers:
 
-| Configuration Item | Huawei Cloud OBS | Alibaba Cloud OSS | Tencent Cloud COS |
-|--------|-----------|-----------|-----------|
-| **engine value** | `HUAWEI_OBS` | `ALIYUN_OSS` | `TENCENT_COS` |
-| **endpoint format** | `obs.region.myhuaweicloud.com` | `oss-cn-region.aliyuncs.com` | `cos.region.myqcloud.com` |
-| **region format** | `cn-region-n` | `cn-region` | `ap-region` |
-| **Access key names** | Access Key Id / Secret Access Key | AccessKey ID / AccessKey Secret | SecretId / SecretKey |
-| **Storage tiers** | 4 (Standard, IA, Archive, Deep Archive) | 4 | 11 |
-| **Lifecycle management** | ✅ Supported | ✅ Supported | ✅ Supported |
+| Configuration Item       | Huawei Cloud OBS                        | Alibaba Cloud OSS               | Tencent Cloud COS         |
+|--------------------------|-----------------------------------------|---------------------------------|---------------------------|
+| **engine value**         | `HUAWEI_OBS`                            | `ALIYUN_OSS`                    | `TENCENT_COS`             |
+| **endpoint format**      | `obs.region.myhuaweicloud.com`          | `oss-cn-region.aliyuncs.com`    | `cos.region.myqcloud.com` |
+| **region format**        | `cn-region-n`                           | `cn-region`                     | `ap-region`               |
+| **Access key names**     | Access Key Id / Secret Access Key       | AccessKey ID / AccessKey Secret | SecretId / SecretKey      |
+| **Storage tiers**        | 4 (Standard, IA, Archive, Deep Archive) | 4                               | 11                        |
+| **Lifecycle management** | ✅ Supported                            | ✅ Supported                    | ✅ Supported              |
 
 ### endpoint Configuration
 
 Huawei Cloud OBS endpoint format:
 
 - **Standard format**: `obs.region.myhuaweicloud.com`
-  - Example: `obs.cn-north-4.myhuaweicloud.com`
-  - Example: `obs.cn-east-3.myhuaweicloud.com`
-  - Example: `obs.cn-south-1.myhuaweicloud.com`
+    - Example: `obs.cn-north-4.myhuaweicloud.com`
+    - Example: `obs.cn-east-3.myhuaweicloud.com`
+    - Example: `obs.cn-south-1.myhuaweicloud.com`
 
 - **Internal endpoint**: `obs.region-internal.myhuaweicloud.com`
-  - Suitable for same-region ECS access, no traffic fees
-  - Example: `obs.cn-north-4-internal.myhuaweicloud.com`
+    - Suitable for same-region ECS access, no traffic fees
+    - Example: `obs.cn-north-4-internal.myhuaweicloud.com`
 
 - **Custom domain**: You can bind a custom domain in the OBS console
 
@@ -185,30 +192,30 @@ Huawei Cloud OBS endpoint format:
 
 Regions supported by Huawei Cloud OBS:
 
-| Region | Code |
-|------|------|
-| CN North-Beijing 4 | `cn-north-4` |
-| CN North-Beijing 1 | `cn-north-1` |
-| CN East-Shanghai 1 | `cn-east-3` |
-| CN East-Shanghai 2 | `cn-east-2` |
-| CN South-Guangzhou | `cn-south-1` |
+| Region                 | Code             |
+|------------------------|------------------|
+| CN North-Beijing 4     | `cn-north-4`     |
+| CN North-Beijing 1     | `cn-north-1`     |
+| CN East-Shanghai 1     | `cn-east-3`      |
+| CN East-Shanghai 2     | `cn-east-2`      |
+| CN South-Guangzhou     | `cn-south-1`     |
 | CN Southwest-Guiyang 1 | `cn-southwest-2` |
-| AP-Bangkok | `ap-southeast-2` |
-| AP-Singapore | `ap-southeast-1` |
-| AF-Johannesburg | `af-south-1` |
-| LA-Sao Paulo 1 | `la-south-2` |
-| LA-Mexico City 2 | `la-north-2` |
+| AP-Bangkok             | `ap-southeast-2` |
+| AP-Singapore           | `ap-southeast-1` |
+| AF-Johannesburg        | `af-south-1`     |
+| LA-Sao Paulo 1         | `la-south-2`     |
+| LA-Mexico City 2       | `la-north-2`     |
 
 ### Storage Tiers
 
 Storage tiers supported by Huawei Cloud OBS:
 
-| Storage Tier | Description | Suitable Scenario |
-|---------|------|---------|
-| `STANDARD` | Standard storage | Frequently accessed data |
-| `STANDARD_IA` | Infrequent access storage | Data that is not accessed often but requires fast retrieval |
-| `ARCHIVE` | Archive storage | Long-term retention, rarely accessed data |
-| `DEEP_ARCHIVE` | Deep archive storage | Very long-term retention, almost never accessed data |
+| Storage Tier   | Description               | Suitable Scenario                                           |
+|----------------|---------------------------|-------------------------------------------------------------|
+| `STANDARD`     | Standard storage          | Frequently accessed data                                    |
+| `STANDARD_IA`  | Infrequent access storage | Data that is not accessed often but requires fast retrieval |
+| `ARCHIVE`      | Archive storage           | Long-term retention, rarely accessed data                   |
+| `DEEP_ARCHIVE` | Deep archive storage      | Very long-term retention, almost never accessed data        |
 
 ### Access Credentials
 
@@ -219,7 +226,7 @@ Huawei Cloud OBS uses Access Key Id and Secret Access Key for authentication:
 3. Create a user and grant OBS access permissions
 4. Create access keys
 
-> **Security Tips**: 
+> **Security Tips**:
 > - Use IAM sub-users and follow the principle of least privilege
 > - Do not commit access keys to source control
 > - Use environment variables or a secrets management service (such as Huawei Cloud KMS)
@@ -264,33 +271,34 @@ Huawei Cloud OBS supports cross-region replication (configured in the console), 
 ## Best Practices
 
 1. **Region Selection**
-   - Choose the region closest to your users to minimize latency
-   - Consider data compliance requirements
+    - Choose the region closest to your users to minimize latency
+    - Consider data compliance requirements
 
 2. **Storage Tier Selection**
-   - Frequent access: `STANDARD`
-   - Occasional access: `STANDARD_IA`
-   - Long-term archiving: `ARCHIVE` or `DEEP_ARCHIVE`
+    - Frequent access: `STANDARD`
+    - Occasional access: `STANDARD_IA`
+    - Long-term archiving: `ARCHIVE` or `DEEP_ARCHIVE`
 
 3. **Lifecycle Management**
-   - Configure lifecycle policies to automatically transition storage tiers
-   - Set transition time points based on access frequency
+    - Configure lifecycle policies to automatically transition storage tiers
+    - Set transition time points based on access frequency
 
 4. **Access Credential Management**
-   - Use IAM sub-users and follow the principle of least privilege
-   - Use environment variables or a secrets management service
-   - Rotate access keys regularly
+    - Use IAM sub-users and follow the principle of least privilege
+    - Use environment variables or a secrets management service
+    - Rotate access keys regularly
 
 5. **Cost Optimization**
-   - Use lifecycle policies to automatically transition storage tiers
-   - Delete unnecessary objects
-   - Use the internal endpoint to avoid traffic fees
+    - Use lifecycle policies to automatically transition storage tiers
+    - Delete unnecessary objects
+    - Use the internal endpoint to avoid traffic fees
 
 ## FAQ
 
 ### Q: How do I configure lifecycle management?
 
-A: Configure lifecycle policies in the OBS console to define storage tier transition rules for objects at different time points.
+A: Configure lifecycle policies in the OBS console to define storage tier transition rules for objects at different time
+points.
 
 ### Q: Does it support custom domains?
 
@@ -306,7 +314,8 @@ A: Internal network access is free of traffic fees and offers lower latency, but
 
 ### Q: What are the characteristics of Deep Archive storage?
 
-A: Deep Archive storage has the lowest cost, but restoration takes longer (typically 12 to 24 hours), making it suitable for very long-term retention.
+A: Deep Archive storage has the lowest cost, but restoration takes longer (typically 12 to 24 hours), making it suitable
+for very long-term retention.
 
 ## Related Documentation
 

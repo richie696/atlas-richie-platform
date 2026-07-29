@@ -36,6 +36,7 @@ public class ObjectConfig {
 
     /**
      * 云存储引擎
+     *
      * @see StorageEngineEnum 云存储引擎枚举
      */
     private StorageEngineEnum engine;

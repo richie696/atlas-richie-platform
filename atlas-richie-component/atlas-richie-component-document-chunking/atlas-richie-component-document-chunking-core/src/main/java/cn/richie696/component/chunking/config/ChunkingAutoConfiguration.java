@@ -66,13 +66,13 @@ public class ChunkingAutoConfiguration {
      * {@link ChunkingRule#maxCharacters()} 取较大值，避免规则变大后 streaming 容量不足。</p>
      *
      * @param chunkingService 依赖本类暴露的同步切片器
-     * @param properties 已绑定的切片组件配置
+     * @param properties      已绑定的切片组件配置
      * @return 装配好的流式切片工厂
      */
     @Bean
     @ConditionalOnMissingBean
     public StreamingChunkerFactory streamingChunkerFactory(ChunkingService chunkingService,
-                                                            ChunkingProperties properties) {
+                                                           ChunkingProperties properties) {
         return new StreamingChunkerFactory(chunkingService,
                 properties.getStreaming().getMaxPendingCharacters());
     }

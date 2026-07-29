@@ -15,14 +15,14 @@
  */
 package cn.richie696.component.storage.config;
 
-import com.aliyun.oss.OSS;
-import com.aliyun.oss.OSSClientBuilder;
-import com.aliyun.oss.common.auth.CredentialsProviderFactory;
-import com.aliyun.oss.common.auth.DefaultCredentialProvider;
 import cn.richie696.component.storage.bean.ObjectConfig;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.core.impl.OssStorageEngine;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
+import com.aliyun.oss.OSS;
+import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.common.auth.CredentialsProviderFactory;
+import com.aliyun.oss.common.auth.DefaultCredentialProvider;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

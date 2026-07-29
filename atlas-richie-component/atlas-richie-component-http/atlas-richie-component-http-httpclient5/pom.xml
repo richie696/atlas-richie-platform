@@ -49,7 +49,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/http/httpclient5/HttpClient5Adapter*</include>
+                        <include>cn/richie696/component/http/httpclient5/HttpClient5Adapter*</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -57,7 +57,7 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/http/httpclient5/HttpClient5Adapter*</include>
+                                <include>cn/richie696/component/http/httpclient5/HttpClient5Adapter*</include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

@@ -1,56 +1,59 @@
 # Atlas Richie Liquibase Component (atlas-richie-component-liquibase)
 
-> **Liquibase** database migration component. Pre-configured Spring Boot autoconfig, multi-DB support (MySQL / PostgreSQL / Oracle / DM / Kingbase / MSSQL), changelog generation, runtime validation, and per-DB context isolation. Plugs into any business service.
+> **Liquibase** database migration component. Pre-configured Spring Boot autoconfig, multi-DB support (MySQL /
+> PostgreSQL / Oracle / DM / Kingbase / MSSQL), changelog generation, runtime validation, and per-DB context isolation.
+> Plugs into any business service.
 
 ---
 
 ## 📖 Contents
 
 - [📖 Overview](#📖-overview)
-  - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
+    - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
 - [✨ Features](#✨-features)
-  - [Core capabilities](#core-capabilities)
-  - [Design choices](#design-choices)
+    - [Core capabilities](#core-capabilities)
+    - [Design choices](#design-choices)
 - [🏗️ Architecture & Module Layout](#🏗️-architecture-&-module-layout)
 - [🚀 Quick Start](#🚀-quick-start)
-  - [1. Add the dependency](#1-add-the-dependency)
-  - [2. Add changelog file](#2-add-changelog-file)
-  - [3. Configure](#3-configure)
-  - [4. Run app](#4-run-app)
+    - [1. Add the dependency](#1-add-the-dependency)
+    - [2. Add changelog file](#2-add-changelog-file)
+    - [3. Configure](#3-configure)
+    - [4. Run app](#4-run-app)
 - [🔧 Core Capabilities](#🔧-core-capabilities)
-  - [1. Spring Boot autoconfig](#1-spring-boot-autoconfig)
-  - [2. Multi-DB support](#2-multi-db-support)
-  - [3. Changelog formats](#3-changelog-formats)
-  - [4. Pre-startup validation](#4-pre-startup-validation)
-  - [5. Skip on test profile](#5-skip-on-test-profile)
+    - [1. Spring Boot autoconfig](#1-spring-boot-autoconfig)
+    - [2. Multi-DB support](#2-multi-db-support)
+    - [3. Changelog formats](#3-changelog-formats)
+    - [4. Pre-startup validation](#4-pre-startup-validation)
+    - [5. Skip on test profile](#5-skip-on-test-profile)
 - [⚙️ Configuration Reference](#⚙️-configuration-reference)
 - [🎯 Best Practices](#🎯-best-practices)
 - [⚠️ Known Limitations](#⚠️-known-limitations)
 - [❓ FAQ](#❓-faq)
-  - [Q1: Why does the app fail to start with "changelog parse error"?](#q1-why-does-the-app-fail-to-start-with-changelog-parse-error?)
-  - [Q2: How do I add a multi-tenant migration?](#q2-how-do-i-add-a-multi-tenant-migration?)
-  - [Q3: Can I disable Liquibase for unit tests?](#q3-can-i-disable-liquibase-for-unit-tests?)
-  - [Q4: How do I coordinate changes across services?](#q4-how-do-i-coordinate-changes-across-services?)
+    - [Q1: Why does the app fail to start with "changelog parse error"?](#q1-why-does-the-app-fail-to-start-with-changelog-parse-error?)
+    - [Q2: How do I add a multi-tenant migration?](#q2-how-do-i-add-a-multi-tenant-migration?)
+    - [Q3: Can I disable Liquibase for unit tests?](#q3-can-i-disable-liquibase-for-unit-tests?)
+    - [Q4: How do I coordinate changes across services?](#q4-how-do-i-coordinate-changes-across-services?)
 - [📚 Further Reading](#📚-further-reading)
+
 ---
 
 ## 📖 Overview
 
-| Item | Value |
-|------|-------|
-| **Artifact** | `cn.richie696.component:atlas-richie-component-liquibase` |
-| **Category** | Database — schema migration |
-| **Hard dependencies** | `liquibase-core`, Spring Boot |
-| **Compatible with** | MySQL, PostgreSQL, Oracle, DM, Kingbase, MSSQL, SQLite (dev) |
+| Item                  | Value                                                        |
+|-----------------------|--------------------------------------------------------------|
+| **Artifact**          | `cn.richie696.component:atlas-richie-component-liquibase`    |
+| **Category**          | Database — schema migration                                  |
+| **Hard dependencies** | `liquibase-core`, Spring Boot                                |
+| **Compatible with**   | MySQL, PostgreSQL, Oracle, DM, Kingbase, MSSQL, SQLite (dev) |
 
 ### `What` this component is — and what it isn't
 
-| ✅ It gives you | ❌ It does not give you |
-|-----------------|------------------------|
+| ✅ It gives you                      | ❌ It does not give you                                     |
+|--------------------------------------|-------------------------------------------------------------|
 | Spring Boot autoconfig for Liquibase | A migration authoring tool (use Liquibase CLI / IDE plugin) |
-| Multi-DB support (8 dialects) | Online schema change (use gh-ost / pt-online-schema-change) |
-| Pre-startup validation | Database connection pooling (use HikariCP) |
-| Per-DB context isolation | Cross-DB migration coordination |
+| Multi-DB support (8 dialects)        | Online schema change (use gh-ost / pt-online-schema-change) |
+| Pre-startup validation               | Database connection pooling (use HikariCP)                  |
+| Per-DB context isolation             | Cross-DB migration coordination                             |
 
 ## ✨ Features
 
@@ -159,16 +162,16 @@ Default location: `db/changelog/master.xml`. Override with `platform.component.l
 
 ### 2) `Multi`-`DB` support
 
-| Database | Support | Notes |
-|----------|---------|-------|
-| MySQL / MariaDB | ✓ | Default dialect |
-| PostgreSQL | ✓ | Including `pgvector` extensions |
-| Oracle | ✓ | 12c+ |
-| **达梦 (DM)** | ✓ | Chinese domestic DB |
-| **人大金仓 (Kingbase)** | ✓ | Chinese domestic DB |
-| MSSQL | ✓ | 2016+ |
-| H2 | ✓ (test) | In-memory |
-| SQLite | ✓ (dev) | Embedded |
+| Database                | Support   | Notes                           |
+|-------------------------|-----------|---------------------------------|
+| MySQL / MariaDB         | ✓        | Default dialect                 |
+| PostgreSQL              | ✓        | Including `pgvector` extensions |
+| Oracle                  | ✓        | 12c+                            |
+| **达梦 (DM)**           | ✓        | Chinese domestic DB             |
+| **人大金仓 (Kingbase)** | ✓        | Chinese domestic DB             |
+| MSSQL                   | ✓        | 2016+                           |
+| H2                      | ✓ (test) | In-memory                       |
+| SQLite                  | ✓ (dev)  | Embedded                        |
 
 ### 3) `Changelog` formats
 
@@ -199,7 +202,8 @@ ALTER TABLE users ADD COLUMN phone VARCHAR(32);
 
 ### 4) `Pre`-startup validation
 
-`PreStartupValidator` parses the changelog and validates syntax before app startup. Bad changelog = app fails fast with a clear error.
+`PreStartupValidator` parses the changelog and validates syntax before app startup. Bad changelog = app fails fast with
+a clear error.
 
 ### 5) `Skip` on test profile
 
@@ -213,14 +217,14 @@ spring:
 
 ## ⚙️ Configuration Reference
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `enabled` | boolean | `true` | Master switch |
-| `change-log` | String | `classpath:db/changelog/master.xml` | Master changelog path |
-| `default-schema` | String | – | Default schema name |
-| `drop-first` | boolean | `false` | Drop all tables first (dev only) |
-| `skip-on-test-profile` | boolean | `true` | Skip when `spring.profiles.active=test` |
-| `liquibase-contexts` | String | – | Comma-separated contexts to filter |
+| Property               | Type    | Default                             | Description                             |
+|------------------------|---------|-------------------------------------|-----------------------------------------|
+| `enabled`              | boolean | `true`                              | Master switch                           |
+| `change-log`           | String  | `classpath:db/changelog/master.xml` | Master changelog path                   |
+| `default-schema`       | String  | –                                   | Default schema name                     |
+| `drop-first`           | boolean | `false`                             | Drop all tables first (dev only)        |
+| `skip-on-test-profile` | boolean | `true`                              | Skip when `spring.profiles.active=test` |
+| `liquibase-contexts`   | String  | –                                   | Comma-separated contexts to filter      |
 
 ## 🎯 Best Practices
 
@@ -232,11 +236,11 @@ spring:
 
 ## ⚠️ Known Limitations
 
-| Limitation | Impact | Workaround |
-|------------|--------|------------|
-| **No online schema change** | Large tables lock during DDL | Use gh-ost / pt-osc externally |
+| Limitation                          | Impact                             | Workaround                                |
+|-------------------------------------|------------------------------------|-------------------------------------------|
+| **No online schema change**         | Large tables lock during DDL       | Use gh-ost / pt-osc externally            |
 | **Cross-DB migration coordination** | Multi-DB apps need manual ordering | Sequence changelogs by service dependency |
-| **No native GitOps** | Migrations run on app startup | Use Liquibase Flow or external runner |
+| **No native GitOps**                | Migrations run on app startup      | Use Liquibase Flow or external runner     |
 
 ## ❓ FAQ
 
@@ -267,7 +271,8 @@ Sequence changelogs manually; document dependencies in your changelog file names
 
 - **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
 - **DAO** — [`../atlas-richie-component-dao/README.md`](../atlas-richie-component-dao/README.md)
-- External: [Liquibase docs](https://docs.liquibase.com/) · [Spring Boot Liquibase](https://docs.spring.io/spring-boot/how-to/data-initialization.html#using-liquibase)
+-
+External: [Liquibase docs](https://docs.liquibase.com/) · [Spring Boot Liquibase](https://docs.spring.io/spring-boot/how-to/data-initialization.html#using-liquibase)
 
 ---
 

@@ -1,12 +1,17 @@
 # Richie Component Platform
 
-> **Technology middle-platform component library** — 25 production-grade Spring Boot components covering four domains: infrastructure, service communication, data storage, and business capabilities. A unified set of interface abstractions with pluggable implementations decouples business code from technology choices.
+> **Technology middle-platform component library** — 25 production-grade Spring Boot components covering four domains:
+> infrastructure, service communication, data storage, and business capabilities. A unified set of interface abstractions
+> with pluggable implementations decouples business code from technology choices.
 
 ---
 
 ## 📖 Overview
 
-**Richie Component Platform** is the core component library of the Richie technology middle platform, providing unified, generalized, and reusable technical capabilities. Through an **abstraction interface layer**, it hides underlying technology differences; business code depends only on interfaces, not on implementations. Switch storage backends, message queues, or vector databases with a single line of YAML and zero code changes.
+**Richie Component Platform** is the core component library of the Richie technology middle platform, providing unified,
+generalized, and reusable technical capabilities. Through an **abstraction interface layer**, it hides underlying
+technology differences; business code depends only on interfaces, not on implementations. Switch storage backends,
+message queues, or vector databases with a single line of YAML and zero code changes.
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -26,7 +31,8 @@
 └──────────────────────────────────────────────────┘
 ```
 
-**Core Positioning**: Let business teams focus on "what business to implement" rather than "what technology to use". The component library encapsulates the technical details, enabling configuration-driven switching and out-of-the-box usage.
+**Core Positioning**: Let business teams focus on "what business to implement" rather than "what technology to use". The
+component library encapsulates the technical details, enabling configuration-driven switching and out-of-the-box usage.
 
 ---
 
@@ -150,7 +156,8 @@ graph TB
   D --> E
 ```
 
-> **Inter-layer Relationships**: The business capability layer calls the service communication layer, the service communication layer depends on the data storage layer, and all layers are built on top of the infrastructure layer.
+> **Inter-layer Relationships**: The business capability layer calls the service communication layer, the service
+> communication layer depends on the data storage layer, and all layers are built on top of the infrastructure layer.
 
 ### Component Landscape Table
 
@@ -392,7 +399,8 @@ public class BusinessService {
 
 ### 1. Interface-First, Dependency Inversion
 
-Business code depends on abstract interfaces, not concrete implementations. Interfaces like `StorageEngine`, `VectorService`, `MessageService` define the contract, and underlying implementations can be replaced at any time.
+Business code depends on abstract interfaces, not concrete implementations. Interfaces like `StorageEngine`,
+`VectorService`, `MessageService` define the contract, and underlying implementations can be replaced at any time.
 
 ```
 Business Code → Interface ← Technology Implementation (S3 / OSS / MinIO ...)
@@ -414,11 +422,14 @@ platform.component.vector.provider: REDIS       # 或 Milvus / Qdrant / MongoDB
 
 ### 3. Layered Isolation, Each with Its Own Responsibility
 
-Infrastructure components (cache / web / logging) provide generic capabilities, no business dependencies. Business capability components (statemachine / ai / mfa) build composite functions on top of infrastructure. Upper layers depend on lower layers; lower layers are unaware of upper layers.
+Infrastructure components (cache / web / logging) provide generic capabilities, no business dependencies. Business
+capability components (statemachine / ai / mfa) build composite functions on top of infrastructure. Upper layers depend
+on lower layers; lower layers are unaware of upper layers.
 
 ### 4. Built-in Observability
 
 Each component automatically outputs the following while providing core capabilities:
+
 - **Metrics** — Micrometer metrics, integrated with Prometheus + Grafana
 - **Tracing** — OpenTelemetry traces, integrated with Jaeger / Tempo
 - **Logging** — Structured logging, auto-injects traceId / tenantId

@@ -55,7 +55,15 @@ public class KeyPoolExhaustedException extends RuntimeException {
         this.numCooldown = numCooldown;
     }
 
-    public int getRetryRounds() { return retryRounds; }
-    public int getTotalKeys() { return totalKeys; }
-    public int getNumCooldown() { return numCooldown; }
+    public int getRetryRounds() {
+        return retryRounds;
+    }
+
+    public int getTotalKeys() {
+        return totalKeys;
+    }
+
+    public int getNumCooldown() {
+        return numCooldown;
+    }
 }

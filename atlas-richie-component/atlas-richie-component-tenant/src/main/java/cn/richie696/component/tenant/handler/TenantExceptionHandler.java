@@ -15,13 +15,8 @@
  */
 package cn.richie696.component.tenant.handler;
 
+import cn.richie696.component.tenant.exception.*;
 import cn.richie696.contract.exception.BusinessException;
-import cn.richie696.component.tenant.exception.DataSourceUnavailableException;
-import cn.richie696.component.tenant.exception.TenantMigratingException;
-import cn.richie696.component.tenant.exception.TenantModeMigrationException;
-import cn.richie696.component.tenant.exception.TenantNotFoundException;
-import cn.richie696.component.tenant.exception.TenantProvisionException;
-import cn.richie696.component.tenant.exception.TenantSwitchInTransactionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -47,49 +42,49 @@ public class TenantExceptionHandler {
 
     @ExceptionHandler(DataSourceUnavailableException.class)
     public ResponseEntity<Map<String, Object>> handleDataSourceUnavailable(
-        DataSourceUnavailableException e) {
+            DataSourceUnavailableException e) {
         log.warn("Data source unavailable: {}", e.getMessage());
         return buildResponse(503, "TENANT_DATA_SOURCE_UNAVAILABLE", e.getMessage());
     }
 
     @ExceptionHandler(TenantMigratingException.class)
     public ResponseEntity<Map<String, Object>> handleTenantMigrating(
-        TenantMigratingException e) {
+            TenantMigratingException e) {
         log.warn("Tenant migrating: {}", e.getMessage());
         return buildResponse(503, "TENANT_MIGRATING", e.getMessage());
     }
 
     @ExceptionHandler(TenantSwitchInTransactionException.class)
     public ResponseEntity<Map<String, Object>> handleTenantSwitchInTx(
-        TenantSwitchInTransactionException e) {
+            TenantSwitchInTransactionException e) {
         log.warn("Tenant switch in transaction: from={} to={}", e.getFromTenantId(), e.getToTenantId());
         return buildResponse(403, "TENANT_SWITCH_IN_TRANSACTION", e.getMessage());
     }
 
     @ExceptionHandler(TenantNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleTenantNotFound(
-        TenantNotFoundException e) {
+            TenantNotFoundException e) {
         log.warn("Tenant not found: {}", e.getMessage());
         return buildResponse(404, "TENANT_NOT_FOUND", e.getMessage());
     }
 
     @ExceptionHandler(TenantModeMigrationException.class)
     public ResponseEntity<Map<String, Object>> handleModeMigration(
-        TenantModeMigrationException e) {
+            TenantModeMigrationException e) {
         log.warn("Mode migration denied: {}", e.getMessage());
         return buildResponse(403, "TENANT_MODE_MIGRATION_DENIED", e.getMessage());
     }
 
     @ExceptionHandler(TenantProvisionException.class)
     public ResponseEntity<Map<String, Object>> handleProvision(
-        TenantProvisionException e) {
+            TenantProvisionException e) {
         log.error("Tenant provision failed: {}", e.getMessage());
         return buildResponse(500, "TENANT_PROVISION_FAILED", e.getMessage());
     }
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Map<String, Object>> handleBusiness(
-        BusinessException e) {
+            BusinessException e) {
         log.warn("Tenant business error: {}", e.getMessage());
         return buildResponse(403, e.getCode(), e.getMessage());
     }

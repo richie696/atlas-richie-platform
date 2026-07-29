@@ -43,25 +43,39 @@ import java.util.concurrent.locks.Lock;
 @Accessors(chain = true)
 public class CacheLock implements Closeable {
 
-    /** 是否加锁成功 */
+    /**
+     * 是否加锁成功
+     */
     private final boolean success;
 
-    /** 锁对应的 Redis key */
+    /**
+     * 锁对应的 Redis key
+     */
     private String key;
 
-    /** 请求唯一标识，用于原子解锁校验 */
+    /**
+     * 请求唯一标识，用于原子解锁校验
+     */
     private final String requestId;
 
-    /** 持有锁的线程 ID */
+    /**
+     * 持有锁的线程 ID
+     */
     private long holdThreadId;
 
-    /** Redisson 栅栏锁 */
+    /**
+     * Redisson 栅栏锁
+     */
     private RFencedLock redissonFencedLock;
 
-    /** 可重入计数 */
+    /**
+     * 可重入计数
+     */
     private int nestTransaction = 1;
 
-    /** 是否支持可重入 */
+    /**
+     * 是否支持可重入
+     */
     @Getter
     private final boolean reentrant;
 
@@ -95,14 +109,14 @@ public class CacheLock implements Closeable {
     /**
      * 构造基于 Redisson FencedLock 的锁对象。
      *
-     * @param success          是否加锁成功
-     * @param key              锁 key
-     * @param requestId        请求唯一标识
+     * @param success            是否加锁成功
+     * @param key                锁 key
+     * @param requestId          请求唯一标识
      * @param redissonFencedLock Redisson 栅栏锁
-     * @param reentrant        是否可重入
+     * @param reentrant          是否可重入
      */
     public CacheLock(boolean success, String key, String requestId,
-              RFencedLock redissonFencedLock, boolean reentrant) {
+                     RFencedLock redissonFencedLock, boolean reentrant) {
         this.success = success;
         this.key = key;
         this.requestId = requestId;
@@ -130,6 +144,7 @@ public class CacheLock implements Closeable {
 
     /**
      * 增加嵌套事务数
+     *
      * @return CacheLock
      */
     public CacheLock addCounter() {
@@ -146,6 +161,7 @@ public class CacheLock implements Closeable {
 
     /**
      * 设置嵌套事务数
+     *
      * @param nestTransaction 嵌套事务数
      */
     public void setNestTransaction(int nestTransaction) {

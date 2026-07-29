@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.tenant.context;
 
+import cn.richie696.component.tenant.exception.TenantSwitchInTransactionException;
 import io.micrometer.context.ContextRegistry;
 import io.micrometer.context.ThreadLocalAccessor;
-import cn.richie696.component.tenant.exception.TenantSwitchInTransactionException;
 import jakarta.annotation.Nonnull;
 
 /**
@@ -40,10 +40,26 @@ public final class TransactionTenantHolder {
 
     static {
         ContextRegistry.getInstance().registerThreadLocalAccessor(new ThreadLocalAccessor<Long>() {
-            @Nonnull @Override public Object key() { return CONTEXT_KEY; }
-            @Override public Long getValue() { return TX_TENANT.get(); }
-            @Override public void setValue(@Nonnull Long value) { TX_TENANT.set(value); }
-            @Override public void setValue() { TX_TENANT.remove(); }
+            @Nonnull
+            @Override
+            public Object key() {
+                return CONTEXT_KEY;
+            }
+
+            @Override
+            public Long getValue() {
+                return TX_TENANT.get();
+            }
+
+            @Override
+            public void setValue(@Nonnull Long value) {
+                TX_TENANT.set(value);
+            }
+
+            @Override
+            public void setValue() {
+                TX_TENANT.remove();
+            }
         });
     }
 

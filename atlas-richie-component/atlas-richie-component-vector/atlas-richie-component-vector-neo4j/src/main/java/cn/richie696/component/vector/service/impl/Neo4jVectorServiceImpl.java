@@ -15,16 +15,12 @@
  */
 package cn.richie696.component.vector.service.impl;
 
-import cn.richie696.component.vector.config.VectorProperties;
-import cn.richie696.component.vector.model.IndexInfo;
-import cn.richie696.component.vector.model.IndexStatus;
-import cn.richie696.component.vector.model.Modality;
-import cn.richie696.component.vector.model.VectorContent;
-import cn.richie696.component.vector.model.VectorRecord;
 import cn.richie696.component.ai.service.RerankService;
+import cn.richie696.component.vector.config.VectorProperties;
+import cn.richie696.component.vector.model.*;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
-import cn.richie696.component.vector.service.VectorService;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
+import cn.richie696.component.vector.service.VectorService;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.*;
 import org.neo4j.driver.Record;
@@ -54,8 +50,8 @@ import java.util.Map;
  *
  * @author 王锦阳
  * @version 2.0.0
- * @since 2.0.0
  * @see VectorService
+ * @since 2.0.0
  */
 @Slf4j
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "neo4j")
@@ -75,10 +71,10 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      *
      * <p>通过构造器注入所需的依赖组件，包括向量存储、嵌入模型和 Neo4j 驱动.</p>
      *
-     * @param rerankService 重排序服务（可选）
-     * @param vectorStore     Spring AI 向量存储接口，用于文档的添加和删除
-     * @param embeddingModel  嵌入模型，用于将文本转换为向量表示
-     * @param driver          Neo4j 数据库驱动程序，用于执行 Cypher 查询
+     * @param rerankService  重排序服务（可选）
+     * @param vectorStore    Spring AI 向量存储接口，用于文档的添加和删除
+     * @param embeddingModel 嵌入模型，用于将文本转换为向量表示
+     * @param driver         Neo4j 数据库驱动程序，用于执行 Cypher 查询
      */
     @Autowired
     public Neo4jVectorServiceImpl(@Autowired(required = false) RerankService rerankService,
@@ -94,7 +90,9 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
     //               getIndexConfigImpl / countDocumentsImpl / truncateIndexImpl
     // ====================================================================
 
-    /** Neo4j 默认向量维度（OpenAI text-embedding-3-small 等） */
+    /**
+     * Neo4j 默认向量维度（OpenAI text-embedding-3-small 等）
+     */
     private static final int DEFAULT_DIMENSION = 1536;
 
     /**
@@ -571,7 +569,9 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
     }
 
     @Override
-    protected boolean usesStoreManagedEmbedding() { return true; }
+    protected boolean usesStoreManagedEmbedding() {
+        return true;
+    }
 
     @Override
     protected void writeStoreManagedRecords(String indexName, List<VectorRecord> records) {
@@ -705,7 +705,7 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      * Java driver 无法直接触发。VectorService 层不暴露 in-process 备份能力，
      * 建议由运维侧调度 {@code neo4j-admin} 完成整库 dump 后再回灌数据。</p>
      *
-     * @param indexName 索引名称（仅用于诊断信息）
+     * @param indexName  索引名称（仅用于诊断信息）
      * @param targetPath 备份目标路径
      * @throws UnsupportedOperationException Neo4j backup 需 out-of-process 工具
      */

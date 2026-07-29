@@ -15,15 +15,16 @@
  */
 package cn.richie696.component.ai.service;
 
-import cn.richie696.component.ai.config.AiModelProperties;
-import cn.richie696.component.ai.service.impl.AiMultimodalServiceImpl;
 import cn.richie696.component.ai.api.RerankModel;
 import cn.richie696.component.ai.api.image.ImageEmbeddingModel;
+import cn.richie696.component.ai.config.AiModelProperties;
+import cn.richie696.component.ai.service.impl.AiMultimodalServiceImpl;
 import org.springframework.ai.audio.transcription.TranscriptionModel;
 import org.springframework.ai.audio.tts.TextToSpeechModel;
 import org.springframework.ai.image.ImageModel;
 
 import java.util.Set;
+import java.util.Map;
 
 /**
  * R-N 多模态服务接口(重排 / 文生图 / 语音合成 / 语音识别)。

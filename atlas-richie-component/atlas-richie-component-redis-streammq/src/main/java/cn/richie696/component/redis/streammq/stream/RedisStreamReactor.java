@@ -15,18 +15,17 @@
  */
 package cn.richie696.component.redis.streammq.stream;
 
-import cn.richie696.contract.model.BaseStreamMessage;
 import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
 import cn.richie696.component.cache.redis.bean.MultiStringRedisTemplate;
 import cn.richie696.component.redis.streammq.bean.StreamMessage;
 import cn.richie696.component.redis.streammq.monitor.MetricsErrorRecorder;
 import cn.richie696.component.redis.streammq.monitor.RedisStreamMetrics;
+import cn.richie696.contract.model.BaseStreamMessage;
 import io.micrometer.core.instrument.Timer;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.connection.stream.*;
-import org.springframework.stereotype.Component;
 import reactor.core.Disposable;
 import reactor.core.scheduler.Schedulers;
 
@@ -63,52 +62,75 @@ import java.util.concurrent.atomic.AtomicLong;
  * @since 2025-09-16
  */
 @Slf4j
-@Component
 public class RedisStreamReactor {
 
-    /** Redis 模板（JSON 序列化） */
+    /**
+     * Redis 模板（JSON 序列化）
+     */
     @Qualifier("jsonTemplate")
     private final MultiRedisTemplate<Object> redisTemplate;
 
-    /** 字符串 Redis 模板 */
+    /**
+     * 字符串 Redis 模板
+     */
     private final MultiStringRedisTemplate stringRedisTemplate;
 
-    /** Stream 指标 */
+    /**
+     * Stream 指标
+     */
     private final RedisStreamMetrics metrics;
 
-    /** 定时调度器 */
+    /**
+     * 定时调度器
+     */
     private final ScheduledExecutorService scheduler;
 
-    /** 活跃拉取器任务（streamKey -> ScheduledFuture，用于取消） */
+    /**
+     * 活跃拉取器任务（streamKey -> ScheduledFuture，用于取消）
+     */
     private final Map<String, ScheduledFuture<?>> activePollers = new ConcurrentHashMap<>();
 
-    /** 拉取器配置（streamKey -> 配置） */
+    /**
+     * 拉取器配置（streamKey -> 配置）
+     */
     private final Map<String, PollerConfig> pollerConfigs = new ConcurrentHashMap<>();
 
-    /** 拉取器状态快照（供健康检查与端点查询） */
+    /**
+     * 拉取器状态快照（供健康检查与端点查询）
+     */
     private final Map<String, PollerStatus> pollerStatusMap = new ConcurrentHashMap<>();
 
-    /** 总拉取次数 */
+    /**
+     * 总拉取次数
+     */
     private final AtomicLong totalPollCount = new AtomicLong(0);
 
-    /** 总消息数 */
+    /**
+     * 总消息数
+     */
     private final AtomicLong totalMessageCount = new AtomicLong(0);
 
-    /** 总错误数 */
+    /**
+     * 总错误数
+     */
     private final AtomicLong totalErrorCount = new AtomicLong(0);
 
-    /** 控制总线订阅（用于拉取器状态查询/响应） */
+    /**
+     * 控制总线订阅（用于拉取器状态查询/响应）
+     */
     private final Disposable controlSubscription;
 
-    /** 是否正在优雅停机 */
+    /**
+     * 是否正在优雅停机
+     */
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     /**
      * 构造函数
      *
-     * @param redisTemplate Redis 模板
+     * @param redisTemplate       Redis 模板
      * @param stringRedisTemplate 字符串 Redis 模板
-     * @param metrics Stream 指标
+     * @param metrics             Stream 指标
      */
     public RedisStreamReactor(@Qualifier("jsonTemplate") MultiRedisTemplate<Object> redisTemplate, MultiStringRedisTemplate stringRedisTemplate, RedisStreamMetrics metrics) {
         this.redisTemplate = redisTemplate;
@@ -147,7 +169,7 @@ public class RedisStreamReactor {
      *   <li>节省资源：无消息时保持长轮询，避免频繁空轮询</li>
      * </ul>
      *
-     * @param <T>      消息负载类型
+     * @param <T>       消息负载类型
      * @param streamKey Stream 键名
      * @param group     消费者组名
      * @param consumer  消费者名称
@@ -187,7 +209,7 @@ public class RedisStreamReactor {
             metrics.incrementActivePollers();
 
             log.info("自适应轮询拉取器启动成功: stream={}, group={}, consumer={}, count={}, blockMs={}, " +
-                    "有消息时立即拉取，无消息时等待{}ms",
+                            "有消息时立即拉取，无消息时等待{}ms",
                     streamKey, group, consumer, count, blockMs, blockMs);
 
         } catch (Exception e) {
@@ -202,7 +224,7 @@ public class RedisStreamReactor {
      * 调度下一次拉取
      *
      * @param pollerKey 拉取器键
-     * @param delayMs 延迟时间（毫秒），0 表示立即执行
+     * @param delayMs   延迟时间（毫秒），0 表示立即执行
      */
     private void scheduleNextPoll(String pollerKey, long delayMs) {
         PollerConfig config = pollerConfigs.get(pollerKey);
@@ -393,9 +415,9 @@ public class RedisStreamReactor {
      * 执行一次拉取操作，并返回是否拉取到消息
      *
      * @param streamKey Stream 键
-     * @param group 消费者组
-     * @param consumer 消费者名称
-     * @param count 拉取数量
+     * @param group     消费者组
+     * @param consumer  消费者名称
+     * @param count     拉取数量
      * @return true 表示拉取到消息，false 表示未拉取到消息
      */
     private boolean pollOnceWithResult(String streamKey, String group, String consumer, int count) {
@@ -555,19 +577,29 @@ public class RedisStreamReactor {
      */
     private static final class PollerConfig {
 
-        /** Stream 键名 */
+        /**
+         * Stream 键名
+         */
         final String streamKey;
 
-        /** 消费者组名 */
+        /**
+         * 消费者组名
+         */
         final String group;
 
-        /** 消费者名称 */
+        /**
+         * 消费者名称
+         */
         final String consumer;
 
-        /** 单次拉取数量 */
+        /**
+         * 单次拉取数量
+         */
         final int count;
 
-        /** 阻塞等待时间（毫秒） */
+        /**
+         * 阻塞等待时间（毫秒）
+         */
         final long blockMs;
 
         /**
@@ -588,31 +620,49 @@ public class RedisStreamReactor {
         }
     }
 
-    /** 拉取器运行时状态 */
+    /**
+     * 拉取器运行时状态
+     */
     private static final class PollerStatus {
 
-        /** Stream 键名 */
+        /**
+         * Stream 键名
+         */
         final String streamKey;
 
-        /** 消费者组名 */
+        /**
+         * 消费者组名
+         */
         final String group;
 
-        /** 消费者名称 */
+        /**
+         * 消费者名称
+         */
         final String consumer;
 
-        /** 是否处于活跃拉取中 */
+        /**
+         * 是否处于活跃拉取中
+         */
         volatile boolean active;
 
-        /** 启动时间 */
+        /**
+         * 启动时间
+         */
         final Instant startTime;
 
-        /** 最后活动时间 */
+        /**
+         * 最后活动时间
+         */
         volatile Instant lastActivity;
 
-        /** 已拉取消息数 */
+        /**
+         * 已拉取消息数
+         */
         final AtomicLong messageCount;
 
-        /** 错误次数 */
+        /**
+         * 错误次数
+         */
         final AtomicLong errorCount;
 
         /**
@@ -657,7 +707,7 @@ public class RedisStreamReactor {
      * 确保目标 Stream 与消费者组存在；如果 Stream 不存在则创建空 Stream，再创建消费者组。
      *
      * @param streamKey Stream 键名
-     * @param group    消费者组名
+     * @param group     消费者组名
      */
     private void ensureStreamAndGroup(String streamKey, String group) {
         try {

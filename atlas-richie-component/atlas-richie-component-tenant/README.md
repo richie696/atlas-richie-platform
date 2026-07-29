@@ -4,98 +4,100 @@
 
 - [这是什么样的组件](#这是什么样的组件)
 - [5种隔离模式--选型决策树](#5种隔离模式-选型决策树)
-  - [对比矩阵](#对比矩阵)
-  - [决策流程](#决策流程)
-  - [实际选型经验](#实际选型经验)
+    - [对比矩阵](#对比矩阵)
+    - [决策流程](#决策流程)
+    - [实际选型经验](#实际选型经验)
 - [快速开始](#快速开始)
-  - [1. 引入依赖](#1-引入依赖)
-  - [2. 准备 `sys_tenant` 表](#2-准备-systenant-表)
-  - [3. 实现 `TenantInfoProvider` SPI](#3-实现-tenantinfoprovider-spi)
-  - [4. 配置 application.yml](#4-配置-applicationyml)
-  - [5. 业务代码](#5-业务代码)
-  - [6. 启动验证](#6-启动验证)
+    - [1. 引入依赖](#1-引入依赖)
+    - [2. 准备 `sys_tenant` 表](#2-准备-systenant-表)
+    - [3. 实现 `TenantInfoProvider` SPI](#3-实现-tenantinfoprovider-spi)
+    - [4. 配置 application.yml](#4-配置-applicationyml)
+    - [5. 业务代码](#5-业务代码)
+    - [6. 启动验证](#6-启动验证)
 - [架构总览](#架构总览)
-  - [上下文传播全景](#上下文传播全景)
+    - [上下文传播全景](#上下文传播全景)
 - [核心 API](#核心-api)
-  - [TenantContext (静态门面)](#tenantcontext-静态门面)
-  - [TenantPrincipal (租户身份)](#tenantprincipal-租户身份)
-  - [IsolationMode (5 种模式枚举)](#isolationmode-5-种模式枚举)
-  - [TenantInfo (租户运行时信息)](#tenantinfo-租户运行时信息)
+    - [TenantContext (静态门面)](#tenantcontext-静态门面)
+    - [TenantPrincipal (租户身份)](#tenantprincipal-租户身份)
+    - [IsolationMode (5 种模式枚举)](#isolationmode-5-种模式枚举)
+    - [TenantInfo (租户运行时信息)](#tenantinfo-租户运行时信息)
 - [隔离模式详解](#隔离模式详解)
-  - [COLUMN 模式](#column-模式)
-  - [TABLE 模式](#table-模式)
-  - [SCHEMA 模式](#schema-模式)
-  - [DATABASE 模式](#database-模式)
-  - [HYBRID 模式](#hybrid-模式)
+    - [COLUMN 模式](#column-模式)
+    - [TABLE 模式](#table-模式)
+    - [SCHEMA 模式](#schema-模式)
+    - [DATABASE 模式](#database-模式)
+    - [HYBRID 模式](#hybrid-模式)
 - [Web 集成](#web-集成)
-  - [TenantIdentityFilter](#tenantidentityfilter)
-  - [超级管理员 (无租户用户)](#超级管理员-无租户用户)
-  - [配置白名单](#配置白名单)
-  - [错误响应格式](#错误响应格式)
-  - [WebFlux / Reactive 集成](#webflux-/-reactive-集成)
+    - [TenantIdentityFilter](#tenantidentityfilter)
+    - [超级管理员 (无租户用户)](#超级管理员-无租户用户)
+    - [配置白名单](#配置白名单)
+    - [错误响应格式](#错误响应格式)
+    - [WebFlux / Reactive 集成](#webflux-/-reactive-集成)
 - [事务管理](#事务管理)
-  - [事务内租户冻结](#事务内租户冻结)
-  - [设计意图](#设计意图)
+    - [事务内租户冻结](#事务内租户冻结)
+    - [设计意图](#设计意图)
 - [异步与多线程](#异步与多线程)
-  - [核心问题](#核心问题)
-  - [解决方案 (按推荐度排序)](#解决方案-按推荐度排序)
-  - [覆盖 vs 失效场景](#覆盖-vs-失效场景)
+    - [核心问题](#核心问题)
+    - [解决方案 (按推荐度排序)](#解决方案-按推荐度排序)
+    - [覆盖 vs 失效场景](#覆盖-vs-失效场景)
 - [数据源路由与熔断](#数据源路由与熔断)
-  - [Database 模式下的数据源路由](#database-模式下的数据源路由)
-  - [熔断器](#熔断器)
-  - [灰度发布](#灰度发布)
+    - [Database 模式下的数据源路由](#database-模式下的数据源路由)
+    - [熔断器](#熔断器)
+    - [灰度发布](#灰度发布)
 - [配置参考](#配置参考)
-  - [完整配置项 (MultiTenancyProperties)](#完整配置项-multitenancyproperties)
-  - [通信框架依赖](#通信框架依赖)
-  - [启动日志参考](#启动日志参考)
+    - [完整配置项 (MultiTenancyProperties)](#完整配置项-multitenancyproperties)
+    - [通信框架依赖](#通信框架依赖)
+    - [启动日志参考](#启动日志参考)
 - [SPI 扩展点](#spi-扩展点)
-  - [TenantInfoProvider (必实现)](#tenantinfoprovider-必实现)
+    - [TenantInfoProvider (必实现)](#tenantinfoprovider-必实现)
 - [API 全签名参考](#api-全签名参考)
-  - [业务必用 facade](#业务必用-facade)
-  - [枚举类](#枚举类)
-  - [配置 properties](#配置-properties)
-  - [SPI 实现接口](#spi-实现接口)
-  - [异常体系](#异常体系)
-  - [框架内部组件(业务不应直接调用,列出便于查阅)](#框架内部组件业务不应直接调用,列出便于查阅)
-  - [未来扩展点 (保留)](#未来扩展点-保留)
+    - [业务必用 facade](#业务必用-facade)
+    - [枚举类](#枚举类)
+    - [配置 properties](#配置-properties)
+    - [SPI 实现接口](#spi-实现接口)
+    - [异常体系](#异常体系)
+    - [框架内部组件 (业务不应直接调用,列出便于查阅)](#框架内部组件业务不应直接调用,列出便于查阅)
+    - [未来扩展点 (保留)](#未来扩展点-保留)
 - [错误码参考](#错误码参考)
 - [注意事项与陷阱](#注意事项与陷阱)
-  - [🚨 高频踩坑](#🚨-高频踩坑)
-  - [🟡 性能注意事项](#🟡-性能注意事项)
-  - [🟢 最佳实践](#🟢-最佳实践)
+    - [🚨 高频踩坑](#🚨-高频踩坑)
+    - [🟡 性能注意事项](#🟡-性能注意事项)
+    - [🟢 最佳实践](#🟢-最佳实践)
 - [文档索引](#文档索引)
-  - [本文档](#本文档)
-  - [详细设计 (docs/ 目录)](#详细设计-docs/-目录)
-  - [测试覆盖 (src/test/)](#测试覆盖-src/test/)
+    - [本文档](#本文档)
+    - [详细设计 (docs/ 目录)](#详细设计-docs/-目录)
+    - [测试覆盖 (src/test/)](#测试覆盖-src/test/)
 - [端到端最小可运行示例](#端到端最小可运行示例)
-  - [1. Maven 依赖](#1-maven-依赖)
-  - [2. 主类](#2-主类)
-  - [3. sys_tenant DDL](#3-systenant-ddl)
-  - [4. TenantInfoProvider 实现（无需手写缓存，框架内置装饰器自动叠加）](#4-tenantinfoprovider-实现（无需手写缓存，框架内置装饰器自动叠加）)
-  - [5. 业务 Entity / Mapper / Service / Controller](#5-业务-entity-/-mapper-/-service-/-controller)
-  - [6. application.yml — 4 种模式各一个](#6-applicationyml-—-4-种模式各一个)
-  - [7. 启动 & 验证](#7-启动-&-验证)
-  - [8. 常见接入问题](#8-常见接入问题)
+    - [1. Maven 依赖](#1-maven-依赖)
+    - [2. 主类](#2-主类)
+    - [3. sys_tenant DDL](#3-systenant-ddl)
+    - [4. TenantInfoProvider 实现（无需手写缓存，框架内置装饰器自动叠加）](#4-tenantinfoprovider-实现（无需手写缓存，框架内置装饰器自动叠加）)
+    - [5. 业务 Entity / Mapper / Service / Controller](#5-业务-entity-/-mapper-/-service-/-controller)
+    - [6. application.yml — 4 种模式各一个](#6-applicationyml-—-4-种模式各一个)
+    - [7. 启动 & 验证](#7-启动-&-验证)
+    - [8. 常见接入问题](#8-常见接入问题)
+
 ---
 
 ## 这是什么样的组件
 
-`atlas-richie-component-tenant` 是 Atlas Richie 平台的多租户能力组件,覆盖**从 HTTP 请求进入到 MyBatis SQL 执行**的完整链路:
+`atlas-richie-component-tenant` 是 Atlas Richie 平台的多租户能力组件,覆盖 **从 HTTP 请求进入到 MyBatis SQL 执行**
+的完整链路:
 
-| 链路节点                 | 涉及的类                                                 | 作用                                                               |
-|----------------------|------------------------------------------------------|------------------------------------------------------------------|
-| HTTP 请求进入            | `TenantIdentityFilter`                               | 从 JWT 提取租户 → 校验 → 绑定到线程上下文                                       |
-| 业务层调用                | `TenantContext` (静态门面)                               | 业务代码读/写当前租户                                                      |
-| 异步任务派发               | `TenantTaskDecoratorBeanPostProcessor`               | 自动给所有线程池注入上下文装饰器                                                 |
-| 事务内调用                | `TransactionTenantHolder`                            | 冻结租户,防同一事务切换不同租户                                                 |
-| MyBatis SQL 执行前      | `TenantStrategyInterceptor`                          | 查租户信息 → 熔断检查 → 调度对应策略                                            |
+| 链路节点                 | 涉及的类                                             | 作用                                                                    |
+|--------------------------|------------------------------------------------------|-------------------------------------------------------------------------|
+| HTTP 请求进入            | `TenantIdentityFilter`                               | 从 JWT 提取租户 → 校验 → 绑定到线程上下文                               |
+| 业务层调用               | `TenantContext` (静态门面)                           | 业务代码读/写当前租户                                                   |
+| 异步任务派发             | `TenantTaskDecoratorBeanPostProcessor`               | 自动给所有线程池注入上下文装饰器                                        |
+| 事务内调用               | `TransactionTenantHolder`                            | 冻结租户,防同一事务切换不同租户                                         |
+| MyBatis SQL 执行前       | `TenantStrategyInterceptor`                          | 查租户信息 → 熔断检查 → 调度对应策略                                    |
 | Column 模式 SQL 改写     | `TenantLineInnerInterceptor`                         | 给 SELECT/UPDATE/DELETE 加 `tenant_id` 条件,给 INSERT 加 `tenant_id` 列 |
-| Table 模式 SQL 改写      | `DynamicTableNameInnerInterceptor`                   | 给所有表名追加租户后缀                                                      |
-| Schema 模式            | `SchemaStrategy`                                     | `SET LOCAL search_path` 切换 Schema                                |
-| Database 模式          | `DynamicTenantDataSource` + `DatabaseStrategy`       | 数据源 key 路由到独立 DB                                                 |
-| MyBatis 实体 INSERT 填充 | `TenantMetaObjectHandler`                            | 兜底,INSERT 时自动填 `tenantId`                                        |
-| 数据源熔断                | `DataSourceCircuitBreaker` + `DataSourceHealthProbe` | 失败计数 → 熔断 → 探测恢复                                                 |
-| 异常处理                 | `TenantExceptionHandler` + `TenantErrorCode`         | 统一 4xx/5xx 响应                                                    |
+| Table 模式 SQL 改写      | `DynamicTableNameInnerInterceptor`                   | 给所有表名追加租户后缀                                                  |
+| Schema 模式              | `SchemaStrategy`                                     | `SET LOCAL search_path` 切换 Schema                                     |
+| Database 模式            | `DynamicTenantDataSource` + `DatabaseStrategy`       | 数据源 key 路由到独立 DB                                                |
+| MyBatis 实体 INSERT 填充 | `TenantMetaObjectHandler`                            | 兜底,INSERT 时自动填 `tenantId`                                         |
+| 数据源熔断               | `DataSourceCircuitBreaker` + `DataSourceHealthProbe` | 失败计数 → 熔断 → 探测恢复                                              |
+| 异常处理                 | `TenantExceptionHandler` + `TenantErrorCode`         | 统一 4xx/5xx 响应                                                       |
 
 ---
 
@@ -105,13 +107,13 @@
 
 ### 对比矩阵
 
-| 模式           | 共享什么        | 隔离什么                   | 适合场景           | 运维成本                | 性能    | 安全性               |
-|--------------|-------------|------------------------|----------------|---------------------|-------|-------------------|
-| **COLUMN**   | 整张表         | 通过 `tenant_id` 列       | 租户数据量小,共享业务    | ⭐ 最低                | ⭐⭐⭐⭐  | ⭐⭐ (靠 SQL 改写 + 列) |
-| **TABLE**    | 数据库         | 表名后缀 (如 `orders_1001`) | 中等数据量,需要按租户分表  | ⭐⭐ 需 DDL            | ⭐⭐⭐   | ⭐⭐⭐               |
-| **SCHEMA**   | DB instance | Schema (PG/Oracle)     | 中等-大量,需要独立 DDL | ⭐⭐⭐ 需维护 schema      | ⭐⭐⭐   | ⭐⭐⭐⭐              |
-| **DATABASE** | 应用服务        | 独立 DB instance         | 金融/医疗,合规要求     | ⭐⭐⭐⭐ 需独立 DB         | ⭐⭐    | ⭐⭐⭐⭐⭐             |
-| **HYBRID**   | 混合          | 按租户动态选                 | 大型平台,租户异质      | ⭐⭐⭐⭐ 需 sys_tenant 表 | 取决于委派 | 取决于委派             |
+| 模式         | 共享什么    | 隔离什么                    | 适合场景                  | 运维成本                  | 性能       | 安全性                  |
+|--------------|-------------|-----------------------------|---------------------------|---------------------------|------------|-------------------------|
+| **COLUMN**   | 整张表      | 通过 `tenant_id` 列         | 租户数据量小,共享业务     | ⭐ 最低                   | ⭐⭐⭐⭐   | ⭐⭐ (靠 SQL 改写 + 列) |
+| **TABLE**    | 数据库      | 表名后缀 (如 `orders_1001`) | 中等数据量,需要按租户分表 | ⭐⭐ 需 DDL               | ⭐⭐⭐     | ⭐⭐⭐                  |
+| **SCHEMA**   | DB instance | Schema (PG/Oracle)          | 中等-大量,需要独立 DDL    | ⭐⭐⭐ 需维护 schema      | ⭐⭐⭐     | ⭐⭐⭐⭐                |
+| **DATABASE** | 应用服务    | 独立 DB instance            | 金融/医疗,合规要求        | ⭐⭐⭐⭐ 需独立 DB        | ⭐⭐       | ⭐⭐⭐⭐⭐              |
+| **HYBRID**   | 混合        | 按租户动态选                | 大型平台,租户异质         | ⭐⭐⭐⭐ 需 sys_tenant 表 | 取决于委派 | 取决于委派              |
 
 ### 决策流程
 
@@ -139,13 +141,13 @@
 
 ### 实际选型经验
 
-| 业务类型                   | 推荐模式                | 理由                        |
-|------------------------|---------------------|---------------------------|
-| SaaS 通用业务 (CRM/ERP/工单) | **COLUMN**          | 简单,共享表足够,业务方不用关心 DDL      |
-| 平台型业务 (不同租户 UI 都不同)    | **HYBRID** + SCHEMA | 大租户给独立 schema,小租户走 column |
-| 金融/医疗                  | **DATABASE**        | 合规要求,独立 DB instance       |
-| IoT/日志型 (单租户数据爆炸)      | **TABLE**           | 分表,水平扩展                   |
-| 内部多业务线                 | **COLUMN**          | 业务线之间天然独立,SQL 隔离够用        |
+| 业务类型                        | 推荐模式            | 理由                                |
+|---------------------------------|---------------------|-------------------------------------|
+| SaaS 通用业务 (CRM/ERP/工单)    | **COLUMN**          | 简单,共享表足够,业务方不用关心 DDL  |
+| 平台型业务 (不同租户 UI 都不同) | **HYBRID** + SCHEMA | 大租户给独立 schema,小租户走 column |
+| 金融/医疗                       | **DATABASE**        | 合规要求,独立 DB instance           |
+| IoT/日志型 (单租户数据爆炸)     | **TABLE**           | 分表,水平扩展                       |
+| 内部多业务线                    | **COLUMN**          | 业务线之间天然独立,SQL 隔离够用     |
 
 ---
 
@@ -162,11 +164,13 @@
 
 **零配置即可使用 COLUMN 模式 + Web 集成**。
 
-> 🧩 **租户信息缓存默认开启**：框架自动为 {@link TenantInfoProvider} 装饰 {@link spi.cn.richie696.component.tenant.CachingTenantInfoProvider}，
-> 以 {@code ttl=60s}、{@code max-size=10000} 缓存 {@code getTenantInfo()} 结果，避免每次 SQL 都穿透业务实现。
+> 🧩 **租户信息缓存默认开启**：框架自动为 {@link TenantInfoProvider} 装饰 {@link
+> spi.cn.richie696.component.tenant.CachingTenantInfoProvider}，
+> 以 {@code ttl=60s}、{@code max-size=10000} 缓存 {@code getTenantInfo ()} 结果，避免每次 SQL 都穿透业务实现。
 > 可通过 {@code multi-tenancy.cache.tenant-info.enabled=false} 关闭。
 
 启动日志看到:
+
 ```
 TenantContext initialized with ScopedValue (preferred for virtual threads)
 [多租户] 微服务通信框架已就绪: HTTP (Feign/RestClient)
@@ -219,7 +223,8 @@ public class MyTenantInfoProvider implements TenantInfoProvider {
 
 > ⚠️ **必须实现此 SPI**,组件默认 NoOp 实现 (返回 null),会导致所有 SQL 抛 `TenantNotFoundException`。
 >
-> 🧩 **无需手写缓存**。框架内置 `CachingTenantInfoProvider` 自动装饰你的实现（`@ConditionalOnProperty(matchIfMissing=true)`），
+> 🧩 **无需手写缓存**。框架内置 `CachingTenantInfoProvider` 自动装饰你的实现（
+> `@ConditionalOnProperty(matchIfMissing=true)`），
 > 以 JDK `ConcurrentHashMap` 实现 `ttl=60s`、`max-size=10000` 缓存，业务方只写纯 DB 查询即可。
 > 若需关闭内置缓存：`multi-tenancy.cache.tenant-info.enabled=false`。
 
@@ -322,16 +327,16 @@ curl -H "X-ACCESS-TOKEN: $JWT" -H "X-Tenant-ID: 1001" \
 
 ### 上下文传播全景
 
-| 场景 | 上下文保持 | 实现机制 |
-|------|----------|---------|
-| 单线程请求 | ✅ | ScopedValue / ThreadLocal |
-| `StructuredTaskScope.fork()` | ✅ 自动 | ScopedValue 继承 |
-| `@Async` 线程池 | ✅ 自动 | TenantTaskDecoratorBeanPostProcessor |
-| `@Scheduled` 定时任务 | ✅ 自动 | 同上 |
-| CompletableFuture 链 | ⚠️ 部分 | 依赖业务用 TaskDecorator |
-| Reactive (WebFlux) | ✅ 自动 | TenantWebFilter + ReactorTenantContext |
-| Feign 调用下游 | ✅ | 由 `atlas-richie-component-microservice` 处理 |
-| RocketMQ 消费 | ✅ | 由 `atlas-richie-component-messaging` 处理 |
+| 场景                         | 上下文保持 | 实现机制                                      |
+|------------------------------|------------|-----------------------------------------------|
+| 单线程请求                   | ✅         | ScopedValue / ThreadLocal                     |
+| `StructuredTaskScope.fork()` | ✅ 自动    | ScopedValue 继承                              |
+| `@Async` 线程池              | ✅ 自动    | TenantTaskDecoratorBeanPostProcessor          |
+| `@Scheduled` 定时任务        | ✅ 自动    | 同上                                          |
+| CompletableFuture 链         | ⚠️ 部分    | 依赖业务用 TaskDecorator                      |
+| Reactive (WebFlux)           | ✅ 自动    | TenantWebFilter + ReactorTenantContext        |
+| Feign 调用下游               | ✅         | 由 `atlas-richie-component-microservice` 处理 |
+| RocketMQ 消费                | ✅         | 由 `atlas-richie-component-messaging` 处理    |
 
 ---
 
@@ -365,7 +370,8 @@ Order order = TenantContext.runWithTenant(principal, () ->
 ```
 
 **重要约束**:
-- 同一线程重复 `runWithTenant` 走的是嵌套作用域(ScopedValue 支持)
+
+- 同一线程重复 `runWithTenant` 走的是嵌套作用域 (ScopedValue 支持)
 - 事务内 `runWithTenant(另一个租户, ...)` 会抛 `TenantSwitchInTransactionException` (由 `TransactionTenantHolder` 检测)
 - 异步任务 (新线程) 默认不继承上下文,需用 `TenantTaskDecorator` (框架已自动配)
 
@@ -444,11 +450,11 @@ INSERT INTO orders (product, amount, tenant_id) VALUES ('X', 100, 1001);
 
 #### 工作机制
 
-| 拦截器 | 作用 | 触发条件 |
-|--------|------|---------|
-| `TenantStrategyInterceptor` | 调 `ColumnStrategy.beforeSqlExecute()` 做前置校验 | 总是 |
-| `TenantLineInnerInterceptor` | 用 JSqlParser 改写 SQL,追加 `tenant_id` 条件/列 | COLUMN 模式总是改写;HYBRID 模式下若该租户为 COLUMN 模式才改写;TABLE/SCHEMA/DATABASE 模式**自动跳过** |
-| `TenantMetaObjectHandler` | MyBatis-Plus INSERT 时填 `tenantId` 字段 | INSERT 实体有 `tenantId` 字段 |
+| 拦截器                       | 作用                                              | 触发条件                                                                                             |
+|------------------------------|---------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| `TenantStrategyInterceptor`  | 调 `ColumnStrategy.beforeSqlExecute()` 做前置校验 | 总是                                                                                                 |
+| `TenantLineInnerInterceptor` | 用 JSqlParser 改写 SQL,追加 `tenant_id` 条件/列   | COLUMN 模式总是改写;HYBRID 模式下若该租户为 COLUMN 模式才改写;TABLE/SCHEMA/DATABASE 模式**自动跳过** |
+| `TenantMetaObjectHandler`    | MyBatis-Plus INSERT 时填 `tenantId` 字段          | INSERT 实体有 `tenantId` 字段                                                                        |
 
 #### 配置
 
@@ -487,16 +493,15 @@ public interface OrderMapper extends BaseMapper<Order> {
 
 #### 不用会怎样
 
-| 不接的类 | 后果 |
-|---------|------|
-| 不接 `TenantLineInnerInterceptor` | SQL 无 `tenant_id` 条件 → **跨租户数据泄露** |
-| 不接 `TenantMetaObjectHandler` | INSERT 不自动填 `tenant_id` → 数据 `tenant_id=0` 混在平台默认租户里 |
-| 不接 `TenantStrategyInterceptor` | 不做租户信息查询,所有请求按 `mode` 配置走,无法按租户动态配置 |
+| 不接的类                          | 后果                                                                |
+|-----------------------------------|---------------------------------------------------------------------|
+| 不接 `TenantLineInnerInterceptor` | SQL 无 `tenant_id` 条件 → **跨租户数据泄露**                        |
+| 不接 `TenantMetaObjectHandler`    | INSERT 不自动填 `tenant_id` → 数据 `tenant_id=0` 混在平台默认租户里 |
+| 不接 `TenantStrategyInterceptor`  | 不做租户信息查询,所有请求按 `mode` 配置走,无法按租户动态配置        |
 
 #### 适用 / 不适用
 
-✅ 适用: 租户数 10-1000,单租户数据量 < 100 万行
-❌ 不适用: 单租户数据量极大(> 1000 万行,SQL 慢);合规要求物理隔离
+✅ 适用: 租户数 10-1000,单租户数据量 < 100 万行 ❌ 不适用: 单租户数据量极大 (> 1000 万行,SQL 慢);合规要求物理隔离
 
 ---
 
@@ -516,11 +521,11 @@ SELECT * FROM orders_1001 WHERE id = 123;
 
 #### 工作机制
 
-| 拦截器 | 作用 |
-|--------|------|
-| `TenantStrategyInterceptor` | 调 `TableStrategy.beforeSqlExecute()`,从 `TenantInfo.tableSuffix` 取后缀,写入 `TableSuffixHolder` |
-| `DynamicTableNameInnerInterceptor` | 读 `TableSuffixHolder` 拿后缀,改写 SQL 中所有表名 |
-| `TenantLineInnerInterceptor` | ✅ **自动跳过**(内部短路):TABLE 模式不需要 `tenant_id` 列改写 |
+| 拦截器                             | 作用                                                                                              |
+|------------------------------------|---------------------------------------------------------------------------------------------------|
+| `TenantStrategyInterceptor`        | 调 `TableStrategy.beforeSqlExecute()`,从 `TenantInfo.tableSuffix` 取后缀,写入 `TableSuffixHolder` |
+| `DynamicTableNameInnerInterceptor` | 读 `TableSuffixHolder` 拿后缀,改写 SQL 中所有表名                                                 |
+| `TenantLineInnerInterceptor`       | ✅ **自动跳过**(内部短路):TABLE 模式不需要 `tenant_id` 列改写                                     |
 
 #### 配置
 
@@ -547,15 +552,15 @@ CREATE TABLE orders_1003 (id BIGINT PRIMARY KEY, ...);
 
 #### 不用会怎样
 
-| 不接的类 | 后果 |
-|---------|------|
-| 不接 `DynamicTableNameInnerInterceptor` | SQL 查 `orders` → 找不到表 → **SQL 报错** |
-| 不接 `TableStrategy` | `TableSuffixHolder` 为空 → 拦截器无后缀可加 → **SQL 报错** |
+| 不接的类                                | 后果                                                       |
+|-----------------------------------------|------------------------------------------------------------|
+| 不接 `DynamicTableNameInnerInterceptor` | SQL 查 `orders` → 找不到表 → **SQL 报错**                  |
+| 不接 `TableStrategy`                    | `TableSuffixHolder` 为空 → 拦截器无后缀可加 → **SQL 报错** |
 
 #### 适用 / 不适用
 
-✅ 适用: 单租户数据量极大(分表分散 IO),允许按租户手动建表
-❌ 不适用: 租户数多(> 10000),DDL 维护爆炸;租户动态开通(无法预先建表)
+✅ 适用: 单租户数据量极大 (分表分散 IO),允许按租户手动建表 ❌ 不适用: 租户数多 (> 10000),DDL 维护爆炸;租户动态开通
+(无法预先建表)
 
 ---
 
@@ -565,19 +570,19 @@ CREATE TABLE orders_1003 (id BIGINT PRIMARY KEY, ...);
 
 #### 工作机制
 
-| 拦截器/策略 | 作用 |
-|------------|------|
-| `SchemaStrategy.beforeSqlExecute` | (可选) 自动 CREATE SCHEMA;`SET LOCAL search_path TO <schema>` |
-| `TenantLineInnerInterceptor` | ✅ **自动跳过**(内部短路):SCHEMA 模式不需要 `tenant_id` 列改写 |
+| 拦截器/策略                        | 作用                                                                      |
+|------------------------------------|---------------------------------------------------------------------------|
+| `SchemaStrategy.beforeSqlExecute`  | (可选) 自动 CREATE SCHEMA;`SET LOCAL search_path TO <schema>`             |
+| `TenantLineInnerInterceptor`       | ✅ **自动跳过**(内部短路):SCHEMA 模式不需要 `tenant_id` 列改写            |
 | `DynamicTableNameInnerInterceptor` | ✅ **自动跳过**:`TableSuffixHolder` 在 SCHEMA 模式下为空,改写逻辑不会触发 |
 
-> Schema 模式**不做 SQL 改写**。表名一致,靠 PostgreSQL 的 `search_path` 解析到对应 schema。
-> 两个改写类拦截器在 SCHEMA 模式下均**自动跳过**(内部短路),无需手工把它们加入 `ignore-tables`。
+> Schema 模式 **不做 SQL 改写**。表名一致,靠 PostgreSQL 的 `search_path` 解析到对应 schema。
+> 两个改写类拦截器在 SCHEMA 模式下均 **自动跳过**(内部短路),无需手工把它们加入 `ignore-tables`。
 
 > ⚠️ **前置条件 — 必须有活动事务**
 >
-> `SET LOCAL search_path` 是 PostgreSQL 的事务局部设置,**仅在事务内(autoCommit=false)生效**。
-> 如果调用方未启用事务(MyBatis 默认 `autoCommit=true`),PG 会**静默忽略**该语句,数据写入错的 schema 而不报错。
+> `SET LOCAL search_path` 是 PostgreSQL 的事务局部设置, **仅在事务内 (autoCommit=false)生效**。
+> 如果调用方未启用事务 (MyBatis 默认 `autoCommit=true`),PG 会 **静默忽略**该语句,数据写入错的 schema 而不报错。
 >
 > 本组件 `SchemaStrategy` 已做 fail-fast 检查:遇到非事务连接立即抛 `TENANT_SCHEMA_REQUIRES_TRANSACTION`(500) 异常,
 > 避免 silent failure 导致的数据泄漏。
@@ -611,33 +616,33 @@ multi-tenancy:
 
 #### 不用会怎样
 
-| 不接的类 | 后果 |
-|---------|------|
+| 不接的类              | 后果                                                                |
+|-----------------------|---------------------------------------------------------------------|
 | 不接 `SchemaStrategy` | `search_path` 不切换 → 查的是 `public` schema → **数据错乱/查不到** |
 
 #### 适用 / 不适用
 
-✅ 适用: PostgreSQL/Oracle,需要租户级 DDL 定制,租户数适中
-❌ 不适用: MySQL (无 Schema 概念);租户数极大(> 5000,Schema 数量爆炸)
+✅ 适用: PostgreSQL/Oracle,需要租户级 DDL 定制,租户数适中 ❌ 不适用: MySQL (无 Schema 概念);租户数极大 (> 5000,Schema
+数量爆炸)
 
 ---
 
 ### `DATABASE` 模式
 
-**每个租户独立 DB instance**。最强的物理隔离,支持跨 DB 类型(如部分租户用 PG,部分用 MySQL)。
+**每个租户独立 DB instance**。最强的物理隔离,支持跨 DB 类型 (如部分租户用 PG,部分用 MySQL)。
 
 #### 工作机制
 
-| 组件 | 作用 |
-|------|------|
-| `TenantStrategyInterceptor` | 调 `DatabaseStrategy.beforeSqlExecute()`,从 `TenantInfo.dataSourceName` 取 key,写入 `DataSourceContextHolder` |
-| `DynamicTenantDataSource` (extends `AbstractRoutingDataSource`) | Spring JDBC 调用时,按 `DataSourceContextHolder` key 路由到对应 DataSource |
-| `DataSourceCircuitBreaker` | 熔断器,失败 N 次后该租户数据源短路 |
-| `DataSourceHealthProbe` | 后台定时探测熔断中的数据源,半开恢复 |
-| `TenantLineInnerInterceptor` | ✅ **自动跳过**(内部短路):DATABASE 模式不需要 `tenant_id` 列改写 |
-| `DynamicTableNameInnerInterceptor` | ✅ **自动跳过**:`TableSuffixHolder` 在 DATABASE 模式下为空,改写逻辑不会触发 |
+| 组件                                                            | 作用                                                                                                          |
+|-----------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| `TenantStrategyInterceptor`                                     | 调 `DatabaseStrategy.beforeSqlExecute()`,从 `TenantInfo.dataSourceName` 取 key,写入 `DataSourceContextHolder` |
+| `DynamicTenantDataSource` (extends `AbstractRoutingDataSource`) | Spring JDBC 调用时,按 `DataSourceContextHolder` key 路由到对应 DataSource                                     |
+| `DataSourceCircuitBreaker`                                      | 熔断器,失败 N 次后该租户数据源短路                                                                            |
+| `DataSourceHealthProbe`                                         | 后台定时探测熔断中的数据源,半开恢复                                                                           |
+| `TenantLineInnerInterceptor`                                    | ✅ **自动跳过**(内部短路):DATABASE 模式不需要 `tenant_id` 列改写                                              |
+| `DynamicTableNameInnerInterceptor`                              | ✅ **自动跳过**:`TableSuffixHolder` 在 DATABASE 模式下为空,改写逻辑不会触发                                   |
 
-> 两个改写类拦截器在 DATABASE 模式下均**自动跳过**(内部短路),无需手工把它们加入 `ignore-tables`。
+> 两个改写类拦截器在 DATABASE 模式下均 **自动跳过**(内部短路),无需手工把它们加入 `ignore-tables`。
 
 #### 配置
 
@@ -665,26 +670,27 @@ multi-tenancy:
 #### 注册 `DynamicTenantDataSource`
 
 ```java
+
 @Configuration
 public class MyDataSourceConfig {
-    
+
     @Bean
     @Primary
     public DataSource dataSource(
-        @Value("${multi-tenancy.datasource.shared.url}") String url,
-        @Value("${multi-tenancy.datasource.shared.username}") String username,
-        @Value("${multi-tenancy.datasource.shared.password}") String password,
-        MultiTenancyProperties props
+            @Value("${multi-tenancy.datasource.shared.url}") String url,
+            @Value("${multi-tenancy.datasource.shared.username}") String username,
+            @Value("${multi-tenancy.datasource.shared.password}") String password,
+            MultiTenancyProperties props
     ) {
         // 1. 创建 shared 数据源 (Hikari)
         HikariDataSource shared = new HikariDataSource();
         shared.setJdbcUrl(url);
         shared.setUsername(username);
         shared.setPassword(password);
-        
+
         // 2. 创建 DynamicTenantDataSource
         DynamicTenantDataSource ds = new DynamicTenantDataSource(shared);
-        
+
         // 3. 注册所有租户数据源
         for (var entry : props.getDatasource().getTenants().entrySet()) {
             TenantDataSourceConfig cfg = entry.getValue();
@@ -694,7 +700,7 @@ public class MyDataSourceConfig {
             tenantDs.setPassword(cfg.getPassword());
             ds.addTenantDataSource(entry.getKey(), tenantDs);
         }
-        
+
         return ds;
     }
 }
@@ -706,15 +712,14 @@ public class MyDataSourceConfig {
 
 #### 不用会怎样
 
-| 不接的类 | 后果 |
-|---------|------|
-| 不接 `DatabaseStrategy` | `DataSourceContextHolder` 为空 → 路由到 shared → **查错库** |
-| 不注册 `DynamicTenantDataSource` | 走 shared 数据源 → **数据泄露到 shared** |
+| 不接的类                         | 后果                                                        |
+|----------------------------------|-------------------------------------------------------------|
+| 不接 `DatabaseStrategy`          | `DataSourceContextHolder` 为空 → 路由到 shared → **查错库** |
+| 不注册 `DynamicTenantDataSource` | 走 shared 数据源 → **数据泄露到 shared**                    |
 
 #### 适用 / 不适用
 
-✅ 适用: 金融/医疗/政企,合规要求物理隔离;不同租户可用不同 DB 类型
-❌ 不适用: 租户数多(> 1000),DB 实例管理成本爆炸
+✅ 适用: 金融/医疗/政企,合规要求物理隔离;不同租户可用不同 DB 类型 ❌ 不适用: 租户数多 (> 1000),DB 实例管理成本爆炸
 
 ---
 
@@ -740,12 +745,13 @@ TenantStrategyInterceptor 按 tenantInfo.mode 从工厂取策略
 
 #### 改写类拦截器在 `HYBRID` 下的行为
 
-| 拦截器 | HYBRID 下的行为 |
-|--------|----------------|
-| `TenantLineInnerInterceptor` | **按租户查实际模式** —— 调 `TenantInfoProvider.getTenantInfo(tenantId)`,若该租户是 COLUMN 模式才改写;若是 TABLE/SCHEMA/DATABASE 则跳过 |
-| `DynamicTableNameInnerInterceptor` | 按租户查实际模式后,只有租户是 TABLE 模式且 `TableSuffixHolder` 有 suffix 才改写 |
+| 拦截器                             | HYBRID 下的行为                                                                                                                        |
+|------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| `TenantLineInnerInterceptor`       | **按租户查实际模式** —— 调 `TenantInfoProvider.getTenantInfo(tenantId)`,若该租户是 COLUMN 模式才改写;若是 TABLE/SCHEMA/DATABASE 则跳过 |
+| `DynamicTableNameInnerInterceptor` | 按租户查实际模式后,只有租户是 TABLE 模式且 `TableSuffixHolder` 有 suffix 才改写                                                        |
 
-> ⚠️ **性能注意**:`TenantLineInnerInterceptor` 在 HYBRID 模式下**每次 SQL 都查** `TenantInfoProvider`,接入方**必须**在自己的实现里加缓存(例如 Caffeine 60 秒 TTL),否则 P99 延迟会翻倍。
+> ⚠️ **性能注意**:`TenantLineInnerInterceptor` 在 HYBRID 模式下 **每次 SQL 都查** `TenantInfoProvider`,接入方 **必须**
+> 在自己的实现里加缓存 (例如 Caffeine 60 秒 TTL),否则 P99 延迟会翻倍。
 
 #### 配置
 
@@ -770,8 +776,8 @@ UPDATE sys_tenant SET isolation_mode = 'COLUMN' WHERE id = 1003;
 
 #### 适用 / 不适用
 
-✅ 适用: 大型平台,租户异质(少数大租户 + 大量小租户)
-❌ 不适用: 所有租户同质;团队人手少(多模式运维成本)
+✅ 适用: 大型平台,租户异质 (少数大租户 + 大量小租户)
+❌ 不适用: 所有租户同质;团队人手少 (多模式运维成本)
 
 ---
 
@@ -779,11 +785,11 @@ UPDATE sys_tenant SET isolation_mode = 'COLUMN' WHERE id = 1003;
 
 ### `TenantIdentityFilter`
 
-`OncePerRequestFilter`,在 `Ordered.HIGHEST_PRECEDENCE + 500` 排序,**最早执行**。
+`OncePerRequestFilter`,在 `Ordered.HIGHEST_PRECEDENCE + 500` 排序, **最早执行**。
 
 **解析流程**:
 
-1. **白名单检查** — 配置的路径(如 `/actuator/**`, `/login`)直接放行,不绑定租户
+1. **白名单检查** — 配置的路径 (如 `/actuator/**`, `/login`)直接放行,不绑定租户
 2. **从 JWT 解析** — `JwtUtils.getTenantPrincipal(token)` 拿 `TenantPrincipal`
 3. **降级从 Header** — Feign 内部调用场景,`X-Tenant-ID` header 携带
 4. **校验** — tenantId 必须是正整数
@@ -793,12 +799,12 @@ UPDATE sys_tenant SET isolation_mode = 'COLUMN' WHERE id = 1003;
 
 ### 超级管理员 (无租户用户)
 
-JWT 中**无 `tenantId` claim** 时的行为取决于 `enforceAuthTenant` 配置：
+JWT 中 **无 `tenantId` claim** 时的行为取决于 `enforceAuthTenant` 配置：
 
-| `enforceAuthTenant` | 行为 |
-|---------------------|------|
-| `false` | 视为平台超管，**不绑定租户上下文**，直接放行 |
-| `true`（默认） | **拒绝请求**（返回 401 `TENANT_AUTH_MISSING_TOKEN`），除非路径在 `superAdminPaths` 中 |
+| `enforceAuthTenant` | 行为                                                                                  |
+|---------------------|---------------------------------------------------------------------------------------|
+| `false`             | 视为平台超管，**不绑定租户上下文**，直接放行                                          |
+| `true`（默认）      | **拒绝请求**（返回 401 `TENANT_AUTH_MISSING_TOKEN`），除非路径在 `superAdminPaths` 中 |
 
 适用场景: 平台管理后台、租户开通/审核、跨租户数据查询。
 
@@ -840,11 +846,11 @@ public class MyWhitelistConfig {
 
 本组件提供 **WebFlux 原生支持**。Spring WebFlux 应用的租户解析和上下文传播与 Servlet 应用一致：
 
-| 组件 | Servlet (MVC) | Reactive (WebFlux) |
-|------|--------------|-------------------|
-| 拦截器 | `TenantIdentityFilter` (`OncePerRequestFilter`) | `TenantWebFilter` (`WebFilter`) |
-| 异常处理器 | `TenantExceptionHandler` (`@RestControllerAdvice`) | 复用 `TenantExceptionHandler` (兼容) |
-| 租户上下文 | `TenantContext.get()` (ScopedValue/ThreadLocal) | `ReactorTenantContext.get()` (Reactor Context) |
+| 组件       | Servlet (MVC)                                      | Reactive (WebFlux)                             |
+|------------|----------------------------------------------------|------------------------------------------------|
+| 拦截器     | `TenantIdentityFilter` (`OncePerRequestFilter`)    | `TenantWebFilter` (`WebFilter`)                |
+| 异常处理器 | `TenantExceptionHandler` (`@RestControllerAdvice`) | 复用 `TenantExceptionHandler` (兼容)           |
+| 租户上下文 | `TenantContext.get()` (ScopedValue/ThreadLocal)    | `ReactorTenantContext.get()` (Reactor Context) |
 
 #### `TenantWebFilter`
 
@@ -891,7 +897,8 @@ Mono<Order> order = ReactorTenantContext.bridgeToBlocking(() ->
 
 ### 事务内租户冻结
 
-**核心约束**: 同一事务内**禁止切换租户**。因为切换租户意味着数据源连接要换,但 Spring 事务的 Connection 已经在第一个 SQL 时绑定,中途换会脏读/泄露。
+**核心约束**: 同一事务内 **禁止切换租户**。因为切换租户意味着数据源连接要换,但 Spring 事务的 Connection 已经在第一个 SQL
+时绑定,中途换会脏读/泄露。
 
 `TransactionTenantHolder` 在事务开启时记录"事务内租户",`runWithTenant(另一个租户, ...)` 时检测并拒绝。
 
@@ -907,7 +914,7 @@ public void doSomething() {
 
 ### 设计意图
 
-事务是"逻辑工作单元",跨租户混操作破坏 ACID。组件选择**强一致**而非灵活。
+事务是"逻辑工作单元",跨租户混操作破坏 ACID。组件选择 **强一致**而非灵活。
 
 ---
 
@@ -915,7 +922,8 @@ public void doSomething() {
 
 ### 核心问题
 
-Java `Thread.start()` / `ExecutorService.submit()` / `@Async` 默认不继承 `ScopedValue`。子线程 `TenantContext.get()` 返回 `null` → 拦截器跳过 → SQL 不带租户条件 → **数据泄露**。
+Java `Thread.start()` / `ExecutorService.submit()` / `@Async` 默认不继承 `ScopedValue`。子线程 `TenantContext.get()` 返回
+`null` → 拦截器跳过 → SQL 不带租户条件 → **数据泄露**。
 
 ### 解决方案 (按推荐度排序)
 
@@ -933,13 +941,13 @@ try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
 }
 ```
 
-✅ **ScopedValue 自动继承**,无额外配置
-✅ 子任务生命周期受父任务约束(结构化并发)
+✅ **ScopedValue 自动继承**,无额外配置 ✅ 子任务生命周期受父任务约束 (结构化并发)
 ❌ 仅 JDK 21+ 支持
 
 #### 方案 2 — `TenantTaskDecorator` (自动)
 
-**框架默认已配**。`TenantTaskDecoratorBeanPostProcessor` 是 `BeanPostProcessor`,Spring 启动时自动给所有 `ThreadPoolTaskExecutor` / `ThreadPoolTaskScheduler` 注入 `TenantTaskDecorator`,**业务代码零感知**。
+**框架默认已配**。`TenantTaskDecoratorBeanPostProcessor` 是 `BeanPostProcessor`,Spring 启动时自动给所有
+`ThreadPoolTaskExecutor` / `ThreadPoolTaskScheduler` 注入 `TenantTaskDecorator`, **业务代码零感知**。
 
 ```java
 @Async
@@ -949,7 +957,8 @@ public CompletableFuture<Order> asyncQuery(Long orderId) {
 }
 ```
 
-机制: `TenantTaskDecorator` 基于 micrometer `ContextSnapshot`,提交任务时**捕获**当前线程所有 `ThreadLocalAccessor` 值,执行时**恢复**。覆盖租户上下文、数据源路由、表名后缀等全部上下文。
+机制: `TenantTaskDecorator` 基于 micrometer `ContextSnapshot`,提交任务时 **捕获**当前线程所有 `ThreadLocalAccessor`
+值,执行时 **恢复**。覆盖租户上下文、数据源路由、表名后缀等全部上下文。
 
 #### 方案 3 — 手动传递 (兜底)
 
@@ -962,20 +971,20 @@ executor.submit(() -> {
 });
 ```
 
-仅在方案 1/2 都不适用时用(自定义线程池,且 BPP 未生效)。
+仅在方案 1/2 都不适用时用 (自定义线程池,且 BPP 未生效)。
 
 ### 覆盖 vs 失效场景
 
-| 场景 | 是否继承上下文 | 备注 |
-|------|--------------|------|
-| 同一线程 | ✅ | ScopedValue / ThreadLocal 默认 |
-| `StructuredTaskScope.fork()` | ✅ | 结构化并发 |
-| `@Async` 线程池 | ✅ | BPP 自动注入 |
-| `CompletableFuture.supplyAsync(supplier, executor)` | ✅ | executor 是 Spring 托管的 `ThreadPoolTaskExecutor` 时 |
-| `new Thread(() -> {...}).start()` | ❌ | **必须**手动包 `runWithTenant` |
-| `ForkJoinPool.commonPool()` | ❌ | 公共池,BPP 无法注入 |
-| WebFlux `Mono`/`Flux` operator chain | ✅ 自动 | TenantWebFilter + ReactorTenantContext |
-| Spring `@Scheduled` 定时任务 | ✅ | BPP 注入到 `ThreadPoolTaskScheduler` |
+| 场景                                                | 是否继承上下文 | 备注                                                  |
+|-----------------------------------------------------|----------------|-------------------------------------------------------|
+| 同一线程                                            | ✅             | ScopedValue / ThreadLocal 默认                        |
+| `StructuredTaskScope.fork()`                        | ✅             | 结构化并发                                            |
+| `@Async` 线程池                                     | ✅             | BPP 自动注入                                          |
+| `CompletableFuture.supplyAsync(supplier, executor)` | ✅             | executor 是 Spring 托管的 `ThreadPoolTaskExecutor` 时 |
+| `new Thread(() -> {...}).start()`                   | ❌             | **必须**手动包 `runWithTenant`                        |
+| `ForkJoinPool.commonPool()`                         | ❌             | 公共池,BPP 无法注入                                   |
+| WebFlux `Mono`/`Flux` operator chain                | ✅ 自动        | TenantWebFilter + ReactorTenantContext                |
+| Spring `@Scheduled` 定时任务                        | ✅             | BPP 注入到 `ThreadPoolTaskScheduler`                  |
 
 ---
 
@@ -1007,9 +1016,10 @@ DynamicTenantDataSource.determineCurrentLookupKey()
 
 ### 熔断器
 
-`DataSourceCircuitBreaker` 防止**单个租户的数据源故障**拖垮整个应用。
+`DataSourceCircuitBreaker` 防止 **单个租户的数据源故障**拖垮整个应用。
 
 **熔断状态机**:
+
 ```
 CLOSED (正常) ── 连续失败 N 次 ──→ OPEN (熔断,直接拒绝)
                                        │
@@ -1025,6 +1035,7 @@ CLOSED (正常) ── 连续失败 N 次 ──→ OPEN (熔断,直接拒绝)
 ```
 
 **配置**:
+
 ```yaml
 multi-tenancy:
   circuit:
@@ -1035,11 +1046,13 @@ multi-tenancy:
 ```
 
 **触发场景**:
+
 - 租户数据库连接超时
 - 租户数据库 CPU 100%
 - 租户数据源密码过期
 
 **故障表现**:
+
 - 触发 `DataSourceUnavailableException` → HTTP 503
 - 错误码 `TENANT_DATA_SOURCE_UNAVAILABLE` (单租户) 或 `TENANT_SHARED_DS_UNAVAILABLE` (shared)
 
@@ -1066,54 +1079,57 @@ multi-tenancy:
 
 ### 完整配置项 (`MultiTenancyProperties`)
 
-| 配置 | 默认值 | 说明 |
-|------|-------|------|
-| `multi-tenancy.enabled` | `true` | 总开关。`false` 时所有拦截器/策略跳过 |
-| `multi-tenancy.mode` | `COLUMN` | 全局默认模式 (Hybrid 时按 `sys_tenant.isolation_mode`) |
-| `multi-tenancy.tenant-id-header` | `X-Tenant-ID` | 租户 ID header 名 |
-| `multi-tenancy.enforce-auth-tenant` | `true` | 是否强制要求 JWT tenantId 存在且合法 |
-| `multi-tenancy.tenant-id-column` | `tenant_id` | Column 模式的列名 |
-| `multi-tenancy.ignore-tables` | `[]` | 跳过租户隔离的表名列表 |
-| `multi-tenancy.table-name-suffix` | `_${tenant}` | Table 模式的表名后缀模板 |
-| `multi-tenancy.schema-prefix` | `tenant_` | Schema 模式的 schema 前缀 |
-| `multi-tenancy.schema-auto-create` | `false` | Schema 模式是否自动 CREATE SCHEMA |
-| `multi-tenancy.force-thread-local` | `false` | 强制 ThreadLocalHolder 降级 |
-| `multi-tenancy.microservice` | `true` | 是否微服务架构 (false 跳过通信框架检测) |
-| `multi-tenancy.datasource.shared.*` | — | shared 数据源 (Database 模式 sys_tenant 表) |
-| `multi-tenancy.datasource.tenants.*` | `{}` | 租户独立数据源 Map (key=tenantId) |
-| `multi-tenancy.canary.tenants` | `[]` | 灰度租户列表 |
-| `multi-tenancy.circuit.failure-threshold` | `5` | 熔断失败阈值 |
-| `multi-tenancy.circuit.open-window-ms` | `30000` | 熔断打开后等待时间 (ms) |
-| `multi-tenancy.health.probe-interval-ms` | `30000` | 健康探测间隔 (ms) |
-| `multi-tenancy.cache.tenant-info.enabled` | `true` | 开启 {@link spi.cn.richie696.component.tenant.CachingTenantInfoProvider} 装饰器 |
-| `multi-tenancy.cache.tenant-info.ttl-seconds` | `60` | 缓存 TTL（秒），过短命中率低，过长 sys_tenant 变更生效延迟 |
-| `multi-tenancy.cache.tenant-info.max-size` | `10000` | 缓存最大租户数，超出按 LRU 淘汰一半，`<=0` 不限制 |
+| 配置                                          | 默认值        | 说明                                                                            |
+|-----------------------------------------------|---------------|---------------------------------------------------------------------------------|
+| `multi-tenancy.enabled`                       | `true`        | 总开关。`false` 时所有拦截器/策略跳过                                           |
+| `multi-tenancy.mode`                          | `COLUMN`      | 全局默认模式 (Hybrid 时按 `sys_tenant.isolation_mode`)                          |
+| `multi-tenancy.tenant-id-header`              | `X-Tenant-ID` | 租户 ID header 名                                                               |
+| `multi-tenancy.enforce-auth-tenant`           | `true`        | 是否强制要求 JWT tenantId 存在且合法                                            |
+| `multi-tenancy.tenant-id-column`              | `tenant_id`   | Column 模式的列名                                                               |
+| `multi-tenancy.ignore-tables`                 | `[]`          | 跳过租户隔离的表名列表                                                          |
+| `multi-tenancy.table-name-suffix`             | `_${tenant}`  | Table 模式的表名后缀模板                                                        |
+| `multi-tenancy.schema-prefix`                 | `tenant_`     | Schema 模式的 schema 前缀                                                       |
+| `multi-tenancy.schema-auto-create`            | `false`       | Schema 模式是否自动 CREATE SCHEMA                                               |
+| `multi-tenancy.force-thread-local`            | `false`       | 强制 ThreadLocalHolder 降级                                                     |
+| `multi-tenancy.microservice`                  | `true`        | 是否微服务架构 (false 跳过通信框架检测)                                         |
+| `multi-tenancy.datasource.shared.*`           | —             | shared 数据源 (Database 模式 sys_tenant 表)                                     |
+| `multi-tenancy.datasource.tenants.*`          | `{}`          | 租户独立数据源 Map (key=tenantId)                                               |
+| `multi-tenancy.canary.tenants`                | `[]`          | 灰度租户列表                                                                    |
+| `multi-tenancy.circuit.failure-threshold`     | `5`           | 熔断失败阈值                                                                    |
+| `multi-tenancy.circuit.open-window-ms`        | `30000`       | 熔断打开后等待时间 (ms)                                                         |
+| `multi-tenancy.health.probe-interval-ms`      | `30000`       | 健康探测间隔 (ms)                                                               |
+| `multi-tenancy.cache.tenant-info.enabled`     | `true`        | 开启 {@link spi.cn.richie696.component.tenant.CachingTenantInfoProvider} 装饰器 |
+| `multi-tenancy.cache.tenant-info.ttl-seconds` | `60`          | 缓存 TTL（秒），过短命中率低，过长 sys_tenant 变更生效延迟                      |
+| `multi-tenancy.cache.tenant-info.max-size`    | `10000`       | 缓存最大租户数，超出按 LRU 淘汰一半，`<=0` 不限制                               |
 
 ### 通信框架依赖
 
 微服务模式 (`microservice=true`) 需要引入通信框架之一:
 
-| 框架 | 引入依赖 |
-|------|---------|
+| 框架                      | 引入依赖                              |
+|---------------------------|---------------------------------------|
 | HTTP (Feign / RestClient) | `atlas-richie-component-microservice` |
-| gRPC | `atlas-richie-component-grpc` |
+| gRPC                      | `atlas-richie-component-grpc`         |
 
 未引入会 WARN 启动日志,但不阻断。`microservice=false` 跳过检测。
 
 ### 启动日志参考
 
 正常启动:
+
 ```
 TenantContext initialized with ScopedValue (preferred for virtual threads)
 [多租户] 微服务通信框架已就绪: HTTP (Feign/RestClient)
 ```
 
 降级模式:
+
 ```
 TenantContext initialized with ThreadLocal + micrometer context-propagation (force-thread-local=true)
 ```
 
 未配通信框架 (微服务模式):
+
 ```
 [多租户] 微服务模式已开启但未检测到通信框架！跨服务调用时租户上下文将中断。
   请根据通信协议引入其中一个组件:
@@ -1141,7 +1157,7 @@ public interface TenantInfoProvider {
 > ⚠️ **必须实现此 SPI**。组件默认 NoOp 实现返回 `null`,会导致所有 SQL 抛 `TenantNotFoundException`。
 
 > 🧩 **框架已提供内置缓存**。`CachingTenantInfoProvider` 默认自动装饰在业务实现的 `TenantInfoProvider` 上，
-> 在拦截器层以 {@code ttl=60s}、{@code max-size=10000} 缓存 {@code getTenantInfo()} 结果，避免每次 SQL 都穿透到底层实现。
+> 在拦截器层以 {@code ttl=60s}、{@code max-size=10000} 缓存 {@code getTenantInfo ()} 结果，避免每次 SQL 都穿透到底层实现。
 > 业务方无需自行实现缓存层。
 >
 > 若需关闭内置缓存（例如业务方希望使用自定义缓存策略），设置：
@@ -1151,13 +1167,13 @@ public interface TenantInfoProvider {
 >     tenant-info:
 >       enabled: false
 > ```
-> 租户状态变更后可通过 {@code CachingTenantInfoProvider.invalidate(tenantId)} 主动失效缓存。
+> 租户状态变更后可通过 {@code CachingTenantInfoProvider.invalidate (tenantId)} 主动失效缓存。
 
 ---
 
 ## API 全签名参考
 
-业务开发者只需要熟悉本节列出的 facade 类;`interceptor/`、`strategy/`、`datasource/` 下的类是**框架内部组件**,业务代码不应直接调用。
+业务开发者只需要熟悉本节列出的 facade 类;`interceptor/`、`strategy/`、`datasource/` 下的类是 **框架内部组件**,业务代码不应直接调用。
 
 ### 业务必用 facade
 
@@ -1262,6 +1278,7 @@ public enum TenantStatus {
 #### `cn.richie696.component.tenant.config.MultiTenancyProperties`
 
 ```java
+
 @Data
 @ConfigurationProperties(prefix = "multi-tenancy")
 public class MultiTenancyProperties {
@@ -1281,37 +1298,52 @@ public class MultiTenancyProperties {
     private CircuitBreakerConfig circuit = new CircuitBreakerConfig();
     private HealthProbeConfig health = new HealthProbeConfig();
 
-    @Data public static class DataSourceConfig {
+    @Data
+    public static class DataSourceConfig {
         private SharedDataSourceConfig shared = new SharedDataSourceConfig();
         private Map<String, TenantDataSourceConfig> tenants = new HashMap<>();
     }
-    @Data public static class SharedDataSourceConfig {
+
+    @Data
+    public static class SharedDataSourceConfig {
         private String url, username, password;
         private HikariConfig hikari = new HikariConfig();
     }
-    @Data public static class TenantDataSourceConfig {
+
+    @Data
+    public static class TenantDataSourceConfig {
         private String url, username, password;
         private String canaryUrl;                                // 灰度 URL
         private HikariConfig hikari;                             // null = 继承 shared
     }
-    @Data public static class HikariConfig {
+
+    @Data
+    public static class HikariConfig {
         private int maximumPoolSize = 0;                         // 0 = 走 Spring Boot 默认
         private int minimumIdle = 0;
         private long idleTimeout = 0;
         private long connectionTimeout = 0;
     }
-    @Data public static class CanaryConfig {
+
+    @Data
+    public static class CanaryConfig {
         private List<CanaryTenant> tenants = new ArrayList<>();
     }
-    @Data public static class CanaryTenant {
+
+    @Data
+    public static class CanaryTenant {
         private Long id;
         private int ratio = 100;                                 // 0-100
     }
-    @Data public static class CircuitBreakerConfig {
+
+    @Data
+    public static class CircuitBreakerConfig {
         private int failureThreshold = 5;
         private long openWindowMs = 30_000;
     }
-    @Data public static class HealthProbeConfig {
+
+    @Data
+    public static class HealthProbeConfig {
         private long probeIntervalMs = 30_000;
     }
 }
@@ -1374,7 +1406,7 @@ public interface TransactionTenantChecker {
 }
 ```
 
-> 业务**不要**实现这个 — 框架的 `TransactionTenantHolder` 已提供默认实现。
+> 业务 **不要**实现这个 — 框架的 `TransactionTenantHolder` 已提供默认实现。
 
 ### 异常体系
 
@@ -1389,27 +1421,28 @@ RuntimeException
 └── TenantProvisionException           (租户开通失败)
 ```
 
-**统一处理**: `TenantExceptionHandler` (`@RestControllerAdvice`) 已自动捕获所有上述异常并转为 `{code, message}` JSON 响应。HTTP 状态码取自 `TenantErrorCode.httpStatus`。
+**统一处理**: `TenantExceptionHandler` (`@RestControllerAdvice`) 已自动捕获所有上述异常并转为 `{code, message}` JSON
+响应。HTTP 状态码取自 `TenantErrorCode.httpStatus`。
 
-### 框架内部组件(业务不应直接调用,列出便于查阅)
+### 框架内部组件 (业务不应直接调用,列出便于查阅)
 
-| 类 | 包 | 业务调用? |
-|---|----|----------|
-| `TenancyStrategy` (interface) | `strategy` | ❌ |
-| `TenancyStrategyFactory` | `strategy` | ❌ |
-| `ColumnStrategy` / `TableStrategy` / `SchemaStrategy` / `DatabaseStrategy` / `HybridStrategy` | `strategy` | ❌ |
-| `AbstractTenancyStrategy` | `strategy` | ❌ |
-| `TenantLineInnerInterceptor` | `interceptor` | ❌(MyBatis plugin 自动触发) |
-| `TenantStrategyInterceptor` | `interceptor` | ❌ |
-| `DynamicTableNameInnerInterceptor` | `interceptor` | ❌ |
-| `ConnectionResetInterceptor` | `interceptor` | ❌ |
-| `DynamicTenantDataSource` | `datasource` | ❌(Spring JDBC 自动路由) |
-| `DataSourceCircuitBreaker` / `DataSourceHealthProbe` | `circuit` | ❌ |
-| `DataSourceContextHolder` / `TableSuffixHolder` / `TransactionTenantHolder` | `context` | ❌ |
-| `TenantIdentityFilter` | `web` | ❌(Servlet Filter 自动生效) |
-| `TenantExceptionHandler` / `TenantMetaObjectHandler` | `handler` | ❌(全局 @RestControllerAdvice / MyBatis-Plus 自动调用) |
-| `TenantTaskDecorator` | `cross` | ⚠️ 仅在自定义非 `@Bean` 线程池时需要手动装配 |
-| `TenantTaskDecoratorBeanPostProcessor` | `cross` | ❌(BPP 自动生效) |
+| 类                                                                                            | 包            | 业务调用?                                              |
+|-----------------------------------------------------------------------------------------------|---------------|--------------------------------------------------------|
+| `TenancyStrategy` (interface)                                                                 | `strategy`    | ❌                                                     |
+| `TenancyStrategyFactory`                                                                      | `strategy`    | ❌                                                     |
+| `ColumnStrategy` / `TableStrategy` / `SchemaStrategy` / `DatabaseStrategy` / `HybridStrategy` | `strategy`    | ❌                                                     |
+| `AbstractTenancyStrategy`                                                                     | `strategy`    | ❌                                                     |
+| `TenantLineInnerInterceptor`                                                                  | `interceptor` | ❌(MyBatis plugin 自动触发)                            |
+| `TenantStrategyInterceptor`                                                                   | `interceptor` | ❌                                                     |
+| `DynamicTableNameInnerInterceptor`                                                            | `interceptor` | ❌                                                     |
+| `ConnectionResetInterceptor`                                                                  | `interceptor` | ❌                                                     |
+| `DynamicTenantDataSource`                                                                     | `datasource`  | ❌(Spring JDBC 自动路由)                               |
+| `DataSourceCircuitBreaker` / `DataSourceHealthProbe`                                          | `circuit`     | ❌                                                     |
+| `DataSourceContextHolder` / `TableSuffixHolder` / `TransactionTenantHolder`                   | `context`     | ❌                                                     |
+| `TenantIdentityFilter`                                                                        | `web`         | ❌(Servlet Filter 自动生效)                            |
+| `TenantExceptionHandler` / `TenantMetaObjectHandler`                                          | `handler`     | ❌(全局 @RestControllerAdvice / MyBatis-Plus 自动调用) |
+| `TenantTaskDecorator`                                                                         | `cross`       | ⚠️ 仅在自定义非 `@Bean` 线程池时需要手动装配           |
+| `TenantTaskDecoratorBeanPostProcessor`                                                        | `cross`       | ❌(BPP 自动生效)                                       |
 
 ### 未来扩展点 (保留)
 
@@ -1421,23 +1454,23 @@ RuntimeException
 
 `TenantErrorCode` 枚举,所有租户相关异常统一从这里取。
 
-| 错误码 | HTTP | 含义 | 触发场景 |
-|--------|------|------|---------|
-| `TENANT_AUTH_MISSING_TOKEN` | 401 | 无租户上下文（`enforceAuthTenant=true`） | JWT 无 tenantId claim 且路径不在 `superAdminPaths` 中 |
-| `TENANT_AUTH_BLANK_CLAIM` | 403 | JWT tenantId 为空字符串 | token 签发时没填租户 |
-| `TENANT_AUTH_INVALID_FORMAT` | 403 | tenantId 格式非法 | 非数字/负数/0 |
-| `TENANT_AUTH_EXPIRED` | 403 | 租户已过期 | `expiredTime` < 当前时间 |
-| `TENANT_AUTH_MISMATCH` | 403 | JWT 与 Header 不一致 | 防 header 伪造 |
-| `TENANT_IDENTITY_NOT_FOUND` | 403 | 租户未注册 | `sys_tenant` 表不存在 |
-| `TENANT_NOT_FOUND` | 404 | 策略调度时找不到租户 | `TenantInfoProvider` 返回 null |
-| `TENANT_DATA_SOURCE_UNAVAILABLE` | 503 | 租户数据源熔断 | Database 模式熔断器打开 |
-| `TENANT_SHARED_DS_UNAVAILABLE` | 503 | shared 数据源熔断 | Column/Table/Schema 模式 |
-| `TENANT_SWITCH_IN_TRANSACTION` | 403 | 事务内切换租户 | 同事务 runWithTenant 两次 |
-| `TENANT_MIGRATING` | 503 | 租户迁移中 | `status=MIGRATING` |
-| `TENANT_MODE_MIGRATION_DENIED` | 403 | 模式迁移被拒 | 管理接口限制 |
-| `TENANT_PROVISION_FAILED` | 500 | 租户开通失败 | 资源分配错误 |
-| `TENANT_SCHEMA_REQUIRES_TRANSACTION` | 500 | SCHEMA 模式要求事务 | `SchemaStrategy` 检测到 `autoCommit=true`(`SET LOCAL search_path` 静默失效的高危场景) |
-| `TENANT_ADMIN_REQUIRED` | 403 | 非管理员访问管理接口 | 缺 platform administrator 角色 |
+| 错误码                               | HTTP | 含义                                     | 触发场景                                                                              |
+|--------------------------------------|------|------------------------------------------|---------------------------------------------------------------------------------------|
+| `TENANT_AUTH_MISSING_TOKEN`          | 401  | 无租户上下文（`enforceAuthTenant=true`） | JWT 无 tenantId claim 且路径不在 `superAdminPaths` 中                                 |
+| `TENANT_AUTH_BLANK_CLAIM`            | 403  | JWT tenantId 为空字符串                  | token 签发时没填租户                                                                  |
+| `TENANT_AUTH_INVALID_FORMAT`         | 403  | tenantId 格式非法                        | 非数字/负数/0                                                                         |
+| `TENANT_AUTH_EXPIRED`                | 403  | 租户已过期                               | `expiredTime` < 当前时间                                                              |
+| `TENANT_AUTH_MISMATCH`               | 403  | JWT 与 Header 不一致                     | 防 header 伪造                                                                        |
+| `TENANT_IDENTITY_NOT_FOUND`          | 403  | 租户未注册                               | `sys_tenant` 表不存在                                                                 |
+| `TENANT_NOT_FOUND`                   | 404  | 策略调度时找不到租户                     | `TenantInfoProvider` 返回 null                                                        |
+| `TENANT_DATA_SOURCE_UNAVAILABLE`     | 503  | 租户数据源熔断                           | Database 模式熔断器打开                                                               |
+| `TENANT_SHARED_DS_UNAVAILABLE`       | 503  | shared 数据源熔断                        | Column/Table/Schema 模式                                                              |
+| `TENANT_SWITCH_IN_TRANSACTION`       | 403  | 事务内切换租户                           | 同事务 runWithTenant 两次                                                             |
+| `TENANT_MIGRATING`                   | 503  | 租户迁移中                               | `status=MIGRATING`                                                                    |
+| `TENANT_MODE_MIGRATION_DENIED`       | 403  | 模式迁移被拒                             | 管理接口限制                                                                          |
+| `TENANT_PROVISION_FAILED`            | 500  | 租户开通失败                             | 资源分配错误                                                                          |
+| `TENANT_SCHEMA_REQUIRES_TRANSACTION` | 500  | SCHEMA 模式要求事务                      | `SchemaStrategy` 检测到 `autoCommit=true`(`SET LOCAL search_path` 静默失效的高危场景) |
+| `TENANT_ADMIN_REQUIRED`              | 403  | 非管理员访问管理接口                     | 缺 platform administrator 角色                                                        |
 
 ---
 
@@ -1465,13 +1498,14 @@ RuntimeException
 
 **原因**: `MetaObjectHandler.strictInsertFill` 拒绝覆盖已存在的值
 
-**解决**: INSERT 的业务代码**不要**手动设 `tenantId`,交给 `TenantMetaObjectHandler` 自动填
+**解决**: INSERT 的业务代码 **不要**手动设 `tenantId`,交给 `TenantMetaObjectHandler` 自动填
 
 #### 4. `@Async` 任务查不到租户
 
 **症状**: `@Async` 内部 `TenantContext.getTenantId()` 返回 `null`
 
 **解决**:
+
 - 确认项目用了 Spring 托管的 `ThreadPoolTaskExecutor` (而非 `Executors.newFixedThreadPool()`)
 - `TenantTaskDecoratorBeanPostProcessor` 已注册 (默认自动注册)
 - 自定义 executor Bean 加 `@Bean` 注解才会被 BPP 处理
@@ -1490,9 +1524,8 @@ RuntimeException
 
 **原因**: Reactive 算子不传播 ScopedValue。
 
-**解决**: 本组件已适配 WebFlux，`TenantWebFilter` 自动将租户上下文写入 Reactor `Context`。
-在 reactive 代码中通过 `ReactorTenantContext.get()` 读取租户。
-若需桥接到阻塞代码，使用 `ReactorTenantContext.bridgeToBlocking()`。
+**解决**: 本组件已适配 WebFlux，`TenantWebFilter` 自动将租户上下文写入 Reactor `Context`。 在 reactive 代码中通过
+`ReactorTenantContext.get()` 读取租户。 若需桥接到阻塞代码，使用 `ReactorTenantContext.bridgeToBlocking()`。
 
 #### 7. `Table` 模式 join 了 sys_dict
 
@@ -1516,31 +1549,35 @@ RuntimeException
 
 **原因**: `DatabaseStrategy` 没触发,`DataSourceContextHolder` 是空的
 
-**解决**: 确认 `TenantStrategyInterceptor` 触发(看日志),`sys_tenant.isolation_mode='DATABASE'` 没写错
+**解决**: 确认 `TenantStrategyInterceptor` 触发 (看日志),`sys_tenant.isolation_mode='DATABASE'` 没写错
 
 #### 10. 跨服务调用租户上下文丢失
 
 **症状**: A 服务有租户上下文,调 B 服务后 B 服务 `TenantContext.get()` 是 null
 
-**解决**: 引入 `atlas-richie-component-microservice` (HTTP) 或 `atlas-richie-component-grpc` (gRPC),由它们处理出/入站 header 透传
+**解决**: 引入 `atlas-richie-component-microservice` (HTTP) 或 `atlas-richie-component-grpc` (gRPC),由它们处理出/入站
+header 透传
 
 #### 11. `TenantInfoProvider` 未缓存导致 P99 延迟爆炸
 
 **症状**: COLUMN 模式或 HYBRID 模式上线后,慢 SQL P99 从 50ms 涨到 500ms
 
-**原因**: `TenantLineInnerInterceptor` 和 `TenantStrategyInterceptor` **每次 SQL 都调用** `TenantInfoProvider.getTenantInfo(tenantId)`,如果实现里直接查 `sys_tenant` 表,等于每次业务查询都多一次 DB 查询
+**原因**: `TenantLineInnerInterceptor` 和 `TenantStrategyInterceptor` **每次 SQL 都调用**
+`TenantInfoProvider.getTenantInfo(tenantId)`,如果实现里直接查 `sys_tenant` 表,等于每次业务查询都多一次 DB 查询
 
 **解决**: 框架已内置 `CachingTenantInfoProvider` 装饰器（默认开启，`multi-tenancy.cache.tenant-info.enabled=true`），
-自动为业务实现的 `TenantInfoProvider` 叠加 JDK `ConcurrentHashMap` 缓存（`ttl=60s`、`max-size=10000`）。
-**业务方只需写纯 DB 查询实现，无需手写缓存**。
+自动为业务实现的 `TenantInfoProvider` 叠加 JDK `ConcurrentHashMap` 缓存（`ttl=60s`、`max-size=10000`）。 **业务方只需写纯 DB
+查询实现，无需手写缓存**。
 
 如果关闭了内置缓存（`enabled=false`），需自行在实现里加缓存层。
 
-#### 12. SCHEMA 模式没加 `@Transactional` 导致数据写入错的 schema(史上最难排查的 silent failure)
+#### 12. SCHEMA 模式没加 `@Transactional` 导致数据写入错的 schema (史上最难排查的 silent failure)
 
-**症状**: `org.postgresql.util.PSQLException: ERROR: relation "xxx" does not exist` 或者**更隐蔽**:数据写到了 `public` schema 而不报错(只在自己查数据时才发现)
+**症状**: `org.postgresql.util.PSQLException: ERROR: relation "xxx" does not exist` 或者 **更隐蔽**:数据写到了 `public`
+schema 而不报错 (只在自己查数据时才发现)
 
-**原因**:`SET LOCAL search_path` 是 PG 事务局部语句,**只在事务内生效**。MyBatis 默认 `autoCommit=true`,PG 会**静默忽略** `SET LOCAL`,不报错,但 search_path 没切换。
+**原因**:`SET LOCAL search_path` 是 PG 事务局部语句, **只在事务内生效**。MyBatis 默认 `autoCommit=true`,PG 会
+**静默忽略** `SET LOCAL`,不报错,但 search_path 没切换。
 
 **解决**: 所有走 SCHEMA 模式的业务方法必须加 `@Transactional`(或 `TransactionTemplate` 包裹),让连接 `autoCommit=false`。
 
@@ -1552,7 +1589,7 @@ public class OrderService {
 }
 ```
 
-> 修复版本(自 v1.0.0 起)已主动 fail-fast:遇到非事务连接抛 `TENANT_SCHEMA_REQUIRES_TRANSACTION`,不再静默写入错的 schema。
+> 修复版本 (自 v1.0.0 起)已主动 fail-fast:遇到非事务连接抛 `TENANT_SCHEMA_REQUIRES_TRANSACTION`,不再静默写入错的 schema。
 > 升级到 v1.0.0+ 即可获得该保护,无需改业务代码——之前 silent failure 现在会立即报错。
 
 ### 🟡 性能注意事项
@@ -1582,7 +1619,7 @@ SELECT * FROM orders o JOIN users_1002 u ON o.user_id = u.id;
 
 ### 🟢 最佳实践
 
-1. **COLUMN 模式**: DDL `tenant_id BIGINT NOT NULL DEFAULT 0`,业务代码**永不**手动设 `tenantId`
+1. **COLUMN 模式**: DDL `tenant_id BIGINT NOT NULL DEFAULT 0`,业务代码 **永不**手动设 `tenantId`
 2. **JVM 调优**: ScopedValue 模式无 ThreadLocal 内存泄漏,推荐生产使用;`force-thread-local=true` 仅作为降级兜底
 3. **微服务**: 出/入站 header 透传交给 `atlas-richie-component-microservice` 或 `atlas-richie-component-grpc`,业务无感
 4. **灰度**: 新租户上线先用 `canary-url` 灰度,验证通过再切全量
@@ -1595,40 +1632,43 @@ SELECT * FROM orders o JOIN users_1002 u ON o.user_id = u.id;
 
 ### 本文档
 
-| 章节 | 内容 |
-|------|------|
-| [5 种隔离模式](#5-种隔离模式--选型决策树) | 选型决策树 + 对比矩阵 |
-| [快速开始](#快速开始) | 6 步接入 |
-| [架构总览](#架构总览) | 全链路流程图 + 上下文传播矩阵 |
-| [隔离模式详解](#隔离模式详解) | 5 个模式每个的改写效果、机制、配置、DDL、不用会怎样 |
-| [Web 集成](#web-集成) | TenantIdentityFilter 解析流程 + 白名单 + 超管 |
-| [事务管理](#事务管理) | 事务内冻结 |
-| [异步与多线程](#异步与多线程) | 3 种异步场景方案 + 覆盖矩阵 |
-| [数据源路由与熔断](#数据源路由与熔断) | Database 模式路由 + 熔断状态机 + 灰度 |
-| [配置参考](#配置参考) | 完整 properties + 启动日志参考 |
-| [错误码参考](#错误码参考) | TenantErrorCode 14 个错误码 |
-| [注意事项与陷阱](#注意事项与陷阱) | 10 个高频踩坑 + 性能 + 最佳实践 |
+| 章节                                      | 内容                                                |
+|-------------------------------------------|-----------------------------------------------------|
+| [5 种隔离模式](#5-种隔离模式--选型决策树) | 选型决策树 + 对比矩阵                               |
+| [快速开始](#快速开始)                     | 6 步接入                                            |
+| [架构总览](#架构总览)                     | 全链路流程图 + 上下文传播矩阵                       |
+| [隔离模式详解](#隔离模式详解)             | 5 个模式每个的改写效果、机制、配置、DDL、不用会怎样 |
+| [Web 集成](#web-集成)                     | TenantIdentityFilter 解析流程 + 白名单 + 超管       |
+| [事务管理](#事务管理)                     | 事务内冻结                                          |
+| [异步与多线程](#异步与多线程)             | 3 种异步场景方案 + 覆盖矩阵                         |
+| [数据源路由与熔断](#数据源路由与熔断)     | Database 模式路由 + 熔断状态机 + 灰度               |
+| [配置参考](#配置参考)                     | 完整 properties + 启动日志参考                      |
+| [错误码参考](#错误码参考)                 | TenantErrorCode 14 个错误码                         |
+| [注意事项与陷阱](#注意事项与陷阱)         | 10 个高频踩坑 + 性能 + 最佳实践                     |
 
 ### 详细设计 (docs/ 目录)
 
-| 文档 | 内容 |
-|------|------|
-| [多租户 MyBatis-Plus 通用插件概念设计](docs/多租户MyBatis-Plus通用插件概念设计.md) | 概念、技术架构、数据模型、业务流程 |
-| [上下文模块详细设计](docs/上下文模块详细设计.md) | TenantContextHolder SPI、ScopedValue / ThreadLocal 双实现 |
-| [策略模块详细设计](docs/策略模块详细设计.md) | TenancyStrategy 工厂、五种隔离策略 |
-| [持久层路由与拦截器集成模块详细设计](docs/持久层路由与拦截器集成模块详细设计.md) | DynamicTenantDataSource、拦截器链、事务冻结 |
-| [可运维与灰度增强详细设计](docs/可运维与灰度增强详细设计.md) | 健康检查、灰度发布、动态配置刷新 |
-| [租户生命周期详细设计](docs/租户生命周期详细设计.md) | 租户开通/迁移/回收全流程 |
-| [模式切换数据迁移方案](docs/模式切换数据迁移方案.md) | COLUMN → SCHEMA → DATABASE 模式升级路径 |
-| [多租户方案设计](docs/多租户方案设计.md) | 总体方案概览 |
-| [多租户设计阅读导览](docs/多租户设计阅读导览.md) | 文档阅读建议 |
+| 文档                                                                               | 内容                                                      |
+|------------------------------------------------------------------------------------|-----------------------------------------------------------|
+| [多租户 MyBatis-Plus 通用插件概念设计](docs/多租户MyBatis-Plus通用插件概念设计.md) | 概念、技术架构、数据模型、业务流程                        |
+| [上下文模块详细设计](docs/上下文模块详细设计.md)                                   | TenantContextHolder SPI、ScopedValue / ThreadLocal 双实现 |
+| [策略模块详细设计](docs/策略模块详细设计.md)                                       | TenancyStrategy 工厂、五种隔离策略                        |
+| [持久层路由与拦截器集成模块详细设计](docs/持久层路由与拦截器集成模块详细设计.md)   | DynamicTenantDataSource、拦截器链、事务冻结               |
+| [可运维与灰度增强详细设计](docs/可运维与灰度增强详细设计.md)                       | 健康检查、灰度发布、动态配置刷新                          |
+| [租户生命周期详细设计](docs/租户生命周期详细设计.md)                               | 租户开通/迁移/回收全流程                                  |
+| [模式切换数据迁移方案](docs/模式切换数据迁移方案.md)                               | COLUMN → SCHEMA → DATABASE 模式升级路径                   |
+| [多租户方案设计](docs/多租户方案设计.md)                                           | 总体方案概览                                              |
+| [多租户设计阅读导览](docs/多租户设计阅读导览.md)                                   | 文档阅读建议                                              |
 
 ### 测试覆盖 (src/test/)
 
 **单元测试** (206 case):
-- `context/` — TenantContext、ThreadLocalHolder、ScopedValueHolder、TableSuffixHolder、DataSourceContextHolder、TransactionTenantHolder
+
+- `context/` —
+  TenantContext、ThreadLocalHolder、ScopedValueHolder、TableSuffixHolder、DataSourceContextHolder、TransactionTenantHolder
 - `cross/` — TenantTaskDecorator、TenantTaskDecoratorBeanPostProcessor
-- `interceptor/` — TenantLineInnerInterceptor、TenantStrategyInterceptor、DynamicTableNameInnerInterceptor、ConnectionResetInterceptor
+- `interceptor/` —
+  TenantLineInnerInterceptor、TenantStrategyInterceptor、DynamicTableNameInnerInterceptor、ConnectionResetInterceptor
 - `handler/` — TenantExceptionHandler、TenantMetaObjectHandler
 - `strategy/` — 5 个策略的单元测试
 - `circuit/` — DataSourceCircuitBreaker、DataSourceHealthProbe
@@ -1638,6 +1678,7 @@ SELECT * FROM orders o JOIN users_1002 u ON o.user_id = u.id;
 - `config/` — MultiTenancyProperties
 
 **集成测试** (63 case,真跑 Testcontainers PostgreSQL):
+
 - `SchemaStrategyIT` — Schema 自动创建、search_path 切换、跨 Schema 隔离、名称校验
 - `ColumnStrategyIT` — SQL 改写真跑 + 多租户行级隔离 (INSERT/SELECT/UPDATE/DELETE)
 - `TableStrategyIT` — 表级后缀隔离 + SQL 改写真跑
@@ -1649,7 +1690,7 @@ SELECT * FROM orders o JOIN users_1002 u ON o.user_id = u.id;
 
 ## 端到端最小可运行示例
 
-本节提供一个**可直接 `mvn spring-boot:run` 跑起来**的最小应用骨架。复制粘贴即可作为新业务接入多租户的起点。
+本节提供一个 **可直接 `mvn spring-boot:run` 跑起来**的最小应用骨架。复制粘贴即可作为新业务接入多租户的起点。
 
 ### 1) `Maven` 依赖
 
@@ -1878,7 +1919,7 @@ public class OrderController {
 
 ### 6) application.yml — 4 种模式各一个
 
-#### `COLUMN` 模式(最简单,推荐起步)
+#### `COLUMN` 模式 (最简单,推荐起步)
 
 ```yaml
 spring:
@@ -1922,7 +1963,7 @@ multi-tenancy:
 
 > DDL 需要为每个租户建表:`CREATE TABLE orders_1001 (LIKE orders INCLUDING ALL);`
 
-#### `SCHEMA` 模式(仅 `PG`/`Oracle`)
+#### `SCHEMA` 模式 (仅 `PG`/`Oracle`)
 
 ```yaml
 multi-tenancy:
@@ -1935,7 +1976,7 @@ multi-tenancy:
   microservice: false
 ```
 
-#### `DATABASE` 模式(最强物理隔离)
+#### `DATABASE` 模式 (最强物理隔离)
 
 ```yaml
 spring:
@@ -1965,7 +2006,8 @@ multi-tenancy:
   microservice: false
 ```
 
-> 注意:`@SpringBootApplication` 默认只接 1 个 DataSource Bean。DATABASE 模式需要在主类**排除** Spring Boot 的 DataSource 自动配置,然后由 `atlas-richie-component-tenant` 的 `TenantAutoConfiguration` 接管。
+> 注意:`@SpringBootApplication` 默认只接 1 个 DataSource Bean。DATABASE 模式需要在主类 **排除** Spring Boot 的 DataSource
+> 自动配置,然后由 `atlas-richie-component-tenant` 的 `TenantAutoConfiguration` 接管。
 
 ```java
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
@@ -1995,10 +2037,10 @@ curl -H "X-Tenant-ID: 1002" http://localhost:8080/orders
 
 ### 8) 常见接入问题
 
-| 问题 | 解决 |
-|------|------|
-| 启动时 `No qualifying bean of type 'TenantInfoProvider'` | 没自己实现,只用了默认 NoOp。**必须**实现 `CachedTenantInfoProvider` 这种。 |
-| `java.lang.IllegalStateException: TenantContext not initialized` | 主类没扫到 `TenantAutoConfiguration`,加 `@SpringBootApplication` 默认就扫,看是否被 `@ComponentScan` 排除了 |
-| 数据库模式 `Failed to determine a suitable driver class` | 主类没排除 `DataSourceAutoConfiguration`(DATABASE 模式必需) |
-| COLUMN 模式 SQL 报 `column "tenant_id" does not exist` | 业务表确实没建 `tenant_id` 列,要么 DDL 补上,要么把表加到 `ignore-tables` |
-| @Async 内 `TenantContext.getTenantId()` 返回 null | 用了 `Executors.newFixedThreadPool()` 而非 Spring `@Bean ThreadPoolTaskExecutor`,前者不会被 `TenantTaskDecoratorBeanPostProcessor` 处理 |
+| 问题                                                             | 解决                                                                                                                                    |
+|------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| 启动时 `No qualifying bean of type 'TenantInfoProvider'`         | 没自己实现,只用了默认 NoOp。**必须**实现 `CachedTenantInfoProvider` 这种。                                                              |
+| `java.lang.IllegalStateException: TenantContext not initialized` | 主类没扫到 `TenantAutoConfiguration`,加 `@SpringBootApplication` 默认就扫,看是否被 `@ComponentScan` 排除了                              |
+| 数据库模式 `Failed to determine a suitable driver class`         | 主类没排除 `DataSourceAutoConfiguration`(DATABASE 模式必需)                                                                             |
+| COLUMN 模式 SQL 报 `column "tenant_id" does not exist`           | 业务表确实没建 `tenant_id` 列,要么 DDL 补上,要么把表加到 `ignore-tables`                                                                |
+| @Async 内 `TenantContext.getTenantId()` 返回 null                | 用了 `Executors.newFixedThreadPool()` 而非 Spring `@Bean ThreadPoolTaskExecutor`,前者不会被 `TenantTaskDecoratorBeanPostProcessor` 处理 |

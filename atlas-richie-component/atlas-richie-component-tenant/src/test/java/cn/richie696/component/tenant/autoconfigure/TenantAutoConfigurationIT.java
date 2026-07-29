@@ -125,13 +125,13 @@ class TenantAutoConfigurationIT {
     @Test
     void interceptorOrder_shouldBeExplicit() {
         assertThat(applicationContext.findAnnotationOnBean(
-            "connectionResetInterceptor", Order.class).value()).isEqualTo(1);
+                "connectionResetInterceptor", Order.class).value()).isEqualTo(1);
         assertThat(applicationContext.findAnnotationOnBean(
-            "tenantLineInnerInterceptor", Order.class).value()).isEqualTo(2);
+                "tenantLineInnerInterceptor", Order.class).value()).isEqualTo(2);
         assertThat(applicationContext.findAnnotationOnBean(
-            "dynamicTableNameInnerInterceptor", Order.class).value()).isEqualTo(3);
+                "dynamicTableNameInnerInterceptor", Order.class).value()).isEqualTo(3);
         assertThat(applicationContext.findAnnotationOnBean(
-            "tenantStrategyInterceptor", Order.class).value()).isEqualTo(4);
+                "tenantStrategyInterceptor", Order.class).value()).isEqualTo(4);
     }
 
     // ==================== PostgreSQL 连接 ====================
@@ -165,12 +165,12 @@ class TenantAutoConfigurationIT {
             // CREATE TABLE
             try (var stmt = conn.createStatement()) {
                 stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS it_test_basic (
-                        id BIGSERIAL PRIMARY KEY,
-                        name VARCHAR(100) NOT NULL,
-                        tenant_id BIGINT NOT NULL
-                    )
-                    """);
+                        CREATE TABLE IF NOT EXISTS it_test_basic (
+                            id BIGSERIAL PRIMARY KEY,
+                            name VARCHAR(100) NOT NULL,
+                            tenant_id BIGINT NOT NULL
+                        )
+                        """);
             }
 
             // INSERT + SELECT

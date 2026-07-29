@@ -6,44 +6,44 @@
 
 - [✨ 功能特性](#-功能特性)
 - [🚀 快速开始](#-快速开始)
-  - [1. 添加依赖](#1-添加依赖)
-  - [2. 配置数据源](#2-配置数据源)
-  - [3. 创建实体类](#3-创建实体类)
-  - [4. 创建 Mapper 接口](#4-创建-mapper-接口)
-  - [5. 使用示例](#5-使用示例)
+    - [1. 添加依赖](#1-添加依赖)
+    - [2. 配置数据源](#2-配置数据源)
+    - [3. 创建实体类](#3-创建实体类)
+    - [4. 创建 Mapper 接口](#4-创建-mapper-接口)
+    - [5. 使用示例](#5-使用示例)
 - [🔧 核心功能](#-核心功能)
-  - [1. 智能分页](#1-智能分页)
-  - [2. 分布式ID生成](#2-分布式id生成)
-  - [3. 自动字段填充](#3-自动字段填充)
-  - [4. SQL监控](#4-sql监控)
-  - [5. 乐观锁支持](#5-乐观锁支持)
-  - [6. 安全防护](#6-安全防护)
-  - [7. 批量更新限制](#7-批量更新限制)
+    - [1. 智能分页](#1-智能分页)
+    - [2. 分布式ID生成](#2-分布式id生成)
+    - [3. 自动字段填充](#3-自动字段填充)
+    - [4. SQL监控](#4-sql监控)
+    - [5. 乐观锁支持](#5-乐观锁支持)
+    - [6. 安全防护](#6-安全防护)
+    - [7. 批量更新限制](#7-批量更新限制)
 - [🏢 多租户支持](#-多租户支持)
-  - [概述](#概述)
-  - [功能特性](#功能特性)
-  - [配置](#配置)
-  - [数据源表结构](#数据源表结构)
-  - [使用方式](#使用方式)
-  - [租户数据隔离](#租户数据隔离)
+    - [概述](#概述)
+    - [功能特性](#功能特性)
+    - [配置](#配置)
+    - [数据源表结构](#数据源表结构)
+    - [使用方式](#使用方式)
+    - [租户数据隔离](#租户数据隔离)
 - [⚙️ 配置说明](#-配置说明)
-  - [基础配置](#基础配置)
-  - [多租户配置](#多租户配置)
+    - [基础配置](#基础配置)
+    - [多租户配置](#多租户配置)
 - [🎯 最佳实践](#-最佳实践)
-  - [1. 实体类设计](#1-实体类设计)
-  - [2. 分页查询](#2-分页查询)
-  - [3. 条件查询](#3-条件查询)
-  - [4. 批量操作](#4-批量操作)
-  - [5. 逻辑删除](#5-逻辑删除)
-  - [6. 多租户使用](#6-多租户使用)
+    - [1. 实体类设计](#1-实体类设计)
+    - [2. 分页查询](#2-分页查询)
+    - [3. 条件查询](#3-条件查询)
+    - [4. 批量操作](#4-批量操作)
+    - [5. 逻辑删除](#5-逻辑删除)
+    - [6. 多租户使用](#6-多租户使用)
 - [❓ 常见问题](#-常见问题)
-  - [Q1: 如何自定义ID生成策略？](#q1-如何自定义id生成策略)
-  - [Q2: 如何禁用自动字段填充？](#q2-如何禁用自动字段填充)
-  - [Q3: 分页查询时排序字段如何转换？](#q3-分页查询时排序字段如何转换)
-  - [Q4: 多租户如何切换数据源？](#q4-多租户如何切换数据源)
-  - [Q5: 如何配置慢SQL检测？](#q5-如何配置慢sql检测)
-  - [Q6: 批量更新限制如何调整？](#q6-批量更新限制如何调整)
-  - [Q7: 如何忽略某些表的租户隔离？](#q7-如何忽略某些表的租户隔离)
+    - [Q1: 如何自定义ID生成策略？](#q1-如何自定义id生成策略)
+    - [Q2: 如何禁用自动字段填充？](#q2-如何禁用自动字段填充)
+    - [Q3: 分页查询时排序字段如何转换？](#q3-分页查询时排序字段如何转换)
+    - [Q4: 多租户如何切换数据源？](#q4-多租户如何切换数据源)
+    - [Q5: 如何配置慢SQL检测？](#q5-如何配置慢sql检测)
+    - [Q6: 批量更新限制如何调整？](#q6-批量更新限制如何调整)
+    - [Q7: 如何忽略某些表的租户隔离？](#q7-如何忽略某些表的租户隔离)
 - [📝 总结](#-总结)
 
 ---
@@ -213,6 +213,7 @@ IPage<User> result = userMapper.selectPage(page, null);
 ```
 
 **特性**：
+
 - 自动将驼峰字段名转换为下划线字段名（如 `userName` → `user_name`）
 - 支持 ResultMap 映射，优先使用映射关系
 - 支持多字段排序
@@ -227,12 +228,14 @@ private Long id;
 ```
 
 **特性**：
+
 - 基于雪花算法，保证分布式环境下ID唯一性
 - 自动生成，无需手动设置
 - 支持最大 1024 个工作节点
 - 时间戳从 2020-05-03 开始计算
 
 **ID结构**：
+
 ```
 最高 1 位：始终为 0
 接下来的 10 位：workerId（工作节点ID）
@@ -283,6 +286,7 @@ public class CustomFieldHandler implements MetaObjectHandler {
 组件集成了 p6spy，提供SQL执行监控和慢SQL检测。
 
 **功能特性**：
+
 - SQL执行时间统计
 - 慢SQL检测（默认2秒）
 - 优化的SQL日志格式
@@ -299,6 +303,7 @@ platform:
 ```
 
 **日志格式示例**：
+
 ```
 2025-01-09 10:30:00+0800 | SQL耗时： 15 ms | 连接信息： statement-1 | 执行语句：
 SELECT * FROM user WHERE id = ?
@@ -478,25 +483,25 @@ spring:
 
 ### 基础配置
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `platform.component.dao.db-type` | String | `MYSQL` | 数据库类型：`MYSQL`、`POSTGRE_SQL` |
-| `platform.component.dao.enable-logging` | boolean | `false` | 是否启用SQL日志格式化 |
-| `platform.component.dao.enable-tenant` | boolean | `false` | 是否启用多租户 |
-| `platform.component.dao.enable-batch-update-limit` | boolean | `true` | 是否启用批量更新限制 |
-| `platform.component.dao.batch-update-limit` | int | `1000` | 批量更新限制阈值 |
-| `platform.component.dao.enable-default-field-handler` | boolean | `true` | 是否启用默认字段处理器 |
+| 配置项                                                | 类型    | 默认值  | 说明                               |
+|-------------------------------------------------------|---------|---------|------------------------------------|
+| `platform.component.dao.db-type`                      | String  | `MYSQL` | 数据库类型：`MYSQL`、`POSTGRE_SQL` |
+| `platform.component.dao.enable-logging`               | boolean | `false` | 是否启用SQL日志格式化              |
+| `platform.component.dao.enable-tenant`                | boolean | `false` | 是否启用多租户                     |
+| `platform.component.dao.enable-batch-update-limit`    | boolean | `true`  | 是否启用批量更新限制               |
+| `platform.component.dao.batch-update-limit`           | int     | `1000`  | 批量更新限制阈值                   |
+| `platform.component.dao.enable-default-field-handler` | boolean | `true`  | 是否启用默认字段处理器             |
 
 ### 多租户配置
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `spring.datasource.dynamic.tenant.ignore-tenant-tables` | List<String> | `[]` | 忽略租户隔离的表名列表 |
-| `spring.datasource.dynamic.tenant.tenant-table-name` | String | `tenant_datasource` | 租户数据源表名 |
-| `spring.datasource.dynamic.tenant.db-url-template` | String | `jdbc:mysql://%s?...` | 数据库连接URL模板 |
-| `spring.datasource.dynamic.tenant.tenant-id-column` | String | `tenant_code` | 租户字段名 |
-| `spring.datasource.dynamic.tenant.add-tenant-topic` | String | `add_tenant_topic` | 新增租户的topic |
-| `spring.datasource.dynamic.tenant.use-random-master` | boolean | `true` | 找不到master时是否使用随机数据源 |
+| 配置项                                                  | 类型         | 默认值                | 说明                             |
+|---------------------------------------------------------|--------------|-----------------------|----------------------------------|
+| `spring.datasource.dynamic.tenant.ignore-tenant-tables` | List<String> | `[]`                  | 忽略租户隔离的表名列表           |
+| `spring.datasource.dynamic.tenant.tenant-table-name`    | String       | `tenant_datasource`   | 租户数据源表名                   |
+| `spring.datasource.dynamic.tenant.db-url-template`      | String       | `jdbc:mysql://%s?...` | 数据库连接URL模板                |
+| `spring.datasource.dynamic.tenant.tenant-id-column`     | String       | `tenant_code`         | 租户字段名                       |
+| `spring.datasource.dynamic.tenant.add-tenant-topic`     | String       | `add_tenant_topic`    | 新增租户的topic                  |
+| `spring.datasource.dynamic.tenant.use-random-master`    | boolean      | `true`                | 找不到master时是否使用随机数据源 |
 
 ---
 
@@ -629,7 +634,8 @@ platform:
 
 ### `Q4` — 多租户如何切换数据源？
 
-**A:** 组件会自动从请求头（`X-Tenant-Code`）或JWT Token中获取租户代码，并自动切换数据源。也可以使用 `@CommonDataSource` 注解手动指定数据源。
+**A:** 组件会自动从请求头（`X-Tenant-Code`）或JWT Token中获取租户代码，并自动切换数据源。也可以使用 `@CommonDataSource`
+注解手动指定数据源。
 
 ### `Q5` — 如何配置慢SQL检测？
 

@@ -55,12 +55,16 @@ public class TenantMetricsCollector {
 
     // ==================== SQL 改写：line ====================
 
-    /** 递增一次 Column 模式 SQL 改写尝试。 */
+    /**
+     * 递增一次 Column 模式 SQL 改写尝试。
+     */
     public void incrementLineRewriteAttempts() {
         lineRewriteAttempts.incrementAndGet();
     }
 
-    /** 递增一次 Column 模式 SQL 改写成功。 */
+    /**
+     * 递增一次 Column 模式 SQL 改写成功。
+     */
     public void incrementLineRewriteSuccess() {
         lineRewriteSuccess.incrementAndGet();
     }
@@ -75,12 +79,16 @@ public class TenantMetricsCollector {
 
     // ==================== SQL 改写：table ====================
 
-    /** 递增一次 Table 模式 SQL 改写尝试。 */
+    /**
+     * 递增一次 Table 模式 SQL 改写尝试。
+     */
     public void incrementTableRewriteAttempts() {
         tableRewriteAttempts.incrementAndGet();
     }
 
-    /** 递增一次 Table 模式 SQL 改写成功。 */
+    /**
+     * 递增一次 Table 模式 SQL 改写成功。
+     */
     public void incrementTableRewriteSuccess() {
         tableRewriteSuccess.incrementAndGet();
     }
@@ -95,12 +103,16 @@ public class TenantMetricsCollector {
 
     // ==================== 缓存 ====================
 
-    /** 递增一次缓存命中。 */
+    /**
+     * 递增一次缓存命中。
+     */
     public void incrementCacheHits() {
         cacheHits.incrementAndGet();
     }
 
-    /** 递增一次缓存未命中（穿透到 delegate）。 */
+    /**
+     * 递增一次缓存未命中（穿透到 delegate）。
+     */
     public void incrementCacheMisses() {
         cacheMisses.incrementAndGet();
     }

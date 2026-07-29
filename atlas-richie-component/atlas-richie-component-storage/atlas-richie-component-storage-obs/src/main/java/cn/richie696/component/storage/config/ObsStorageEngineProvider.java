@@ -15,11 +15,11 @@
  */
 package cn.richie696.component.storage.config;
 
-import com.obs.services.ObsClient;
 import cn.richie696.component.storage.bean.ObjectConfig;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.core.impl.ObsStorageEngine;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
+import com.obs.services.ObsClient;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

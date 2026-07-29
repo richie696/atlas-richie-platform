@@ -218,7 +218,6 @@ public class FastRecoveryConfig {
     private int keepAliveInterval = 30;
 
 
-
     /**
      * 是否启用网络监控
      *

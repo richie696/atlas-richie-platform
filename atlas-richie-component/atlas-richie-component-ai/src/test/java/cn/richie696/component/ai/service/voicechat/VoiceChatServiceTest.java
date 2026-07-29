@@ -9,11 +9,7 @@
  */
 package cn.richie696.component.ai.service.voicechat;
 
-import cn.richie696.component.ai.api.voicechat.StsTicket;
-import cn.richie696.component.ai.api.voicechat.VoiceChatConfig;
-import cn.richie696.component.ai.api.voicechat.VoiceChatEvent;
-import cn.richie696.component.ai.api.voicechat.VoiceChatModel;
-import cn.richie696.component.ai.api.voicechat.VoiceConversation;
+import cn.richie696.component.ai.api.voicechat.*;
 import cn.richie696.component.ai.service.VoiceChatService;
 import cn.richie696.component.ai.service.impl.VoiceChatServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -21,12 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.concurrent.Flow;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * VoiceChatService 单测 — 验证 2 项核心不变量:

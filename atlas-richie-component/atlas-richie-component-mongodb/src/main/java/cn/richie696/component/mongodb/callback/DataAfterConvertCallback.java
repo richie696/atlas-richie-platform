@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.mongodb.callback;
 
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.mapping.event.AfterConvertCallback;
-import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;

@@ -23,8 +23,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.lang.reflect.Field;
 import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class EntityIntrospectorTest {
@@ -121,24 +123,58 @@ class EntityIntrospectorTest {
 
         private String normalField;
 
-        public String getCustomId() { return customId; }
-        public void setCustomId(String customId) { this.customId = customId; }
-        public String getIndexedField1() { return indexedField1; }
-        public void setIndexedField1(String indexedField1) { this.indexedField1 = indexedField1; }
-        public String getIndexedField2() { return indexedField2; }
-        public void setIndexedField2(String indexedField2) { this.indexedField2 = indexedField2; }
-        public String getNormalField() { return normalField; }
-        public void setNormalField(String normalField) { this.normalField = normalField; }
+        public String getCustomId() {
+            return customId;
+        }
+
+        public void setCustomId(String customId) {
+            this.customId = customId;
+        }
+
+        public String getIndexedField1() {
+            return indexedField1;
+        }
+
+        public void setIndexedField1(String indexedField1) {
+            this.indexedField1 = indexedField1;
+        }
+
+        public String getIndexedField2() {
+            return indexedField2;
+        }
+
+        public void setIndexedField2(String indexedField2) {
+            this.indexedField2 = indexedField2;
+        }
+
+        public String getNormalField() {
+            return normalField;
+        }
+
+        public void setNormalField(String normalField) {
+            this.normalField = normalField;
+        }
     }
 
     static class SimpleEntity {
         private String id;
         private String name;
 
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 
     @SoftDelete

@@ -46,7 +46,7 @@ class ExpressionConfigHolderTest {
         RulesEngineConfig.ExpressionConfig config = new RulesEngineConfig.ExpressionConfig();
         config.setSlowThresholdMs(100L);
         ExpressionConfigHolder.setConfig(config);
-        
+
         assertEquals(100L, ExpressionConfigHolder.getSlowThresholdMs());
     }
 
@@ -61,7 +61,7 @@ class ExpressionConfigHolderTest {
         RulesEngineConfig.ExpressionConfig config = new RulesEngineConfig.ExpressionConfig();
         config.setEnableSecurityCheck(false);
         ExpressionConfigHolder.setConfig(config);
-        
+
         assertFalse(ExpressionConfigHolder.isSecurityCheckEnabled());
     }
 
@@ -75,14 +75,14 @@ class ExpressionConfigHolderTest {
         RulesEngineConfig.ExpressionConfig config = new RulesEngineConfig.ExpressionConfig();
         config.setEnableDetailedLog(true);
         ExpressionConfigHolder.setConfig(config);
-        
+
         assertTrue(ExpressionConfigHolder.isDetailedLogEnabled());
     }
 
     @Test
     void testGetSecurityBlacklist_Default() {
         Set<String> blacklist = ExpressionConfigHolder.getSecurityBlacklist();
-        
+
         assertNotNull(blacklist);
         assertTrue(blacklist.contains("java.lang.Runtime"));
         assertTrue(blacklist.contains("ProcessBuilder"));
@@ -95,9 +95,9 @@ class ExpressionConfigHolderTest {
         RulesEngineConfig.ExpressionConfig config = new RulesEngineConfig.ExpressionConfig();
         config.setSecurityBlacklist("custom.dangerous,another.unsafe");
         ExpressionConfigHolder.setConfig(config);
-        
+
         Set<String> blacklist = ExpressionConfigHolder.getSecurityBlacklist();
-        
+
         assertTrue(blacklist.contains("custom.dangerous"));
         assertTrue(blacklist.contains("another.unsafe"));
         // 默认黑名单也应该存在
@@ -109,9 +109,9 @@ class ExpressionConfigHolderTest {
         RulesEngineConfig.ExpressionConfig config = new RulesEngineConfig.ExpressionConfig();
         config.setSecurityBlacklist("");
         ExpressionConfigHolder.setConfig(config);
-        
+
         Set<String> blacklist = ExpressionConfigHolder.getSecurityBlacklist();
-        
+
         // 应该只有默认黑名单
         assertTrue(blacklist.contains("java.lang.Runtime"));
     }
@@ -121,9 +121,9 @@ class ExpressionConfigHolderTest {
         RulesEngineConfig.ExpressionConfig config = new RulesEngineConfig.ExpressionConfig();
         config.setSecurityBlacklist("  , custom.dangerous , another.unsafe ,  ");
         ExpressionConfigHolder.setConfig(config);
-        
+
         Set<String> blacklist = ExpressionConfigHolder.getSecurityBlacklist();
-        
+
         assertTrue(blacklist.contains("custom.dangerous"));
         assertTrue(blacklist.contains("another.unsafe"));
     }

@@ -16,23 +16,16 @@
 package cn.richie696.component.desensitize.jackson.serializer;
 
 import cn.richie696.component.desensitize.core.annotation.Sensitive;
+import cn.richie696.component.desensitize.core.config.DesensitizeProperties;
 import cn.richie696.component.desensitize.core.model.MaskScene;
 import cn.richie696.component.desensitize.core.model.MaskType;
-import cn.richie696.component.desensitize.jackson.DesensitizeJacksonModule;
-import cn.richie696.component.desensitize.core.config.DesensitizeProperties;
 import cn.richie696.component.desensitize.core.permission.DefaultMaskPermissionEvaluator;
 import cn.richie696.component.desensitize.core.registry.MaskRuleRegistry;
 import cn.richie696.component.desensitize.core.registry.SensitiveKeyRegistry;
 import cn.richie696.component.desensitize.core.service.DefaultMaskingService;
 import cn.richie696.component.desensitize.core.service.MaskingService;
-import cn.richie696.component.desensitize.core.strategy.AddressMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.BankCardMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.EmailMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.IdCardMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.MaskingStrategyRegistry;
-import cn.richie696.component.desensitize.core.strategy.NameMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.PasswordMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.PhoneMaskingStrategy;
+import cn.richie696.component.desensitize.core.strategy.*;
+import cn.richie696.component.desensitize.jackson.DesensitizeJacksonModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;

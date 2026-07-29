@@ -29,9 +29,9 @@ public interface LimiterOps {
     /**
      * 滑动窗口限流，判断是否允许通过。
      *
-     * @param key            限流标识键
-     * @param maxCount       窗口内最大请求数
-     * @param windowSeconds  窗口时间（秒）
+     * @param key           限流标识键
+     * @param maxCount      窗口内最大请求数
+     * @param windowSeconds 窗口时间（秒）
      * @return true表示允许通过，false表示被限流
      */
     boolean tryAcquire(String key, int maxCount, int windowSeconds);

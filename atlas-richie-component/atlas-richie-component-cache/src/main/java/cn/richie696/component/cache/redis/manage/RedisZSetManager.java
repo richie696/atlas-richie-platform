@@ -15,15 +15,15 @@
  */
 package cn.richie696.component.cache.redis.manage;
 
-import cn.richie696.context.utils.data.JsonUtils;
-import cn.richie696.context.bloom.BloomFilter;
 import cn.richie696.component.cache.config.CacheProperties;
 import cn.richie696.component.cache.function.ZSetFunction;
 import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
 import cn.richie696.component.cache.redis.perf.RedisOperationCatalog;
 import cn.richie696.component.cache.redis.perf.RedisPerfGuard;
-import tools.jackson.core.type.TypeReference;
+import cn.richie696.context.bloom.BloomFilter;
+import cn.richie696.context.utils.data.JsonUtils;
 import com.google.common.util.concurrent.AtomicDouble;
+import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -34,11 +34,14 @@ import org.springframework.data.redis.core.DefaultTypedTuple;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.ZSetOperations;
-import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.type.TypeReference;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * ZSet类型缓存管理器
@@ -53,17 +56,25 @@ import java.util.stream.Collectors;
 @ConditionalOnExpression("'${platform.cache.cache-provider:REDIS}'=='REDIS'")
 public class RedisZSetManager implements ZSetFunction {
 
-    /** Redis 模板（JSON 序列化） */
+    /**
+     * Redis 模板（JSON 序列化）
+     */
     @Qualifier("jsonTemplate")
     private final MultiRedisTemplate<Object> redisTemplate;
 
-    /** 缓存配置 */
+    /**
+     * 缓存配置
+     */
     private final CacheProperties cacheProperties;
 
-    /** 布隆过滤器门面 */
+    /**
+     * 布隆过滤器门面
+     */
     private final BloomFilter bloomFilter;
 
-    /** Redis 性能守卫（可选启用） */
+    /**
+     * Redis 性能守卫（可选启用）
+     */
     private final RedisPerfGuard redisPerfGuard;
 
     /**

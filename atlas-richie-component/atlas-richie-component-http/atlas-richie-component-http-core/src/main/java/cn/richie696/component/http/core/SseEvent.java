@@ -33,8 +33,8 @@ import java.time.Duration;
  * </ul>
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public record SseEvent(String id, String event, String data, Duration retry) {
 
@@ -50,7 +50,7 @@ public record SseEvent(String id, String event, String data, Duration retry) {
      * @param data 事件数据，可为 {@code null}
      * @return 新的 {@link SseEvent} 实例
      */
-    public static SseEvent of(String data) {
+    public static SseEvent of (String data){
         return new SseEvent(null, DEFAULT_EVENT_NAME, data, null);
     }
 

@@ -64,7 +64,7 @@ public final class StorageEngineInvocationHandler implements InvocationHandler {
      * 为指定引擎类型创建 handler（{@link cn.richie696.component.storage.config.StorageEngineRegistry} 使用）
      */
     public static StorageEngineInvocationHandler forType(StorageEngineEnum engineType,
-                                                          Supplier<StorageEngine> delegateSupplier) {
+                                                         Supplier<StorageEngine> delegateSupplier) {
         return new StorageEngineInvocationHandler(
                 engineType != null ? engineType.name() : null, delegateSupplier);
     }

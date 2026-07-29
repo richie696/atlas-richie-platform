@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.storage.observability;
 
-import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.config.StorageEngineRegistry;
+import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
 import cn.richie696.context.common.api.SpringContextHolder;
 import io.micrometer.core.instrument.Gauge;
@@ -31,6 +31,7 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Map;
 
 class StorageMetricsBinderTest {
 
@@ -63,7 +64,8 @@ class StorageMetricsBinderTest {
             Field f = SpringContextHolder.class.getDeclaredField("applicationContext");
             f.setAccessible(true);
             f.set(null, null);
-        } catch (ReflectiveOperationException ignored) {}
+        } catch (ReflectiveOperationException ignored) {
+        }
         meterRegistry.close();
     }
 
@@ -108,16 +110,59 @@ class StorageMetricsBinderTest {
     }
 
     static class NoopEngine implements StorageEngine {
-        @Override public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String k, java.util.@NonNull Map<?, ?> c) { return null; }
-        @Override public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String k, java.util.@NonNull Collection<?> c) { return null; }
-        @Override public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String k, @NonNull Object o) { return null; }
-        @Override public cn.richie696.component.storage.bean.UploadResponse putObject(@NonNull String k, java.io.@NonNull File f) { return null; }
-        @Override public cn.richie696.component.storage.bean.UploadResponse putObject(@NonNull String k, java.io.@NonNull InputStream i) { return null; }
-        @Override public cn.richie696.component.storage.bean.UploadResponse putImage(@NonNull String k, java.io.@NonNull File f, cn.richie696.component.storage.bean.image.ImageOptions o) { return null; }
-        @Override public cn.richie696.component.storage.bean.UploadResponse putImage(@NonNull String k, java.io.@NonNull InputStream i, cn.richie696.component.storage.bean.image.ImageOptions o) { return null; }
-        @Override public <T> cn.richie696.component.storage.bean.DownloadResponse<T> getData(@NonNull String k, tools.jackson.core.type.@NonNull TypeReference<T> t) { return null; }
-        @Override public cn.richie696.component.storage.bean.DownloadResponse<byte[]> getObject(@NonNull String k, java.io.@NonNull File p, boolean r) { return null; }
-        @Override public cn.richie696.component.storage.bean.DownloadResponse<byte[]> getResumableObject(@NonNull String k, @NonNull String t, boolean r) { return null; }
-        @Override public boolean existsObject(@NonNull String k) { return true; }
+        @Override
+        public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String k, java.util.@NonNull Map<?, ?> c) {
+            return null;
+        }
+
+        @Override
+        public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String k, java.util.@NonNull Collection<?> c) {
+            return null;
+        }
+
+        @Override
+        public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String k, @NonNull Object o) {
+            return null;
+        }
+
+        @Override
+        public cn.richie696.component.storage.bean.UploadResponse putObject(@NonNull String k, java.io.@NonNull File f) {
+            return null;
+        }
+
+        @Override
+        public cn.richie696.component.storage.bean.UploadResponse putObject(@NonNull String k, java.io.@NonNull InputStream i) {
+            return null;
+        }
+
+        @Override
+        public cn.richie696.component.storage.bean.UploadResponse putImage(@NonNull String k, java.io.@NonNull File f, cn.richie696.component.storage.bean.image.ImageOptions o) {
+            return null;
+        }
+
+        @Override
+        public cn.richie696.component.storage.bean.UploadResponse putImage(@NonNull String k, java.io.@NonNull InputStream i, cn.richie696.component.storage.bean.image.ImageOptions o) {
+            return null;
+        }
+
+        @Override
+        public <T> cn.richie696.component.storage.bean.DownloadResponse<T> getData(@NonNull String k, tools.jackson.core.type.@NonNull TypeReference<T> t) {
+            return null;
+        }
+
+        @Override
+        public cn.richie696.component.storage.bean.DownloadResponse<byte[]> getObject(@NonNull String k, java.io.@NonNull File p, boolean r) {
+            return null;
+        }
+
+        @Override
+        public cn.richie696.component.storage.bean.DownloadResponse<byte[]> getResumableObject(@NonNull String k, @NonNull String t, boolean r) {
+            return null;
+        }
+
+        @Override
+        public boolean existsObject(@NonNull String k) {
+            return true;
+        }
     }
 }

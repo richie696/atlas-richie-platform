@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package cn.richie696.component.desensitize.core.model;
+
 public enum MaskScene {
     API_RESPONSE,
     LOG,

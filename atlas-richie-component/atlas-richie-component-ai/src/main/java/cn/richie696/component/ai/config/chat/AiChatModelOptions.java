@@ -17,6 +17,7 @@ package cn.richie696.component.ai.config.chat;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
+import java.util.List;
 
 /**
  * 大语言模型(Chat)条目参数。

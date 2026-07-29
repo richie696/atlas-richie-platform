@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Map;
 
 /**
  * {@link SseListener} 默认方法 + 回调契约的单元测试。

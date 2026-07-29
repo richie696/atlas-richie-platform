@@ -15,12 +15,9 @@
  */
 package cn.richie696.component.parser.internal;
 
-import cn.richie696.component.parser.DocumentSegment;
-import cn.richie696.component.parser.ParseEvent;
-import cn.richie696.component.parser.ParseListener;
-import cn.richie696.component.parser.DocumentSummary;
-import cn.richie696.component.parser.ParserContext;
-import cn.richie696.component.parser.ParserSource;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import cn.richie696.component.parser.*;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;

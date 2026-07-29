@@ -15,7 +15,6 @@
  */
 package cn.richie696.component.ai.provider.zhipu;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.ai.api.RerankModel;
 import cn.richie696.component.ai.api.RerankRequest;
 import cn.richie696.component.ai.api.RerankResponse;
@@ -23,16 +22,14 @@ import cn.richie696.component.ai.api.RerankResult;
 import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.context.utils.data.JsonUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * 智谱 AI（BigModel）重排序模型适配器。
@@ -60,10 +57,14 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class ZhipuRerankModel implements RerankModel {
 
-    /** 智谱 Rerank REST 端点（{@code /paas/v4/rerank}）。 */
+    /**
+     * 智谱 Rerank REST 端点（{@code /paas/v4/rerank}）。
+     */
     public static final String DEFAULT_BASE_URL = "https://open.bigmodel.cn/api/paas/v4/rerank";
 
-    /** 当 {@link RerankRequest#model} 为空时使用的默认模型（{@code rerank}，固定枚举）。 */
+    /**
+     * 当 {@link RerankRequest#model} 为空时使用的默认模型（{@code rerank}，固定枚举）。
+     */
     public static final String DEFAULT_MODEL = "rerank";
 
     private final HttpClient httpClient;
@@ -172,7 +173,9 @@ public class ZhipuRerankModel implements RerankModel {
 
     // ====== Zhipu response DTOs ======
 
-    /** 顶层响应：{@code { "results": [...], "usage": { ... } }}。 */
+    /**
+     * 顶层响应：{@code { "results": [...], "usage": { ... } }}。
+     */
     static class ZhipuRerankRawResponse {
         @JsonProperty("results")
         public List<ZhipuRerankRawItem> results;

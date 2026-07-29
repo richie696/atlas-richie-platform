@@ -15,11 +15,11 @@
  */
 package cn.richie696.component.storage.local.cleanup;
 
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.storage.bean.LocalConfig;
 import cn.richie696.component.storage.local.repository.entity.FileMetadata;
 import cn.richie696.component.storage.local.repository.mapper.FileMetadataMapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -139,7 +139,7 @@ public class FileCleanupJob implements SchedulingConfigurer {
     /**
      * 软删数据库中的元数据记录（更新 storage_state 与 deleted_time）
      *
-     * @param key 存储键
+     * @param key          存储键
      * @param physicalPath 物理路径
      */
     private void softDeleteMetadata(String key, String physicalPath) {
@@ -149,8 +149,8 @@ public class FileCleanupJob implements SchedulingConfigurer {
             update.setDeletedTime(java.time.LocalDateTime.now());
             LambdaUpdateWrapper<FileMetadata> uw = new LambdaUpdateWrapper<>();
             uw.eq(FileMetadata::getKeyPath, key)
-              .or()
-              .eq(FileMetadata::getPhysicalPath, physicalPath);
+                    .or()
+                    .eq(FileMetadata::getPhysicalPath, physicalPath);
             int affected = fileMetadataMapper.update(update, uw);
             if (affected == 0) {
                 log.info("[storage-local] 未找到匹配的元数据记录，key={}, path={}", key, physicalPath);
@@ -172,7 +172,8 @@ public class FileCleanupJob implements SchedulingConfigurer {
                         if (localConfig.getCleanup() != null && localConfig.getCleanup().getCron() != null && !localConfig.getCleanup().getCron().isBlank()) {
                             cron = localConfig.getCleanup().getCron();
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                     return new CronTrigger(cron).nextExecution(triggerContext);
                 }
         );

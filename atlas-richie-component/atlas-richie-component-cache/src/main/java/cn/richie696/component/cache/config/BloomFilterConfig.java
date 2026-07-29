@@ -29,11 +29,17 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class BloomFilterConfig {
 
-    /** 是否启用布隆过滤器 */
+    /**
+     * 是否启用布隆过滤器
+     */
     private boolean enable = false;
-    /** 布隆过滤器实现类型 */
+    /**
+     * 布隆过滤器实现类型
+     */
     private Type type = Type.REDISSON;
-    /** 布隆过滤器数据保存路径 */
+    /**
+     * 布隆过滤器数据保存路径
+     */
     private String key = "platform:cache:bloom:global";
     /**
      * 预期插入数量
@@ -70,11 +76,17 @@ public class BloomFilterConfig {
      */
     private double falseProbability = 0.001;
 
-    /** 布隆过滤器实现类型 */
+    /**
+     * 布隆过滤器实现类型
+     */
     public enum Type {
-        /** Redisson */
+        /**
+         * Redisson
+         */
         REDISSON,
-        /** Guava */
+        /**
+         * Guava
+         */
         GUAVA
     }
 }

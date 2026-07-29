@@ -94,11 +94,11 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/ai/support/ToolRegistry*</include>
-                        <include>com/richie/component/ai/support/AiModelRouter*</include>
-                        <include>com/richie/component/ai/support/AiModelCircuitBreaker*</include>
-                        <include>com/richie/component/ai/model/AiResponse*</include>
-                        <include>com/richie/component/ai/model/AiRequest*</include>
+                        <include>cn/richie696/component/ai/support/ToolRegistry*</include>
+                        <include>cn/richie696/component/ai/support/AiModelRouter*</include>
+                        <include>cn/richie696/component/ai/support/AiModelCircuitBreaker*</include>
+                        <include>cn/richie696/component/ai/model/AiResponse*</include>
+                        <include>cn/richie696/component/ai/model/AiRequest*</include>
                     </includes>
                     <rules>
                         <rule>
@@ -118,11 +118,11 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/ai/support/ToolRegistry*</include>
-                                <include>com/richie/component/ai/support/AiModelRouter*</include>
-                                <include>com/richie/component/ai/support/AiModelCircuitBreaker*</include>
-                                <include>com/richie/component/ai/model/AiResponse*</include>
-                                <include>com/richie/component/ai/model/AiRequest*</include>
+                                <include>cn/richie696/component/ai/support/ToolRegistry*</include>
+                                <include>cn/richie696/component/ai/support/AiModelRouter*</include>
+                                <include>cn/richie696/component/ai/support/AiModelCircuitBreaker*</include>
+                                <include>cn/richie696/component/ai/model/AiResponse*</include>
+                                <include>cn/richie696/component/ai/model/AiRequest*</include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

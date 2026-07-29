@@ -15,9 +15,6 @@
  */
 package cn.richie696.component.vector.config;
 
-import cn.richie696.component.vector.config.VectorProperties.IndexConfig;
-import cn.richie696.component.vector.model.HybridSearchOptions;
-import cn.richie696.component.vector.model.IndexInfo;
 import cn.richie696.component.vector.model.SearchOptions;
 import cn.richie696.component.vector.model.VectorRecord;
 import cn.richie696.component.vector.model.VectorSearchResult;
@@ -33,14 +30,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 @ExtendWith(MockitoExtension.class)
 class VectorMultiProviderGuardTest {
@@ -114,13 +106,42 @@ class VectorMultiProviderGuardTest {
             return name;
         }
 
-        @Override public String upsert(VectorRecord record) { return null; }
-        @Override public void deleteById(String indexName, String vectorId) { }
-        @Override public void deleteByIds(String indexName, Collection<String> vectorIds) { }
-        @Override public List<VectorSearchResult> searchByText(String indexName, String text, int limit, SearchOptions options) { return List.of(); }
-        @Override public List<VectorSearchResult> searchByImage(String indexName, byte[] image, String mimeType, int limit, double minScore) { return List.of(); }
-        @Override public List<VectorSearchResult> searchByImage(String indexName, java.nio.file.Path imagePath, String mimeType, int limit) { return List.of(); }
-        @Override public Flux<cn.richie696.component.vector.bulk.BulkOperationEvent> upsertAll(String indexName, Flux<VectorRecord> records) { return Flux.empty(); }
-        @Override public Flux<cn.richie696.component.vector.bulk.BulkOperationEvent> deleteAll(String indexName, Flux<String> ids) { return Flux.empty(); }
+        @Override
+        public String upsert(VectorRecord record) {
+            return null;
+        }
+
+        @Override
+        public void deleteById(String indexName, String vectorId) {
+        }
+
+        @Override
+        public void deleteByIds(String indexName, Collection<String> vectorIds) {
+        }
+
+        @Override
+        public List<VectorSearchResult> searchByText(String indexName, String text, int limit, SearchOptions options) {
+            return List.of();
+        }
+
+        @Override
+        public List<VectorSearchResult> searchByImage(String indexName, byte[] image, String mimeType, int limit, double minScore) {
+            return List.of();
+        }
+
+        @Override
+        public List<VectorSearchResult> searchByImage(String indexName, java.nio.file.Path imagePath, String mimeType, int limit) {
+            return List.of();
+        }
+
+        @Override
+        public Flux<cn.richie696.component.vector.bulk.BulkOperationEvent> upsertAll(String indexName, Flux<VectorRecord> records) {
+            return Flux.empty();
+        }
+
+        @Override
+        public Flux<cn.richie696.component.vector.bulk.BulkOperationEvent> deleteAll(String indexName, Flux<String> ids) {
+            return Flux.empty();
+        }
     }
 }

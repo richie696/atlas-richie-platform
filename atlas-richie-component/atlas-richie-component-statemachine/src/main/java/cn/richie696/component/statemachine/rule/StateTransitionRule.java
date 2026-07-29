@@ -28,6 +28,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.SimpleEvaluationContext;
 
 import java.util.Set;
+import java.util.Map;
 
 /**
  * 状态转换规则
@@ -63,7 +64,7 @@ public record StateTransitionRule(Transition transition, Object context) {
      * @return true 表示条件满足，规则应该被触发；false 表示条件不满足
      */
     @Condition
-    public boolean when() {
+    public boolean when () {
         // 检查当前状态是否匹配
         if (context instanceof StateContext stateContext) {
             String currentState = stateContext.getCurrentState();
@@ -92,7 +93,7 @@ public record StateTransitionRule(Transition transition, Object context) {
      *
      */
     @Action
-    public void then() {
+    public void then () {
         if (context instanceof StateContext stateContext) {
             // 执行转换动作
             if (transition.getAction() != null) {
@@ -116,7 +117,7 @@ public record StateTransitionRule(Transition transition, Object context) {
      * @return 规则优先级
      */
     @Priority
-    public int getPriority() {
+    public int getPriority () {
         return transition.getPriority();
     }
 
@@ -131,7 +132,7 @@ public record StateTransitionRule(Transition transition, Object context) {
      * @param context    状态上下文对象
      * @return true 表示条件满足，false 表示条件不满足或执行失败
      */
-    private boolean evaluateCondition(String condition, Object context) {
+    private boolean evaluateCondition (String condition, Object context){
         if (condition == null || condition.isBlank()) {
             return true;
         }
@@ -185,7 +186,7 @@ public record StateTransitionRule(Transition transition, Object context) {
      * @param action  动作表达式（SpEL）
      * @param context 状态上下文对象
      */
-    private void executeAction(String action, Object context) {
+    private void executeAction (String action, Object context){
         if (action == null || action.isBlank()) {
             return;
         }
@@ -235,7 +236,7 @@ public record StateTransitionRule(Transition transition, Object context) {
      * @param ctx 状态上下文对象
      * @return 变量映射表，包含 context、currentState、previousState、event、attributes、transition 等
      */
-    private java.util.Map<String, Object> buildVariables(Object ctx) {
+    private java.util.Map<String, Object> buildVariables (Object ctx){
         java.util.Map<String, Object> vars = new java.util.HashMap<>();
         if (ctx instanceof StateContext sc) {
             vars.put("context", sc);
@@ -258,7 +259,7 @@ public record StateTransitionRule(Transition transition, Object context) {
      * @param expr 表达式字符串
      * @return true 表示表达式安全，false 表示表达式不安全
      */
-    private boolean isSafeExpression(String expr) {
+    private boolean isSafeExpression (String expr){
         String s = expr;
         Set<String> blacklist = ExpressionConfigHolder.getSecurityBlacklist();
         for (String bad : blacklist) {
@@ -278,7 +279,7 @@ public record StateTransitionRule(Transition transition, Object context) {
      * @param expr 表达式字符串
      * @return 缩写后的表达式字符串（如果长度超过 120 字符则截断）
      */
-    private String abbreviate(String expr) {
+    private String abbreviate (String expr){
         if (expr == null) return "";
         return expr.length() > 120 ? expr.substring(0, 117) + "..." : expr;
     }

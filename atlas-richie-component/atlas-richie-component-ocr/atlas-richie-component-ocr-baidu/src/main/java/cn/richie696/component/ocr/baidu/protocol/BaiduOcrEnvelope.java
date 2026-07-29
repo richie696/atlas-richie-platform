@@ -50,7 +50,7 @@ public record BaiduOcrEnvelope(
      * 百度通用文字识别响应 {@code words_result} 数组元素 —— 每行识别结果。
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record WordItem(
-            @JsonProperty("words") String words) {
+    public record WordItem (
+            @JsonProperty("words") String words){
     }
 }

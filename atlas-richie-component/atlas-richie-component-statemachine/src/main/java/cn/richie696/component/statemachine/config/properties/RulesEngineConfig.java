@@ -18,15 +18,16 @@ package cn.richie696.component.statemachine.config.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * 规则引擎配置
  * <p>
  * 配置 Easy Rules 引擎的执行策略和参数。
- * 
+ *
  * <p>
  * 注意：此类使用 Lombok {@code @Data} 注解，构造函数由 Lombok 自动生成。
- * 
+ *
  */
 @Data
 @ConfigurationProperties(prefix = "platform.component.statemachine.rules-engine")
@@ -80,8 +81,8 @@ public class RulesEngineConfig {
     /**
      * 表达式执行配置
      */
+    @NestedConfigurationProperty
     private ExpressionConfig expression = new ExpressionConfig();
-
 
 
     /**

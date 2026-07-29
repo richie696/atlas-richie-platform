@@ -4,6 +4,7 @@
 package cn.richie696.component.ai.provider.support;
 
 import cn.richie696.context.utils.data.JsonUtils;
+import java.util.Map;
 
 /**
  * JsonUtils 容错封装 — 在 vendor 流式协议解析中,经常遇到 keep-alive ping /
@@ -14,7 +15,8 @@ import cn.richie696.context.utils.data.JsonUtils;
  */
 public final class JsonSafe {
 
-    private JsonSafe() {}
+    private JsonSafe() {
+    }
 
     @SuppressWarnings("unchecked")
     public static java.util.Map<String, Object> parseMap(String text) {

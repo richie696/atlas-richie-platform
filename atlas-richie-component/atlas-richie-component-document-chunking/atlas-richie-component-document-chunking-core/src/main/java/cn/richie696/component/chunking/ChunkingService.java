@@ -45,9 +45,9 @@ public interface ChunkingService {
      * {@code SemanticBoundaryAdvisor}；缺失时明确抛出不支持异常。</p>
      *
      * @param content 待切片字符串；可为 {@code null}
-     * @param rule 切片规则快照；{@code null} 触发 {@link NullPointerException}
+     * @param rule    切片规则快照；{@code null} 触发 {@link NullPointerException}
      * @return 不变的结果对象；当输入被截断或硬切时 {@code diagnostics.hardTruncated} 为 {@code true}
-     * @throws NullPointerException 当 {@code rule} 为 {@code null} 时抛出
+     * @throws NullPointerException          当 {@code rule} 为 {@code null} 时抛出
      * @throws UnsupportedOperationException 当请求的策略未注册时抛出
      */
     ChunkingResult chunk(String content, ChunkingRule rule);

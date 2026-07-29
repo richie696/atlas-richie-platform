@@ -68,7 +68,8 @@ class ScopedValueHolderTest {
         @Test
         @DisplayName("作用域结束后自动失效")
         void autoCleanAfterScope() {
-            holder.runWithTenant(principal(1001L), () -> {});
+            holder.runWithTenant(principal(1001L), () -> {
+            });
             assertThat(holder.get()).isNull();
         }
 

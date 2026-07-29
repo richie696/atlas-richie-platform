@@ -80,9 +80,13 @@ public class VolcanoOcrProperties {
      */
     @Data
     public static class Credentials {
-        /** 火山引擎 API 访问密钥 Id。 */
+        /**
+         * 火山引擎 API 访问密钥 Id。
+         */
         private String accessKey;
-        /** 火山引擎 API 访问密钥 Secret。 */
+        /**
+         * 火山引擎 API 访问密钥 Secret。
+         */
         private String secretKey;
     }
 }

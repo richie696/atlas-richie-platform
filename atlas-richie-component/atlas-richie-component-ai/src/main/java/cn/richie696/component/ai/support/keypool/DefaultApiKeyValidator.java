@@ -46,10 +46,14 @@ import java.util.regex.Pattern;
 @Component
 public class DefaultApiKeyValidator implements ApiKeyValidator {
 
-    /** 需要 invalidate 的 HTTP 状态码集合。 */
+    /**
+     * 需要 invalidate 的 HTTP 状态码集合。
+     */
     private static final Set<Integer> INVALIDATING_STATUS_CODES = Set.of(429, 403, 503);
 
-    /** 错误消息中的限流关键词(不区分大小写)。 */
+    /**
+     * 错误消息中的限流关键词(不区分大小写)。
+     */
     private static final Pattern RATE_LIMIT_PATTERN = Pattern.compile(
             "\\b(rate[_\\s-]?limit|quota[_\\s-]?(exceeded)?|too[_\\s-]?many[_\\s-]?requests?|" +
                     "throttl(ed|ing)|exceed(ed|ing)[_\\s-]?(limit|quota)|" +
@@ -79,7 +83,9 @@ public class DefaultApiKeyValidator implements ApiKeyValidator {
         return false;
     }
 
-    /** 从异常链中提取 HTTP 状态码(支持多层包装)。 */
+    /**
+     * 从异常链中提取 HTTP 状态码(支持多层包装)。
+     */
     private Integer extractHttpStatus(Throwable error) {
         Throwable current = error;
         while (current != null) {
@@ -99,7 +105,9 @@ public class DefaultApiKeyValidator implements ApiKeyValidator {
         return null;
     }
 
-    /** 通过反射尝试读取 {@code statusCode} / {@code status} 字段。 */
+    /**
+     * 通过反射尝试读取 {@code statusCode} / {@code status} 字段。
+     */
     private Integer reflectStatusField(Throwable t) {
         for (String fieldName : new String[]{"statusCode", "status", "code"}) {
             try {

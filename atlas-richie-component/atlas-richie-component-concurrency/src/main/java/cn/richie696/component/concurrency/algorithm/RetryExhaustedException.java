@@ -16,6 +16,7 @@
 package cn.richie696.component.concurrency.algorithm;
 
 import java.io.Serial;
+import java.time.Duration;
 
 /**
  * 重试耗尽异常 —— 当 {@link Retryer} 的所有重试次数用尽、或重试循环被线程中断时抛出。

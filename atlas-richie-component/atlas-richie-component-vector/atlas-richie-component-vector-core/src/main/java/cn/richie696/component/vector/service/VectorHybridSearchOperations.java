@@ -51,7 +51,7 @@ public interface VectorHybridSearchOperations {
      *                     仅 dense
      * @param limit        返回条数上限
      * @param options      混合选项（权重、内层 SearchOptions、keyword query 等）；
-     *                    {@code null} 时回退到默认权重 0.7/0.3 + 空 SearchOptions
+     *                     {@code null} 时回退到默认权重 0.7/0.3 + 空 SearchOptions
      * @return 融合后的命中候选；可能为空但不为 {@code null}
      * @throws IllegalArgumentException      {@code indexName} 或 {@code text} 为空时
      * @throws UnsupportedOperationException provider 实际不支持时（由 {@code AbstractVectorService}

@@ -18,6 +18,7 @@ package cn.richie696.component.mfa.core.config.properties;
 import cn.richie696.component.mfa.core.constant.KeyManagementProviderEnum;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * 密钥管理配置属性。
@@ -55,6 +56,7 @@ public class MfaKeyManagementProperties {
      * <p>
      * 当 provider = VAULT 时使用，包含 Vault 连接信息、Transit 引擎路径、密钥轮换配置等
      */
+    @NestedConfigurationProperty
     private MfaVaultProperties vault = new MfaVaultProperties();
 
     /**
@@ -69,6 +71,7 @@ public class MfaKeyManagementProperties {
      * <p>
      * 当 provider = HSM 时使用，包含 HSM 提供者选择（Thales、SafeNet 等）和连接信息
      */
+    @NestedConfigurationProperty
     private MfaHsmProperties hsm = new MfaHsmProperties();
 
     /**

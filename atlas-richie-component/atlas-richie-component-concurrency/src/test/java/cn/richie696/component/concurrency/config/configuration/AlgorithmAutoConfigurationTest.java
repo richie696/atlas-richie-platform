@@ -19,21 +19,15 @@ import cn.richie696.component.concurrency.algorithm.CircuitBreaker;
 import cn.richie696.component.concurrency.algorithm.RateLimiter;
 import cn.richie696.component.concurrency.config.ConcurrencyProperties;
 import cn.richie696.component.concurrency.config.properties.CircuitBreakerProperties;
-import cn.richie696.component.concurrency.config.properties.PoolProperties;
 import cn.richie696.component.concurrency.config.properties.RateLimiterProperties;
 import cn.richie696.component.concurrency.threadpool.DynamicExecutor;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.support.TestPropertySourceUtils;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -240,7 +234,8 @@ class AlgorithmAutoConfigurationTest {
             assertThat(executor).isNotNull();
 
             // 先执行一个任务让工厂创建线程
-            executor.execute(() -> {});
+            executor.execute(() -> {
+            });
             Thread[] threads = new Thread[Thread.activeCount() + 8];
             int n = Thread.enumerate(threads);
             boolean foundPrefix = false;

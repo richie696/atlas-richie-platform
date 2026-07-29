@@ -46,16 +46,24 @@ import org.springframework.core.Ordered;
 @Slf4j
 public class PlatformProtectionInterceptor implements WebInterceptor, Ordered {
 
-    /** Gateway 互斥标志：ctx attribute key，B 组拦截器（如 AnomalyDetection）读取以决定是否跳过。 */
+    /**
+     * Gateway 互斥标志：ctx attribute key，B 组拦截器（如 AnomalyDetection）读取以决定是否跳过。
+     */
     public static final String GATEWAY_BYPASS_ATTRIBUTE = "platform.web.gateway-bypass";
 
-    /** Gateway id 值（从 {@code X-Forwarded-From-Gateway} header 取），供日志 / 审计。 */
+    /**
+     * Gateway id 值（从 {@code X-Forwarded-From-Gateway} header 取），供日志 / 审计。
+     */
     public static final String GATEWAY_ID_ATTRIBUTE = "platform.web.gateway-id";
 
-    /** Gateway header 名（README.md §4.8.4 契约）。 */
+    /**
+     * Gateway header 名（README.md §4.8.4 契约）。
+     */
     public static final String GATEWAY_HEADER = "X-Forwarded-From-Gateway";
 
-    /** 拦截器在链中的位置；越早越先执行。 */
+    /**
+     * 拦截器在链中的位置；越早越先执行。
+     */
     public static final int ORDER = 100;
 
     private final RequestSizeGuard requestSizeGuard;

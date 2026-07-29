@@ -23,6 +23,7 @@ import cn.richie696.component.statemachine.config.StateMachineDefinitionRegistry
 import cn.richie696.component.statemachine.config.StateMachineProperties;
 import cn.richie696.component.statemachine.config.StatePersistenceModeResolver;
 import cn.richie696.component.statemachine.config.properties.DbPersistenceMode;
+import cn.richie696.component.statemachine.config.properties.StorageType;
 import cn.richie696.component.statemachine.context.StateContext;
 import cn.richie696.component.statemachine.event.StateChangedEvent;
 import cn.richie696.component.statemachine.event.StateSyncMessage;
@@ -30,7 +31,6 @@ import cn.richie696.component.statemachine.exception.StateMachineException;
 import cn.richie696.component.statemachine.model.State;
 import cn.richie696.component.statemachine.model.StateMachineModel;
 import cn.richie696.component.statemachine.model.Transition;
-import cn.richie696.component.statemachine.config.properties.StorageType;
 import cn.richie696.component.statemachine.persistence.StateDbPersistenceService;
 import cn.richie696.component.statemachine.persistence.async.AsyncThreadStorageManager;
 import cn.richie696.component.statemachine.registry.StateMachineRegistry;
@@ -41,16 +41,12 @@ import cn.richie696.component.statemachine.storage.StateMachineKeyBuilder;
 import cn.richie696.component.statemachine.storage.StateStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jeasy.rules.api.Facts;
-import org.jeasy.rules.api.Rule;
-import org.jeasy.rules.api.Rules;
-import org.jeasy.rules.api.RulesEngine;
-import org.jeasy.rules.api.RulesEngineParameters;
+import org.jeasy.rules.api.*;
 import org.jeasy.rules.core.DefaultRulesEngine;
 import org.jeasy.rules.core.RuleBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +57,6 @@ import java.util.Map;
  * <p>
  * 核心组件，负责执行状态转换逻辑。支持基于 Easy Rules 的规则引擎、SpEL 表达式评估、
  * 状态转换校验、历史记录、事件发布等功能。
- *
  *
  * @author richie696
  * @since 1.0.0
@@ -118,7 +113,6 @@ public class StateMachineEngine {
      * 使用场景：仅需触发事件，不额外携带上下文，也不显式传入当前状态。
      * 说明：当前状态将从存储中读取，若不存在则使用状态机初始状态。
      *
-     *
      * @param stateMachineName 状态机名称（枚举）
      * @param event            触发事件（枚举）
      * @param businessId       业务唯一标识（Long 类型，支持与业务表的数值型主键直接关联查询）
@@ -133,7 +127,6 @@ public class StateMachineEngine {
      * <p>
      * 使用场景：规则条件/动作需要额外的上下文数据（如操作者、原因、请求参数等）。
      * 说明：上下文属性将注入到 StateContext，可被条件/动作表达式访问。
-     *
      *
      * @param stateMachineName 状态机名称（枚举）
      * @param event            触发事件（枚举）
@@ -150,7 +143,6 @@ public class StateMachineEngine {
      * <p>
      * 使用场景：同时需要上下文数据与显式当前状态的高性能路径（避免一次存储读取）。
      * 说明：适用于对延迟敏感、且业务侧已维护当前状态的场景。
-     *
      *
      * @param stateMachineName 状态机名称（枚举）
      * @param event            触发事件（枚举）
@@ -170,7 +162,6 @@ public class StateMachineEngine {
      * 使用场景：调用方已知业务的当前状态（如缓存/下游返回），希望显式指定以避免一次读存储。
      * 说明：当显式传入当前状态时，将跳过存储的"当前状态读取"。
      *
-     *
      * @param stateMachineName 状态机名称（枚举）
      * @param event            触发事件（枚举）
      * @param businessId       业务唯一标识（Long 类型，支持与业务表的数值型主键直接关联查询）
@@ -179,7 +170,7 @@ public class StateMachineEngine {
      * @return 状态转换结果
      */
     public <ST extends Enum<ST>> StateTransitionResult fire(Enum<?> stateMachineName, Enum<?> event, Long businessId, ST currentStateEnum) {
-            return fire(StateMachineName.of(stateMachineName), StateMachineEvent.of(event), businessId, null, currentStateEnum);
+        return fire(StateMachineName.of(stateMachineName), StateMachineEvent.of(event), businessId, null, currentStateEnum);
     }
 
     /**
@@ -193,33 +184,32 @@ public class StateMachineEngine {
      * 5. 保存状态和历史记录
      * 6. 发布事件和同步消息
      *
-     *
-     * @param stateMachineName  状态机名称包装对象
-     * @param event             事件包装对象
-     * @param businessId         业务唯一标识
-     * @param attributes        额外上下文属性（可为 null）
-     * @param currentStateEnum  业务当前状态（枚举，传 null 表示从存储读取）
-     * @param <ST>              状态枚举类型参数
+     * @param stateMachineName 状态机名称包装对象
+     * @param event            事件包装对象
+     * @param businessId       业务唯一标识
+     * @param attributes       额外上下文属性（可为 null）
+     * @param currentStateEnum 业务当前状态（枚举，传 null 表示从存储读取）
+     * @param <ST>             状态枚举类型参数
      * @return 状态转换结果
      */
-private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateMachineName, StateMachineEvent event, Long businessId, Map<String, Object> attributes, ST currentStateEnum) {
+    private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateMachineName, StateMachineEvent event, Long businessId, Map<String, Object> attributes, ST currentStateEnum) {
         try {
             String stateMachineNameStr = stateMachineName.getStateMachineName();
-        StateMachineModel stateMachine = stateMachineRegistry.getStateMachine(stateMachineNameStr);
+            StateMachineModel stateMachine = stateMachineRegistry.getStateMachine(stateMachineNameStr);
             if (stateMachine == null) {
                 return StateTransitionResult.failure("状态机未找到: " + stateMachineNameStr);
             }
             StateMachineDefinition definition = getStateMachineDefinition(stateMachineNameStr);
             if (definition == null) {
-            log.debug("状态机定义未找到: {}，将仅使用存储进行状态管理", stateMachineNameStr);
+                log.debug("状态机定义未找到: {}，将仅使用存储进行状态管理", stateMachineNameStr);
             }
-        String currentState = currentStateEnum == null ? null : currentStateEnum.name();
-        StateContext context = new StateContext(currentState, event.getEventName());
-        if (attributes != null) {
-            attributes.forEach(context::setAttribute);
-        }
+            String currentState = currentStateEnum == null ? null : currentStateEnum.name();
+            StateContext context = new StateContext(currentState, event.getEventName());
+            if (attributes != null) {
+                attributes.forEach(context::setAttribute);
+            }
             if (currentState == null) {
-            String storedState = stateStorage.getCurrentState(stateMachineNameStr, businessId);
+                String storedState = stateStorage.getCurrentState(stateMachineNameStr, businessId);
                 if (storedState != null) {
                     context.setCurrentState(storedState);
                 } else {
@@ -239,7 +229,7 @@ private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateM
             }
             // 设置表达式配置（供 StateTransitionRule 使用）
             ExpressionConfigHolder.setConfig(
-                properties.getRulesEngine().getExpression()
+                    properties.getRulesEngine().getExpression()
             );
 
             List<Transition> orderedTransitions = new ArrayList<>(transitions);
@@ -248,8 +238,8 @@ private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateM
                 orderedTransitions.sort((t1, t2) -> Integer.compare(t2.getPriority(), t1.getPriority()));
                 if (log.isDebugEnabled() && properties.getRulesEngine().isEnableExecutionLog()) {
                     log.debug("规则已按优先级排序: {}", orderedTransitions.stream()
-                        .map(t -> "%s:%d".formatted(t.getName(), t.getPriority()))
-                        .toList());
+                            .map(t -> "%s:%d".formatted(t.getName(), t.getPriority()))
+                            .toList());
                 }
             }
 
@@ -285,40 +275,40 @@ private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateM
                 if (timeoutMs > 0 && properties.getRulesEngine().isEnableExecutionLog()) {
                     log.debug("执行规则引擎，超时阈值: {} ms, 规则数: {}", timeoutMs, orderedTransitions.size());
                 }
-            rulesEngine.fire(rulesSet, facts);
+                rulesEngine.fire(rulesSet, facts);
                 long costMs = System.currentTimeMillis() - startTime;
                 if (timeoutMs > 0 && costMs > timeoutMs) {
                     log.warn("规则执行超时: {} ms (阈值: {} ms), 状态机: {}, 业务ID: {}",
-                        costMs, timeoutMs, stateMachineNameStr, businessId);
+                            costMs, timeoutMs, stateMachineNameStr, businessId);
                 } else if (properties.getRulesEngine().isEnableExecutionLog() && log.isDebugEnabled()) {
                     log.debug("规则执行完成，耗时: {} ms, 状态机: {}, 业务ID: {}",
-                        costMs, stateMachineNameStr, businessId);
+                            costMs, stateMachineNameStr, businessId);
                 }
             } catch (Exception e) {
                 long costMs = System.currentTimeMillis() - startTime;
                 log.error("规则执行异常，耗时: {} ms, 状态机: {}, 业务ID: {}",
-                    costMs, stateMachineNameStr, businessId, e);
+                        costMs, stateMachineNameStr, businessId, e);
                 throw e;
             }
             if (context.getTransition() != null) {
-            long seq = assignSeq(stateMachineNameStr, businessId);
-            context.setAttribute("seq", seq);
-            stateStorage.saveCurrentState(stateMachineNameStr, businessId, context.getCurrentState(), context);
-            if (properties.isEnableHistory()) {
-                stateStorage.saveStateHistory(stateMachineNameStr, businessId,
-                        context.getPreviousState(), context.getCurrentState(), event.getEventName(), context);
-            }
-            if (properties.isEnableEvents()) {
-                // 发布 Spring 事件（兼容其他监听器）
-                eventPublisher.publishEvent(StateChangedEvent.from(
-                        stateMachineNameStr,
-                        businessId,
-                        event.getEventName(),
-                        context
-                ));
-            }
-            DbPersistenceMode effectiveMode = resolveEffectiveMode(definition, context.getCurrentState(), context.getTransition(), stateMachineNameStr);
-            persistToDatabaseByMode(effectiveMode, stateMachineNameStr, businessId, event.getEventName(), context);
+                long seq = assignSeq(stateMachineNameStr, businessId);
+                context.setAttribute("seq", seq);
+                stateStorage.saveCurrentState(stateMachineNameStr, businessId, context.getCurrentState(), context);
+                if (properties.isEnableHistory()) {
+                    stateStorage.saveStateHistory(stateMachineNameStr, businessId,
+                            context.getPreviousState(), context.getCurrentState(), event.getEventName(), context);
+                }
+                if (properties.isEnableEvents()) {
+                    // 发布 Spring 事件（兼容其他监听器）
+                    eventPublisher.publishEvent(StateChangedEvent.from(
+                            stateMachineNameStr,
+                            businessId,
+                            event.getEventName(),
+                            context
+                    ));
+                }
+                DbPersistenceMode effectiveMode = resolveEffectiveMode(definition, context.getCurrentState(), context.getTransition(), stateMachineNameStr);
+                persistToDatabaseByMode(effectiveMode, stateMachineNameStr, businessId, event.getEventName(), context);
                 return StateTransitionResult.success(context);
             } else {
                 return StateTransitionResult.failure("状态转换失败");
@@ -335,7 +325,6 @@ private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateM
      * <p>
      * 从存储中获取指定业务对象的当前状态。如果存储中不存在，则返回状态机的初始状态。
      *
-     *
      * @param stateMachineName 状态机名称（枚举）
      * @param businessId       业务唯一标识
      * @return 当前状态（字符串），如果状态机不存在则返回 null
@@ -349,7 +338,6 @@ private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateM
      * <p>
      * 从存储中获取指定业务对象的当前状态，并转换为指定的枚举类型。
      * 如果存储中不存在，则返回状态机的初始状态对应的枚举值。
-     *
      *
      * @param stateMachineName 状态机名称（枚举）
      * @param businessId       业务唯一标识
@@ -367,16 +355,15 @@ private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateM
      * <p>
      * 内部方法，从存储中获取当前状态，如果不存在则返回状态机的初始状态。
      *
-     *
      * @param stateMachineName 状态机名称包装对象
      * @param businessId       业务唯一标识
      * @return 当前状态（字符串），如果状态机不存在则返回 null
      */
     private String getCurrentState(StateMachineName stateMachineName, Long businessId) {
         String stateMachineNameStr = stateMachineName.getStateMachineName();
-    String currentState = stateStorage.getCurrentState(stateMachineNameStr, businessId);
+        String currentState = stateStorage.getCurrentState(stateMachineNameStr, businessId);
         if (currentState == null) {
-        StateMachineModel stateMachine = stateMachineRegistry.getStateMachine(stateMachineNameStr);
+            StateMachineModel stateMachine = stateMachineRegistry.getStateMachine(stateMachineNameStr);
             if (stateMachine != null) {
                 return stateMachine.getInitialState();
             }
@@ -390,28 +377,27 @@ private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateM
      * 检查指定业务对象在当前状态下是否可以执行指定事件，即是否存在匹配的转换规则。
      * 用于前置校验，避免无效的状态转换尝试。
      *
-     *
      * @param stateMachineName 状态机名称（枚举）
      * @param event            触发事件（枚举）
      * @param businessId       业务唯一标识
      * @return true 表示可以执行该事件，false 表示不能执行
      */
     public boolean canTransitionTo(Enum<?> stateMachineName, Enum<?> event, Long businessId) {
-    String stateMachineNameStr = StateMachineName.of(stateMachineName).getStateMachineName();
-    String currentState = stateStorage.getCurrentState(stateMachineNameStr, businessId);
+        String stateMachineNameStr = StateMachineName.of(stateMachineName).getStateMachineName();
+        String currentState = stateStorage.getCurrentState(stateMachineNameStr, businessId);
         if (currentState == null) {
-        StateMachineModel stateMachine = stateMachineRegistry.getStateMachine(stateMachineNameStr);
+            StateMachineModel stateMachine = stateMachineRegistry.getStateMachine(stateMachineNameStr);
             if (stateMachine != null) {
                 currentState = stateMachine.getInitialState();
             } else {
                 return false;
             }
         }
-    StateMachineModel stateMachine = stateMachineRegistry.getStateMachine(stateMachineNameStr);
+        StateMachineModel stateMachine = stateMachineRegistry.getStateMachine(stateMachineNameStr);
         if (stateMachine == null) {
             return false;
         }
-    List<Transition> transitions = stateMachine.getTransitions(currentState, StateMachineEvent.of(event).getEventName());
+        List<Transition> transitions = stateMachine.getTransitions(currentState, StateMachineEvent.of(event).getEventName());
         return !transitions.isEmpty();
     }
 
@@ -421,14 +407,13 @@ private <ST extends Enum<ST>> StateTransitionResult fire(StateMachineName stateM
      * 获取指定业务对象在指定状态机下的所有状态变更历史记录。
      * 用于审计追踪、问题排查、可视化时间线等场景。
      *
-     *
      * @param stateMachineName 状态机名称（枚举）
      * @param businessId       业务唯一标识
      * @return 状态历史记录列表，按时间顺序返回（具体顺序取决于存储实现）
      */
     public List<StateHistory> getStateHistory(Enum<?> stateMachineName, Long businessId) {
-    String stateMachineNameStr = StateMachineName.of(stateMachineName).getStateMachineName();
-    return stateStorage.getStateHistory(stateMachineNameStr, businessId);
+        String stateMachineNameStr = StateMachineName.of(stateMachineName).getStateMachineName();
+        return stateStorage.getStateHistory(stateMachineNameStr, businessId);
     }
 
     /**

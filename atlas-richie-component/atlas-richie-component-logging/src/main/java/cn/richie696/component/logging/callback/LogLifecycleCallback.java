@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.logging.callback;
 
-import cn.richie696.contract.model.ApiResult;
 import cn.richie696.component.logging.domain.AccessLogInfo;
+import cn.richie696.contract.model.ApiResult;
 import jakarta.annotation.Nullable;
 import org.aspectj.lang.ProceedingJoinPoint;
 

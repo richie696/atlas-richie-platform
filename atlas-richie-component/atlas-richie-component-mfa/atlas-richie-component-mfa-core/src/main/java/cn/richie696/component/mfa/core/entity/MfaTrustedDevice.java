@@ -22,10 +22,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 /**
  * MFA可信设备实体
- *
+ * <p>
  * 对应数据库表：mfa_trusted_device
  *
  * <p><b>设计说明</b>：

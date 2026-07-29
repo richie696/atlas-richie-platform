@@ -1,8 +1,8 @@
 package cn.richie696.component.chunking;
 
 import cn.richie696.component.chunking.model.Chunk;
-import cn.richie696.component.chunking.model.ChunkingRule;
 import cn.richie696.component.chunking.model.ChunkingResult;
+import cn.richie696.component.chunking.model.ChunkingRule;
 import cn.richie696.component.chunking.strategy.StreamingChunkingStrategy;
 import cn.richie696.component.chunking.strategy.StreamingStrategyResolver;
 
@@ -39,16 +39,26 @@ public final class StreamingChunker {
     private final ChunkingRule rule;
     private final StreamingChunkingStrategy streamingStrategy;
     private final int maxPendingCharacters;
-    /** 累积中的待切片文本；不包含已发出部分，include 上一轮保留的 overlap 尾巴。 */
+    /**
+     * 累积中的待切片文本；不包含已发出部分，include 上一轮保留的 overlap 尾巴。
+     */
     private final StringBuilder pending = new StringBuilder();
 
-    /** 即将分配给下一个 emit 的全局 ordinal；保证跨多次 drain 的连续性。 */
+    /**
+     * 即将分配给下一个 emit 的全局 ordinal；保证跨多次 drain 的连续性。
+     */
     private int nextOrdinal;
-    /** 已消费到 pending 之外的字符总数；用于把局部坐标映射到原始输入的全局坐标。 */
+    /**
+     * 已消费到 pending 之外的字符总数；用于把局部坐标映射到原始输入的全局坐标。
+     */
     private long pendingStartOffset;
-    /** 已经向调用方发出的最大字符结束位置，用于在 flush 时丢弃纯 overlap 尾巴。 */
+    /**
+     * 已经向调用方发出的最大字符结束位置，用于在 flush 时丢弃纯 overlap 尾巴。
+     */
     private int lastEmittedEnd;
-    /** 会话状态：{@code true} 后 {@link #accept(String)} 立即抛异常。 */
+    /**
+     * 会话状态：{@code true} 后 {@link #accept(String)} 立即抛异常。
+     */
     private boolean finished;
 
     /**
@@ -56,8 +66,8 @@ public final class StreamingChunker {
      * 默认值，刚好容纳“一个最大 chunk + 其 overlap 尾巴”，适配绝大多数 RECURSIVE 场景。
      *
      * @param chunkingService 委托的同步切片器
-     * @param rule 本次会话的规则快照
-     * @throws NullPointerException 任一参数为 {@code null}
+     * @param rule            本次会话的规则快照
+     * @throws NullPointerException     任一参数为 {@code null}
      * @throws IllegalArgumentException 规则为 SEMANTIC
      */
     public StreamingChunker(ChunkingService chunkingService, ChunkingRule rule) {
@@ -76,10 +86,10 @@ public final class StreamingChunker {
      *       逻辑上死锁。</li>
      * </ul>
      *
-     * @param chunkingService 委托的同步切片器
-     * @param rule 本次会话的规则快照
+     * @param chunkingService      委托的同步切片器
+     * @param rule                 本次会话的规则快照
      * @param maxPendingCharacters 缓冲区字符上限；{@code >= maxCharacters}
-     * @throws NullPointerException {@code chunkingService} 或 {@code rule} 为 {@code null}
+     * @throws NullPointerException     {@code chunkingService} 或 {@code rule} 为 {@code null}
      * @throws IllegalArgumentException 策略不支持流式或 {@code maxPendingCharacters < maxCharacters}
      */
     public StreamingChunker(ChunkingService chunkingService, ChunkingRule rule, int maxPendingCharacters) {

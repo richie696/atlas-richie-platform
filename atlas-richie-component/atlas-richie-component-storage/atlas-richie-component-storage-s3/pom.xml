@@ -52,8 +52,8 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/storage/core/impl/S3StorageEngine*</include>
-                        <include>com/richie/component/storage/converter/*</include>
+                        <include>cn/richie696/component/storage/core/impl/S3StorageEngine*</include>
+                        <include>cn/richie696/component/storage/converter/*</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -61,8 +61,8 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/storage/core/impl/S3StorageEngine*</include>
-                                <include>com/richie/component/storage/converter/*</include>
+                                <include>cn/richie696/component/storage/core/impl/S3StorageEngine*</include>
+                                <include>cn/richie696/component/storage/converter/*</include>
                             </includes>
                             <rules>
                                 <rule>

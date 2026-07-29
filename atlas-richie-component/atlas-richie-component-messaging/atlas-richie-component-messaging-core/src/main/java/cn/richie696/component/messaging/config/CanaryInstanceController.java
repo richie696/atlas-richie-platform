@@ -21,7 +21,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.cloud.context.refresh.ContextRefresher;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,9 +46,13 @@ import java.util.Map;
 @ConditionalOnBean(CanaryInstanceManager.class)
 public class CanaryInstanceController {
 
-    /** 灰度实例管理器 */
+    /**
+     * 灰度实例管理器
+     */
     private final CanaryInstanceManager canaryInstanceManager;
-    /** 配置刷新器，用于触发 Nacos 配置重新加载 */
+    /**
+     * 配置刷新器，用于触发 Nacos 配置重新加载
+     */
     @Qualifier("configDataContextRefresher")
     private final ContextRefresher contextRefresher;
 
@@ -66,8 +73,8 @@ public class CanaryInstanceController {
      * <p>
      * 使用方式：
      * 1. 在 Nacos 配置中心修改 Gateway 配置：
-     *    platform.gateway.deploy.enable=true/false
-     *    platform.gateway.deploy.id-list=[门店ID列表]
+     * platform.gateway.deploy.enable=true/false
+     * platform.gateway.deploy.id-list=[门店ID列表]
      * 2. 调用此接口触发配置刷新
      *
      * @return 操作结果（含 success、message、currentStatus），不会为 null

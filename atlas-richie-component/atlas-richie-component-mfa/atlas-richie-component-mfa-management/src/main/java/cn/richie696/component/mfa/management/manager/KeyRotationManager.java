@@ -124,7 +124,7 @@ public class KeyRotationManager {
         try {
             var rotation = vaultProperties.getRotation();
             log.info("执行 Vault 主密钥轮换，rotationIntervalDays: {}, gracePeriodDays: {}",
-                rotation.getRotationIntervalDays(), rotation.getGracePeriodDays());
+                    rotation.getRotationIntervalDays(), rotation.getGracePeriodDays());
             vaultKeyManagementEngine.rotateKey();
         } catch (Exception e) {
             log.error("执行 Vault 主密钥轮换失败", e);

@@ -15,21 +15,14 @@
  */
 package cn.richie696.component.ai.service.impl;
 
-import cn.richie696.component.ai.config.multimodal.stt.SttModelConfig;
-
-import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
-
-import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
-
-import cn.richie696.component.ai.config.multimodal.image.ImageEmbeddingModelConfig;
-import cn.richie696.component.ai.config.multimodal.image.ImageModelConfig;
-
 import cn.richie696.component.ai.api.RerankModel;
 import cn.richie696.component.ai.api.image.ImageEmbeddingModel;
 import cn.richie696.component.ai.config.AiModelProperties;
-
-
-
+import cn.richie696.component.ai.config.multimodal.image.ImageEmbeddingModelConfig;
+import cn.richie696.component.ai.config.multimodal.image.ImageModelConfig;
+import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
+import cn.richie696.component.ai.config.multimodal.stt.SttModelConfig;
+import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
 import cn.richie696.component.ai.provider.support.MultimodalModelFactory;
 import cn.richie696.component.ai.service.AiMultimodalService;
 import cn.richie696.component.http.core.HttpClient;
@@ -88,19 +81,29 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
     private final AiModelProperties aiModelProperties;
     private final ObjectProvider<HttpClient> httpClientProvider;
 
-    /** Rerank 模型运行时缓存，key = 业务名。{@link LinkedHashMap} 保持插入顺序。 */
+    /**
+     * Rerank 模型运行时缓存，key = 业务名。{@link LinkedHashMap} 保持插入顺序。
+     */
     private final Map<String, RerankModel> rerankModels = new LinkedHashMap<>();
 
-    /** 文生图模型运行时缓存。 */
+    /**
+     * 文生图模型运行时缓存。
+     */
     private final Map<String, ImageModel> imageModels = new LinkedHashMap<>();
 
-    /** 多模态向量(CLIP-equivalent)模型运行时缓存。 */
+    /**
+     * 多模态向量(CLIP-equivalent)模型运行时缓存。
+     */
     private final Map<String, ImageEmbeddingModel> imageEmbeddings = new LinkedHashMap<>();
 
-    /** TTS 模型运行时缓存。 */
+    /**
+     * TTS 模型运行时缓存。
+     */
     private final Map<String, TextToSpeechModel> ttsModels = new LinkedHashMap<>();
 
-    /** STT / Transcription 模型运行时缓存。 */
+    /**
+     * STT / Transcription 模型运行时缓存。
+     */
     private final Map<String, TranscriptionModel> sttModels = new LinkedHashMap<>();
 
     /**

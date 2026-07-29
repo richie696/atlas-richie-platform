@@ -99,8 +99,12 @@
         </dependency>
     </dependencies>
 
-    <build>
+<build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -114,14 +118,14 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/redis/streammq/utils/**</include>
-                        <include>com/richie/component/redis/streammq/stream/PublishResult*</include>
-                        <include>com/richie/component/redis/streammq/stream/PublishFailureReason*</include>
-                        <include>com/richie/component/redis/streammq/stream/EventContext*</include>
-                        <include>com/richie/component/redis/streammq/stream/RedisStreamIdempotencyGuard*</include>
-                        <include>com/richie/component/redis/streammq/stream/StreamMessageEvent*</include>
-                        <include>com/richie/component/redis/streammq/ops/impl/**</include>
-                        <include>com/richie/component/redis/streammq/StreamMQ*</include>
+                        <include>cn/richie696/component/redis/streammq/utils/**</include>
+                        <include>cn/richie696/component/redis/streammq/stream/PublishResult*</include>
+                        <include>cn/richie696/component/redis/streammq/stream/PublishFailureReason*</include>
+                        <include>cn/richie696/component/redis/streammq/stream/EventContext*</include>
+                        <include>cn/richie696/component/redis/streammq/stream/RedisStreamIdempotencyGuard*</include>
+                        <include>cn/richie696/component/redis/streammq/stream/StreamMessageEvent*</include>
+                        <include>cn/richie696/component/redis/streammq/ops/impl/**</include>
+                        <include>cn/richie696/component/redis/streammq/StreamMQ*</include>
                     </includes>
                     <rules>
                         <rule>
@@ -141,14 +145,15 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/redis/streammq/utils/**</include>
-                                <include>com/richie/component/redis/streammq/stream/PublishResult*</include>
-                                <include>com/richie/component/redis/streammq/stream/PublishFailureReason*</include>
-                                <include>com/richie/component/redis/streammq/stream/EventContext*</include>
-                                <include>com/richie/component/redis/streammq/stream/RedisStreamIdempotencyGuard*</include>
-                                <include>com/richie/component/redis/streammq/stream/StreamMessageEvent*</include>
-                                <include>com/richie/component/redis/streammq/ops/impl/**</include>
-                                <include>com/richie/component/redis/streammq/StreamMQ*</include>
+                                <include>cn/richie696/component/redis/streammq/utils/**</include>
+                                <include>cn/richie696/component/redis/streammq/stream/PublishResult*</include>
+                                <include>cn/richie696/component/redis/streammq/stream/PublishFailureReason*</include>
+                                <include>cn/richie696/component/redis/streammq/stream/EventContext*</include>
+                                <include>cn/richie696/component/redis/streammq/stream/RedisStreamIdempotencyGuard*
+                                </include>
+                                <include>cn/richie696/component/redis/streammq/stream/StreamMessageEvent*</include>
+                                <include>cn/richie696/component/redis/streammq/ops/impl/**</include>
+                                <include>cn/richie696/component/redis/streammq/StreamMQ*</include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

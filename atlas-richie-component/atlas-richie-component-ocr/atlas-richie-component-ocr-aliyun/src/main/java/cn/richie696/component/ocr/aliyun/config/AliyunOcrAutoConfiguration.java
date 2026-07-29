@@ -57,14 +57,16 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(AliyunOcrProperties.class)
 public class AliyunOcrAutoConfiguration {
 
-    /** 自动配置注册过程使用的日志记录器。 */
+    /**
+     * 自动配置注册过程使用的日志记录器。
+     */
     private static final Logger log = LoggerFactory.getLogger(AliyunOcrAutoConfiguration.class);
 
     /**
      * 注册并初始化阿里云读光 OCR Provider Bean。
      * <p>两个 {@code @ConditionalOnProperty} 同时约束: 主开关 enabled=true + vendor=aliyun。
      *
-     * @param props 阿里云 OCR 私有配置属性，由 {@code platform.component.ocr.aliyun.*} 绑定得到
+     * @param props      阿里云 OCR 私有配置属性，由 {@code platform.component.ocr.aliyun.*} 绑定得到
      * @param httpClient OCR 专用 HTTP 客户端，用于调用阿里云读光 HTTP JSON 接口
      * @return 已完成配置加载的 {@link AliyunOcrProvider}
      */

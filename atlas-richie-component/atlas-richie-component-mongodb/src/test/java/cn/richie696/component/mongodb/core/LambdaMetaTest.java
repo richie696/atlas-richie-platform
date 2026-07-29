@@ -17,8 +17,8 @@ package cn.richie696.component.mongodb.core;
 
 import cn.richie696.component.mongodb.builder.LambdaField;
 import org.junit.jupiter.api.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class LambdaMetaTest {
 
@@ -66,18 +66,56 @@ class LambdaMetaTest {
         private boolean active;
         private boolean valid;
 
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public String getUsername() { return username; }
-        public void setUsername(String username) { this.username = username; }
-        public String getCreateTime() { return createTime; }
-        public void setCreateTime(String createTime) { this.createTime = createTime; }
-        public boolean isActive() { return active; }
-        public void setActive(boolean active) { this.active = active; }
-        public boolean isValid() { return valid; }
-        public void setValid(boolean valid) { this.valid = valid; }
-        public String customMethod() { return "custom"; }
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getCreateTime() {
+            return createTime;
+        }
+
+        public void setCreateTime(String createTime) {
+            this.createTime = createTime;
+        }
+
+        public boolean isActive() {
+            return active;
+        }
+
+        public void setActive(boolean active) {
+            this.active = active;
+        }
+
+        public boolean isValid() {
+            return valid;
+        }
+
+        public void setValid(boolean valid) {
+            this.valid = valid;
+        }
+
+        public String customMethod() {
+            return "custom";
+        }
     }
 }

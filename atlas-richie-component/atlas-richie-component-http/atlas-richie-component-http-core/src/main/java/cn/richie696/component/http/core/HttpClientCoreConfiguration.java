@@ -24,8 +24,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
  * 该配置负责注册 {@link HttpCoreProperties}，供各个 Provider 的自动装配共享使用。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @AutoConfiguration
 @EnableConfigurationProperties(HttpCoreProperties.class)

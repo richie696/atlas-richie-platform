@@ -71,19 +71,29 @@ import java.util.List;
 @ConfigurationProperties(prefix = "platform.component.web.protection")
 public class PlatformProtectionProperties {
 
-    /** 全局防护开关（false → 所有子拦截器不创建）。默认 true。 */
+    /**
+     * 全局防护开关（false → 所有子拦截器不创建）。默认 true。
+     */
     private boolean enabled = true;
 
-    /** RequestSizeGuard 子段。 */
+    /**
+     * RequestSizeGuard 子段。
+     */
     private RequestSize requestSize = new RequestSize();
 
-    /** AnomalyDetection 子段。 */
+    /**
+     * AnomalyDetection 子段。
+     */
     private AnomalyDetection anomalyDetection = new AnomalyDetection();
 
-    /** BruteForce 子段。 */
+    /**
+     * BruteForce 子段。
+     */
     private BruteForce bruteForce = new BruteForce();
 
-    /** LongLived 路径旁路子段。 */
+    /**
+     * LongLived 路径旁路子段。
+     */
     private LongLived longLived = new LongLived();
 
     /**
@@ -91,19 +101,33 @@ public class PlatformProtectionProperties {
      */
     @Data
     public static class RequestSize {
-        /** 子开关（false → RequestSizeGuard 不创建）。默认 true。 */
+        /**
+         * 子开关（false → RequestSizeGuard 不创建）。默认 true。
+         */
         private boolean enabled = true;
-        /** 单请求 body 最大字节数，默认 1 MiB。 */
+        /**
+         * 单请求 body 最大字节数，默认 1 MiB。
+         */
         private long maxBodyBytes = 1024L * 1024L;
-        /** 单请求 header 总字节数上限，默认 8 KiB。 */
+        /**
+         * 单请求 header 总字节数上限，默认 8 KiB。
+         */
         private long maxHeaderBytes = 8L * 1024L;
-        /** body 超限时响应状态码，默认 413 (Payload Too Large)。 */
+        /**
+         * body 超限时响应状态码，默认 413 (Payload Too Large)。
+         */
         private int bodyDenyStatus = 413;
-        /** header 超限时响应状态码，默认 431 (Request Header Fields Too Large)。 */
+        /**
+         * header 超限时响应状态码，默认 431 (Request Header Fields Too Large)。
+         */
         private int headerDenyStatus = 431;
-        /** 兜底业务 code。 */
+        /**
+         * 兜底业务 code。
+         */
         private String denyCode = "REQUEST_TOO_LARGE";
-        /** 兜底业务 msg，支持占位符 {@code {reason}} / {@code {limit}} / {@code {actual}}。 */
+        /**
+         * 兜底业务 msg，支持占位符 {@code {reason}} / {@code {limit}} / {@code {actual}}。
+         */
         private String denyMsg = "请求体过大 ({reason}, limit={limit}B, actual={actual}B)";
     }
 
@@ -112,17 +136,29 @@ public class PlatformProtectionProperties {
      */
     @Data
     public static class AnomalyDetection {
-        /** 子开关。默认 true。 */
+        /**
+         * 子开关。默认 true。
+         */
         private boolean enabled = true;
-        /** Bot UA 模式列表（Ant-style 通配），如 {@code ["curl/*", "wget/*"]}。 */
+        /**
+         * Bot UA 模式列表（Ant-style 通配），如 {@code ["curl/*", "wget/*"]}。
+         */
         private List<String> botUserAgents = new ArrayList<>();
-        /** IP 黑名单（CIDR 或精确 IP），命中即拒绝。 */
+        /**
+         * IP 黑名单（CIDR 或精确 IP），命中即拒绝。
+         */
         private List<String> ipBlacklist = new ArrayList<>();
-        /** 兜底 HTTP 状态码；默认 403。 */
+        /**
+         * 兜底 HTTP 状态码；默认 403。
+         */
         private int denyStatus = 403;
-        /** 兜底业务 code。 */
+        /**
+         * 兜底业务 code。
+         */
         private String denyCode = "BOT_DETECTED";
-        /** 兜底业务 msg，支持占位符 {@code {ua}} / {@code {ip}}。 */
+        /**
+         * 兜底业务 msg，支持占位符 {@code {ua}} / {@code {ip}}。
+         */
         private String denyMsg = "检测到异常客户端 ({ua}, ip={ip})";
     }
 
@@ -131,19 +167,33 @@ public class PlatformProtectionProperties {
      */
     @Data
     public static class BruteForce {
-        /** 子开关。默认 true。 */
+        /**
+         * 子开关。默认 true。
+         */
         private boolean enabled = true;
-        /** 失败计数窗口（秒）。 */
+        /**
+         * 失败计数窗口（秒）。
+         */
         private long windowSeconds = 60L;
-        /** 窗口内允许的最大失败次数。 */
+        /**
+         * 窗口内允许的最大失败次数。
+         */
         private int maxAttempts = 5;
-        /** 锁定时长（秒）。 */
+        /**
+         * 锁定时长（秒）。
+         */
         private long lockoutSeconds = 60L;
-        /** 兜底 HTTP 状态码；默认 429。 */
+        /**
+         * 兜底 HTTP 状态码；默认 429。
+         */
         private int denyStatus = 429;
-        /** 兜底业务 code。 */
+        /**
+         * 兜底业务 code。
+         */
         private String denyCode = "BRUTE_FORCE";
-        /** 兜底业务 msg，支持占位符 {@code {lockout}}。 */
+        /**
+         * 兜底业务 msg，支持占位符 {@code {lockout}}。
+         */
         private String denyMsg = "登录尝试过于频繁，已锁定 {lockout} 秒";
     }
 
@@ -152,7 +202,9 @@ public class PlatformProtectionProperties {
      */
     @Data
     public static class LongLived {
-        /** Ant-style 路径模式列表，默认 {@code ["/sse/**", "/ws/**"]}。 */
+        /**
+         * Ant-style 路径模式列表，默认 {@code ["/sse/**", "/ws/**"]}。
+         */
         private List<String> pathPatterns = List.of("/sse/**", "/ws/**");
     }
 }

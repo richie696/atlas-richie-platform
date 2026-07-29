@@ -46,7 +46,8 @@ class DebouncerTest {
         @Test
         @DisplayName("null delay 抛 NPE")
         void nullDelay_throws() {
-            Runnable noop = () -> {};
+            Runnable noop = () -> {
+            };
             assertThatThrownBy(() -> Debouncer.of(null, noop))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("delay");
@@ -63,7 +64,8 @@ class DebouncerTest {
         @Test
         @DisplayName("零延迟抛 IAE")
         void zeroDelay_throws() {
-            assertThatThrownBy(() -> Debouncer.of(Duration.ZERO, () -> {}))
+            assertThatThrownBy(() -> Debouncer.of(Duration.ZERO, () -> {
+            }))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("delay must be positive");
         }
@@ -71,7 +73,8 @@ class DebouncerTest {
         @Test
         @DisplayName("负延迟抛 IAE")
         void negativeDelay_throws() {
-            assertThatThrownBy(() -> Debouncer.of(Duration.ofMillis(-1), () -> {}))
+            assertThatThrownBy(() -> Debouncer.of(Duration.ofMillis(-1), () -> {
+            }))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("delay must be positive");
         }
@@ -79,7 +82,8 @@ class DebouncerTest {
         @Test
         @DisplayName("正常参数构造成功")
         void validConstruction_succeeds() {
-            Debouncer debouncer = Debouncer.of(Duration.ofMillis(100), () -> {});
+            Debouncer debouncer = Debouncer.of(Duration.ofMillis(100), () -> {
+            });
             try {
                 // 初始状态应无挂起操作
                 assertThat(debouncer.isPending()).isFalse();
@@ -145,7 +149,8 @@ class DebouncerTest {
         @Timeout(5)
         @DisplayName("trigger 后 isPending 应为 true")
         void trigger_marksPending() {
-            Debouncer debouncer = Debouncer.of(Duration.ofSeconds(10), () -> {});
+            Debouncer debouncer = Debouncer.of(Duration.ofSeconds(10), () -> {
+            });
             try {
                 assertThat(debouncer.isPending()).isFalse();
                 debouncer.trigger();
@@ -221,7 +226,9 @@ class DebouncerTest {
         @DisplayName("flush 吞掉 action 中的异常，不向上抛")
         void flush_swallowsActionException() {
             Debouncer debouncer = Debouncer.of(Duration.ofSeconds(10),
-                    () -> { throw new RuntimeException("boom"); });
+                    () -> {
+                        throw new RuntimeException("boom");
+                    });
             try {
                 // 不应抛异常
                 debouncer.flush();
@@ -282,7 +289,8 @@ class DebouncerTest {
         @Timeout(5)
         @DisplayName("cancel 在无挂起时调用无效果")
         void cancel_whenNothingPending_noOp() {
-            Debouncer debouncer = Debouncer.of(Duration.ofSeconds(10), () -> {});
+            Debouncer debouncer = Debouncer.of(Duration.ofSeconds(10), () -> {
+            });
             try {
                 assertThat(debouncer.isPending()).isFalse();
                 debouncer.cancel();
@@ -305,7 +313,8 @@ class DebouncerTest {
         @Timeout(5)
         @DisplayName("close 幂等，多次调用安全")
         void close_isIdempotent() {
-            Debouncer debouncer = Debouncer.of(Duration.ofSeconds(10), () -> {});
+            Debouncer debouncer = Debouncer.of(Duration.ofSeconds(10), () -> {
+            });
             debouncer.close();
             debouncer.close();
             debouncer.close();
@@ -329,7 +338,8 @@ class DebouncerTest {
         @Timeout(5)
         @DisplayName("close 后 isPending 永远为 false")
         void close_isPendingFalse() {
-            Debouncer debouncer = Debouncer.of(Duration.ofSeconds(10), () -> {});
+            Debouncer debouncer = Debouncer.of(Duration.ofSeconds(10), () -> {
+            });
             try {
                 debouncer.trigger();
                 assertThat(debouncer.isPending()).isTrue();

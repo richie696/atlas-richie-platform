@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.lang.Iterable;
 
 /**
  * 二级缓存（L2）同步辅助类。

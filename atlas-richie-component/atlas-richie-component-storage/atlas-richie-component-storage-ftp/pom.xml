@@ -49,7 +49,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/storage/pool/FtpClientPool*</include>
+                        <include>cn/richie696/component/storage/pool/FtpClientPool*</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -57,7 +57,7 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/storage/pool/FtpClientPool*</include>
+                                <include>cn/richie696/component/storage/pool/FtpClientPool*</include>
                             </includes>
                             <rules>
                                 <rule>

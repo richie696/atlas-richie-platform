@@ -178,7 +178,8 @@ class DynamicExecutorTest {
                 // 先确认 AbortPolicy 会拒绝
                 executor.execute(() -> sleepUninterruptibly(500));
                 executor.execute(() -> sleepUninterruptibly(500));
-                assertThatThrownBy(() -> executor.execute(() -> {}))
+                assertThatThrownBy(() -> executor.execute(() -> {
+                }))
                         .isInstanceOf(java.util.concurrent.RejectedExecutionException.class);
 
                 // 热更新为 DiscardPolicy
@@ -187,7 +188,8 @@ class DynamicExecutorTest {
                         .build());
 
                 // DiscardPolicy 静默丢弃，不抛异常
-                executor.execute(() -> {});
+                executor.execute(() -> {
+                });
                 // 如果上一行没抛异常，说明 handler 已生效
                 assertThat(executor.getRejectedExecutionHandler())
                         .isInstanceOf(ThreadPoolExecutor.DiscardPolicy.class);
@@ -290,7 +292,8 @@ class DynamicExecutorTest {
             try {
                 executor.execute(() -> sleepUninterruptibly(2000));
                 executor.execute(() -> sleepUninterruptibly(2000));
-                assertThatThrownBy(() -> executor.execute(() -> {}))
+                assertThatThrownBy(() -> executor.execute(() -> {
+                }))
                         .isInstanceOf(java.util.concurrent.RejectedExecutionException.class);
                 assertThat(executor.getRejectionCount()).isOne();
                 executor.resetRejectionCount();
@@ -310,10 +313,12 @@ class DynamicExecutorTest {
             try {
                 executor.execute(() -> sleepUninterruptibly(2000));
                 executor.execute(() -> sleepUninterruptibly(2000)); // 进队列
-                assertThatThrownBy(() -> executor.execute(() -> {})) // 被拒绝
+                assertThatThrownBy(() -> executor.execute(() -> {
+                })) // 被拒绝
                         .isInstanceOf(java.util.concurrent.RejectedExecutionException.class);
                 assertThat(executor.getRejectionCount()).isOne();
-                assertThatThrownBy(() -> executor.execute(() -> {})) // 又被拒绝
+                assertThatThrownBy(() -> executor.execute(() -> {
+                })) // 又被拒绝
                         .isInstanceOf(java.util.concurrent.RejectedExecutionException.class);
                 assertThat(executor.getRejectionCount()).isEqualTo(2);
             } finally {
@@ -367,9 +372,11 @@ class DynamicExecutorTest {
             try {
                 executor.execute(() -> sleepUninterruptibly(2000));
                 executor.execute(() -> sleepUninterruptibly(2000));
-                assertThatThrownBy(() -> executor.execute(() -> {}))
+                assertThatThrownBy(() -> executor.execute(() -> {
+                }))
                         .isInstanceOf(java.util.concurrent.RejectedExecutionException.class);
-                assertThatThrownBy(() -> executor.execute(() -> {}))
+                assertThatThrownBy(() -> executor.execute(() -> {
+                }))
                         .isInstanceOf(java.util.concurrent.RejectedExecutionException.class);
 
                 PoolStatus status = executor.snapshot();

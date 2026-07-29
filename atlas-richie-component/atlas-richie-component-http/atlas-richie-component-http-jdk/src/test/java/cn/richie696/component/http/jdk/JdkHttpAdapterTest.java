@@ -183,6 +183,89 @@ class JdkHttpAdapterTest {
         assertThat(holder[0]).containsEntry("name", "async-ref");
     }
 
+    // ====== Coverage of previously-uncovered paths ======
+
+    @Test
+    void postWithoutBody() throws Exception {
+        server.setHandler((exchange, body) -> {
+            assertThat(exchange.getRequestMethod()).isEqualTo("POST");
+            assertThat(body).isEmpty();
+            server.respondJson(exchange, 200, "{\"name\":\"no-body\"}");
+        });
+
+        EchoDto dto = client.post(server.url("/no-body")).execute(EchoDto.class);
+        assertThat(dto.name()).isEqualTo("no-body");
+    }
+
+    @Test
+    void multipartUpload() throws Exception {
+        server.setHandler((exchange, body) -> {
+            assertThat(exchange.getRequestMethod()).isEqualTo("POST");
+            assertThat(exchange.getRequestHeaders().getFirst("Content-Type"))
+                    .startsWith("multipart/form-data");
+            server.respondJson(exchange, 200, "{\"name\":\"uploaded\"}");
+        });
+
+        var data = new java.io.ByteArrayInputStream("file-content".getBytes(StandardCharsets.UTF_8));
+        EchoDto dto = client.post(server.url("/upload"))
+                .multipart("file", "test.txt", data)
+                .execute(EchoDto.class);
+        assertThat(dto.name()).isEqualTo("uploaded");
+    }
+
+    @Test
+    void executeThrowsOnConnectionFailure() {
+        try {
+            client.get("http://localhost:1/fail").execute();
+            throw new AssertionError("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            assertThat(e.getMessage()).isEqualTo("HTTP request failed");
+        }
+    }
+
+    @Test
+    void asyncCallbackHandlesSendFailure() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<IOException> failure = new AtomicReference<>();
+        client.get("http://localhost:1/fail").async(new AsyncCallback<>() {
+            @Override
+            public void onResponse(HttpResponse response, EchoDto data) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(IOException exception) {
+                failure.set(exception);
+                latch.countDown();
+            }
+        }, EchoDto.class);
+
+        assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue();
+        assertThat(failure.get()).isNotNull();
+    }
+
+    @Test
+    void asyncCallbackHandlesSendFailureWithTypeRef() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<IOException> failure = new AtomicReference<>();
+        client.get("http://localhost:1/fail").async(new AsyncCallback<Map<String, String>>() {
+            @Override
+            public void onResponse(HttpResponse response, Map<String, String> data) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(IOException exception) {
+                failure.set(exception);
+                latch.countDown();
+            }
+        }, new TypeReference<Map<String, String>>() {
+        });
+
+        assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue();
+        assertThat(failure.get()).isNotNull();
+    }
+
     record EchoDto(String name) {
     }
 }

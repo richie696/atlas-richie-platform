@@ -1,57 +1,59 @@
 # Atlas Richie NATS组件 (atlas-richie-component-nats)
 
-> 生产级 **NATS** 客户端组件。连接管理、消息总线、RPC 端点、分布式追踪、上下文透传、幂等去重、**JetStream** 持久化流、KV / Object Store。
+> 生产级 **NATS** 客户端组件。连接管理、消息总线、RPC 端点、分布式追踪、上下文透传、幂等去重、 **JetStream** 持久化流、KV /
+> Object Store。
 
 ---
 
 ## 📖 目录
 
 - [📖 概述](#📖-概述)
-  - [本模块的"是"与"不是"](#本模块的是与不是)
+    - [本模块的"是"与"不是"](#本模块的是与不是)
 - [✨ 功能特性](#✨-功能特性)
-  - [核心能力](#核心能力)
-  - [设计选择](#设计选择)
+    - [核心能力](#核心能力)
+    - [设计选择](#设计选择)
 - [🏗️ 架构与模块布局](#🏗️-架构与模块布局)
 - [🚀 快速开始](#🚀-快速开始)
-  - [1. 引入依赖](#1-引入依赖)
-  - [2. 配置](#2-配置)
-  - [3. 发布消息](#3-发布消息)
-  - [4. 订阅](#4-订阅)
+    - [1. 引入依赖](#1-引入依赖)
+    - [2. 配置](#2-配置)
+    - [3. 发布消息](#3-发布消息)
+    - [4. 订阅](#4-订阅)
 - [🔧 核心能力](#🔧-核心能力)
-  - [1. 核心 pub/sub](#1-核心-pub/sub)
-  - [2. 请求 / 响应（RPC）](#2-请求-/-响应（rpc）)
-  - [3. JetStream 持久化流](#3-jetstream-持久化流)
-  - [4. Key-Value & Object Store](#4-key-value-&-object-store)
-  - [5. 幂等性](#5-幂等性)
+    - [1. 核心 pub/sub](#1-核心-pub/sub)
+    - [2. 请求 / 响应（RPC）](#2-请求-/-响应（rpc）)
+    - [3. JetStream 持久化流](#3-jetstream-持久化流)
+    - [4. Key-Value & Object Store](#4-key-value-&-object-store)
+    - [5. 幂等性](#5-幂等性)
 - [⚙️ 配置参考](#⚙️-配置参考)
 - [🎯 最佳实践](#🎯-最佳实践)
 - [⚠️ 已知限制](#⚠️-已知限制)
 - [❓ 常见问题](#❓-常见问题)
-  - [Q1：NATS vs Kafka 何时选择？](#q1：nats-vs-kafka-何时选择？)
-  - [Q2：能否在同一应用同时使用 NATS 核心和 JetStream？](#q2：能否在同一应用同时使用-nats-核心和-jetstream？)
-  - [Q3：如何在服务间追踪 NATS 调用？](#q3：如何在服务间追踪-nats-调用？)
-  - [Q4：broker 挂了会怎样？](#q4：broker-挂了会怎样？)
+    - [Q1：NATS vs Kafka 何时选择？](#q1：nats-vs-kafka-何时选择？)
+    - [Q2：能否在同一应用同时使用 NATS 核心和 JetStream？](#q2：能否在同一应用同时使用-nats-核心和-jetstream？)
+    - [Q3：如何在服务间追踪 NATS 调用？](#q3：如何在服务间追踪-nats-调用？)
+    - [Q4：broker 挂了会怎样？](#q4：broker-挂了会怎样？)
 - [📚 相关文档](#📚-相关文档)
+
 ---
 
 ## 📖 概述
 
-| 项 | 值 |
-|---|---|
-| **坐标** | `cn.richie696.component:atlas-richie-component-nats` |
-| **类别** | 消息——NATS pub/sub + JetStream |
-| **强依赖** | `io.nats:jnats`（JetStream 客户端） |
-| **兼容** | NATS Server 2.10+，启用 JetStream |
+| 项         | 值                                                   |
+|------------|------------------------------------------------------|
+| **坐标**   | `cn.richie696.component:atlas-richie-component-nats` |
+| **类别**   | 消息——NATS pub/sub + JetStream                       |
+| **强依赖** | `io.nats:jnats`（JetStream 客户端）                  |
+| **兼容**   | NATS Server 2.10+，启用 JetStream                    |
 
 ### 本模块的"是"与"不是"
 
-| ✅ 提供 | ❌ 不提供 |
-|--------|---------|
-| 连接管理 + 自动重连 | NATS Server（需自建 nats-server） |
-| 请求 / 响应 RPC 模式 | 集群编排（用 nats-box / helm） |
-| JetStream 持久化流 + KV / Object Store | 长时 saga（用 Temporal） |
-| 幂等性（JetStream 消息去重） | MQTT 5.0（用 [`atlas-richie-component-mqtt`](./atlas-richie-component-mqtt/README.zh.md)） |
-| Tracing 集成（W3C traceparent） | Schema Registry（需手写 Protobuf） |
+| ✅ 提供                                | ❌ 不提供                                                                                  |
+|----------------------------------------|--------------------------------------------------------------------------------------------|
+| 连接管理 + 自动重连                    | NATS Server（需自建 nats-server）                                                          |
+| 请求 / 响应 RPC 模式                   | 集群编排（用 nats-box / helm）                                                             |
+| JetStream 持久化流 + KV / Object Store | 长时 saga（用 Temporal）                                                                   |
+| 幂等性（JetStream 消息去重）           | MQTT 5.0（用 [`atlas-richie-component-mqtt`](./atlas-richie-component-mqtt/README.zh.md)） |
+| Tracing 集成（W3C traceparent）        | Schema Registry（需手写 Protobuf）                                                         |
 
 ## ✨ 功能特性
 
@@ -239,15 +241,15 @@ jetStreamPublisher.publish(
 
 ## ⚙️ 配置参考
 
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `servers` | List<String> | – | NATS 服务端 URL |
-| `connection.name` | String | – | 客户端名（`nats conns` 中可见） |
-| `connection.reconnect-wait-seconds` | int | `2` | 初始重连等待 |
-| `connection.reconnect-wait-max-seconds` | int | `30` | 最大重连等待 |
-| `connection.ping-interval-seconds` | int | `60` | PING 间隔 |
-| `jetstream.enabled` | boolean | `true` | 启用 JetStream |
-| `jetstream.domain` | String | – | JS domain（前缀） |
+| 属性                                    | 类型         | 默认值 | 说明                            |
+|-----------------------------------------|--------------|--------|---------------------------------|
+| `servers`                               | List<String> | –      | NATS 服务端 URL                 |
+| `connection.name`                       | String       | –      | 客户端名（`nats conns` 中可见） |
+| `connection.reconnect-wait-seconds`     | int          | `2`    | 初始重连等待                    |
+| `connection.reconnect-wait-max-seconds` | int          | `30`   | 最大重连等待                    |
+| `connection.ping-interval-seconds`      | int          | `60`   | PING 间隔                       |
+| `jetstream.enabled`                     | boolean      | `true` | 启用 JetStream                  |
+| `jetstream.domain`                      | String       | –      | JS domain（前缀）               |
 
 ## 🎯 最佳实践
 
@@ -259,11 +261,11 @@ jetStreamPublisher.publish(
 
 ## ⚠️ 已知限制
 
-| 限制 | 影响 | 临时方案 |
-|------|------|---------|
-| **无内置 schema 校验** | 错误消息类型在 consumer 失败 | Protobuf / Avro + CI |
-| **跨区域复制有限** | 跨区域 JetStream 复杂 | 用 leaf node + sync replica |
-| **JetStream dedup 窗口是 per-stream** | 可配置但有限 | 设置 `max-age` ≥ dedup 窗口 |
+| 限制                                  | 影响                         | 临时方案                    |
+|---------------------------------------|------------------------------|-----------------------------|
+| **无内置 schema 校验**                | 错误消息类型在 consumer 失败 | Protobuf / Avro + CI        |
+| **跨区域复制有限**                    | 跨区域 JetStream 复杂        | 用 leaf node + sync replica |
+| **JetStream dedup 窗口是 per-stream** | 可配置但有限                 | 设置 `max-age` ≥ dedup 窗口 |
 
 ## ❓ 常见问题
 
@@ -277,7 +279,8 @@ NATS：低延迟 pub/sub、RPC、IoT。Kafka：日志式事件流、高吞吐、
 
 ### `Q3`：如何在服务间追踪 `NATS` 调用？
 
-本组件自动透传 `traceparent` header。与 [`atlas-richie-component-tracing`](./atlas-richie-component-tracing/README.zh.md) 配合。
+本组件自动透传 `traceparent` header。与 [`atlas-richie-component-tracing`](./atlas-richie-component-tracing/README.zh.md)
+配合。
 
 ### `Q4`：broker 挂了会怎样？
 
@@ -287,7 +290,8 @@ NATS：低延迟 pub/sub、RPC、IoT。Kafka：日志式事件流、高吞吐、
 
 - **父组件** — [`../README.zh.md`](../README.zh.md)
 - **追踪** — [`./atlas-richie-component-tracing/README.zh.md`](./atlas-richie-component-tracing/README.zh.md)
-- **微服务** — [`./atlas-richie-component-microservice/README.zh.md`](./atlas-richie-component-microservice/README.zh.md)
+- **微服务** — [
+  `./atlas-richie-component-microservice/README.zh.md`](./atlas-richie-component-microservice/README.zh.md)
 - 外部：[NATS 文档](https://docs.nats.io/) · [JetStream](https://docs.nats.io/nats-concepts/jetstream)
 
 ---

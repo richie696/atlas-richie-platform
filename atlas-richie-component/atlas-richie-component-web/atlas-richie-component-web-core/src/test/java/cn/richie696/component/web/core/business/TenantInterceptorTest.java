@@ -24,6 +24,7 @@ import org.slf4j.MDC;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import cn.richie696.component.web.core.business.TenantInterceptor;
 
 class TenantInterceptorTest {
 

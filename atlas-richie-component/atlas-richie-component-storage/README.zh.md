@@ -4,39 +4,39 @@
 
 - [概述](#概述)
 - [线程安全与客户端生命周期](#线程安全与客户端生命周期)
-  - [设计原则](#设计原则)
-  - [各引擎客户端线程安全背书](#各引擎客户端线程安全背书)
-  - [使用建议](#使用建议)
-  - [反面示例（请勿使用）](#反面示例（请勿使用）)
+    - [设计原则](#设计原则)
+    - [各引擎客户端线程安全背书](#各引擎客户端线程安全背书)
+    - [使用建议](#使用建议)
+    - [反面示例（请勿使用）](#反面示例（请勿使用）)
 - [核心特性](#核心特性)
 - [快速开始](#快速开始)
-  - [1. 添加依赖](#1-添加依赖)
-  - [2. 选择存储实现](#2-选择存储实现)
-  - [3. 配置存储](#3-配置存储)
-  - [4. 使用示例](#4-使用示例)
+    - [1. 添加依赖](#1-添加依赖)
+    - [2. 选择存储实现](#2-选择存储实现)
+    - [3. 配置存储](#3-配置存储)
+    - [4. 使用示例](#4-使用示例)
 - [核心接口](#核心接口)
-  - [StorageEngine](#storageengine)
+    - [StorageEngine](#storageengine)
 - [配置说明](#配置说明)
-  - [本地存储配置](#本地存储配置)
-  - [对象存储配置](#对象存储配置)
-  - [FTP/SFTP/SMB 配置](#ftp/sftp/smb-配置)
+    - [本地存储配置](#本地存储配置)
+    - [对象存储配置](#对象存储配置)
+    - [FTP/SFTP/SMB 配置](#ftp/sftp/smb-配置)
 - [双模式架构](#双模式架构)
-  - [使用场景对照](#使用场景对照)
-  - [自动模式（默认）](#自动模式（默认）)
-  - [手动模式](#手动模式)
-  - [支持的引擎类型枚举](#支持的引擎类型枚举)
-  - [内部架构](#内部架构)
+    - [使用场景对照](#使用场景对照)
+    - [自动模式（默认）](#自动模式（默认）)
+    - [手动模式](#手动模式)
+    - [支持的引擎类型枚举](#支持的引擎类型枚举)
+    - [内部架构](#内部架构)
 - [可观测性：HealthIndicator + Micrometer 指标](#可观测性：healthindicator-+-micrometer-指标)
-  - [HealthIndicator（健康检查）](#healthindicator（健康检查）)
-  - [Micrometer 指标绑定器](#micrometer-指标绑定器)
-  - [关闭示例（不接监控）](#关闭示例（不接监控）)
+    - [HealthIndicator（健康检查）](#healthindicator（健康检查）)
+    - [Micrometer 指标绑定器](#micrometer-指标绑定器)
+    - [关闭示例（不接监控）](#关闭示例（不接监控）)
 - [存储引擎对比](#存储引擎对比)
 - [最佳实践](#最佳实践)
 - [业务侧 Controller 参考实现](#业务侧-controller-参考实现)
 - [常见问题](#常见问题)
-  - [Q: 如何切换存储后端？](#q-如何切换存储后端？)
-  - [Q: 支持哪些图片格式？](#q-支持哪些图片格式？)
-  - [Q: 如何实现文件去重？](#q-如何实现文件去重？)
+    - [Q: 如何切换存储后端？](#q-如何切换存储后端？)
+    - [Q: 支持哪些图片格式？](#q-支持哪些图片格式？)
+    - [Q: 如何实现文件去重？](#q-如何实现文件去重？)
 - [相关文档](#相关文档)
 
 ---
@@ -51,33 +51,33 @@
 
 ### 设计原则
 
-- `StorageEngine` 实现类注册为 Spring `@Service` Bean，默认即为**单例**，所有线程共享同一实例。
+- `StorageEngine` 实现类注册为 Spring `@Service` Bean，默认即为 **单例**，所有线程共享同一实例。
 - 各存储 SDK 客户端在组件内部均以 **Spring 单例 Bean** 方式注册，由容器统一管理生命周期。
-- `StorageEngine` 本身是**无状态**的，所有操作所需的配置通过构造函数注入，方法调用不修改任何共享可变状态，天然支持多线程并发。
+- `StorageEngine` 本身是 **无状态**的，所有操作所需的配置通过构造函数注入，方法调用不修改任何共享可变状态，天然支持多线程并发。
 
 ### 各引擎客户端线程安全背书
 
 #### 对象存储
 
-| 存储引擎       | 客户端类型                 | 官方是否声明线程安全 | 推荐模式              |
-|------------|-----------------------|:----------:|-------------------|
-| 阿里云 OSS    | `OSSClient`           |    ✅ 是     | 单例，复用连接池          |
-| 腾讯云 COS    | `COSClient`           |    ✅ 是     | 单例，内部维护连接池        |
-| 华为云 OBS    | `ObsClient`           |    ✅ 是     | 单例，可在并发场景下使用      |
-| 金山云 KS3    | `Ks3Client`           |    ✅ 是     | 单例，支持并发使用         |
-| AWS S3     | `S3Client`            |    ✅ 是     | 单例，内部连接池          |
-| MinIO      | `MinioAsyncClient`    |    ✅ 是     | 单例，Okhttp 线程安全    |
-| 火山引擎 TOS   | `TOSV2`               |    ✅ 是     | 单例，Transport 线程安全 |
-| Azure Blob | `BlobContainerClient` |    ✅ 是     | 单例，微软官方保证         |
+| 存储引擎     | 客户端类型            | 官方是否声明线程安全 | 推荐模式                 |
+|--------------|-----------------------|:--------------------:|--------------------------|
+| 阿里云 OSS   | `OSSClient`           |        ✅ 是         | 单例，复用连接池         |
+| 腾讯云 COS   | `COSClient`           |        ✅ 是         | 单例，内部维护连接池     |
+| 华为云 OBS   | `ObsClient`           |        ✅ 是         | 单例，可在并发场景下使用 |
+| 金山云 KS3   | `Ks3Client`           |        ✅ 是         | 单例，支持并发使用       |
+| AWS S3       | `S3Client`            |        ✅ 是         | 单例，内部连接池         |
+| MinIO        | `MinioAsyncClient`    |        ✅ 是         | 单例，Okhttp 线程安全    |
+| 火山引擎 TOS | `TOSV2`               |        ✅ 是         | 单例，Transport 线程安全 |
+| Azure Blob   | `BlobContainerClient` |        ✅ 是         | 单例，微软官方保证       |
 
 #### 文件传输 / 网络存储
 
-| 存储引擎 | 客户端/资源类型                        | 线程安全机制 | 推荐模式                                       |
-|------|---------------------------------|:------:|--------------------------------------------|
-| FTP  | `FtpClientPool`                 |  ✅ 是   | 单例连接池（Apache Commons Pool），池内借用/归还天然线程安全   |
-| SFTP | `SshClient` + `SftpSessionPool` |  ✅ 是   | `SshClient` 单例 + 会话池，Apache MINA SSHD 线程安全 |
-| SMB  | `CIFSContext`                   |  ✅ 是   | 单例上下文，jcifs-ng `BaseContext` 线程安全          |
-| 本地   | 无客户端（直接文件 I/O）                  |  ✅ 是   | `LocalStorageEngine` 无状态，直接操作本地文件系统        |
+| 存储引擎 | 客户端/资源类型                 | 线程安全机制 | 推荐模式                                                     |
+|----------|---------------------------------|:------------:|--------------------------------------------------------------|
+| FTP      | `FtpClientPool`                 |    ✅ 是     | 单例连接池（Apache Commons Pool），池内借用/归还天然线程安全 |
+| SFTP     | `SshClient` + `SftpSessionPool` |    ✅ 是     | `SshClient` 单例 + 会话池，Apache MINA SSHD 线程安全         |
+| SMB      | `CIFSContext`                   |    ✅ 是     | 单例上下文，jcifs-ng `BaseContext` 线程安全                  |
+| 本地     | 无客户端（直接文件 I/O）        |    ✅ 是     | `LocalStorageEngine` 无状态，直接操作本地文件系统            |
 
 ### 使用建议
 
@@ -89,7 +89,8 @@
        private final StorageEngine storageEngine; // 单例注入，线程安全
    }
    ```
-2. **不要在每次操作后关闭/销毁客户端**。各 SDK 客户端内部维护了 HTTP 连接池，频繁创建和销毁会导致连接池资源泄漏（如 `ClientBuilderConfiguration` 残留），长期运行后可能造成内存膨胀和文件描述符耗尽。
+2. **不要在每次操作后关闭/销毁客户端**。各 SDK 客户端内部维护了 HTTP 连接池，频繁创建和销毁会导致连接池资源泄漏（如
+   `ClientBuilderConfiguration` 残留），长期运行后可能造成内存膨胀和文件描述符耗尽。
 3. **不要在业务代码中自行创建底层 SDK 客户端**（如 `new OSSClientBuilder().build(...)`），应统一由组件管理，避免与组件内部的单例客户端产生冲突。
 
 ### 反面示例（请勿使用）
@@ -309,21 +310,21 @@ platform:
 
 本组件支持两种初始化模式，通过 `auto-init` 属性控制：
 
-| 模式 | 配置值 | 适用场景 | 引擎创建方式 |
-|------|--------|---------|-------------|
-| **自动模式**（默认） | `auto-init: true`（或不配置） | 配置固定写在 YAML/配置文件，启动后无需切换 | YAML + Spring Boot 自动注册到 `Registry` |
-| **手动模式** | `auto-init: false` | 配置来自数据库/Nacos/管理后台，**需要运行时热切换** | 业务代码手工调用 `Registry.switchEngine()` |
+| 模式                 | 配置值                        | 适用场景                                            | 引擎创建方式                               |
+|----------------------|-------------------------------|-----------------------------------------------------|--------------------------------------------|
+| **自动模式**（默认） | `auto-init: true`（或不配置） | 配置固定写在 YAML/配置文件，启动后无需切换          | YAML + Spring Boot 自动注册到 `Registry`   |
+| **手动模式**         | `auto-init: false`            | 配置来自数据库/Nacos/管理后台，**需要运行时热切换** | 业务代码手工调用 `Registry.switchEngine()` |
 
 ### 使用场景对照
 
-| 场景 | 推荐模式 | 理由 |
-|------|---------|------|
-| 中小型项目，存储后端写死（如只用 MinIO） | **自动模式** | YAML 配一次即用，零业务代码 |
-| 多环境差异（dev/prod 不同后端） | **自动模式** | profile + YAML 切换，无需改代码 |
-| 配置存数据库，租户隔离（每个租户独立存储） | **手动模式** | 启动后根据租户配置动态创建引擎 |
-| 运维后台切换存储后端（不停机迁移） | **手动模式** | `switchEngine` 热切换，连接池自动重建 |
-| 多引擎并存（对象存储 + FTP + SFTP 同时使用） | **手动模式** | 手工注册多个引擎到 Registry |
-| 灰度切换（如 S3 → MinIO 平滑迁移） | **手动模式** | 先注册新引擎，`switchEngine` 原子切换 |
+| 场景                                         | 推荐模式     | 理由                                  |
+|----------------------------------------------|--------------|---------------------------------------|
+| 中小型项目，存储后端写死（如只用 MinIO）     | **自动模式** | YAML 配一次即用，零业务代码           |
+| 多环境差异（dev/prod 不同后端）              | **自动模式** | profile + YAML 切换，无需改代码       |
+| 配置存数据库，租户隔离（每个租户独立存储）   | **手动模式** | 启动后根据租户配置动态创建引擎        |
+| 运维后台切换存储后端（不停机迁移）           | **手动模式** | `switchEngine` 热切换，连接池自动重建 |
+| 多引擎并存（对象存储 + FTP + SFTP 同时使用） | **手动模式** | 手工注册多个引擎到 Registry           |
+| 灰度切换（如 S3 → MinIO 平滑迁移）           | **手动模式** | 先注册新引擎，`switchEngine` 原子切换 |
 
 > **两种模式互斥，不可在同一系统中同时使用。** 自动模式下禁止调用 `switchEngine()`；手动模式下禁止配置引擎相关 YAML。
 
@@ -416,7 +417,8 @@ sequenceDiagram
 
 ### 手动模式
 
-业务代码完全控制引擎生命周期。`auto-init=false` 关闭自动注册，`StorageEngineRegistry` 预创建空 Proxy 占位，业务代码在合适的时机（如启动 `@PostConstruct`、租户登录、管理员操作）调用 `switchEngine` 创建/切换引擎。
+业务代码完全控制引擎生命周期。`auto-init=false` 关闭自动注册，`StorageEngineRegistry` 预创建空 Proxy 占位，业务代码在合适的时机（如启动
+`@PostConstruct`、租户登录、管理员操作）调用 `switchEngine` 创建/切换引擎。
 
 **架构图**：
 
@@ -550,7 +552,8 @@ public class StorageInitService {
 
 #### 3. 运行时热切换
 
-管理后台修改存储配置时，调用 `switchEngine()` 即可切换指定类型的引擎。Registry 自动销毁旧引擎（释放连接池等资源）、创建新引擎并更新对应 Proxy 引用，**不影响其他类型的引擎**：
+管理后台修改存储配置时，调用 `switchEngine()` 即可切换指定类型的引擎。Registry 自动销毁旧引擎（释放连接池等资源）、创建新引擎并更新对应
+Proxy 引用， **不影响其他类型的引擎**：
 
 ```java
 @PostMapping("/api/admin/storage/switch")
@@ -629,7 +632,8 @@ public void switchSmb(String host, String domain, String user, String password) 
 
 #### 3.2 安全刷新：失败回滚（refreshEngine）
 
-`switchEngine()` 在新引擎初始化失败时会**抛异常但不影响旧引擎**。若希望保留旧引擎的引用不被任何瞬时异常替换，可使用 `refreshEngine()` 语义相同的双重方法，但 API 名称更明确表达"原地刷新"意图：
+`switchEngine()` 在新引擎初始化失败时会 **抛异常但不影响旧引擎**。若希望保留旧引擎的引用不被任何瞬时异常替换，可使用
+`refreshEngine()` 语义相同的双重方法，但 API 名称更明确表达"原地刷新"意图：
 
 ```java
 public void refreshLocal(String newPath) {
@@ -643,6 +647,7 @@ public void refreshLocal(String newPath) {
 ```
 
 `refreshEngine()` 的回滚语义：
+
 - 引擎未初始化 → 抛 `IllegalStateException`（区别于 `switchEngine` 的允许首次创建）
 - `validate()` 失败 → 抛异常，旧 delegate 不变
 - `create()` + `afterPropertiesSet()` 失败 → 自动 `destroy()` 新引擎后抛异常，旧 delegate 不变
@@ -650,7 +655,8 @@ public void refreshLocal(String newPath) {
 
 #### 4. 多引擎并存
 
-系统中可以同时注册多种引擎类型，典型场景：对象存储（业务数据） + FTP/SMB（系统间数据交换）。Registry 为每种引擎类型维护独立的 Proxy，互不影响：
+系统中可以同时注册多种引擎类型，典型场景：对象存储（业务数据） + FTP/SMB（系统间数据交换）。Registry 为每种引擎类型维护独立的
+Proxy，互不影响：
 
 ```java
 @Service
@@ -723,24 +729,25 @@ public class DataSyncService {
 > | `@Qualifier("localStorageEngine")` | 本地存储 | `@Service` Bean | Registry `ProxyHolder(LOCAL)` |
 > | 无 `@Qualifier`（`@Primary`） | 默认引擎 | ProxyFactoryBean 代理 | Registry `defaultProxy` |
 
-> **重要约束**：业务代码必须通过 `@Autowired StorageEngine` 注入代理对象，**禁止**直接持有或缓存 `StorageEngineRegistry.getEngine()` 返回的实例引用，否则热切换后将指向已销毁的旧引擎。
+> **重要约束**：业务代码必须通过 `@Autowired StorageEngine` 注入代理对象， **禁止**直接持有或缓存
+> `StorageEngineRegistry.getEngine()` 返回的实例引用，否则热切换后将指向已销毁的旧引擎。
 
 ### 支持的引擎类型枚举
 
-| 枚举值 | `configValue` | 说明 |
-|--------|--------------|------|
-| `MINIO` | `minio` | MinIO |
-| `AWS_S3` | `aws_s3` | AWS S3 |
-| `ALIYUN_OSS` | `aliyun_oss` | 阿里云 OSS |
-| `TENCENT_COS` | `tencent_cos` | 腾讯云 COS |
-| `HUAWEI_OBS` | `huawei_obs` | 华为云 OBS |
-| `KSYUN_KS3` | `ksyun_ks3` | 金山云 KS3 |
+| 枚举值           | `configValue`    | 说明         |
+|------------------|------------------|--------------|
+| `MINIO`          | `minio`          | MinIO        |
+| `AWS_S3`         | `aws_s3`         | AWS S3       |
+| `ALIYUN_OSS`     | `aliyun_oss`     | 阿里云 OSS   |
+| `TENCENT_COS`    | `tencent_cos`    | 腾讯云 COS   |
+| `HUAWEI_OBS`     | `huawei_obs`     | 华为云 OBS   |
+| `KSYUN_KS3`      | `ksyun_ks3`      | 金山云 KS3   |
 | `VOLCENGINE_TOS` | `volcengine_tos` | 火山引擎 TOS |
-| `AZURE_BLOB` | `azure_blob` | Azure Blob |
-| `FTP` | `ftp` | FTP |
-| `SFTP` | `sftp` | SFTP |
-| `SMB` | `smb` | SMB |
-| `LOCAL` | `local` | 本地存储 |
+| `AZURE_BLOB`     | `azure_blob`     | Azure Blob   |
+| `FTP`            | `ftp`            | FTP          |
+| `SFTP`           | `sftp`           | SFTP         |
+| `SMB`            | `smb`            | SMB          |
+| `LOCAL`          | `local`          | 本地存储     |
 
 > `StorageEngineEnum.fromConfigValue("aws_s3")` 可将字符串配置值转换为枚举。
 
@@ -781,7 +788,8 @@ public class DataSyncService {
 
 ## 可观测性：HealthIndicator + Micrometer 指标
 
-存储引擎在 Spring Boot Actuator 框架下提供两个可选的观测 Bean。未对接 Prometheus/Grafana/APM 时可关闭，避免 CollectorRegistry 找不到收集器等噪音日志。
+存储引擎在 Spring Boot Actuator 框架下提供两个可选的观测 Bean。未对接 Prometheus/Grafana/APM 时可关闭，避免
+CollectorRegistry 找不到收集器等噪音日志。
 
 ### `HealthIndicator`（健康检查）
 
@@ -831,41 +839,41 @@ management:
 
 ## 存储引擎对比
 
-| 存储引擎 | engine 值 | endpoint 格式 | region 要求 | 特殊说明 |
-|---------|----------|--------------|-------------|---------|
-| MinIO | `MINIO` | `http://host:port` | 可选 | 支持自定义域名 |
-| AWS S3 | `AWS_S3` | `s3.region.amazonaws.com` | 必填 | 支持多种存储类型 |
-| 阿里云 OSS | `ALIYUN_OSS` | `oss-cn-region.aliyuncs.com` | 必填 | 支持图片处理 |
-| 腾讯云 COS | `TENCENT_COS` | `cos.region.myqcloud.com` | 必填 | 支持多可用区存储 |
-| 华为云 OBS | `HUAWEI_OBS` | `obs.region.myhuaweicloud.com` | 必填 | 支持生命周期管理 |
-| 金山云 KS3 | `KSYUN_KS3` | `ks3-cn-region.ksyuncs.com` | 必填 | 兼容 S3 协议 |
-| 火山引擎 TOS | `VOLCENGINE_TOS` | `tos-cn-region.volces.com` | 必填 | 支持图片处理 |
-| Azure Blob | `AZURE_BLOB` | `account.blob.core.windows.net` | 必填 | 需要连接字符串 |
+| 存储引擎     | engine 值        | endpoint 格式                   | region 要求 | 特殊说明         |
+|--------------|------------------|---------------------------------|-------------|------------------|
+| MinIO        | `MINIO`          | `http://host:port`              | 可选        | 支持自定义域名   |
+| AWS S3       | `AWS_S3`         | `s3.region.amazonaws.com`       | 必填        | 支持多种存储类型 |
+| 阿里云 OSS   | `ALIYUN_OSS`     | `oss-cn-region.aliyuncs.com`    | 必填        | 支持图片处理     |
+| 腾讯云 COS   | `TENCENT_COS`    | `cos.region.myqcloud.com`       | 必填        | 支持多可用区存储 |
+| 华为云 OBS   | `HUAWEI_OBS`     | `obs.region.myhuaweicloud.com`  | 必填        | 支持生命周期管理 |
+| 金山云 KS3   | `KSYUN_KS3`      | `ks3-cn-region.ksyuncs.com`     | 必填        | 兼容 S3 协议     |
+| 火山引擎 TOS | `VOLCENGINE_TOS` | `tos-cn-region.volces.com`      | 必填        | 支持图片处理     |
+| Azure Blob   | `AZURE_BLOB`     | `account.blob.core.windows.net` | 必填        | 需要连接字符串   |
 
 > **注意**: 各存储后端的配置差异较大，请参考对应的子组件文档了解详细配置说明。
 
 ## 最佳实践
 
 1. **选择合适的存储后端**
-   - 开发/测试环境：使用本地存储或 MinIO
-   - 生产环境：根据云服务商选择对应的云存储
+    - 开发/测试环境：使用本地存储或 MinIO
+    - 生产环境：根据云服务商选择对应的云存储
 
 2. **文件路径规范**
-   - 使用相对路径，避免绝对路径
-   - 使用日期/业务维度组织路径，如：`/2024/01/15/user-123/avatar.jpg`
+    - 使用相对路径，避免绝对路径
+    - 使用日期/业务维度组织路径，如：`/2024/01/15/user-123/avatar.jpg`
 
 3. **大文件处理**
-   - 使用 `getResumableObject` 支持断点续传
-   - 设置 `returnData=false` 避免内存溢出
+    - 使用 `getResumableObject` 支持断点续传
+    - 设置 `returnData=false` 避免内存溢出
 
 4. **错误处理**
-   - 检查 `UploadResponse.isSuccess()` 和 `DownloadResponse.isSuccess()`
-   - 记录错误信息用于排查问题
+    - 检查 `UploadResponse.isSuccess()` 和 `DownloadResponse.isSuccess()`
+    - 记录错误信息用于排查问题
 
 5. **组件边界约束（推荐）**
-   - `richie-component-storage` 只提供能力接口与引擎实现，不内置 HTTP Controller
-   - 业务服务自行定义上传/签发接口，避免所有引用方自动暴露同一路由
-   - Controller 中仅做鉴权、参数校验、业务 key 生成，实际能力委托给 `StorageEngine`
+    - `richie-component-storage` 只提供能力接口与引擎实现，不内置 HTTP Controller
+    - 业务服务自行定义上传/签发接口，避免所有引用方自动暴露同一路由
+    - Controller 中仅做鉴权、参数校验、业务 key 生成，实际能力委托给 `StorageEngine`
 
 ## 业务侧 Controller 参考实现
 
@@ -969,6 +977,7 @@ public class StorageUploadServiceImpl implements StorageUploadService {
 ### `Q` — 如何切换存储后端？
 
 A: 两种方式：
+
 - **自动模式**：修改配置中的 `engine` 字段，并引入对应的存储实现模块依赖，重启应用。
 - **手动模式**：通过 `StorageEngineRegistry.switchEngine(engineType, properties)` 运行时热切换，无需重启。详见“双模式架构”章节。
 

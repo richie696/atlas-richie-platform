@@ -41,7 +41,9 @@ import java.nio.file.Path;
  * @version 1.0
  * @since 2025-07-01
  */
-public sealed interface VectorContent
+public sealed
+
+interface VectorContent
         permits VectorContent.TextContent, VectorContent.ImageContent {
 
     /**
@@ -64,12 +66,13 @@ public sealed interface VectorContent
      * @param text     原始文本（必填，紧凑构造器会校验非空）。
      * @param mimeType MIME 类型，例如 {@code text/plain} / {@code text/markdown}，为空时默认
      *                 填 {@code text/plain}。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
      */
-    record TextContent(String text, String mimeType) implements VectorContent {
+    record TextContent(String text, String mimeType) implements
+
+    VectorContent {
 
         /**
          * 紧凑构造器：自动校验 + 默认 mimeType。
@@ -96,7 +99,7 @@ public sealed interface VectorContent
          * @return 恒为 {@link Modality#TEXT}
          */
         @Override
-        public Modality modality() {
+        public Modality modality () {
             return Modality.TEXT;
         }
     }
@@ -111,12 +114,13 @@ public sealed interface VectorContent
      * @param data     原始字节数组（必填，紧凑构造器校验非空）。
      * @param mimeType MIME 类型，必须以 {@code image/} 开头（紧凑构造器校验），例如
      *                 {@code image/png} / {@code image/jpeg}。
-     *
      * @author richie696
      * @version 1.0
      * @since 2025-07-01
      */
-    record ImageContent(byte[] data, String mimeType) implements VectorContent {
+    record ImageContent(byte[] data, String mimeType) implements
+
+    VectorContent {
 
         /**
          * 紧凑构造器：校验字节非空 + MIME 类型合法。
@@ -143,7 +147,7 @@ public sealed interface VectorContent
          * @return 恒为 {@link Modality#IMAGE}
          */
         @Override
-        public Modality modality() {
+        public Modality modality () {
             return Modality.IMAGE;
         }
 
@@ -158,7 +162,7 @@ public sealed interface VectorContent
          * @return ImageContent 实例
          * @throws IllegalArgumentException 当读取图片文件失败时
          */
-        public static ImageContent ofPath(Path path, String mimeType) {
+        public static ImageContent ofPath (Path path, String mimeType){
             try {
                 return new ImageContent(Files.readAllBytes(path), mimeType);
             } catch (Exception e) {

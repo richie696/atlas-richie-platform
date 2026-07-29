@@ -18,6 +18,7 @@ package cn.richie696.component.storage.local.config.integration;
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.storage.local.config.support.AbstractStorageRedisIntegrationTest;
 import org.junit.jupiter.api.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class LocalStorageCacheOpsIT extends AbstractStorageRedisIntegrationTest {

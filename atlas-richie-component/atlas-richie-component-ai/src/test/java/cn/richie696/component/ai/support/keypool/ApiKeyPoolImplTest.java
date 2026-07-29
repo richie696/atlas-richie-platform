@@ -21,12 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * ApiKeyPool 行为测试 — 覆盖 borrow/return/invalidate/冷却 等核心路径。
@@ -191,14 +186,18 @@ class ApiKeyPoolImplTest {
     @Test
     void multipleBorrows_useDifferentKeysInRoundRobin() {
         Set<String> keys = new LinkedHashSet<>();
-        keys.add("k1"); keys.add("k2"); keys.add("k3");
+        keys.add("k1");
+        keys.add("k2");
+        keys.add("k3");
         ApiKeyPoolImpl pool = new ApiKeyPoolImpl("test", keys, defaultProps());
         ApiKey a = pool.borrow();
         ApiKey b = pool.borrow();
         ApiKey c = pool.borrow();
         // 3 个借出应该是 3 个不同 key
         assertEquals(3, Set.of(a.value(), b.value(), c.value()).size());
-        pool.returnObject(a); pool.returnObject(b); pool.returnObject(c);
+        pool.returnObject(a);
+        pool.returnObject(b);
+        pool.returnObject(c);
         pool.close();
     }
 

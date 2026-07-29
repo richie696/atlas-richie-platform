@@ -1,8 +1,10 @@
 # Atlas Richie Desensitize Component (atlas-richie-component-desensitize)
 
-> Unified data desensitization component: applies consistent processing to sensitive fields in **API responses**, **logs**, **audits**, and **exception messages**, preventing plaintext leakage at every egress.
+> Unified data desensitization component: applies consistent processing to sensitive fields in **API responses**,
+> **logs**, **audits**, and **exception messages**, preventing plaintext leakage at every egress.
 
-> **Current Status**: **P0 Core**, **P1 Jackson**, and **P2 Logging (basic version)** have been implemented and passed unit/integration tests; enhancements like JSON Layout can be iterated on later.
+> **Current Status**: **P0 Core**, **P1 Jackson**, and **P2 Logging (basic version)** have been implemented and passed
+> unit/integration tests; enhancements like JSON Layout can be iterated on later.
 
 ---
 
@@ -10,52 +12,54 @@
 
 - [Sub-module Documentation at a Glance](#sub-module-documentation-at-a-glance)
 - [1. Goals & Scope](#1-goals-&-scope)
-  - [1.1 Goals](#11-goals)
-  - [1.2 Scope (V1)](#12-scope-v1)
-  - [1.3 Non-Goals (V1 Not Done)](#13-non-goals-v1-not-done)
+    - [1.1 Goals](#11-goals)
+    - [1.2 Scope (V1)](#12-scope-v1)
+    - [1.3 Non-Goals (V1 Not Done)](#13-non-goals-v1-not-done)
 - [2. Architecture Design](#2-architecture-design)
-  - [2.1 Module Dependency Relationships](#21-module-dependency-relationships)
-  - [2.2 Runtime Component Relationships](#22-runtime-component-relationships)
+    - [2.1 Module Dependency Relationships](#21-module-dependency-relationships)
+    - [2.2 Runtime Component Relationships](#22-runtime-component-relationships)
 - [3. Working Principles](#3-working-principles)
-  - [3.1 Rule Resolution Priority](#31-rule-resolution-priority)
-  - [3.2 API Response Desensitization Sequence](#32-api-response-desensitization-sequence)
-  - [3.3 Log Desensitization Dedicated Design](#33-log-desensitization-dedicated-design)
-  - [3.4 Exception Message Desensitization (Planned)](#34-exception-message-desensitization-planned)
+    - [3.1 Rule Resolution Priority](#31-rule-resolution-priority)
+    - [3.2 API Response Desensitization Sequence](#32-api-response-desensitization-sequence)
+    - [3.3 Log Desensitization Dedicated Design](#33-log-desensitization-dedicated-design)
+    - [3.4 Exception Message Desensitization (Planned)](#34-exception-message-desensitization-planned)
 - [4. Key Objects](#4-key-objects)
-  - [4.1 Domain Model](#41-domain-model)
-  - [4.2 Core Services & Extensions](#42-core-services-&-extensions)
-  - [4.3 Jackson Integration](#43-jackson-integration)
-  - [4.4 Logging Related (Core + Logging Modules)](#44-logging-related-core-+-logging-modules)
-  - [4.5 Built-in Strategies (Planned Implementation)](#45-built-in-strategies-planned-implementation)
+    - [4.1 Domain Model](#41-domain-model)
+    - [4.2 Core Services & Extensions](#42-core-services-&-extensions)
+    - [4.3 Jackson Integration](#43-jackson-integration)
+    - [4.4 Logging Related (Core + Logging Modules)](#44-logging-related-core-+-logging-modules)
+    - [4.5 Built-in Strategies (Planned Implementation)](#45-built-in-strategies-planned-implementation)
 - [5. Configuration Model](#5-configuration-model)
-  - [5.0 Default Strategy (Recommended)](#50-default-strategy-recommended)
-  - [5.1 Configuration Prefix](#51-configuration-prefix)
-  - [5.2 Annotation Usage (Planned)](#52-annotation-usage-planned)
-  - [5.3 API Return Map Example (Planned)](#53-api-return-map-example-planned)
-  - [5.4 Log Usage Example (Planned)](#54-log-usage-example-planned)
-  - [5.5 Dependency Introduction (Planned)](#55-dependency-introduction-planned)
+    - [5.0 Default Strategy (Recommended)](#50-default-strategy-recommended)
+    - [5.1 Configuration Prefix](#51-configuration-prefix)
+    - [5.2 Annotation Usage (Planned)](#52-annotation-usage-planned)
+    - [5.3 API Return Map Example (Planned)](#53-api-return-map-example-planned)
+    - [5.4 Log Usage Example (Planned)](#54-log-usage-example-planned)
+    - [5.5 Dependency Introduction (Planned)](#55-dependency-introduction-planned)
 - [6. Extension Points](#6-extension-points)
-  - [6.1 Custom Strategy](#61-custom-strategy)
-  - [6.2 Permission Evaluation](#62-permission-evaluation)
+    - [6.1 Custom Strategy](#61-custom-strategy)
+    - [6.2 Permission Evaluation](#62-permission-evaluation)
 - [7. Relationship with Other Platform Components](#7-relationship-with-other-platform-components)
 - [8. Implementation Roadmap](#8-implementation-roadmap)
-  - [Definition of Done (Coding Phase)](#definition-of-done-coding-phase)
+    - [Definition of Done (Coding Phase)](#definition-of-done-coding-phase)
 - [9. Risks & Constraints](#9-risks-&-constraints)
 - [10. Documentation Index](#10-documentation-index)
-  - [10.1 Parent Component (this document)](#101-parent-component-this-document)
-  - [10.2 Sub-module Documentation](#102-sub-module-documentation)
+    - [10.1 Parent Component (this document)](#101-parent-component-this-document)
+    - [10.2 Sub-module Documentation](#102-sub-module-documentation)
 - [11. Version](#11-version)
+
 ---
 
 ## Sub-module Documentation at a Glance
 
-This component ships as three Maven modules. Each has its own README with detailed usage, configuration, and design notes:
+This component ships as three Maven modules. Each has its own README with detailed usage, configuration, and design
+notes:
 
-| Module | English | 中文 | Primary Use |
-|--------|---------|------|-------------|
-| `desensitize-core` | [README](./atlas-richie-component-desensitize-core/README.md) | Pure-Java rules, strategies, `MaskingService`, `DesensitizeUtils`, Spring Boot auto-config |
-| `desensitize-jackson` | [README](./atlas-richie-component-desensitize-jackson/README.md) | `@Sensitive` annotation + Map serialization for REST API responses |
-| `desensitize-logging` | [README](./atlas-richie-component-desensitize-logging/README.md) | Logback `ConversionRule` / TurboFilter for log output masking |
+| Module                | English                                                          | 中文                                                                                       | Primary Use |
+|-----------------------|------------------------------------------------------------------|--------------------------------------------------------------------------------------------|-------------|
+| `desensitize-core`    | [README](./atlas-richie-component-desensitize-core/README.md)    | Pure-Java rules, strategies, `MaskingService`, `DesensitizeUtils`, Spring Boot auto-config |
+| `desensitize-jackson` | [README](./atlas-richie-component-desensitize-jackson/README.md) | `@Sensitive` annotation + Map serialization for REST API responses                         |
+| `desensitize-logging` | [README](./atlas-richie-component-desensitize-logging/README.md) | Logback `ConversionRule` / TurboFilter for log output masking                              |
 
 ---
 
@@ -63,13 +67,13 @@ This component ships as three Maven modules. Each has its own README with detail
 
 ### 1.1 `Goals`
 
-| Goal | Description |
-|------|-------------|
-| Unified Rules | Built-in strategies for phone numbers, ID cards, bank cards, emails + extensible SPI |
-| Multi-Scenario | The same `MaskingService` powers JSON serialization, logs, exception messages, etc. |
-| Configurable | YAML global rules + annotation field-level overrides |
-| Optional Permission | Decide whether to mask by role/permission (e.g. admins see plaintext) |
-| Low-Intrusion | API-side DTO with `@Sensitive`; log-side `DesensitizeUtils` for explicit masking and safe serialization |
+| Goal                | Description                                                                                             |
+|---------------------|---------------------------------------------------------------------------------------------------------|
+| Unified Rules       | Built-in strategies for phone numbers, ID cards, bank cards, emails + extensible SPI                    |
+| Multi-Scenario      | The same `MaskingService` powers JSON serialization, logs, exception messages, etc.                     |
+| Configurable        | YAML global rules + annotation field-level overrides                                                    |
+| Optional Permission | Decide whether to mask by role/permission (e.g. admins see plaintext)                                   |
+| Low-Intrusion       | API-side DTO with `@Sensitive`; log-side `DesensitizeUtils` for explicit masking and safe serialization |
 
 ### 1.2 `Scope` (`V1`)
 
@@ -111,11 +115,11 @@ flowchart TB
     LOGGING --> CORE
 ```
 
-| Module | Dependency-Side Use Case | Documentation |
-|--------|--------------------------|---------------|
-| `desensitize-core` | Programmatic desensitization only, or custom integration | [English](./atlas-richie-component-desensitize-core/README.md) |
-| `desensitize-jackson` | REST API response JSON desensitization | [English](./atlas-richie-component-desensitize-jackson/README.md) |
-| `desensitize-logging` | Log output desensitization | [English](./atlas-richie-component-desensitize-logging/README.md) |
+| Module                | Dependency-Side Use Case                                 | Documentation                                                     |
+|-----------------------|----------------------------------------------------------|-------------------------------------------------------------------|
+| `desensitize-core`    | Programmatic desensitization only, or custom integration | [English](./atlas-richie-component-desensitize-core/README.md)    |
+| `desensitize-jackson` | REST API response JSON desensitization                   | [English](./atlas-richie-component-desensitize-jackson/README.md) |
+| `desensitize-logging` | Log output desensitization                               | [English](./atlas-richie-component-desensitize-logging/README.md) |
 
 ### 2.2 `Runtime` `Component` `Relationships`
 
@@ -151,10 +155,13 @@ flowchart LR
 
 **Design Principles**:
 
-1. **Core has no Web / no Jackson dependencies**: `MaskingService` is pure-Java capability for easy unit testing and reuse.
-2. **Thin integration layer**: Jackson handles API serialization; the log side uses `DesensitizeUtils` as the main entry.
+1. **Core has no Web / no Jackson dependencies**: `MaskingService` is pure-Java capability for easy unit testing and
+   reuse.
+2. **Thin integration layer**: Jackson handles API serialization; the log side uses `DesensitizeUtils` as the main
+   entry.
 3. **Scene-driven**: `MaskScene` decides whether the current egress performs masking and the rule priority.
-4. **Logs do not guess types**: sensitive semantics are explicitly marked by developers, VO annotations, or Map key-name config — no PII inference on Chinese / i18n free text.
+4. **Logs do not guess types**: sensitive semantics are explicitly marked by developers, VO annotations, or Map key-name
+   config — no PII inference on Chinese / i18n free text.
 
 ---
 
@@ -226,14 +233,15 @@ public class UserVO {
 }
 ```
 
-| Return Shape | `@Sensitive` / Bean Serializer | Handling |
-|--------------|-------------------------------|----------|
-| `UserVO` scalar field | ✅ `SensitiveJsonSerializer` | Annotation + `MaskScene.API_RESPONSE` |
-| `Map` as root return value | ❌ | `SensitiveMapSerializer` + **`sensitive-keys`** |
-| `Map` field inside `UserVO` | ❌ (inner Map keys have no annotation) | When property type is `Map`, also goes through `SensitiveMapSerializer` |
-| Dynamic keys, cannot configure | ❌ | **`DesensitizeUtils.maskMap(map)`** before return, or change to VO |
+| Return Shape                   | `@Sensitive` / Bean Serializer         | Handling                                                                |
+|--------------------------------|----------------------------------------|-------------------------------------------------------------------------|
+| `UserVO` scalar field          | ✅ `SensitiveJsonSerializer`           | Annotation + `MaskScene.API_RESPONSE`                                   |
+| `Map` as root return value     | ❌                                     | `SensitiveMapSerializer` + **`sensitive-keys`**                         |
+| `Map` field inside `UserVO`    | ❌ (inner Map keys have no annotation) | When property type is `Map`, also goes through `SensitiveMapSerializer` |
+| Dynamic keys, cannot configure | ❌                                     | **`DesensitizeUtils.maskMap(map)`** before return, or change to VO      |
 
-**Same rules as log Map**: look up `MaskType` by **key name**, mask value, **do not guess value shape**. LOG and API can share global `sensitive-keys`, or override per-scene (see §5.1).
+**Same rules as log Map**: look up `MaskType` by **key name**, mask value, **do not guess value shape**. LOG and API can
+share global `sensitive-keys`, or override per-scene (see §5.1).
 
 ```mermaid
 sequenceDiagram
@@ -269,7 +277,8 @@ sequenceDiagram
 **Recommended priority for business-side**:
 
 1. **Preferred**: external API uses **VO + `@Sensitive`**, type-safe and reviewable.
-2. **Map required** (dynamic columns, legacy interfaces): maintain **`sensitive-keys`**, ensure stable key naming (`phone`, not `mobilePhone` / `user_phone` mixed).
+2. **Map required** (dynamic columns, legacy interfaces): maintain **`sensitive-keys`**, ensure stable key naming
+   (`phone`, not `mobilePhone` / `user_phone` mixed).
 3. **Fallback**: `return DesensitizeUtils.maskMap(map);` (Core generates masked Map in memory, Jackson writes it as-is).
 
 ```java
@@ -277,20 +286,24 @@ sequenceDiagram
 return DesensitizeUtils.maskMap(rawMap);  // Returns new Map, does not modify original
 ```
 
-> **Convention**: Do not rely on "Jackson default Map serialization" to auto-desensitize; Map returns without `sensitive-keys` and without `maskMap` will output **plaintext**.
+> **Convention**: Do not rely on "Jackson default Map serialization" to auto-desensitize; Map returns without
+> `sensitive-keys` and without `maskMap` will output **plaintext**.
 
 ### 3.3 `Log` `Desensitization` `Dedicated` `Design`
 
-Key difference between logs and API responses: **SLF4J defaults to calling `toString()` on parameters, not Jackson**. Therefore the log side takes **developer-explicit masking + safe serialization** as the main path, and **does not run full-string rule blind scanning on already-formatted messages** (especially when containing Chinese, i18n templates where PII types cannot be reliably inferred).
+Key difference between logs and API responses: **SLF4J defaults to calling `toString()` on parameters, not Jackson**.
+Therefore the log side takes **developer-explicit masking + safe serialization** as the main path, and **does not run
+full-string rule blind scanning on already-formatted messages** (especially when containing Chinese, i18n templates
+where PII types cannot be reliably inferred).
 
 #### 3.3.1 `Core` `Principles`
 
-| Principle | Description |
-|-----------|-------------|
-| **Explicit over Inference** | Scalars are `mask`ed by developers before logging; VO uses `toSafeJson`; Map uses `sensitive-keys` + `toSafeString` |
-| **Semantics in Data, Not in Text** | Chinese / English / i18n only affects templates, not type judgment |
-| **Forbidden to Concatenate into Message** | `msg + phone`, `getMessage() + idCard` and similar anti-patterns, the component cannot fix |
-| **Regex Only as Fallback** | `log.regex-fallback.enabled` defaults to `false`, not part of the main solution |
+| Principle                                 | Description                                                                                                         |
+|-------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| **Explicit over Inference**               | Scalars are `mask`ed by developers before logging; VO uses `toSafeJson`; Map uses `sensitive-keys` + `toSafeString` |
+| **Semantics in Data, Not in Text**        | Chinese / English / i18n only affects templates, not type judgment                                                  |
+| **Forbidden to Concatenate into Message** | `msg + phone`, `getMessage() + idCard` and similar anti-patterns, the component cannot fix                          |
+| **Regex Only as Fallback**                | `log.regex-fallback.enabled` defaults to `false`, not part of the main solution                                     |
 
 #### 3.3.2 `Choose` `Strategy` by `Data` `Shape`
 
@@ -306,13 +319,13 @@ flowchart TD
     SAFE_MAP --> SLF4J
 ```
 
-| Shape | Can "Look Like Phone" by String? | Recommended Approach |
-|-------|----------------------------------|----------------------|
-| **Scalar** (`phone`, `idCard`) | No | `log.info("...", DesensitizeUtils.mask(phone, PHONE))` |
-| **VO / DTO** | No (`log.info("{}", vo)` calls `toString()`, `@Sensitive` doesn't apply) | `log.info("user={}", DesensitizeUtils.toSafeJson(vo))` |
-| **Map** | No (no field annotations) | `log.info("row={}", DesensitizeUtils.toSafeString(map))`, key name hits `sensitive-keys` |
-| **i18n Template + Parameters** | No (template language-independent) | Explicitly `mask` only the **sensitive parameters**, template text outputs as-is |
-| **Free Text Message** | No | Development convention forbidden; optional regex fallback (off by default) |
+| Shape                          | Can "Look Like Phone" by String?                                         | Recommended Approach                                                                     |
+|--------------------------------|--------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| **Scalar** (`phone`, `idCard`) | No                                                                       | `log.info("...", DesensitizeUtils.mask(phone, PHONE))`                                   |
+| **VO / DTO**                   | No (`log.info("{}", vo)` calls `toString()`, `@Sensitive` doesn't apply) | `log.info("user={}", DesensitizeUtils.toSafeJson(vo))`                                   |
+| **Map**                        | No (no field annotations)                                                | `log.info("row={}", DesensitizeUtils.toSafeString(map))`, key name hits `sensitive-keys` |
+| **i18n Template + Parameters** | No (template language-independent)                                       | Explicitly `mask` only the **sensitive parameters**, template text outputs as-is         |
+| **Free Text Message**          | No                                                                       | Development convention forbidden; optional regex fallback (off by default)               |
 
 #### 3.3.3 `Scalar` `Parameters` — `Explicit` `Masking` (`Main` `Path`, `Most` `Reliable`)
 
@@ -326,7 +339,8 @@ log.info("User {}'s phone is {}", name, mask(phone, MaskType.PHONE));
 log.info(messageSource.getMessage("user.phone", new Object[]{ name, mask(phone, PHONE) }, locale));
 ```
 
-`DesensitizeUtils` is a static facade that internally delegates to the `MaskingService` in the Spring container, sharing rules and `MaskingStrategy` with API and `@Sensitive`.
+`DesensitizeUtils` is a static facade that internally delegates to the `MaskingService` in the Spring container, sharing
+rules and `MaskingStrategy` with API and `@Sensitive`.
 
 #### 3.3.4 `VO` / `DTO` — `Safe` `Serialization` (`Annotation`-`Driven`)
 
@@ -343,11 +357,14 @@ log.info("user={}", DesensitizeUtils.toSafeJson(userVo));
 1. `null` → `"null"`
 2. **Java Bean**: output JSON string after masking by field `@Sensitive` + `MaskScene.LOG`
 3. **Collection / Array**: process elements recursively
-4. Optional: if Jackson is on classpath and `desensitize.jackson.log-enabled` is enabled, delegate to `ObjectMapper` + `SensitiveModule` (consistent with API rules)
+4. Optional: if Jackson is on classpath and `desensitize.jackson.log-enabled` is enabled, delegate to `ObjectMapper` +
+   `SensitiveModule` (consistent with API rules)
 
 #### 3.3.5 `Map` — `Key`-`Name` `Config` `Driven` (`No` `Annotation`)
 
-`Map` has no field annotations, masks value by **key semantics**, **does not guess type by value shape** (avoid `orderId=138...` false positive). Shares global **`sensitive-keys`** with API-returned Map (§3.2.1); `log.sensitive-keys` is only an optional override.
+`Map` has no field annotations, masks value by **key semantics**, **does not guess type by value shape** (avoid
+`orderId=138...` false positive). Shares global **`sensitive-keys`** with API-returned Map (§3.2.1);
+`log.sensitive-keys` is only an optional override.
 
 ```yaml
 platform:
@@ -391,19 +408,24 @@ log.info("phone={}", SensitiveLogArg.phone(phone));
 `desensitize-logging` provides two log enhancement paths:
 
 1. `DesensitizeConverter`: output masked message via `%desensitizeMsg`.
-2. `SensitiveLogArgTurboFilter`: replace `SensitiveLogArg` parameters in-place before log event creation, even with plain `%msg`.
+2. `SensitiveLogArgTurboFilter`: replace `SensitiveLogArg` parameters in-place before log event creation, even with
+   plain `%msg`.
 3. `DesensitizeJsonMessageConverter`: auto-mask JSON text messages by `sensitive-keys` via `%desensitizeJsonMsg`.
-4. `SensitiveMdcTurboFilter`: auto-mask sensitive MDC key-values (e.g. `phone`, `idCard`) before log events, suitable for JSON Layout `includeMdc` scenarios.
+4. `SensitiveMdcTurboFilter`: auto-mask sensitive MDC key-values (e.g. `phone`, `idCard`) before log events, suitable
+   for JSON Layout `includeMdc` scenarios.
 
 JSON Layout is still an optional enhancement.
 
 #### 3.3.7 `Optional` — `Structured` `JSON` `Log` `Layout`
 
-In production with unified JSON Layout, you can mask **known JSON field names** at the Encoder layer (sharing config with `sensitive-keys`). VO can also go through `ObjectMapper` + `SensitiveModule` inside the Encoder. This is a P2 enhancement, **does not replace** the business-side `toSafeJson` / explicit `mask` convention.
+In production with unified JSON Layout, you can mask **known JSON field names** at the Encoder layer (sharing config
+with `sensitive-keys`). VO can also go through `ObjectMapper` + `SensitiveModule` inside the Encoder. This is a P2
+enhancement, **does not replace** the business-side `toSafeJson` / explicit `mask` convention.
 
 #### 3.3.8 `Regex` `Fallback` (`Off` by `Default`, `Not` `Recommended`)
 
-Only for legacy logs that cannot be modified; **cannot handle** pure natural language, multi-language mixing, or i18n already concatenated into message scenarios.
+Only for legacy logs that cannot be modified; **cannot handle** pure natural language, multi-language mixing, or i18n
+already concatenated into message scenarios.
 
 ```yaml
 platform:
@@ -417,7 +439,8 @@ platform:
               pattern: "(1[3-9]\\d{9})"
 ```
 
-When enabled: pre-compile regex scan on **whole-line message** once; accept false positives / false negatives risk. Isolated from `EXCEPTION` scene config.
+When enabled: pre-compile regex scan on **whole-line message** once; accept false positives / false negatives risk.
+Isolated from `EXCEPTION` scene config.
 
 #### 3.3.9 `Log` `Desensitization` `Sequence` (`Main` `Path`)
 
@@ -461,16 +484,19 @@ sequenceDiagram
 - [ ] **Forbidden** to concatenate plaintext PII into message / i18n strings
 - [ ] Do not enable `log.regex-fallback` by default
 
-> **Detailed usage, configuration, and Logback wiring (`%desensitizeMsg` / `%desensitizeJsonMsg` / TurboFilters) live in the sub-module documentation:**
-> [`atlas-richie-component-desensitize-logging/README.md`](./atlas-richie-component-desensitize-logging/README.md) · 
+> **Detailed usage, configuration, and Logback wiring (`%desensitizeMsg` / `%desensitizeJsonMsg` / TurboFilters) live in
+the sub-module documentation:**
+> [`atlas-richie-component-desensitize-logging/README.md`](./atlas-richie-component-desensitize-logging/README.md) ·
 
 ---
 
 ### 3.4 `Exception` `Message` `Desensitization` (`Planned`)
 
-If exception `getMessage()` is concatenated by business and contains PII, parameters should be explicitly `mask`ed **before throwing**, or wrapped as error code messages not containing plaintext.
+If exception `getMessage()` is concatenated by business and contains PII, parameters should be explicitly `mask`ed
+**before throwing**, or wrapped as error code messages not containing plaintext.
 
-Under `MaskScene.EXCEPTION`, you can optionally enable `exception.regex-fallback` (default `false`) **independent of logs**, as the last line of defense at the framework layer; **does not replace** business-side explicit handling.
+Under `MaskScene.EXCEPTION`, you can optionally enable `exception.regex-fallback` (default `false`) **independent of
+logs**, as the last line of defense at the framework layer; **does not replace** business-side explicit handling.
 
 ---
 
@@ -478,60 +504,60 @@ Under `MaskScene.EXCEPTION`, you can optionally enable `exception.regex-fallback
 
 ### 4.1 `Domain` `Model`
 
-| Type | Responsibility |
-|------|---------------|
-| `MaskType` | Desensitization type enum: `PHONE`, `ID_CARD`, `EMAIL`, `BANK_CARD`, `NAME`, `ADDRESS`, `PASSWORD`, `CUSTOM`, etc. |
-| `MaskScene` | Egress scene: `API_RESPONSE`, `LOG`, `AUDIT`, `EXCEPTION` |
-| `MaskRule` | Single rule: `type`, `scenes`, `keepLeft`/`keepRight`, `maskChar`; `pattern` only for optional regex fallback |
-| `MaskContext` | One-time masking context: `scene`, `fieldName`, `declaringClass`, `principal` (optional) |
-| `DesensitizeProperties` | `@ConfigurationProperties(prefix = "platform.component.desensitize")` |
+| Type                    | Responsibility                                                                                                     |
+|-------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `MaskType`              | Desensitization type enum: `PHONE`, `ID_CARD`, `EMAIL`, `BANK_CARD`, `NAME`, `ADDRESS`, `PASSWORD`, `CUSTOM`, etc. |
+| `MaskScene`             | Egress scene: `API_RESPONSE`, `LOG`, `AUDIT`, `EXCEPTION`                                                          |
+| `MaskRule`              | Single rule: `type`, `scenes`, `keepLeft`/`keepRight`, `maskChar`; `pattern` only for optional regex fallback      |
+| `MaskContext`           | One-time masking context: `scene`, `fieldName`, `declaringClass`, `principal` (optional)                           |
+| `DesensitizeProperties` | `@ConfigurationProperties(prefix = "platform.component.desensitize")`                                              |
 
 ### 4.2 `Core` `Services` & `Extensions`
 
-| Type | Responsibility |
-|------|---------------|
-| `MaskingStrategy` | SPI: `boolean supports(MaskType)`, `String mask(String raw, MaskRule rule)` |
-| `MaskRuleRegistry` | Merges YAML + annotation metadata, queries rules by field name/type |
-| `MaskingService` | Unified entry: `mask(String, MaskType)`, `mask(String, MaskContext)`, `maskObject(Object, MaskScene)`, `maskMap(Map, Map<String, MaskType>)` |
-| `MaskPermissionEvaluator` | `boolean shouldMask(MaskContext)`, default masks everyone; can connect to Spring Security |
-| `ObjectMaskingService` | VO reflection masking, `toSafeJson` / `toSafeString` implementation carrier |
-| `DesensitizeUtils` | Static facade: `mask`, `toSafeJson`, `toSafeString`, delegates to `MaskingService` |
-| `SensitiveLogArg` | Optional log parameter wrapper: `SensitiveLogArg.phone(value)` etc., marks `MaskType` |
+| Type                      | Responsibility                                                                                                                               |
+|---------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| `MaskingStrategy`         | SPI: `boolean supports(MaskType)`, `String mask(String raw, MaskRule rule)`                                                                  |
+| `MaskRuleRegistry`        | Merges YAML + annotation metadata, queries rules by field name/type                                                                          |
+| `MaskingService`          | Unified entry: `mask(String, MaskType)`, `mask(String, MaskContext)`, `maskObject(Object, MaskScene)`, `maskMap(Map, Map<String, MaskType>)` |
+| `MaskPermissionEvaluator` | `boolean shouldMask(MaskContext)`, default masks everyone; can connect to Spring Security                                                    |
+| `ObjectMaskingService`    | VO reflection masking, `toSafeJson` / `toSafeString` implementation carrier                                                                  |
+| `DesensitizeUtils`        | Static facade: `mask`, `toSafeJson`, `toSafeString`, delegates to `MaskingService`                                                           |
+| `SensitiveLogArg`         | Optional log parameter wrapper: `SensitiveLogArg.phone(value)` etc., marks `MaskType`                                                        |
 
 ### 4.3 `Jackson` `Integration`
 
-| Type | Responsibility |
-|------|---------------|
-| `@Sensitive` | Field annotation: `MaskType type`, `MaskScene[] scenes`, `String customStrategy` |
-| `SensitiveJsonSerializer` | `JsonSerializer<String>`, delegates to `MaskingService` |
-| `SensitiveBeanSerializerModifier` | Registers Bean properties with `@Sensitive`; `Map` type properties bind Map serializer |
-| `SensitiveMapSerializer` | `JsonSerializer<Map>`: mask entry value by `sensitive-keys` (API_RESPONSE) |
-| `SensitiveKeyRegistry` | Resolves global / per-scene `sensitive-keys`, shared by Map serializer and `toSafeString` |
-| `JacksonDesensitizeAutoConfiguration` | Registers `Module` / `SerializerModifier` / `SensitiveMapSerializer` |
+| Type                                  | Responsibility                                                                            |
+|---------------------------------------|-------------------------------------------------------------------------------------------|
+| `@Sensitive`                          | Field annotation: `MaskType type`, `MaskScene[] scenes`, `String customStrategy`          |
+| `SensitiveJsonSerializer`             | `JsonSerializer<String>`, delegates to `MaskingService`                                   |
+| `SensitiveBeanSerializerModifier`     | Registers Bean properties with `@Sensitive`; `Map` type properties bind Map serializer    |
+| `SensitiveMapSerializer`              | `JsonSerializer<Map>`: mask entry value by `sensitive-keys` (API_RESPONSE)                |
+| `SensitiveKeyRegistry`                | Resolves global / per-scene `sensitive-keys`, shared by Map serializer and `toSafeString` |
+| `JacksonDesensitizeAutoConfiguration` | Registers `Module` / `SerializerModifier` / `SensitiveMapSerializer`                      |
 
 ### 4.4 `Logging` `Related` (`Core` + `Logging` `Modules`)
 
-| Type | Responsibility |
-|------|---------------|
-| `DesensitizeUtils` | **Main entry** (Core `util` package): scalar `mask`, VO `toSafeJson`, Map `toSafeString` |
-| `SafeLogSerializer` | Converts Bean / Map to log-safe string (used internally by `ObjectMaskingService`) |
-| `SensitiveKeyRegistry` | Resolves `sensitive-keys` (global and per-scene), shared by LOG / API |
-| `SensitiveLogArg` | Optional: SLF4J parameter wrapper, replaced before formatting |
-| `JsonLogEncoderEnhancer` | Optional enhancement: Logback JSON Encoder field-level masking |
-| `LoggingDesensitizeAutoConfiguration` | Conditional assembly of log desensitization services (`LoggingMaskingService`) |
-| `DesensitizeConverter` | Logback `ClassicConverter`: `%desensitizeMsg` outputs masked message |
+| Type                                  | Responsibility                                                                           |
+|---------------------------------------|------------------------------------------------------------------------------------------|
+| `DesensitizeUtils`                    | **Main entry** (Core `util` package): scalar `mask`, VO `toSafeJson`, Map `toSafeString` |
+| `SafeLogSerializer`                   | Converts Bean / Map to log-safe string (used internally by `ObjectMaskingService`)       |
+| `SensitiveKeyRegistry`                | Resolves `sensitive-keys` (global and per-scene), shared by LOG / API                    |
+| `SensitiveLogArg`                     | Optional: SLF4J parameter wrapper, replaced before formatting                            |
+| `JsonLogEncoderEnhancer`              | Optional enhancement: Logback JSON Encoder field-level masking                           |
+| `LoggingDesensitizeAutoConfiguration` | Conditional assembly of log desensitization services (`LoggingMaskingService`)           |
+| `DesensitizeConverter`                | Logback `ClassicConverter`: `%desensitizeMsg` outputs masked message                     |
 
 ### 4.5 `Built`-in `Strategies` (`Planned` `Implementation`)
 
-| MaskType | Example Input | Example Output | Rule Notes |
-|----------|---------------|----------------|------------|
-| `PHONE` | 13812348000 | 138****8000 | Keep first 3 + last 4 |
-| `ID_CARD` | 110101199001011234 | 110101********1234 | Keep first 6 + last 4 |
-| `EMAIL` | user@example.com | u***@example.com | Local part masked |
-| `BANK_CARD` | 6222021234567890 | 6222 **** **** 7890 | Keep first 4 + last 4 |
-| `NAME` | Zhang Sanfeng | Zhang** | Keep first character |
-| `PASSWORD` | any | ****** | Fully masked |
-| `CUSTOM` | - | - | Specify via SPI Bean name or class |
+| MaskType    | Example Input      | Example Output      | Rule Notes                         |
+|-------------|--------------------|---------------------|------------------------------------|
+| `PHONE`     | 13812348000        | 138****8000         | Keep first 3 + last 4              |
+| `ID_CARD`   | 110101199001011234 | 110101********1234  | Keep first 6 + last 4              |
+| `EMAIL`     | user@example.com   | u***@example.com    | Local part masked                  |
+| `BANK_CARD` | 6222021234567890   | 6222 **** **** 7890 | Keep first 4 + last 4              |
+| `NAME`      | Zhang Sanfeng      | Zhang**             | Keep first character               |
+| `PASSWORD`  | any                | ******              | Fully masked                       |
+| `CUSTOM`    | -                  | -                   | Specify via SPI Bean name or class |
 
 ---
 
@@ -541,21 +567,22 @@ Under `MaskScene.EXCEPTION`, you can optionally enable `exception.regex-fallback
 
 Defaults to **all-scene desensitization**, only allowing "explicit whitelist" to bypass non-masking scenes:
 
-| Scene | Default Mask? | Description |
-|-------|---------------|-------------|
-| `API_RESPONSE` | Yes | External responses default masked, avoid frontend/packet capture link leakage |
-| `LOG` | Yes | Logs are long-retained and widely propagated, must default mask |
-| `AUDIT` | Yes | Audit data may be retrieved and exported, recommend default mask |
-| `EXCEPTION` | Yes | Exception messages may enter logs/alert systems, default mask |
+| Scene          | Default Mask? | Description                                                                   |
+|----------------|---------------|-------------------------------------------------------------------------------|
+| `API_RESPONSE` | Yes           | External responses default masked, avoid frontend/packet capture link leakage |
+| `LOG`          | Yes           | Logs are long-retained and widely propagated, must default mask               |
+| `AUDIT`        | Yes           | Audit data may be retrieved and exported, recommend default mask              |
+| `EXCEPTION`    | Yes           | Exception messages may enter logs/alert systems, default mask                 |
 
 Common "non-masking" is only used as exception bypass; do not recommend changing global scene toggles:
 
-| Exception Scene | Recommended Approach |
-|-----------------|----------------------|
-| User viewing/editing own profile | Enable `permission.enabled=true` + `plain-text-roles` bypass |
-| Controlled audit plaintext viewing | Bypass via restricted roles, ensure access audit trails |
+| Exception Scene                    | Recommended Approach                                         |
+|------------------------------------|--------------------------------------------------------------|
+| User viewing/editing own profile   | Enable `permission.enabled=true` + `plain-text-roles` bypass |
+| Controlled audit plaintext viewing | Bypass via restricted roles, ensure access audit trails      |
 
-> Recommendation: keep `scenes.* = true`, consolidate "non-masking" into permission whitelist, rather than disabling the entire scene's desensitization capability.
+> Recommendation: keep `scenes.* = true`, consolidate "non-masking" into permission whitelist, rather than disabling the
+> entire scene's desensitization capability.
 
 ### 5.1 `Configuration` `Prefix`
 
@@ -622,7 +649,8 @@ public class UserVO {
 }
 ```
 
-> `@Sensitive(scenes = LOG)` only applies when using `DesensitizeUtils.toSafeJson(vo)` or JSON Layout Encoder; **does not** affect `log.info("{}", vo)`.
+> `@Sensitive(scenes = LOG)` only applies when using `DesensitizeUtils.toSafeJson(vo)` or JSON Layout Encoder; **does
+not** affect `log.info("{}", vo)`.
 
 ### 5.3 `API` `Return` `Map` `Example` (`Planned`)
 
@@ -669,7 +697,8 @@ log.info("row={}", DesensitizeUtils.toSafeString(dataMap));
 </dependency>
 ```
 
-The log module (`desensitize-logging`) is **optional**: V1 business-side only needs to depend on `desensitize-core` + `DesensitizeUtils` to satisfy the main path. JSON Layout / `SensitiveLogArg` filters are P2 enhancements.
+The log module (`desensitize-logging`) is **optional**: V1 business-side only needs to depend on `desensitize-core` +
+`DesensitizeUtils` to satisfy the main path. JSON Layout / `SensitiveLogArg` filters are P2 enhancements.
 
 Logback Integration Example (Implemented):
 
@@ -698,7 +727,8 @@ log.info("phone={}, orderId={}",
         "ORDER-13812348000");
 ```
 
-If using the regular `%msg`, after enabling the logging module it will also be auto-handled by `SensitiveLogArgTurboFilter`.
+If using the regular `%msg`, after enabling the logging module it will also be auto-handled by
+`SensitiveLogArgTurboFilter`.
 
 For JSON message scenarios:
 
@@ -716,7 +746,8 @@ MDC.put("traceId", "T-1");
 log.info("user login");
 ```
 
-If JSON Layout/Encoder outputs MDC (e.g. `includeMdc=true`), `phone` will be auto-masked to `138****8000`, `traceId` remains unchanged.
+If JSON Layout/Encoder outputs MDC (e.g. `includeMdc=true`), `phone` will be auto-masked to `138****8000`, `traceId`
+remains unchanged.
 
 You can disable enhancements via config toggle:
 
@@ -737,7 +768,8 @@ platform:
 
 ### 6.1 `Custom` `Strategy`
 
-Implement `MaskingStrategy` and register as a Spring Bean; `MaskType.CUSTOM` + `customStrategy = "beanName"` points to that implementation.
+Implement `MaskingStrategy` and register as a Spring Bean; `MaskType.CUSTOM` + `customStrategy = "beanName"` points to
+that implementation.
 
 ```mermaid
 flowchart LR
@@ -749,7 +781,8 @@ flowchart LR
 
 ### 6.2 `Permission` `Evaluation`
 
-Replace or decorate `MaskPermissionEvaluator`: combine `SecurityContext`, tenant, data permissions to decide whether the current user can see plaintext.
+Replace or decorate `MaskPermissionEvaluator`: combine `SecurityContext`, tenant, data permissions to decide whether the
+current user can see plaintext.
 
 ---
 
@@ -765,25 +798,28 @@ flowchart TB
     TENANT -->|Tenant Context| DES
 ```
 
-- **HTTP Client**: Use `DesensitizeUtils.toSafeJson` / `mask` before printing outbound request/response body logs, avoiding duplicate rule implementation inside Adapter.
+- **HTTP Client**: Use `DesensitizeUtils.toSafeJson` / `mask` before printing outbound request/response body logs,
+  avoiding duplicate rule implementation inside Adapter.
 - **Multi-Tenant**: `MaskContext` can carry `tenantId`, supporting tenant-level desensitization strategies (V2).
 
 ---
 
 ## 8. Implementation Roadmap
 
-| Phase | Content | Output | Documentation |
-|-------|---------|--------|---------------|
-| **P0** | Core: `MaskingService`, `DesensitizeUtils`, `ObjectMaskingService`, `SensitiveKeyRegistry`, `sensitive-keys`, built-in Strategy | Unit-testable; log main path usable | [core / 核心](./atlas-richie-component-desensitize-core/README.md) ·  |
-| **P1** | Jackson: `@Sensitive` + `SensitiveMapSerializer` + Module | API: Bean + Map response desensitization | [jackson / Jackson](./atlas-richie-component-desensitize-jackson/README.md) ·  |
-| **P2** | Logging Basic: `DesensitizeConverter` + `SensitiveLogArgTurboFilter` + `DesensitizeJsonMessageConverter` + `SensitiveMdcTurboFilter` + `LoggingMaskingService`; optional enhancement: JSON Layout Encoder | Log parameters, JSON text, MDC field desensitization directly applicable | [logging / 日志](./atlas-richie-component-desensitize-logging/README.md) ·  |
-| **P3** | Permission Evaluation + Integration Tests + `sample-desensitize` (Optional) | Demonstrable, regression-testable | – |
+| Phase  | Content                                                                                                                                                                                                   | Output                                                                   | Documentation                                                                 |
+|--------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| **P0** | Core: `MaskingService`, `DesensitizeUtils`, `ObjectMaskingService`, `SensitiveKeyRegistry`, `sensitive-keys`, built-in Strategy                                                                           | Unit-testable; log main path usable                                      | [core / 核心](./atlas-richie-component-desensitize-core/README.md) ·          |
+| **P1** | Jackson: `@Sensitive` + `SensitiveMapSerializer` + Module                                                                                                                                                 | API: Bean + Map response desensitization                                 | [jackson / Jackson](./atlas-richie-component-desensitize-jackson/README.md) · |
+| **P2** | Logging Basic: `DesensitizeConverter` + `SensitiveLogArgTurboFilter` + `DesensitizeJsonMessageConverter` + `SensitiveMdcTurboFilter` + `LoggingMaskingService`; optional enhancement: JSON Layout Encoder | Log parameters, JSON text, MDC field desensitization directly applicable | [logging / 日志](./atlas-richie-component-desensitize-logging/README.md) ·    |
+| **P3** | Permission Evaluation + Integration Tests + `sample-desensitize` (Optional)                                                                                                                               | Demonstrable, regression-testable                                        | –                                                                             |
 
 ### `Definition` of `Done` (`Coding` `Phase`)
 
 - [ ] Each built-in `MaskType` has unit tests (boundaries: empty string, short string, illegal format)
-- [ ] `desensitize-jackson` integration tests: VO `@Sensitive`; root `Map` and VO-internal `Map` fields masked by `sensitive-keys`
-- [ ] `DesensitizeUtils`: scalar `mask`, `toSafeJson` (`@Sensitive`), `toSafeString` (Map key) unit and integration tests
+- [ ] `desensitize-jackson` integration tests: VO `@Sensitive`; root `Map` and VO-internal `Map` fields masked by
+  `sensitive-keys`
+- [ ] `DesensitizeUtils`: scalar `mask`, `toSafeJson` (`@Sensitive`), `toSafeString` (Map key) unit and integration
+  tests
 - [ ] Documentation example: `log.info("{}", vo)` does not auto-desensitize (negative case)
 - [ ] `platform.component.desensitize.enabled=false` bypasses the entire chain
 - [ ] README configuration examples consistent with code
@@ -792,16 +828,16 @@ flowchart TB
 
 ## 9. Risks & Constraints
 
-| Item | Description | Mitigation |
-|------|-------------|------------|
-| Misbelieve annotation protects logs | `log.info("{}", vo)` calls `toString()` | Documentation + Code Review; enforce `toSafeJson` |
-| Map dynamic keys | Config cannot cover | Explicit `mask` before writing or change to VO |
-| i18n / Chinese message | Cannot guess PII from text | Only mask parameters; forbidden to concatenate into message |
-| Missed masking | Not `mask`ed / Not `toSafeJson` | Convention checklist; optional ArchUnit rule (V2) |
-| Performance | `toSafeJson` reflection has serialization overhead | Only call when debug/info needed; production prefers JSON Layout |
-| Over-masking | Admins cannot troubleshoot | `MaskPermissionEvaluator` plaintext roles |
-| Regex fallback false positives | Order number looks like phone number | `regex-fallback` off by default |
-| Serialization compatibility | Gson/Protobuf | V1 only Jackson API; others go through `DesensitizeUtils` |
+| Item                                | Description                                        | Mitigation                                                       |
+|-------------------------------------|----------------------------------------------------|------------------------------------------------------------------|
+| Misbelieve annotation protects logs | `log.info("{}", vo)` calls `toString()`            | Documentation + Code Review; enforce `toSafeJson`                |
+| Map dynamic keys                    | Config cannot cover                                | Explicit `mask` before writing or change to VO                   |
+| i18n / Chinese message              | Cannot guess PII from text                         | Only mask parameters; forbidden to concatenate into message      |
+| Missed masking                      | Not `mask`ed / Not `toSafeJson`                    | Convention checklist; optional ArchUnit rule (V2)                |
+| Performance                         | `toSafeJson` reflection has serialization overhead | Only call when debug/info needed; production prefers JSON Layout |
+| Over-masking                        | Admins cannot troubleshoot                         | `MaskPermissionEvaluator` plaintext roles                        |
+| Regex fallback false positives      | Order number looks like phone number               | `regex-fallback` off by default                                  |
+| Serialization compatibility         | Gson/Protobuf                                      | V1 only Jackson API; others go through `DesensitizeUtils`        |
 
 ---
 
@@ -809,21 +845,22 @@ flowchart TB
 
 ### 10.1 `Parent` `Component` (this document)
 
-| Document | Description |
-|----------|-------------|
-| [README.md](./README.md) | This document: design plan, principle diagrams, sequence diagrams, key objects |
-| [README §3.2.1](./README.zh.md#321-api-returns-map-annotation-ineeffective-key-name-config--jackson-map-serializer) | API returns `Map`: `SensitiveMapSerializer` + `sensitive-keys` |
-| [README §3.3](./README.zh.md#33-log-desensitization-dedicated-design) | Logs: explicit `mask`, VO `toSafeJson`, Map `toSafeString`, i18n constraints |
-| [docs/MODULE_STRUCTURE.md](./docs/MODULE_STRUCTURE.md) | Package paths, module responsibilities and resource file planning |
+| Document                                                                                                            | Description                                                                    |
+|---------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| [README.md](./README.md)                                                                                            | This document: design plan, principle diagrams, sequence diagrams, key objects |
+| [README §3.2.1](./README.zh.md#321-api-returns-map-annotation-ineeffective-key-name-config--jackson-map-serializer) | API returns `Map`: `SensitiveMapSerializer` + `sensitive-keys`                 |
+| [README §3.3](./README.zh.md#33-log-desensitization-dedicated-design)                                               | Logs: explicit `mask`, VO `toSafeJson`, Map `toSafeString`, i18n constraints   |
+| [docs/MODULE_STRUCTURE.md](./docs/MODULE_STRUCTURE.md)                                                              | Package paths, module responsibilities and resource file planning              |
 
 ### 10.2 `Sub`-module `Documentation`
 
-Each sub-module has its own README with detailed API usage, configuration, and design notes. Read in this order for first-time onboarding:
+Each sub-module has its own README with detailed API usage, configuration, and design notes. Read in this order for
+first-time onboarding:
 
-| # | Sub-module | English | 中文 | When to read |
-|---|------------|---------|------|--------------|
-| 1 | **`desensitize-core`** | [README](./atlas-richie-component-desensitize-core/README.md) | [README.zh.md](./atlas-richie-component-desensitize-core/README.md) | Always — the pure-Java rule engine, `MaskingService`, `DesensitizeUtils`, `@Sensitive`, built-in strategies, and permission bypass |
-| 2 | **`desensitize-jackson`** | [README](./atlas-richie-component-desensitize-jackson/README.md) | [README.zh.md](./atlas-richie-component-desensitize-jackson/README.md) | When exposing REST APIs that return VOs or `Map` payloads and need `@Sensitive` / `sensitive-keys` driven JSON masking |
+| # | Sub-module                | English                                                          | 中文                                                                   | When to read                                                                                                                         |
+|---|---------------------------|------------------------------------------------------------------|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| 1 | **`desensitize-core`**    | [README](./atlas-richie-component-desensitize-core/README.md)    | [README.zh.md](./atlas-richie-component-desensitize-core/README.md)    | Always — the pure-Java rule engine, `MaskingService`, `DesensitizeUtils`, `@Sensitive`, built-in strategies, and permission bypass   |
+| 2 | **`desensitize-jackson`** | [README](./atlas-richie-component-desensitize-jackson/README.md) | [README.zh.md](./atlas-richie-component-desensitize-jackson/README.md) | When exposing REST APIs that return VOs or `Map` payloads and need `@Sensitive` / `sensitive-keys` driven JSON masking               |
 | 3 | **`desensitize-logging`** | [README](./atlas-richie-component-desensitize-logging/README.md) | [README.zh.md](./atlas-richie-component-desensitize-logging/README.md) | When emitting logs that may contain sensitive values — `%desensitizeMsg` / `%desensitizeJsonMsg` / `SensitiveLogArg` / MDC filtering |
 
 > Each sub-module README cross-links back to this parent document, so navigation is bi-directional.
@@ -832,8 +869,8 @@ Each sub-module has its own README with detailed API usage, configuration, and d
 
 ## 11. Version
 
-| Attribute | Value |
-|-----------|-------|
-| Component Version | Follows `${middle.platform.version}` |
-| Design Document Version | 1.3.0 |
-| Status | P0/P1/P2 (basic version) implemented; JSON Layout and other enhancements pending |
+| Attribute               | Value                                                                            |
+|-------------------------|----------------------------------------------------------------------------------|
+| Component Version       | Follows `${middle.platform.version}`                                             |
+| Design Document Version | 1.3.0                                                                            |
+| Status                  | P0/P1/P2 (basic version) implemented; JSON Layout and other enhancements pending |

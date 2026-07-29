@@ -47,7 +47,7 @@ public class MongodbMetricsRecorder {
     /**
      * 开始计时
      *
-     * @param operation 操作类型
+     * @param operation  操作类型
      * @param collection 集合名称
      * @return Timer.Sample 用于后续停止计时
      */
@@ -58,10 +58,10 @@ public class MongodbMetricsRecorder {
     /**
      * 停止计时并记录结果
      *
-     * @param sample 计时起点
-     * @param operation 操作类型
+     * @param sample     计时起点
+     * @param operation  操作类型
      * @param collection 集合名称
-     * @param success 是否成功
+     * @param success    是否成功
      */
     public void stop(Timer.Sample sample, String operation, String collection, boolean success) {
         String resultTag = success ? "success" : "error";

@@ -30,13 +30,19 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum L2CachingRegion implements CacheName {
 
-    /** 全局缓存区域（通用 KV 等） */
+    /**
+     * 全局缓存区域（通用 KV 等）
+     */
     GLOBAL_CACHE("global_cache"),
 
-    /** 访问日志专用缓存区域 */
+    /**
+     * 访问日志专用缓存区域
+     */
     ACCESS_LOG("access_log");
 
-    /** 区域名称（对应 JSR-107 Cache 名称） */
+    /**
+     * 区域名称（对应 JSR-107 Cache 名称）
+     */
     private final String cache;
 
 }

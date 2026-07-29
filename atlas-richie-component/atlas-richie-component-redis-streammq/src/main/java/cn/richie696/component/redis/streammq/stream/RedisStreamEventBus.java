@@ -97,10 +97,10 @@ import reactor.core.scheduler.Schedulers;
  * </ul>
  *
  * @author richie696
- * @since 2025-09-15
  * @see StreamMessageEvent Redis Stream 消息事件模型
  * @see PublishResult 事件发布结果封装
  * @see AbstractStreamConsumer Stream 消费者基类
+ * @since 2025-09-15
  */
 @Slf4j
 public final class RedisStreamEventBus {
@@ -180,12 +180,10 @@ public final class RedisStreamEventBus {
      * <p>使用 synchronized 关键字确保多线程环境下的线程安全，
      * 避免并发发布时的数据竞争和状态不一致问题。
      *
-     * @param <T> 消息载荷的类型参数
+     * @param <T>   消息载荷的类型参数
      * @param event 要发布的 Redis Stream 消息事件，包含流键、消费者组、记录ID和载荷
      * @return PublishResult 发布结果，包含成功/失败状态和详细信息
-     *
      * @throws RuntimeException 当发布过程中发生意外异常时抛出
-     *
      * @see StreamMessageEvent Redis Stream 消息事件结构
      * @see PublishResult 发布结果封装类
      * @see Sinks.EmitResult Reactor 发布器的发布结果枚举

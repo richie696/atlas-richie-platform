@@ -24,6 +24,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.stereotype.Component;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -105,5 +106,6 @@ public class EntityIntrospector {
 
     record EntityMeta(String collectionName, String idField, List<Field> indexedFields,
                       String softDeleteField, String tenantField, boolean hasAuditFields,
-                      List<Field> expireAfterFields) {}
+                      List<Field> expireAfterFields) {
+    }
 }

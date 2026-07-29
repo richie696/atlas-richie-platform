@@ -17,13 +17,9 @@ package cn.richie696.component.vector.service.impl;
 
 import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.config.VectorProperties;
-import cn.richie696.component.vector.model.IndexInfo;
-import cn.richie696.component.vector.model.IndexStatus;
-import cn.richie696.component.vector.model.Modality;
-import cn.richie696.component.vector.model.VectorContent;
-import cn.richie696.component.vector.model.VectorRecord;
-import cn.richie696.component.vector.service.VectorService;
+import cn.richie696.component.vector.model.*;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
+import cn.richie696.component.vector.service.VectorService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -35,27 +31,16 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import redis.clients.jedis.RedisClient;
 import redis.clients.jedis.params.ScanParams;
-import redis.clients.jedis.search.FTCreateParams;
-import redis.clients.jedis.search.IndexDataType;
-import redis.clients.jedis.search.Query;
-import redis.clients.jedis.search.RediSearchUtil;
-import redis.clients.jedis.search.SearchResult;
-import redis.clients.jedis.search.schemafields.NumericField;
-import redis.clients.jedis.search.schemafields.SchemaField;
-import redis.clients.jedis.search.schemafields.TagField;
-import redis.clients.jedis.search.schemafields.TextField;
-import redis.clients.jedis.search.schemafields.VectorField;
+import redis.clients.jedis.search.*;
+import redis.clients.jedis.search.schemafields.*;
 import redis.clients.jedis.search.schemafields.VectorField.VectorAlgorithm;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Slf4j
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "redis")
@@ -80,7 +65,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
         if (nativeClient.isEmpty()) {
             throw new IllegalStateException(
                     "Redis向量搜索不可用：无法获取Jedis客户端。"
-                    + "请确保Redis版本>=7.0且已加载RediSearch模块（Redis Stack）");
+                            + "请确保Redis版本>=7.0且已加载RediSearch模块（Redis Stack）");
         }
         RedisClient jedis = nativeClient.get();
         try {
@@ -88,8 +73,8 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
         } catch (Exception e) {
             throw new IllegalStateException(
                     "Redis向量搜索不可用：RediSearch模块未检测到。"
-                    + "请确认Redis已安装Redis Stack或RediSearch模块（版本>=2.4），"
-                    + "并启用了向量搜索功能。原始错误: " + e.getMessage(), e);
+                            + "请确认Redis已安装Redis Stack或RediSearch模块（版本>=2.4），"
+                            + "并启用了向量搜索功能。原始错误: " + e.getMessage(), e);
         }
         log.info("Redis Stack向量搜索模块检测正常");
     }
@@ -349,8 +334,8 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      *
      * @return 索引信息列表
      * @throws UnsupportedOperationException 当前 VectorStore 不是 Redis 实现时抛出
-     * @throws IllegalStateException 无法获取 Jedis 客户端时抛出
-     * @throws RuntimeException RediSearch 索引查询失败时抛出
+     * @throws IllegalStateException         无法获取 Jedis 客户端时抛出
+     * @throws RuntimeException              RediSearch 索引查询失败时抛出
      */
     @Override
     protected List<IndexInfo> listIndexesImpl() {
@@ -378,8 +363,8 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      * @param indexName 索引名称
      * @return 包含维度、距离度量和文档数量的索引信息
      * @throws UnsupportedOperationException 当前 VectorStore 不是 Redis 实现时抛出
-     * @throws IllegalStateException 无法获取 Jedis 客户端时抛出
-     * @throws RuntimeException RediSearch 索引信息查询失败时抛出
+     * @throws IllegalStateException         无法获取 Jedis 客户端时抛出
+     * @throws RuntimeException              RediSearch 索引信息查询失败时抛出
      */
     @Override
     protected IndexInfo describeIndexImpl(String indexName) {
@@ -395,7 +380,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      * RediSearch 不支持原地修改向量索引配置，需要调用方自行删除并重建索引。
      *
      * @param indexName 索引名称
-     * @param config 新的索引配置
+     * @param config    新的索引配置
      * @return 固定返回 false，表示不支持原地更新
      */
     @Override
@@ -420,7 +405,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      * 尝试为 RediSearch 向量索引创建别名。
      *
      * @param indexName 索引名称
-     * @param alias 别名
+     * @param alias     别名
      * @return 不返回结果
      * @throws UnsupportedOperationException RediSearch 不支持向量索引别名
      */
@@ -434,7 +419,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      *
      * @param oldIndexName 旧索引名称
      * @param newIndexName 新索引名称
-     * @param alias 别名
+     * @param alias        别名
      * @return 不返回结果
      * @throws UnsupportedOperationException RediSearch 不支持向量索引别名切换
      */
@@ -446,7 +431,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
     /**
      * 尝试通过 VectorService 备份 Redis 数据。
      *
-     * @param indexName 索引名称
+     * @param indexName  索引名称
      * @param targetPath 备份目标路径
      * @return 不返回结果
      * @throws UnsupportedOperationException Redis 备份需要通过进程外命令执行
@@ -460,7 +445,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      * 尝试通过 VectorService 恢复 Redis 数据。
      *
      * @param sourcePath 备份源路径
-     * @param indexName 索引名称
+     * @param indexName  索引名称
      * @return 不返回结果
      * @throws UnsupportedOperationException Redis 恢复需要通过进程外操作执行
      */
@@ -475,8 +460,8 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      * @param indexName 索引名称
      * @return 包含文档数、索引状态及 {@code FT.INFO} 原始统计项的索引信息
      * @throws UnsupportedOperationException 当前 VectorStore 不是 Redis 实现时抛出
-     * @throws IllegalStateException 无法获取 Jedis 客户端时抛出
-     * @throws RuntimeException RediSearch 索引信息查询失败时抛出
+     * @throws IllegalStateException         无法获取 Jedis 客户端时抛出
+     * @throws RuntimeException              RediSearch 索引信息查询失败时抛出
      */
     @Override
     protected IndexInfo getIndexStatsImpl(String indexName) {

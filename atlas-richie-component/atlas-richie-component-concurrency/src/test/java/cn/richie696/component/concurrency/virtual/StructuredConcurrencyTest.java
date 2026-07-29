@@ -185,7 +185,7 @@ class StructuredConcurrencyTest {
                 .containsExactly(0, 1, 2);
     }
 
-@Test
+    @Test
     @Timeout(5)
     @DisplayName("gatherAll: 全部成功时整体耗时近似最长单个任务，而非所有任务之和")
     void gatherAll_runsTasksInParallel() throws Exception {

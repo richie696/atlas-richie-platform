@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.mfa.core.entity;
 
-import cn.richie696.context.common.api.domain.AuditDomain;
 import cn.richie696.component.mfa.core.constant.MfaStatusEnum;
+import cn.richie696.context.common.api.domain.AuditDomain;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -26,9 +26,9 @@ import java.time.OffsetDateTime;
 
 /**
  * MFA用户信息实体
- * 
+ * <p>
  * 对应数据库表：mfa_user_info
- * 
+ *
  * <p><b>重要设计原则</b>：MFA组件只关联业务系统User表的主键ID，不维护任何用户信息。
  * 这样设计的好处：
  * <ul>
@@ -36,7 +36,7 @@ import java.time.OffsetDateTime;
  *   <li>不同业务系统的User表结构可以不同，MFA组件都能适配</li>
  *   <li>业务系统无需为MFA修改已有的User模块代码</li>
  * </ul>
- * 
+ *
  * @author richie696
  * @since 1.0.0
  */
@@ -53,10 +53,10 @@ public class MfaUserInfo extends AuditDomain {
 
     /**
      * 用户ID（业务系统User表的主键ID）
-     * 
+     *
      * <p>注意：此字段仅存储业务系统User表的主键ID，不存储任何其他用户信息。
      * MFA组件通过此ID与业务系统的User表建立关联，但不需要知道User表的其他字段。
-     * 
+     *
      * <p>类型说明：
      * <ul>
      *   <li>如果业务系统User表主键是String类型，直接使用</li>

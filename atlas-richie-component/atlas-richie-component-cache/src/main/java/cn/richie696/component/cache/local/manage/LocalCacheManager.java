@@ -30,6 +30,9 @@ import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 本地缓存管理器，封装了JCache（JSR-107）规范的本地缓存操作。
@@ -46,7 +49,9 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("unchecked")
 public class LocalCacheManager {
 
-    /** JSR-107 缓存管理器（由 Spring 注入） */
+    /**
+     * JSR-107 缓存管理器（由 Spring 注入）
+     */
     @Qualifier("cacheManagerJsr107")
     private final CacheManager cacheManager;
 

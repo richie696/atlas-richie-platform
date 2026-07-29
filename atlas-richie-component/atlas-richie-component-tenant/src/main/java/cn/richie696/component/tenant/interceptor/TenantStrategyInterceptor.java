@@ -26,11 +26,11 @@ import cn.richie696.component.tenant.spi.TenantInfoProvider;
 import cn.richie696.component.tenant.strategy.TenancyStrategy;
 import cn.richie696.component.tenant.strategy.TenancyStrategyFactory;
 import cn.richie696.contract.model.TenantPrincipal;
+import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.plugin.Interceptor;
 import org.apache.ibatis.plugin.Intercepts;
 import org.apache.ibatis.plugin.Invocation;
 import org.apache.ibatis.plugin.Signature;
-import org.apache.ibatis.executor.statement.StatementHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +50,7 @@ import java.sql.Connection;
  * @since 2.0
  */
 @Intercepts({
-    @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class})
+        @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class})
 })
 public class TenantStrategyInterceptor implements Interceptor {
 
@@ -153,14 +153,14 @@ public class TenantStrategyInterceptor implements Interceptor {
         // 检查 shared 数据源（Column / Table / Schema 模式共用）
         if (circuitBreaker.isOpen(SHARED_DS_KEY)) {
             throw new DataSourceUnavailableException(SHARED_DS_KEY,
-                "Shared data source is currently unavailable (circuit breaker OPEN)");
+                    "Shared data source is currently unavailable (circuit breaker OPEN)");
         }
 
         // 检查租户独立数据源（Database 模式）
         String dsKey = resolveDataSourceKey(tenantInfo);
         if (!SHARED_DS_KEY.equals(dsKey) && circuitBreaker.isOpen(dsKey)) {
             throw new DataSourceUnavailableException(dsKey,
-                "Tenant data source is currently unavailable: " + dsKey);
+                    "Tenant data source is currently unavailable: " + dsKey);
         }
     }
 
@@ -169,7 +169,7 @@ public class TenantStrategyInterceptor implements Interceptor {
      */
     private String resolveDataSourceKey(TenantInfo tenantInfo) {
         return tenantInfo.getDataSourceName() != null
-            ? tenantInfo.getDataSourceName()
-            : SHARED_DS_KEY;
+                ? tenantInfo.getDataSourceName()
+                : SHARED_DS_KEY;
     }
 }

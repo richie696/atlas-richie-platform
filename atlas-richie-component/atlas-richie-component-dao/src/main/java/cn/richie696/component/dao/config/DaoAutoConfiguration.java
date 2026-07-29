@@ -44,10 +44,14 @@ import org.springframework.context.annotation.Configuration;
 @RequiredArgsConstructor
 public class DaoAutoConfiguration {
 
-    /** DAO 组件配置 */
+    /**
+     * DAO 组件配置
+     */
     private final DaoProperties properties;
 
-    /** 雪花 ID 生成器 */
+    /**
+     * 雪花 ID 生成器
+     */
     private final IdBuilder idBuilder;
 
     /**
@@ -61,7 +65,7 @@ public class DaoAutoConfiguration {
         var interceptors = new MybatisPlusInterceptor();
         var dbType = properties.getDbType();
         // 插件：乐观锁
-         interceptors.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
+        interceptors.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
         // 插件：批量更新边界保护（在分页之前添加，确保先检查批量更新限制）
         interceptors.addInnerInterceptor(new BatchUpdateLimitInterceptor(properties));
         // 插件：防全表更新与删除插件

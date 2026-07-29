@@ -15,12 +15,7 @@
  */
 package cn.richie696.component.tenant.handler;
 
-import cn.richie696.component.tenant.exception.DataSourceUnavailableException;
-import cn.richie696.component.tenant.exception.TenantMigratingException;
-import cn.richie696.component.tenant.exception.TenantModeMigrationException;
-import cn.richie696.component.tenant.exception.TenantNotFoundException;
-import cn.richie696.component.tenant.exception.TenantProvisionException;
-import cn.richie696.component.tenant.exception.TenantSwitchInTransactionException;
+import cn.richie696.component.tenant.exception.*;
 import cn.richie696.contract.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

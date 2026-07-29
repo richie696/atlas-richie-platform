@@ -15,7 +15,6 @@
  */
 package cn.richie696.component.nats.integration;
 
-import cn.richie696.context.common.api.HeaderContextHolder;
 import cn.richie696.component.nats.bus.NatsBus;
 import cn.richie696.component.nats.config.NatsAutoConfiguration;
 import cn.richie696.component.nats.config.NatsProperties;
@@ -28,6 +27,7 @@ import cn.richie696.component.nats.strategy.NatsMessageSerializer;
 import cn.richie696.component.nats.strategy.OpenTelemetryNatsTracingSupport;
 import cn.richie696.component.nats.support.NatsIntegrationTestSupport;
 import cn.richie696.component.nats.support.TestEvent;
+import cn.richie696.context.common.api.HeaderContextHolder;
 import io.nats.client.Subscription;
 import io.nats.client.impl.Headers;
 import org.junit.jupiter.api.AfterEach;

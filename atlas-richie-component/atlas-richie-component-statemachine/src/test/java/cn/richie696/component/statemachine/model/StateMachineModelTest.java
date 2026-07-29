@@ -68,7 +68,7 @@ class StateMachineModelTest {
     void testAddState() {
         State state = new State("PENDING", "待确认", State.StateType.INITIAL);
         stateMachine.addState(state);
-        
+
         assertEquals(1, stateMachine.getStates().size());
         assertEquals(state, stateMachine.getStates().get(0));
     }
@@ -77,7 +77,7 @@ class StateMachineModelTest {
     void testAddTransition() {
         Transition transition = new Transition("confirm", "PENDING", "CONFIRMED", "CONFIRM");
         stateMachine.addTransition(transition);
-        
+
         assertEquals(1, stateMachine.getTransitions().size());
         assertEquals(transition, stateMachine.getTransitions().get(0));
     }
@@ -88,7 +88,7 @@ class StateMachineModelTest {
         State confirmed = new State("CONFIRMED", "已确认");
         stateMachine.addState(pending);
         stateMachine.addState(confirmed);
-        
+
         assertEquals(pending, stateMachine.getState("PENDING"));
         assertEquals(confirmed, stateMachine.getState("CONFIRMED"));
         assertNull(stateMachine.getState("NON_EXISTENT"));
@@ -99,22 +99,22 @@ class StateMachineModelTest {
         Transition t1 = new Transition("confirm", "PENDING", "CONFIRMED", "CONFIRM");
         Transition t2 = new Transition("cancel", "PENDING", "CANCELLED", "CANCEL");
         Transition t3 = new Transition("complete", "CONFIRMED", "COMPLETED", "COMPLETE");
-        
+
         stateMachine.addTransition(t1);
         stateMachine.addTransition(t2);
         stateMachine.addTransition(t3);
-        
+
         List<Transition> transitions = stateMachine.getTransitions("PENDING", "CONFIRM");
         assertEquals(1, transitions.size());
         assertEquals(t1, transitions.get(0));
-        
+
         transitions = stateMachine.getTransitions("PENDING", "CANCEL");
         assertEquals(1, transitions.size());
         assertEquals(t2, transitions.get(0));
-        
+
         transitions = stateMachine.getTransitions("PENDING", null);
         assertEquals(2, transitions.size());
-        
+
         transitions = stateMachine.getTransitions("NON_EXISTENT", "CONFIRM");
         assertTrue(transitions.isEmpty());
     }
@@ -125,7 +125,7 @@ class StateMachineModelTest {
         stateMachine.setDescription("支付状态机");
         stateMachine.setInitialState("PENDING");
         stateMachine.setVersion("2.0.0");
-        
+
         assertEquals("payment", stateMachine.getName());
         assertEquals("支付状态机", stateMachine.getDescription());
         assertEquals("PENDING", stateMachine.getInitialState());

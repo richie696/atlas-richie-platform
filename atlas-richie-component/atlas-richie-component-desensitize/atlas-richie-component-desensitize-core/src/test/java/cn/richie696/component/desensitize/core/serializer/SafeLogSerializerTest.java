@@ -27,15 +27,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
+
 /**
  * SafeLogSerializerTest 测试类。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 class SafeLogSerializerTest {
 
@@ -147,6 +147,7 @@ class SafeLogSerializerTest {
     static class UserLogVoWithToString extends UserLogVo {
         /**
          * toString。
+         *
          * @return 处理结果
          */
         @Override

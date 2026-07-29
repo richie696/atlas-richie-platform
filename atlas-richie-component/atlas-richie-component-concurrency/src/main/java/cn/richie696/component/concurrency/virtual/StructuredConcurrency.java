@@ -324,19 +324,27 @@ public final class StructuredConcurrency {
      *
      * @param <T> 元素类型
      */
-    private sealed interface Outcome<T> permits Success, Failure {
+    private sealed
+
+    interface Outcome<T> permits Success, Failure {
     }
 
     /**
      * 子任务成功结果包装。
      */
-    private record Success<T>(T value) implements Outcome<T> {
+    private record Success<T>(
+    T value)implements Outcome<T>
+
+    {
     }
 
     /**
      * 子任务失败结果包装。
      */
-    private record Failure<T>(Throwable error) implements Outcome<T> {
+    private record Failure<T>(
+    Throwable error)implements Outcome<T>
+
+    {
     }
 
     // ========== BestEffortResult 公共 record ==========
@@ -371,38 +379,40 @@ public final class StructuredConcurrency {
      * @param <T>           任务返回类型
      */
     public record BestEffortResult<T>(
-            List<T> successes,
-            List<Throwable> failures,
-            List<Integer> failedIndices) {
+    List<T> successes,
+    List<Throwable> failures,
+    List<Integer> failedIndices)
+
+    {
 
         /**
          * 规范化构造器：使用 {@link List#copyOf} 对每个集合字段进行防御性拷贝。
          */
         public BestEffortResult {
-            successes = List.copyOf(successes);
-            failures = List.copyOf(failures);
-            failedIndices = List.copyOf(failedIndices);
-        }
+        successes = List.copyOf(successes);
+        failures = List.copyOf(failures);
+        failedIndices = List.copyOf(failedIndices);
+    }
 
         /**
          * 是否存在成功任务。
          */
-        public boolean hasAnySuccess() {
-            return !successes.isEmpty();
-        }
+        public boolean hasAnySuccess () {
+        return !successes.isEmpty();
+    }
 
         /**
          * 成功任务数量。
          */
-        public int successCount() {
-            return successes.size();
-        }
+        public int successCount () {
+        return successes.size();
+    }
 
         /**
          * 失败任务数量。
          */
-        public int failureCount() {
-            return failures.size();
-        }
+        public int failureCount () {
+        return failures.size();
+    }
     }
 }

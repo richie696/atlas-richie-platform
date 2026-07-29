@@ -15,12 +15,7 @@
  */
 package cn.richie696.component.ai.service;
 
-import cn.richie696.component.ai.model.AiHealthResult;
-import cn.richie696.component.ai.model.AiModelInfo;
-import cn.richie696.component.ai.model.AiRequest;
-import cn.richie696.component.ai.model.AiResponse;
-import cn.richie696.component.ai.model.AiStreamChunk;
-import cn.richie696.component.ai.model.ModelOptions;
+import cn.richie696.component.ai.model.*;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -34,8 +29,8 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author richie696
  * @version 1.0
- * @since 2025-06-30
  * @see AiMultimodalService 多模态能力
+ * @since 2025-06-30
  */
 public interface AiChatService {
 

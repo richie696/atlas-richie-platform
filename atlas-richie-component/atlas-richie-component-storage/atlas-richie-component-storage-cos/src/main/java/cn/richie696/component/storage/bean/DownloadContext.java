@@ -25,5 +25,7 @@ public record DownloadContext(
         TransferManager transferManager,
         GetObjectRequest request,
         File targetFile
-) implements Serializable {
+) implements
+
+Serializable {
 }

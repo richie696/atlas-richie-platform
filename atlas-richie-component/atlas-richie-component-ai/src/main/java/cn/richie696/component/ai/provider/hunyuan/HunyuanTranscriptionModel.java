@@ -15,11 +15,11 @@
  */
 package cn.richie696.component.ai.provider.hunyuan;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
 import cn.richie696.component.ai.provider.sign.Tc3Signer;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.context.utils.data.JsonUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.audio.transcription.AudioTranscription;
 import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
@@ -59,13 +59,19 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class HunyuanTranscriptionModel implements TranscriptionModel {
 
-    /** TC3 服务名（ASR 接口固定为 {@code asr}）。 */
+    /**
+     * TC3 服务名（ASR 接口固定为 {@code asr}）。
+     */
     public static final String TC3_SERVICE = "asr";
 
-    /** TC3 接口 action 名（一句话识别）。 */
+    /**
+     * TC3 接口 action 名（一句话识别）。
+     */
     public static final String TC3_ACTION = "SentenceRecognition";
 
-    /** TC3 接口版本号。 */
+    /**
+     * TC3 接口版本号。
+     */
     public static final String TC3_VERSION = "2019-08-23";
 
     /**
@@ -74,19 +80,29 @@ public class HunyuanTranscriptionModel implements TranscriptionModel {
      */
     public static final String CONTENT_TYPE = "application/json; charset=utf-8";
 
-    /** 默认引擎模型：16k 普通话。 */
+    /**
+     * 默认引擎模型：16k 普通话。
+     */
     public static final String DEFAULT_ENGINE_MODEL_TYPE = "16k_zh";
 
-    /** 单声道。 */
+    /**
+     * 单声道。
+     */
     public static final int DEFAULT_CHANNEL_NUM = 1;
 
-    /** 基础文本结果（不返回词级时间戳）。 */
+    /**
+     * 基础文本结果（不返回词级时间戳）。
+     */
     public static final int DEFAULT_RES_TEXT_FORMAT = 0;
 
-    /** 音频数据来源：1 = base64 编码音频。 */
+    /**
+     * 音频数据来源：1 = base64 编码音频。
+     */
     public static final int DEFAULT_SOURCE_TYPE = 1;
 
-    /** 音频数据类型：1 = 原始 PCM / WAV 等裸流，由腾讯云 ASR 后端按 ResTextFormat 解析。 */
+    /**
+     * 音频数据类型：1 = 原始 PCM / WAV 等裸流，由腾讯云 ASR 后端按 ResTextFormat 解析。
+     */
     public static final int DEFAULT_DATA_TYPE = 1;
 
     private final AbstractAudioModelConfig cfg;
@@ -243,13 +259,17 @@ public class HunyuanTranscriptionModel implements TranscriptionModel {
 
     // ====== Hunyuan response DTOs ======
 
-    /** 顶层响应：{@code { "Response": { "Result": "...", "RequestId": "..." } }}。 */
+    /**
+     * 顶层响应：{@code { "Response": { "Result": "...", "RequestId": "..." } }}。
+     */
     static class SttRawResponse {
         @JsonProperty("Response")
         public SttRawInner response;
     }
 
-    /** {@code Response} 子对象。 */
+    /**
+     * {@code Response} 子对象。
+     */
     static class SttRawInner {
         @JsonProperty("Result")
         public String result;

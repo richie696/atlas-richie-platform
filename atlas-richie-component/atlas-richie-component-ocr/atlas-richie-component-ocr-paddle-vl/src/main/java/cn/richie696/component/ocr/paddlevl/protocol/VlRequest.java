@@ -22,12 +22,12 @@ package cn.richie696.component.ocr.paddlevl.protocol;
  *
  * <p>由 {@code PaddleVlOcrProvider#toProviderRequest} 构造、由 {@code PaddleVlOcrProvider#submit} 序列化。
  *
+ * @param imageData        待识别的图片原始字节
+ * @param lang             语言码，例如 {@code zh}、{@code en}、{@code ja}、{@code ko}
+ * @param tableRecognition 是否启用表格识别，启用后 sidecar 将输出结构化表格块
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-11
- * @param imageData 待识别的图片原始字节
- * @param lang 语言码，例如 {@code zh}、{@code en}、{@code ja}、{@code ko}
- * @param tableRecognition 是否启用表格识别，启用后 sidecar 将输出结构化表格块
  */
 public record VlRequest(
         byte[] imageData,

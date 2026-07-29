@@ -27,8 +27,8 @@ import java.util.Objects;
  * 脱敏静态工具门面，委托 Spring 容器中的服务实现。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public final class DesensitizeUtils {
 
@@ -47,7 +47,7 @@ public final class DesensitizeUtils {
     /**
      * 绑定底层脱敏服务实现。
      *
-     * @param masking 字符串/Map 脱敏服务
+     * @param masking       字符串/Map 脱敏服务
      * @param objectMasking 对象脱敏服务
      */
     public static void bind(MaskingService masking, ObjectMaskingService objectMasking) {
@@ -66,7 +66,7 @@ public final class DesensitizeUtils {
     /**
      * 使用默认场景执行脱敏。
      *
-     * @param raw 原始字符串
+     * @param raw  原始字符串
      * @param type 脱敏类型
      * @return 脱敏结果
      */
@@ -77,8 +77,8 @@ public final class DesensitizeUtils {
     /**
      * 使用指定场景执行脱敏。
      *
-     * @param raw 原始字符串
-     * @param type 脱敏类型
+     * @param raw   原始字符串
+     * @param type  脱敏类型
      * @param scene 脱敏场景
      * @return 脱敏结果
      */
@@ -100,7 +100,7 @@ public final class DesensitizeUtils {
      * 使用指定场景脱敏 Map。
      *
      * @param source 原始 Map
-     * @param scene 脱敏场景
+     * @param scene  脱敏场景
      * @return 脱敏后 Map
      */
     public static Map<String, Object> maskMap(Map<String, ?> source, MaskScene scene) {

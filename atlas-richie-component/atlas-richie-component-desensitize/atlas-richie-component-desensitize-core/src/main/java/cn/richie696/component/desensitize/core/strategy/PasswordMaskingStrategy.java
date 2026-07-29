@@ -23,8 +23,8 @@ import org.springframework.stereotype.Component;
  * 密码全掩码。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @Component
 public class PasswordMaskingStrategy implements MaskingStrategy {
@@ -48,7 +48,7 @@ public class PasswordMaskingStrategy implements MaskingStrategy {
     /**
      * 对密码进行全掩码，最短输出长度为 6。
      *
-     * @param raw 原始字符串
+     * @param raw  原始字符串
      * @param rule 脱敏规则
      * @return 脱敏结果
      */

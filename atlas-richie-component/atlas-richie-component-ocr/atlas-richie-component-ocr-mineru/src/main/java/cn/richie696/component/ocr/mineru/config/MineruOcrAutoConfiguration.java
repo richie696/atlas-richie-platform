@@ -53,7 +53,7 @@ public class MineruOcrAutoConfiguration {
      * <p>触发条件：{@code platform.component.ocr.enabled=true}（默认 true）以及
      * {@code platform.component.ocr.vendor=mineru}。
      *
-     * @param props MinerU 配置属性（含服务地址、API Key、超时时间等）
+     * @param props      MinerU 配置属性（含服务地址、API Key、超时时间等）
      * @param httpClient 由 {@code OcrCoreAutoConfiguration} 注入的 {@code ocrHttpClient} HTTP 客户端
      * @return 已激活的 {@link MineruOcrProvider} 实例
      */
@@ -64,7 +64,7 @@ public class MineruOcrAutoConfiguration {
     @ConditionalOnProperty(prefix = OcrProperties.PREFIX, name = "vendor",
             havingValue = "mineru")
     public MineruOcrProvider mineruOcrProvider(MineruOcrProperties props,
-                                                @Qualifier("ocrHttpClient") HttpClient httpClient) {
+                                               @Qualifier("ocrHttpClient") HttpClient httpClient) {
         MineruOcrProvider provider = new MineruOcrProvider(props, httpClient);
         log.info("[OCR] MinerU provider activated: name={}, endpoint={}",
                 "mineru", props.getEndpoint());

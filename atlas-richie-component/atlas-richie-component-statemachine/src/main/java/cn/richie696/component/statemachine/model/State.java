@@ -23,7 +23,6 @@ import lombok.EqualsAndHashCode;
  * <p>
  * 表示状态机中的一个状态，包含状态名称、描述和类型。
  * 状态类型用于区分初始状态、普通状态、终态和错误状态。
- * 
  *
  * @author richie696
  * @since 1.0.0
@@ -55,7 +54,7 @@ public class State {
      * - NORMAL: 普通状态，可以正常进行状态转换
      * - FINAL: 终态，默认不允许转换（除非转换规则设置了 reopen=true）
      * - ERROR: 错误状态，默认不允许转换（除非转换规则设置了 reopen=true）
-     * 
+     *
      */
     public enum StateType {
         /**

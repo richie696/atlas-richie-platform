@@ -76,10 +76,10 @@ import java.util.Base64;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(
-    prefix = "platform.component.mfa.security.key-management",
-    name = "provider",
-    havingValue = "local",
-    matchIfMissing = true  // 如果未配置provider，默认使用local
+        prefix = "platform.component.mfa.security.key-management",
+        name = "provider",
+        havingValue = "local",
+        matchIfMissing = true  // 如果未配置provider，默认使用local
 )
 public class LocalKeyManagementEngine implements KeyManagementProvider {
 
@@ -96,7 +96,7 @@ public class LocalKeyManagementEngine implements KeyManagementProvider {
      * 这是一个32字节（256位）的随机密钥，Base64编码后的值
      */
     private static final String DEFAULT_SECRET_KEY_BASE64 =
-        "LU52qOTrOtaVVQkzgdx8I3w4H2IL27ijp/ynkkRR+M4="; // 32字节随机密钥的Base64编码
+            "LU52qOTrOtaVVQkzgdx8I3w4H2IL27ijp/ynkkRR+M4="; // 32字节随机密钥的Base64编码
 
     /**
      * 本地加密配置属性（从 core 模块的配置类读取）
@@ -381,7 +381,7 @@ public class LocalKeyManagementEngine implements KeyManagementProvider {
             GlobalCache.value().set(cacheKey, plainSecret, SECRET_STORAGE_TTL_SECONDS * 1000L);
 
             log.info("密钥已存储到 Redis，路径: {}, cacheKey: {}, 密钥长度: {}（仅用于开发/测试）",
-                secretPath, cacheKey, plainSecret != null ? plainSecret.length() : 0);
+                    secretPath, cacheKey, plainSecret != null ? plainSecret.length() : 0);
             return secretPath;
         } catch (Exception e) {
             log.error("Redis存储密钥失败，tenantId: {}, userId: {}", tenantId, userId, e);
@@ -399,7 +399,7 @@ public class LocalKeyManagementEngine implements KeyManagementProvider {
 
             String cacheKey = MfaKeyUtils.getSecretKeyCacheKey(tenantId, userId, tenantSupport.isTenantEnabled());
             log.info("从 Redis 检索密钥，secretReference: {}, 解析后 tenantId: {}, userId: {}, cacheKey: {}",
-                secretReference, tenantId, userId, cacheKey);
+                    secretReference, tenantId, userId, cacheKey);
 
             String secret = GlobalCache.value().get(cacheKey, String.class);
 
@@ -409,7 +409,7 @@ public class LocalKeyManagementEngine implements KeyManagementProvider {
             }
 
             log.info("密钥已从 Redis 检索，路径: {}, cacheKey: {}, 密钥长度: {}（仅用于开发/测试）",
-                secretReference, cacheKey, secret.length());
+                    secretReference, cacheKey, secret.length());
             return secret;
         } catch (Exception e) {
             log.error("Redis检索密钥失败，路径: {}", secretReference, e);

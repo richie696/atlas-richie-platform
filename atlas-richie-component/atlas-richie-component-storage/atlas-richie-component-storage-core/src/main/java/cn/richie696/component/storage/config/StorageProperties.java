@@ -21,6 +21,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * 文件存储服务配置信息
@@ -49,30 +50,35 @@ public class StorageProperties {
      * 本地存储配置（默认：程序所在目录下的./storage目录内）
      */
     @Builder.Default
+    @NestedConfigurationProperty
     private LocalConfig local = new LocalConfig("./storage/");
 
     /**
      * FTP存储配置
      */
     @Builder.Default
+    @NestedConfigurationProperty
     private FtpConfig ftp = new FtpConfig();
 
     /**
      * SFTP存储配置
      */
     @Builder.Default
+    @NestedConfigurationProperty
     private SftpConfig sftp = new SftpConfig();
 
     /**
      * SMB3存储配置
      */
     @Builder.Default
+    @NestedConfigurationProperty
     private Smb3Config smb3 = new Smb3Config();
 
     /**
      * 对象存储配置
      */
     @Builder.Default
+    @NestedConfigurationProperty
     private ObjectConfig object = new ObjectConfig();
 
 }

@@ -5,49 +5,50 @@
 ## 📖 目录
 
 - [✨ 功能特性](#✨-功能特性)
-  - [核心能力](#核心能力)
-  - [高级特性](#高级特性)
+    - [核心能力](#核心能力)
+    - [高级特性](#高级特性)
 - [🚀 快速开始](#🚀-快速开始)
-  - [1. 添加依赖](#1-添加依赖)
-  - [2. 配置日志组件](#2-配置日志组件)
-  - [3. 使用访问日志](#3-使用访问日志)
-  - [4. 使用链路追踪](#4-使用链路追踪)
+    - [1. 添加依赖](#1-添加依赖)
+    - [2. 配置日志组件](#2-配置日志组件)
+    - [3. 使用访问日志](#3-使用访问日志)
+    - [4. 使用链路追踪](#4-使用链路追踪)
 - [🔧 核心功能](#🔧-核心功能)
-  - [1. 访问日志（AccessLog）](#1-访问日志（accesslog）)
-  - [2. 链路追踪（LogTrace）](#2-链路追踪（logtrace）)
-  - [3. 数据库持久化](#3-数据库持久化)
-  - [4. 数据库表结构](#4-数据库表结构)
+    - [1. 访问日志（AccessLog）](#1-访问日志（accesslog）)
+    - [2. 链路追踪（LogTrace）](#2-链路追踪（logtrace）)
+    - [3. 数据库持久化](#3-数据库持久化)
+    - [4. 数据库表结构](#4-数据库表结构)
 - [⚙️ 配置说明](#⚙️-配置说明)
-  - [基础配置](#基础配置)
-  - [请求/响应体配置](#请求/响应体配置)
-  - [数据库持久化配置](#数据库持久化配置)
-  - [消息队列配置](#消息队列配置)
-  - [Redis 配置](#redis-配置)
-  - [数据库模式配置](#数据库模式配置)
-  - [生命周期回调配置](#生命周期回调配置)
+    - [基础配置](#基础配置)
+    - [请求/响应体配置](#请求/响应体配置)
+    - [数据库持久化配置](#数据库持久化配置)
+    - [消息队列配置](#消息队列配置)
+    - [Redis 配置](#redis-配置)
+    - [数据库模式配置](#数据库模式配置)
+    - [生命周期回调配置](#生命周期回调配置)
 - [📎 🔄 生命周期回调函数](#📎-🔄-生命周期回调函数)
-  - [回调函数类型](#回调函数类型)
-  - [使用方式](#使用方式)
-  - [实现示例](#实现示例)
-  - [回调函数签名](#回调函数签名)
-  - [使用场景](#使用场景)
-  - [注意事项](#注意事项)
+    - [回调函数类型](#回调函数类型)
+    - [使用方式](#使用方式)
+    - [实现示例](#实现示例)
+    - [回调函数签名](#回调函数签名)
+    - [使用场景](#使用场景)
+    - [注意事项](#注意事项)
 - [🎯 最佳实践](#🎯-最佳实践)
-  - [1. 访问日志使用](#1-访问日志使用)
-  - [2. 链路追踪使用](#2-链路追踪使用)
-  - [3. 存储方式选择](#3-存储方式选择)
-  - [4. 请求/响应体大小控制](#4-请求/响应体大小控制)
-  - [5. 数据库持久化优化](#5-数据库持久化优化)
+    - [1. 访问日志使用](#1-访问日志使用)
+    - [2. 链路追踪使用](#2-链路追踪使用)
+    - [3. 存储方式选择](#3-存储方式选择)
+    - [4. 请求/响应体大小控制](#4-请求/响应体大小控制)
+    - [5. 数据库持久化优化](#5-数据库持久化优化)
 - [❓ 常见问题](#❓-常见问题)
-  - [Q1: 为什么返回值必须是 ResultVO？](#q1-为什么返回值必须是-resultvo？)
-  - [Q2: 如何获取操作人信息？](#q2-如何获取操作人信息？)
-  - [Q3: 如何禁用某个接口的日志记录？](#q3-如何禁用某个接口的日志记录？)
-  - [Q4: 日志记录会影响性能吗？](#q4-日志记录会影响性能吗？)
-  - [Q5: 如何查看链路追踪日志？](#q5-如何查看链路追踪日志？)
-  - [Q6: 数据库表如何创建？](#q6-数据库表如何创建？)
-  - [Q7: 如何自定义日志格式？](#q7-如何自定义日志格式？)
-  - [Q8: 如何使用生命周期回调函数？](#q8-如何使用生命周期回调函数？)
+    - [Q1: 为什么返回值必须是 ResultVO？](#q1-为什么返回值必须是-resultvo？)
+    - [Q2: 如何获取操作人信息？](#q2-如何获取操作人信息？)
+    - [Q3: 如何禁用某个接口的日志记录？](#q3-如何禁用某个接口的日志记录？)
+    - [Q4: 日志记录会影响性能吗？](#q4-日志记录会影响性能吗？)
+    - [Q5: 如何查看链路追踪日志？](#q5-如何查看链路追踪日志？)
+    - [Q6: 数据库表如何创建？](#q6-数据库表如何创建？)
+    - [Q7: 如何自定义日志格式？](#q7-如何自定义日志格式？)
+    - [Q8: 如何使用生命周期回调函数？](#q8-如何使用生命周期回调函数？)
 - [📎 📝 总结](#📎-📝-总结)
+
 ---
 
 ## ✨ 功能特性
@@ -221,9 +222,9 @@ public class UserServiceImpl {
 
 #### 注解参数
 
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `value` | String | `""` | 日志描述 |
+| 参数         | 类型    | 默认值  | 说明               |
+|--------------|---------|---------|--------------------|
+| `value`      | String  | `""`    | 日志描述           |
 | `persistent` | boolean | `false` | 是否持久化到数据库 |
 
 #### 存储方式
@@ -252,28 +253,29 @@ platform:
 - **异常信息**：异常堆栈、异常行号
 
 **默认切点规则**：
+
 - 默认切点：`execution(public * cn.richie696..*.service..*ServiceImpl.*(..))`
 - 需要同时满足以下条件才会生效：
-  1. 类上有 `@LogTrace` 注解
-  2. 方法上有 `@LogMethodTrace` 注解
+    1. 类上有 `@LogTrace` 注解
+    2. 方法上有 `@LogMethodTrace` 注解
 - 如果类上没有 `@LogTrace` 注解，即使方法上有 `@LogMethodTrace` 注解也不会生效
 
 #### 注解参数
 
 **@LogTrace（类级别）**：
 
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `value` | String | `""` | 日志标签 |
+| 参数    | 类型   | 默认值 | 说明     |
+|---------|--------|--------|----------|
+| `value` | String | `""`   | 日志标签 |
 
 **@LogMethodTrace（方法级别）**：
 
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `value` | String | `""` | 日志标签 |
-| `level` | LogLevelEnum | `INFO` | 日志级别（TRACE、DEBUG、INFO、WARN、ERROR） |
-| `ignoreArgs` | boolean | `true` | 是否忽略方法参数 |
-| `ignoreResult` | boolean | `true` | 是否忽略方法返回值 |
+| 参数           | 类型         | 默认值 | 说明                                        |
+|----------------|--------------|--------|---------------------------------------------|
+| `value`        | String       | `""`   | 日志标签                                    |
+| `level`        | LogLevelEnum | `INFO` | 日志级别（TRACE、DEBUG、INFO、WARN、ERROR） |
+| `ignoreArgs`   | boolean      | `true` | 是否忽略方法参数                            |
+| `ignoreResult` | boolean      | `true` | 是否忽略方法返回值                          |
 
 ### 3) 数据库持久化
 
@@ -288,12 +290,14 @@ platform:
 ```
 
 **持久化机制**：
+
 - 日志先异步写入本地缓存（`LocalCache`）缓冲区
 - 定时任务每分钟执行一次（`@Scheduled(cron = "0 0/1 * * * ?")`），从本地缓存中批量取出日志并持久化到数据库
 - 每次批量处理的数量由 `db-batch-size` 控制（默认 500 条）
 - 如果本地缓存中的数据量小于 `db-batch-size`，定时任务会等待下次执行
 
 **异步处理**：
+
 - `AccessLogServiceImpl.doRecordLog()` 使用 `@Async` 注解，确保日志写入本地缓存不会阻塞主流程
 - 本地缓存使用 `ACCESS_LOG` 区域存储日志数据
 - 定时任务从本地缓存中批量取出日志并持久化，避免频繁的数据库操作
@@ -313,6 +317,7 @@ platform:
 ```
 
 **表结构**（`access_log_info`）：
+
 - `id`：日志ID（雪花算法生成）
 - `title`：日志标题
 - `operator`：操作人
@@ -333,55 +338,56 @@ platform:
 
 ### 基础配置
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `platform.component.logging.enable` | boolean | `true` | 是否启用操作日志 |
-| `platform.component.logging.record-type` | String | `FILE` | 记录类型：`FILE`、`REDIS`、`MQ` |
-| `platform.component.logging.enable-global-advice` | boolean | `false` | 是否启用全局切点 |
-| `platform.component.logging.print-exception` | boolean | `false` | 是否打印异常信息（AOP 日志记录异常时） |
+| 配置项                                            | 类型    | 默认值  | 说明                                   |
+|---------------------------------------------------|---------|---------|----------------------------------------|
+| `platform.component.logging.enable`               | boolean | `true`  | 是否启用操作日志                       |
+| `platform.component.logging.record-type`          | String  | `FILE`  | 记录类型：`FILE`、`REDIS`、`MQ`        |
+| `platform.component.logging.enable-global-advice` | boolean | `false` | 是否启用全局切点                       |
+| `platform.component.logging.print-exception`      | boolean | `false` | 是否打印异常信息（AOP 日志记录异常时） |
 
 ### 请求/响应体配置
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `platform.component.logging.request-body-persistent` | boolean | `true` | 是否启用请求参数体持久化 |
-| `platform.component.logging.request-body-size-limit` | boolean | `false` | 是否限制请求参数体大小 |
-| `platform.component.logging.request-body-max-length` | int | `200` | 请求参数体最大字符长度 |
-| `platform.component.logging.response-body-persistent` | boolean | `true` | 是否启用响应参数体持久化 |
-| `platform.component.logging.response-body-size-limit` | boolean | `false` | 是否限制响应参数体大小 |
-| `platform.component.logging.response-body-max-length` | int | `200` | 响应参数体最大字符长度 |
+| 配置项                                                | 类型    | 默认值  | 说明                     |
+|-------------------------------------------------------|---------|---------|--------------------------|
+| `platform.component.logging.request-body-persistent`  | boolean | `true`  | 是否启用请求参数体持久化 |
+| `platform.component.logging.request-body-size-limit`  | boolean | `false` | 是否限制请求参数体大小   |
+| `platform.component.logging.request-body-max-length`  | int     | `200`   | 请求参数体最大字符长度   |
+| `platform.component.logging.response-body-persistent` | boolean | `true`  | 是否启用响应参数体持久化 |
+| `platform.component.logging.response-body-size-limit` | boolean | `false` | 是否限制响应参数体大小   |
+| `platform.component.logging.response-body-max-length` | int     | `200`   | 响应参数体最大字符长度   |
 
 ### 数据库持久化配置
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `platform.component.logging.db-persistent` | boolean | `true` | 是否启用数据库持久化 |
-| `platform.component.logging.db-batch-size` | int | `500` | 持久化数据库时一次获取的数据量 |
+| 配置项                                     | 类型    | 默认值 | 说明                           |
+|--------------------------------------------|---------|--------|--------------------------------|
+| `platform.component.logging.db-persistent` | boolean | `true` | 是否启用数据库持久化           |
+| `platform.component.logging.db-batch-size` | int     | `500`  | 持久化数据库时一次获取的数据量 |
 
 ### 消息队列配置
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
+| 配置项                                     | 类型   | 默认值             | 说明                  |
+|--------------------------------------------|--------|--------------------|-----------------------|
 | `platform.component.logging.mq-topic-name` | String | `access-log-out-0` | 消息队列的 topic 名称 |
 
 ### `Redis` 配置
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
+| 配置项                                            | 类型   | 默认值                | 说明                            |
+|---------------------------------------------------|--------|-----------------------|---------------------------------|
 | `platform.component.logging.cache-access-log-key` | String | `platform:access-log` | 日志保存到redis时临时暂存的路径 |
 
 ### 数据库模式配置
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `platform.component.logging.schema.enable-auto-ddl` | boolean | `false` | 是否启用自动 DDL（如果启用了 Liquibase，会跳过 DDL 逻辑） |
-| `platform.component.logging.schema.table-prefix` | String | `""` | 表前缀 |
-| `platform.component.logging.schema.access-log-table` | String | `access_log_info` | 访问日志表名 |
-| `platform.component.logging.schema.enable-liquibase` | boolean | `true` | 是否启用 Liquibase 迁移 |
-| `platform.component.logging.schema.liquibase-change-log` | String | `classpath:db/changelog/db.changelog-master.yaml` | Liquibase 变更日志文件路径 |
-| `platform.component.logging.schema.liquibase-dry-run` | boolean | `false` | Liquibase 是否仅生成 SQL 而不执行（干运行模式） |
+| 配置项                                                   | 类型    | 默认值                                            | 说明                                                      |
+|----------------------------------------------------------|---------|---------------------------------------------------|-----------------------------------------------------------|
+| `platform.component.logging.schema.enable-auto-ddl`      | boolean | `false`                                           | 是否启用自动 DDL（如果启用了 Liquibase，会跳过 DDL 逻辑） |
+| `platform.component.logging.schema.table-prefix`         | String  | `""`                                              | 表前缀                                                    |
+| `platform.component.logging.schema.access-log-table`     | String  | `access_log_info`                                 | 访问日志表名                                              |
+| `platform.component.logging.schema.enable-liquibase`     | boolean | `true`                                            | 是否启用 Liquibase 迁移                                   |
+| `platform.component.logging.schema.liquibase-change-log` | String  | `classpath:db/changelog/db.changelog-master.yaml` | Liquibase 变更日志文件路径                                |
+| `platform.component.logging.schema.liquibase-dry-run`    | boolean | `false`                                           | Liquibase 是否仅生成 SQL 而不执行（干运行模式）           |
 
 **enable-auto-ddl 说明**：
+
 - 如果启用了 Liquibase（`enable-liquibase: true`），`LoggingSchemaInitializer` 会跳过 DDL 逻辑
 - 如果未启用 Liquibase 且表不存在，`LoggingSchemaInitializer` 会抛出异常并提示启用 Liquibase 或手动创建表
 - 建议始终使用 Liquibase 管理数据库表结构，而不是启用 `enable-auto-ddl`
@@ -417,12 +423,15 @@ public class CustomBeforeLogCallback implements LogLifecycleCallback.BeforeLogCa
 ```
 
 **自动扫描优先级**（如果存在多个实现）：
+
 1. `@Primary` 标记的实现（最高优先级）
 2. `@Order` 注解值最小的实现
 3. 默认按 Bean 名称排序
 
 **性能说明**：
-- **启动时性能**：自动扫描在应用启动时执行一次，需要遍历 Spring 容器中的所有 Bean（O(n) 复杂度），但通常 Bean 数量较少（几十到几百个），影响可忽略（< 10ms）
+
+- **启动时性能**：自动扫描在应用启动时执行一次，需要遍历 Spring 容器中的所有 Bean（O (n) 复杂度），但通常 Bean
+  数量较少（几十到几百个），影响可忽略（< 10ms）
 - **运行时性能**：直接调用已注册的回调函数引用，无额外性能开销
 - **内存占用**：仅存储回调函数引用，内存占用极小
 
@@ -535,34 +544,34 @@ public class CustomOnErrorCallback implements LogLifecycleCallback.OnErrorCallba
 
 ### 回调函数签名
 
-| 回调函数 | 函数签名 | 返回值说明 |
-|---------|---------|-----------|
-| `BeforeLogCallback` | `(Map<String, Object> requestData, ResultVO<?> responseData) -> AccessLogInfo` | 返回null使用默认实现 |
-| `AfterLogCallback` | `(AccessLogInfo logInfo, Throwable throwable) -> Boolean` | 返回true继续执行，false终止 |
-| `BeforePersistCallback` | `(AccessLogInfo logInfo, ProceedingJoinPoint joinPoint) -> AccessLogInfo` | 返回null使用原始日志信息 |
-| `OnErrorCallback` | `(Map<String, Object> requestData, Throwable throwable) -> ResultVO<?>` | 返回null使用默认错误响应 |
+| 回调函数                | 函数签名                                                                       | 返回值说明                  |
+|-------------------------|--------------------------------------------------------------------------------|-----------------------------|
+| `BeforeLogCallback`     | `(Map<String, Object> requestData, ResultVO<?> responseData) -> AccessLogInfo` | 返回null使用默认实现        |
+| `AfterLogCallback`      | `(AccessLogInfo logInfo, Throwable throwable) -> Boolean`                      | 返回true继续执行，false终止 |
+| `BeforePersistCallback` | `(AccessLogInfo logInfo, ProceedingJoinPoint joinPoint) -> AccessLogInfo`      | 返回null使用原始日志信息    |
+| `OnErrorCallback`       | `(Map<String, Object> requestData, Throwable throwable) -> ResultVO<?>`        | 返回null使用默认错误响应    |
 
 ### 使用场景
 
 1. **日志记录前回调**：
-   - 自定义日志信息生成逻辑
-   - 修改请求数据或响应数据
-   - 添加额外的日志字段
+    - 自定义日志信息生成逻辑
+    - 修改请求数据或响应数据
+    - 添加额外的日志字段
 
 2. **日志记录后回调**：
-   - 发送通知（如邮件、短信）
-   - 记录到其他系统（如监控系统）
-   - 执行清理操作
+    - 发送通知（如邮件、短信）
+    - 记录到其他系统（如监控系统）
+    - 执行清理操作
 
 3. **持久化前回调**：
-   - 脱敏敏感信息（如密码、身份证号）
-   - 添加业务相关字段
-   - 格式化日志信息
+    - 脱敏敏感信息（如密码、身份证号）
+    - 添加业务相关字段
+    - 格式化日志信息
 
 4. **异常处理回调**：
-   - 自定义错误响应格式
-   - 记录详细的错误信息
-   - 发送错误告警
+    - 自定义错误响应格式
+    - 记录详细的错误信息
+    - 发送错误告警
 
 ### 注意事项
 
@@ -674,6 +683,7 @@ platform:
 **A:** 组件需要从返回值中提取响应数据，`ResultVO` 提供了统一的结构。如果返回值不是 `ResultVO`，组件会记录错误日志，但不会中断请求。
 
 **错误日志示例**：
+
 ```
 返回值不是 ResultVO 类型，违反强制性规则，无法进行日志记录。
 违规类：cn.richie696.example.controller.UserController
@@ -683,6 +693,7 @@ platform:
 ### `Q2` — 如何获取操作人信息？
 
 **A:** 组件自动从 JWT Token 中提取操作人信息。Token 需要包含以下字段：
+
 - `username`：操作人名称
 - `tenantCode`：租户代码
 - `id`：操作人ID（可选，通过 `OperatorContextHolder` 设置）
@@ -714,6 +725,7 @@ OperatorContextHolder.
 ```
 
 **注意事项**：
+
 - 操作人信息存储在 Redis 中，使用 `platform:operator:{token}` 作为 key
 - 需要确保 Redis 连接正常，否则操作人信息无法正确存储和获取
 - 操作人信息会在过期时间后自动清除
@@ -724,13 +736,15 @@ OperatorContextHolder.
 
 ### `Q4` — 日志记录会影响性能吗？
 
-**A:** 
+**A:**
+
 - **文件记录**：影响较小，异步写入本地缓存，由定时任务批量持久化
 - **Redis 记录**：影响较小，异步写入本地缓存，由定时任务批量持久化
 - **消息队列**：影响最小，完全异步，不阻塞主流程
 - **数据库持久化**：影响较小，使用异步写入本地缓存 + 定时任务批量持久化的机制，避免频繁的数据库操作
 
 **性能优化机制**：
+
 1. 日志先异步写入本地缓存（`LocalCache`），不阻塞主流程
 2. 定时任务每分钟执行一次，批量从本地缓存中取出日志并持久化到数据库
 3. 批量大小可配置（`db-batch-size`），默认 500 条，可根据数据库性能调整
@@ -742,15 +756,18 @@ OperatorContextHolder.
 ### `Q6` — 数据库表如何创建？
 
 **A:** 组件使用 Liquibase 管理数据库表结构。确保：
+
 1. `enable-liquibase: true`
 2. 配置正确的 `liquibase-change-log` 路径
 3. 应用启动时自动执行迁移
 
 **Liquibase 干运行模式**：
+
 - 设置 `liquibase-dry-run: true` 可以仅生成 SQL 而不执行，用于预览迁移脚本
 - 适用于生产环境迁移前的验证场景
 
 **自动 DDL 说明**：
+
 - `enable-auto-ddl: true` 仅在未启用 Liquibase 时生效
 - 如果启用了 Liquibase，`LoggingSchemaInitializer` 会跳过 DDL 逻辑
 - 建议始终使用 Liquibase 管理数据库表结构，而不是启用 `enable-auto-ddl`
@@ -758,6 +775,7 @@ OperatorContextHolder.
 ### `Q7` — 如何自定义日志格式？
 
 **A:** 组件使用标准的日志格式，如需自定义，可以：
+
 1. 使用生命周期回调函数（推荐）：通过 `BeforeLogCallback` 或 `BeforePersistCallback` 自定义日志信息
 2. 继承 `AccessLogAspect` 或 `LogTraceAspect`：重写日志记录方法
 3. 配置自定义切面
@@ -778,6 +796,7 @@ public class CustomBeforeLogCallback implements LogLifecycleCallback.BeforeLogCa
 ```
 
 如果存在多个实现，组件会按以下优先级选择：
+
 1. `@Primary` 标记的实现（最高优先级）
 2. `@Order` 注解值最小的实现
 3. 默认按 Bean 名称排序

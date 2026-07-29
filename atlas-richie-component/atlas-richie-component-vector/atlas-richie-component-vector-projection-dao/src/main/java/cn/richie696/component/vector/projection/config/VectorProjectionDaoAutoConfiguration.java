@@ -96,12 +96,12 @@ public class VectorProjectionDaoAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(DefaultVectorProjectionService.class)
     public DefaultVectorProjectionService vectorProjectionService(VectorProjectionMapper projectionMapper,
-                                                                    VectorProjectionVersionMapper versionMapper,
-                                                                    VectorProjectionRecordMapper recordMapper,
-                                                                    VectorProjectionOutboxMapper outboxMapper,
-                                                                    VectorRecordDeleteOperations deleteOperations,
-                                                                    VectorProjectionDaoProperties properties,
-                                                                    PlatformTransactionManager transactionManager) {
+                                                                  VectorProjectionVersionMapper versionMapper,
+                                                                  VectorProjectionRecordMapper recordMapper,
+                                                                  VectorProjectionOutboxMapper outboxMapper,
+                                                                  VectorRecordDeleteOperations deleteOperations,
+                                                                  VectorProjectionDaoProperties properties,
+                                                                  PlatformTransactionManager transactionManager) {
         return new DefaultVectorProjectionService(projectionMapper, versionMapper, recordMapper, outboxMapper,
                 deleteOperations, properties, new TransactionTemplate(transactionManager));
     }
@@ -129,7 +129,7 @@ public class VectorProjectionDaoAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(VectorProjectionWriter.class)
     public VectorProjectionWriter vectorProjectionWriter(DefaultVectorProjectionService service,
-                                                           VectorBulkOperations vectorBulkOperations) {
+                                                         VectorBulkOperations vectorBulkOperations) {
         return new DefaultVectorProjectionWriter(service, vectorBulkOperations);
     }
 }

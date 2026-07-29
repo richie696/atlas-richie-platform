@@ -34,7 +34,7 @@ public class PublishResult<T> {
     private final long timestamp;
 
     private PublishResult(T event, boolean success, PublishFailureReason failureReason,
-                         Throwable exception, long timestamp) {
+                          Throwable exception, long timestamp) {
         this.event = event;
         this.success = success;
         this.failureReason = failureReason;
@@ -46,7 +46,7 @@ public class PublishResult<T> {
      * 创建成功结果
      *
      * @param event 发布的事件
-     * @param <T> 事件类型
+     * @param <T>   事件类型
      * @return 成功结果
      */
     public static <T> PublishResult<T> success(T event) {
@@ -56,9 +56,9 @@ public class PublishResult<T> {
     /**
      * 创建失败结果
      *
-     * @param event 发布的事件
+     * @param event         发布的事件
      * @param failureReason 失败原因
-     * @param <T> 事件类型
+     * @param <T>           事件类型
      * @return 失败结果
      */
     public static <T> PublishResult<T> failed(T event, PublishFailureReason failureReason) {
@@ -68,10 +68,10 @@ public class PublishResult<T> {
     /**
      * 创建失败结果（带异常）
      *
-     * @param event 发布的事件
+     * @param event         发布的事件
      * @param failureReason 失败原因
-     * @param exception 异常信息
-     * @param <T> 事件类型
+     * @param exception     异常信息
+     * @param <T>           事件类型
      * @return 失败结果
      */
     public static <T> PublishResult<T> failed(T event, PublishFailureReason failureReason, Throwable exception) {
@@ -185,11 +185,11 @@ public class PublishResult<T> {
     public String toString() {
         if (success) {
             return String.format("PublishResult{success=true, event=%s, timestamp=%d}",
-                event, timestamp);
+                    event, timestamp);
         } else {
             return String.format("PublishResult{success=false, event=%s, failureReason=%s, " +
-                "exception=%s, timestamp=%d}", event, failureReason,
-                exception != null ? exception.getMessage() : "null", timestamp);
+                            "exception=%s, timestamp=%d}", event, failureReason,
+                    exception != null ? exception.getMessage() : "null", timestamp);
         }
     }
 }

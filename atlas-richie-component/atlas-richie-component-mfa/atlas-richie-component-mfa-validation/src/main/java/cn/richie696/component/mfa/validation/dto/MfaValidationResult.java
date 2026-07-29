@@ -138,10 +138,10 @@ public class MfaValidationResult {
      */
     public static MfaValidationResult successWithoutMfa() {
         return MfaValidationResult.builder()
-            .success(true)
-            .mfaRequired(false)
-            .mfaBound(false)
-            .build();
+                .success(true)
+                .mfaRequired(false)
+                .mfaBound(false)
+                .build();
     }
 
     /**
@@ -158,10 +158,10 @@ public class MfaValidationResult {
      */
     public static MfaValidationResult successWithTrustedDevice() {
         return MfaValidationResult.builder()
-            .success(true)
-            .mfaRequired(false)
-            .trustedDevice(true)
-            .build();
+                .success(true)
+                .mfaRequired(false)
+                .trustedDevice(true)
+                .build();
     }
 
     /**
@@ -178,10 +178,10 @@ public class MfaValidationResult {
      */
     public static MfaValidationResult successWithMfa() {
         return MfaValidationResult.builder()
-            .success(true)
-            .mfaRequired(true)
-            .mfaBound(true)
-            .build();
+                .success(true)
+                .mfaRequired(true)
+                .mfaBound(true)
+                .build();
     }
 
     /**
@@ -200,10 +200,10 @@ public class MfaValidationResult {
      */
     public static MfaValidationResult failure(String errorCode, String errorMessage) {
         return MfaValidationResult.builder()
-            .success(false)
-            .errorCode(errorCode)
-            .errorMessage(errorMessage)
-            .build();
+                .success(false)
+                .errorCode(errorCode)
+                .errorMessage(errorMessage)
+                .build();
     }
 
     /**
@@ -226,16 +226,16 @@ public class MfaValidationResult {
      *   <li>{@code defaultTrustDays = defaultTrustDays}</li>
      * </ul>
      */
-    public static MfaValidationResult mfaRequired(boolean trustedDeviceSupported, Integer trustedDeviceCount, 
-                                                   Integer maxTrustedDevices, Integer defaultTrustDays) {
+    public static MfaValidationResult mfaRequired(boolean trustedDeviceSupported, Integer trustedDeviceCount,
+                                                  Integer maxTrustedDevices, Integer defaultTrustDays) {
         return MfaValidationResult.builder()
-            .success(false)
-            .mfaRequired(true)
-            .mfaBound(true)
-            .trustedDeviceSupported(trustedDeviceSupported)
-            .trustedDeviceCount(trustedDeviceCount)
-            .maxTrustedDevices(maxTrustedDevices)
-            .defaultTrustDays(defaultTrustDays)
-            .build();
+                .success(false)
+                .mfaRequired(true)
+                .mfaBound(true)
+                .trustedDeviceSupported(trustedDeviceSupported)
+                .trustedDeviceCount(trustedDeviceCount)
+                .maxTrustedDevices(maxTrustedDevices)
+                .defaultTrustDays(defaultTrustDays)
+                .build();
     }
 }

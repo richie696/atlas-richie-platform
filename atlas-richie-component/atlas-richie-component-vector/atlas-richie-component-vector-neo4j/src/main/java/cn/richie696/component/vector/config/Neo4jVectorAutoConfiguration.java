@@ -21,8 +21,8 @@ import org.neo4j.driver.*;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.neo4j.Neo4jVectorStore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -49,13 +49,13 @@ public class Neo4jVectorAutoConfiguration {
      * 典型配置：spring.data.neo4j.* + spring.ai.vectorstore.neo4j.*
      */
     @Bean
-    @ConditionalOnProperty(prefix = "platform.component.vector", name="provider", havingValue = "neo4j")
+    @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "neo4j")
     public VectorStore neo4jVectorStore(Driver neo4jClient, EmbeddingModel embeddingModel) {
         return Neo4jVectorStore.builder(neo4jClient, embeddingModel).build();
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "platform.component.vector", name="provider", havingValue = "neo4j")
+    @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "neo4j")
     public Driver originalNeo4jDriver(Neo4jConfig config) {
         log.info("初始化Neo4j Driver，应用名称: {}", config.getApplicationName());
 

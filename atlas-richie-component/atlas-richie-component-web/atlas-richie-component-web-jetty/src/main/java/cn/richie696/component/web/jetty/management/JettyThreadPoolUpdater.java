@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.web.jetty.management;
 
+import jakarta.annotation.Nullable;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ThreadPool;
@@ -23,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.Environment;
-import jakarta.annotation.Nullable;
 
 import java.time.Duration;
 

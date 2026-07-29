@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.mongodb.circuitbreaker;
 
-import cn.richie696.component.mongodb.builder.QueryBuilder;
-import cn.richie696.component.mongodb.builder.UpdateBuilder;
 import cn.richie696.component.mongodb.builder.DeleteBuilder;
 import cn.richie696.component.mongodb.builder.PageResult;
+import cn.richie696.component.mongodb.builder.QueryBuilder;
+import cn.richie696.component.mongodb.builder.UpdateBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

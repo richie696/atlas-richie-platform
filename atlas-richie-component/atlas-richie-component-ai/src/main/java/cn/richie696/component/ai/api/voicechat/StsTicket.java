@@ -23,11 +23,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.HexFormat;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * 统一的 STS 短时凭证票面（vendor 5 种认证域收敛）。
@@ -45,12 +42,16 @@ import java.util.Objects;
  */
 public final class StsTicket {
 
-    /** 能力标识常量 — 业务侧按需引用。 */
+    /**
+     * 能力标识常量 — 业务侧按需引用。
+     */
     public static final String CAPABILITY_VOICE_CHAT = "voice-chat";
     public static final String CAPABILITY_TTS_STREAM = "tts-stream";
     public static final String CAPABILITY_STT_STREAM = "stt-stream";
 
-    /** vendor 标识常量 — 仅用于业务侧做日志/埋点，禁止用于 if/else 分支。 */
+    /**
+     * vendor 标识常量 — 仅用于业务侧做日志/埋点，禁止用于 if/else 分支。
+     */
     public static final String VENDOR_DASHSCOPE = "dashscope";
     public static final String VENDOR_ZHIPU = "zhipu";
     public static final String VENDOR_DOUBAO_OPENSPEECH = "doubao-openspeech";
@@ -90,42 +91,58 @@ public final class StsTicket {
         this.akSkMaterial = b.akSkMaterial;
     }
 
-    /** vendor 标识(如 "zhipu" / "hunyuan-tts")。仅用于日志/埋点,禁止业务 if/else。 */
+    /**
+     * vendor 标识(如 "zhipu" / "hunyuan-tts")。仅用于日志/埋点,禁止业务 if/else。
+     */
     public String vendor() {
         return vendor;
     }
 
-    /** 选中的 model 名。 */
+    /**
+     * 选中的 model 名。
+     */
     public String model() {
         return model;
     }
 
-    /** 能力标识 — 决定业务侧调哪个 {@code asXxx()} 方法。 */
+    /**
+     * 能力标识 — 决定业务侧调哪个 {@code asXxx()} 方法。
+     */
     public String capability() {
         return capability;
     }
 
-    /** 完整 WebSocket / HTTP 端点 URL(前端直连目标)。 */
+    /**
+     * 完整 WebSocket / HTTP 端点 URL(前端直连目标)。
+     */
     public String endpoint() {
         return endpoint;
     }
 
-    /** 签发时刻(epoch ms)。 */
+    /**
+     * 签发时刻(epoch ms)。
+     */
     public long issuedAt() {
         return issuedAt;
     }
 
-    /** 过期时刻(epoch ms)。 */
+    /**
+     * 过期时刻(epoch ms)。
+     */
     public long expiresAt() {
         return expiresAt;
     }
 
-    /** 票面有效时长。 */
+    /**
+     * 票面有效时长。
+     */
     public Duration ttl() {
         return Duration.ofMillis(expiresAt - issuedAt);
     }
 
-    /** 是否已过期。 */
+    /**
+     * 是否已过期。
+     */
     public boolean isExpired() {
         return System.currentTimeMillis() >= expiresAt;
     }
@@ -223,10 +240,10 @@ public final class StsTicket {
             }
             case CAPABILITY_TTS_STREAM -> {
                 if (tc3Material != null) {
-                    yield asTc3Headers(actionOrMethod, body == null ? "" : new String(body, StandardCharsets.UTF_8));
+                    yield asTc3Headers (actionOrMethod, body == null ? "" : new String(body, StandardCharsets.UTF_8));
                 }
                 if (akSkMaterial != null) {
-                    yield asSignedHeaders(actionOrMethod, "/", body == null ? new byte[0] : body);
+                    yield asSignedHeaders (actionOrMethod, "/", body == null ? new byte[0] : body);
                 }
                 if (!appCodeHeaders.isEmpty()) {
                     yield appCodeHeaders;
@@ -455,7 +472,9 @@ public final class StsTicket {
         return new Builder();
     }
 
-    /** Builder — 仅 StsSigner impl 包可见(package-private constructor)。 */
+    /**
+     * Builder — 仅 StsSigner impl 包可见(package-private constructor)。
+     */
     public static final class Builder {
         private String vendor;
         private String model;

@@ -18,7 +18,6 @@ package cn.richie696.component.redis.streammq.monitor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
-import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -45,7 +44,6 @@ import java.util.Map;
  * @version 1.0.0
  * @since 2025-09-16
  */
-@Component
 @Endpoint(id = "redis-stream-links")
 @RequiredArgsConstructor
 public class RedisStreamLinksEndpoint {

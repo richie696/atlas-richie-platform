@@ -1,6 +1,8 @@
 # Richie Redis Stream Usage Guide
 
-> **Note (2026-06)**: Stream MQ has been split out into the standalone module `atlas-richie-component-redis-streammq`, with the facade `StreamMQ.stream()`. The `GlobalCache.stream()` syntax used in earlier versions of this document is historical; please refer to the streammq module as the source of truth.
+> **Note (2026-06)**: Stream MQ has been split out into the standalone module `atlas-richie-component-redis-streammq`,
+> with the facade `StreamMQ.stream()`. The `GlobalCache.stream()` syntax used in earlier versions of this document is
+> historical; please refer to the streammq module as the source of truth.
 
 This document is intended for business teams using Stream MQ and covers three major areas:
 
@@ -13,22 +15,29 @@ This document is intended for business teams using Stream MQ and covers three ma
 ## 1. Sending and Receiving Messages
 
 ### 1.1 Dependencies and Terminology
-- Message carriers need to implement or reuse `BaseStreamMessage`. The framework uses JSON serialization internally and writes the complete message (business payload + trace context) into Redis Stream after Base64-encoding it.
-- Producers publish via `StreamFunction.publish(streamKey, payload)`; consumers annotate the consumer class with `@RedisStreamConsumer` and implement the `handle` method on `AbstractStreamConsumer<T>`.
+
+- Message carriers need to implement or reuse `BaseStreamMessage`. The framework uses JSON serialization internally and
+  writes the complete message (business payload + trace context) into Redis Stream after Base64-encoding it.
+- Producers publish via `StreamFunction.publish(streamKey, payload)`; consumers annotate the consumer class with
+  `@RedisStreamConsumer` and implement the `handle` method on `AbstractStreamConsumer<T>`.
 
 ### 1.2 Publishing Messages (Producer)
 
-- Recommended: publish messages via `StreamMQ.stream().publish(streamKey, payload)` (depends on `atlas-richie-component-redis-streammq`).
+- Recommended: publish messages via `StreamMQ.stream().publish(streamKey, payload)` (depends on
+  `atlas-richie-component-redis-streammq`).
 - On publish, the framework automatically:
-  - Routes the message to the corresponding queue based on the `streamKey` and payload you provide
-  
-  * And handles distributed tracing and metric monitoring at the same time
+    - Routes the message to the corresponding queue based on the `streamKey` and payload you provide
+
+    * And handles distributed tracing and metric monitoring at the same time
 
 Usage notes:
+
 - `streamKey` should be partitioned by domain, e.g. `order-events`, `user-events`.
-- `payload` is the business DTO and must be JSON-serializable. To standardize the message type, the DTO must implement the marker interface `BaseStreamMessage`, and implementing the DTO as a `record` class is recommended.
+- `payload` is the business DTO and must be JSON-serializable. To standardize the message type, the DTO must implement
+  the marker interface `BaseStreamMessage`, and implementing the DTO as a `record` class is recommended.
 
 ### 1.3 Consuming Messages (Consumer)
+
 - Annotate the consumer class:
 
   ```java
@@ -67,33 +76,37 @@ Usage notes:
 
 Configuration field descriptions (fields under `consumers.configs.[name]`):
 
-| Field | Type | Description | Example / Default |
-|-------|------|-------------|-------------------|
-| enabled | boolean | Whether to enable configuration-based consumer auto-assembly | true |
-| configs | map | Consumer configuration map; the key is the config name (must match `@RedisStreamConsumer("name")`) | - |
-| stream-key | string | Target Redis Stream key | "order-events" |
-| group | string | Consumer group name | "order-processors" |
-| consumer | string | Current instance's consumer name, used to distinguish different instances within the same group | "order-consumer-1" (default: "default-consumer") |
-| target-type | class | Business payload type (must be a JSON-deserializable class, ideally a record). When this field is not set, the consumer is treated as a dead-letter queue consumer and defaults to `DeadLetterMessage` | "com.example.OrderEvent" |
-| auto-ack | boolean | Whether to auto-ACK on success; when set to `false`, you must manually call the `ack` method on the `ctx` parameter of the `handle` method to commit the ACK to Redis | true |
-| concurrency | int | Number of concurrent consumers | 4 (default: 1) |
-| error-strategy | enum | Error handling strategy: `SKIP` skips and continues; `RETRY` performs a simple one-time retry; `NO_ACK` leaves the message unacknowledged for later processing | SKIP |
-| max-retries | int | Maximum retry attempts (effective when the strategy is `RETRY`; the current implementation retries once and is reserved for extension) | 3 |
-| retry-delay | duration | Retry delay (standard Spring Duration expression) | 1s |
-| idempotency-enabled | boolean | Whether to enable idempotent deduplication | true |
-| auto-start | boolean | Whether the consumer should auto-start after application startup | true |
-
+| Field               | Type     | Description                                                                                                                                                                                            | Example / Default                                |
+|---------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------|
+| enabled             | boolean  | Whether to enable configuration-based consumer auto-assembly                                                                                                                                           | true                                             |
+| configs             | map      | Consumer configuration map; the key is the config name (must match `@RedisStreamConsumer("name")`)                                                                                                     | -                                                |
+| stream-key          | string   | Target Redis Stream key                                                                                                                                                                                | "order-events"                                   |
+| group               | string   | Consumer group name                                                                                                                                                                                    | "order-processors"                               |
+| consumer            | string   | Current instance's consumer name, used to distinguish different instances within the same group                                                                                                        | "order-consumer-1" (default: "default-consumer") |
+| target-type         | class    | Business payload type (must be a JSON-deserializable class, ideally a record). When this field is not set, the consumer is treated as a dead-letter queue consumer and defaults to `DeadLetterMessage` | "com.example.OrderEvent"                         |
+| auto-ack            | boolean  | Whether to auto-ACK on success; when set to `false`, you must manually call the `ack` method on the `ctx` parameter of the `handle` method to commit the ACK to Redis                                  | true                                             |
+| concurrency         | int      | Number of concurrent consumers                                                                                                                                                                         | 4 (default: 1)                                   |
+| error-strategy      | enum     | Error handling strategy: `SKIP` skips and continues; `RETRY` performs a simple one-time retry; `NO_ACK` leaves the message unacknowledged for later processing                                         | SKIP                                             |
+| max-retries         | int      | Maximum retry attempts (effective when the strategy is `RETRY`; the current implementation retries once and is reserved for extension)                                                                 | 3                                                |
+| retry-delay         | duration | Retry delay (standard Spring Duration expression)                                                                                                                                                      | 1s                                               |
+| idempotency-enabled | boolean  | Whether to enable idempotent deduplication                                                                                                                                                             | true                                             |
+| auto-start          | boolean  | Whether the consumer should auto-start after application startup                                                                                                                                       | true                                             |
 
 Implementation details (built into the framework, included here only as a flow explanation for context):
+
 - The framework auto-decodes Base64 → parses the map → reads `payload` and converts it to `target-type`;
-- Automatically extracts the trace context, creates a CONSUMER span on the consumer side, and establishes parent/child relationships;
+- Automatically extracts the trace context, creates a CONSUMER span on the consumer side, and establishes parent/child
+  relationships;
 - Supports concurrent processing, error strategies (SKIP / RETRY / NO_ACK), and automatic ACK;
 - Idempotency protection: by default, in-memory dedup with Redis as the fallback (configurable TTL and namespace).
 
 ### 1.4 Dead-Letter Queue (DLQ)
-- The framework supports "convention over configuration": when the config name is recognized as a DLQ (e.g., starts with `dlq-`/`dlq:` or contains `dead-letter`) and `target-type` is not explicitly set, it defaults to `DeadLetterMessage`.
 
-- Unified utility: `DeadLetterQueueUtil` provides strategies such as `GLOBAL`, `BY_MESSAGE_TYPE`, `BY_SOURCE_STREAM`, and `HYBRID`.
+- The framework supports "convention over configuration": when the config name is recognized as a DLQ (e.g., starts with
+  `dlq-`/`dlq:` or contains `dead-letter`) and `target-type` is not explicitly set, it defaults to `DeadLetterMessage`.
+
+- Unified utility: `DeadLetterQueueUtil` provides strategies such as `GLOBAL`, `BY_MESSAGE_TYPE`, `BY_SOURCE_STREAM`,
+  and `HYBRID`.
 
 - The consumer side can decide in `onError` whether to send the message to the DLQ based on business rules.
 
@@ -302,9 +315,8 @@ Implementation details (built into the framework, included here only as a flow e
   
   ```
 
-  
-
 ### 1.5 Best Practices
+
 - A single Stream should only carry a clear family of business-domain event types; avoid overly "mixed" usage.
 - Consumer group granularity: align with deployment units or responsibilities; consumer names distinguish instances.
 - Use `NO_ACK` with caution (it retains pending entries); prefer SKIP/RETRY.
@@ -316,17 +328,24 @@ Implementation details (built into the framework, included here only as a flow e
 
 ### 2.0 Fundamentals Overview (Propagation Mechanism)
 
-The following excerpt is taken from the "Redis-Stream-Tracing-Propagation" document to help you quickly understand how it works before using it:
+The following excerpt is taken from the "Redis-Stream-Tracing-Propagation" document to help you quickly understand how
+it works before using it:
 
 - Key participants:
-  - Producer `RedisStreamManager.publish`: creates a Publisher Span, wraps the message and injects the W3C context (`traceparent` / `tracestate`) along with auxiliary fields (`traceId` / `spanId` / `sampled`).
-  - Wrapper `TraceableMessageWrapper`: non-invasively wraps business messages; injects on the producer side and extracts on the consumer side.
-  - Puller `RedisStreamReactor`: pulls via XREADGROUP and forwards records as in-app events.
-  - Consumer `AbstractStreamConsumer`: extracts the context from events, creates or continues a Consumer Span, and records processing duration and exceptions.
+    - Producer `RedisStreamManager.publish`: creates a Publisher Span, wraps the message and injects the W3C context
+      (`traceparent` / `tracestate`) along with auxiliary fields (`traceId` / `spanId` / `sampled`).
+    - Wrapper `TraceableMessageWrapper`: non-invasively wraps business messages; injects on the producer side and
+      extracts on the consumer side.
+    - Puller `RedisStreamReactor`: pulls via XREADGROUP and forwards records as in-app events.
+    - Consumer `AbstractStreamConsumer`: extracts the context from events, creates or continues a Consumer Span, and
+      records processing duration and exceptions.
 - Propagation essentials:
-  - Message contents are stored as the Base64-encoded field `data`, internally containing `payload` and `traceContext`.
-  - When the Java Agent is active, `GlobalOpenTelemetry` is used preferentially; otherwise it falls back to the in-app instance.
-  - If the propagator is Noop (common when no Agent is attached), the trace cannot be continued, and the upstream/downstream `traceId` will be disconnected.
+    - Message contents are stored as the Base64-encoded field `data`, internally containing `payload` and
+      `traceContext`.
+    - When the Java Agent is active, `GlobalOpenTelemetry` is used preferentially; otherwise it falls back to the in-app
+      instance.
+    - If the propagator is Noop (common when no Agent is attached), the trace cannot be continued, and the
+      upstream/downstream `traceId` will be disconnected.
 
 ```mermaid
 sequenceDiagram
@@ -360,13 +379,13 @@ sequenceDiagram
   %%{init: {'theme':'base', 'themeVariables': { 'primaryColor': '#ffe6f0', 'primaryTextColor': '#000', 'primaryBorderColor': '#999', 'lineColor': '#666', 'actorTextColor': '#000', 'actorLineColor': '#000', 'actorBkg': '#e6ffe6', 'activationBkgColor': '#f0e6ff', 'activationBorderColor': '#8000ff'}}}%%
 ```
 
-
-
 ### 2.1 Integration Approach
+
 - Uses non-invasive Java Agent integration (recommended).
-- The in-app auto-configuration already handles compatibility and will preferentially use the Java Agent's global `OpenTelemetry` when detected.
+- The in-app auto-configuration already handles compatibility and will preferentially use the Java Agent's global
+  `OpenTelemetry` when detected.
 - To avoid "double writing", it is recommended to disable Spring/Micrometer's built-in exports (example):
-  
+
   ```yaml
   management:
     tracing:
@@ -394,7 +413,8 @@ sequenceDiagram
 -Dotel.traces.sampler.arg=1.0
 ```
 
-Notes: the parameters above are suitable for development and testing. Differentiated configuration is recommended for production environments (see the next section).
+Notes: the parameters above are suitable for development and testing. Differentiated configuration is recommended for
+production environments (see the next section).
 
 ### 2.3 Recommended Production Parameters (Placeholder Example)
 
@@ -411,6 +431,7 @@ Notes: the parameters above are suitable for development and testing. Differenti
 ```
 
 Placeholder descriptions:
+
 - `${OTEL_AGENT_PATH}`: absolute path of the javaagent (e.g., `/opt/otel/opentelemetry-javaagent.jar`)
 - `${OTLP_ENDPOINT}`: OTLP Collector address (e.g., `http://otel-collector:4317`)
 - `${SERVICE_NAME}`: service name (matches the APM backend)
@@ -419,9 +440,13 @@ Placeholder descriptions:
 - `${SAMPLER_RATIO}`: sampling rate (recommended `0.05 ~ 0.2`, depending on throughput and cost)
 
 Notes:
+
 - In production, use reasonable sampling to avoid the cost and performance overhead of full (`1.0`) sampling;
-- Make sure `GlobalOpenTelemetry` is available (the agent is active); otherwise the propagator may be `Noop`, in which case the `traceId` of message producers and consumers may not stay consistent (i.e., propagation fails), causing the trace to break;
-- The framework already injects `traceparent` / `tracestate` / `traceId` / `spanId` / `sampled` into messages, allowing downstream services to continue chaining traces.
+- Make sure `GlobalOpenTelemetry` is available (the agent is active); otherwise the propagator may be `Noop`, in which
+  case the `traceId` of message producers and consumers may not stay consistent (i.e., propagation fails), causing the
+  trace to break;
+- The framework already injects `traceparent` / `tracestate` / `traceId` / `spanId` / `sampled` into messages, allowing
+  downstream services to continue chaining traces.
 
 ---
 
@@ -429,21 +454,25 @@ Notes:
 
 ### 3.0 Architecture Overview (Actuator Workflow)
 
-The following excerpt is taken from the "Redis-Stream-Actuator-Structure" document to give you a holistic understanding before operating the endpoints:
+The following excerpt is taken from the "Redis-Stream-Actuator-Structure" document to give you a holistic understanding
+before operating the endpoints:
 
 - Exposed endpoints (the current version uses the unified `/actuator/redis-stream` system; see 3.2 for details):
-  - Overview: `GET /actuator/redis-stream`
-  - Details: `GET /actuator/redis-stream/{streamKey}`, `GET /actuator/redis-stream/{streamKey}/groups`
-  - Metrics: `GET /actuator/redis-stream/metrics/*` (summary / business / performance / system / errors / backlog)
-  - Health refresh: `GET|POST /actuator/redis-stream/health/refresh`
-  - Link list (optional): `GET /actuator/redis-stream-links`
-  
+    - Overview: `GET /actuator/redis-stream`
+    - Details: `GET /actuator/redis-stream/{streamKey}`, `GET /actuator/redis-stream/{streamKey}/groups`
+    - Metrics: `GET /actuator/redis-stream/metrics/*` (summary / business / performance / system / errors / backlog)
+    - Health refresh: `GET|POST /actuator/redis-stream/health/refresh`
+    - Link list (optional): `GET /actuator/redis-stream-links`
+
 - Workflow essentials:
-  - The overview aggregates results from health indicators (component-level: redis / stream / consumerGroup / poller / business).
-  - The detail page consolidates: basic Stream info, consumer groups, puller snapshots, and (optional) metrics.
-  - Each metric category can be queried independently, and all response structures include a `desc` field for frontend display.
-  - Health checks prioritize dynamic inspection of "registered streams / groups / pullers", falling back to basic connectivity tests when there are no active ones.
-  
+    - The overview aggregates results from health indicators (component-level: redis / stream / consumerGroup / poller /
+      business).
+    - The detail page consolidates: basic Stream info, consumer groups, puller snapshots, and (optional) metrics.
+    - Each metric category can be queried independently, and all response structures include a `desc` field for frontend
+      display.
+    - Health checks prioritize dynamic inspection of "registered streams / groups / pullers", falling back to basic
+      connectivity tests when there are no active ones.
+
   ```mermaid
   flowchart TD
     A[Client/运维人员] -->|HTTP请求| B["/actuator/redisstream<br/>入口端点"]
@@ -496,8 +525,6 @@ The following excerpt is taken from the "Redis-Stream-Actuator-Structure" docume
     
     class E,F,G,H,I,J,C1,C2,C3,C4 longText;
   ```
-  
-  
 
 ### 3.1 Actuator Exposure Configuration
 
@@ -522,15 +549,18 @@ management:
 ### 3.2 Endpoints and Paths
 
 Overview and details:
+
 - GET `/actuator/redis-stream`: overall status (includes health, metrics summary, system info)
 
-- GET `/actuator/redis-stream/{streamKey}`: details for a specific Stream (consumer groups, puller status, optional metrics)
+- GET `/actuator/redis-stream/{streamKey}`: details for a specific Stream (consumer groups, puller status, optional
+  metrics)
 
 - GET `/actuator/redis-stream/{streamKey}/groups`: consumer group info for a specific Stream
 
   ![image-20250922230447151](./assets/image-20250922230447151.png)
 
 Metrics breakdown:
+
 - GET `/actuator/redis-stream/metrics/summary`: metrics summary (business / performance / system / errors)
 
 - GET `/actuator/redis-stream/metrics/business`
@@ -546,26 +576,33 @@ Metrics breakdown:
   ![image-20250922230423774](./assets/image-20250922230423774.png)
 
 Health refresh:
+
 - GET `/actuator/redis-stream/health/refresh` (convenience refresh)
 - POST `/actuator/redis-stream/health/refresh`
 
 Link list (optional, for enhanced display):
-- GET `/actuator/redis-stream-links`: provides fixed clickable links and descriptions on the Actuator root page (when this endpoint is enabled).
+
+- GET `/actuator/redis-stream-links`: provides fixed clickable links and descriptions on the Actuator root page (when
+  this endpoint is enabled).
 
   ![image-20250922230343328](./assets/image-20250922230343328.png)
 
 Notes:
+
 - Metrics response structures uniformly include a `desc` field to help the frontend display meaning;
 - In the consumer group list: `name` / `consumers` / `pending` / `lastDeliveredId` use a `{ value, desc }` structure;
-- Health checks dynamically traverse registered streams and consumer groups, falling back to basic connectivity tests when necessary;
+- Health checks dynamically traverse registered streams and consumer groups, falling back to basic connectivity tests
+  when necessary;
 - If `redis-stream-links` is not enabled, the Actuator root page only displays templated paths (`{seg1}/{seg2}`).
 
 ### 3.3 Common Issues and Troubleshooting
-- Encounter `NoopTextMapPropagator`: usually caused by the Java Agent not being enabled or `GlobalOpenTelemetry` not being initialized properly;
+
+- Encounter `NoopTextMapPropagator`: usually caused by the Java Agent not being enabled or `GlobalOpenTelemetry` not
+  being initialized properly;
 - Empty metrics / health: check `management.endpoints.web.exposure.include` and whether the endpoints are enabled;
 - Double-write issue: make sure Micrometer/OTLP auto-export is disabled, or keep only one path;
-- Useless test/default streams: health checks have been changed to dynamically detect registered streams to avoid false positives.
-
+- Useless test/default streams: health checks have been changed to dynamically detect registered streams to avoid false
+  positives.
 
 ### 3.4 Monitoring Configuration (Business / Performance / Error / Health)
 
@@ -604,23 +641,23 @@ platform:
 
 Configuration field descriptions:
 
-| Path | Type | Description | Recommendation / Default |
-|------|------|-------------|--------------------------|
-| monitoring.enabled | boolean | Master monitoring switch (when disabled, health checks and metric collection are skipped) | Enable in production (default false) |
-| monitoring.metrics.enabled | boolean | Micrometer metrics switch | Enable in production |
-| monitoring.metrics.detailed | boolean | Percentiles / histograms (P50 / P95 / P99); increases CPU and memory overhead | Default true; recommend `false` in production, enable on demand |
-| monitoring.metrics.sampling-rate | double | Metric sampling rate 0.0-1.0 | High concurrency 0.05-0.3; low concurrency / stress test 1.0 |
-| monitoring.performance.enabled | boolean | Performance statistics (processing / polling / publishing duration) | Enable in production |
-| monitoring.performance.record-processing-time | boolean | Record processing duration | Enable in production |
-| monitoring.performance.record-polling-time | boolean | Record polling duration | Enable in production |
-| monitoring.performance.record-publishing-time | boolean | Record publishing duration | Enable in production |
-| monitoring.error-monitoring.enabled | boolean | Error metrics switch | Enable in production |
-| monitoring.error-monitoring.classify-by-type | boolean | Whether to classify counts by error type | Enable (for differentiated alerting) |
-| monitoring.error-monitoring.record-stack-trace | boolean | Whether to record stack traces (significantly increases overhead) | Default false; enable during troubleshooting |
-| monitoring.business-monitoring.enabled | boolean | Business counter switch (publish / consume / ack / retry, etc.) | Enable in production |
-| monitoring.business-monitoring.record-message-count | boolean | Whether to record publish / consume counts | Enable |
-| monitoring.business-monitoring.record-retry-count | boolean | Whether to record retry counts | Enable |
-| monitoring.business-monitoring.record-ack-count | boolean | Whether to record ACK counts | Enable |
-| monitoring.health-check.enabled | boolean | Health check switch | Enable in production |
-| monitoring.health-check.interval | duration | Health check interval | 30s ~ 60s |
-| monitoring.health-check.timeout | duration | Per-check timeout | 3s ~ 5s |
+| Path                                                | Type     | Description                                                                               | Recommendation / Default                                        |
+|-----------------------------------------------------|----------|-------------------------------------------------------------------------------------------|-----------------------------------------------------------------|
+| monitoring.enabled                                  | boolean  | Master monitoring switch (when disabled, health checks and metric collection are skipped) | Enable in production (default false)                            |
+| monitoring.metrics.enabled                          | boolean  | Micrometer metrics switch                                                                 | Enable in production                                            |
+| monitoring.metrics.detailed                         | boolean  | Percentiles / histograms (P50 / P95 / P99); increases CPU and memory overhead             | Default true; recommend `false` in production, enable on demand |
+| monitoring.metrics.sampling-rate                    | double   | Metric sampling rate 0.0-1.0                                                              | High concurrency 0.05-0.3; low concurrency / stress test 1.0    |
+| monitoring.performance.enabled                      | boolean  | Performance statistics (processing / polling / publishing duration)                       | Enable in production                                            |
+| monitoring.performance.record-processing-time       | boolean  | Record processing duration                                                                | Enable in production                                            |
+| monitoring.performance.record-polling-time          | boolean  | Record polling duration                                                                   | Enable in production                                            |
+| monitoring.performance.record-publishing-time       | boolean  | Record publishing duration                                                                | Enable in production                                            |
+| monitoring.error-monitoring.enabled                 | boolean  | Error metrics switch                                                                      | Enable in production                                            |
+| monitoring.error-monitoring.classify-by-type        | boolean  | Whether to classify counts by error type                                                  | Enable (for differentiated alerting)                            |
+| monitoring.error-monitoring.record-stack-trace      | boolean  | Whether to record stack traces (significantly increases overhead)                         | Default false; enable during troubleshooting                    |
+| monitoring.business-monitoring.enabled              | boolean  | Business counter switch (publish / consume / ack / retry, etc.)                           | Enable in production                                            |
+| monitoring.business-monitoring.record-message-count | boolean  | Whether to record publish / consume counts                                                | Enable                                                          |
+| monitoring.business-monitoring.record-retry-count   | boolean  | Whether to record retry counts                                                            | Enable                                                          |
+| monitoring.business-monitoring.record-ack-count     | boolean  | Whether to record ACK counts                                                              | Enable                                                          |
+| monitoring.health-check.enabled                     | boolean  | Health check switch                                                                       | Enable in production                                            |
+| monitoring.health-check.interval                    | duration | Health check interval                                                                     | 30s ~ 60s                                                       |
+| monitoring.health-check.timeout                     | duration | Per-check timeout                                                                         | 3s ~ 5s                                                         |

@@ -15,13 +15,13 @@
  */
 package cn.richie696.component.dao.handler;
 
+import cn.richie696.component.dao.config.DaoProperties;
+import cn.richie696.context.common.api.LoginUserContextHolder;
+import cn.richie696.contract.model.LoginUserPrincipal;
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
-import cn.richie696.component.dao.config.DaoProperties;
-import cn.richie696.context.common.api.LoginUserContextHolder;
-import cn.richie696.contract.model.LoginUserPrincipal;
 import lombok.Data;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.apache.ibatis.reflection.SystemMetaObject;

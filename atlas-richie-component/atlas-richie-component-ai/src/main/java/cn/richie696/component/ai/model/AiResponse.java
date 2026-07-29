@@ -318,6 +318,7 @@ public class AiResponse {
      * 使用场景：
      * - AI服务正常返回结果时
      * - 需要构造成功响应时
+     *
      * @param content   AI生成的回复内容
      * @param modelName 使用的模型名称
      * @param provider  模型提供商
@@ -325,9 +326,9 @@ public class AiResponse {
      * <p>
      * 示例：
      * AiResponse response = AiResponse.success(
-     *     "Java是一种面向对象的编程语言...",
-     *     "gpt-4",
-     *     "OPENAI"
+     * "Java是一种面向对象的编程语言...",
+     * "gpt-4",
+     * "OPENAI"
      * );
      */
     public static AiResponse success(String content, String modelName, String provider) {
@@ -346,14 +347,15 @@ public class AiResponse {
      * - AI服务返回错误时
      * - 网络连接失败时
      * - 参数配置错误时
+     *
      * @param errorMessage 详细的错误信息
      * @param errorCode    标准的错误代码
      * @return 配置好的失败响应对象
      * <p>
      * 示例：
      * AiResponse response = AiResponse.failure(
-     *     "API密钥无效，请检查配置",
-     *     "API_KEY_INVALID"
+     * "API密钥无效，请检查配置",
+     * "API_KEY_INVALID"
      * );
      */
     public static AiResponse failure(String errorMessage, String errorCode) {
@@ -371,6 +373,7 @@ public class AiResponse {
      * 使用场景：
      * - 简单的错误处理
      * - 不需要分类错误类型时
+     *
      * @param errorMessage 错误信息
      * @return 配置好的失败响应对象（错误代码默认为"UNKNOWN_ERROR"）
      * <p>

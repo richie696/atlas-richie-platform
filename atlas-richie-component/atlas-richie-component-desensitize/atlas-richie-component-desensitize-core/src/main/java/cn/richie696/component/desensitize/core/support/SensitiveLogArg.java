@@ -21,8 +21,8 @@ import cn.richie696.component.desensitize.core.model.MaskType;
  * 日志参数包装：显式标明敏感类型（可选，P2 Logback 过滤器识别）。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public record SensitiveLogArg(String value, MaskType type) {
 
@@ -33,7 +33,7 @@ public record SensitiveLogArg(String value, MaskType type) {
      * @param type 脱敏类型
      * @return 日志参数包装对象
      */
-    public static SensitiveLogArg of(String value, MaskType type) {
+    public static SensitiveLogArg of (String value, MaskType type){
         return new SensitiveLogArg(value, type);
     }
 
@@ -43,7 +43,7 @@ public record SensitiveLogArg(String value, MaskType type) {
      * @param value 原始手机号
      * @return 日志参数包装对象
      */
-    public static SensitiveLogArg phone(String value) {
+    public static SensitiveLogArg phone (String value){
         return of(value, MaskType.PHONE);
     }
 
@@ -53,7 +53,7 @@ public record SensitiveLogArg(String value, MaskType type) {
      * @param value 原始身份证号
      * @return 日志参数包装对象
      */
-    public static SensitiveLogArg idCard(String value) {
+    public static SensitiveLogArg idCard (String value){
         return of(value, MaskType.ID_CARD);
     }
 
@@ -63,7 +63,7 @@ public record SensitiveLogArg(String value, MaskType type) {
      * @param value 原始邮箱
      * @return 日志参数包装对象
      */
-    public static SensitiveLogArg email(String value) {
+    public static SensitiveLogArg email (String value){
         return of(value, MaskType.EMAIL);
     }
 
@@ -73,7 +73,7 @@ public record SensitiveLogArg(String value, MaskType type) {
      * @param value 原始银行卡号
      * @return 日志参数包装对象
      */
-    public static SensitiveLogArg bankCard(String value) {
+    public static SensitiveLogArg bankCard (String value){
         return of(value, MaskType.BANK_CARD);
     }
 
@@ -83,7 +83,7 @@ public record SensitiveLogArg(String value, MaskType type) {
      * @param value 原始姓名
      * @return 日志参数包装对象
      */
-    public static SensitiveLogArg name(String value) {
+    public static SensitiveLogArg name (String value){
         return of(value, MaskType.NAME);
     }
 
@@ -93,7 +93,7 @@ public record SensitiveLogArg(String value, MaskType type) {
      * @param value 原始地址
      * @return 日志参数包装对象
      */
-    public static SensitiveLogArg address(String value) {
+    public static SensitiveLogArg address (String value){
         return of(value, MaskType.ADDRESS);
     }
 
@@ -103,7 +103,7 @@ public record SensitiveLogArg(String value, MaskType type) {
      * @param value 原始密码
      * @return 日志参数包装对象
      */
-    public static SensitiveLogArg password(String value) {
+    public static SensitiveLogArg password (String value){
         return of(value, MaskType.PASSWORD);
     }
 
@@ -113,7 +113,7 @@ public record SensitiveLogArg(String value, MaskType type) {
      * @param value 原始值
      * @return 日志参数包装对象
      */
-    public static SensitiveLogArg custom(String value) {
+    public static SensitiveLogArg custom (String value){
         return of(value, MaskType.CUSTOM);
     }
 
@@ -123,7 +123,7 @@ public record SensitiveLogArg(String value, MaskType type) {
      * @return 原始字符串
      */
     @Override
-    public String toString() {
+    public String toString () {
         return value;
     }
 }

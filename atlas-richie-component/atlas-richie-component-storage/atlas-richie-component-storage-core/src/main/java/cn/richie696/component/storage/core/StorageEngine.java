@@ -41,7 +41,7 @@ public interface StorageEngine {
     /**
      * 推送文件到文件服务器的方法
      *
-     * @param key 文件在OS上的绝对路径
+     * @param key        文件在OS上的绝对路径
      * @param collection 文件内容
      * @return 返回推送结果
      */
@@ -50,7 +50,7 @@ public interface StorageEngine {
     /**
      * 推送文件到文件服务器的方法
      *
-     * @param key 文件在OS上的绝对路径
+     * @param key        文件在OS上的绝对路径
      * @param collection 文件内容
      * @return 返回推送结果
      */
@@ -59,7 +59,7 @@ public interface StorageEngine {
     /**
      * 推送文件到文件服务器的方法
      *
-     * @param key 文件在OS上的绝对路径
+     * @param key    文件在OS上的绝对路径
      * @param object 文件内容
      * @return 返回推送结果
      */
@@ -68,7 +68,7 @@ public interface StorageEngine {
     /**
      * 推送文件到文件服务器的方法
      *
-     * @param key 文件在OS上的绝对路径
+     * @param key  文件在OS上的绝对路径
      * @param file 文件内容
      * @return 返回推送结果
      */
@@ -77,7 +77,7 @@ public interface StorageEngine {
     /**
      * 推送文件到文件服务器的方法
      *
-     * @param key 文件在OS上的绝对路径
+     * @param key         文件在OS上的绝对路径
      * @param inputStream 文件的输入流
      * @return 返回推送结果
      */
@@ -86,8 +86,8 @@ public interface StorageEngine {
     /**
      * 推送文件到文件服务器的方法
      *
-     * @param key 文件在OS上的绝对路径
-     * @param file 文件内容
+     * @param key     文件在OS上的绝对路径
+     * @param file    文件内容
      * @param options 图片处理选项
      * @return 返回推送结果
      */
@@ -96,20 +96,20 @@ public interface StorageEngine {
     /**
      * 推送文件到文件服务器的方法
      *
-     * @param key 文件在OS上的绝对路径
+     * @param key         文件在OS上的绝对路径
      * @param inputStream 文件的输入流
-     * @param options 图片处理选项
+     * @param options     图片处理选项
      * @return 返回推送结果
      */
-    UploadResponse putImage(@Nonnull String key, @Nonnull InputStream inputStream,ImageOptions options);
+    UploadResponse putImage(@Nonnull String key, @Nonnull InputStream inputStream, ImageOptions options);
 
     /**
      * 获取文件服务器上的Json文件内容并转换为指定类型对象的方法
      *
-     * @param key 文件在OS上的绝对路径
+     * @param key           文件在OS上的绝对路径
      * @param typeReference 内省对象
+     * @param <T>           Json文件内容对应的Java类型
      * @return 返回文件内容
-     * @param <T> Json文件内容对应的Java类型
      */
     <T> DownloadResponse<T> getData(@Nonnull String key, @Nonnull TypeReference<T> typeReference);
 
@@ -117,7 +117,7 @@ public interface StorageEngine {
      * 下载文件到本地服务器的方法
      * <p style="color:green">（注：本方法不会将下载的文件转为字节数组返回）
      *
-     * @param key 文件在OS上的绝对路径
+     * @param key        文件在OS上的绝对路径
      * @param targetPath 文件的本地路径
      * @param returnData 是否返回文件内容<p style="color: red">（如果文件太大可能导致JVM对外内存溢出）
      * @return 返回推送结果
@@ -127,7 +127,7 @@ public interface StorageEngine {
     /**
      * 下载文件到本地的方法（支持断点续传）
      *
-     * @param key 文件在OS上的绝对路径
+     * @param key        文件在OS上的绝对路径
      * @param targetPath 用于保存文件的本地路径
      * @param returnData 是否返回文件内容<p style="color: red">（如果文件太大可能导致JVM对外内存溢出）
      * @return 返回下载结果
@@ -145,7 +145,7 @@ public interface StorageEngine {
     /**
      * 生成客户端直传对象存储的统一策略（预签名 URL 或可用兜底链接）。
      *
-     * @param key 对象存储键（业务 key，会由引擎补全 basePath）
+     * @param key           对象存储键（业务 key，会由引擎补全 basePath）
      * @param expireSeconds 策略有效期（秒）
      * @return 直传策略
      */

@@ -28,11 +28,17 @@ public enum EnumErrorMassage {
      */
     REQUEST_PARAMS_INVALID("00101001", "Request params is invalid", "platform.component.common.message.invalid.requestParams");
 
-    /** HTTP 响应头中的状态码（如 400） */
+    /**
+     * HTTP 响应头中的状态码（如 400）
+     */
     private final String statusCode;
-    /** 默认错误文案 */
+    /**
+     * 默认错误文案
+     */
     private final String defaultMessage;
-    /** 国际化资源 key */
+    /**
+     * 国际化资源 key
+     */
     private final String i18nCode;
 
     private EnumErrorMassage(String statusCode, String defaultMessage, String i18nCode) {

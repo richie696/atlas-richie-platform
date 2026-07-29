@@ -80,7 +80,17 @@ public final class RedisIntegrationTestSupport {
 
     /** 供 {@link RedisIntegrationTestInitializer} 与 {@link #registerRedisProperties} 共用。 */
     void appendPropertyPairs(List<String> pairs) {
+        int before = pairs.size();
         DELEGATE.appendConnectionPropertyPairs(pairs);
+        // AtlasRedisProperties 绑定前缀为 platform.component.cache.redis，
+        // 而 DELEGATE 只输出 spring.data.redis.*，需同时映射到组件前缀。
+        for (int i = before; i < pairs.size(); i++) {
+            String pair = pairs.get(i);
+            if (pair.startsWith("spring.data.redis.")) {
+                String suffix = pair.substring("spring.data.redis.".length());
+                pairs.add("platform.component.cache.redis." + suffix);
+            }
+        }
         appendComponentPropertyPairs(pairs);
     }
 

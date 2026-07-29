@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.storage.converter;
 
-import com.ksyun.ks3.dto.CannedAccessControlList;
 import cn.richie696.component.storage.enums.AclTypeEnum;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
+import com.ksyun.ks3.dto.CannedAccessControlList;
 import jakarta.annotation.Nonnull;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -39,7 +39,8 @@ public class Ks3AclTypeConverter implements AclTypeConverter<CannedAccessControl
     @Override
     public CannedAccessControlList convertToEngineAcl(@Nonnull AclTypeEnum aclType) {
         return switch (aclType) {
-            case PRIVATE, AUTHENTICATED_READ, BUCKET_OWNER_READ, BUCKET_OWNER_FULL_CONTROL -> CannedAccessControlList.Private;
+            case PRIVATE, AUTHENTICATED_READ, BUCKET_OWNER_READ, BUCKET_OWNER_FULL_CONTROL ->
+                    CannedAccessControlList.Private;
             case PUBLIC_READ -> CannedAccessControlList.PublicRead;
             case PUBLIC_READ_WRITE -> CannedAccessControlList.PublicReadWrite;
             default -> throw new IllegalArgumentException(

@@ -38,7 +38,7 @@ public interface VectorBackupOperations {
      * @param targetPath 备份目标路径（本地路径或远端 URI，provider 决定）；非空
      * @return {@code true} = 备份成功；{@code false} = 备份失败（路径不可写、磁盘满等）
      * @throws UnsupportedOperationException provider 不支持时抛出
-     * @throws IllegalArgumentException     {@code indexName} 或 {@code targetPath} 为空时
+     * @throws IllegalArgumentException      {@code indexName} 或 {@code targetPath} 为空时
      */
     boolean backup(String indexName, String targetPath);
 
@@ -52,7 +52,7 @@ public interface VectorBackupOperations {
      * @param indexName  目标索引名称；非空
      * @return {@code true} = 恢复成功；{@code false} = 恢复失败
      * @throws UnsupportedOperationException provider 不支持时抛出
-     * @throws IllegalArgumentException     {@code sourcePath} 或 {@code indexName} 为空时
+     * @throws IllegalArgumentException      {@code sourcePath} 或 {@code indexName} 为空时
      */
     boolean restore(String sourcePath, String indexName);
 }

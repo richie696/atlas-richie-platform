@@ -18,7 +18,7 @@ import java.time.Duration;
  * 大量生效；当两者接近时说明候选池本身就稀疏，可提示用户"扩大召回"。</p>
  *
  * @param candidateCount 第一轮召回的候选数（已应用 ACL + 投影版本过滤，但未做多样性
- *                        截断），用于评估召回质量
+ *                       截断），用于评估召回质量
  * @param returnedCount  最终返回的 {@link RetrievalCitation} 数量，受 {@code topK} 与
  *                       {@code maxChunksPerDocument} 双重限制
  * @param hybrid         实际走的检索路径是否为 hybrid（dense + sparse）；
@@ -28,7 +28,6 @@ import java.time.Duration;
  * @param elapsed        整个 {@link KnowledgeBaseVectorService#search} 调用的端到端耗时，
  *                       包含 ACL filter 构造、projection 版本解析、provider 调用、
  *                       MMR 多样性截断
- *
  * @author richie696
  * @version 1.0
  * @since 2025-07-01

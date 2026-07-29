@@ -16,16 +16,17 @@
 package cn.richie696.component.mongodb.builder;
 
 import cn.richie696.component.mongodb.core.EntityIntrospector;
-import cn.richie696.component.tenant.context.TenantContext;
 import cn.richie696.component.mongodb.observability.MongodbMetricsRecorder;
 import cn.richie696.component.mongodb.observability.MongodbSlowQueryLogger;
 import cn.richie696.component.mongodb.observability.MongodbTracing;
+import cn.richie696.component.tenant.context.TenantContext;
 import io.micrometer.core.instrument.Timer;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -293,7 +294,8 @@ public class QueryBuilder<T> {
             List<T> result = mongoTemplate.find(query, entityClass);
             if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
             if (sample != null) metricsRecorder.stop(sample, "find", collection, true);
-            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "find", System.currentTimeMillis() - start);
+            if (slowQueryLogger != null)
+                slowQueryLogger.logIfSlow(collection, "find", System.currentTimeMillis() - start);
             return result;
         } catch (Throwable t) {
             if (sample != null) metricsRecorder.stop(sample, "find", collection, false);
@@ -319,7 +321,8 @@ public class QueryBuilder<T> {
             List<T> result = mongoTemplate.find(query, entityClass);
             if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
             if (sample != null) metricsRecorder.stop(sample, "find", collection, true);
-            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "find", System.currentTimeMillis() - start);
+            if (slowQueryLogger != null)
+                slowQueryLogger.logIfSlow(collection, "find", System.currentTimeMillis() - start);
             return result.isEmpty() ? null : result.get(0);
         } catch (Throwable t) {
             if (sample != null) metricsRecorder.stop(sample, "find", collection, false);
@@ -354,7 +357,8 @@ public class QueryBuilder<T> {
             long result = mongoTemplate.count(query, entityClass);
             if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
             if (sample != null) metricsRecorder.stop(sample, "count", collection, true);
-            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "count", System.currentTimeMillis() - start);
+            if (slowQueryLogger != null)
+                slowQueryLogger.logIfSlow(collection, "count", System.currentTimeMillis() - start);
             return result;
         } catch (Throwable t) {
             if (sample != null) metricsRecorder.stop(sample, "count", collection, false);
@@ -384,7 +388,8 @@ public class QueryBuilder<T> {
             List<T> content = mongoTemplate.find(query, entityClass);
             if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
             if (sample != null) metricsRecorder.stop(sample, "find", collection, true);
-            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "find", System.currentTimeMillis() - start);
+            if (slowQueryLogger != null)
+                slowQueryLogger.logIfSlow(collection, "find", System.currentTimeMillis() - start);
             int pageNum = pageRequest != null ? pageRequest.getPageNumber() + 1 : 1;
             int pageSize = pageRequest != null ? pageRequest.getPageSize() : (int) Math.min(total, 100);
             return new PageResult<>(content, total, pageNum, pageSize);

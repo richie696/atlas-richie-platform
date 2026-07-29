@@ -15,21 +15,14 @@
  */
 package cn.richie696.component.ocr.paddle.provider;
 
-import cn.richie696.component.ocr.model.Languages;
-import cn.richie696.component.ocr.paddle.config.PaddleOcrProperties;
-
-import cn.richie696.context.utils.data.JsonUtils;
-import cn.richie696.component.ocr.paddle.protocol.PaddleOcrEnvelope;
-import cn.richie696.component.ocr.model.OcrBlock;
-import cn.richie696.component.ocr.model.OcrImage;
-import cn.richie696.component.ocr.model.OcrLine;
-import cn.richie696.component.ocr.model.OcrOptions;
-import cn.richie696.component.ocr.model.OcrResult;
-import cn.richie696.component.ocr.model.Point;
 import cn.richie696.component.ocr.exception.OcrException;
-import cn.richie696.component.ocr.provider.AbstractOcrProvider;
+import cn.richie696.component.ocr.model.*;
+import cn.richie696.component.ocr.paddle.config.PaddleOcrProperties;
+import cn.richie696.component.ocr.paddle.protocol.PaddleOcrEnvelope;
 import cn.richie696.component.ocr.paddle.protocol.PaddleRequest;
 import cn.richie696.component.ocr.paddle.protocol.PaddleResponse;
+import cn.richie696.component.ocr.provider.AbstractOcrProvider;
+import cn.richie696.context.utils.data.JsonUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -43,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.Set;
 
 /**
  * PaddleOCR Provider 实现
@@ -128,10 +122,10 @@ public class PaddleOcrProvider extends AbstractOcrProvider<PaddleRequest, Paddle
      * <p>仅支持 {@link OcrImage.Bytes} 与 {@link OcrImage.Stream} 两种本地图片来源；
      * {@link OcrImage.Url} 因不具备网络拉取能力将被拒绝。
      *
-     * @param image 待识别图片，支持 {@code Bytes} 与 {@code Stream} 两种 sealed 子类型
+     * @param image   待识别图片，支持 {@code Bytes} 与 {@code Stream} 两种 sealed 子类型
      * @param options 调用选项，用于提取语言以映射到 PaddleOCR 的语言码
      * @return 包含图片字节与语言码的 PaddleOCR 请求对象
-     * @throws OcrException.Unrecognized 当传入的 {@link OcrImage} 类型为 {@code Url} 时抛出
+     * @throws OcrException.Unrecognized        当传入的 {@link OcrImage} 类型为 {@code Url} 时抛出
      * @throws OcrException.ProviderUnavailable 当读取 {@link OcrImage.Stream} 输入流发生 {@link IOException} 时抛出
      */
     @Override
@@ -163,8 +157,8 @@ public class PaddleOcrProvider extends AbstractOcrProvider<PaddleRequest, Paddle
      *
      * @param request 已构造好的 PaddleOCR 请求（图片字节与语言码）
      * @return 包含 typed envelope 与耗时（毫秒）的 PaddleOCR 响应
-     * @throws OcrException.SidecarUnavailable 当 Python 子进程启动失败、IO 异常或脚本报告错误时抛出
-     * @throws OcrException.Unrecognized 当子进程返回非零退出码、或在指定超时内未退出时抛出
+     * @throws OcrException.SidecarUnavailable  当 Python 子进程启动失败、IO 异常或脚本报告错误时抛出
+     * @throws OcrException.Unrecognized        当子进程返回非零退出码、或在指定超时内未退出时抛出
      * @throws OcrException.ProviderUnavailable 当等待子进程被中断时抛出，并恢复线程中断状态
      */
     @Override
@@ -179,10 +173,13 @@ public class PaddleOcrProvider extends AbstractOcrProvider<PaddleRequest, Paddle
             List<String> cmd = new ArrayList<>(6);
             cmd.add(livePythonPath());
             cmd.add(scriptPath.toString());
-            cmd.add("--image"); cmd.add(tmpImage.toString());
-            cmd.add("--lang"); cmd.add(request.lang());
+            cmd.add("--image");
+            cmd.add(tmpImage.toString());
+            cmd.add("--lang");
+            cmd.add(request.lang());
             if (liveModelDir() != null && !liveModelDir().isBlank()) {
-                cmd.add("--model-dir"); cmd.add(liveModelDir());
+                cmd.add("--model-dir");
+                cmd.add(liveModelDir());
             }
 
             // redirectErrorStream(true): stderr 错误信息合到 stdout, 简化错误捕获
@@ -237,7 +234,10 @@ public class PaddleOcrProvider extends AbstractOcrProvider<PaddleRequest, Paddle
                 process.destroyForcibly();
             }
             if (tmpImage != null) {
-                try { Files.deleteIfExists(tmpImage); } catch (IOException ignored) { }
+                try {
+                    Files.deleteIfExists(tmpImage);
+                } catch (IOException ignored) {
+                }
             }
         }
     }

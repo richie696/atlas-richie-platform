@@ -27,10 +27,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class DoubaoStreamingAsrVoiceChatModelTest {
 
@@ -46,7 +43,10 @@ class DoubaoStreamingAsrVoiceChatModelTest {
         String[] models = model.supportedModels();
         boolean found = false;
         for (String m : models) {
-            if ("doubao-streaming-asr".equals(m)) { found = true; break; }
+            if ("doubao-streaming-asr".equals(m)) {
+                found = true;
+                break;
+            }
         }
         assertTrue(found);
     }
@@ -89,7 +89,10 @@ class DoubaoStreamingAsrVoiceChatModelTest {
             assertNotNull(conv.events());
         } finally {
             if (ref.get() != null) {
-                try { ref.get().close(); } catch (Exception ignore) {}
+                try {
+                    ref.get().close();
+                } catch (Exception ignore) {
+                }
             }
         }
     }
@@ -125,17 +128,51 @@ class DoubaoStreamingAsrVoiceChatModelTest {
                     .build();
         }
 
-        @Override public StsTicket sign(String v, String c, String m) { throw new UnsupportedOperationException(); }
-        @Override public StsTicket sign(String v, String c, String m, int t, Map<String, Object> a) { throw new UnsupportedOperationException(); }
-        @Override public List<String> listRegisteredVendors() { return List.of(); }
-        @Override public int signerCount() { return 0; }
+        @Override
+        public StsTicket sign(String v, String c, String m) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public StsTicket sign(String v, String c, String m, int t, Map<String, Object> a) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<String> listRegisteredVendors() {
+            return List.of();
+        }
+
+        @Override
+        public int signerCount() {
+            return 0;
+        }
     }
 
     private static final class ThrowingStsService implements VoiceStsService {
-        @Override public StsTicket sign(VendorStsContext ctx) { throw new IllegalStateException("simulated STS failure"); }
-        @Override public StsTicket sign(String v, String c, String m) { throw new IllegalStateException("simulated STS failure"); }
-        @Override public StsTicket sign(String v, String c, String m, int t, Map<String, Object> a) { throw new IllegalStateException("simulated STS failure"); }
-        @Override public List<String> listRegisteredVendors() { return List.of(); }
-        @Override public int signerCount() { return 0; }
+        @Override
+        public StsTicket sign(VendorStsContext ctx) {
+            throw new IllegalStateException("simulated STS failure");
+        }
+
+        @Override
+        public StsTicket sign(String v, String c, String m) {
+            throw new IllegalStateException("simulated STS failure");
+        }
+
+        @Override
+        public StsTicket sign(String v, String c, String m, int t, Map<String, Object> a) {
+            throw new IllegalStateException("simulated STS failure");
+        }
+
+        @Override
+        public List<String> listRegisteredVendors() {
+            return List.of();
+        }
+
+        @Override
+        public int signerCount() {
+            return 0;
+        }
     }
 }

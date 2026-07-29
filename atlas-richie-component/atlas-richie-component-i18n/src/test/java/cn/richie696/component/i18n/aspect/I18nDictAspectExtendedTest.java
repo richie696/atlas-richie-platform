@@ -15,20 +15,21 @@
  */
 package cn.richie696.component.i18n.aspect;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import cn.richie696.component.cache.GlobalCache;
+import cn.richie696.component.cache.ops.FieldOps;
 import cn.richie696.component.i18n.annotation.I18nControl;
 import cn.richie696.component.i18n.annotation.I18nDict;
 import cn.richie696.component.i18n.config.I18nProperties;
-import cn.richie696.component.cache.GlobalCache;
-import cn.richie696.component.cache.ops.FieldOps;
 import cn.richie696.contract.model.ApiResult;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class I18nDictAspectExtendedTest {

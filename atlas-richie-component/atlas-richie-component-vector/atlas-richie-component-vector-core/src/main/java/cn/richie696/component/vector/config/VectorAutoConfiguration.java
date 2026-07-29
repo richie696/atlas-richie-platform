@@ -49,7 +49,9 @@ public class VectorAutoConfiguration {
         return new SpringAiVectorFilterCompiler();
     }
 
-    /** 没有可信的 provider-side filter compiler 时不创建知识库门面，杜绝 ACL 后过滤。 */
+    /**
+     * 没有可信的 provider-side filter compiler 时不创建知识库门面，杜绝 ACL 后过滤。
+     */
     @Bean
     @ConditionalOnBean({VectorService.class, VectorFilterCompiler.class})
     @ConditionalOnMissingBean(KnowledgeBaseVectorService.class)

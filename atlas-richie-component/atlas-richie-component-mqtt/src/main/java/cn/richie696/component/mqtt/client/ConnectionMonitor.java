@@ -139,8 +139,8 @@ public final class ConnectionMonitor extends MqttEventPublisher {
      *   <li>支持动态网络类型切换</li>
      * </ul>
      *
-     * @param properties MQTT客户端配置，包含监控策略配置
-     * @param clientId   客户端唯一标识
+     * @param properties        MQTT客户端配置，包含监控策略配置
+     * @param clientId          客户端唯一标识
      * @param connectionManager MQTT客户端实例
      * @throws IllegalArgumentException 当参数为null时
      */

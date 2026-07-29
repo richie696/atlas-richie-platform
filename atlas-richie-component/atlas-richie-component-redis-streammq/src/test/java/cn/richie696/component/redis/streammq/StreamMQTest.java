@@ -37,31 +37,20 @@ class StreamMQTest {
     }
 
     @Test
-    void streamAndMessaging_shouldExposeInjectedDelegates() throws Exception {
+    void initialize_shouldExposeStreamFunction() {
         StreamFunction streamFn = mock(StreamFunction.class);
-        StreamMQ.StreamMQDelegate delegate = new StreamMQ.StreamMQDelegate(streamFn);
-
-        StreamMQ facade = newInstance();
-        facade.setDelegate(delegate);
-
+        StreamMQ.initialize(streamFn);
         assertThat(StreamMQ.stream()).isSameAs(streamFn);
     }
 
     @Test
-    void setDelegate_shouldOnlyInitializeOnce() throws Exception {
-        StreamFunction firstStream = mock(StreamFunction.class);
-        StreamFunction secondStream = mock(StreamFunction.class);
+    void initialize_shouldOnlyAcceptFirstCall() {
+        StreamFunction first = mock(StreamFunction.class);
+        StreamFunction second = mock(StreamFunction.class);
 
-        StreamMQ facade = newInstance();
-        facade.setDelegate(new StreamMQ.StreamMQDelegate(firstStream));
-        facade.setDelegate(new StreamMQ.StreamMQDelegate(secondStream));
+        StreamMQ.initialize(first);
+        StreamMQ.initialize(second);
 
-        assertThat(StreamMQ.stream()).isSameAs(firstStream);
-    }
-
-    private static StreamMQ newInstance() throws Exception {
-        var constructor = StreamMQ.class.getDeclaredConstructor();
-        constructor.setAccessible(true);
-        return constructor.newInstance();
+        assertThat(StreamMQ.stream()).isSameAs(first);
     }
 }

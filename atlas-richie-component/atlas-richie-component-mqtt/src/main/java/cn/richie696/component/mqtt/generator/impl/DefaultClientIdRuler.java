@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.mqtt.generator.impl;
 
-import cn.richie696.contract.constant.GlobalConstants;
 import cn.richie696.component.mqtt.generator.ClientIdRuler;
+import cn.richie696.contract.constant.GlobalConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

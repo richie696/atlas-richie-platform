@@ -61,16 +61,16 @@ public class TenancyStrategyFactory {
      */
     public TenancyStrategyFactory(List<TenancyStrategy> strategies) {
         this.strategyMap = Arrays.stream(IsolationMode.values())
-            .collect(Collectors.toMap(
-                Function.identity(),
-                mode -> strategies.stream()
-                    .filter(s -> s.supports(mode))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException(
-                        "No strategy found for mode: " + mode)),
-                (existing, replacement) -> existing,
-                () -> new EnumMap<>(IsolationMode.class)
-            ));
+                .collect(Collectors.toMap(
+                        Function.identity(),
+                        mode -> strategies.stream()
+                                .filter(s -> s.supports(mode))
+                                .findFirst()
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                        "No strategy found for mode: " + mode)),
+                        (existing, replacement) -> existing,
+                        () -> new EnumMap<>(IsolationMode.class)
+                ));
     }
 
     /**

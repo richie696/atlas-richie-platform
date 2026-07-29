@@ -29,18 +29,32 @@ package cn.richie696.component.vector.projection;
  * @since 2025-07-01
  */
 public enum VectorProjectionState {
-    /** 已创建 projection version 记录，等待写入流开始；{@link VectorProjectionLifecycleService#beginRebuild} 后的初始状态。 */
+    /**
+     * 已创建 projection version 记录，等待写入流开始；{@link VectorProjectionLifecycleService#beginRebuild} 后的初始状态。
+     */
     PREPARING,
-    /** 写入流订阅成功，正在向向量库写入向量与 manifest；尚未收到全部完成事件。 */
+    /**
+     * 写入流订阅成功，正在向向量库写入向量与 manifest；尚未收到全部完成事件。
+     */
     WRITING,
-    /** 写入流已正常完成，全部 vectorId 已记录到 manifest，等待业务侧显式 activate。 */
+    /**
+     * 写入流已正常完成，全部 vectorId 已记录到 manifest，等待业务侧显式 activate。
+     */
     READY,
-    /** 当前业务可检索的目标版本；同一 {@link VectorProjectionReference} 同一时刻有且仅有一个 ACTIVE。 */
+    /**
+     * 当前业务可检索的目标版本；同一 {@link VectorProjectionReference} 同一时刻有且仅有一个 ACTIVE。
+     */
     ACTIVE,
-    /** 被新 ACTIVE 替换下来的旧版本；处于可清理的"宽限期"，到期后由 cleanup 任务按 manifest 精确回收。 */
+    /**
+     * 被新 ACTIVE 替换下来的旧版本；处于可清理的"宽限期"，到期后由 cleanup 任务按 manifest 精确回收。
+     */
     RETIRING,
-    /** 写入或激活过程中发生不可恢复错误；保留 {@code failureReason} 不再被激活，等待业务侧重试或人工介入。 */
+    /**
+     * 写入或激活过程中发生不可恢复错误；保留 {@code failureReason} 不再被激活，等待业务侧重试或人工介入。
+     */
     FAILED,
-    /** 已被清理任务从向量库删除并完成 Outbox 事件，生命周期结束；为不可逆终态。 */
+    /**
+     * 已被清理任务从向量库删除并完成 Outbox 事件，生命周期结束；为不可逆终态。
+     */
     CLEANED
 }

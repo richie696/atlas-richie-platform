@@ -15,15 +15,7 @@
  */
 package cn.richie696.component.grpc.interceptor;
 
-import io.grpc.CallOptions;
-import io.grpc.Channel;
-import io.grpc.ClientCall;
-import io.grpc.ClientInterceptor;
-import io.grpc.ForwardingClientCall;
-import io.grpc.ForwardingClientCallListener;
-import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
-import io.grpc.Status;
+import io.grpc.*;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
@@ -61,14 +53,22 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 public final class GrpcClientTracingInterceptor implements ClientInterceptor {
 
-    /** 标记 RPC 系统类型 */
+    /**
+     * 标记 RPC 系统类型
+     */
     private static final AttributeKey<String> RPC_SYSTEM = AttributeKey.stringKey("rpc.system");
-    /** 标记 RPC 方法名 */
+    /**
+     * 标记 RPC 方法名
+     */
     private static final AttributeKey<String> RPC_METHOD = AttributeKey.stringKey("rpc.method");
-    /** 标记 gRPC 状态码 */
+    /**
+     * 标记 gRPC 状态码
+     */
     private static final AttributeKey<Long> RPC_STATUS_CODE = AttributeKey.longKey("rpc.grpc.status_code");
 
-    /** W3C 标准 TextMap 注入器，将 trace context 写入 gRPC Metadata */
+    /**
+     * W3C 标准 TextMap 注入器，将 trace context 写入 gRPC Metadata
+     */
     private static final TextMapSetter<Metadata> SETTER = (metadata, key, value) ->
             metadata.put(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value);
 

@@ -28,7 +28,6 @@ import java.time.Duration;
  * @param writeRequests     写库阶段实际触发的 provider 写入 API 调用次数，一次调用可能写入
  *                          {@code writeBatchSize} 条记录。用于评估 provider 网络/吞吐成本；
  *                          与 {@code writeBatchSize} 的乘积才是写入记录数。
- *
  * @author richie696
  * @version 1.0
  * @since 2025-07-01
@@ -49,7 +48,7 @@ public record BulkOperationSummary(
      *
      * @return 已被嵌入阶段或持久化阶段判定的记录总数
      */
-    public long processed() {
+    public long processed () {
         return succeeded + failed;
     }
 }

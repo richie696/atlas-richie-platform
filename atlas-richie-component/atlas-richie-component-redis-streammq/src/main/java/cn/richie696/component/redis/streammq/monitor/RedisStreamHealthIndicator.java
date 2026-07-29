@@ -28,7 +28,6 @@ import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.stream.StreamInfo;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -58,54 +57,82 @@ import java.util.concurrent.atomic.AtomicLong;
  * @since 2025-09-16
  */
 @Slf4j
-@Component
-@ConditionalOnClass({HealthIndicator.class, MeterRegistry.class})
 public class RedisStreamHealthIndicator implements HealthIndicator {
 
-    /** Redis 模板（JSON 序列化） */
+    /**
+     * Redis 模板（JSON 序列化）
+     */
     @Qualifier("jsonTemplate")
     private final MultiRedisTemplate<Object> redisTemplate;
 
-    /** Stream 指标收集 */
+    /**
+     * Stream 指标收集
+     */
     private final RedisStreamMetrics metrics;
 
-    /** 指标注册表 */
+    /**
+     * 指标注册表
+     */
     private final MeterRegistry meterRegistry;
 
-    /** Stream 反应器 */
+    /**
+     * Stream 反应器
+     */
     private final RedisStreamReactor reactor;
 
-    /** 监控配置 */
+    /**
+     * 监控配置
+     */
     private final RedisStreamMonitoringProperties properties;
 
-    /** 健康检查状态缓存（streamKey -> 状态） */
+    /**
+     * 健康检查状态缓存（streamKey -> 状态）
+     */
     private final Map<String, HealthStatus> healthStatusCache = new ConcurrentHashMap<>();
 
-    /** 上次健康检查时间戳 */
+    /**
+     * 上次健康检查时间戳
+     */
     private final AtomicLong lastCheckTime = new AtomicLong(0);
 
-    /** 健康检查耗时计时器 */
+    /**
+     * 健康检查耗时计时器
+     */
     private final Timer healthCheckDuration;
 
-    /** 健康检查成功计数 */
+    /**
+     * 健康检查成功计数
+     */
     private final Counter healthCheckSuccess;
 
-    /** 健康检查失败计数 */
+    /**
+     * 健康检查失败计数
+     */
     private final Counter healthCheckFailure;
 
-    /** Redis 连接错误计数 */
+    /**
+     * Redis 连接错误计数
+     */
     private final Counter redisConnectionErrors;
 
-    /** Stream 可用性错误计数 */
+    /**
+     * Stream 可用性错误计数
+     */
     private final Counter streamAvailabilityErrors;
 
-    /** 消费者组错误计数 */
+    /**
+     * 消费者组错误计数
+     */
     private final Counter consumerGroupErrors;
 
-    /** 拉取器错误计数 */
+    /**
+     * 拉取器错误计数
+     */
     private final Counter pollerErrors;
 
-    /** 业务健康错误计数 */
+    /**
+     * 业务健康错误计数
+     */
     private final Counter businessHealthErrors;
 
     /**
@@ -118,10 +145,10 @@ public class RedisStreamHealthIndicator implements HealthIndicator {
      * @param properties    监控配置
      */
     public RedisStreamHealthIndicator(MultiRedisTemplate<Object> redisTemplate,
-                                    RedisStreamMetrics metrics,
-                                    RedisStreamReactor reactor,
-                                    MeterRegistry meterRegistry,
-                                    RedisStreamMonitoringProperties properties) {
+                                      RedisStreamMetrics metrics,
+                                      RedisStreamReactor reactor,
+                                      MeterRegistry meterRegistry,
+                                      RedisStreamMonitoringProperties properties) {
         this.redisTemplate = redisTemplate;
         this.metrics = metrics;
         this.reactor = reactor;
@@ -169,18 +196,21 @@ public class RedisStreamHealthIndicator implements HealthIndicator {
 
         /**
          * 是否健康
+         *
          * @return 是否健康
          */
         boolean isHealthy();
 
         /**
          * 描述信息
+         *
          * @return 描述信息
          */
         String getMessage();
 
         /**
          * 响应耗时（毫秒）
+         *
          * @return 响应耗时（毫秒）
          */
         long getResponseTime();
@@ -191,7 +221,7 @@ public class RedisStreamHealthIndicator implements HealthIndicator {
      */
     public enum HealthLevel {
         /**
-         *  健康
+         * 健康
          */
         UP,
         /**
@@ -207,10 +237,10 @@ public class RedisStreamHealthIndicator implements HealthIndicator {
     /**
      * 健康检查结果
      *
-     * @param healthy     是否健康
-     * @param message     描述信息
+     * @param healthy      是否健康
+     * @param message      描述信息
      * @param responseTime 响应耗时（毫秒）
-     * @param details     明细数据
+     * @param details      明细数据
      */
     public record HealthCheckResult(boolean healthy, String message, long responseTime, Map<String, Object> details) {
     }
@@ -963,6 +993,7 @@ public class RedisStreamHealthIndicator implements HealthIndicator {
 
     /**
      * 获取错误指标（供外部调用）
+     *
      * @return 错误指标
      */
     public Map<String, Object> getErrorMetrics() {

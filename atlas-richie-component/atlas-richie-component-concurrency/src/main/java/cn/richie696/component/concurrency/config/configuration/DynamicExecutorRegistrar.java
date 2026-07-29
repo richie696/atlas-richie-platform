@@ -79,7 +79,9 @@ public class DynamicExecutorRegistrar
 
     private static final Logger log = LoggerFactory.getLogger(DynamicExecutorRegistrar.class);
 
-    /** {@code platform.concurrency.thread-pools} 配置前缀 */
+    /**
+     * {@code platform.concurrency.thread-pools} 配置前缀
+     */
     private static final String THREAD_POOLS_PREFIX = "platform.concurrency.thread-pools";
 
     /**

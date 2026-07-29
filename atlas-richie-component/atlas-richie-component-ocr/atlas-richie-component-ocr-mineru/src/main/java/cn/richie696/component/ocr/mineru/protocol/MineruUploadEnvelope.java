@@ -21,10 +21,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * MinerU sidecar {@code POST /upload} 端点响应的 wire-format 记录。
  *
+ * @param taskId MinerU 返回的任务唯一标识
  * @author richie696
  * @version 2.2.0
  * @since 2026-07-12
- * @param taskId MinerU 返回的任务唯一标识
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record MineruUploadEnvelope(

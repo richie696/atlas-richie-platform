@@ -15,9 +15,6 @@
  */
 package cn.richie696.component.storage.core.impl;
 
-import com.obs.services.ObsClient;
-import com.obs.services.exception.ObsException;
-import com.obs.services.model.*;
 import cn.richie696.component.storage.bean.DirectDownloadPolicy;
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
@@ -27,6 +24,9 @@ import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.converter.StorageTypeConverter;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.context.utils.data.JsonUtils;
+import com.obs.services.ObsClient;
+import com.obs.services.exception.ObsException;
+import com.obs.services.model.*;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -42,6 +42,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
+import java.io.File;
 
 
 /**
@@ -405,7 +406,6 @@ public final class ObsStorageEngine extends AbstractObjectStorageEngine<ObsClien
         return request;
     }
 
-    
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Object buildObsTemporarySignatureRequest(String realKey, Date expiration, int safeExpire) throws Exception {

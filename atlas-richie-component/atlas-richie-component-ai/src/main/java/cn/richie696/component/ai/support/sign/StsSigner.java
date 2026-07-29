@@ -111,9 +111,9 @@ public interface StsSigner {
     /**
      * 创建默认上下文 (vendor + authDomain(取第一个 supportedAuthDomain) + capability + model, ttl 用 {@link #defaultTtlSeconds()})。
      *
-     * @param vendor    厂商标识
+     * @param vendor     厂商标识
      * @param capability 能力 (VOICE_CHAT / TTS_STREAM / STT_STREAM)
-     * @param model     模型名
+     * @param model      模型名
      * @return 上下文
      */
     default VendorStsContext defaultContext(String vendor, String capability, String model) {

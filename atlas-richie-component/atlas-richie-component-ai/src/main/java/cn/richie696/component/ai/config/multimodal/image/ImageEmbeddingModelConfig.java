@@ -19,6 +19,7 @@ import lombok.Data;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.net.URL;
 
 /**
  * 多模态向量模型(CLIP-equivalent)配置 — 映射 {@code platform.component.ai.image-embedding.<key>}。
@@ -35,19 +36,29 @@ import java.util.Set;
 @Data
 public class ImageEmbeddingModelConfig {
 
-    /** 厂商(枚举)— 见 {@link ImageEmbeddingProvider}。 */
+    /**
+     * 厂商(枚举)— 见 {@link ImageEmbeddingProvider}。
+     */
     private ImageEmbeddingProvider provider;
 
-    /** 业务可读标识(默认与 Map key 相同)。 */
+    /**
+     * 业务可读标识(默认与 Map key 相同)。
+     */
     private String name;
 
-    /** DashScope / 其他厂商的 API Key。 */
+    /**
+     * DashScope / 其他厂商的 API Key。
+     */
     private String apiKey;
 
-    /** API Key 池 — Token Plan 多 key 轮询 / 限流后冷却。YAML: {@code api-keys: [sk-1, sk-2]}。 */
+    /**
+     * API Key 池 — Token Plan 多 key 轮询 / 限流后冷却。YAML: {@code api-keys: [sk-1, sk-2]}。
+     */
     private Set<String> apiKeys = new LinkedHashSet<>();
 
-    /** 厂商端点 URL(为空时适配器回落到默认 URL)。 */
+    /**
+     * 厂商端点 URL(为空时适配器回落到默认 URL)。
+     */
     private String baseUrl;
 
     /**

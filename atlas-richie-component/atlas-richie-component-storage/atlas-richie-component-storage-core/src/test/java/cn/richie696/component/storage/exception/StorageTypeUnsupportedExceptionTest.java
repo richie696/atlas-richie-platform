@@ -15,11 +15,10 @@
  */
 package cn.richie696.component.storage.exception;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
 import cn.richie696.component.storage.enums.StorageTypeEnum;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class StorageTypeUnsupportedExceptionTest {
 

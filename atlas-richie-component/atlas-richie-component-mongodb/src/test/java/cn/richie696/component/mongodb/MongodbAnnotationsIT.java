@@ -30,8 +30,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.IndexInfo;
+
 import java.time.Instant;
 import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @MongodbIntegrationTest
@@ -193,12 +195,29 @@ class MongodbAnnotationsIT {
         private Boolean deleted = false;
         private String name;
 
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public Boolean getDeleted() { return deleted; }
-        public void setDeleted(Boolean deleted) { this.deleted = deleted; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public Boolean getDeleted() {
+            return deleted;
+        }
+
+        public void setDeleted(Boolean deleted) {
+            this.deleted = deleted;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 
     @TenantScoped
@@ -208,12 +227,29 @@ class MongodbAnnotationsIT {
         private String tenantId;
         private String name;
 
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public String getTenantId() { return tenantId; }
-        public void setTenantId(String tenantId) { this.tenantId = tenantId; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getTenantId() {
+            return tenantId;
+        }
+
+        public void setTenantId(String tenantId) {
+            this.tenantId = tenantId;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 
     @AuditFields
@@ -226,18 +262,53 @@ class MongodbAnnotationsIT {
         private Instant updatedAt;
         private String updatedBy;
 
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public Instant getCreatedAt() { return createdAt; }
-        public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
-        public String getCreatedBy() { return createdBy; }
-        public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-        public Instant getUpdatedAt() { return updatedAt; }
-        public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
-        public String getUpdatedBy() { return updatedBy; }
-        public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Instant getCreatedAt() {
+            return createdAt;
+        }
+
+        public void setCreatedAt(Instant createdAt) {
+            this.createdAt = createdAt;
+        }
+
+        public String getCreatedBy() {
+            return createdBy;
+        }
+
+        public void setCreatedBy(String createdBy) {
+            this.createdBy = createdBy;
+        }
+
+        public Instant getUpdatedAt() {
+            return updatedAt;
+        }
+
+        public void setUpdatedAt(Instant updatedAt) {
+            this.updatedAt = updatedAt;
+        }
+
+        public String getUpdatedBy() {
+            return updatedBy;
+        }
+
+        public void setUpdatedBy(String updatedBy) {
+            this.updatedBy = updatedBy;
+        }
     }
 
     private static class ExpireAfterDoc {
@@ -246,10 +317,21 @@ class MongodbAnnotationsIT {
         @ExpireAfter(seconds = 3600)
         private Instant expiresAt;
 
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public Instant getExpiresAt() { return expiresAt; }
-        public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public Instant getExpiresAt() {
+            return expiresAt;
+        }
+
+        public void setExpiresAt(Instant expiresAt) {
+            this.expiresAt = expiresAt;
+        }
     }
 
     @SoftDelete
@@ -266,21 +348,68 @@ class MongodbAnnotationsIT {
         private Instant updatedAt;
         private String updatedBy;
 
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public Boolean getDeleted() { return deleted; }
-        public void setDeleted(Boolean deleted) { this.deleted = deleted; }
-        public String getTenantId() { return tenantId; }
-        public void setTenantId(String tenantId) { this.tenantId = tenantId; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public Instant getCreatedAt() { return createdAt; }
-        public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
-        public String getCreatedBy() { return createdBy; }
-        public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-        public Instant getUpdatedAt() { return updatedAt; }
-        public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
-        public String getUpdatedBy() { return updatedBy; }
-        public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public Boolean getDeleted() {
+            return deleted;
+        }
+
+        public void setDeleted(Boolean deleted) {
+            this.deleted = deleted;
+        }
+
+        public String getTenantId() {
+            return tenantId;
+        }
+
+        public void setTenantId(String tenantId) {
+            this.tenantId = tenantId;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Instant getCreatedAt() {
+            return createdAt;
+        }
+
+        public void setCreatedAt(Instant createdAt) {
+            this.createdAt = createdAt;
+        }
+
+        public String getCreatedBy() {
+            return createdBy;
+        }
+
+        public void setCreatedBy(String createdBy) {
+            this.createdBy = createdBy;
+        }
+
+        public Instant getUpdatedAt() {
+            return updatedAt;
+        }
+
+        public void setUpdatedAt(Instant updatedAt) {
+            this.updatedAt = updatedAt;
+        }
+
+        public String getUpdatedBy() {
+            return updatedBy;
+        }
+
+        public void setUpdatedBy(String updatedBy) {
+            this.updatedBy = updatedBy;
+        }
     }
 }

@@ -15,6 +15,9 @@
  */
 package cn.richie696.component.storage.config;
 
+import cn.richie696.component.storage.bean.ObjectConfig;
+import cn.richie696.component.storage.exception.StorageException;
+import cn.richie696.component.storage.support.ObjectStorageStartupProbe;
 import com.ksyun.ks3.dto.HeadBucketResult;
 import com.ksyun.ks3.exception.Ks3ClientException;
 import com.ksyun.ks3.http.HttpClientConfig;
@@ -23,9 +26,6 @@ import com.ksyun.ks3.service.Ks3Client;
 import com.ksyun.ks3.service.Ks3ClientConfig;
 import com.ksyun.ks3.service.request.GetObjectRequest;
 import com.ksyun.ks3.service.request.PutObjectRequest;
-import cn.richie696.component.storage.bean.ObjectConfig;
-import cn.richie696.component.storage.exception.StorageException;
-import cn.richie696.component.storage.support.ObjectStorageStartupProbe;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

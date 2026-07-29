@@ -60,14 +60,14 @@ public class VikingDbVectorServiceImpl extends AbstractVectorService implements 
         }
         DataApiResponse<SearchResult> response;
         try {
-         response = vikingDbVectorStore.getNativeClient().orElseThrow()
-                .searchByVector(SearchByVectorRequest.builder()
-                        .collectionName(config.getCollectionName())
-                        .indexName(config.getIndexName())
-                        .denseVector(denseVector)
-                        .limit(limit)
-                        .outputFields(vikingDbVectorStore.getOutputFields())
-                        .build());
+            response = vikingDbVectorStore.getNativeClient().orElseThrow()
+                    .searchByVector(SearchByVectorRequest.builder()
+                            .collectionName(config.getCollectionName())
+                            .indexName(config.getIndexName())
+                            .denseVector(denseVector)
+                            .limit(limit)
+                            .outputFields(vikingDbVectorStore.getOutputFields())
+                            .build());
         } catch (VectorApiException | ApiClientException e) {
             throw new IllegalStateException("VikingDB searchByVector failed", e);
         }
@@ -93,7 +93,9 @@ public class VikingDbVectorServiceImpl extends AbstractVectorService implements 
     }
 
     @Override
-    protected boolean usesStoreManagedEmbedding() { return true; }
+    protected boolean usesStoreManagedEmbedding() {
+        return true;
+    }
 
     @Override
     protected void writeStoreManagedRecords(String indexName, List<VectorRecord> records) {

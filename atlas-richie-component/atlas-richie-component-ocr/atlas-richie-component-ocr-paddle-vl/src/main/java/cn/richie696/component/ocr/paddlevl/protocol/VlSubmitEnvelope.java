@@ -31,10 +31,10 @@ import java.util.List;
  *   <li>{@link Line} —— 行级子结构（{@code text} / {@code confidence} / {@code bbox}）</li>
  * </ul>
  *
+ * @param taskId 任务唯一标识
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-12
- * @param taskId 任务唯一标识
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record VlSubmitEnvelope(
@@ -56,15 +56,16 @@ public record VlSubmitEnvelope(
      * @param availableVramMb 可用的VRAM MB
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record VlPollEnvelope(
+    public record VlPollEnvelope (
             @JsonProperty("state") String state,
             @JsonProperty("text") String text,
             @JsonProperty("confidence") Double confidence,
-            @JsonProperty("blocks") List<Block> blocks,
+            @JsonProperty("blocks") List < Block > blocks,
             @JsonProperty("error_code") String errorCode,
             @JsonProperty("error_msg") String errorMsg,
             @JsonProperty("required_vram_mb") Integer requiredVramMb,
-            @JsonProperty("available_vram_mb") Integer availableVramMb) {}
+            @JsonProperty("available_vram_mb") Integer availableVramMb){
+    }
 
     /**
      * PaddleOCR-VL sidecar 响应的 wire-format 记录族。
@@ -78,11 +79,12 @@ public record VlSubmitEnvelope(
      * @param lines       行级结构列表
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Block(
+    public record Block (
             @JsonProperty("text") String text,
             @JsonProperty("confidence") Double confidence,
-            @JsonProperty("bbox") List<List<Float>> bbox,
-            @JsonProperty("lines") List<Line> lines) {}
+            @JsonProperty("bbox") List < List < Float >> bbox,
+            @JsonProperty("lines") List < Line > lines){
+    }
 
     /**
      * PaddleOCR-VL sidecar 响应的 wire-format 记录族。
@@ -95,8 +97,9 @@ public record VlSubmitEnvelope(
      * @param bbox        边界框
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Line(
+    public record Line (
             @JsonProperty("text") String text,
             @JsonProperty("confidence") Double confidence,
-            @JsonProperty("bbox") List<List<Float>> bbox) {}
+            @JsonProperty("bbox") List < List < Float >> bbox){
+    }
 }

@@ -15,14 +15,7 @@
  */
 package cn.richie696.component.http.jdk;
 
-import cn.richie696.component.http.core.AsyncCallback;
-import cn.richie696.component.http.core.HttpClient;
-import cn.richie696.component.http.core.HttpMethod;
-import cn.richie696.component.http.core.HttpRequest;
-import cn.richie696.component.http.core.HttpRequestSupport;
-import cn.richie696.component.http.core.HttpResponse;
-import cn.richie696.component.http.core.SseConnection;
-import cn.richie696.component.http.core.SseListener;
+import cn.richie696.component.http.core.*;
 import tools.jackson.core.type.TypeReference;
 
 import java.io.IOException;
@@ -38,8 +31,8 @@ import java.util.concurrent.CompletableFuture;
  * 基于 JDK 原生 {@code java.net.http.HttpClient} 的 {@link HttpClient} 实现。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class JdkHttpAdapter implements HttpClient {
 
@@ -61,12 +54,35 @@ public class JdkHttpAdapter implements HttpClient {
         return sseClient.connect(url, headers, listener);
     }
 
-    @Override public HttpRequest get(String url) { return new HttpRequest(url, HttpMethod.GET, null).client(this); }
-    @Override public HttpRequest post(String url, Object body) { return new HttpRequest(url, HttpMethod.POST, body).client(this); }
-    @Override public HttpRequest post(String url) { return new HttpRequest(url, HttpMethod.POST, null).client(this); }
-    @Override public HttpRequest put(String url, Object body) { return new HttpRequest(url, HttpMethod.PUT, body).client(this); }
-    @Override public HttpRequest delete(String url, Object body) { return new HttpRequest(url, HttpMethod.DELETE, body).client(this); }
-    @Override public HttpRequest delete(String url) { return new HttpRequest(url, HttpMethod.DELETE, null).client(this); }
+    @Override
+    public HttpRequest get(String url) {
+        return new HttpRequest(url, HttpMethod.GET, null).client(this);
+    }
+
+    @Override
+    public HttpRequest post(String url, Object body) {
+        return new HttpRequest(url, HttpMethod.POST, body).client(this);
+    }
+
+    @Override
+    public HttpRequest post(String url) {
+        return new HttpRequest(url, HttpMethod.POST, null).client(this);
+    }
+
+    @Override
+    public HttpRequest put(String url, Object body) {
+        return new HttpRequest(url, HttpMethod.PUT, body).client(this);
+    }
+
+    @Override
+    public HttpRequest delete(String url, Object body) {
+        return new HttpRequest(url, HttpMethod.DELETE, body).client(this);
+    }
+
+    @Override
+    public HttpRequest delete(String url) {
+        return new HttpRequest(url, HttpMethod.DELETE, null).client(this);
+    }
 
     @Override
     public HttpResponse execute(HttpRequest request) {
@@ -80,9 +96,14 @@ public class JdkHttpAdapter implements HttpClient {
     }
 
     @Override
-    public <T> T execute(HttpRequest request, Class<T> type) { return execute(request).bodyAs(type); }
+    public <T> T execute(HttpRequest request, Class<T> type) {
+        return execute(request).bodyAs(type);
+    }
+
     @Override
-    public <T> T execute(HttpRequest request, TypeReference<T> typeRef) { return execute(request).bodyAs(typeRef); }
+    public <T> T execute(HttpRequest request, TypeReference<T> typeRef) {
+        return execute(request).bodyAs(typeRef);
+    }
 
     @Override
     public <T> void async(HttpRequest request, AsyncCallback<T> callback, Class<T> type) {
@@ -95,7 +116,10 @@ public class JdkHttpAdapter implements HttpClient {
                         callback.onFailure(new IOException(e));
                     }
                 })
-                .exceptionally(e -> { callback.onFailure(new IOException(e)); return null; });
+                .exceptionally(e -> {
+                    callback.onFailure(new IOException(e));
+                    return null;
+                });
     }
 
     @Override
@@ -109,7 +133,10 @@ public class JdkHttpAdapter implements HttpClient {
                         callback.onFailure(new IOException(e));
                     }
                 })
-                .exceptionally(e -> { callback.onFailure(new IOException(e)); return null; });
+                .exceptionally(e -> {
+                    callback.onFailure(new IOException(e));
+                    return null;
+                });
     }
 
     @Override
@@ -141,10 +168,18 @@ public class JdkHttpAdapter implements HttpClient {
             byte[] multipartBody = buildMultipartBody(boundary,
                     request.multipartFieldName(), request.multipartFileName(), multipartData);
             switch (request.method()) {
-                case POST:   builder.POST(BodyPublishers.ofByteArray(multipartBody)); break;
-                case PUT:    builder.PUT(BodyPublishers.ofByteArray(multipartBody)); break;
-                case DELETE: builder.method("DELETE", BodyPublishers.ofByteArray(multipartBody)); break;
-                default:     builder.method(request.method().name(), BodyPublishers.ofByteArray(multipartBody)); break;
+                case POST:
+                    builder.POST(BodyPublishers.ofByteArray(multipartBody));
+                    break;
+                case PUT:
+                    builder.PUT(BodyPublishers.ofByteArray(multipartBody));
+                    break;
+                case DELETE:
+                    builder.method("DELETE", BodyPublishers.ofByteArray(multipartBody));
+                    break;
+                default:
+                    builder.method(request.method().name(), BodyPublishers.ofByteArray(multipartBody));
+                    break;
             }
             return builder.build();
         }
@@ -155,10 +190,18 @@ public class JdkHttpAdapter implements HttpClient {
         byte[] bodyBytes = bodyBytes(request);
         // DELETE 保留 body 能力，与其它 Provider 保持一致行为。
         switch (request.method()) {
-            case GET:    builder.GET(); break;
-            case DELETE: builder.method("DELETE", bodyPublisher(bodyBytes)); break;
-            case PUT:    builder.PUT(bodyPublisher(bodyBytes)); break;
-            case POST:   builder.POST(bodyPublisher(bodyBytes)); break;
+            case GET:
+                builder.GET();
+                break;
+            case DELETE:
+                builder.method("DELETE", bodyPublisher(bodyBytes));
+                break;
+            case PUT:
+                builder.PUT(bodyPublisher(bodyBytes));
+                break;
+            case POST:
+                builder.POST(bodyPublisher(bodyBytes));
+                break;
         }
         return builder.build();
     }

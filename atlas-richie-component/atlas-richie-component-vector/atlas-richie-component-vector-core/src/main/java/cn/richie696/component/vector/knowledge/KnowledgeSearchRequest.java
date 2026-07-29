@@ -21,30 +21,29 @@ import cn.richie696.component.vector.model.VectorFilter;
  *       {@code 0.0} = 纯多样性，{@code 0.6} 左右是常用折中</li>
  * </ul>
  *
- * @param query               语义查询文本；非空、不可全空白字符
- * @param topK                最终返回条数上限，必须 {@code &gt; 0}
- * @param candidateK          第一轮召回条数（候选池大小），必须 {@code &ge; topK}；
- *                            缺省时取 {@code max(topK, 50)}
- * @param accessScope         调用主体范围（ACL 预过滤的唯一权威输入），必填；
- *                            详见 {@link AccessScope}
- * @param rerank              是否在文本检索后调用重排序；图像检索默认不重排
- * @param hybrid              是否走 hybrid（dense + sparse）路径；为 {@code true} 时
- *                            provider 必须实现
- *                            {@link cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations}
- * @param keywordQuery        显式关键词查询，用于 BM25/sparse 通道；
- *                            当 {@code hybrid=false} 时可传 {@code null}，
- *                            当 {@code hybrid=true} 时若缺省则退化为 {@code query}
- * @param mmr                 是否启用 MMR 多样性重排；
- *                            要求 provider 在检索结果里携带 {@code vector} 字段，
- *                            否则 {@link DefaultKnowledgeBaseVectorService} 会拒绝
- *                            静默伪造（抛 {@link UnsupportedOperationException}）
- * @param mmrLambda           MMR 相关性/冗余度权重；{@code [0, 1]}，常用 {@code 0.6}
+ * @param query                语义查询文本；非空、不可全空白字符
+ * @param topK                 最终返回条数上限，必须 {@code &gt; 0}
+ * @param candidateK           第一轮召回条数（候选池大小），必须 {@code &ge; topK}；
+ *                             缺省时取 {@code max(topK, 50)}
+ * @param accessScope          调用主体范围（ACL 预过滤的唯一权威输入），必填；
+ *                             详见 {@link AccessScope}
+ * @param rerank               是否在文本检索后调用重排序；图像检索默认不重排
+ * @param hybrid               是否走 hybrid（dense + sparse）路径；为 {@code true} 时
+ *                             provider 必须实现
+ *                             {@link cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations}
+ * @param keywordQuery         显式关键词查询，用于 BM25/sparse 通道；
+ *                             当 {@code hybrid=false} 时可传 {@code null}，
+ *                             当 {@code hybrid=true} 时若缺省则退化为 {@code query}
+ * @param mmr                  是否启用 MMR 多样性重排；
+ *                             要求 provider 在检索结果里携带 {@code vector} 字段，
+ *                             否则 {@link DefaultKnowledgeBaseVectorService} 会拒绝
+ *                             静默伪造（抛 {@link UnsupportedOperationException}）
+ * @param mmrLambda            MMR 相关性/冗余度权重；{@code [0, 1]}，常用 {@code 0.6}
  * @param maxChunksPerDocument 单文档最大入选项数；{@code &le; 0} 时取 {@code 2}；
  *                             控制"单文档霸榜"
- * @param additionalFilter    业务侧追加的过滤条件；为 {@code null} 时由
- *                            {@link DefaultKnowledgeBaseVectorService} 替换为
- *                            {@code VectorFilter.exists("tenantId")} 兜底断言
- *
+ * @param additionalFilter     业务侧追加的过滤条件；为 {@code null} 时由
+ *                             {@link DefaultKnowledgeBaseVectorService} 替换为
+ *                             {@code VectorFilter.exists("tenantId")} 兜底断言
  * @author richie696
  * @version 1.0
  * @since 2025-07-01

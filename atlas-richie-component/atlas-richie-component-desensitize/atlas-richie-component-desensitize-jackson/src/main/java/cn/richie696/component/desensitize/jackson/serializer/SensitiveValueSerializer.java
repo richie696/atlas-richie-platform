@@ -30,8 +30,8 @@ import tools.jackson.databind.ser.std.StdSerializer;
  * 对带 {@link Sensitive} 的 String 字段序列化时脱敏。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class SensitiveValueSerializer extends StdSerializer<String> {
 
@@ -60,9 +60,9 @@ public class SensitiveValueSerializer extends StdSerializer<String> {
      * 构造字段级脱敏序列化器。
      *
      * @param maskingService 脱敏服务
-     * @param maskType 脱敏类型
-     * @param scene 脱敏场景
-     * @param fieldName 字段名
+     * @param maskType       脱敏类型
+     * @param scene          脱敏场景
+     * @param fieldName      字段名
      * @param declaringClass 声明类
      */
     public SensitiveValueSerializer(
@@ -83,8 +83,8 @@ public class SensitiveValueSerializer extends StdSerializer<String> {
      * 序列化字符串字段，并按上下文执行脱敏。
      *
      * @param value 原始值
-     * @param gen Json 生成器
-     * @param ctxt 序列化上下文
+     * @param gen   Json 生成器
+     * @param ctxt  序列化上下文
      */
     @Override
     public void serialize(String value, JsonGenerator gen, SerializationContext ctxt) {
@@ -99,7 +99,7 @@ public class SensitiveValueSerializer extends StdSerializer<String> {
     /**
      * 基于属性注解创建上下文化序列化器。
      *
-     * @param ctxt 序列化上下文
+     * @param ctxt     序列化上下文
      * @param property 当前属性
      * @return 序列化器实例
      */

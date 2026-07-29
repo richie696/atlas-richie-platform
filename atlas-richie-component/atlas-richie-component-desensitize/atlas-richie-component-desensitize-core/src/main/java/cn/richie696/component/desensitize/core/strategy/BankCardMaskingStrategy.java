@@ -23,8 +23,8 @@ import org.springframework.stereotype.Component;
  * 银行卡脱敏：保留前 4 后 4，中间以空格分组掩码。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @Component
 public class BankCardMaskingStrategy implements MaskingStrategy {
@@ -43,7 +43,7 @@ public class BankCardMaskingStrategy implements MaskingStrategy {
     /**
      * 保留前后卡号，中间使用分组掩码。
      *
-     * @param raw 原始字符串
+     * @param raw  原始字符串
      * @param rule 脱敏规则
      * @return 脱敏结果
      */

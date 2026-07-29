@@ -32,9 +32,9 @@ class StateTransitionResultTest {
         StateContext context = new StateContext("PENDING", "CONFIRM");
         context.setCurrentState("CONFIRMED");
         context.setPreviousState("PENDING");
-        
+
         StateTransitionResult result = StateTransitionResult.success(context);
-        
+
         assertTrue(result.isSuccess());
         assertNull(result.getErrorMessage());
         assertEquals(context, result.getContext());
@@ -46,7 +46,7 @@ class StateTransitionResultTest {
     void testFailure() {
         String errorMessage = "状态转换失败";
         StateTransitionResult result = StateTransitionResult.failure(errorMessage);
-        
+
         assertFalse(result.isSuccess());
         assertEquals(errorMessage, result.getErrorMessage());
         assertNull(result.getContext());
@@ -58,7 +58,7 @@ class StateTransitionResultTest {
     void testGetCurrentState_WithContext() {
         StateContext context = new StateContext("PENDING", "CONFIRM");
         context.setCurrentState("CONFIRMED");
-        
+
         StateTransitionResult result = StateTransitionResult.success(context);
         assertEquals("CONFIRMED", result.getCurrentState());
     }
@@ -74,7 +74,7 @@ class StateTransitionResultTest {
         StateContext context = new StateContext("PENDING", "CONFIRM");
         context.setCurrentState("CONFIRMED");
         context.setPreviousState("PENDING");
-        
+
         StateTransitionResult result = StateTransitionResult.success(context);
         assertEquals("PENDING", result.getPreviousState());
     }
@@ -90,10 +90,10 @@ class StateTransitionResultTest {
         StateTransitionResult result = new StateTransitionResult();
         result.setSuccess(true);
         result.setErrorMessage("测试错误");
-        
+
         StateContext context = new StateContext();
         result.setContext(context);
-        
+
         assertTrue(result.isSuccess());
         assertEquals("测试错误", result.getErrorMessage());
         assertEquals(context, result.getContext());

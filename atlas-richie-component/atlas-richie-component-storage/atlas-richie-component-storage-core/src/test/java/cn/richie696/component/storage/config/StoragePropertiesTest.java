@@ -15,11 +15,7 @@
  */
 package cn.richie696.component.storage.config;
 
-import cn.richie696.component.storage.bean.FtpConfig;
-import cn.richie696.component.storage.bean.LocalConfig;
-import cn.richie696.component.storage.bean.ObjectConfig;
-import cn.richie696.component.storage.bean.SftpConfig;
-import cn.richie696.component.storage.bean.Smb3Config;
+import cn.richie696.component.storage.bean.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

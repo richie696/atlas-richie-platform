@@ -16,12 +16,9 @@
 package cn.richie696.component.vector.config;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Redis Vector 配置冒烟测试

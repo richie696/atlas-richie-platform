@@ -15,16 +15,10 @@
  */
 package cn.richie696.component.ai.provider.zhipu;
 
+import cn.richie696.component.ai.api.voicechat.*;
 import cn.richie696.component.ai.provider.support.JsonSafe;
-
-import cn.richie696.component.ai.support.sign.VendorStsContext;
-
-import cn.richie696.component.ai.api.voicechat.StsTicket;
-import cn.richie696.component.ai.api.voicechat.VoiceChatConfig;
-import cn.richie696.component.ai.api.voicechat.VoiceChatEvent;
-import cn.richie696.component.ai.api.voicechat.VoiceChatModel;
-import cn.richie696.component.ai.api.voicechat.VoiceConversation;
 import cn.richie696.component.ai.service.VoiceStsService;
+import cn.richie696.component.ai.support.sign.VendorStsContext;
 import cn.richie696.context.utils.data.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,11 +34,7 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Flow;
-import java.util.concurrent.SubmissionPublisher;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -78,10 +68,14 @@ public class ZhipuRealtimeVoiceChatModel implements VoiceChatModel {
 
     private static final Logger log = LoggerFactory.getLogger(ZhipuRealtimeVoiceChatModel.class);
 
-    /** Zhipu Realtime WebSocket 默认端点。 */
+    /**
+     * Zhipu Realtime WebSocket 默认端点。
+     */
     public static final String DEFAULT_ENDPOINT = "wss://open.bigmodel.cn/api/paas/v4/realtime";
 
-    /** 支持的模型名集合 (与公开文档对齐,可通过 vendorOptions 扩展)。 */
+    /**
+     * 支持的模型名集合 (与公开文档对齐,可通过 vendorOptions 扩展)。
+     */
     private static final String[] DEFAULT_SUPPORTED_MODELS = {
             "glm-4-voice",
             "glm-realtime",

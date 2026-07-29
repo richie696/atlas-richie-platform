@@ -47,8 +47,8 @@ import java.util.concurrent.CompletableFuture;
  * }</pre>
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public interface HttpClient {
 

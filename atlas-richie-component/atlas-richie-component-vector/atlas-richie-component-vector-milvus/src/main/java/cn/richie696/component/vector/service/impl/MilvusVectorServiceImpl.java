@@ -15,46 +15,44 @@
  */
 package cn.richie696.component.vector.service.impl;
 
-import cn.richie696.context.utils.data.JsonUtils;
+import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.config.MilvusConfig;
 import cn.richie696.component.vector.config.VectorProperties;
-import cn.richie696.component.vector.model.IndexInfo;
-import cn.richie696.component.vector.model.IndexStatus;
-import cn.richie696.component.vector.model.Modality;
-import cn.richie696.component.vector.model.SearchOptions;
-import cn.richie696.component.vector.model.VectorRecord;
-import cn.richie696.component.vector.model.VectorSearchResult;
-import org.springframework.ai.document.Document;
-import cn.richie696.component.ai.service.RerankService;
+import cn.richie696.component.vector.model.*;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
-import cn.richie696.component.vector.service.VectorService;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
+import cn.richie696.component.vector.service.VectorService;
+import cn.richie696.context.utils.data.JsonUtils;
 import io.milvus.client.MilvusServiceClient;
 import io.milvus.grpc.*;
 import io.milvus.param.IndexType;
 import io.milvus.param.MetricType;
 import io.milvus.param.R;
 import io.milvus.param.RpcStatus;
-import io.milvus.param.collection.*;
-import io.milvus.param.control.ManualCompactParam;
 import io.milvus.param.alias.AlterAliasParam;
 import io.milvus.param.alias.CreateAliasParam;
+import io.milvus.param.collection.*;
+import io.milvus.param.control.ManualCompactParam;
 import io.milvus.param.dml.DeleteParam;
 import io.milvus.param.dml.InsertParam;
 import io.milvus.param.dml.QueryParam;
 import io.milvus.param.dml.SearchParam;
-import io.milvus.response.QueryResultsWrapper;
 import io.milvus.param.index.CreateIndexParam;
+import io.milvus.response.QueryResultsWrapper;
 import io.milvus.response.SearchResultsWrapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Milvus向量数据库服务实现类
@@ -62,13 +60,13 @@ import java.util.stream.Collectors;
  * <p>提供基于Milvus的高性能向量存储和检索能力，实现VectorService接口。
  * 通过Spring条件配置实现与Spring AI VectorStore的集成，支持向量相似度搜索功能。</p>
  *
-  * <p>该实现支持：</p>
-  * <ul>
-  *   <li>动态Collection创建，可配置主键、向量维度、索引类型等</li>
-  *   <li>多种索引类型（HNSW、IVF、FLAT等）</li>
-  *   <li>多种距离度量方式（余弦相似度、欧氏距离、点积）</li>
-  *   <li>向量相似度搜索，返回匹配的文档及相似度分数</li>
-  * </ul>
+ * <p>该实现支持：</p>
+ * <ul>
+ *   <li>动态Collection创建，可配置主键、向量维度、索引类型等</li>
+ *   <li>多种索引类型（HNSW、IVF、FLAT等）</li>
+ *   <li>多种距离度量方式（余弦相似度、欧氏距离、点积）</li>
+ *   <li>向量相似度搜索，返回匹配的文档及相似度分数</li>
+ * </ul>
  *
  * @author richie696
  * @version 1.0.0
@@ -89,7 +87,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
      *
      * <p>使用@Qualifier注解指定EmbeddingModel bean，确保注入正确的嵌入模型实例。</p>
      *
-     * @param rerankService 重排序服务（可选）
+     * @param rerankService  重排序服务（可选）
      * @param vectorStore    Spring AI VectorStore，用于文档存储和检索
      * @param embeddingModel 嵌入模型，用于将文本转换为向量
      * @param milvusConfig   Milvus配置，包含连接信息和默认参数
@@ -585,10 +583,10 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
      * 对于余弦相似度，距离越小相似度越高，因此分数 = 1 - distance。
      * 分数会被裁剪到[0, 1]范围内。</p>
      *
-     * @param indexName   索引名称
+     * @param indexName 索引名称
      * @return 搜索结果列表，按相似度降序排列
      * @throws IllegalArgumentException 如果queryVector为空或limit小于等于0
-     * @throws RuntimeException 如果搜索执行失败
+     * @throws RuntimeException         如果搜索执行失败
      */
     @Override
     protected long truncateIndexImpl(String indexName) {
@@ -637,13 +635,13 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
      */
     @Override
     protected List<Document> similaritySearchByVector(String indexName, float[] queryVector,
-                                                                                        int limit, double minScore) {
+                                                      int limit, double minScore) {
         return similaritySearchByVector(indexName, queryVector, limit, minScore, null);
     }
 
     @Override
     protected List<Document> similaritySearchByVector(String indexName, float[] queryVector,
-                                                       int limit, double minScore, String providerFilter) {
+                                                      int limit, double minScore, String providerFilter) {
         if (queryVector == null || queryVector.length == 0) {
             throw new IllegalArgumentException("查询向量不能为空");
         }

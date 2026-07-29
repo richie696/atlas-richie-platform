@@ -16,8 +16,8 @@
 package cn.richie696.component.desensitize.logging.config;
 
 import ch.qos.logback.classic.LoggerContext;
-import cn.richie696.component.desensitize.logging.logback.SensitiveMdcTurboFilter;
 import cn.richie696.component.desensitize.logging.logback.SensitiveLogArgTurboFilter;
+import cn.richie696.component.desensitize.logging.logback.SensitiveMdcTurboFilter;
 import cn.richie696.component.desensitize.logging.service.DefaultLoggingMaskingService;
 import cn.richie696.component.desensitize.logging.service.LoggingMaskingService;
 import org.slf4j.LoggerFactory;
@@ -34,8 +34,8 @@ import org.springframework.context.annotation.Bean;
  * 日志脱敏自动配置。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @AutoConfiguration(after = cn.richie696.component.desensitize.core.config.DesensitizeAutoConfiguration.class)
 @ConditionalOnBean(cn.richie696.component.desensitize.core.service.MaskingService.class)
@@ -44,6 +44,7 @@ public class LoggingDesensitizeAutoConfiguration {
 
     /**
      * loggingMaskingService。
+     *
      * @return 处理结果
      */
     @Bean

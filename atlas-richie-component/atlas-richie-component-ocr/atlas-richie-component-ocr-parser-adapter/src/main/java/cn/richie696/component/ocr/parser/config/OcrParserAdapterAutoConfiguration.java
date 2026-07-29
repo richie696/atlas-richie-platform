@@ -27,7 +27,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandi
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
-/** OCR 对 document-parser 输出流的可选自动装配。 */
+/**
+ * OCR 对 document-parser 输出流的可选自动装配。
+ */
 @AutoConfiguration
 @ConditionalOnClass({OcrProvider.class, ReadEvent.class})
 @ConditionalOnSingleCandidate(OcrProvider.class)
@@ -38,7 +40,7 @@ public class OcrParserAdapterAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(OcrDocumentEnrichmentAdapter.class)
     public OcrDocumentEnrichmentAdapter ocrDocumentEnrichmentAdapter(OcrProvider provider,
-                                                                       OcrParserAdapterProperties properties) {
+                                                                     OcrParserAdapterProperties properties) {
         return new DefaultOcrDocumentEnrichmentAdapter(provider, properties);
     }
 }

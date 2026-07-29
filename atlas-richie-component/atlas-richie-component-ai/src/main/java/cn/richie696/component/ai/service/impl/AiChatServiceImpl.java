@@ -15,20 +15,12 @@
  */
 package cn.richie696.component.ai.service.impl;
 
-import cn.richie696.component.ai.config.chat.LlmProvider;
-
-import cn.richie696.component.ai.config.chat.AiChatModelOptions;
-
-import cn.richie696.component.ai.config.chat.AiChatModel;
-
 import cn.richie696.component.ai.config.AiChatClientFactory;
 import cn.richie696.component.ai.config.AiModelProperties;
-import cn.richie696.component.ai.model.AiHealthResult;
-import cn.richie696.component.ai.model.AiModelInfo;
-import cn.richie696.component.ai.model.AiRequest;
-import cn.richie696.component.ai.model.AiResponse;
-import cn.richie696.component.ai.model.AiStreamChunk;
-import cn.richie696.component.ai.model.ModelOptions;
+import cn.richie696.component.ai.config.chat.AiChatModel;
+import cn.richie696.component.ai.config.chat.AiChatModelOptions;
+import cn.richie696.component.ai.config.chat.LlmProvider;
+import cn.richie696.component.ai.model.*;
 import cn.richie696.component.ai.service.AiChatService;
 import cn.richie696.component.ai.support.AiChatOptionsResolver;
 import cn.richie696.component.ai.support.AiModelCircuitBreaker;

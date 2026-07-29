@@ -16,6 +16,7 @@
 package cn.richie696.component.concurrency.virtual;
 
 import java.util.List;
+import java.time.Duration;
 
 /**
  * 带结果列表的批量映射结果 —— 记录 {@link BatchProcessor.BatchBuilder#mapParallel} 的执行情况。
@@ -55,43 +56,43 @@ import java.util.List;
  * @since 1.0.0
  */
 public record BatchMappingResult<T, R>(
-        int successCount,
-        int failureCount,
-        List<Throwable> errors,
-        List<R> results) {
+int successCount,
+int failureCount,
+List<Throwable> errors,
+List<R> results){
 
-    /**
-     * 规范化构造器：对 {@code errors} 与 {@code results} 均进行防御性拷贝，
-     * 保证外部不可修改内部状态。
-     *
-     * <p>{@code errors} 使用 {@link List#copyOf}（禁止 null 元素，因为异常实例不可为 null）；
-     * {@code results} 使用 {@link java.util.Collections#unmodifiableList}，
-     * 因为失败/超时项对应的槽位允许为 {@code null}。</p>
-     *
-     * @throws NullPointerException 当 {@code errors} 或 {@code results} 列表本身为 null 时
-     */
-    public BatchMappingResult {
-        errors = List.copyOf(errors);
-        results = java.util.Collections.unmodifiableList(new java.util.ArrayList<>(results));
-    }
+/**
+ * 规范化构造器：对 {@code errors} 与 {@code results} 均进行防御性拷贝，
+ * 保证外部不可修改内部状态。
+ *
+ * <p>{@code errors} 使用 {@link List#copyOf}（禁止 null 元素，因为异常实例不可为 null）；
+ * {@code results} 使用 {@link java.util.Collections#unmodifiableList}，
+ * 因为失败/超时项对应的槽位允许为 {@code null}。</p>
+ *
+ * @throws NullPointerException 当 {@code errors} 或 {@code results} 列表本身为 null 时
+ */
+public BatchMappingResult {
+    errors = List.copyOf(errors);
+    results = java.util.Collections.unmodifiableList(new java.util.ArrayList<>(results));
+}
 
-    /**
-     * 是否存在失败项。
-     *
-     * @return 当且仅当 {@link #failureCount()} 大于 0 时返回 {@code true}
-     */
-    public boolean hasError() {
-        return failureCount > 0;
-    }
+/**
+ * 是否存在失败项。
+ *
+ * @return 当且仅当 {@link #failureCount()} 大于 0 时返回 {@code true}
+ */
+public boolean hasError() {
+    return failureCount > 0;
+}
 
-    /**
-     * 获取输入顺序下指定下标处的结果。
-     *
-     * @param index 元素下标（与输入集合下标一致）
-     * @return 成功项返回映射结果；失败项返回 {@code null}
-     * @throws IndexOutOfBoundsException 当 {@code index} 越界时
-     */
-    public R resultAt(int index) {
-        return results.get(index);
-    }
+/**
+ * 获取输入顺序下指定下标处的结果。
+ *
+ * @param index 元素下标（与输入集合下标一致）
+ * @return 成功项返回映射结果；失败项返回 {@code null}
+ * @throws IndexOutOfBoundsException 当 {@code index} 越界时
+ */
+public R resultAt(int index) {
+    return results.get(index);
+}
 }

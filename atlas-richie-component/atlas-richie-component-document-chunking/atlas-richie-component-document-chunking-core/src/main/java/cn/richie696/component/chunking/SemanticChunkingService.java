@@ -1,10 +1,6 @@
 package cn.richie696.component.chunking;
 
-import cn.richie696.component.chunking.model.Chunk;
-import cn.richie696.component.chunking.model.ChunkingDiagnostics;
-import cn.richie696.component.chunking.model.ChunkingResult;
-import cn.richie696.component.chunking.model.ChunkingRule;
-import cn.richie696.component.chunking.model.ChunkingSignal;
+import cn.richie696.component.chunking.model.*;
 import cn.richie696.component.chunking.spi.SemanticBoundaryAdvisor;
 
 import java.util.ArrayList;
@@ -59,7 +55,7 @@ public final class SemanticChunkingService {
      * (4) 每段的局部 chunk 用 {@code + start} 平移到全局坐标，并按整体顺序重新分配 ordinal。</p>
      *
      * @param content 原始输入；{@code null} 或空白返回空结果
-     * @param rule 切片规则；{@link ChunkingRule.Strategy} 必须为 {@code SEMANTIC}
+     * @param rule    切片规则；{@link ChunkingRule.Strategy} 必须为 {@code SEMANTIC}
      * @return 不变结果对象；不触发硬切（语义建议本身就是有意义的边界）
      * @throws NullPointerException {@code rule} 为 {@code null}
      */
@@ -117,7 +113,7 @@ public final class SemanticChunkingService {
     }
 
     private ChunkingResult deterministicFallback(String content, ChunkingRule semanticRule,
-                                                  Set<ChunkingSignal> additionalSignals) {
+                                                 Set<ChunkingSignal> additionalSignals) {
         ChunkingResult fallbackResult = fallback.chunk(content, deterministicRule(semanticRule));
         Set<ChunkingSignal> signals = new java.util.HashSet<>(fallbackResult.diagnostics().signals());
         signals.addAll(additionalSignals);
@@ -149,10 +145,10 @@ public final class SemanticChunkingService {
      * 把 {@code content[start, end)} 当作独立输入交给 fallback，并把局部 chunk 的字符区间
      * 平移到全局坐标、按整体顺序重新编号 ordinal。
      *
-     * @param output 累积的全局 chunk 列表
-     * @param content 原始全文
-     * @param start 当前语义段起点（含）
-     * @param end 当前语义段终点（不含）
+     * @param output       累积的全局 chunk 列表
+     * @param content      原始全文
+     * @param start        当前语义段起点（含）
+     * @param end          当前语义段终点（不含）
      * @param semanticRule SEMANTIC 规则；用于派生 fallback 用的 RECURSIVE 规则
      */
     private void appendSegment(List<Chunk> output, String content, int start, int end, ChunkingRule semanticRule) {

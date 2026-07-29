@@ -39,9 +39,9 @@ public final class DefaultMqttClient extends HiveMqMqttClient implements MqttCli
     /**
      * 构造默认MQTT客户端
      *
-     * @param properties MQTT客户端配置属性
-     * @param deviceIdGenerator 设备ID生成器
-     * @param messageHandler 消息处理器
+     * @param properties            MQTT客户端配置属性
+     * @param deviceIdGenerator     设备ID生成器
+     * @param messageHandler        消息处理器
      * @param networkQualityManager 网络质量管理器
      */
     public DefaultMqttClient(MqttClientProperties properties, IMqttClientDeviceIdGenerator deviceIdGenerator, @Qualifier("hiveMqMessageHandler") MessageHandler<Mqtt5Publish> messageHandler, NetworkQualityManager networkQualityManager) {

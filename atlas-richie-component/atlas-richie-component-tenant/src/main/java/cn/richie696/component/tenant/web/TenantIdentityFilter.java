@@ -21,10 +21,10 @@ import cn.richie696.component.tenant.exception.TenantErrorCode;
 import cn.richie696.component.tenant.model.TenantInfo;
 import cn.richie696.component.tenant.model.TenantStatus;
 import cn.richie696.component.tenant.spi.TenantInfoProvider;
+import cn.richie696.context.utils.data.JsonUtils;
+import cn.richie696.context.utils.spring.JwtUtils;
 import cn.richie696.contract.constant.GlobalConstants;
 import cn.richie696.contract.model.TenantPrincipal;
-import cn.richie696.context.utils.spring.JwtUtils;
-import cn.richie696.context.utils.data.JsonUtils;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -110,7 +110,7 @@ public class TenantIdentityFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@Nonnull HttpServletRequest request,
                                     @Nonnull HttpServletResponse response,
                                     @Nonnull FilterChain filterChain)
-        throws ServletException, IOException {
+            throws ServletException, IOException {
 
         if (!properties.isEnabled()) {
             filterChain.doFilter(request, response);
@@ -138,7 +138,7 @@ public class TenantIdentityFilter extends OncePerRequestFilter {
             // enforceAuthTenant=true 且路径非超管专用 → 拒绝(防绕过租户隔离)
             if (properties.isEnforceAuthTenant() && !isSuperAdminPath(requestUri)) {
                 log.warn("Rejecting request to {} without tenant context (enforceAuthTenant=true)",
-                    requestUri);
+                        requestUri);
                 writeError(response, TenantErrorCode.TENANT_AUTH_MISSING_TOKEN, requestUri);
                 return;
             }
@@ -196,7 +196,7 @@ public class TenantIdentityFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
             } catch (ServletException | IOException e) {
                 if (e instanceof ServletException se
-                    && se.getRootCause() instanceof RuntimeException re) {
+                        && se.getRootCause() instanceof RuntimeException re) {
                     throw re;
                 }
                 throw new RuntimeException(e);
@@ -245,7 +245,7 @@ public class TenantIdentityFilter extends OncePerRequestFilter {
             return new TenantPrincipal().setTenantId(tenantId);
         } catch (NumberFormatException e) {
             log.warn("Invalid tenant ID header value: {} = '{}'",
-                properties.getTenantIdHeader(), tenantIdStr);
+                    properties.getTenantIdHeader(), tenantIdStr);
             return null;
         }
     }

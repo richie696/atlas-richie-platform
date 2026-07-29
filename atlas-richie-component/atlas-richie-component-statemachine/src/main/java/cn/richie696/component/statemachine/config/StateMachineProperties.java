@@ -15,13 +15,10 @@
  */
 package cn.richie696.component.statemachine.config;
 
-import cn.richie696.component.statemachine.config.properties.RedisStreamConfig;
-import cn.richie696.component.statemachine.config.properties.RulesEngineConfig;
-import cn.richie696.component.statemachine.config.properties.DbPersistenceMode;
-import cn.richie696.component.statemachine.config.properties.StorageType;
-import cn.richie696.component.statemachine.config.properties.ThreadPoolConfig;
+import cn.richie696.component.statemachine.config.properties.*;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * 状态机配置属性
@@ -31,7 +28,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * <p>
  * 注意：此类使用 Lombok {@code @Data} 注解，构造函数由 Lombok 自动生成。
- *
  *
  * @author richie696
  * @since 1.0.0
@@ -54,6 +50,7 @@ public class StateMachineProperties {
      * 配置 Easy Rules 引擎的行为，包括规则执行策略、优先级、超时等。
      *
      */
+    @NestedConfigurationProperty
     private RulesEngineConfig rulesEngine = new RulesEngineConfig();
 
     /**
@@ -124,6 +121,7 @@ public class StateMachineProperties {
      * 仅在 storageType=REDIS 时使用。
      *
      */
+    @NestedConfigurationProperty
     private RedisStreamConfig redisStream = new RedisStreamConfig();
 
     /**
@@ -132,6 +130,7 @@ public class StateMachineProperties {
      * 仅在 storageType=ASYNC_DB 时使用。
      *
      */
+    @NestedConfigurationProperty
     private ThreadPoolConfig threadPool = new ThreadPoolConfig();
 
 }

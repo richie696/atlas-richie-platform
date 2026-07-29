@@ -105,9 +105,9 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/mfa/management/manager/MfaCacheSyncManager*</include>
-                        <include>com/richie/component/mfa/management/manager/SecretKeyManager*</include>
-                        <include>com/richie/component/mfa/management/util/**</include>
+                        <include>cn/richie696/component/mfa/management/manager/MfaCacheSyncManager*</include>
+                        <include>cn/richie696/component/mfa/management/manager/SecretKeyManager*</include>
+                        <include>cn/richie696/component/mfa/management/util/**</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -116,9 +116,9 @@
                         <configuration combine.self="override">
                             <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
                             <includes>
-                                <include>com/richie/component/mfa/management/manager/MfaCacheSyncManager*</include>
-                                <include>com/richie/component/mfa/management/manager/SecretKeyManager*</include>
-                                <include>com/richie/component/mfa/management/util/**</include>
+                                <include>cn/richie696/component/mfa/management/manager/MfaCacheSyncManager*</include>
+                                <include>cn/richie696/component/mfa/management/manager/SecretKeyManager*</include>
+                                <include>cn/richie696/component/mfa/management/util/**</include>
                             </includes>
                             <rules>
                                 <rule>

@@ -27,28 +27,28 @@ import cn.richie696.component.storage.enums.StorageTypeEnum;
 public class StorageTypeUnsupportedException extends RuntimeException {
 
     /**
-     * @param engine       存储引擎
-     * @param storageType  存储类型
-     * @param message      错误信息
+     * @param engine      存储引擎
+     * @param storageType 存储类型
+     * @param message     错误信息
      */
     public StorageTypeUnsupportedException(StorageEngineEnum engine, StorageTypeEnum storageType, String message) {
         super("[%s]%s - %s".formatted(engine.getDescription(), storageType.getDescription(), message));
     }
 
     /**
-     * @param engine       存储引擎
-     * @param storageType  存储类型
-     * @param message      错误信息
-     * @param cause        原因
+     * @param engine      存储引擎
+     * @param storageType 存储类型
+     * @param message     错误信息
+     * @param cause       原因
      */
     public StorageTypeUnsupportedException(StorageEngineEnum engine, StorageTypeEnum storageType, String message, Throwable cause) {
         super("[%s]%s - %s".formatted(engine.getDescription(), storageType.getDescription(), message), cause);
     }
 
     /**
-     * @param engine       存储引擎
-     * @param storageType  存储类型
-     * @param cause        原因
+     * @param engine      存储引擎
+     * @param storageType 存储类型
+     * @param cause       原因
      */
     public StorageTypeUnsupportedException(StorageEngineEnum engine, StorageTypeEnum storageType, Throwable cause) {
         super("[%s]%s - 不支持的类型".formatted(engine.getDescription(), storageType.getDescription()), cause);

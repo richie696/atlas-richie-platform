@@ -42,13 +42,13 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/storage/core/impl/AbstractObjectStorageEngine*</include>
-                        <include>com/richie/component/storage/util/**</include>
-                        <include>com/richie/component/storage/support/**</include>
-                        <include>com/richie/component/storage/exception/**</include>
+                        <include>cn/richie696/component/storage/core/impl/AbstractObjectStorageEngine*</include>
+                        <include>cn/richie696/component/storage/util/**</include>
+                        <include>cn/richie696/component/storage/support/**</include>
+                        <include>cn/richie696/component/storage/exception/**</include>
                     </includes>
                     <excludes>
-                        <exclude>com/richie/component/storage/core/impl/AbstractDestroyEngine</exclude>
+                        <exclude>cn/richie696/component/storage/core/impl/AbstractDestroyEngine</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -56,13 +56,13 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/storage/core/impl/AbstractObjectStorageEngine*</include>
-                                <include>com/richie/component/storage/util/**</include>
-                                <include>com/richie/component/storage/support/**</include>
-                                <include>com/richie/component/storage/exception/**</include>
+                                <include>cn/richie696/component/storage/core/impl/AbstractObjectStorageEngine*</include>
+                                <include>cn/richie696/component/storage/util/**</include>
+                                <include>cn/richie696/component/storage/support/**</include>
+                                <include>cn/richie696/component/storage/exception/**</include>
                             </includes>
                             <excludes>
-                                <exclude>com/richie/component/storage/core/impl/AbstractDestroyEngine</exclude>
+                                <exclude>cn/richie696/component/storage/core/impl/AbstractDestroyEngine</exclude>
                             </excludes>
                             <rules>
                                 <rule>

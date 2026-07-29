@@ -35,7 +35,7 @@ public interface NotificationFunction extends CacheFunction {
     /**
      * 发布消息到指定频道的方法
      *
-     * @param topic 发布消息的主题
+     * @param topic   发布消息的主题
      * @param message 消息内容
      * @return 返回接收到消息的订阅者数量（当Redis处于管道或事务环境中时，返回null）
      */

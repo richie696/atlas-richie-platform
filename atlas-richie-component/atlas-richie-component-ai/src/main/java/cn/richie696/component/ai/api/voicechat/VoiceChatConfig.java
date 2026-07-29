@@ -63,22 +63,54 @@ public final class VoiceChatConfig {
      *
      * <p>设置此字段后, {@link VoiceChatModel#supports(VoiceChatConfig)} 会按 vendor 路由。
      */
-    public String vendor() { return vendor; }
+    public String vendor() {
+        return vendor;
+    }
 
-    public String model() { return model; }
-    public String voice() { return voice; }
-    public String language() { return language; }
-    public VadMode vadMode() { return vadMode; }
-    public boolean interruptOnSpeech() { return interruptOnSpeech; }
-    public int sampleRateHz() { return sampleRateHz; }
-    public AudioFormat inputFormat() { return inputFormat; }
-    public AudioFormat outputFormat() { return outputFormat; }
-    public Map<String, String> vendorOptions() { return vendorOptions; }
+    public String model() {
+        return model;
+    }
+
+    public String voice() {
+        return voice;
+    }
+
+    public String language() {
+        return language;
+    }
+
+    public VadMode vadMode() {
+        return vadMode;
+    }
+
+    public boolean interruptOnSpeech() {
+        return interruptOnSpeech;
+    }
+
+    public int sampleRateHz() {
+        return sampleRateHz;
+    }
+
+    public AudioFormat inputFormat() {
+        return inputFormat;
+    }
+
+    public AudioFormat outputFormat() {
+        return outputFormat;
+    }
+
+    public Map<String, String> vendorOptions() {
+        return vendorOptions;
+    }
 
     public enum VadMode {
-        /** 服务端 VAD(vendor 自行检测语音结束) */
+        /**
+         * 服务端 VAD(vendor 自行检测语音结束)
+         */
         SERVER,
-        /** 客户端 VAD(业务侧自行控制发送/结束) */
+        /**
+         * 客户端 VAD(业务侧自行控制发送/结束)
+         */
         CLIENT
     }
 
@@ -100,9 +132,17 @@ public final class VoiceChatConfig {
             this.bitsPerSample = bitsPerSample;
         }
 
-        public int sampleRate() { return sampleRate; }
-        public int channels() { return channels; }
-        public int bitsPerSample() { return bitsPerSample; }
+        public int sampleRate() {
+            return sampleRate;
+        }
+
+        public int channels() {
+            return channels;
+        }
+
+        public int bitsPerSample() {
+            return bitsPerSample;
+        }
     }
 
     public static Builder builder() {
@@ -112,6 +152,7 @@ public final class VoiceChatConfig {
     public static final class Builder {
         private Builder() {
         }
+
         private String vendor;
         private String model;
         private String voice;

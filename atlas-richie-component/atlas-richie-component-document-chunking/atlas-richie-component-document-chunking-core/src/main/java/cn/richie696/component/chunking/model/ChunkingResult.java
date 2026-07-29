@@ -1,4 +1,5 @@
 package cn.richie696.component.chunking.model;
+
 import java.util.List;
 import java.util.Set;
 
@@ -10,7 +11,7 @@ import java.util.Set;
  * 该结果同时是同步 {@link cn.richie696.component.chunking.ChunkingService#chunk} 与流式
  * {@link cn.richie696.component.chunking.StreamingChunker} 路径的统一对外数据形状。</p>
  *
- * @param chunks 切片序列；按产生顺序，{@link Chunk#ordinal()} 从 0 起连续递增；空列表表示输入为空白或 {@code null}
+ * @param chunks      切片序列；按产生顺序，{@link Chunk#ordinal()} 从 0 起连续递增；空列表表示输入为空白或 {@code null}
  * @param diagnostics 诊断信息；记录是否触发硬截断、原始输入长度等审计字段；为 {@code null} 时自动回落为默认值
  */
 public record ChunkingResult(List<Chunk> chunks, ChunkingDiagnostics diagnostics) {
@@ -22,7 +23,9 @@ public record ChunkingResult(List<Chunk> chunks, ChunkingDiagnostics diagnostics
      *
      * @param chunks 切片序列；构造器会进一步调用 {@link List#copyOf} 固化
      */
-    public ChunkingResult(List<Chunk> chunks) { this(chunks, new ChunkingDiagnostics(false, 0)); }
+    public ChunkingResult(List < Chunk > chunks) {
+        this(chunks, new ChunkingDiagnostics(false, 0));
+    }
     /**
      * 规范构造器：把 {@link #chunks()} 固化为不可变副本，并在 {@link #diagnostics()} 为空时回落到默认值。
      *

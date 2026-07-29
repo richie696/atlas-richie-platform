@@ -15,9 +15,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNullPointerException;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,10 +26,14 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class SpringAiSemanticBoundaryAdvisorTest {
 
-    @Mock private ChatModel chatModel;
-    @Mock private ChatResponse chatResponse;
-    @Mock private Generation generation;
-    @Mock private AssistantMessage assistantMessage;
+    @Mock
+    private ChatModel chatModel;
+    @Mock
+    private ChatResponse chatResponse;
+    @Mock
+    private Generation generation;
+    @Mock
+    private AssistantMessage assistantMessage;
 
     private SpringAiSemanticBoundaryAdvisor advisor;
 

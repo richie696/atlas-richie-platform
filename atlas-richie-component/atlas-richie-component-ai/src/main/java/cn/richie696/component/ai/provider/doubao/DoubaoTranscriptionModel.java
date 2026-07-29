@@ -15,12 +15,11 @@
  */
 package cn.richie696.component.ai.provider.doubao;
 
-import cn.richie696.component.ai.provider.support.JsonSafe;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
+import cn.richie696.component.ai.provider.support.JsonSafe;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.core.HttpResponse;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.audio.transcription.AudioTranscription;
@@ -30,13 +29,11 @@ import org.springframework.ai.audio.transcription.TranscriptionModel;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * 字节跳动豆包（火山引擎 OpenSpeech）语音识别（STT / 一句话识别 flash 模式）模型适配器，
@@ -73,20 +70,30 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 public class DoubaoTranscriptionModel implements TranscriptionModel {
 
-    /** 豆包 OpenSpeech 一句话识别 flash REST 端点。 */
+    /**
+     * 豆包 OpenSpeech 一句话识别 flash REST 端点。
+     */
     public static final String DEFAULT_STT_URL =
             "https://openspeech.bytedance.com/api/v3/auc/bigmodel/recognize/flash";
 
-    /** 豆包 OpenSpeech STT resourceId（flash 一句话识别专用）。 */
+    /**
+     * 豆包 OpenSpeech STT resourceId（flash 一句话识别专用）。
+     */
     public static final String STT_RESOURCE_ID = "volc.bigasr.auc_turbo";
 
-    /** 默认音频格式（wav / pcm / mp3 等；当前适配 flash 接口固定 wav）。 */
+    /**
+     * 默认音频格式（wav / pcm / mp3 等；当前适配 flash 接口固定 wav）。
+     */
     public static final String DEFAULT_AUDIO_FORMAT = "wav";
 
-    /** 业务侧 {@code user.uid} 字段占位（豆包仅用于审计）。 */
+    /**
+     * 业务侧 {@code user.uid} 字段占位（豆包仅用于审计）。
+     */
     public static final String DEFAULT_UID = "doubao-stt";
 
-    /** 豆包 STT 成功返回码。 */
+    /**
+     * 豆包 STT 成功返回码。
+     */
     public static final int CODE_SUCCESS = 1000;
 
     private final AbstractAudioModelConfig cfg;

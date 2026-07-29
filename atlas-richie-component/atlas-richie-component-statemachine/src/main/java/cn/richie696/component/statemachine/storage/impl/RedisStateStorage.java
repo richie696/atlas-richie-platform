@@ -16,7 +16,6 @@
 package cn.richie696.component.statemachine.storage.impl;
 
 import cn.richie696.component.cache.GlobalCache;
-import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.component.statemachine.config.StateMachineProperties;
 import cn.richie696.component.statemachine.context.StateContext;
 import cn.richie696.component.statemachine.persistence.dao.entity.StateMachineStateCurrent;
@@ -24,6 +23,7 @@ import cn.richie696.component.statemachine.persistence.dao.mapper.StateMachineSt
 import cn.richie696.component.statemachine.storage.StateHistory;
 import cn.richie696.component.statemachine.storage.StateMachineKeyBuilder;
 import cn.richie696.component.statemachine.storage.StateStorage;
+import cn.richie696.context.utils.data.JsonUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +41,6 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * 使用 Redis 作为状态存储，适用于微服务多实例部署场景，支持状态共享。
  * 实现缓存预热机制：当 Redis 中没有数据时，自动从数据库加载并回填到 Redis。
- *
  *
  * @author richie696
  * @since 1.0.0
@@ -76,7 +75,6 @@ public class RedisStateStorage implements StateStorage {
      * 历史记录必须有过期时间，避免 Redis 数据量过大。
      * 默认 7 天，如果配置为 0 则强制使用 7 天。
      *
-     *
      * @return 历史记录过期时间（毫秒）
      */
     private long getHistoryTimeout() {
@@ -92,7 +90,6 @@ public class RedisStateStorage implements StateStorage {
      * 保存当前状态
      * <p>
      * 将当前状态保存到 Redis，永不过期（因为状态机状态需要持久化）。
-     *
      *
      * @param stateMachineName 状态机名称
      * @param businessId       业务对象ID
@@ -114,7 +111,6 @@ public class RedisStateStorage implements StateStorage {
      * <p>
      * 从 Redis 获取当前状态。如果数据库持久化已启用，会使用防缓存击穿机制：
      * 当 Redis 中没有数据时，自动从数据库加载并回填到 Redis。
-     *
      *
      * @param stateMachineName 状态机名称
      * @param businessId       业务对象ID
@@ -179,7 +175,6 @@ public class RedisStateStorage implements StateStorage {
      * 2. 历史记录列表（List 结构，用于批量查询）
      * 历史记录会设置过期时间，避免 Redis 数据量过大。
      *
-     *
      * @param stateMachineName 状态机名称
      * @param businessId       业务对象ID
      * @param fromState        源状态
@@ -221,7 +216,6 @@ public class RedisStateStorage implements StateStorage {
      * 从 Redis 获取指定业务对象的状态变更历史记录列表。
      * 返回的记录按创建时间降序排序（最新的在前）。
      *
-     *
      * @param stateMachineName 状态机名称
      * @param businessId       业务对象ID
      * @return 状态历史记录列表，按创建时间降序排序
@@ -258,7 +252,6 @@ public class RedisStateStorage implements StateStorage {
      * <p>
      * 删除指定业务对象的状态数据，包括当前状态和历史记录列表。
      * 注意：历史记录 Hash 不会自动删除（因为 key 包含时间戳），可以通过定期清理任务处理。
-     *
      *
      * @param stateMachineName 状态机名称
      * @param businessId       业务对象ID

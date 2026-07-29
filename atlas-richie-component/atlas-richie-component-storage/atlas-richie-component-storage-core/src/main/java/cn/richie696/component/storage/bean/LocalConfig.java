@@ -97,17 +97,29 @@ public class LocalConfig implements Serializable {
      */
     @Data
     public static class Cleanup implements Serializable {
-        /** 是否启用清理（默认：false） */
+        /**
+         * 是否启用清理（默认：false）
+         */
         private Boolean enabled = false;
-        /** 保留天数（默认：180天） */
+        /**
+         * 保留天数（默认：180天）
+         */
         private Integer retentionDays = 180;
-        /** 每次最大删除数量（默认：1000） */
+        /**
+         * 每次最大删除数量（默认：1000）
+         */
         private Integer maxDeletePerRun = 1000;
-        /** 是否仅打印SQL/操作而不执行（默认：false） */
+        /**
+         * 是否仅打印SQL/操作而不执行（默认：false）
+         */
         private Boolean dryRun = false;
-        /** 默认执行时间：每天03:00（实际调度固定在03:00触发） */
+        /**
+         * 默认执行时间：每天03:00（实际调度固定在03:00触发）
+         */
         private String cron = "0 0 3 * * ?";
-        /** 是否同时删除数据库元数据（默认：true） */
+        /**
+         * 是否同时删除数据库元数据（默认：true）
+         */
         private Boolean removeMetadata = true;
     }
 }

@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.ocr.aliyun.protocol;
 
+import cn.richie696.component.ocr.model.OcrOptions;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import cn.richie696.component.ocr.model.OcrOptions;
 
 /**
  * 阿里云读光 OCR {@code /v1/ocr/recognize} 端点请求 wire-format record。
@@ -53,7 +53,7 @@ public record AliyunOcrPayload(
         @JsonProperty("feature") String feature) {
 
     /** 构造 base64 image payload（非手写体 / 无高级特性）。 */
-    public static AliyunOcrPayload ofBase64(String base64, OcrOptions options, String model, String feature) {
+    public static AliyunOcrPayload ofBase64 (String base64, OcrOptions options, String model, String feature){
         return new AliyunOcrPayload(
                 null,
                 base64,
@@ -65,7 +65,7 @@ public record AliyunOcrPayload(
     }
 
     /** 构造 URL image payload。 */
-    public static AliyunOcrPayload ofUrl(String url, OcrOptions options, String model, String feature) {
+    public static AliyunOcrPayload ofUrl (String url, OcrOptions options, String model, String feature){
         return new AliyunOcrPayload(
                 url,
                 null,

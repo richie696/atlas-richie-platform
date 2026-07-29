@@ -77,7 +77,8 @@ class WatchdogSchedulerTest {
         });
         try {
             WatchdogScheduler scheduler = new WatchdogScheduler(exec);
-            WatchdogScheduler.WatchHandle handle = scheduler.schedule(10_000, () -> {});
+            WatchdogScheduler.WatchHandle handle = scheduler.schedule(10_000, () -> {
+            });
             assertThat(handle.cancel()).isTrue();
             assertThat(handle.cancel()).isFalse();
         } finally {

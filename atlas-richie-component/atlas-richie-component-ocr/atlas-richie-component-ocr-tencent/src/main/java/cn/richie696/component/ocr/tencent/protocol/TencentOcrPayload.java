@@ -32,10 +32,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * <p>{@code @JsonInclude(NON_NULL)} 字段级策略: 任何 {@code null} 字段自动从输出 JSON 中剔除。
  *
+ * @param imageBase64 base64 编码的图像数据
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-12
- * @param imageBase64 base64 编码的图像数据
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -43,7 +43,7 @@ public record TencentOcrPayload(
         @JsonProperty("ImageBase64") String imageBase64) {
 
     /** 构造腾讯云 OCR base64 模式请求载荷。 */
-    public static TencentOcrPayload of(String imageBase64) {
+    public static TencentOcrPayload of (String imageBase64){
         return new TencentOcrPayload(imageBase64);
     }
 }

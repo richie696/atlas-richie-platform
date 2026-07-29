@@ -30,7 +30,7 @@ import java.time.LocalDateTime;
  * <p>与表 rd_file_metadata 对应。
  */
 @Data
-@Accessors(chain=true)
+@Accessors(chain = true)
 @TableName("rd_file_metadata")
 public class FileMetadata implements Serializable {
     @TableId(type = IdType.ASSIGN_ID)

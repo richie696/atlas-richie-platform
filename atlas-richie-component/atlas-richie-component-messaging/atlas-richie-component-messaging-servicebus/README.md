@@ -56,12 +56,12 @@ spring:
 
 ### Azure Service Bus Binder 配置
 
-| 配置项                                               | 说明                | 默认值 |
-|---------------------------------------------------|-------------------|-----|
-| `spring.cloud.azure.servicebus.connection-string` | Service Bus 连接字符串 | -   |
-| `spring.cloud.azure.servicebus.namespace`         | Service Bus 命名空间  | -   |
-| `spring.cloud.azure.servicebus.queue-name`        | Queue 名称          | -   |
-| `spring.cloud.azure.servicebus.topic-name`        | Topic 名称          | -   |
+| 配置项                                            | 说明                   | 默认值 |
+|---------------------------------------------------|------------------------|--------|
+| `spring.cloud.azure.servicebus.connection-string` | Service Bus 连接字符串 | -      |
+| `spring.cloud.azure.servicebus.namespace`         | Service Bus 命名空间   | -      |
+| `spring.cloud.azure.servicebus.queue-name`        | Queue 名称             | -      |
+| `spring.cloud.azure.servicebus.topic-name`        | Topic 名称             | -      |
 
 ### 详细配置
 

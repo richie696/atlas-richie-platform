@@ -2,14 +2,16 @@
 
 ## 概述
 
-`richie-component-storage-azure` 是微软 Azure Blob Storage 的实现，基于 Azure Storage SDK for Java 提供完整的 Azure Blob 存储能力。
+`richie-component-storage-azure` 是微软 Azure Blob Storage 的实现，基于 Azure Storage SDK for Java 提供完整的 Azure Blob
+存储能力。
 
 ## 核心特性
 
 - ✅ **Azure Blob 兼容** - 完整支持 Azure Blob Storage API
 - ✅ **多种访问层** - 支持热、冷、归档访问层
 - ✅ **断点续传** - 支持大文件断点续传
-- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非 Spring 环境
+- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非
+  Spring 环境
 - ✅ **自动配置** - Spring Boot 自动配置
 
 ## 双模式架构
@@ -43,12 +45,12 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 每个实现包都提供 `StorageEngineProvider` SPI 实现，`AzureBlobStorageEngineProvider` 负责：
 
-| 方法 | 说明 |
-|------|------|
-| `supportedEngineType()` | 返回 `StorageEngineEnum.AZURE_BLOB` |
-| `create(properties)` | 从配置创建引擎实例 |
-| `validate(properties)` | 校验 endpoint / accessKeyId / accessKeySecret / bucketName 必填 |
-| `destroy(engine)` | 释放资源 |
+| 方法                    | 说明                                                            |
+|-------------------------|-----------------------------------------------------------------|
+| `supportedEngineType()` | 返回 `StorageEngineEnum.AZURE_BLOB`                             |
+| `create(properties)`    | 从配置创建引擎实例                                              |
+| `validate(properties)`  | 校验 endpoint / accessKeyId / accessKeySecret / bucketName 必填 |
+| `destroy(engine)`       | 释放资源                                                        |
 
 自动模式下 Provider 在 `AzureBlobAutoConfiguration` 中注册为 Bean；手动模式下由 Registry 通过 SPI 发现。
 
@@ -56,24 +58,24 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 引擎创建前会通过 `ConfigValidation` 工具类校验必填参数，校验失败时抛出 `IllegalArgumentException`：
 
-| 参数 | 校验规则 |
-|------|---------|
-| endpoint | 非空 |
-| accessKeyId | 非空 |
-| accessKeySecret | 非空 |
-| bucketName | 非空 |
+| 参数            | 校验规则 |
+|-----------------|----------|
+| endpoint        | 非空     |
+| accessKeyId     | 非空     |
+| accessKeySecret | 非空     |
+| bucketName      | 非空     |
 
 ## 直传策略 (DirectUploadPolicy)
 
 Azure Blob 引擎支持通过 SAS 签名 URL 实现客户端直传到对象存储，减少服务端流量压力：
 
-| 字段 | 说明 |
-|------|------|
-| uploadUrl | 预签名上传 URL |
-| method | HTTP 方法（PUT） |
-| headers | 签名头信息 |
-| expireAt | 策略过期时间 |
-| success | 策略是否可用 |
+| 字段      | 说明             |
+|-----------|------------------|
+| uploadUrl | 预签名上传 URL   |
+| method    | HTTP 方法（PUT） |
+| headers   | 签名头信息       |
+| expireAt  | 策略过期时间     |
+| success   | 策略是否可用     |
 
 ```java
 DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
@@ -151,23 +153,23 @@ public class FileService {
 
 Azure Blob Storage 与其他云存储的主要配置差异：
 
-| 配置项 | Azure Blob | AWS S3 | 阿里云 OSS |
-|--------|-----------|--------|-----------|
-| **engine 值** | `AZURE_BLOB` | `AWS_S3` | `ALIYUN_OSS` |
-| **endpoint 格式** | `account.blob.core.windows.net` | `s3.region.amazonaws.com` | `oss-cn-region.aliyuncs.com` |
-| **region 格式** | Azure 区域代码（如 `eastus`） | AWS 区域代码（如 `us-east-1`） | 阿里云区域代码（如 `cn-hangzhou`） |
-| **访问密钥名称** | Storage Account Name / Storage Account Key | Access Key ID / Secret Access Key | AccessKey ID / AccessKey Secret |
-| **存储桶名称** | Container Name | Bucket Name | Bucket Name |
-| **访问层** | 热、冷、归档 | 存储类型（15+种） | 存储类型（4种） |
-| **连接字符串** | ✅ 支持 | ❌ 不支持 | ❌ 不支持 |
+| 配置项            | Azure Blob                                 | AWS S3                            | 阿里云 OSS                         |
+|-------------------|--------------------------------------------|-----------------------------------|------------------------------------|
+| **engine 值**     | `AZURE_BLOB`                               | `AWS_S3`                          | `ALIYUN_OSS`                       |
+| **endpoint 格式** | `account.blob.core.windows.net`            | `s3.region.amazonaws.com`         | `oss-cn-region.aliyuncs.com`       |
+| **region 格式**   | Azure 区域代码（如 `eastus`）              | AWS 区域代码（如 `us-east-1`）    | 阿里云区域代码（如 `cn-hangzhou`） |
+| **访问密钥名称**  | Storage Account Name / Storage Account Key | Access Key ID / Secret Access Key | AccessKey ID / AccessKey Secret    |
+| **存储桶名称**    | Container Name                             | Bucket Name                       | Bucket Name                        |
+| **访问层**        | 热、冷、归档                               | 存储类型（15+种）                 | 存储类型（4种）                    |
+| **连接字符串**    | ✅ 支持                                    | ❌ 不支持                         | ❌ 不支持                          |
 
 ### endpoint 配置
 
 Azure Blob Storage 的 endpoint 格式：
 
 - **标准格式**: `account.blob.core.windows.net`
-  - 示例：`mystorageaccount.blob.core.windows.net`
-  - `account` 为存储账户名称
+    - 示例：`mystorageaccount.blob.core.windows.net`
+    - `account` 为存储账户名称
 
 - **自定义域名**: 可在 Azure 门户配置自定义域名
 
@@ -175,17 +177,17 @@ Azure Blob Storage 的 endpoint 格式：
 
 Azure Blob Storage 支持的区域：
 
-| 区域 | 代码 |
-|------|------|
-| 美国东部 | `eastus` |
-| 美国西部 | `westus` |
-| 美国中部 | `centralus` |
-| 欧洲西部 | `westeurope` |
-| 欧洲北部 | `northeurope` |
-| 亚太东部 | `eastasia` |
+| 区域       | 代码            |
+|------------|-----------------|
+| 美国东部   | `eastus`        |
+| 美国西部   | `westus`        |
+| 美国中部   | `centralus`     |
+| 欧洲西部   | `westeurope`    |
+| 欧洲北部   | `northeurope`   |
+| 亚太东部   | `eastasia`      |
 | 亚太东南部 | `southeastasia` |
-| 中国东部 | `chinaeast` |
-| 中国北部 | `chinanorth` |
+| 中国东部   | `chinaeast`     |
+| 中国北部   | `chinanorth`    |
 
 ### 访问凭证
 
@@ -195,7 +197,7 @@ Azure Blob Storage 使用存储账户名称和存储账户密钥进行身份验�
 2. 创建存储账户
 3. 在"访问密钥"中获取存储账户名称和密钥
 
-> **安全提示**: 
+> **安全提示**:
 > - 使用共享访问签名（SAS）替代存储账户密钥（如可能）
 > - 不要将访问密钥提交到代码仓库
 > - 使用 Azure Key Vault 管理密钥
@@ -204,11 +206,11 @@ Azure Blob Storage 使用存储账户名称和存储账户密钥进行身份验�
 
 Azure Blob Storage 支持三种访问层：
 
-| 访问层 | 说明 | 适用场景 |
-|--------|------|---------|
-| **热** | 频繁访问的数据 | 活跃数据 |
-| **冷** | 不经常访问的数据 | 备份数据 |
-| **归档** | 很少访问的数据 | 长期归档 |
+| 访问层   | 说明             | 适用场景 |
+|----------|------------------|----------|
+| **热**   | 频繁访问的数据   | 活跃数据 |
+| **冷**   | 不经常访问的数据 | 备份数据 |
+| **归档** | 很少访问的数据   | 长期归档 |
 
 > **注意**: Azure Blob Storage 的访问层概念与其他云存储的存储类型类似，但配置方式不同。
 
@@ -216,7 +218,8 @@ Azure Blob Storage 支持三种访问层：
 
 ### 1. 连接字符串支持
 
-Azure Blob Storage 支持使用连接字符串进行身份验证。组件通过 accessKeyId（存储账户名称）和 accessKeySecret（存储账户密钥）进行身份验证，连接字符串方式可通过 Azure SDK 直接使用。
+Azure Blob Storage 支持使用连接字符串进行身份验证。组件通过 accessKeyId（存储账户名称）和
+accessKeySecret（存储账户密钥）进行身份验证，连接字符串方式可通过 Azure SDK 直接使用。
 
 ### 2. 访问层自动设置
 
@@ -229,23 +232,23 @@ Azure Blob Storage 支持使用 SAS（共享访问签名）进行临时授权访
 ## 最佳实践
 
 1. **区域选择**
-   - 选择距离用户最近的区域，降低延迟
-   - 考虑数据合规要求
+    - 选择距离用户最近的区域，降低延迟
+    - 考虑数据合规要求
 
 2. **访问层选择**
-   - 频繁访问：热访问层
-   - 偶尔访问：冷访问层
-   - 长期归档：归档访问层
+    - 频繁访问：热访问层
+    - 偶尔访问：冷访问层
+    - 长期归档：归档访问层
 
 3. **访问凭证管理**
-   - 使用 SAS 替代存储账户密钥（如可能）
-   - 使用 Azure Key Vault 管理密钥
-   - 定期轮换访问密钥
+    - 使用 SAS 替代存储账户密钥（如可能）
+    - 使用 Azure Key Vault 管理密钥
+    - 定期轮换访问密钥
 
 4. **成本优化**
-   - 使用生命周期策略自动转换访问层
-   - 删除不需要的 Blob
-   - 使用冷或归档访问层存储不常访问的数据
+    - 使用生命周期策略自动转换访问层
+    - 删除不需要的 Blob
+    - 使用冷或归档访问层存储不常访问的数据
 
 ## 常见问题
 

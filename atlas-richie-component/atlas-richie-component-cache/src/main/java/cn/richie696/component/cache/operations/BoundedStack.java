@@ -31,10 +31,10 @@ public class BoundedStack<T> {
 
     private static final RedisScript<Long> PUSH_SCRIPT = RedisScript.of(
             "local maxLen = tonumber(redis.call('GET', KEYS[2]));" +
-            "if maxLen == nil then return -1 end;" +
-            "if redis.call('LLEN', KEYS[1]) >= maxLen then return 0 end;" +
-            "redis.call('RPUSH', KEYS[1], ARGV[1]);" +
-            "return 1;",
+                    "if maxLen == nil then return -1 end;" +
+                    "if redis.call('LLEN', KEYS[1]) >= maxLen then return 0 end;" +
+                    "redis.call('RPUSH', KEYS[1], ARGV[1]);" +
+                    "return 1;",
             Long.class);
 
     private final String key;

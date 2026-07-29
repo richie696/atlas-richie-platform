@@ -15,12 +15,12 @@
  */
 package cn.richie696.component.cache.redis.manage;
 
+import jakarta.annotation.Nonnull;
 import org.springframework.cache.Cache;
 import org.springframework.data.redis.cache.RedisCache;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
-import jakarta.annotation.Nonnull;
 
 import java.time.Duration;
 import java.util.Map;
@@ -38,7 +38,8 @@ public class AtlasRedisCacheManager extends RedisCacheManager {
 
     /**
      * Constructs a new {@link AtlasRedisCacheManager} instance.
-     * @param cacheWriter must not be {@literal null}.
+     *
+     * @param cacheWriter               must not be {@literal null}.
      * @param defaultCacheConfiguration must not be {@literal null}. Maybe just use
      */
     public AtlasRedisCacheManager(RedisCacheWriter cacheWriter, RedisCacheConfiguration defaultCacheConfiguration) {
@@ -47,9 +48,10 @@ public class AtlasRedisCacheManager extends RedisCacheManager {
 
     /**
      * Constructs a new {@link AtlasRedisCacheManager} instance.
-     * @param cacheWriter must not be {@literal null}.
+     *
+     * @param cacheWriter               must not be {@literal null}.
      * @param defaultCacheConfiguration must not be {@literal null}. Maybe just use
-     * @param initialCacheNames must not be {@literal null}.
+     * @param initialCacheNames         must not be {@literal null}.
      */
     public AtlasRedisCacheManager(RedisCacheWriter cacheWriter, RedisCacheConfiguration defaultCacheConfiguration, String... initialCacheNames) {
         super(cacheWriter, defaultCacheConfiguration, initialCacheNames);
@@ -57,10 +59,11 @@ public class AtlasRedisCacheManager extends RedisCacheManager {
 
     /**
      * Constructs a new {@link AtlasRedisCacheManager} instance.
-     * @param cacheWriter must not be {@literal null}.
-     * @param defaultCacheConfiguration must not be {@literal null}. Maybe just use
+     *
+     * @param cacheWriter                must not be {@literal null}.
+     * @param defaultCacheConfiguration  must not be {@literal null}. Maybe just use
      * @param allowInFlightCacheCreation allow create unconfigured cache.
-     * @param initialCacheNames must not be {@literal null}.
+     * @param initialCacheNames          must not be {@literal null}.
      */
     public AtlasRedisCacheManager(RedisCacheWriter cacheWriter, RedisCacheConfiguration defaultCacheConfiguration, boolean allowInFlightCacheCreation, String... initialCacheNames) {
         super(cacheWriter, defaultCacheConfiguration, allowInFlightCacheCreation, initialCacheNames);
@@ -68,8 +71,9 @@ public class AtlasRedisCacheManager extends RedisCacheManager {
 
     /**
      * Constructs a new {@link AtlasRedisCacheManager} instance.
-     * @param cacheWriter must not be {@literal null}.
-     * @param defaultCacheConfiguration must not be {@literal null}. Maybe just use
+     *
+     * @param cacheWriter                must not be {@literal null}.
+     * @param defaultCacheConfiguration  must not be {@literal null}. Maybe just use
      * @param initialCacheConfigurations must not be {@literal null}.
      */
     public AtlasRedisCacheManager(RedisCacheWriter cacheWriter, RedisCacheConfiguration defaultCacheConfiguration, Map<String, RedisCacheConfiguration> initialCacheConfigurations) {
@@ -89,6 +93,7 @@ public class AtlasRedisCacheManager extends RedisCacheManager {
 
     /**
      * 获取缓存
+     *
      * @param name 缓存名称
      * @return 缓存
      */

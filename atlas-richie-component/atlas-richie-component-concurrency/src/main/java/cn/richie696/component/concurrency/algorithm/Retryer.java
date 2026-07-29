@@ -209,7 +209,7 @@ public final class Retryer {
          * @param <T>  任务返回类型
          * @return 任务执行结果
          * @throws RetryExhaustedException 重试耗尽或线程被中断
-         * @throws NullPointerException     如果 {@code task} 为 null
+         * @throws NullPointerException    如果 {@code task} 为 null
          */
         public <T> T execute(Callable<T> task) {
             Objects.requireNonNull(task, "task must not be null");
@@ -281,7 +281,7 @@ public final class Retryer {
          *
          * @param task 要执行的任务
          * @throws RetryExhaustedException 重试耗尽或线程被中断
-         * @throws NullPointerException     如果 {@code task} 为 null
+         * @throws NullPointerException    如果 {@code task} 为 null
          */
         public void execute(Runnable task) {
             Objects.requireNonNull(task, "task must not be null");

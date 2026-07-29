@@ -21,10 +21,9 @@ package cn.richie696.component.vector.projection;
  * 本身不可变，重建期间不会变更。如 {@code sourceVersion} / {@code embeddingSpaceId} /
  * {@code indexName} 任一改变，应创建新的 projection version 而非复用本 record。
  *
- * @param sourceVersion 业务源文档版本号；非空、非纯空白；用于回溯与检索过滤。
- * @param indexName 目标索引名（对应向量库的 collection / index）；非空、非纯空白。
+ * @param sourceVersion    业务源文档版本号；非空、非纯空白；用于回溯与检索过滤。
+ * @param indexName        目标索引名（对应向量库的 collection / index）；非空、非纯空白。
  * @param embeddingSpaceId 嵌入模型空间标识（如模型名 + 维度指纹）；非空、非纯空白；用于跨模型空间隔离。
- *
  * @author richie696
  * @version 1.0
  * @since 2025-07-01
@@ -45,7 +44,7 @@ public record VectorProjectionSpecification(String sourceVersion, String indexNa
      * @throws IllegalArgumentException 当 {@code value} 为 {@code null} 或
      *                                  {@link String#isBlank()} 时抛出。
      */
-    private static String required(String value, String name) {
+    private static String required (String value, String name){
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(name + " must not be blank");
         }

@@ -17,16 +17,15 @@ package cn.richie696.component.cache.ops.impl;
 
 import cn.richie696.component.cache.enums.KeyTypeEnum;
 import cn.richie696.component.cache.function.SetFunction;
+import cn.richie696.component.cache.operations.SetCapacityLimits;
 import cn.richie696.component.cache.ops.CollectionOps;
 import cn.richie696.component.cache.ops.L2SyncHelper;
-import cn.richie696.component.cache.operations.SetCapacityLimits;
-
-import java.util.Map;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 @Slf4j

@@ -93,12 +93,12 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/tenant/**</include>
+                        <include>cn/richie696/component/tenant/**</include>
                     </includes>
                     <excludes>
-                        <exclude>com/richie/component/tenant/config/**</exclude>
-                        <exclude>com/richie/component/tenant/model/**</exclude>
-                        <exclude>com/richie/component/tenant/exception/**</exclude>
+                        <exclude>cn/richie696/component/tenant/config/**</exclude>
+                        <exclude>cn/richie696/component/tenant/model/**</exclude>
+                        <exclude>cn/richie696/component/tenant/exception/**</exclude>
                     </excludes>
                     <rules>
                         <rule>
@@ -119,7 +119,7 @@
                         <configuration combine.self="override">
                             <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
                             <includes>
-                                <include>com/richie/component/tenant/**</include>
+                                <include>cn/richie696/component/tenant/**</include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

@@ -29,11 +29,11 @@ import java.util.List;
  *   <li>{@link Item} —— 识别项（{@code text} / {@code score} / {@code bbox} / {@code cls}）</li>
  * </ul>
  *
+ * @param items 识别项列表
+ * @param error 错误信息
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-12
- * @param items 识别项列表
- * @param error 错误信息
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record PaddleOcrEnvelope(
@@ -52,9 +52,10 @@ public record PaddleOcrEnvelope(
      * @param cls   类别
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Item(
+    public record Item (
             @JsonProperty("text") String text,
             @JsonProperty("score") Double score,
-            @JsonProperty("bbox") List<List<Float>> bbox,
-            @JsonProperty("cls") Integer cls) {}
+            @JsonProperty("bbox") List < List < Float >> bbox,
+            @JsonProperty("cls") Integer cls){
+    }
 }

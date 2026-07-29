@@ -99,33 +99,33 @@ public class MfaAuditEvent extends ApplicationEvent {
     /**
      * 构造函数
      *
-     * @param source        事件源（通常为发布事件的组件实例）
-     * @param tenantId      租户ID
-     * @param userId        用户ID
-     * @param operationType 操作类型
-     * @param authMethod    认证方式
-     * @param ipAddress     IP地址
-     * @param userAgent     用户代理
-     * @param deviceId      设备ID
-     * @param result        操作结果
-     * @param errorCode     错误码
-     * @param errorMessage  错误消息
-     * @param durationMs    操作耗时
-     * @param eventTimestamp     事件时间戳
+     * @param source         事件源（通常为发布事件的组件实例）
+     * @param tenantId       租户ID
+     * @param userId         用户ID
+     * @param operationType  操作类型
+     * @param authMethod     认证方式
+     * @param ipAddress      IP地址
+     * @param userAgent      用户代理
+     * @param deviceId       设备ID
+     * @param result         操作结果
+     * @param errorCode      错误码
+     * @param errorMessage   错误消息
+     * @param durationMs     操作耗时
+     * @param eventTimestamp 事件时间戳
      */
     public MfaAuditEvent(Object source,
-                        String tenantId,
-                        String userId,
-                        MfaOperationTypeEnum operationType,
-                        String authMethod,
-                        String ipAddress,
-                        String userAgent,
-                        String deviceId,
-                        String result,
-                        String errorCode,
-                        String errorMessage,
-                        Long durationMs,
-                        OffsetDateTime eventTimestamp) {
+                         String tenantId,
+                         String userId,
+                         MfaOperationTypeEnum operationType,
+                         String authMethod,
+                         String ipAddress,
+                         String userAgent,
+                         String deviceId,
+                         String result,
+                         String errorCode,
+                         String errorMessage,
+                         Long durationMs,
+                         OffsetDateTime eventTimestamp) {
         this.eventTimestamp = eventTimestamp != null ? eventTimestamp : OffsetDateTime.now(ZoneOffset.UTC);
         this.tenantId = tenantId;
         this.userId = userId;
@@ -235,19 +235,19 @@ public class MfaAuditEvent extends ApplicationEvent {
 
         public MfaAuditEvent build() {
             return new MfaAuditEvent(
-                source,
-                tenantId,
-                userId,
-                operationType,
-                authMethod,
-                ipAddress,
-                userAgent,
-                deviceId,
-                result,
-                errorCode,
-                errorMessage,
-                durationMs,
-                timestamp
+                    source,
+                    tenantId,
+                    userId,
+                    operationType,
+                    authMethod,
+                    ipAddress,
+                    userAgent,
+                    deviceId,
+                    result,
+                    errorCode,
+                    errorMessage,
+                    durationMs,
+                    timestamp
             );
         }
     }

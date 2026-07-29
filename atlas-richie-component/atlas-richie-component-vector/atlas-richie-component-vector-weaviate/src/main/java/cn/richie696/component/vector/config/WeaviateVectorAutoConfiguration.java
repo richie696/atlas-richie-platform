@@ -26,8 +26,8 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.weaviate.WeaviateVectorStore;
 import org.springframework.ai.vectorstore.weaviate.WeaviateVectorStoreOptions;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -49,13 +49,13 @@ public class WeaviateVectorAutoConfiguration {
     /**
      * Weaviate VectorStore Bean（依赖 spring-ai-starter-vector-store-weaviate）。
      *
-     * @param embeddingModel  Embedding 模型
+     * @param embeddingModel Embedding 模型
      * @param weaviateClient Weaviate 客户端
      * @param config         Weaviate 配置
      * @return WeaviateVectorStore 实例
      */
     @Bean
-    @ConditionalOnProperty(prefix = "platform.component.vector", name="provider", havingValue = "weaviate")
+    @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "weaviate")
     @Autowired
     public VectorStore weaviateVectorStore(EmbeddingModel embeddingModel, WeaviateClient weaviateClient, WeaviateConfig config) {
         // 解析filterMetadataFields配置，支持格式如 country:text,year:number
@@ -98,7 +98,7 @@ public class WeaviateVectorAutoConfiguration {
      * @return WeaviateClient 实例
      */
     @Bean
-    @ConditionalOnProperty(prefix = "platform.component.vector", name="provider", havingValue = "weaviate")
+    @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "weaviate")
     public WeaviateClient weaviateClient(WeaviateConfig config) {
         Config weaviateConfig = new Config(config.getScheme(), config.getHost());
         if (config.getApiKey() != null && !config.getApiKey().isBlank()) {

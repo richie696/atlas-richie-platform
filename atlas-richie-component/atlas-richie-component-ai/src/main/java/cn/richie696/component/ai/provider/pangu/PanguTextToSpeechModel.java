@@ -15,16 +15,12 @@
  */
 package cn.richie696.component.ai.provider.pangu;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
 import cn.richie696.component.ai.provider.sign.AppCodeSigner;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.core.HttpRequest;
-import org.springframework.ai.audio.tts.Speech;
-import org.springframework.ai.audio.tts.TextToSpeechMessage;
-import org.springframework.ai.audio.tts.TextToSpeechModel;
-import org.springframework.ai.audio.tts.TextToSpeechPrompt;
-import org.springframework.ai.audio.tts.TextToSpeechResponse;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.springframework.ai.audio.tts.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -45,7 +41,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public class PanguTextToSpeechModel implements TextToSpeechModel {
 
-    /** 当前冲刺约定的盘古 TTS 默认端点。 */
+    /**
+     * 当前冲刺约定的盘古 TTS 默认端点。
+     */
     public static final String DEFAULT_TTS_URL =
             "https://pangu.cn-north-4.myhuaweicloud.com/v1.0/voice/tts";
 
@@ -103,7 +101,7 @@ public class PanguTextToSpeechModel implements TextToSpeechModel {
      *
      * @param prompt Spring AI 语音合成提示
      * @return 异步语音合成响应
-     * @throws NullPointerException 当提示为空时
+     * @throws NullPointerException     当提示为空时
      * @throws IllegalArgumentException 当文本或语音模型名为空时
      */
     public CompletableFuture<TextToSpeechResponse> callAsync(TextToSpeechPrompt prompt) {
@@ -158,7 +156,7 @@ public class PanguTextToSpeechModel implements TextToSpeechModel {
      *
      * @param raw 盘古原始响应
      * @return Spring AI 语音合成响应
-     * @throws IllegalStateException 当响应不包含音频数据时
+     * @throws IllegalStateException    当响应不包含音频数据时
      * @throws IllegalArgumentException 当音频数据不是合法 Base64 时
      */
     private static TextToSpeechResponse toTextToSpeechResponse(PanguTtsRawResponse raw) {
@@ -170,13 +168,17 @@ public class PanguTextToSpeechModel implements TextToSpeechModel {
         return new TextToSpeechResponse(List.of(new Speech(audio)));
     }
 
-    /** 盘古 TTS 顶层响应。 */
+    /**
+     * 盘古 TTS 顶层响应。
+     */
     private static final class PanguTtsRawResponse {
         @JsonProperty("result")
         public PanguTtsRawResult result;
     }
 
-    /** 盘古 TTS 结果。 */
+    /**
+     * 盘古 TTS 结果。
+     */
     private static final class PanguTtsRawResult {
         @JsonProperty("data")
         public String data;

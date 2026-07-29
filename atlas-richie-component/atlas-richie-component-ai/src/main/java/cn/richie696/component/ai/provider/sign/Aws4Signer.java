@@ -42,11 +42,17 @@ import java.util.HexFormat;
  */
 public class Aws4Signer {
 
-    /** AWS4 签名算法名称。 */
+    /**
+     * AWS4 签名算法名称。
+     */
     private static final String ALGORITHM = "AWS4-HMAC-SHA256";
-    /** AWS4 签名链路终止 token。 */
+    /**
+     * AWS4 签名链路终止 token。
+     */
     private static final String AWS4_REQUEST = "aws4_request";
-    /** 本工具对 payload 哈希使用的请求头名称（火山视觉风格）。 */
+    /**
+     * 本工具对 payload 哈希使用的请求头名称（火山视觉风格）。
+     */
     private static final String X_CONTENT_SHA256 = "x-content-sha256";
 
     public Aws4Signer() {

@@ -43,7 +43,7 @@ import java.sql.Connection;
  * @since 2.0
  */
 @Intercepts({
-    @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class})
+        @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class})
 })
 public class ConnectionResetInterceptor implements Interceptor {
 

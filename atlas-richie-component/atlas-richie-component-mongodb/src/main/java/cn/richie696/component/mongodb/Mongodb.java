@@ -30,6 +30,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -80,7 +81,8 @@ public class Mongodb {
             T result = mongoTemplate.save(entity);
             if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
             if (sample != null) metricsRecorder.stop(sample, "save", collection, true);
-            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "save", System.currentTimeMillis() - start);
+            if (slowQueryLogger != null)
+                slowQueryLogger.logIfSlow(collection, "save", System.currentTimeMillis() - start);
             return result;
         } catch (Throwable t) {
             if (sample != null) metricsRecorder.stop(sample, "save", collection, false);
@@ -103,7 +105,8 @@ public class Mongodb {
             T result = mongoTemplate.insert(entity);
             if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
             if (sample != null) metricsRecorder.stop(sample, "insert", collection, true);
-            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "insert", System.currentTimeMillis() - start);
+            if (slowQueryLogger != null)
+                slowQueryLogger.logIfSlow(collection, "insert", System.currentTimeMillis() - start);
             return result;
         } catch (org.springframework.dao.DuplicateKeyException e) {
             if (sample != null) metricsRecorder.stop(sample, "insert", collection, false);
@@ -137,7 +140,8 @@ public class Mongodb {
             List<T> result = (List<T>) mongoTemplate.insert(entities, entityClass);
             if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
             if (sample != null) metricsRecorder.stop(sample, "insert", collection, true);
-            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "insert", System.currentTimeMillis() - start);
+            if (slowQueryLogger != null)
+                slowQueryLogger.logIfSlow(collection, "insert", System.currentTimeMillis() - start);
             return result;
         } catch (Throwable t) {
             if (sample != null) metricsRecorder.stop(sample, "insert", collection, false);
@@ -181,7 +185,8 @@ public class Mongodb {
             mongoTemplate.dropCollection(entityClass);
             if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
             if (sample != null) metricsRecorder.stop(sample, "drop", collection, true);
-            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "drop", System.currentTimeMillis() - start);
+            if (slowQueryLogger != null)
+                slowQueryLogger.logIfSlow(collection, "drop", System.currentTimeMillis() - start);
         } catch (Throwable t) {
             if (sample != null) metricsRecorder.stop(sample, "drop", collection, false);
             if (sample != null) metricsRecorder.recordError(t);

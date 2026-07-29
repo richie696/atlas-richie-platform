@@ -15,24 +15,16 @@
  */
 package cn.richie696.component.ai.provider.bailian;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.http.core.HttpClient;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.image.Image;
-import org.springframework.ai.image.ImageGeneration;
-import org.springframework.ai.image.ImageMessage;
-import org.springframework.ai.image.ImageModel;
-import org.springframework.ai.image.ImagePrompt;
-import org.springframework.ai.image.ImageResponse;
+import org.springframework.ai.image.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Spring AI {@link ImageModel} 在阿里百炼（DashScope）平台上的适配器。
@@ -56,10 +48,14 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class BailianImageAdapter implements ImageModel {
 
-    /** DashScope 文生图 REST 端点。 */
+    /**
+     * DashScope 文生图 REST 端点。
+     */
     public static final String DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis";
 
-    /** 当请求未指定模型时使用的默认模型。 */
+    /**
+     * 当请求未指定模型时使用的默认模型。
+     */
     public static final String DEFAULT_MODEL = "wanx-v1";
 
     private final HttpClient httpClient;
@@ -188,17 +184,23 @@ public class BailianImageAdapter implements ImageModel {
 
     // ====== DashScope response DTOs ======
 
-    /** 顶层响应：{@code { "output": { "results": [...] } }}。 */
+    /**
+     * 顶层响应：{@code { "output": { "results": [...] } }}。
+     */
     static class ImageRawResponse {
         public ImageRawOutput output;
     }
 
-    /** {@code output} 子对象。 */
+    /**
+     * {@code output} 子对象。
+     */
     static class ImageRawOutput {
         public List<ImageRawItem> results;
     }
 
-    /** 单张图片结果：{@code { "url": "..." }}。 */
+    /**
+     * 单张图片结果：{@code { "url": "..." }}。
+     */
     static class ImageRawItem {
         @JsonProperty("url")
         public String url;

@@ -39,7 +39,9 @@ import java.util.function.Consumer;
  * @version 1.0
  * @since 2022-09-15 12:36:26
  */
-public abstract non-sealed class AbstractMqttClientApi extends MqttEventPublisher implements MqttClientApi {
+public abstract non-sealed
+
+class AbstractMqttClientApi extends MqttEventPublisher implements MqttClientApi {
 
     /**
      * MQTT 客户端配置信息

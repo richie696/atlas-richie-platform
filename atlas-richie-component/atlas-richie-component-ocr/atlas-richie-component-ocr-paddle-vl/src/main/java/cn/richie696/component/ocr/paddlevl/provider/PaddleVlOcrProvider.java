@@ -17,20 +17,14 @@ package cn.richie696.component.ocr.paddlevl.provider;
 
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.core.HttpResponse;
-import cn.richie696.component.ocr.model.Languages;
-import cn.richie696.component.ocr.model.OcrBlock;
-import cn.richie696.component.ocr.model.OcrImage;
-import cn.richie696.component.ocr.model.OcrLine;
-import cn.richie696.component.ocr.model.OcrOptions;
-import cn.richie696.component.ocr.model.OcrResult;
-import cn.richie696.component.ocr.model.Point;
-import cn.richie696.component.ocr.paddlevl.config.PaddleVlOcrProperties;
 import cn.richie696.component.ocr.exception.OcrException;
-import cn.richie696.component.ocr.provider.AbstractOcrProvider;
+import cn.richie696.component.ocr.model.*;
+import cn.richie696.component.ocr.paddlevl.config.PaddleVlOcrProperties;
 import cn.richie696.component.ocr.paddlevl.protocol.VlRequest;
 import cn.richie696.component.ocr.paddlevl.protocol.VlResponse;
 import cn.richie696.component.ocr.paddlevl.protocol.VlSubmitEnvelope;
 import cn.richie696.component.ocr.paddlevl.protocol.VlSubmitPayload;
+import cn.richie696.component.ocr.provider.AbstractOcrProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.Set;
 
 /**
  * PaddleOCR-VL Provider 实现
@@ -49,8 +44,8 @@ import java.util.concurrent.TimeUnit;
  *   <li>{@code GET {grpc-endpoint}/tasks/{task_id}} → 返回 {@code {"state": "PENDING|RUNNING|SUCCEEDED|FAILED", "result": {...}, "error_code": "..."}}</li>
  * </ul>
  *
-     * <p><b>同步</b>: VLM 推理慢, {@link #recognize} 仅对
-     * 小图（{@value #MAX_SYNC_BYTES} 字节内）开放，大图直接抛 {@link OcrException.ImageTooLargeForSync}。
+ * <p><b>同步</b>: VLM 推理慢, {@link #recognize} 仅对
+ * 小图（{@value #MAX_SYNC_BYTES} 字节内）开放，大图直接抛 {@link OcrException.ImageTooLargeForSync}。
  *
  * <p><b>错误码映射</b>:
  * <ul>
@@ -77,7 +72,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class PaddleVlOcrProvider extends AbstractOcrProvider<VlRequest, VlResponse> {
 
-    /** 同步识别字节阈值: VLM 推理慢, 超过该值直接抛 ImageTooLargeForSync */
+    /**
+     * 同步识别字节阈值: VLM 推理慢, 超过该值直接抛 ImageTooLargeForSync
+     */
     private static final int MAX_SYNC_BYTES = 1024 * 1024;
     private static final long DEFAULT_TIMEOUT_MS = 120_000L;
     private static final String DEFAULT_ENDPOINT = "http://localhost:50051";
@@ -88,10 +85,14 @@ public class PaddleVlOcrProvider extends AbstractOcrProvider<VlRequest, VlRespon
         return value == null || value.isBlank() ? PaddleVlOcrProvider.DEFAULT_ENDPOINT : value;
     }
 
-    /** 调用 PaddleOCR-VL sidecar 的共享 HTTP 客户端（不是 vendor 配置，不走 props）。 */
+    /**
+     * 调用 PaddleOCR-VL sidecar 的共享 HTTP 客户端（不是 vendor 配置，不走 props）。
+     */
     private final HttpClient httpClient;
 
-    /** PaddleOCR-VL vendor 配置 Properties —— 每次调用 lazy 读取。 */
+    /**
+     * PaddleOCR-VL vendor 配置 Properties —— 每次调用 lazy 读取。
+     */
     private final PaddleVlOcrProperties props;
 
     /**
@@ -102,7 +103,7 @@ public class PaddleVlOcrProvider extends AbstractOcrProvider<VlRequest, VlRespon
      * 卡数对齐）；其他配置（{@code grpc-endpoint} / {@code timeout-ms}）在每次调用时通过
      * {@code liveXxx()} 实时读取。
      *
-     * @param props typed 供应商配置（provider-name / grpc-endpoint / gpu-pool / timeout-ms）
+     * @param props      typed 供应商配置（provider-name / grpc-endpoint / gpu-pool / timeout-ms）
      * @param httpClient 共享的 HTTP 客户端，用于调用 PaddleOCR-VL sidecar 的 submit / 轮询接口
      * @throws OcrException.ConfigMissing 当 {@code gpu-pool} 配置无效（{@code < 1}）时抛出
      */
@@ -140,10 +141,10 @@ public class PaddleVlOcrProvider extends AbstractOcrProvider<VlRequest, VlRespon
      * <p>仅支持 {@link OcrImage.Bytes} 与 {@link OcrImage.Stream}；{@link OcrImage.Url}
      * 因 sidecar 不支持而直接拒绝。
      *
-     * @param image 待识别图片，支持 {@code Bytes} 与 {@code Stream}
+     * @param image   待识别图片，支持 {@code Bytes} 与 {@code Stream}
      * @param options 调用选项，用于提取语言与是否启用表格识别
      * @return 包含图片字节、语言码与表格识别开关的 VL 请求对象
-     * @throws OcrException.Unrecognized 当传入的 {@link OcrImage} 类型为 {@code Url} 时抛出
+     * @throws OcrException.Unrecognized        当传入的 {@link OcrImage} 类型为 {@code Url} 时抛出
      * @throws OcrException.ProviderUnavailable 当读取 {@link OcrImage.Stream} 输入流发生 {@link IOException} 时抛出
      */
     @Override
@@ -168,11 +169,11 @@ public class PaddleVlOcrProvider extends AbstractOcrProvider<VlRequest, VlRespon
      * 同步识别入口；对图片字节长度做前置校验，超过 {@link #MAX_SYNC_BYTES}（1 MB）时直接抛
      * {@link OcrException.ImageTooLargeForSync}。
      *
-     * @param image 待识别图片，仅支持 {@link OcrImage.Bytes} 与 {@link OcrImage.Stream}
+     * @param image   待识别图片，仅支持 {@link OcrImage.Bytes} 与 {@link OcrImage.Stream}
      * @param options 调用选项
      * @return 统一的 OCR 识别结果
      * @throws OcrException.ImageTooLargeForSync 当图片字节数大于 1 MB 时抛出
-     * @throws OcrException.ProviderUnavailable 当读取 {@link OcrImage.Stream} 输入流发生 {@link IOException} 时抛出
+     * @throws OcrException.ProviderUnavailable  当读取 {@link OcrImage.Stream} 输入流发生 {@link IOException} 时抛出
      */
     @Override
     public OcrResult recognize(OcrImage image, OcrOptions options) {
@@ -210,10 +211,10 @@ public class PaddleVlOcrProvider extends AbstractOcrProvider<VlRequest, VlRespon
      *
      * @param request 已构造好的 VL 请求（图片字节、语言、表格识别开关）
      * @return 包含任务 ID、终态、结果 JSON 与耗时的 VL 响应
-     * @throws OcrException.SidecarUnavailable 当 HTTP 5xx、连接失败或 IO 异常时抛出
-     * @throws OcrException.VlmTimeout 当轮询超过当前 {@code liveTimeoutMs()} 仍未完成时抛出
-     * @throws OcrException.VlmOutOfMemory 当任务失败且 error_code 为 {@code VLM_OOM} 时抛出
-     * @throws OcrException.Unrecognized 当任务终态为 {@code FAILED} 且非 OOM 业务错误时抛出
+     * @throws OcrException.SidecarUnavailable  当 HTTP 5xx、连接失败或 IO 异常时抛出
+     * @throws OcrException.VlmTimeout          当轮询超过当前 {@code liveTimeoutMs()} 仍未完成时抛出
+     * @throws OcrException.VlmOutOfMemory      当任务失败且 error_code 为 {@code VLM_OOM} 时抛出
+     * @throws OcrException.Unrecognized        当任务终态为 {@code FAILED} 且非 OOM 业务错误时抛出
      * @throws OcrException.ProviderUnavailable 当轮询被中断时抛出，并恢复线程中断状态
      */
     @Override

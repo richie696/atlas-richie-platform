@@ -31,7 +31,7 @@ public interface EventFunction extends CacheFunction {
     /**
      * 订阅指定模式的Key事件。
      *
-     * @param pattern 事件模式（如__keyevent@0__:expired）
+     * @param pattern  事件模式（如__keyevent@0__:expired）
      * @param listener 消息监听器，收到事件时回调
      */
     void subscribeKeyEvent(String pattern, MessageListener listener);

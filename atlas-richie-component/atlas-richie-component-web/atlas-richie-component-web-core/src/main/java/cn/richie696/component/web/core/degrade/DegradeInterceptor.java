@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
 
 /**
  * 降级拦截器（README.md §4.7）。
@@ -102,13 +103,19 @@ public class DegradeInterceptor implements WebInterceptor, Ordered {
      */
     public static final String ATTR_HIT_STRATEGY = "degrade.hit_strategy";
 
-    /** 全局 fallback 命中时的策略名标记（{@code ATTR_HIT_STRATEGY} 值）。 */
+    /**
+     * 全局 fallback 命中时的策略名标记（{@code ATTR_HIT_STRATEGY} 值）。
+     */
     public static final String STRATEGY_NAME_FALLBACK = "<fallback>";
 
-    /** path 路由命中但无 Bean 引用时的策略名标记。 */
+    /**
+     * path 路由命中但无 Bean 引用时的策略名标记。
+     */
     public static final String STRATEGY_NAME_ROUTE = "<route>";
 
-    /** path 路由命中且带 Bean 引用时的策略名标记前缀。 */
+    /**
+     * path 路由命中且带 Bean 引用时的策略名标记前缀。
+     */
     public static final String STRATEGY_NAME_ROUTE_BEAN_PREFIX = "<route-bean:";
 
     private static final AntPathMatcher ANT_MATCHER = new AntPathMatcher();
@@ -116,10 +123,14 @@ public class DegradeInterceptor implements WebInterceptor, Ordered {
     private final DegradeStrategyRegistry registry;
     private final DegradeProperties properties;
     private final long latencyThresholdMs;
-    /** 可空：仅在配置了 routes.{path}.fallbackBean 时需要；为 null 表示无 Bean 降级能力。注入 {@link BeanFactory}
-     *  而非 {@code ApplicationContext}，降低测试桩构造代价。 */
+    /**
+     * 可空：仅在配置了 routes.{path}.fallbackBean 时需要；为 null 表示无 Bean 降级能力。注入 {@link BeanFactory}
+     * 而非 {@code ApplicationContext}，降低测试桩构造代价。
+     */
     private final BeanFactory beanFactory;
-    /** Bean 反射方法缓存：key = beanName + "#" + methodName → Method。 */
+    /**
+     * Bean 反射方法缓存：key = beanName + "#" + methodName → Method。
+     */
     private final Map<String, Method> beanMethodCache = new ConcurrentHashMap<>();
 
     public DegradeInterceptor(DegradeStrategyRegistry registry,
@@ -362,10 +373,10 @@ public class DegradeInterceptor implements WebInterceptor, Ordered {
      * </ul>
      */
     private static DegradeResult toDegradeResult(WebRequestContext ctx,
-                                                  Trigger trigger,
-                                                  DegradeProperties.RouteFallback route,
-                                                  String beanName,
-                                                  Object returnValue) {
+                                                 Trigger trigger,
+                                                 DegradeProperties.RouteFallback route,
+                                                 String beanName,
+                                                 Object returnValue) {
         String body;
         if (returnValue instanceof ApiResult<?> api) {
             body = api.toJson();

@@ -1,16 +1,14 @@
 package cn.richie696.component.chunking.strategy;
 
-import cn.richie696.component.chunking.model.Chunk;
-import cn.richie696.component.chunking.model.ChunkingDiagnostics;
-import cn.richie696.component.chunking.model.ChunkingResult;
-import cn.richie696.component.chunking.model.ChunkingRule;
-import cn.richie696.component.chunking.model.ChunkingSignal;
+import cn.richie696.component.chunking.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/** 策略共享的 Chunk 构造、尾段归并和诊断支持。 */
+/**
+ * 策略共享的 Chunk 构造、尾段归并和诊断支持。
+ */
 final class ChunkingStrategySupport {
 
     private final int minChunkCharacters;

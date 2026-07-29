@@ -22,6 +22,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.lang.AutoCloseable;
 
 /**
  * 防抖器 —— 用语义化 API 替代 {@code ScheduledExecutorService} 的手动调用，

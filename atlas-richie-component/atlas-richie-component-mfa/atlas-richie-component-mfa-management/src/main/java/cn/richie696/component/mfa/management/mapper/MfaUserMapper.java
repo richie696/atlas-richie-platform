@@ -24,10 +24,10 @@ import java.util.List;
 
 /**
  * MFA用户信息Mapper
- * 
+ *
  * <p><b>注意</b>：此Mapper只操作MFA相关的表，不涉及业务系统的User表。
  * userId参数是业务系统User表的主键ID，用于关联，但不查询User表。
- * 
+ *
  * @author richie696
  * @since 1.0.0
  */
@@ -47,7 +47,7 @@ public interface MfaUserMapper extends BaseMapper<MfaUserInfo> {
      * @param userId   用户ID（必填，业务系统User表的主键ID）
      * @return MFA用户信息（如果不存在则返回 null）
      */
-    MfaUserInfo selectByTenantAndUser(@Param("tenantId") String tenantId, 
+    MfaUserInfo selectByTenantAndUser(@Param("tenantId") String tenantId,
                                       @Param("userId") String userId);
 
     /**
@@ -59,6 +59,6 @@ public interface MfaUserMapper extends BaseMapper<MfaUserInfo> {
      * @param userId   用户ID（必填，业务系统User表的主键ID）
      * @return MFA用户信息列表（包括已删除的记录）
      */
-    List<MfaUserInfo> selectAllByTenantAndUser(@Param("tenantId") String tenantId, 
+    List<MfaUserInfo> selectAllByTenantAndUser(@Param("tenantId") String tenantId,
                                                @Param("userId") String userId);
 }

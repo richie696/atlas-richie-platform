@@ -17,6 +17,7 @@ package cn.richie696.component.tenant.cross;
 
 import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.StructuredTaskScope.Joiner;
+import java.util.List;
 
 /**
  * 租户感知的 {@link StructuredTaskScope} 工厂。

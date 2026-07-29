@@ -62,7 +62,9 @@ public final class StorageRedisIntegrationTestSupport {
         return Holder.INSTANCE;
     }
 
-    /** JUnit {@code @EnabledIf} 入口。 */
+    /**
+     * JUnit {@code @EnabledIf} 入口。
+     */
     public static boolean isEnabled() {
         return DELEGATE.isAvailable();
     }
@@ -80,7 +82,9 @@ public final class StorageRedisIntegrationTestSupport {
         appendComponentPropertyPairs(pairs);
     }
 
-    /** 供 {@link org.springframework.test.context.DynamicPropertySource} 与 Initializer 共用。 */
+    /**
+     * 供 {@link org.springframework.test.context.DynamicPropertySource} 与 Initializer 共用。
+     */
     public void registerProperties(DynamicPropertyRegistry registry) {
         List<String> pairs = new ArrayList<>();
         appendPropertyPairs(pairs);

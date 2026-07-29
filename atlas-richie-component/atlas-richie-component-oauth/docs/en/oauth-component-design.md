@@ -6,9 +6,12 @@
 
 This component is designed to achieve the following core goals:
 
-1. **Gateway OAuth 2.0 → 2.1 Upgrade**: Upgrade the existing Gateway's OAuth implementation from 2.0 to the 2.1 standard, following the RFC 9000 series specifications
-2. **MCP Shared Component**: Provide standardized OAuth 2.1 authorization support for the Model Context Protocol (MCP), enabling MCP Server and MCP Client to seamlessly integrate into the existing authentication system
-3. **Component-Based Reuse**: Split OAuth functionality into independently deployable, flexibly composable components through a Maven multi-module design
+1. **Gateway OAuth 2.0 → 2.1 Upgrade**: Upgrade the existing Gateway's OAuth implementation from 2.0 to the 2.1
+   standard, following the RFC 9000 series specifications
+2. **MCP Shared Component**: Provide standardized OAuth 2.1 authorization support for the Model Context Protocol (MCP),
+   enabling MCP Server and MCP Client to seamlessly integrate into the existing authentication system
+3. **Component-Based Reuse**: Split OAuth functionality into independently deployable, flexibly composable components
+   through a Maven multi-module design
 
 ### 1.2 Module Relationship Diagram
 
@@ -95,15 +98,15 @@ flowchart LR
 
 ### 1.4 Technology Stack
 
-| Technology | Version/Specification |
-|--------|------------|
-| Java | JDK 25 |
-| Spring Boot | 4.0.6 |
-| Maven | 3.9+ |
-| OAuth | OAuth 2.1 (RFC 9000 Series) |
-| MCP | Model Context Protocol 2025-11-25 |
-| Redis | GlobalCache API |
-| JWT | auth0 java-jwt |
+| Technology  | Version/Specification             |
+|-------------|-----------------------------------|
+| Java        | JDK 25                            |
+| Spring Boot | 4.0.6                             |
+| Maven       | 3.9+                              |
+| OAuth       | OAuth 2.1 (RFC 9000 Series)       |
+| MCP         | Model Context Protocol 2025-11-25 |
+| Redis       | GlobalCache API                   |
+| JWT         | auth0 java-jwt                    |
 
 ---
 
@@ -111,14 +114,14 @@ flowchart LR
 
 ### 2.1 Package Structure
 
-| Package | Description | Source File Count |
-|---------|------|----------|
-| `cn.richie696.component.oauth.core` | Core components: TokenEndpoint, ClientRegistry, ScopeResolver | 3 |
-| `cn.richie696.component.oauth.core.spi` | SPI interface: TokenStore | 1 |
-| `cn.richie696.component.oauth.core.support` | SPI implementation: DefaultTokenStore | 1 |
-| `cn.richie696.component.oauth.core.model` | Domain models: ClientConfig, TokenResponse, etc. | 5 |
-| `cn.richie696.component.oauth.core.config` | Configuration classes: OAuth2Properties, OAuth2RedisKey, OAuth2AutoConfiguration | 3 |
-| `cn.richie696.component.oauth.core.exception` | Exception classes: InvalidClientException, InvalidGrantException, TokenExpiredException | 3 |
+| Package                                       | Description                                                                             | Source File Count |
+|-----------------------------------------------|-----------------------------------------------------------------------------------------|-------------------|
+| `cn.richie696.component.oauth.core`           | Core components: TokenEndpoint, ClientRegistry, ScopeResolver                           | 3                 |
+| `cn.richie696.component.oauth.core.spi`       | SPI interface: TokenStore                                                               | 1                 |
+| `cn.richie696.component.oauth.core.support`   | SPI implementation: DefaultTokenStore                                                   | 1                 |
+| `cn.richie696.component.oauth.core.model`     | Domain models: ClientConfig, TokenResponse, etc.                                        | 5                 |
+| `cn.richie696.component.oauth.core.config`    | Configuration classes: OAuth2Properties, OAuth2RedisKey, OAuth2AutoConfiguration        | 3                 |
+| `cn.richie696.component.oauth.core.exception` | Exception classes: InvalidClientException, InvalidGrantException, TokenExpiredException | 3                 |
 
 ### 2.2 Package Map
 
@@ -151,59 +154,65 @@ cn.richie696.component.oauth.core
 
 #### 2.3.1 TokenEndpoint
 
-**Class Responsibility**: OAuth 2.1 Token endpoint, responsible for the full token lifecycle management: issuance, refresh, validation, and revocation.
+**Class Responsibility**: OAuth 2.1 Token endpoint, responsible for the full token lifecycle management: issuance,
+refresh, validation, and revocation.
 
 **Constructor**:
+
 ```java
 public TokenEndpoint(TokenStore tokenStore, ClientRegistry clientRegistry, OAuth2Properties properties)
 ```
 
 **Public Methods**:
 
-| Method Signature | Description | Return Type | Throws Exception |
-|---------|------|---------|---------|
-| `TokenResponse generateToken(String clientId, String clientSecret, String ip)` | Issue token using client_credentials mode | `TokenResponse` | `BusinessException` |
-| `TokenResponse refreshToken(String refreshToken, String ip)` | Refresh token using refresh_token mode (with distributed lock) | `TokenResponse` | `BusinessException` |
-| `void revokeToken(String token, String tokenTypeHint)` | Revoke token (access_token→blacklist, refresh_token→delete) | `void` | - |
-| `TokenIntrospection introspectToken(String accessToken)` | Introspect token (returns active + clientId + scope) | `TokenIntrospection` | - |
-| `ClientConfig verifyAccessToken(String accessToken)` | Verify JWT signature, expiration, blacklist; returns client config or null | `ClientConfig` | - |
-| `List<String> getIpWhitelist(String accessToken)` | Get client's IP whitelist | `List<String>` | - |
+| Method Signature                                                               | Description                                                                | Return Type          | Throws Exception    |
+|--------------------------------------------------------------------------------|----------------------------------------------------------------------------|----------------------|---------------------|
+| `TokenResponse generateToken(String clientId, String clientSecret, String ip)` | Issue token using client_credentials mode                                  | `TokenResponse`      | `BusinessException` |
+| `TokenResponse refreshToken(String refreshToken, String ip)`                   | Refresh token using refresh_token mode (with distributed lock)             | `TokenResponse`      | `BusinessException` |
+| `void revokeToken(String token, String tokenTypeHint)`                         | Revoke token (access_token→blacklist, refresh_token→delete)                | `void`               | -                   |
+| `TokenIntrospection introspectToken(String accessToken)`                       | Introspect token (returns active + clientId + scope)                       | `TokenIntrospection` | -                   |
+| `ClientConfig verifyAccessToken(String accessToken)`                           | Verify JWT signature, expiration, blacklist; returns client config or null | `ClientConfig`       | -                   |
+| `List<String> getIpWhitelist(String accessToken)`                              | Get client's IP whitelist                                                  | `List<String>`       | -                   |
 
 #### 2.3.2 ClientRegistry
 
-**Class Responsibility**: Client registry, responsible for reading and writing OAuth client configurations, with data stored in Redis Hash.
+**Class Responsibility**: Client registry, responsible for reading and writing OAuth client configurations, with data
+stored in Redis Hash.
 
 **Constructor**:
+
 ```java
 public ClientRegistry()
 ```
 
 **Public Methods**:
 
-| Method Signature | Description | Return Type |
-|---------|------|---------|
-| `<T> T getClientConfig(String clientId, ClientConfig.Field field)` | Get single field value from Redis Hash | `T` |
-| `Map<ClientConfig.Field, Object> getClientConfig(String clientId, Field f1, Field f2)` | Get multiple field values in batch | `Map<Field, Object>` |
-| `boolean isClientValid(String clientId)` | Check if client is enabled | `boolean` |
-| `boolean verifyClientSecret(String clientId, String clientSecret)` | Timing-safe comparison of client secret | `boolean` |
-| `ClientConfig registerTestClient(String clientName)` | Register test client to Redis | `ClientConfig` |
+| Method Signature                                                                       | Description                             | Return Type          |
+|----------------------------------------------------------------------------------------|-----------------------------------------|----------------------|
+| `<T> T getClientConfig(String clientId, ClientConfig.Field field)`                     | Get single field value from Redis Hash  | `T`                  |
+| `Map<ClientConfig.Field, Object> getClientConfig(String clientId, Field f1, Field f2)` | Get multiple field values in batch      | `Map<Field, Object>` |
+| `boolean isClientValid(String clientId)`                                               | Check if client is enabled              | `boolean`            |
+| `boolean verifyClientSecret(String clientId, String clientSecret)`                     | Timing-safe comparison of client secret | `boolean`            |
+| `ClientConfig registerTestClient(String clientName)`                                   | Register test client to Redis           | `ClientConfig`       |
 
 #### 2.3.3 ScopeResolver
 
-**Class Responsibility**: Scope path resolver that uses Ant path matching to find the Scopes required by an interface based on the request path and HTTP method.
+**Class Responsibility**: Scope path resolver that uses Ant path matching to find the Scopes required by an interface
+based on the request path and HTTP method.
 
 **Constructor**:
+
 ```java
 public ScopeResolver()
 ```
 
 **Public Methods**:
 
-| Method Signature | Description | Return Type |
-|---------|------|---------|
-| `List<String> getRequiredScopes(String path, String method)` | Get required scopes by path and method (AntPath matching) | `List<String>` |
-| `boolean verifyScope(Set<String> tokenScopes, List<String> requiredScopes)` | Verify whether token scopes meet requirements (OR logic) | `boolean` |
-| `Set<String> extractScopesFromToken(String accessToken)` | Parse scope claim from JWT | `Set<String>` |
+| Method Signature                                                            | Description                                               | Return Type    |
+|-----------------------------------------------------------------------------|-----------------------------------------------------------|----------------|
+| `List<String> getRequiredScopes(String path, String method)`                | Get required scopes by path and method (AntPath matching) | `List<String>` |
+| `boolean verifyScope(Set<String> tokenScopes, List<String> requiredScopes)` | Verify whether token scopes meet requirements (OR logic)  | `boolean`      |
+| `Set<String> extractScopesFromToken(String accessToken)`                    | Parse scope claim from JWT                                | `Set<String>`  |
 
 ### 2.4 TokenEndpoint State Machine
 
@@ -297,34 +306,34 @@ classDiagram
 
 **Configuration Prefix**: `platform.component.oauth`
 
-| Property Name | Type | Default Value | Description |
-|--------|------|--------|------|
-| `enabled` | boolean | `false` | Whether to enable the OAuth 2.1 component |
-| `tokenSecret` | String | - | Token signing secret (32 chars recommended) |
-| `defaultTokenValidDuration` | Integer | `2` | Default access_token validity (hours) |
-| `defaultRefreshTokenValidDuration` | Integer | `720` | Default refresh_token validity (hours, i.e., 30 days) |
-| `revokePreviousTokensOnIssue` | boolean | `false` | Whether to immediately revoke old tokens when issuing a new token |
-| `enableDailyIssueLimit` | boolean | `true` | Whether to enable daily issuance count limit |
+| Property Name                      | Type    | Default Value | Description                                                       |
+|------------------------------------|---------|---------------|-------------------------------------------------------------------|
+| `enabled`                          | boolean | `false`       | Whether to enable the OAuth 2.1 component                         |
+| `tokenSecret`                      | String  | -             | Token signing secret (32 chars recommended)                       |
+| `defaultTokenValidDuration`        | Integer | `2`           | Default access_token validity (hours)                             |
+| `defaultRefreshTokenValidDuration` | Integer | `720`         | Default refresh_token validity (hours, i.e., 30 days)             |
+| `revokePreviousTokensOnIssue`      | boolean | `false`       | Whether to immediately revoke old tokens when issuing a new token |
+| `enableDailyIssueLimit`            | boolean | `true`        | Whether to enable daily issuance count limit                      |
 
 ### 2.7 Redis Key Schema Table
 
-| Key Enum | Prefix | Template | Description |
-|---------|------|------|------|
-| `OAUTH2_CLIENT_CONFIG` | `third-party-client:` | `third-party-client:%s` | Client configuration (Hash) |
-| `OAUTH2_REFRESH_TOKEN` | `refresh-token:` | `refresh-token:%s` | Refresh Token storage (Hash) |
-| `OAUTH2_CLIENT_REFRESH_TOKEN_INDEX` | `client-refresh-token:` | `client-refresh-token:%s` | Client Refresh Token index |
-| `OAUTH2_DAILY_TOKEN_ISSUE_COUNT` | `oauth2:daily:issue-count:` | `oauth2:daily:issue-count:%s` | Daily issuance count |
-| `OAUTH2_REFRESH_TOKEN_LOCK` | `refresh-token-lock:` | `refresh-token-lock:%s` | Refresh Token distributed lock |
-| `OAUTH2_ACCESS_TOKEN_BLACKLIST` | `access-token-blacklist:` | `access-token-blacklist:%s` | Access Token blacklist |
-| `OAUTH2_ACCESS_TOKEN_IP_BIND` | `access-token-ip:` | `access-token-ip:%s` | Access Token IP binding |
-| `OAUTH2_ANOMALY_REFRESH_COUNT` | `oauth2:anomaly:refresh:count:` | `oauth2:anomaly:refresh:count:%s` | Anomalous refresh count |
-| `OAUTH2_ANOMALY_RATELIMIT` | `oauth2:anomaly:ratelimit:oauth2:` | `oauth2:anomaly:ratelimit:oauth2:%s` | Anomalous rate limit count |
-| `OAUTH2_ANOMALY_TOKEN_IPS` | `oauth2:anomaly:token:ips:` | `oauth2:anomaly:token:ips:%s` | Anomalous Token IP list |
-| `OAUTH2_AUDIT_EVENTS` | `oauth2:audit:events` | `oauth2:audit:events` | Audit events (List) |
-| `GATEWAY_API_INDEX` | `gateway:api:index` | `gateway:api:index` | Gateway API index (Set) |
-| `GATEWAY_API_CONFIG` | `gateway:api:` | `gateway:api:%s` | Gateway API configuration (Hash) |
-| `GATEWAY_API_SCOPES` | `gateway:api:scopes:` | `gateway:api:scopes:%s` | API corresponding scopes (Set) |
-| `GATEWAY_SCOPE_CONFIG` | `gateway:scope:` | `gateway:scope:%s` | Scope configuration |
+| Key Enum                            | Prefix                             | Template                             | Description                      |
+|-------------------------------------|------------------------------------|--------------------------------------|----------------------------------|
+| `OAUTH2_CLIENT_CONFIG`              | `third-party-client:`              | `third-party-client:%s`              | Client configuration (Hash)      |
+| `OAUTH2_REFRESH_TOKEN`              | `refresh-token:`                   | `refresh-token:%s`                   | Refresh Token storage (Hash)     |
+| `OAUTH2_CLIENT_REFRESH_TOKEN_INDEX` | `client-refresh-token:`            | `client-refresh-token:%s`            | Client Refresh Token index       |
+| `OAUTH2_DAILY_TOKEN_ISSUE_COUNT`    | `oauth2:daily:issue-count:`        | `oauth2:daily:issue-count:%s`        | Daily issuance count             |
+| `OAUTH2_REFRESH_TOKEN_LOCK`         | `refresh-token-lock:`              | `refresh-token-lock:%s`              | Refresh Token distributed lock   |
+| `OAUTH2_ACCESS_TOKEN_BLACKLIST`     | `access-token-blacklist:`          | `access-token-blacklist:%s`          | Access Token blacklist           |
+| `OAUTH2_ACCESS_TOKEN_IP_BIND`       | `access-token-ip:`                 | `access-token-ip:%s`                 | Access Token IP binding          |
+| `OAUTH2_ANOMALY_REFRESH_COUNT`      | `oauth2:anomaly:refresh:count:`    | `oauth2:anomaly:refresh:count:%s`    | Anomalous refresh count          |
+| `OAUTH2_ANOMALY_RATELIMIT`          | `oauth2:anomaly:ratelimit:oauth2:` | `oauth2:anomaly:ratelimit:oauth2:%s` | Anomalous rate limit count       |
+| `OAUTH2_ANOMALY_TOKEN_IPS`          | `oauth2:anomaly:token:ips:`        | `oauth2:anomaly:token:ips:%s`        | Anomalous Token IP list          |
+| `OAUTH2_AUDIT_EVENTS`               | `oauth2:audit:events`              | `oauth2:audit:events`                | Audit events (List)              |
+| `GATEWAY_API_INDEX`                 | `gateway:api:index`                | `gateway:api:index`                  | Gateway API index (Set)          |
+| `GATEWAY_API_CONFIG`                | `gateway:api:`                     | `gateway:api:%s`                     | Gateway API configuration (Hash) |
+| `GATEWAY_API_SCOPES`                | `gateway:api:scopes:`              | `gateway:api:scopes:%s`              | API corresponding scopes (Set)   |
+| `GATEWAY_SCOPE_CONFIG`              | `gateway:scope:`                   | `gateway:scope:%s`                   | Scope configuration              |
 
 ### 2.8 Sequence Diagrams
 
@@ -512,14 +521,16 @@ sequenceDiagram
 
 ### 3.1 Design Goals
 
-Implement the OAuth 2.1 Authorization Code + PKCE flow, following the [MCP Authorization Spec (2025-11-25)](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) specification.
+Implement the OAuth 2.1 Authorization Code + PKCE flow, following
+the [MCP Authorization Spec (2025-11-25)](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)
+specification.
 
 ### 3.2 Module Structure
 
 ```
 atlas-richie-component-oauth-authz
 ├── pom.xml
-└── src/main/java/com/richie/component/oauth/authz/
+└── src/main/java/cn/richie696/component/oauth/authz/
     ├── AuthorizationEndpoint.java        # Authorization endpoint
     ├── AuthorizationCodeGrant.java      # Authorization code grant handler
     ├── PKCESupport.java                 # PKCE S256 support
@@ -534,11 +545,13 @@ atlas-richie-component-oauth-authz
 
 #### 3.3.1 AuthorizationEndpoint
 
-**Class Responsibility**: Handles OAuth 2.1 authorization endpoint requests, including authorization requests (GET /authorize) and user authorization consent (POST /authorize).
+**Class Responsibility**: Handles OAuth 2.1 authorization endpoint requests, including authorization requests (GET
+/authorize) and user authorization consent (POST /authorize).
 
 **Package**: `cn.richie696.component.oauth.authz`
 
 **Constructor**:
+
 ```java
 public AuthorizationEndpoint(
     ClientRegistry clientRegistry,
@@ -550,15 +563,15 @@ public AuthorizationEndpoint(
 
 **Public Methods**:
 
-| Method Signature | Description | Return Type |
-|---------|------|---------|
-| `void handleAuthorizationRequest(HttpServletRequest request, HttpServletResponse response)` | Handle GET /authorize, redirect to login page | `void` |
-| `void handleAuthorizationConsent(HttpServletRequest request, HttpServletResponse response)` | Handle POST /authorize (user grants consent), generate authorization code and redirect | `void` |
+| Method Signature                                                                            | Description                                                                            | Return Type |
+|---------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|-------------|
+| `void handleAuthorizationRequest(HttpServletRequest request, HttpServletResponse response)` | Handle GET /authorize, redirect to login page                                          | `void`      |
+| `void handleAuthorizationConsent(HttpServletRequest request, HttpServletResponse response)` | Handle POST /authorize (user grants consent), generate authorization code and redirect | `void`      |
 
 **Internal Methods (Private)**:
 
-| Method Signature | Description | Return Type |
-|---------|------|---------|
+| Method Signature                                                                                                       | Description                           | Return Type         |
+|------------------------------------------------------------------------------------------------------------------------|---------------------------------------|---------------------|
 | `AuthorizationCode generateAuthorizationCode(String clientId, String redirectUri, String codeChallenge, String state)` | Generate authorization code and store | `AuthorizationCode` |
 
 #### 3.3.2 AuthorizationCodeStore (SPI)
@@ -725,7 +738,8 @@ public class PKCESupport {
 
 #### 3.3.5 AuthorizationCodeGrant
 
-**Class Responsibility**: Handles the code→token exchange flow in authorization code mode. Requires extending the `generateToken` method of TokenEndpoint.
+**Class Responsibility**: Handles the code→token exchange flow in authorization code mode. Requires extending the
+`generateToken` method of TokenEndpoint.
 
 **Package**: `cn.richie696.component.oauth.authz`
 
@@ -908,7 +922,8 @@ public class AuthorizationServerMetadata {
 
 ### 3.4 TokenEndpoint Extension Requirements
 
-To support the `authorization_code` grant, TokenEndpoint needs to add the following methods or overload existing methods:
+To support the `authorization_code` grant, TokenEndpoint needs to add the following methods or overload existing
+methods:
 
 ```java
 // New method: support authorization_code grant
@@ -930,7 +945,8 @@ private String generateAccessToken(String clientId, ClientConfig config, List<St
 
 RFC 8707 defines the `resource` parameter, used to specify the target resource server. Implementation points:
 
-1. **JWT aud claim**: When resource is specified, the `aud` claim of the generated JWT access_token should contain the resource URI
+1. **JWT aud claim**: When resource is specified, the `aud` claim of the generated JWT access_token should contain the
+   resource URI
 2. **Audience Validation**: Add audience validation logic in `verifyAccessToken`
 
 ```java
@@ -1074,7 +1090,7 @@ Implement RFC 7591 Dynamic Client Registration Protocol and Client ID Metadata D
 ```
 atlas-richie-component-oauth-dcr
 ├── pom.xml
-└── src/main/java/com/richie/component/oauth/dcr/
+└── src/main/java/cn/richie696/component/oauth/dcr/
     ├── DynamicClientRegistrationEndpoint.java  # DCR endpoint
     ├── ClientRegistrationRequest.java         # DCR request DTO
     ├── ClientRegistrationResponse.java        # DCR response DTO
@@ -1095,6 +1111,7 @@ atlas-richie-component-oauth-dcr
 **Package**: `cn.richie696.component.oauth.dcr`
 
 **Constructor**:
+
 ```java
 public DynamicClientRegistrationEndpoint(
     ClientRegistry clientRegistry,
@@ -1105,10 +1122,10 @@ public DynamicClientRegistrationEndpoint(
 
 **Public Methods**:
 
-| Method Signature | Description | Return Type |
-|---------|------|---------|
-| `ClientRegistrationResponse registerClient(ClientRegistrationRequest request, HttpServletRequest httpRequest)` | Handle client registration request | `ClientRegistrationResponse` |
-| `ClientRegistrationResponse updateClient(String clientId, ClientRegistrationRequest request, HttpServletRequest httpRequest)` | Update registered client | `ClientRegistrationResponse` |
+| Method Signature                                                                                                              | Description                        | Return Type                  |
+|-------------------------------------------------------------------------------------------------------------------------------|------------------------------------|------------------------------|
+| `ClientRegistrationResponse registerClient(ClientRegistrationRequest request, HttpServletRequest httpRequest)`                | Handle client registration request | `ClientRegistrationResponse` |
+| `ClientRegistrationResponse updateClient(String clientId, ClientRegistrationRequest request, HttpServletRequest httpRequest)` | Update registered client           | `ClientRegistrationResponse` |
 
 #### 4.3.2 ClientRegistrationRequest
 
@@ -1558,12 +1575,12 @@ sequenceDiagram
 
 ### 5.1 MCP Role to OAuth Component Module Mapping Table
 
-| MCP Role | OAuth Role | Atlas OAuth Component | Description |
-|----------|-----------|---------------------|------|
-| MCP Server | Resource Server (Protected Resource) | `oauth-core` | Use `verifyAccessToken` to validate access token |
-| MCP Client | OAuth Client | `oauth-authz` | Client SDK, handles authorization flow |
-| Authorization Server | AS | `oauth-authz` | `AuthorizationEndpoint` + `TokenEndpoint` |
-| MCP Client (Token Holder) | OAuth Client | `oauth-authz` | `AuthorizationCodeGrant` handles code-to-token exchange |
+| MCP Role                  | OAuth Role                           | Atlas OAuth Component | Description                                             |
+|---------------------------|--------------------------------------|-----------------------|---------------------------------------------------------|
+| MCP Server                | Resource Server (Protected Resource) | `oauth-core`          | Use `verifyAccessToken` to validate access token        |
+| MCP Client                | OAuth Client                         | `oauth-authz`         | Client SDK, handles authorization flow                  |
+| Authorization Server      | AS                                   | `oauth-authz`         | `AuthorizationEndpoint` + `TokenEndpoint`               |
+| MCP Client (Token Holder) | OAuth Client                         | `oauth-authz`         | `AuthorizationCodeGrant` handles code-to-token exchange |
 
 ### 5.2 MCP Server Integration (Resource Server)
 
@@ -1673,18 +1690,19 @@ response.setHeader("WWW-Authenticate", wwwAuthenticate);
 
 MCP Server should define the following standard Scopes:
 
-| Scope | Description | Typical Use |
-|-------|------|---------|
-| `mcp:read` | Read MCP resources | Query tool lists, context, etc. |
-| `mcp:write` | Write MCP resources | Modify configuration, upload files, etc. |
-| `mcp:execute` | Execute MCP operations | Call tools, execute commands, etc. |
-| `mcp:admin` | Administrative functions | User management, system configuration, etc. |
+| Scope         | Description              | Typical Use                                 |
+|---------------|--------------------------|---------------------------------------------|
+| `mcp:read`    | Read MCP resources       | Query tool lists, context, etc.             |
+| `mcp:write`   | Write MCP resources      | Modify configuration, upload files, etc.    |
+| `mcp:execute` | Execute MCP operations   | Call tools, execute commands, etc.          |
+| `mcp:admin`   | Administrative functions | User management, system configuration, etc. |
 
 ### 5.5 Token Audience Binding (resource parameter)
 
 RFC 8707 specifies that when an MCP Client requests an MCP Server:
 
-1. **At Request Time**: The MCP Client specifies the `resource` parameter (pointing to the MCP Server URI) in the Token request
+1. **At Request Time**: The MCP Client specifies the `resource` parameter (pointing to the MCP Server URI) in the Token
+   request
 2. **At Token Generation**: `AuthorizationCodeGrant` writes `resource` into the JWT's `aud` claim
 3. **At Validation**: The MCP Server verifies in `verifyAccessToken` whether the `aud` claim contains its own URI
 
@@ -1898,17 +1916,18 @@ public interface ClientIdMetadataDocumentResolver {
 
 ### 7.1 PKCE S256 Mandatory Requirement
 
-**Design Decision**: The OAuth 2.1 specification requires that all authorization code flows must use PKCE, and only the S256 method is supported.
+**Design Decision**: The OAuth 2.1 specification requires that all authorization code flows must use PKCE, and only the
+S256 method is supported.
 
 **Implementation Points**:
 
 1. When `AuthorizationEndpoint` handles authorization requests:
-   - Verify that `code_challenge` is present
-   - Verify that `code_challenge_method` is `S256` (reject `plain`)
+    - Verify that `code_challenge` is present
+    - Verify that `code_challenge_method` is `S256` (reject `plain`)
 
 2. When `AuthorizationCodeGrant` exchanges Token:
-   - Use `PKCESupport.verifyChallenge()` to verify `code_verifier`
-   - Return `invalid_grant` on verification failure
+    - Use `PKCESupport.verifyChallenge()` to verify `code_verifier`
+    - Return `invalid_grant` on verification failure
 
 ```java
 // Validation in AuthorizationEndpoint.handleAuthorizationRequest()
@@ -1961,7 +1980,8 @@ return Strings.CS.equals(storedSecret, clientSecret);
 **Design**:
 
 1. **Blacklist**: When revoking an Access Token, add it to the Redis blacklist with automatic expiration cleanup
-2. **IP Binding**: Record the binding relationship between Token and IP at each issuance, with optional verification during validation
+2. **IP Binding**: Record the binding relationship between Token and IP at each issuance, with optional verification
+   during validation
 
 ```java
 // TokenEndpoint.generateToken()
@@ -1978,11 +1998,13 @@ if (boundIp != null && !boundIp.equals(requestIp)) {
 ### 7.5 Daily Issuance Count Limit
 
 **Calculation Formula**:
+
 ```
 maxIssuesPerDay = max(24 / tokenValidDuration, 1) + 2
 ```
 
 **Examples**:
+
 - Token validity 2 hours → maximum 14 times per day
 - Token validity 4 hours → maximum 8 times per day
 - Token validity 24 hours → maximum 3 times per day
@@ -2036,12 +2058,12 @@ public boolean isUrlSafe(String url) {
 
 ### 8.1 New Redis Keys
 
-| Key Enum | Prefix | Template | Description |
-|---------|------|------|------|
-| `OAUTH2_AUTHZ_CODE` | `authz-code:` | `authz-code:%s` | Authorization code storage (Hash) |
-| `OAUTH2_CLIENT_META` | `client-meta:` | `client-meta:%s` | Client metadata (Hash) |
-| `OAUTH2_REGISTRATION_TOKEN` | `reg-token:` | `reg-token:%s` | Registration Access Token |
-| `OAUTH2_SSRF_DNS_CACHE` | `ssrf:dns:` | `ssrf:dns:%s` | SSRF DNS cache |
+| Key Enum                    | Prefix         | Template         | Description                       |
+|-----------------------------|----------------|------------------|-----------------------------------|
+| `OAUTH2_AUTHZ_CODE`         | `authz-code:`  | `authz-code:%s`  | Authorization code storage (Hash) |
+| `OAUTH2_CLIENT_META`        | `client-meta:` | `client-meta:%s` | Client metadata (Hash)            |
+| `OAUTH2_REGISTRATION_TOKEN` | `reg-token:`   | `reg-token:%s`   | Registration Access Token         |
+| `OAUTH2_SSRF_DNS_CACHE`     | `ssrf:dns:`    | `ssrf:dns:%s`    | SSRF DNS cache                    |
 
 ### 8.2 OAuth2RedisKey Extension
 
@@ -2057,18 +2079,18 @@ OAUTH2_SSRF_DNS_CACHE("ssrf:dns:", "ssrf:dns:%s"),
 
 ## 9. Error Code Specification
 
-| Error Code | Error Type (RFC 6749) | Description |
-|--------|-------------------|------|
-| `invalid_request` | invalid_request | Request parameter missing or invalid |
-| `invalid_client` | invalid_client | Client authentication failed |
-| `invalid_grant` | invalid_grant | Authorization code/refresh token invalid or expired |
-| `unauthorized_client` | unauthorized_client | Client not authorized to use this grant type |
-| `unsupported_grant_type` | unsupported_grant_type | Unsupported grant type |
-| `invalid_token` | invalid_token | Access Token invalid or expired |
-| `insufficient_scope` | insufficient_scope | Insufficient Token scope |
-| `access_denied` | access_denied | User denied authorization |
-| `rate_limit_exceeded` | (Extension) | Request rate exceeded limit |
-| `ip_not_allowed` | (Extension) | IP not in whitelist |
+| Error Code               | Error Type (RFC 6749)  | Description                                         |
+|--------------------------|------------------------|-----------------------------------------------------|
+| `invalid_request`        | invalid_request        | Request parameter missing or invalid                |
+| `invalid_client`         | invalid_client         | Client authentication failed                        |
+| `invalid_grant`          | invalid_grant          | Authorization code/refresh token invalid or expired |
+| `unauthorized_client`    | unauthorized_client    | Client not authorized to use this grant type        |
+| `unsupported_grant_type` | unsupported_grant_type | Unsupported grant type                              |
+| `invalid_token`          | invalid_token          | Access Token invalid or expired                     |
+| `insufficient_scope`     | insufficient_scope     | Insufficient Token scope                            |
+| `access_denied`          | access_denied          | User denied authorization                           |
+| `rate_limit_exceeded`    | (Extension)            | Request rate exceeded limit                         |
+| `ip_not_allowed`         | (Extension)            | IP not in whitelist                                 |
 
 ---
 
@@ -2156,22 +2178,22 @@ public class OAuth2DCRAutoConfiguration {}
 
 ## 12. Reference Specifications
 
-| Specification | Title |
-|------|------|
-| RFC 6749 | OAuth 2.0 Authorization Framework |
-| RFC 6750 | OAuth 2.0 Bearer Token Usage |
-| RFC 7009 | OAuth 2.0 Token Revocation |
-| RFC 7519 | JSON Web Token (JWT) |
-| RFC 7521 | Assertion Framework for OAuth 2.0 |
-| RFC 7591 | OAuth 2.0 Dynamic Client Registration Protocol |
-| RFC 7592 | OAuth 2.0 Dynamic Client Registration Management Protocol |
-| RFC 7636 | PKCE for OAuth 2.0 |
-| RFC 7662 | OAuth 2.0 Token Introspection |
-| RFC 8414 | OAuth 2.0 Authorization Server Metadata |
-| RFC 8707 | Resource Indicators for OAuth 2.0 |
-| RFC 9728 | Protected Resource Metadata |
-| OAuth 2.1 | OAuth 2.1 Authorization Framework (draft) |
-| MCP Authorization | Model Context Protocol Authorization Spec (2025-11-25) |
+| Specification     | Title                                                     |
+|-------------------|-----------------------------------------------------------|
+| RFC 6749          | OAuth 2.0 Authorization Framework                         |
+| RFC 6750          | OAuth 2.0 Bearer Token Usage                              |
+| RFC 7009          | OAuth 2.0 Token Revocation                                |
+| RFC 7519          | JSON Web Token (JWT)                                      |
+| RFC 7521          | Assertion Framework for OAuth 2.0                         |
+| RFC 7591          | OAuth 2.0 Dynamic Client Registration Protocol            |
+| RFC 7592          | OAuth 2.0 Dynamic Client Registration Management Protocol |
+| RFC 7636          | PKCE for OAuth 2.0                                        |
+| RFC 7662          | OAuth 2.0 Token Introspection                             |
+| RFC 8414          | OAuth 2.0 Authorization Server Metadata                   |
+| RFC 8707          | Resource Indicators for OAuth 2.0                         |
+| RFC 9728          | Protected Resource Metadata                               |
+| OAuth 2.1         | OAuth 2.1 Authorization Framework (draft)                 |
+| MCP Authorization | Model Context Protocol Authorization Spec (2025-11-25)    |
 
 ---
 

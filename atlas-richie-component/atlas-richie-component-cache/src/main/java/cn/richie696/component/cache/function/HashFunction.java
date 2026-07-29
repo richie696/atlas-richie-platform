@@ -109,9 +109,9 @@ public interface HashFunction extends CacheFunction {
     /**
      * 获取Hash对象
      *
-     * @param key       缓存key
+     * @param key        缓存key
      * @param valueClass 目标类型
-     * @param <T> 目标对象类型
+     * @param <T>        目标对象类型
      * @return 返回对象
      */
     <T> T getObjectFromHash(String key, Class<T> valueClass);

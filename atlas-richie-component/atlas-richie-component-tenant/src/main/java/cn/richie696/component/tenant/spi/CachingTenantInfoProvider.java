@@ -72,9 +72,9 @@ public class CachingTenantInfoProvider implements TenantInfoProvider {
     /**
      * 构造带 TTL 缓存的装饰器。
      *
-     * @param delegate  底层真实 provider（必传，不能为 null）
+     * @param delegate   底层真实 provider（必传，不能为 null）
      * @param ttlSeconds TTL（秒），{@code <= 0} 视为禁用缓存（直接穿透）
-     * @param maxSize   最大缓存租户数，超出时清空一半（按 LRU 时间），{@code <= 0} 视为不限
+     * @param maxSize    最大缓存租户数，超出时清空一半（按 LRU 时间），{@code <= 0} 视为不限
      */
     public CachingTenantInfoProvider(TenantInfoProvider delegate, long ttlSeconds, int maxSize) {
         this(delegate, ttlSeconds, maxSize, null);
@@ -106,7 +106,7 @@ public class CachingTenantInfoProvider implements TenantInfoProvider {
             });
             this.janitor.scheduleWithFixedDelay(this::evictExpired, sweepSeconds, sweepSeconds, TimeUnit.SECONDS);
             log.info("CachingTenantInfoProvider created with ttl={}s, max-size={}, sweep={}s",
-                ttlSeconds, maxSize, sweepSeconds);
+                    ttlSeconds, maxSize, sweepSeconds);
         }
     }
 
@@ -172,7 +172,7 @@ public class CachingTenantInfoProvider implements TenantInfoProvider {
             int after = cache.size();
             if (before != after) {
                 log.debug("CachingTenantInfoProvider evicted {} expired entries ({} -> {})",
-                    before - after, before, after);
+                        before - after, before, after);
             }
         } catch (Exception e) {
             log.warn("CachingTenantInfoProvider janitor failed: {}", e.getMessage());
@@ -188,9 +188,9 @@ public class CachingTenantInfoProvider implements TenantInfoProvider {
         if (cache.size() > maxSize) {
             int toRemove = cache.size() - (maxSize / 2);
             cache.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue())
-                .limit(toRemove)
-                .forEach(e -> cache.remove(e.getKey()));
+                    .sorted(Map.Entry.comparingByValue())
+                    .limit(toRemove)
+                    .forEach(e -> cache.remove(e.getKey()));
         }
     }
 
@@ -202,19 +202,21 @@ public class CachingTenantInfoProvider implements TenantInfoProvider {
         cache.clear();
     }
 
-    private record CacheEntry(TenantInfo value, Instant expiresAt) implements Comparable<CacheEntry> {
+    private record CacheEntry(TenantInfo value, Instant expiresAt) implements Comparable<CacheEntry>
 
-        boolean isExpired() {
-            return isExpiredAt(Instant.now());
-        }
+    {
 
-        boolean isExpiredAt(Instant now) {
-            return expiresAt.isBefore(now);
-        }
+        boolean isExpired () {
+        return isExpiredAt(Instant.now());
+    }
+
+        boolean isExpiredAt (Instant now){
+        return expiresAt.isBefore(now);
+    }
 
         @Override
-        public int compareTo(CacheEntry other) {
-            return expiresAt.compareTo(other.expiresAt);
-        }
+        public int compareTo (CacheEntry other){
+        return expiresAt.compareTo(other.expiresAt);
+    }
     }
 }

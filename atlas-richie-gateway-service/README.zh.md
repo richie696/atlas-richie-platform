@@ -200,7 +200,7 @@ flowchart TB
 
 ```
 atlas-richie-gateway-service/
-├── src/main/java/com/richie/gateway/
+├── src/main/java/cn/richie696/gateway/
 │   ├── config/              # GatewayConfig、SSO、ECC、Sentinel、Swagger、启动校验
 │   ├── filter/
 │   │   ├── common/          # 各模式共用

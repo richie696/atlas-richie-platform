@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.storage.local.config;
 
-import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import cn.richie696.component.liquibase.migration.ChangeLogRegistry;
 import cn.richie696.component.storage.config.StorageEngineProvider;
+import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +43,9 @@ import org.springframework.context.annotation.Bean;
 @MapperScan("cn.richie696.component.storage.local.repository.mapper")
 public class LocalStorageAutoConfiguration {
 
-    /** 变更日志注册表，用于注册本地存储的 Liquibase 脚本 */
+    /**
+     * 变更日志注册表，用于注册本地存储的 Liquibase 脚本
+     */
     private final ChangeLogRegistry changeLogRegistry;
 
     /**

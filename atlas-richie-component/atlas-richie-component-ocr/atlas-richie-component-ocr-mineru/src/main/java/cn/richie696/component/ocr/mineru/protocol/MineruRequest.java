@@ -21,10 +21,10 @@ package cn.richie696.component.ocr.mineru.protocol;
  * <p>由 {@code MineruOcrProvider#toProviderRequest} 构造、由 {@code MineruOcrProvider#upload}
  * 以 multipart/form-data 形式序列化提交。
  *
+ * @param pdfData 待识别的 PDF 原始字节
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-12
- * @param pdfData 待识别的 PDF 原始字节
  */
 public record MineruRequest(
         byte[] pdfData) {

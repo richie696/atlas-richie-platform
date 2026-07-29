@@ -21,11 +21,10 @@ package cn.richie696.component.web.core.sse;
  * 对应 SSE 协议一行：{@code event: <name>\ndata: <data>\nid: <id>\nretry: <ms>}。
  * 业务方通过 {@link #builder()} 构造或静态工厂 {@link #of(Object)} / {@link #of(String, Object)}。
  *
- * @param name         事件名（{@code event:} 字段）；默认 {@code "message"}
- * @param data         事件数据（{@code data:} 字段）；任意 {@link Object}，由 Spring Jackson 序列化
- * @param id           事件 ID（{@code id:} 字段）；可选
- * @param reconnectMs  客户端重连间隔（{@code retry:} 字段）；可选，毫秒
- *
+ * @param name        事件名（{@code event:} 字段）；默认 {@code "message"}
+ * @param data        事件数据（{@code data:} 字段）；任意 {@link Object}，由 Spring Jackson 序列化
+ * @param id          事件 ID（{@code id:} 字段）；可选
+ * @param reconnectMs 客户端重连间隔（{@code retry:} 字段）；可选，毫秒
  * @author richie696
  * @since 2026-07
  */
@@ -40,25 +39,25 @@ public record SseEvent(String name, Object data, String id, Long reconnectMs) {
     /**
      * 默认事件（{@code event: message}）。
      */
-    public static SseEvent of(Object data) {
+    public static SseEvent of (Object data){
         return new SseEvent("message", data, null, null);
     }
 
     /**
      * 命名事件（{@code event: <name>}）。
      */
-    public static SseEvent of(String name, Object data) {
+    public static SseEvent of (String name, Object data){
         return new SseEvent(name, data, null, null);
     }
 
     /**
      * 心跳事件（{@code event: ping, data: "ping"}），用于穿透代理 idle timeout。
      */
-    public static SseEvent ping() {
+    public static SseEvent ping () {
         return new SseEvent("ping", "ping", null, null);
     }
 
-    public static Builder builder() {
+    public static Builder builder () {
         return new Builder();
     }
 

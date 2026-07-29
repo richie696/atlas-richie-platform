@@ -39,7 +39,9 @@ public final class MfaRedisIntegrationTestSupport implements RedisIntegrationTes
         return INSTANCE;
     }
 
-    /** JUnit {@code @EnabledIf} 入口（不可与实例 {@link #isEnabled()} 同名）。 */
+    /**
+     * JUnit {@code @EnabledIf} 入口（不可与实例 {@link #isEnabled()} 同名）。
+     */
     public static boolean integrationTestsEnabled() {
         return getInstance().isEnabled();
     }

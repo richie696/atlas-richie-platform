@@ -18,17 +18,8 @@ package cn.richie696.component.nats.dlq;
 import cn.richie696.component.nats.config.NatsAutoConfiguration;
 import cn.richie696.component.nats.connection.NatsConnectionManager;
 import cn.richie696.component.nats.support.NatsIntegrationTestSupport;
-import io.nats.client.Connection;
-import io.nats.client.JetStream;
-import io.nats.client.JetStreamApiException;
-import io.nats.client.JetStreamManagement;
-import io.nats.client.Nats;
-import io.nats.client.api.MessageInfo;
-import io.nats.client.api.RetentionPolicy;
-import io.nats.client.api.StorageType;
-import io.nats.client.api.StreamConfiguration;
-import io.nats.client.api.StreamInfo;
-import io.nats.client.api.StreamState;
+import io.nats.client.*;
+import io.nats.client.api.*;
 import io.nats.client.impl.Headers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,7 +74,9 @@ import static org.awaitility.Awaitility.await;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class NatsDeadLetterAdvisoryConsumerEndToEndIT {
 
-    /** OTel traceparent fixture,验证 DLQ headers 透传。 */
+    /**
+     * OTel traceparent fixture,验证 DLQ headers 透传。
+     */
     private static final String FIXTURE_TRACE_PARENT =
             "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01";
 

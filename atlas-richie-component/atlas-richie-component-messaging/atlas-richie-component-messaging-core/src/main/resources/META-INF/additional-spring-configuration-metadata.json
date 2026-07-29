@@ -5,4 +5,5 @@
       "type": "java.lang.String",
       "description": "声明队列消费者函数的名称."
     }
-  ] }
+  ]
+}

@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 package cn.richie696.component.parser.internal;
-import cn.richie696.component.parser.testutil.ParseSyncHelper;
 
-import cn.richie696.component.parser.DocumentSegment;
-import cn.richie696.component.parser.ParseEvent;
-import cn.richie696.component.parser.ParsedDocument;
-import cn.richie696.component.parser.ParserContext;
-import cn.richie696.component.parser.ParserSource;
+import cn.richie696.component.parser.*;
 import cn.richie696.component.parser.config.ParserProperties;
 import cn.richie696.component.parser.exception.DocumentParseException;
+import cn.richie696.component.parser.testutil.ParseSyncHelper;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -34,7 +30,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.awt.Color;
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -45,13 +42,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 
-import javax.imageio.ImageIO;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * {@link TikaDocumentParser} 单元测试 — PDF 解析 + 全图片 PDF 检测。

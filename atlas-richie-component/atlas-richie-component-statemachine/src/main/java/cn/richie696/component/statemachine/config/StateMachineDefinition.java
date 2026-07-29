@@ -27,7 +27,6 @@ import java.util.Map;
  * 表示从配置文件（YAML/JSON）加载的状态机定义。
  * 包含状态机的基本信息、状态列表、转换规则列表和扩展配置。
  *
- *
  * @author richie696
  * @since 1.0.0
  */

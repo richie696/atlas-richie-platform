@@ -60,16 +60,16 @@ public class MfaCacheSyncManager {
      */
     public void syncToCache(MfaUserInfo userInfo) {
         String cacheKey = MfaKeyUtils.getUserCacheKey(
-            userInfo.getTenantId(),
-            userInfo.getUserId(),
-            tenantSupport.isTenantEnabled()
+                userInfo.getTenantId(),
+                userInfo.getUserId(),
+                tenantSupport.isTenantEnabled()
         );
 
         long ttl = properties.getManagement().getTtlHours() * 3600 * 1000L; // 转换为毫秒
         GlobalCache.struct().set(cacheKey, userInfo, ttl);
 
         log.info("MFA信息同步到缓存成功，userId: {}, tenantId: {}",
-            userInfo.getUserId(), userInfo.getTenantId());
+                userInfo.getUserId(), userInfo.getTenantId());
     }
 
     /**

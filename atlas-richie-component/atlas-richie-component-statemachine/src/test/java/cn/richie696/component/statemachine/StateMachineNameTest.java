@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class StateMachineNameTest {
 
-    enum TestStateMachine { order, payment }
+    enum TestStateMachine {order, payment}
 
     @Test
     void testOf_WithEnum() {

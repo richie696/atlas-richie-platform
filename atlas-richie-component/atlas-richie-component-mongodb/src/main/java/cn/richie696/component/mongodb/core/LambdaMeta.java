@@ -16,6 +16,7 @@
 package cn.richie696.component.mongodb.core;
 
 import cn.richie696.component.mongodb.exception.MongodbException;
+
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.util.function.Function;

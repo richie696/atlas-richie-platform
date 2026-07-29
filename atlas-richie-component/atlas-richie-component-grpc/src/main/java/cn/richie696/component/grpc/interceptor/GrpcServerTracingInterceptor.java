@@ -15,13 +15,7 @@
  */
 package cn.richie696.component.grpc.interceptor;
 
-import io.grpc.ForwardingServerCall;
-import io.grpc.ForwardingServerCallListener;
-import io.grpc.Metadata;
-import io.grpc.ServerCall;
-import io.grpc.ServerCallHandler;
-import io.grpc.ServerInterceptor;
-import io.grpc.Status;
+import io.grpc.*;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
@@ -37,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.lang.Iterable;
 
 /**
  * gRPC 服务端 OpenTelemetry 链路追踪拦截器
@@ -57,18 +52,28 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 public final class GrpcServerTracingInterceptor implements ServerInterceptor {
 
-    /** 标记 RPC 系统类型 */
+    /**
+     * 标记 RPC 系统类型
+     */
     private static final AttributeKey<String> RPC_SYSTEM = AttributeKey.stringKey("rpc.system");
-    /** 标记 RPC 方法名 */
+    /**
+     * 标记 RPC 方法名
+     */
     private static final AttributeKey<String> RPC_METHOD = AttributeKey.stringKey("rpc.method");
-    /** 标记 gRPC 状态码 */
+    /**
+     * 标记 gRPC 状态码
+     */
     private static final AttributeKey<Long> RPC_STATUS_CODE = AttributeKey.longKey("rpc.grpc.status_code");
 
-    /** 响应中携带 traceId 的 Metadata key */
+    /**
+     * 响应中携带 traceId 的 Metadata key
+     */
     private static final Metadata.Key<String> TRACE_ID_HEADER =
             Metadata.Key.of("x-trace-id", Metadata.ASCII_STRING_MARSHALLER);
 
-    /** W3C 标准 TextMap 提取器，从 gRPC Metadata 中提取上游 trace context */
+    /**
+     * W3C 标准 TextMap 提取器，从 gRPC Metadata 中提取上游 trace context
+     */
     private static final TextMapGetter<Metadata> GETTER = new TextMapGetter<>() {
         @Override
         public Iterable<String> keys(Metadata metadata) {
@@ -215,8 +220,8 @@ public final class GrpcServerTracingInterceptor implements ServerInterceptor {
     /**
      * 结束 span：写入最终状态码和 traceId，清理 MDC
      *
-     * @param span           当前 span
-     * @param status         gRPC 最终状态
+     * @param span            当前 span
+     * @param status          gRPC 最终状态
      * @param responseHeaders 响应 Metadata（用于写入 traceId 给调用方）
      */
     private void finishSpan(Span span, Status status, Metadata responseHeaders) {

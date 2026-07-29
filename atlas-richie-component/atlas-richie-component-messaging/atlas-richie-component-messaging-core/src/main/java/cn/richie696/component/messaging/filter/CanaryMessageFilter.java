@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.messaging.filter;
 
-import cn.richie696.contract.gateway.config.DeployConfig;
-import cn.richie696.contract.constant.GlobalConstants;
 import cn.richie696.component.messaging.config.CanaryInstanceManager;
+import cn.richie696.contract.constant.GlobalConstants;
+import cn.richie696.contract.gateway.config.DeployConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.client.ServiceInstance;
@@ -229,7 +229,7 @@ public class CanaryMessageFilter {
     /**
      * 从消息头获取值
      *
-     * @param message  消息对象
+     * @param message   消息对象
      * @param headerKey 请求头键
      * @return 请求头值
      */

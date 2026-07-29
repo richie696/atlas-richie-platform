@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.i18n.aspect;
 
-import cn.richie696.component.i18n.annotation.I18nDict;
-import cn.richie696.component.i18n.config.I18nProperties;
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.cache.ops.FieldOps;
+import cn.richie696.component.i18n.annotation.I18nDict;
+import cn.richie696.component.i18n.config.I18nProperties;
 import cn.richie696.contract.model.ApiResult;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -26,7 +26,8 @@ import org.mockito.MockedStatic;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class I18nDictAspectTest {

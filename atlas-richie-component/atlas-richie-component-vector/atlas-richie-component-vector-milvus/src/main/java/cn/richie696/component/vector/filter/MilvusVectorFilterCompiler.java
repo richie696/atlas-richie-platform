@@ -1,11 +1,13 @@
 package cn.richie696.component.vector.filter;
 
-import cn.richie696.component.vector.filter.VectorFilterCompiler;
 import cn.richie696.component.vector.model.VectorFilter;
 
 import java.util.stream.Collectors;
+import java.util.List;
 
-/** 将统一 {@link VectorFilter} 编译为 Milvus V1 expression。 */
+/**
+ * 将统一 {@link VectorFilter} 编译为 Milvus V1 expression。
+ */
 public final class MilvusVectorFilterCompiler implements VectorFilterCompiler {
 
     @Override
@@ -20,7 +22,8 @@ public final class MilvusVectorFilterCompiler implements VectorFilterCompiler {
             case VectorFilter.Or or -> or.filters().stream()
                     .map(this::compile).collect(Collectors.joining(" || ", "(", ")"));
             // Milvus scalar列一条记录只承载一个部门/主体值；集合交集退化为该标量值属于主体集合。
-            case VectorFilter.ContainsAny containsAny -> field(containsAny.field()) + " in " + list(containsAny.values());
+            case VectorFilter.ContainsAny containsAny ->
+                    field(containsAny.field()) + " in " + list(containsAny.values());
             case VectorFilter.Exists ignored -> throw new UnsupportedOperationException(
                     "Milvus scalar filtering does not support exists; use an explicit scalar equality condition");
         };

@@ -21,10 +21,9 @@ package cn.richie696.component.vector.projection;
  * 抛出 {@link IllegalArgumentException}；record 本身不可变，构造后可安全共享与跨进程
  * 传递。三元组相等即可视为同一份业务文档，与 sourceVersion / embeddingSpaceId 无关。
  *
- * @param tenantId 租户标识；非空、非纯空白；用于跨租户隔离与检索预过滤。
+ * @param tenantId        租户标识；非空、非纯空白；用于跨租户隔离与检索预过滤。
  * @param knowledgeBaseId 知识库标识；非空、非纯空白；用于在同一租户内细分向量空间与权限域。
- * @param documentRef 业务文档在所属知识库内的稳定引用（如业务主键或外部文档 ID）；非空、非纯空白。
- *
+ * @param documentRef     业务文档在所属知识库内的稳定引用（如业务主键或外部文档 ID）；非空、非纯空白。
  * @author richie696
  * @version 1.0
  * @since 2025-07-01
@@ -45,7 +44,7 @@ public record VectorProjectionReference(String tenantId, String knowledgeBaseId,
      * @throws IllegalArgumentException 当 {@code value} 为 {@code null} 或
      *                                  {@link String#isBlank()} 时抛出。
      */
-    private static String required(String value, String name) {
+    private static String required (String value, String name){
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(name + " must not be blank");
         }

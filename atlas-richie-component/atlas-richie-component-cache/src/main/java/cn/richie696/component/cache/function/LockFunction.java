@@ -50,8 +50,8 @@ public interface LockFunction extends CacheFunction {
     /**
      * 带续期能力的加锁（先按乐观/悲观获取，成功则启动续期任务）
      *
-     * @param key       资源键
-     * @param seconds   锁过期时间（秒），不能小于 3
+     * @param key        资源键
+     * @param seconds    锁过期时间（秒），不能小于 3
      * @param optimistic true 乐观锁获取，false 悲观锁获取
      * @return 获取结果
      */

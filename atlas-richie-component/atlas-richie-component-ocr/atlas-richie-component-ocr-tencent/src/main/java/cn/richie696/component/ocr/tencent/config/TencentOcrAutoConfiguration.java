@@ -59,7 +59,9 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(TencentOcrProperties.class)
 public class TencentOcrAutoConfiguration {
 
-    /** 自动配置注册过程使用的日志记录器。 */
+    /**
+     * 自动配置注册过程使用的日志记录器。
+     */
     private static final Logger log = LoggerFactory.getLogger(TencentOcrAutoConfiguration.class);
 
     /**
@@ -68,7 +70,7 @@ public class TencentOcrAutoConfiguration {
      * <p>激活条件由主开关 {@code platform.component.ocr.enabled=true} 与 vendor 选择
      * {@code platform.component.ocr.vendor=tencent} 共同控制。
      *
-     * @param props 腾讯云 OCR 私有配置属性，由 {@code platform.component.ocr.tencent.*} 绑定得到，不能为 {@code null}
+     * @param props      腾讯云 OCR 私有配置属性，由 {@code platform.component.ocr.tencent.*} 绑定得到，不能为 {@code null}
      * @param httpClient OCR 专用 HTTP 客户端，用于调用腾讯云 OCR HTTP JSON 接口，不能为 {@code null}
      * @return 已完成配置加载的 {@link TencentOcrProvider}
      */

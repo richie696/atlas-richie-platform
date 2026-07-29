@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.lang.AutoCloseable;
 
 /**
  * 本地 HTTP 测试服务器，支持 SSE（Server-Sent Events）响应。
@@ -30,8 +31,8 @@ import java.nio.charset.StandardCharsets;
  * 提供 SSE 格式的辅助方法，用于测试 SSE 客户端功能。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public final class LocalHttpServer implements AutoCloseable {
 
@@ -100,8 +101,8 @@ public final class LocalHttpServer implements AutoCloseable {
      * <p>
      * 写入单个 SSE 事件块后立即关闭连接，适用于测试简单场景。
      *
-     * @param exchange     HTTP 交换对象
-     * @param sseContent   SSE 格式的事件内容
+     * @param exchange   HTTP 交换对象
+     * @param sseContent SSE 格式的事件内容
      * @throws IOException 如果发生 I/O 错误
      */
     public void respondSseAndClose(HttpExchange exchange, String sseContent) throws IOException {

@@ -67,7 +67,7 @@ import java.util.stream.Collectors;
  * @since 2.0
  */
 @Intercepts({
-    @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class})
+        @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class})
 })
 public class TenantLineInnerInterceptor implements Interceptor {
 
@@ -138,7 +138,7 @@ public class TenantLineInnerInterceptor implements Interceptor {
             }
         } catch (Exception e) {
             log.warn("Failed to rewrite SQL for tenant isolation, proceeding with original SQL: {}",
-                e.getMessage());
+                    e.getMessage());
         }
 
         return invocation.proceed();
@@ -177,8 +177,8 @@ public class TenantLineInnerInterceptor implements Interceptor {
     private String processSql(String sql, Long tenantId) throws Exception {
         Statement statement = CCJSqlParserUtil.parse(sql);
         Set<String> ignoreTables = properties.getIgnoreTables().stream()
-            .map(String::toLowerCase)
-            .collect(Collectors.toSet());
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
         String tenantColumn = properties.getTenantIdColumn();
 
         if (statement instanceof Select select) {
@@ -241,7 +241,7 @@ public class TenantLineInnerInterceptor implements Interceptor {
         if (tableName != null && !ignoreTables.contains(tableName.toLowerCase())) {
             List<Column> columns = insert.getColumns();
             boolean alreadyHasTenant = columns.stream()
-                .anyMatch(c -> tenantColumn.equalsIgnoreCase(c.getColumnName()));
+                    .anyMatch(c -> tenantColumn.equalsIgnoreCase(c.getColumnName()));
             if (!alreadyHasTenant) {
                 columns.add(new Column(tenantColumn));
                 if (insert.getValues() != null) {

@@ -31,7 +31,7 @@
         <java.version>25</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <tomcat.version>11.0.22</tomcat.version>
+        <tomcat.version>11.0.24</tomcat.version>
 
         <!-- 字符集配置 -->
         <encoding>UTF-8</encoding>

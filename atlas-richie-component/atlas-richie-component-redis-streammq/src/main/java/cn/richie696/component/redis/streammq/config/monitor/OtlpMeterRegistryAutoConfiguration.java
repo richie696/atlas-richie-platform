@@ -63,9 +63,9 @@ public class OtlpMeterRegistryAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(OtlpMeterRegistry.class)
     @ConditionalOnProperty(
-        prefix = "management.otlp.metrics",
-        name = "enabled",
-        havingValue = "true"
+            prefix = "management.otlp.metrics",
+            name = "enabled",
+            havingValue = "true"
     )
     public OtlpMeterRegistry otlpMeterRegistry(OtlpMeterRegistryProperties properties) {
         // 检查是否配置了有效的端点

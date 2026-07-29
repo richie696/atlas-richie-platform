@@ -28,7 +28,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 2025-01-29
  */
 @Data
-@ConfigurationProperties(prefix = "management.otlp.metrics")
+@ConfigurationProperties(prefix = "platform.component.cache.redis.stream.monitor.otlp")
 public class OtlpMeterRegistryProperties {
 
     /**

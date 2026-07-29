@@ -15,13 +15,13 @@
  */
 package cn.richie696.component.ai.support.keypool;
 
-import cn.richie696.component.ai.config.multimodal.stt.SttModelConfig;
-import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
-import cn.richie696.component.ai.config.multimodal.voicechat.VoiceChatModelConfig;
 import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
 import cn.richie696.component.ai.config.multimodal.image.ImageEmbeddingModelConfig;
 import cn.richie696.component.ai.config.multimodal.image.ImageModelConfig;
 import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
+import cn.richie696.component.ai.config.multimodal.stt.SttModelConfig;
+import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
+import cn.richie696.component.ai.config.multimodal.voicechat.VoiceChatModelConfig;
 
 /**
  * 多模态 config 浅拷贝工具 — 把 config 的 apiKey 覆盖成指定值,其他字段共享引用。
@@ -32,7 +32,8 @@ import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
  */
 public final class MultimodalConfigCloner {
 
-    private MultimodalConfigCloner() {}
+    private MultimodalConfigCloner() {
+    }
 
     public static RerankModelConfig cloneRerankWithKey(RerankModelConfig src, String apiKey) {
         RerankModelConfig copy = new RerankModelConfig();

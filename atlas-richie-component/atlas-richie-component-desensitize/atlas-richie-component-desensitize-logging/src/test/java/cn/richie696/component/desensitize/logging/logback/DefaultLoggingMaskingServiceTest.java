@@ -30,12 +30,13 @@ import org.slf4j.MDC;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * DefaultLoggingMaskingServiceTest 测试类。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 class DefaultLoggingMaskingServiceTest {
 

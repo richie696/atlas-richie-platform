@@ -41,10 +41,14 @@ import org.springframework.core.Ordered;
 @Slf4j
 public class IdempotencyInterceptor implements WebInterceptor, Ordered {
 
-    /** 决策事件 attribute key。 */
+    /**
+     * 决策事件 attribute key。
+     */
     public static final String DECISION_ATTRIBUTE = "platform.web.idempotency-decision";
 
-    /** 拦截器在链中的位置。 */
+    /**
+     * 拦截器在链中的位置。
+     */
     public static final int ORDER = 270;
 
     private final String headerName;

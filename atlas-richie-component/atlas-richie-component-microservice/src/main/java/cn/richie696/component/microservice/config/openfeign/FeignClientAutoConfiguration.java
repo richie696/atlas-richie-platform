@@ -61,7 +61,9 @@ import java.util.concurrent.Executors;
 @RequiredArgsConstructor
 public class FeignClientAutoConfiguration {
 
-    /** Feign OkHttp 扩展配置（超时、连接池、SSL、日志等） */
+    /**
+     * Feign OkHttp 扩展配置（超时、连接池、SSL、日志等）
+     */
     private final FeignClientOkhttpProperties properties;
 
     /**

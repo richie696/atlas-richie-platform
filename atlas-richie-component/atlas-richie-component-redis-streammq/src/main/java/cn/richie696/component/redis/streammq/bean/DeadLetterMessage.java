@@ -15,11 +15,10 @@
  */
 package cn.richie696.component.redis.streammq.bean;
 
-import cn.richie696.component.redis.streammq.stream.EventContext;
-import cn.richie696.contract.model.BaseStreamMessage;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import cn.richie696.component.redis.streammq.stream.EventContext;
+import cn.richie696.contract.model.BaseStreamMessage;
 
 /**
  * 通用死信队列消息封装类
@@ -27,19 +26,19 @@ import java.io.StringWriter;
  * <p>使用 record 类实现，提供不可变的数据传输对象
  * <p>自动生成构造函数、getter、equals、hashCode、toString 方法
  *
- * @param originalMessage 原始消息（使用Object类型，支持任意消息类型）
+ * @param originalMessage     原始消息（使用Object类型，支持任意消息类型）
  * @param originalMessageType 原始消息类型，用于反序列化
- * @param originalStreamKey 原始Stream键名
- * @param originalGroup 原始消费者组
- * @param originalRecordId 原始记录ID
- * @param errorMessage 错误消息
- * @param errorType 错误类型
- * @param stackTrace 异常堆栈信息
- * @param timestamp 时间戳
- * @param sourceConsumer 来源消费者
- * @param retryCount 重试次数
- * @param businessId 业务ID，如订单号、用户ID等
- * @param priority 优先级：HIGH, MEDIUM, LOW
+ * @param originalStreamKey   原始Stream键名
+ * @param originalGroup       原始消费者组
+ * @param originalRecordId    原始记录ID
+ * @param errorMessage        错误消息
+ * @param errorType           错误类型
+ * @param stackTrace          异常堆栈信息
+ * @param timestamp           时间戳
+ * @param sourceConsumer      来源消费者
+ * @param retryCount          重试次数
+ * @param businessId          业务ID，如订单号、用户ID等
+ * @param priority            优先级：HIGH, MEDIUM, LOW
  */
 public record DeadLetterMessage(
         Object originalMessage,
@@ -55,7 +54,9 @@ public record DeadLetterMessage(
         Integer retryCount,
         String businessId,
         String priority
-) implements BaseStreamMessage {
+) implements
+
+BaseStreamMessage {
 
     /**
      * 创建死信队列消息的便捷方法
@@ -66,7 +67,8 @@ public record DeadLetterMessage(
      * @param sourceConsumer 来源消费者
      * @return 死信队列消息
      */
-    public static DeadLetterMessage of(Object originalMessage, Throwable error, EventContext ctx, String sourceConsumer) {
+    public static DeadLetterMessage of (Object originalMessage, Throwable error, EventContext ctx, String sourceConsumer)
+    {
         return new DeadLetterMessage(
                 originalMessage,
                 originalMessage.getClass().getName(),
@@ -95,8 +97,8 @@ public record DeadLetterMessage(
      * @param priority 优先级
      * @return 死信队列消息
      */
-    public static DeadLetterMessage of(Object originalMessage, Throwable error, EventContext ctx,
-                                       String sourceConsumer, String businessId, String priority) {
+    public static DeadLetterMessage of (Object originalMessage, Throwable error, EventContext ctx,
+            String sourceConsumer, String businessId, String priority){
         return new DeadLetterMessage(
                 originalMessage,
                 originalMessage.getClass().getName(),
@@ -120,7 +122,7 @@ public record DeadLetterMessage(
      * @param error 异常对象
      * @return 堆栈字符串
      */
-    private static String getStackTrace(Throwable error) {
+    private static String getStackTrace (Throwable error){
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         error.printStackTrace(pw);

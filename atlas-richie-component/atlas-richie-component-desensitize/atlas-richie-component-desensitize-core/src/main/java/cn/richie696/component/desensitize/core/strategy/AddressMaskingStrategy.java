@@ -22,8 +22,8 @@ import org.springframework.stereotype.Component;
  * 地址脱敏：保留前 6 个字符。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @Component
 public class AddressMaskingStrategy extends AbstractKeepEdgeMaskingStrategy {
@@ -41,6 +41,7 @@ public class AddressMaskingStrategy extends AbstractKeepEdgeMaskingStrategy {
 
     /**
      * supportedType。
+     *
      * @return 处理结果
      */
     @Override

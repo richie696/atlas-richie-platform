@@ -24,12 +24,12 @@ import cn.richie696.component.storage.config.StorageEngineProxyFactoryBean;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.FactoryBean;
+import tools.jackson.core.type.TypeReference;
 
 import java.io.File;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
-import tools.jackson.core.type.TypeReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

@@ -28,13 +28,18 @@ import io.nats.client.Connection;
  */
 public interface NatsConnectionListener {
 
-    default void onConnected(Connection connection) {}
+    default void onConnected(Connection connection) {
+    }
 
-    default void onDisconnected(Connection connection) {}
+    default void onDisconnected(Connection connection) {
+    }
 
-    default void onReconnecting(Connection connection) {}
+    default void onReconnecting(Connection connection) {
+    }
 
-    default void onClosed(Connection connection) {}
+    default void onClosed(Connection connection) {
+    }
 
-    default void onError(Connection connection, Exception error) {}
+    default void onError(Connection connection, Exception error) {
+    }
 }

@@ -15,13 +15,10 @@
  */
 package cn.richie696.component.ai.provider.support;
 
-import cn.richie696.component.ai.api.image.ImageEmbeddingModel;
-
-import cn.richie696.component.ai.support.keypool.ApiKey;
-
 import cn.richie696.component.ai.api.RerankModel;
 import cn.richie696.component.ai.api.RerankRequest;
 import cn.richie696.component.ai.api.RerankResponse;
+import cn.richie696.component.ai.api.image.ImageEmbeddingModel;
 import cn.richie696.component.ai.config.multimodal.image.ImageEmbeddingModelConfig;
 import cn.richie696.component.ai.config.multimodal.image.ImageEmbeddingProvider;
 import cn.richie696.component.ai.config.multimodal.image.ImageModelConfig;
@@ -40,21 +37,15 @@ import cn.richie696.component.ai.provider.doubao.DoubaoTranscriptionModel;
 import cn.richie696.component.ai.provider.doubao.DoubaoVikingRerankModel;
 import cn.richie696.component.ai.provider.hunyuan.HunyuanTextToSpeechModel;
 import cn.richie696.component.ai.provider.hunyuan.HunyuanTranscriptionModel;
+import cn.richie696.component.ai.provider.ollama.OllamaImageEmbeddingAdapter;
 import cn.richie696.component.ai.provider.pangu.PanguRerankModel;
 import cn.richie696.component.ai.provider.pangu.PanguTextToSpeechModel;
 import cn.richie696.component.ai.provider.pangu.PanguTranscriptionModel;
 import cn.richie696.component.ai.provider.tei.TeiImageEmbeddingAdapter;
-import cn.richie696.component.ai.provider.ollama.OllamaImageEmbeddingAdapter;
 import cn.richie696.component.ai.provider.zhipu.ZhipuRerankModel;
 import cn.richie696.component.ai.provider.zhipu.ZhipuTextToSpeechModel;
 import cn.richie696.component.ai.provider.zhipu.ZhipuTranscriptionModel;
-import cn.richie696.component.ai.support.keypool.ApiKeyPool;
-import cn.richie696.component.ai.support.keypool.ApiKeyPoolManager;
-import cn.richie696.component.ai.support.keypool.ApiKeyUtils;
-import cn.richie696.component.ai.support.keypool.ApiKeyValidator;
-import cn.richie696.component.ai.support.keypool.DefaultApiKeyValidator;
-import cn.richie696.component.ai.support.keypool.MultimodalConfigCloner;
-import cn.richie696.component.ai.support.keypool.PooledExecutor;
+import cn.richie696.component.ai.support.keypool.*;
 import cn.richie696.component.http.core.HttpClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
@@ -64,11 +55,7 @@ import org.springframework.ai.audio.tts.TextToSpeechModel;
 import org.springframework.ai.audio.tts.TextToSpeechPrompt;
 import org.springframework.ai.audio.tts.TextToSpeechResponse;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.embedding.BatchingStrategy;
-import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.embedding.EmbeddingOptions;
-import org.springframework.ai.embedding.EmbeddingRequest;
-import org.springframework.ai.embedding.EmbeddingResponse;
+import org.springframework.ai.embedding.*;
 import org.springframework.ai.image.ImageModel;
 import org.springframework.ai.image.ImagePrompt;
 import org.springframework.ai.image.ImageResponse;
@@ -166,7 +153,9 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public final class MultimodalModelFactory {
 
-    /** 池关闭/不可用时的默认重试轮数 — 与 KeyPoolProperties.retry-rounds 对齐。 */
+    /**
+     * 池关闭/不可用时的默认重试轮数 — 与 KeyPoolProperties.retry-rounds 对齐。
+     */
     private static final int DEFAULT_RETRY_ROUNDS = 2;
 
     private MultimodalModelFactory() {
@@ -191,9 +180,9 @@ public final class MultimodalModelFactory {
      * 池化 Rerank — 多 key 时为每个 key 预建一个 RerankModel,用 {@link PooledExecutor} 装饰。
      */
     public static RerankModel createRerankModelPooled(String businessName,
-                                                     RerankModelConfig cfg,
-                                                     HttpClient httpClient,
-                                                     ApiKeyPoolManager poolManager) {
+                                                      RerankModelConfig cfg,
+                                                      HttpClient httpClient,
+                                                      ApiKeyPoolManager poolManager) {
         Set<String> keys = ApiKeyUtils.resolveKeys(cfg);
         if (keys.size() <= 1) {
             return createRerankModel(cfg, httpClient);
@@ -261,7 +250,8 @@ public final class MultimodalModelFactory {
             throw vendorUnknown("image-embedding", null);
         }
         return switch (vendor) {
-            case BAILIAN -> new BailianImageEmbeddingAdapter(httpClient, cfg.getApiKey(), cfg.getBaseUrl(), cfg.getModel());
+            case BAILIAN ->
+                    new BailianImageEmbeddingAdapter(httpClient, cfg.getApiKey(), cfg.getBaseUrl(), cfg.getModel());
             case TEI -> new TeiImageEmbeddingAdapter(httpClient, cfg.getBaseUrl(), cfg.getModel(), cfg.getApiKey());
             case OLLAMA -> createOllamaImageEmbeddingModel(cfg, httpClient, null);
         };
@@ -276,9 +266,9 @@ public final class MultimodalModelFactory {
      * 不会把 key 放进 Ollama 原生请求体。
      */
     public static ImageEmbeddingModel createImageEmbeddingModelPooled(String businessName,
-                                                                       ImageEmbeddingModelConfig cfg,
-                                                                       HttpClient httpClient,
-                                                                       ApiKeyPoolManager poolManager) {
+                                                                      ImageEmbeddingModelConfig cfg,
+                                                                      HttpClient httpClient,
+                                                                      ApiKeyPoolManager poolManager) {
         if (cfg.getProvider() == ImageEmbeddingProvider.OLLAMA
                 && cfg.getApiKeys() != null && !cfg.getApiKeys().isEmpty()) {
             Set<String> ollamaKeys = cfg.getApiKeys();
@@ -415,7 +405,7 @@ public final class MultimodalModelFactory {
         private final PooledExecutor<RerankModel> executor;
 
         public PooledRerankModel(String businessName, List<RerankModel> perKey,
-                                  ApiKeyPool pool, ApiKeyValidator validator, int retryRounds) {
+                                 ApiKeyPool pool, ApiKeyValidator validator, int retryRounds) {
             this.executor = new PooledExecutor<>(businessName, perKey, pool, validator, retryRounds);
         }
 
@@ -479,6 +469,7 @@ public final class MultimodalModelFactory {
         public float[] embedImage(String imageUrlOrBase64) {
             return executor.execute("image-embedding", m -> m.embedImage(imageUrlOrBase64));
         }
+
         @Override
         public float[] embed(String text) {
             return executor.execute("image-embedding", m -> m.embed(text));
@@ -514,7 +505,7 @@ public final class MultimodalModelFactory {
         private final PooledExecutor<TextToSpeechModel> executor;
 
         public PooledTextToSpeechModel(String businessName, List<TextToSpeechModel> perKey,
-                                        ApiKeyPool pool, ApiKeyValidator validator, int retryRounds) {
+                                       ApiKeyPool pool, ApiKeyValidator validator, int retryRounds) {
             this.executor = new PooledExecutor<>(businessName, perKey, pool, validator, retryRounds);
         }
 

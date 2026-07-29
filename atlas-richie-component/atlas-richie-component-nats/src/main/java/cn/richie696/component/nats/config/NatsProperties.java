@@ -45,13 +45,17 @@ import java.util.Set;
  * @since 1.0.0
  */
 @Data
-@ConfigurationProperties(prefix = "platform.nats")
+@ConfigurationProperties(prefix = "platform.component.nats")
 public class NatsProperties {
 
-    /** 组件总开关 */
+    /**
+     * 组件总开关
+     */
     private boolean enabled = true;
 
-    /** NATS 服务器地址，支持逗号分隔多地址 */
+    /**
+     * NATS 服务器地址，支持逗号分隔多地址
+     */
     private String server = "nats://localhost:4222";
 
     private Auth auth = new Auth();

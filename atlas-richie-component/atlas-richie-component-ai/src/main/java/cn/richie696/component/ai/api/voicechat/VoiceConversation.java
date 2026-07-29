@@ -91,7 +91,7 @@ public interface VoiceConversation extends Closeable {
      *
      * @param text 文本内容 (不可空,长度 &gt; 0)
      * @throws UnsupportedOperationException 当前 vendor 不支持文本上行
-     * @throws IllegalStateException        会话已关闭
+     * @throws IllegalStateException         会话已关闭
      */
     void sendText(String text);
 

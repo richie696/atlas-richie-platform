@@ -32,6 +32,7 @@ import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.time.Duration;
 
 /**
  * 并发算法自动装配 —— 按需提供 {@link RateLimiter}、{@link CircuitBreaker} Spring Bean。

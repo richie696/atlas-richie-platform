@@ -120,14 +120,14 @@ public class MfaValidationServiceImpl implements MfaValidationService {
         // 3. 检查账户是否已锁定
         if (userInfo.getLockedUntil() != null && OffsetDateTime.now(ZoneOffset.UTC).isBefore(userInfo.getLockedUntil())) {
             return MfaValidationResult.builder()
-                .success(false)
-                .mfaRequired(true)
-                .mfaBound(true)
-                .accountLocked(true)
-                .lockedUntil(userInfo.getLockedUntil().toInstant().toEpochMilli())
-                .errorCode("ACCOUNT_LOCKED")
-                .errorMessage("账户已锁定，请稍后再试")
-                .build();
+                    .success(false)
+                    .mfaRequired(true)
+                    .mfaBound(true)
+                    .accountLocked(true)
+                    .lockedUntil(userInfo.getLockedUntil().toInstant().toEpochMilli())
+                    .errorCode("ACCOUNT_LOCKED")
+                    .errorMessage("账户已锁定，请稍后再试")
+                    .build();
         }
 
         // 4. 检查 MFA 状态
@@ -139,14 +139,14 @@ public class MfaValidationServiceImpl implements MfaValidationService {
         // 5. 需要 MFA 验证
         // 读取可信设备配置信息
         boolean trustedDeviceSupported = properties.getSecurity().getTrustedDevice() != null
-            && properties.getSecurity().getTrustedDevice().isEnabled();
+                && properties.getSecurity().getTrustedDevice().isEnabled();
         Integer trustedDeviceCount = getTrustedDeviceCount(userId, tenantId);
         Integer maxTrustedDevices = properties.getSecurity().getTrustedDevice() != null
-            ? properties.getSecurity().getTrustedDevice().getMaxDevices()
-            : 10; // 默认值
+                ? properties.getSecurity().getTrustedDevice().getMaxDevices()
+                : 10; // 默认值
         Integer defaultTrustDays = properties.getSecurity().getTrustedDevice() != null
-            ? properties.getSecurity().getTrustedDevice().getDefaultTrustDays()
-            : 30; // 默认值
+                ? properties.getSecurity().getTrustedDevice().getDefaultTrustDays()
+                : 30; // 默认值
 
         return MfaValidationResult.mfaRequired(trustedDeviceSupported, trustedDeviceCount, maxTrustedDevices, defaultTrustDays);
     }
@@ -164,7 +164,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
         if (userInfo == null) {
             // 发布审计事件：用户未绑定
             publishAuditEvent(tenantId, userId, MfaOperationTypeEnum.VERIFY, "TOTP", null, "FAILED",
-                "MFA_NOT_BOUND", "用户未绑定 MFA 设备", null);
+                    "MFA_NOT_BOUND", "用户未绑定 MFA 设备", null);
             return MfaValidationResult.failure("MFA_NOT_BOUND", "用户未绑定 MFA 设备");
         }
 
@@ -172,7 +172,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
         if (userInfo.getStatus() == null || userInfo.getStatus() != MfaStatusEnum.ENABLED) {
             // 发布审计事件：MFA 未启用
             publishAuditEvent(tenantId, userId, MfaOperationTypeEnum.VERIFY, "TOTP", null, "FAILED",
-                "MFA_NOT_ENABLED", "MFA 未启用", null);
+                    "MFA_NOT_ENABLED", "MFA 未启用", null);
             return MfaValidationResult.failure("MFA_NOT_ENABLED", "MFA 未启用");
         }
 
@@ -180,14 +180,14 @@ public class MfaValidationServiceImpl implements MfaValidationService {
         if (userInfo.getLockedUntil() != null && OffsetDateTime.now(ZoneOffset.UTC).isBefore(userInfo.getLockedUntil())) {
             // 发布审计事件：账户已锁定
             publishAuditEvent(tenantId, userId, MfaOperationTypeEnum.VERIFY, "TOTP", null, "BLOCKED",
-                "ACCOUNT_LOCKED", "账户已锁定，请稍后再试", null);
+                    "ACCOUNT_LOCKED", "账户已锁定，请稍后再试", null);
             return MfaValidationResult.builder()
-                .success(false)
-                .accountLocked(true)
-                .lockedUntil(userInfo.getLockedUntil().toInstant().toEpochMilli())
-                .errorCode("ACCOUNT_LOCKED")
-                .errorMessage("账户已锁定，请稍后再试")
-                .build();
+                    .success(false)
+                    .accountLocked(true)
+                    .lockedUntil(userInfo.getLockedUntil().toInstant().toEpochMilli())
+                    .errorCode("ACCOUNT_LOCKED")
+                    .errorMessage("账户已锁定，请稍后再试")
+                    .build();
         }
 
         // 4. 防重放检查
@@ -197,7 +197,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
             log.warn("检测到重放攻击，userId: {}, tenantId: {}", userId, tenantId);
             // 发布审计事件：重放攻击
             publishAuditEvent(tenantId, userId, MfaOperationTypeEnum.VERIFY, "TOTP", null, "FAILED",
-                "MFA_CODE_USED", "验证码已被使用（重放攻击）", null);
+                    "MFA_CODE_USED", "验证码已被使用（重放攻击）", null);
             return MfaValidationResult.failure("MFA_CODE_USED", "验证码已被使用");
         }
 
@@ -216,14 +216,14 @@ public class MfaValidationServiceImpl implements MfaValidationService {
 
             // 使用数据库中的 period 和 digits 进行验证，确保与二维码生成时使用的参数一致
             boolean valid = totpEngine.verifyCode(
-                plainSecret,
-                mfaCode,
-                userId,
-                tenantId,
-                properties.getTotp().getWindowSize(),
-                algorithm,
-                period != null ? period : properties.getTotp().getPeriod(),  // 使用数据库中的 period，如果为null则使用配置默认值
-                digits != null ? digits : properties.getTotp().getDigits()   // 使用数据库中的 digits，如果为null则使用配置默认值
+                    plainSecret,
+                    mfaCode,
+                    userId,
+                    tenantId,
+                    properties.getTotp().getWindowSize(),
+                    algorithm,
+                    period != null ? period : properties.getTotp().getPeriod(),  // 使用数据库中的 period，如果为null则使用配置默认值
+                    digits != null ? digits : properties.getTotp().getDigits()   // 使用数据库中的 digits，如果为null则使用配置默认值
             );
 
             if (!valid) {
@@ -232,47 +232,47 @@ public class MfaValidationServiceImpl implements MfaValidationService {
                 long failureCount = GlobalCache.value().increment(failureKey, 1, Duration.ofHours(1).toMillis());
                 int maxAttempts = properties.getSecurity().getMaxAttempts();
 
-               // 达到最大失败次数，需要锁定账户
-               if (failureCount >= maxAttempts) {
-                   // 注意：账户锁定通知应通过消息队列或缓存标记实现，validation 模块不直接调用 management 模块
-                   // 实现方式：
-                   // 1. 通过消息队列发送账户锁定事件（推荐）
-                   // 2. 在缓存中标记锁定状态，由 management 模块定期扫描并更新数据库
-                   // 3. 通过 Feign 客户端异步调用 management 模块的锁定 API（不推荐，会增加耦合）
-                   // 当前实现：在缓存中标记锁定状态，management 模块在查询用户信息时会检查并更新数据库
-                   String lockKey = "mfa:lock:%s:%s".formatted(
-                       tenantSupport.isTenantEnabled() && tenantId != null ? tenantId + ":" : "",
-                       userId);
-                   long lockDuration = properties.getSecurity().getLockDurationSeconds() * 1000L;
-                   GlobalCache.value().set(lockKey, "1", lockDuration);
-                   log.warn("账户达到最大失败次数，已标记锁定，tenantId: {}, userId: {}, lockDuration: {}秒",
-                       tenantId, userId, properties.getSecurity().getLockDurationSeconds());
+                // 达到最大失败次数，需要锁定账户
+                if (failureCount >= maxAttempts) {
+                    // 注意：账户锁定通知应通过消息队列或缓存标记实现，validation 模块不直接调用 management 模块
+                    // 实现方式：
+                    // 1. 通过消息队列发送账户锁定事件（推荐）
+                    // 2. 在缓存中标记锁定状态，由 management 模块定期扫描并更新数据库
+                    // 3. 通过 Feign 客户端异步调用 management 模块的锁定 API（不推荐，会增加耦合）
+                    // 当前实现：在缓存中标记锁定状态，management 模块在查询用户信息时会检查并更新数据库
+                    String lockKey = "mfa:lock:%s:%s".formatted(
+                            tenantSupport.isTenantEnabled() && tenantId != null ? tenantId + ":" : "",
+                            userId);
+                    long lockDuration = properties.getSecurity().getLockDurationSeconds() * 1000L;
+                    GlobalCache.value().set(lockKey, "1", lockDuration);
+                    log.warn("账户达到最大失败次数，已标记锁定，tenantId: {}, userId: {}, lockDuration: {}秒",
+                            tenantId, userId, properties.getSecurity().getLockDurationSeconds());
 
-                   // 发布审计事件：账户锁定
-                   publishAuditEvent(tenantId, userId, MfaOperationTypeEnum.VERIFY, "TOTP", null, "BLOCKED",
-                       "ACCOUNT_LOCKED", "账户已锁定", null);
+                    // 发布审计事件：账户锁定
+                    publishAuditEvent(tenantId, userId, MfaOperationTypeEnum.VERIFY, "TOTP", null, "BLOCKED",
+                            "ACCOUNT_LOCKED", "账户已锁定", null);
 
-                   return MfaValidationResult.builder()
-                       .success(false)
-                       .errorCode("MFA_CODE_INVALID")
-                       .errorMessage("验证码错误，账户已锁定")
-                       .failureCount((int) failureCount)
-                       .maxAttempts(maxAttempts)
-                       .accountLocked(true)
-                       .build();
-               }
+                    return MfaValidationResult.builder()
+                            .success(false)
+                            .errorCode("MFA_CODE_INVALID")
+                            .errorMessage("验证码错误，账户已锁定")
+                            .failureCount((int) failureCount)
+                            .maxAttempts(maxAttempts)
+                            .accountLocked(true)
+                            .build();
+                }
 
                 // 发布审计事件：验证失败
                 publishAuditEvent(tenantId, userId, MfaOperationTypeEnum.VERIFY, "TOTP", null, "FAILED",
-                    "MFA_CODE_INVALID", "验证码错误", null);
+                        "MFA_CODE_INVALID", "验证码错误", null);
 
                 return MfaValidationResult.builder()
-                    .success(false)
-                    .errorCode("MFA_CODE_INVALID")
-                    .errorMessage("验证码错误")
-                    .failureCount((int) failureCount)
-                    .maxAttempts(maxAttempts)
-                    .build();
+                        .success(false)
+                        .errorCode("MFA_CODE_INVALID")
+                        .errorMessage("验证码错误")
+                        .failureCount((int) failureCount)
+                        .maxAttempts(maxAttempts)
+                        .build();
             }
 
             // 7. 验证成功，标记验证码已使用
@@ -292,7 +292,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
             log.error("MFA验证异常，userId: {}, tenantId: {}", userId, tenantId, e);
             // 发布审计事件：验证异常
             publishAuditEvent(tenantId, userId, MfaOperationTypeEnum.VERIFY, "TOTP", null, "FAILED",
-                "MFA_VERIFY_ERROR", "MFA验证异常: " + e.getMessage(), null);
+                    "MFA_VERIFY_ERROR", "MFA验证异常: " + e.getMessage(), null);
             return MfaValidationResult.failure("MFA_VERIFY_ERROR", "MFA验证异常: " + e.getMessage());
         }
     }
@@ -333,30 +333,30 @@ public class MfaValidationServiceImpl implements MfaValidationService {
         if (device == null) {
             // 设备不存在或未同步到缓存
             return MfaValidationResult.builder()
-                .success(false)
-                .mfaRequired(true)
-                .trustedDevice(false)
-                .build();
+                    .success(false)
+                    .mfaRequired(true)
+                    .trustedDevice(false)
+                    .build();
         }
 
         // 检查设备信任是否有效（未过期）
         if (device.getTrustedUntil() == null || OffsetDateTime.now(ZoneOffset.UTC).isAfter(device.getTrustedUntil())) {
             // 设备已过期
             return MfaValidationResult.builder()
-                .success(false)
-                .mfaRequired(true)
-                .trustedDevice(true)
-                .trustedDeviceExpired(true)
-                .build();
+                    .success(false)
+                    .mfaRequired(true)
+                    .trustedDevice(true)
+                    .trustedDeviceExpired(true)
+                    .build();
         }
 
         // 设备可信且未过期，可跳过 MFA
         return MfaValidationResult.builder()
-            .success(true)
-            .mfaRequired(false)
-            .trustedDevice(true)
-            .trustedDeviceExpired(false)
-            .build();
+                .success(true)
+                .mfaRequired(false)
+                .trustedDevice(true)
+                .trustedDeviceExpired(false)
+                .build();
     }
 
     /**
@@ -386,7 +386,7 @@ public class MfaValidationServiceImpl implements MfaValidationService {
                 String deviceKey = MfaKeyUtils.getTrustedDeviceCacheKey(tenantId, userId, deviceId, tenantSupport.isTenantEnabled());
                 MfaTrustedDevice device = GlobalCache.struct().get(deviceKey, MfaTrustedDevice.class);
                 if (device != null && device.getTrustedUntil() != null
-                    && OffsetDateTime.now(ZoneOffset.UTC).isBefore(device.getTrustedUntil())) {
+                        && OffsetDateTime.now(ZoneOffset.UTC).isBefore(device.getTrustedUntil())) {
                     validCount++;
                 }
             }
@@ -423,30 +423,30 @@ public class MfaValidationServiceImpl implements MfaValidationService {
 
             // 构建并发布事件
             MfaAuditEvent event = MfaAuditEvent.builder(this)
-                .tenantId(tenantId)
-                .userId(userId)
-                .operationType(operationType)
-                .authMethod(authMethod)
-                .ipAddress(ipAddress)
-                .userAgent(userAgent)
-                .deviceId(deviceId)
-                .result(result)
-                .errorCode(errorCode)
-                .errorMessage(errorMessage)
-                .durationMs(durationMs)
-                .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-                .build();
+                    .tenantId(tenantId)
+                    .userId(userId)
+                    .operationType(operationType)
+                    .authMethod(authMethod)
+                    .ipAddress(ipAddress)
+                    .userAgent(userAgent)
+                    .deviceId(deviceId)
+                    .result(result)
+                    .errorCode(errorCode)
+                    .errorMessage(errorMessage)
+                    .durationMs(durationMs)
+                    .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
+                    .build();
 
             eventPublisher.publishEvent(event);
 
             if (log.isDebugEnabled()) {
                 log.debug("MFA审计事件已发布: operationType={}, userId={}, result={}",
-                    operationType != null ? operationType.getCode() : null, userId, result);
+                        operationType != null ? operationType.getCode() : null, userId, result);
             }
         } catch (Exception e) {
             // 审计事件发布失败不应影响主流程，只记录错误日志
             log.error("发布MFA审计事件失败: operationType={}, userId={}, result={}",
-                operationType != null ? operationType.getCode() : null, userId, result, e);
+                    operationType != null ? operationType.getCode() : null, userId, result, e);
         }
     }
 

@@ -18,14 +18,14 @@ package cn.richie696.component.statemachine.config;
 import cn.richie696.component.statemachine.model.State;
 import cn.richie696.component.statemachine.model.StateMachineModel;
 import cn.richie696.component.statemachine.model.Transition;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Component;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,7 +37,6 @@ import java.util.Map;
  * <p>
  * 负责从文件系统或 classpath 加载状态机配置文件（YAML/JSON），
  * 并将配置定义转换为状态机模型对象。
- *
  *
  * @author richie696
  * @since 1.0.0
@@ -67,7 +66,6 @@ public class StateMachineConfigLoader {
      * <p>
      * 支持 Ant 风格的路径模式（如 classpath:statemachine\/**\/*.yml），
      * 会扫描所有匹配的 YAML 文件并解析为状态机定义。
-     *
      *
      * @param configPath 配置文件路径（支持 Ant 风格模式，如 classpath:statemachine\/**\/*.yml）
      * @return 状态机定义列表，如果路径为空或未找到文件则返回空列表
@@ -119,7 +117,6 @@ public class StateMachineConfigLoader {
      * 支持 Ant 风格的路径模式（如 classpath:statemachine\/**\/*.json），
      * 会扫描所有匹配的 JSON 文件并解析为状态机定义。
      *
-     *
      * @param configPath 配置文件路径（支持 Ant 风格模式，如 classpath:statemachine\/**\/*.json）
      * @return 状态机定义列表，如果路径为空或未找到文件则返回空列表
      */
@@ -169,7 +166,6 @@ public class StateMachineConfigLoader {
      * <p>
      * 将从配置文件加载的状态机定义转换为运行时使用的状态机模型。
      * 包括状态转换、类型校验、初始状态设置等。
-     *
      *
      * @param definition 状态机定义对象
      * @return 状态机模型对象
@@ -233,10 +229,10 @@ public class StateMachineConfigLoader {
                     }
 
                     Transition transition = new Transition(
-                        transitionDef.getName() != null ? transitionDef.getName() : "",
-                        transitionDef.getFromState(),
-                        transitionDef.getToState(),
-                        transitionDef.getEvent()
+                            transitionDef.getName() != null ? transitionDef.getName() : "",
+                            transitionDef.getFromState(),
+                            transitionDef.getToState(),
+                            transitionDef.getEvent()
                     );
                     transition.setDescription(transitionDef.getDescription());
                     transition.setCondition(transitionDef.getCondition());

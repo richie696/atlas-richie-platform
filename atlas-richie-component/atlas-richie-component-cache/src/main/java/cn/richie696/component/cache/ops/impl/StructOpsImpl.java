@@ -19,10 +19,9 @@ import cn.richie696.component.cache.enums.KeyTypeEnum;
 import cn.richie696.component.cache.function.HashFunction;
 import cn.richie696.component.cache.ops.L2SyncHelper;
 import cn.richie696.component.cache.ops.StructOps;
-import tools.jackson.core.type.TypeReference;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.type.TypeReference;
 
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;

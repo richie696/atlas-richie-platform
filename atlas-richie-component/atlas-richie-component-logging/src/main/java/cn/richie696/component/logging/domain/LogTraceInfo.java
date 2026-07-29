@@ -107,7 +107,6 @@ public class LogTraceInfo {
     private String execEndTime;
 
 
-
     @Override
     public String toString() {
         return JsonUtils.getInstance().serialize(this);

@@ -39,7 +39,9 @@ public final class MessagingRedisIntegrationTestSupport implements RedisIntegrat
         return INSTANCE;
     }
 
-        /** JUnit { @EnabledIf} 入口（不可与实例 { #isEnabled()} 同名）。 */
+    /**
+     * JUnit { @EnabledIf} 入口（不可与实例 { #isEnabled()} 同名）。
+     */
     public static boolean integrationTestsEnabled() {
         return getInstance().isEnabled();
     }
@@ -56,7 +58,17 @@ public final class MessagingRedisIntegrationTestSupport implements RedisIntegrat
 
     @Override
     public void appendPropertyPairs(List<String> pairs) {
+        int before = pairs.size();
         DELEGATE.appendPropertyPairs(pairs);
+        // AtlasRedisProperties 绑定前缀为 platform.component.cache.redis，
+        // 而 DELEGATE 只输出 spring.data.redis.*，需同时映射到组件前缀。
+        for (int i = before; i < pairs.size(); i++) {
+            String pair = pairs.get(i);
+            if (pair.startsWith("spring.data.redis.")) {
+                pairs.add("platform.component.cache.redis." + pair.substring(
+                        "spring.data.redis.".length()));
+            }
+        }
     }
 
     private static void appendComponentProperties(List<String> pairs) {

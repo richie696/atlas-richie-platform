@@ -47,7 +47,9 @@ import static cn.richie696.component.cache.enums.L2CachingRegion.ACCESS_LOG;
 @EnableConfigurationProperties({LocalCacheProperties.class})
 public class LocalCacheAutoConfiguration {
 
-    /** 默认构造函数，供 Spring 实例化使用。 */
+    /**
+     * 默认构造函数，供 Spring 实例化使用。
+     */
     public LocalCacheAutoConfiguration() {
     }
 
@@ -98,7 +100,7 @@ public class LocalCacheAutoConfiguration {
                 .setStoreByValue(cacheDefinition.isStoreByValue())
                 .setStatisticsEnabled(cacheDefinition.isStatisticsEnabled());
 
-        Duration expiryDuration = new Duration(cacheDefinition.getExpiryUnit(), cacheDefinition.getExpiry());
+        Duration expiryDuration = new Duration(cacheDefinition.getExpiryUnit(), cacheDefinition.getExpiry().longValue());
         switch (cacheDefinition.getExpiryPolicy()) {
             case CREATED -> configuration.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(expiryDuration));
             case ACCESSED -> configuration.setExpiryPolicyFactory(AccessedExpiryPolicy.factoryOf(expiryDuration));

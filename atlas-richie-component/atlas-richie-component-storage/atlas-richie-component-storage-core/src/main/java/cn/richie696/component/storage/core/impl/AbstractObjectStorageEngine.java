@@ -46,10 +46,14 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public abstract class AbstractObjectStorageEngine<T> extends AbstractDestroyEngine<T> {
 
-    /** 存储组件统一配置 */
+    /**
+     * 存储组件统一配置
+     */
     private final StorageProperties properties;
 
-    /** 存储类型与引擎类型的转换器 */
+    /**
+     * 存储类型与引擎类型的转换器
+     */
     private final StorageTypeConverter converter;
 
     /**

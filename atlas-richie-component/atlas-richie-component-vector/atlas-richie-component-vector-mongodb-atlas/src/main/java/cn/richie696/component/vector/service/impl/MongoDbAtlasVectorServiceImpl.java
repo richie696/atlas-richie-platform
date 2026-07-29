@@ -15,16 +15,18 @@
  */
 package cn.richie696.component.vector.service.impl;
 
+import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.config.VectorProperties;
 import cn.richie696.component.vector.model.IndexInfo;
 import cn.richie696.component.vector.model.IndexStatus;
 import cn.richie696.component.vector.model.Modality;
 import cn.richie696.component.vector.model.VectorRecord;
-import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
-import cn.richie696.component.vector.service.VectorService;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
+import cn.richie696.component.vector.service.VectorService;
+import com.mongodb.client.result.DeleteResult;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,13 +39,8 @@ import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
-import com.mongodb.client.result.DeleteResult;
-import org.bson.Document;
-
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
 
@@ -74,10 +71,10 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      *
      * <p>通过依赖注入获取 VectorStore、EmbeddingModel 和 MongoTemplate 实例.
      *
-     * @param rerankService 重排序服务（可选）
-     * @param vectorStore     Spring AI 向量存储接口,用于通用向量操作
-     * @param embeddingModel  嵌入模型,用于文本向量化
-     * @param mongoTemplate   MongoDB 模板类,用于执行原生 MongoDB 操作
+     * @param rerankService  重排序服务（可选）
+     * @param vectorStore    Spring AI 向量存储接口,用于通用向量操作
+     * @param embeddingModel 嵌入模型,用于文本向量化
+     * @param mongoTemplate  MongoDB 模板类,用于执行原生 MongoDB 操作
      */
     @Autowired
     public MongoDbAtlasVectorServiceImpl(@Autowired(required = false) RerankService rerankService,
@@ -90,7 +87,9 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
 
     // ==================== 索引管理（保留 v1 公开方法重写，多态分发仍生效） ====================
 
-    /** MongoDB Atlas 默认向量维度（OpenAI text-embedding-3-small 等） */
+    /**
+     * MongoDB Atlas 默认向量维度（OpenAI text-embedding-3-small 等）
+     */
     private static final int DEFAULT_DIMENSION = 1536;
 
     /**
@@ -437,7 +436,9 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
     }
 
     @Override
-    protected boolean usesStoreManagedEmbedding() { return true; }
+    protected boolean usesStoreManagedEmbedding() {
+        return true;
+    }
 
     /**
      * 把 {@link VectorRecord} 序列化为 Spring AI {@link org.springframework.ai.document.Document}
@@ -494,22 +495,22 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
 
         // 构建 $vectorSearch 聚合阶段
         AggregationOperation vectorSearchStage = context -> new Document("$vectorSearch",
-            new Document("index", VECTOR_INDEX)
-                .append("path", VECTOR_FIELD)
-                .append("queryVector", queryVectorList)
-                .append("numCandidates", Math.max(limit * 10, 100))
-                .append("limit", limit)
+                new Document("index", VECTOR_INDEX)
+                        .append("path", VECTOR_FIELD)
+                        .append("queryVector", queryVectorList)
+                        .append("numCandidates", Math.max(limit * 10, 100))
+                        .append("limit", limit)
         );
 
         // 构建 $project 聚合阶段 - 不返回 vector 字段节省带宽
         AggregationOperation projectStage = context -> new Document("$project",
-            new Document("id", "$_id")
-                .append("content", "$content")
-                .append("score", new Document("$meta", "vectorSearchScore"))
+                new Document("id", "$_id")
+                        .append("content", "$content")
+                        .append("score", new Document("$meta", "vectorSearchScore"))
         );
 
         Aggregation aggregation = Aggregation.newAggregation(
-            vectorSearchStage, projectStage
+                vectorSearchStage, projectStage
         );
 
         AggregationResults<Document> aggResults = mongoTemplate.aggregate(aggregation, indexName, Document.class);
@@ -587,8 +588,8 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      * 通过 Atlas 控制台 / Cloud Manager / Ops Manager API 调用,
      * 不在 VectorService SDK 抽象层支持范围内.
      *
-     * @param indexName   集合/索引名称
-     * @param targetPath  备份目标路径
+     * @param indexName  集合/索引名称
+     * @param targetPath 备份目标路径
      * @throws UnsupportedOperationException Atlas backup 为 managed service
      */
     @Override

@@ -1,7 +1,7 @@
 package cn.richie696.component.vector.knowledge;
 
-import cn.richie696.component.vector.model.SearchOptions;
 import cn.richie696.component.vector.model.HybridSearchOptions;
+import cn.richie696.component.vector.model.SearchOptions;
 import cn.richie696.component.vector.model.VectorFilter;
 import cn.richie696.component.vector.model.VectorSearchResult;
 import cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations;
@@ -10,7 +10,6 @@ import cn.richie696.component.vector.service.VectorService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -106,10 +105,10 @@ public final class DefaultKnowledgeBaseVectorService implements KnowledgeBaseVec
      *   <li>对候选应用 MMR 与单文档多样性截断，产出 {@link RetrievalCitation} 列表</li>
      * </ol>
      *
-     * @throws IllegalArgumentException       {@code knowledgeBaseId} 为空时
-     * @throws UnsupportedOperationException  请求 hybrid 但 provider 未实现
-     *                                         {@link VectorAclAwareHybridSearchOperations}，
-     *                                         或 MMR 模式下候选缺失 embedding 向量时
+     * @throws IllegalArgumentException      {@code knowledgeBaseId} 为空时
+     * @throws UnsupportedOperationException 请求 hybrid 但 provider 未实现
+     *                                       {@link VectorAclAwareHybridSearchOperations}，
+     *                                       或 MMR 模式下候选缺失 embedding 向量时
      */
     @Override
     public RetrievalResult search(String knowledgeBaseId, KnowledgeSearchRequest request) {
@@ -201,11 +200,11 @@ public final class DefaultKnowledgeBaseVectorService implements KnowledgeBaseVec
      *       累计到 {@code topK} 时终止</li>
      * </ol>
      *
-     * @param candidates        provider 返回的候选（已应用 ACL filter）
-     * @param topK              最终返回条数上限
-     * @param maxPerDocument    单文档最大入选项数，控制"单文档霸榜"
-     * @param mmr               是否启用 MMR 重排
-     * @param mmrLambda         MMR 相关性/冗余度权重
+     * @param candidates     provider 返回的候选（已应用 ACL filter）
+     * @param topK           最终返回条数上限
+     * @param maxPerDocument 单文档最大入选项数，控制"单文档霸榜"
+     * @param mmr            是否启用 MMR 重排
+     * @param mmrLambda      MMR 相关性/冗余度权重
      * @return 最终引用的 {@link RetrievalCitation} 列表，长度 {@code <= topK}
      */
     private List<RetrievalCitation> diversify(List<VectorSearchResult> candidates, int topK, int maxPerDocument,
@@ -253,7 +252,10 @@ public final class DefaultKnowledgeBaseVectorService implements KnowledgeBaseVec
                 double redundancy = selected.stream().mapToDouble(chosen -> cosine(candidate.getVector(), chosen.getVector()))
                         .max().orElse(0.0);
                 double score = lambda * relevance - (1.0 - lambda) * redundancy;
-                if (score > bestScore) { best = candidate; bestScore = score; }
+                if (score > bestScore) {
+                    best = candidate;
+                    bestScore = score;
+                }
             }
             selected.add(best);
             remaining.remove(best);
@@ -272,7 +274,9 @@ public final class DefaultKnowledgeBaseVectorService implements KnowledgeBaseVec
     private static double cosine(float[] left, float[] right) {
         double dot = 0, leftNorm = 0, rightNorm = 0;
         for (int i = 0; i < left.length && i < right.length; i++) {
-            dot += left[i] * right[i]; leftNorm += left[i] * left[i]; rightNorm += right[i] * right[i];
+            dot += left[i] * right[i];
+            leftNorm += left[i] * left[i];
+            rightNorm += right[i] * right[i];
         }
         return leftNorm == 0 || rightNorm == 0 ? 0 : dot / Math.sqrt(leftNorm * rightNorm);
     }
@@ -304,7 +308,10 @@ public final class DefaultKnowledgeBaseVectorService implements KnowledgeBaseVec
     private static Integer integerMetadata(Map<String, Object> metadata, String key) {
         Object value = metadata.get(key);
         if (value instanceof Number number) return number.intValue();
-        try { return value == null ? null : Integer.valueOf(String.valueOf(value)); }
-        catch (NumberFormatException ignored) { return null; }
+        try {
+            return value == null ? null : Integer.valueOf(String.valueOf(value));
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 }

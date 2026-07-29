@@ -18,6 +18,7 @@ package cn.richie696.component.cache.config;
 import cn.richie696.component.cache.enums.CacheProvider;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * 缓存属性配置类
@@ -27,7 +28,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 2026-02-07 19:46:01
  */
 @Data
-@ConfigurationProperties(prefix = "platform.cache")
+@ConfigurationProperties(prefix = "platform.component.cache")
 public class CacheProperties {
 
     /**
@@ -38,6 +39,7 @@ public class CacheProperties {
     /**
      * 布隆过滤器配置
      */
+    @NestedConfigurationProperty
     private BloomFilterConfig bloomFilter = new BloomFilterConfig();
 
 }

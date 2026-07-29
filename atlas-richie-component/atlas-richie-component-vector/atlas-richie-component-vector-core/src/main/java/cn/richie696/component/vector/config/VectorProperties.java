@@ -19,27 +19,41 @@ import cn.richie696.component.vector.enums.VectorProvider;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import java.util.Map;
 
-/** 向量存储组件配置；模型厂商和 API 凭据由 AI 组件管理。 */
+/**
+ * 向量存储组件配置；模型厂商和 API 凭据由 AI 组件管理。
+ */
 @Data
 @ConfigurationProperties(prefix = "platform.component.vector")
 public class VectorProperties {
 
-    /** 当前启用的单一向量 provider。 */
+    /**
+     * 当前启用的单一向量 provider。
+     */
     private VectorProvider provider = VectorProvider.MILVUS;
 
-    /** 默认索引/collection 名称。 */
+    /**
+     * 默认索引/collection 名称。
+     */
     private String defaultIndex = "documents";
 
-    /** 索引级声明配置。 */
+    /**
+     * 索引级声明配置。
+     */
     private Map<String, IndexConfig> indexes;
 
-    /** 仅在使用者验证该 provider 支持 Spring AI filter DSL 后开启。 */
+    /**
+     * 仅在使用者验证该 provider 支持 Spring AI filter DSL 后开启。
+     */
     private boolean springAiFilterDslEnabled;
 
-    /** 批量入库的背压、并发及刷盘参数。 */
+    /**
+     * 批量入库的背压、并发及刷盘参数。
+     */
+    @NestedConfigurationProperty
     private Bulk bulk = new Bulk();
 
     @Data
@@ -58,13 +72,21 @@ public class VectorProperties {
     @Data
     @Accessors(chain = true)
     public static class Bulk {
-        /** 同时进行的 embedding 调用数。 */
+        /**
+         * 同时进行的 embedding 调用数。
+         */
         private int embeddingConcurrency = 8;
-        /** 单次向量库写入的记录数。 */
+        /**
+         * 单次向量库写入的记录数。
+         */
         private int writeBatchSize = 100;
-        /** 同时进行的向量库写入数。 */
+        /**
+         * 同时进行的向量库写入数。
+         */
         private int writeConcurrency = 4;
-        /** 不足一个写入批次时的最长等待时间。 */
+        /**
+         * 不足一个写入批次时的最长等待时间。
+         */
         private long writeFlushIntervalMs = 1_000;
     }
 }

@@ -21,8 +21,8 @@ import cn.richie696.component.desensitize.core.model.MaskContext;
  * 判断是否应对当前上下文执行脱敏。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @FunctionalInterface
 public interface MaskPermissionEvaluator {

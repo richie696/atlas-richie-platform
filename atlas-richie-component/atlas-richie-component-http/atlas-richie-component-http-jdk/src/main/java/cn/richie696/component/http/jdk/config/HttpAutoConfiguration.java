@@ -40,8 +40,8 @@ import java.util.concurrent.Executors;
  * JDK HttpClient Provider 自动配置。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @Slf4j
 @AutoConfiguration
@@ -95,9 +95,18 @@ public class HttpAutoConfiguration {
             var ctx = SSLContext.getInstance("TLS");
             ctx.init(null, new TrustManager[]{
                     new X509TrustManager() {
-                        @Override public void checkClientTrusted(X509Certificate[] chain, String a) {}
-                        @Override public void checkServerTrusted(X509Certificate[] chain, String a) {}
-                        @Override public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+                        @Override
+                        public void checkClientTrusted(X509Certificate[] chain, String a) {
+                        }
+
+                        @Override
+                        public void checkServerTrusted(X509Certificate[] chain, String a) {
+                        }
+
+                        @Override
+                        public X509Certificate[] getAcceptedIssuers() {
+                            return new X509Certificate[0];
+                        }
                     }
             }, new SecureRandom());
             return ctx;

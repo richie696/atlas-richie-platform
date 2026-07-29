@@ -15,23 +15,20 @@
  */
 package cn.richie696.component.ai.provider.bailian;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.ai.api.RerankModel;
 import cn.richie696.component.ai.api.RerankRequest;
 import cn.richie696.component.ai.api.RerankResponse;
 import cn.richie696.component.ai.api.RerankResult;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.context.utils.data.JsonUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * 阿里百炼（DashScope）重排序模型适配器。
@@ -55,10 +52,14 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class BailianRerankModel implements RerankModel {
 
-    /** DashScope 文本重排 REST 端点。 */
+    /**
+     * DashScope 文本重排 REST 端点。
+     */
     public static final String DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank";
 
-    /** 当 {@link RerankRequest#model} 为空时使用的默认模型。 */
+    /**
+     * 当 {@link RerankRequest#model} 为空时使用的默认模型。
+     */
     public static final String DEFAULT_MODEL = "gte-rerank";
 
     private final HttpClient httpClient;
@@ -153,12 +154,16 @@ public class BailianRerankModel implements RerankModel {
 
     // ====== DashScope response DTOs ======
 
-    /** 顶层响应：{@code { "output": { "results": [...] } }}。 */
+    /**
+     * 顶层响应：{@code { "output": { "results": [...] } }}。
+     */
     static class RerankRawResponse {
         public RerankRawOutput output;
     }
 
-    /** {@code output} 子对象。 */
+    /**
+     * {@code output} 子对象。
+     */
     static class RerankRawOutput {
         public List<RerankRawItem> results;
     }

@@ -22,8 +22,8 @@ package cn.richie696.component.http.core;
  * 由实现类读取此枚举来设置正确的 Content-Type 头。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 enum ContentType {
 
@@ -36,8 +36,12 @@ enum ContentType {
 
     private final String mime;
 
-    ContentType(String mime) { this.mime = mime; }
+    ContentType(String mime) {
+        this.mime = mime;
+    }
 
-    String mime() { return mime; }
+    String mime() {
+        return mime;
+    }
 
 }

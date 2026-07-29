@@ -33,7 +33,7 @@ class StateHistoryTest {
     @Test
     void testDefaultConstructor() {
         StateHistory history = new StateHistory();
-        
+
         assertNull(history.getId());
         assertNull(history.getStateMachineName());
         assertNull(history.getBusinessId());
@@ -50,7 +50,7 @@ class StateHistoryTest {
     void testConstructorWithParameters() {
         Long businessId = 123L;
         StateHistory history = new StateHistory("order", businessId, "PENDING", "CONFIRMED", "CONFIRM");
-        
+
         assertEquals("order", history.getStateMachineName());
         assertEquals(businessId, history.getBusinessId());
         assertEquals("PENDING", history.getFromState());
@@ -63,7 +63,7 @@ class StateHistoryTest {
     void testSettersAndGetters() {
         Long businessId = 123L;
         StateHistory history = new StateHistory();
-        
+
         history.setId(1L);
         history.setStateMachineName("order");
         history.setBusinessId(businessId);
@@ -72,15 +72,15 @@ class StateHistoryTest {
         history.setEvent("CONFIRM");
         history.setOperator("user123");
         history.setRemark("手动确认");
-        
+
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("amount", 100.0);
         attributes.put("channel", "WEB");
         history.setAttributes(attributes);
-        
+
         LocalDateTime now = LocalDateTime.now();
         history.setCreateTime(now);
-        
+
         assertEquals(1L, history.getId());
         assertEquals("order", history.getStateMachineName());
         assertEquals(businessId, history.getBusinessId());
@@ -96,17 +96,17 @@ class StateHistoryTest {
     @Test
     void testCreateTime_AutoSet() {
         LocalDateTime before = LocalDateTime.now();
-        
+
         // 等待一小段时间
         try {
             Thread.sleep(10);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        
+
         StateHistory history = new StateHistory();
         LocalDateTime after = LocalDateTime.now();
-        
+
         assertTrue(history.getCreateTime().isAfter(before) || history.getCreateTime().equals(before));
         assertTrue(history.getCreateTime().isBefore(after) || history.getCreateTime().equals(after));
     }

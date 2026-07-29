@@ -16,6 +16,7 @@
 package cn.richie696.component.concurrency.virtual;
 
 import java.util.List;
+import java.time.Duration;
 
 /**
  * 批量处理结果 —— 记录批量任务的成功/失败统计及异常明细。
@@ -59,7 +60,7 @@ public record BatchResult(int successCount, int failureCount, List<Throwable> er
      *
      * @return 共享的 {@link #EMPTY} 实例
      */
-    public static BatchResult empty() {
+    public static BatchResult empty () {
         return EMPTY;
     }
 
@@ -68,7 +69,7 @@ public record BatchResult(int successCount, int failureCount, List<Throwable> er
      *
      * @return 当且仅当 {@link #failureCount()} 大于 0 时返回 {@code true}
      */
-    public boolean hasError() {
+    public boolean hasError () {
         return failureCount > 0;
     }
 }

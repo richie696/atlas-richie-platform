@@ -16,6 +16,7 @@
 package cn.richie696.component.redis.streammq.stream;
 
 import reactor.core.publisher.Sinks;
+import java.util.List;
 
 /**
  * 事件发布结果封装类
@@ -96,98 +97,97 @@ import reactor.core.publisher.Sinks;
  * @param event 被发布的原始事件对象，用于后续处理或重试
  * @param failureReason 发布失败的具体原因，成功时为 null
  * @param error 发布过程中的异常对象，无异常时为 null
- *
  * @author richie696
- * @since 2025-09-15
  * @see PublishFailureReason 发布失败原因枚举
  * @see RedisStreamEventBus Redis Stream 事件总线
  * @see reactor.core.publisher.Sinks.EmitResult Reactor 发布结果枚举
+ * @since 2025-09-15
  */
-public record PublishResult<T>(boolean success, T event, PublishFailureReason failureReason, Throwable error) {
+public record PublishResult<T>(
+        boolean success, T
+event,
+        PublishFailureReason failureReason, Throwable
+error){
 
-    /**
-     * 创建成功的发布结果
-     *
-     * <p>用于表示事件成功发布到事件总线的情况。
-     * 成功结果中 failureReason 和 error 字段均为 null。
-     *
-     * @param <T> 事件对象的类型参数
-     * @param event 成功发布的事件对象
-     * @return 表示成功的 PublishResult 实例
-     *
-     * @see #failed(Object, PublishFailureReason) 创建失败结果
-     */
-    public static <T> PublishResult<T> success(T event) {
-        return new PublishResult<>(true, event, null, null);
-    }
+/**
+ * 创建成功的发布结果
+ *
+ * <p>用于表示事件成功发布到事件总线的情况。
+ * 成功结果中 failureReason 和 error 字段均为 null。
+ *
+ * @param <T>   事件对象的类型参数
+ * @param event 成功发布的事件对象
+ * @return 表示成功的 PublishResult 实例
+ * @see #failed(Object, PublishFailureReason) 创建失败结果
+ */
+public static <T> PublishResult<T> success(T event) {
+    return new PublishResult<>(true, event, null, null);
+}
 
-    /**
-     * 创建失败的发布结果（无异常信息）
-     *
-     * <p>用于表示事件发布失败但没有具体异常信息的情况。
-     * 通常用于 Reactor 框架返回的标准失败状态。
-     *
-     * @param <T> 事件对象的类型参数
-     * @param event 发布失败的事件对象，可用于重试或日志记录
-     * @param reason 发布失败的具体原因
-     * @return 表示失败的 PublishResult 实例
-     *
-     * @see #failed(Object, PublishFailureReason, Throwable) 创建带异常信息的失败结果
-     */
-    public static <T> PublishResult<T> failed(T event, PublishFailureReason reason) {
-        return new PublishResult<>(false, event, reason, null);
-    }
+/**
+ * 创建失败的发布结果（无异常信息）
+ *
+ * <p>用于表示事件发布失败但没有具体异常信息的情况。
+ * 通常用于 Reactor 框架返回的标准失败状态。
+ *
+ * @param <T>    事件对象的类型参数
+ * @param event  发布失败的事件对象，可用于重试或日志记录
+ * @param reason 发布失败的具体原因
+ * @return 表示失败的 PublishResult 实例
+ * @see #failed(Object, PublishFailureReason, Throwable) 创建带异常信息的失败结果
+ */
+public static <T> PublishResult<T> failed(T event, PublishFailureReason reason) {
+    return new PublishResult<>(false, event, reason, null);
+}
 
-    /**
-     * 创建失败的发布结果（包含异常信息）
-     *
-     * <p>用于表示事件发布过程中抛出异常的情况。
-     * 包含详细的异常信息，便于问题诊断和处理。
-     *
-     * @param <T> 事件对象的类型参数
-     * @param event 发布失败的事件对象，可用于重试或日志记录
-     * @param reason 发布失败的具体原因，通常为 EXCEPTION
-     * @param error 发布过程中抛出的异常对象
-     * @return 表示失败的 PublishResult 实例
-     *
-     * @see #failed(Object, PublishFailureReason) 创建无异常信息的失败结果
-     */
-    public static <T> PublishResult<T> failed(T event, PublishFailureReason reason, Throwable error) {
-        return new PublishResult<>(false, event, reason, error);
-    }
+/**
+ * 创建失败的发布结果（包含异常信息）
+ *
+ * <p>用于表示事件发布过程中抛出异常的情况。
+ * 包含详细的异常信息，便于问题诊断和处理。
+ *
+ * @param <T>    事件对象的类型参数
+ * @param event  发布失败的事件对象，可用于重试或日志记录
+ * @param reason 发布失败的具体原因，通常为 EXCEPTION
+ * @param error  发布过程中抛出的异常对象
+ * @return 表示失败的 PublishResult 实例
+ * @see #failed(Object, PublishFailureReason) 创建无异常信息的失败结果
+ */
+public static <T> PublishResult<T> failed(T event, PublishFailureReason reason, Throwable error) {
+    return new PublishResult<>(false, event, reason, error);
+}
 
-    /**
-     * 从 Reactor Sinks.EmitResult 转换为 PublishResult（包内可见）
-     *
-     * <p>将 Reactor 框架的发布结果转换为业务层的发布结果。
-     * 这个方法仅供包内的事件总线实现类使用，提供了统一的结果转换逻辑��
-     *
-     * <p><strong>转换映射：</strong>
-     * <ul>
-     *   <li><strong>OK</strong> → 成功结果</li>
-     *   <li><strong>FAIL_TERMINATED</strong> → SINK_TERMINATED 失败</li>
-     *   <li><strong>FAIL_OVERFLOW</strong> → BUFFER_OVERFLOW 失败</li>
-     *   <li><strong>FAIL_CANCELLED</strong> → OPERATION_CANCELLED 失败</li>
-     *   <li><strong>FAIL_NON_SERIALIZED</strong> → NON_SERIALIZED_ACCESS 失败</li>
-     *   <li><strong>其他</strong> → UNKNOWN_ERROR 失败</li>
-     * </ul>
-     *
-     * @param <T> 事件对象的类型参数
-     * @param result Reactor 框架的发布结果
-     * @param event 相关的事件对象
-     * @param name 事件类型名称，用于日志和调试（当前版本未使用）
-     * @return 转换后的 PublishResult 实例
-     *
-     * @see reactor.core.publisher.Sinks.EmitResult Reactor 发布结果枚举
-     */
-    static <T> PublishResult<T> fromEmit(Sinks.EmitResult result, T event, String name) {
-        return switch (result) {
-            case OK -> PublishResult.success(event);
-            case FAIL_TERMINATED -> PublishResult.failed(event, PublishFailureReason.SINK_TERMINATED);
-            case FAIL_OVERFLOW -> PublishResult.failed(event, PublishFailureReason.BUFFER_OVERFLOW);
-            case FAIL_CANCELLED -> PublishResult.failed(event, PublishFailureReason.OPERATION_CANCELLED);
-            case FAIL_NON_SERIALIZED -> PublishResult.failed(event, PublishFailureReason.NON_SERIALIZED_ACCESS);
-            default -> PublishResult.failed(event, PublishFailureReason.UNKNOWN_ERROR);
-        };
-    }
+/**
+ * 从 Reactor Sinks.EmitResult 转换为 PublishResult（包内可见）
+ *
+ * <p>将 Reactor 框架的发布结果转换为业务层的发布结果。
+ * 这个方法仅供包内的事件总线实现类使用，提供了统一的结果转换逻辑��
+ *
+ * <p><strong>转换映射：</strong>
+ * <ul>
+ *   <li><strong>OK</strong> → 成功结果</li>
+ *   <li><strong>FAIL_TERMINATED</strong> → SINK_TERMINATED 失败</li>
+ *   <li><strong>FAIL_OVERFLOW</strong> → BUFFER_OVERFLOW 失败</li>
+ *   <li><strong>FAIL_CANCELLED</strong> → OPERATION_CANCELLED 失败</li>
+ *   <li><strong>FAIL_NON_SERIALIZED</strong> → NON_SERIALIZED_ACCESS 失败</li>
+ *   <li><strong>其他</strong> → UNKNOWN_ERROR 失败</li>
+ * </ul>
+ *
+ * @param <T>    事件对象的类型参数
+ * @param result Reactor 框架的发布结果
+ * @param event  相关的事件对象
+ * @param name   事件类型名称，用于日志和调试（当前版本未使用）
+ * @return 转换后的 PublishResult 实例
+ * @see reactor.core.publisher.Sinks.EmitResult Reactor 发布结果枚举
+ */
+static <T> PublishResult<T> fromEmit(Sinks.EmitResult result, T event, String name) {
+    return switch (result) {
+        case OK -> PublishResult.success(event);
+        case FAIL_TERMINATED -> PublishResult.failed(event, PublishFailureReason.SINK_TERMINATED);
+        case FAIL_OVERFLOW -> PublishResult.failed(event, PublishFailureReason.BUFFER_OVERFLOW);
+        case FAIL_CANCELLED -> PublishResult.failed(event, PublishFailureReason.OPERATION_CANCELLED);
+        case FAIL_NON_SERIALIZED -> PublishResult.failed(event, PublishFailureReason.NON_SERIALIZED_ACCESS);
+        default -> PublishResult.failed(event, PublishFailureReason.UNKNOWN_ERROR);
+    };
+}
 }

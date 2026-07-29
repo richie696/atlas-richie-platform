@@ -21,13 +21,13 @@ package cn.richie696.component.ocr.mineru.protocol;
  * <p>由 {@code MineruOcrProvider#pollUntilDone} 在轮询拿到 {@code SUCCEEDED} 时构造、
  * 由 {@code MineruOcrProvider#fromProviderResponse} 消费。
  *
+ * @param taskId    MinerU 返回的任务唯一标识
+ * @param state     任务终态（典型取值 {@code SUCCEEDED}）
+ * @param markdown  MinerU 输出的结构化 Markdown 全文
+ * @param latencyMs 自任务上传起至完成的总耗时，单位毫秒
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-12
- * @param taskId MinerU 返回的任务唯一标识
- * @param state 任务终态（典型取值 {@code SUCCEEDED}）
- * @param markdown MinerU 输出的结构化 Markdown 全文
- * @param latencyMs 自任务上传起至完成的总耗时，单位毫秒
  */
 public record MineruResponse(
         String taskId,

@@ -15,12 +15,13 @@
  */
 package cn.richie696.component.web.core.adapter;
 
-import cn.richie696.contract.model.LoginUserPrincipal;
-import cn.richie696.contract.model.ApiResult;
-import cn.richie696.contract.constant.GlobalConstants;
-import cn.richie696.context.utils.spring.JwtUtils;
 import cn.richie696.component.web.core.config.login.LoginConfig;
 import cn.richie696.component.web.core.config.mvc.CorsProperties;
+import cn.richie696.context.utils.spring.JwtUtils;
+import cn.richie696.contract.constant.GlobalConstants;
+import cn.richie696.contract.model.ApiResult;
+import cn.richie696.contract.model.LoginUserPrincipal;
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +30,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
-import jakarta.annotation.Nonnull;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 

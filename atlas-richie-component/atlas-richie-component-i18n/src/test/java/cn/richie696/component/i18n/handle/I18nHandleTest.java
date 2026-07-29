@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.i18n.handle;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.cache.ops.FieldOps;
 import cn.richie696.component.cache.ops.KeyOps;
@@ -24,8 +25,8 @@ import org.mockito.MockedStatic;
 
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class I18nHandleTest {

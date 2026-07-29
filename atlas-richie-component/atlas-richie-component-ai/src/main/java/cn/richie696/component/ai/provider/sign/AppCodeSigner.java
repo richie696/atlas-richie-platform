@@ -35,7 +35,9 @@ import java.util.Map;
  */
 public final class AppCodeSigner {
 
-    /** 华为云 API 网关 AppCode 头部名称（盘古 / SIS / ModelArts 市场版统一约定）。 */
+    /**
+     * 华为云 API 网关 AppCode 头部名称（盘古 / SIS / ModelArts 市场版统一约定）。
+     */
     public static final String HEADER_APP_CODE = "X-Apig-AppCode";
 
     private AppCodeSigner() {

@@ -22,17 +22,17 @@ public interface SemanticBoundaryAdvisor {
      * 在批式入口一次性同步调用；不会在 {@link cn.richie696.component.chunking.StreamingChunker}
      * 中被调用 —— 语义边界依赖完整上下文。</p>
      *
-* <p><b>调用方契约（前置条件）：</b></p>
- * <ul>
- *   <li>返回值按 0-based、相对于 {@code content} 的字符下标（左闭右开区间的起始位置），
- *       表示“下标处之后应开始新段”。</li>
- *   <li>下标必须满足 {@code 0 < value < content.length()}；等于 0、等于
- *       {@code content.length()}、{@code null} 元素都会被
- *       {@link cn.richie696.component.chunking.SemanticChunkingService} 内部过滤。</li>
- *   <li>返回 {@code null} 或空列表时，core 自动回退到确定性 RECURSIVE 策略；
- *       因此建议器可以安全地“拿不准就交还”。</li>
- *   <li>建议器自身不必排序或去重 —— 归一化逻辑由 core 完成。</li>
- * </ul>
+     * <p><b>调用方契约（前置条件）：</b></p>
+     * <ul>
+     *   <li>返回值按 0-based、相对于 {@code content} 的字符下标（左闭右开区间的起始位置），
+     *       表示“下标处之后应开始新段”。</li>
+     *   <li>下标必须满足 {@code 0 < value < content.length()}；等于 0、等于
+     *       {@code content.length()}、{@code null} 元素都会被
+     *       {@link cn.richie696.component.chunking.SemanticChunkingService} 内部过滤。</li>
+     *   <li>返回 {@code null} 或空列表时，core 自动回退到确定性 RECURSIVE 策略；
+     *       因此建议器可以安全地“拿不准就交还”。</li>
+     *   <li>建议器自身不必排序或去重 —— 归一化逻辑由 core 完成。</li>
+     * </ul>
      *
      * @param content 完整输入文本
      * @return 期望切分位置的下标集合；返回 {@code null} / 空集合代表“不建议切”，core 自动回退

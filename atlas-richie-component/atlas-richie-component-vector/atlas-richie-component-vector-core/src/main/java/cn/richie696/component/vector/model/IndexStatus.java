@@ -23,21 +23,33 @@ package cn.richie696.component.vector.model;
  */
 public enum IndexStatus {
 
-    /** 创建中 */
+    /**
+     * 创建中
+     */
     CREATING,
 
-    /** 已就绪，可读写 */
+    /**
+     * 已就绪，可读写
+     */
     READY,
 
-    /** 配置更新中 */
+    /**
+     * 配置更新中
+     */
     UPDATING,
 
-    /** 删除中 */
+    /**
+     * 删除中
+     */
     DELETING,
 
-    /** 失败 */
+    /**
+     * 失败
+     */
     FAILED,
 
-    /** 状态未知（provider 不支持或查询失败） */
+    /**
+     * 状态未知（provider 不支持或查询失败）
+     */
     UNKNOWN
 }

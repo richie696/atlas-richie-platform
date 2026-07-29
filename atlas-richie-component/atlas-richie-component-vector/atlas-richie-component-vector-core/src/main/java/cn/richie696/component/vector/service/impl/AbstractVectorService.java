@@ -18,22 +18,12 @@ package cn.richie696.component.vector.service.impl;
 import cn.richie696.component.ai.api.RerankResponse;
 import cn.richie696.component.ai.api.RerankResult;
 import cn.richie696.component.ai.service.RerankService;
-import cn.richie696.component.vector.bulk.BulkIngestionPipeline;
-import cn.richie696.component.vector.bulk.BulkOperationEvent;
-import cn.richie696.component.vector.bulk.BulkOperationSummary;
-import cn.richie696.component.vector.bulk.BulkOperationType;
-import cn.richie696.component.vector.bulk.BulkProcessingStage;
+import cn.richie696.component.vector.bulk.*;
 import cn.richie696.component.vector.config.VectorProperties;
 import cn.richie696.component.vector.embeddings.ModalityAwareEmbeddingService;
 import cn.richie696.component.vector.exceptions.UnsupportedModalityException;
 import cn.richie696.component.vector.filter.VectorFilterCompiler;
-import cn.richie696.component.vector.model.HybridSearchOptions;
-import cn.richie696.component.vector.model.IndexInfo;
-import cn.richie696.component.vector.model.Modality;
-import cn.richie696.component.vector.model.SearchOptions;
-import cn.richie696.component.vector.model.VectorContent;
-import cn.richie696.component.vector.model.VectorRecord;
-import cn.richie696.component.vector.model.VectorSearchResult;
+import cn.richie696.component.vector.model.*;
 import cn.richie696.component.vector.service.VectorService;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -46,19 +36,18 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * {@link VectorService} v2 抽象基类 — 所有向量数据库实现的公共父类。
@@ -77,17 +66,23 @@ import java.util.stream.Collectors;
 @Slf4j
 public abstract class AbstractVectorService implements VectorService {
 
-    /** 列表查询最大单页限制 */
+    /**
+     * 列表查询最大单页限制
+     */
     public static final int MAX_LIST_LIMIT = 1000;
 
-    /** 批量查询默认批大小 */
+    /**
+     * 批量查询默认批大小
+     */
     protected static final int LIST_DOCUMENTS_BATCH_SIZE = 200;
 
     protected final VectorStore vectorStore;
     protected final EmbeddingModel embeddingModel;
     protected final RerankService rerankService;
 
-    /** 可选的图片嵌入路由器；未配置时文本能力不受影响。 */
+    /**
+     * 可选的图片嵌入路由器；未配置时文本能力不受影响。
+     */
     @Autowired(required = false)
     @Setter
     protected ModalityAwareEmbeddingService modalityService;
@@ -139,7 +134,9 @@ public abstract class AbstractVectorService implements VectorService {
         this.vectorProperties = vectorProperties;
     }
 
-    /** 向后兼容构造器（无 rerank） */
+    /**
+     * 向后兼容构造器（无 rerank）
+     */
     protected AbstractVectorService(VectorStore vectorStore, EmbeddingModel embeddingModel) {
         this(null, vectorStore, embeddingModel);
     }
@@ -237,7 +234,7 @@ public abstract class AbstractVectorService implements VectorService {
 
     @Override
     public List<VectorSearchResult> searchByImage(String indexName, byte[] image, String mimeType,
-                                                   int limit, double minScore) {
+                                                  int limit, double minScore) {
         VectorContent.ImageContent content = new VectorContent.ImageContent(image, mimeType);
         return searchByImageVector(indexName, content, limit, minScore);
     }
@@ -247,13 +244,15 @@ public abstract class AbstractVectorService implements VectorService {
         return searchByImageVector(indexName, VectorContent.ImageContent.ofPath(imagePath, mimeType), limit, 0.0);
     }
 
-    /** 供具体 provider 或旧调用方使用的默认图片检索重载。 */
+    /**
+     * 供具体 provider 或旧调用方使用的默认图片检索重载。
+     */
     public List<VectorSearchResult> searchByImage(String indexName, byte[] image, String mimeType, int limit) {
         return searchByImage(indexName, image, mimeType, limit, 0.0);
     }
 
     private List<VectorSearchResult> searchByImageVector(String indexName, VectorContent.ImageContent image,
-                                                          int limit, double minScore) {
+                                                         int limit, double minScore) {
         validateIndexName(indexName);
         if (modalityService == null || !modalityService.supportsModality(Modality.IMAGE)) {
             throw new UnsupportedModalityException(Modality.IMAGE, "IMAGE 模态未配置 imageEmbeddingModel");
@@ -485,7 +484,9 @@ public abstract class AbstractVectorService implements VectorService {
     // 抽象方法 — 子类必实现
     // ====================================================================
 
-    /** 按向量搜索（含 minScore 过滤） */
+    /**
+     * 按向量搜索（含 minScore 过滤）
+     */
     protected abstract List<Document> similaritySearchByVector(String indexName, float[] vector, int limit, double minScore);
 
     /**
@@ -493,38 +494,54 @@ public abstract class AbstractVectorService implements VectorService {
      * 不支持原生过滤的 provider 复用无过滤实现；需要 ACL 的 provider 必须覆盖此方法。
      */
     protected List<Document> similaritySearchByVector(String indexName, float[] vector, int limit,
-                                                       double minScore, String providerFilter) {
+                                                      double minScore, String providerFilter) {
         if (providerFilter != null && !providerFilter.isBlank()) {
             throw new UnsupportedOperationException("provider does not support native vector filter pushdown");
         }
         return similaritySearchByVector(indexName, vector, limit, minScore);
     }
 
-    /** 批量写入已嵌入文档 */
+    /**
+     * 批量写入已嵌入文档
+     */
     protected abstract void addEmbeddings(String indexName, List<Document> docs);
 
-    /** provider 的 {@code VectorStore.add} 自行调用 EmbeddingModel 时返回 true，避免 bulk 双重嵌入。 */
-    protected boolean usesStoreManagedEmbedding() { return false; }
+    /**
+     * provider 的 {@code VectorStore.add} 自行调用 EmbeddingModel 时返回 true，避免 bulk 双重嵌入。
+     */
+    protected boolean usesStoreManagedEmbedding() {
+        return false;
+    }
 
-    /** 仅供 {@link #usesStoreManagedEmbedding()} 为 true 的 provider 覆盖。 */
+    /**
+     * 仅供 {@link #usesStoreManagedEmbedding()} 为 true 的 provider 覆盖。
+     */
     protected void writeStoreManagedRecords(String indexName, List<VectorRecord> records) {
         throw new UnsupportedOperationException("provider does not support store-managed bulk embedding");
     }
 
-    /** 按 ID 列表删除 */
+    /**
+     * 按 ID 列表删除
+     */
     protected abstract void deleteByIds(String indexName, List<String> ids);
 
-    /** 按 ID 列表读取 */
+    /**
+     * 按 ID 列表读取
+     */
     protected List<VectorRecord> getByIds(String indexName, List<String> ids) {
         throw new UnsupportedOperationException("provider does not support exact vector record reads");
     }
 
-    /** 分页列出索引内文档 */
+    /**
+     * 分页列出索引内文档
+     */
     protected List<VectorRecord> listDocumentsImpl(String indexName, int offset, int limit) {
         throw new UnsupportedOperationException("provider does not support record listing");
     }
 
-    /** provider 可限制一个实例实际绑定的 index，避免调用参数与数据面不一致。 */
+    /**
+     * provider 可限制一个实例实际绑定的 index，避免调用参数与数据面不一致。
+     */
     protected void validateIndexName(String indexName) {
         if (indexName == null || indexName.isBlank()) {
             throw new IllegalArgumentException("indexName must not be blank");

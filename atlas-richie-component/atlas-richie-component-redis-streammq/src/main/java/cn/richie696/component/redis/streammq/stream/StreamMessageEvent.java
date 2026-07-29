@@ -15,8 +15,9 @@
  */
 package cn.richie696.component.redis.streammq.stream;
 
-import org.springframework.data.redis.connection.stream.RecordId;
+import cn.richie696.contract.model.BaseStreamMessage;
 import lombok.Builder;
+import org.springframework.data.redis.connection.stream.RecordId;
 
 /**
  * Redis Stream 消息事件
@@ -31,7 +32,12 @@ import lombok.Builder;
  * @param payload   事件载荷
  */
 @Builder
-public record StreamMessageEvent<T>(String streamKey, String group, String consumer, RecordId recordId, T payload) {
-}
+public record StreamMessageEvent<T>(
+        String streamKey, String
+        group,
+        String consumer, RecordId
+        recordId,
+        T payload){
+        }
 
 

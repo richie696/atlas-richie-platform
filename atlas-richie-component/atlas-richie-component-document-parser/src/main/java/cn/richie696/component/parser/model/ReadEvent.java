@@ -33,28 +33,44 @@ import cn.richie696.component.parser.exception.DocumentParseException;
  * @version 1.0
  * @since 2026-07-09
  */
-public sealed interface ReadEvent {
+public sealed
+
+interface ReadEvent {
 
     /**
      * 文本段事件 — {@code fileName} 标识来源文件 (批次流式时让 listener 直接归并到 per-file accumulator)。
      */
-    record Section(ParsedSection section, String fileName) implements ReadEvent {}
+    record Section(ParsedSection section, String fileName) implements
+
+    ReadEvent {
+    }
 
     /**
      * 图片资源事件 — {@code fileName} 标识来源文件 (批次流式时让 listener 直接归并到 per-file accumulator)。
      */
-    record Image(ParsedImage image, String fileName) implements ReadEvent {}
+    record Image(ParsedImage image, String fileName) implements
+
+    ReadEvent {
+    }
 
     /**
      * 完成事件 — 含汇总结果 + 计数。
      *
-     * @param summary        常量空间的完成摘要（不含已发出的 Section / Image）
-     * @param totalSections  本次解析产出的文本段数
-     * @param totalImages    本次解析产出的图片资源数
+     * @param summary       常量空间的完成摘要（不含已发出的 Section / Image）
+     * @param totalSections 本次解析产出的文本段数
+     * @param totalImages   本次解析产出的图片资源数
      */
     record Finished(ReadSummary summary, int totalSections, int totalImages)
-            implements ReadEvent {}
+            implements
 
-    /** 失败事件 */
-    record Failed(DocumentParseException error) implements ReadEvent {}
+    ReadEvent {
+    }
+
+    /**
+     * 失败事件
+     */
+    record Failed(DocumentParseException error) implements
+
+    ReadEvent {
+    }
 }

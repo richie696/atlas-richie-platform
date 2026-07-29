@@ -25,31 +25,27 @@ import cn.richie696.component.desensitize.core.service.DefaultMaskingService;
 import cn.richie696.component.desensitize.core.service.DefaultObjectMaskingService;
 import cn.richie696.component.desensitize.core.service.MaskingService;
 import cn.richie696.component.desensitize.core.service.ObjectMaskingService;
-import cn.richie696.component.desensitize.core.strategy.AddressMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.BankCardMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.EmailMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.IdCardMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.MaskingStrategyRegistry;
-import cn.richie696.component.desensitize.core.strategy.NameMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.PasswordMaskingStrategy;
-import cn.richie696.component.desensitize.core.strategy.PhoneMaskingStrategy;
+import cn.richie696.component.desensitize.core.strategy.*;
 import cn.richie696.component.desensitize.core.util.DesensitizeUtils;
 
 import java.util.List;
 import java.util.Map;
+
 /**
  * DesensitizeTestSupport 测试类。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public final class DesensitizeTestSupport {
 
     private DesensitizeTestSupport() {
     }
+
     /**
      * defaultProperties。
+     *
      * @return 处理结果
      */
     public static DesensitizeProperties defaultProperties() {
@@ -60,8 +56,10 @@ public final class DesensitizeTestSupport {
         properties.getSensitiveKeys().put("id_card", MaskType.ID_CARD);
         return properties;
     }
+
     /**
      * maskingService。
+     *
      * @param properties 参数
      * @return 处理结果
      */
@@ -76,34 +74,42 @@ public final class DesensitizeTestSupport {
                 keyRegistry,
                 new DefaultMaskPermissionEvaluator(properties));
     }
+
     /**
      * defaultMaskingService。
+     *
      * @return 处理结果
      */
     public static MaskingService defaultMaskingService() {
         return maskingService(defaultProperties());
     }
+
     /**
      * defaultObjectMaskingService。
+     *
      * @param maskingService 参数
-     * @param properties 参数
+     * @param properties     参数
      * @return 处理结果
      */
     public static ObjectMaskingService defaultObjectMaskingService(MaskingService maskingService, DesensitizeProperties properties) {
         MaskRuleRegistry ruleRegistry = new MaskRuleRegistry(properties);
         return new DefaultObjectMaskingService(new SafeLogSerializer(maskingService, ruleRegistry));
     }
+
     /**
      * bindUtils。
-     * @param maskingService 参数
+     *
+     * @param maskingService       参数
      * @param objectMaskingService 参数
      * @return 处理结果
      */
     public static void bindUtils(MaskingService maskingService, ObjectMaskingService objectMaskingService) {
         DesensitizeUtils.bind(maskingService, objectMaskingService);
     }
+
     /**
      * bindDefaults。
+     *
      * @return 处理结果
      */
     public static void bindDefaults() {
@@ -111,15 +117,19 @@ public final class DesensitizeTestSupport {
         MaskingService maskingService = maskingService(properties);
         bindUtils(maskingService, defaultObjectMaskingService(maskingService, properties));
     }
+
     /**
      * clearUtils。
+     *
      * @return 处理结果
      */
     public static void clearUtils() {
         DesensitizeUtils.clear();
     }
+
     /**
      * defaultStrategies。
+     *
      * @return 处理结果
      */
     public static List<cn.richie696.component.desensitize.core.strategy.MaskingStrategy> defaultStrategies() {
@@ -133,8 +143,10 @@ public final class DesensitizeTestSupport {
                 new AddressMaskingStrategy()
         );
     }
+
     /**
      * sampleRow。
+     *
      * @return 处理结果
      */
     public static Map<String, Object> sampleRow() {

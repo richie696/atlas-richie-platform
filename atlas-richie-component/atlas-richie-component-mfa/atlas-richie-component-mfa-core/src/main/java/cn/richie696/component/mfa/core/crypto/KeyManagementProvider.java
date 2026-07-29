@@ -99,7 +99,7 @@ public interface KeyManagementProvider {
     default String storeSecret(String tenantId, String userId, String plainSecret) {
         // 默认实现：不支持存储，抛出异常提示使用支持存储的实现
         throw new UnsupportedOperationException(
-            "当前 KMS 提供方不支持密钥存储功能，请使用支持 KV 存储的实现（如 Vault KV 引擎）"
+                "当前 KMS 提供方不支持密钥存储功能，请使用支持 KV 存储的实现（如 Vault KV 引擎）"
         );
     }
 
@@ -122,7 +122,7 @@ public interface KeyManagementProvider {
     default String retrieveSecret(String secretReference) {
         // 默认实现：不支持检索，抛出异常提示使用支持检索的实现
         throw new UnsupportedOperationException(
-            "当前 KMS 提供方不支持密钥检索功能，请使用支持 KV 存储的实现（如 Vault KV 引擎）"
+                "当前 KMS 提供方不支持密钥检索功能，请使用支持 KV 存储的实现（如 Vault KV 引擎）"
         );
     }
 
@@ -139,7 +139,7 @@ public interface KeyManagementProvider {
     default void deleteSecret(String secretReference) {
         // 默认实现：不支持删除，抛出异常提示使用支持删除的实现
         throw new UnsupportedOperationException(
-            "当前 KMS 提供方不支持密钥删除功能，请使用支持 KV 存储的实现（如 Vault KV 引擎）"
+                "当前 KMS 提供方不支持密钥删除功能，请使用支持 KV 存储的实现（如 Vault KV 引擎）"
         );
     }
 }

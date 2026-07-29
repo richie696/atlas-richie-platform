@@ -15,25 +15,20 @@
  */
 package cn.richie696.component.cache.redis.config.base;
 
-import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
 import cn.richie696.component.cache.redis.bean.MultiStringRedisTemplate;
 import cn.richie696.component.cache.redis.enums.RedisTypeEnum;
+import cn.richie696.component.cache.redis.manage.AtlasRedisCacheManager;
 import cn.richie696.component.cache.redis.manage.CacheSyncListener;
 import cn.richie696.component.cache.redis.manage.MessageSubscriber;
-import cn.richie696.component.cache.redis.manage.AtlasRedisCacheManager;
-import jakarta.annotation.Nonnull;
-import org.springframework.boot.data.redis.autoconfigure.DataRedisProperties;
-import tools.jackson.databind.DefaultTyping;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
-import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
+import cn.richie696.context.utils.data.JsonUtils;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.ReadFrom;
 import io.lettuce.core.SocketOptions;
 import io.lettuce.core.TimeoutOptions;
 import io.lettuce.core.api.StatefulConnection;
 import io.lettuce.core.protocol.DecodeBufferPolicies;
+import jakarta.annotation.Nonnull;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
@@ -43,6 +38,7 @@ import org.redisson.config.Config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -57,10 +53,14 @@ import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.*;
 import org.springframework.util.StringUtils;
+import tools.jackson.databind.DefaultTyping;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -246,7 +246,7 @@ public class RedisBaseAutoConfiguration {
     /**
      * 根据指定过期时长获取Redis缓存配置对象的方法
      *
-     * @param duration       指定的过期时长
+     * @param duration        指定的过期时长
      * @param redisSerializer Redis序列化器实例
      * @return 返回Redis缓存配置对象
      */

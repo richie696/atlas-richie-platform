@@ -38,13 +38,15 @@ import java.util.Objects;
  */
 public class BoundedQueue<T> {
 
-    /** RPUSH + LTRIM（maxLen 从 meta 读取，原子）。 */
+    /**
+     * RPUSH + LTRIM（maxLen 从 meta 读取，原子）。
+     */
     private static final RedisScript<Long> PUSH_SCRIPT = RedisScript.of(
             "local maxLen = tonumber(redis.call('GET', KEYS[2]));" +
-            "if maxLen == nil then return -1 end;" +
-            "redis.call('RPUSH', KEYS[1], ARGV[1]);" +
-            "redis.call('LTRIM', KEYS[1], -maxLen, -1);" +
-            "return 1;",
+                    "if maxLen == nil then return -1 end;" +
+                    "redis.call('RPUSH', KEYS[1], ARGV[1]);" +
+                    "redis.call('LTRIM', KEYS[1], -maxLen, -1);" +
+                    "return 1;",
             Long.class);
 
     private final String key;

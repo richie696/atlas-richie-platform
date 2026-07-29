@@ -20,12 +20,7 @@ import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.core.HttpResponse;
 import cn.richie696.context.utils.spring.SpringBeanUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.audio.tts.Speech;
-import org.springframework.ai.audio.tts.TextToSpeechMessage;
-import org.springframework.ai.audio.tts.TextToSpeechModel;
-import org.springframework.ai.audio.tts.TextToSpeechOptions;
-import org.springframework.ai.audio.tts.TextToSpeechPrompt;
-import org.springframework.ai.audio.tts.TextToSpeechResponse;
+import org.springframework.ai.audio.tts.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -60,17 +55,25 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class ZhipuTextToSpeechModel implements TextToSpeechModel {
 
-    /** 智谱 TTS REST 端点。 */
+    /**
+     * 智谱 TTS REST 端点。
+     */
     public static final String DEFAULT_TTS_URL =
             "https://open.bigmodel.cn/api/paas/v4/audio/speech";
 
-    /** 当未指定模型时使用的默认模型（{@code glm-tts}）。 */
+    /**
+     * 当未指定模型时使用的默认模型（{@code glm-tts}）。
+     */
     public static final String DEFAULT_MODEL = "glm-tts";
 
-    /** 当未指定音色时使用的默认音色（智谱 GLM-TTS 7 音色之一）。 */
+    /**
+     * 当未指定音色时使用的默认音色（智谱 GLM-TTS 7 音色之一）。
+     */
     public static final String DEFAULT_VOICE = "tongtong";
 
-    /** 音频输出格式：wav（与 STT 回路对齐，便于回路播放）。 */
+    /**
+     * 音频输出格式：wav（与 STT 回路对齐，便于回路播放）。
+     */
     public static final String RESPONSE_FORMAT = "wav";
 
     private final AbstractAudioModelConfig cfg;

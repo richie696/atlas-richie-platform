@@ -17,8 +17,8 @@ package cn.richie696.component.chunking.config;
 
 import cn.richie696.component.chunking.ChunkingService;
 import cn.richie696.component.chunking.DefaultChunkingService;
-import cn.richie696.component.chunking.model.ChunkingRule;
 import cn.richie696.component.chunking.model.ChunkingResult;
+import cn.richie696.component.chunking.model.ChunkingRule;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

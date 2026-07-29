@@ -22,8 +22,8 @@ import org.springframework.stereotype.Component;
  * 手机号脱敏：保留前 3 后 4。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @Component
 public class PhoneMaskingStrategy extends AbstractKeepEdgeMaskingStrategy {
@@ -41,6 +41,7 @@ public class PhoneMaskingStrategy extends AbstractKeepEdgeMaskingStrategy {
 
     /**
      * supportedType。
+     *
      * @return 处理结果
      */
     @Override

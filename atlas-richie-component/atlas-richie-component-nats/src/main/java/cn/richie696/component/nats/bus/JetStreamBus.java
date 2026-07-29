@@ -23,11 +23,7 @@ import cn.richie696.component.nats.strategy.NatsErrorStrategy;
 import cn.richie696.component.nats.strategy.NatsHeaderInjector;
 import cn.richie696.component.nats.strategy.NatsMessageSerializer;
 import cn.richie696.component.nats.strategy.NatsTracingSupport;
-import io.nats.client.ConsumerContext;
-import io.nats.client.FetchConsumer;
-import io.nats.client.JetStream;
-import io.nats.client.Message;
-import io.nats.client.MessageConsumer;
+import io.nats.client.*;
 import io.nats.client.api.PublishAck;
 import io.nats.client.impl.Headers;
 import io.opentelemetry.api.trace.Span;
@@ -110,7 +106,7 @@ public class JetStreamBus {
      * @return MessageConsumer（可用于 stop）
      */
     public MessageConsumer consume(String streamName, String consumerName,
-                                    NatsMessageHandler handler) {
+                                   NatsMessageHandler handler) {
         ConsumerContext consumerCtx = connectionManager.getConsumerContext(streamName, consumerName);
         NatsMessageHandler pipelinedHandler = subscriberFactory.buildAsyncPipeline(handler);
 

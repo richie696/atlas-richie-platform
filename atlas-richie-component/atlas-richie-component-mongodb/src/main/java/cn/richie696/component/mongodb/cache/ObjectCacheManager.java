@@ -39,7 +39,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ObjectCacheManager {
 
-    /** Spring Data MongoDB 操作模板 */
+    /**
+     * Spring Data MongoDB 操作模板
+     */
     private final MongoTemplate template;
 
     /**
@@ -197,8 +199,8 @@ public class ObjectCacheManager {
     /**
      * 根据条件获取指定集合中的缓存对象数量
      *
-     * @param key 缓存集合键
-     * @param condition 查询条件
+     * @param key         缓存集合键
+     * @param condition   查询条件
      * @param entityClass 缓存对象类型
      * @return 返回缓存对象数量
      */

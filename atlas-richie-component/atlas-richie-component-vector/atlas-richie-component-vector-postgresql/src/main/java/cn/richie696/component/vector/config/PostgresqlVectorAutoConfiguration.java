@@ -22,8 +22,8 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -57,13 +57,13 @@ public class PostgresqlVectorAutoConfiguration {
      * 通过 {@link PostgresqlVectorServiceImpl#createIndexImpl(String, cn.richie696.component.vector.config.VectorProperties.IndexConfig)}
      * 在 native SQL 层落表，不在 Spring AI builder 上显式设置。</p>
      *
-     * @param jdbcTemplate    pgvector 专用的 {@link JdbcTemplate}
-     * @param embeddingModel  文本嵌入模型，用于 add/search 时的向量化
-     * @param config          PostgreSQL 连接配置
+     * @param jdbcTemplate   pgvector 专用的 {@link JdbcTemplate}
+     * @param embeddingModel 文本嵌入模型，用于 add/search 时的向量化
+     * @param config         PostgreSQL 连接配置
      * @return Spring AI 统一的 {@link VectorStore} 视图
      */
     @Bean
-    @ConditionalOnProperty(prefix = "platform.component.vector", name="provider", havingValue = "postgresql")
+    @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "postgresql")
     public VectorStore postgresVectorStore(@Qualifier("postgresqlJdbcTemplate") JdbcTemplate jdbcTemplate,
                                            EmbeddingModel embeddingModel, PostgresqlConfig config) {
         return PgVectorStore.builder(jdbcTemplate, embeddingModel)
@@ -83,7 +83,7 @@ public class PostgresqlVectorAutoConfiguration {
      * @return 绑定到 pgvector 数据源的 {@link JdbcTemplate}
      */
     @Bean("postgresqlJdbcTemplate")
-    @ConditionalOnProperty(prefix = "platform.component.vector", name="provider", havingValue = "postgresql")
+    @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "postgresql")
     public JdbcTemplate jdbcTemplate(PostgresqlConfig config) {
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl(config.getJdbcUrl());

@@ -57,7 +57,7 @@ public record HttpAuth(Type type, String value) {
      * @param token 令牌原文
      * @return Bearer 认证实例
      */
-    public static HttpAuth bearer(String token) {
+    public static HttpAuth bearer (String token){
         return new HttpAuth(Type.BEARER, token);
     }
 
@@ -67,7 +67,7 @@ public record HttpAuth(Type type, String value) {
      * @param credentials Base64 编码后的 {@code user:pass}（业务侧自行编码）
      * @return Basic 认证实例
      */
-    public static HttpAuth basic(String credentials) {
+    public static HttpAuth basic (String credentials){
         return new HttpAuth(Type.BASIC, credentials);
     }
 }

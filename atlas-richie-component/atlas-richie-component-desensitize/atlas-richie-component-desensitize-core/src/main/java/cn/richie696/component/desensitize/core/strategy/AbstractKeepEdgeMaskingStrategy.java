@@ -17,12 +17,13 @@ package cn.richie696.component.desensitize.core.strategy;
 
 import cn.richie696.component.desensitize.core.model.MaskRule;
 import cn.richie696.component.desensitize.core.model.MaskType;
+
 public abstract class AbstractKeepEdgeMaskingStrategy implements MaskingStrategy {
 
     /**
      * 按规则保留两端字符并掩码中间内容。
      *
-     * @param raw 原始字符串
+     * @param raw  原始字符串
      * @param rule 脱敏规则
      * @return 脱敏结果
      */

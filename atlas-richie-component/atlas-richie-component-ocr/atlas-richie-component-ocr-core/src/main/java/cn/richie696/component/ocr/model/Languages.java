@@ -36,39 +36,71 @@ import java.util.Set;
  * @since 2026-07-11
  */
 public enum Languages {
-    /** 兜底 sentinel: 业务侧显式声明 "用全局 yml 配置的 defaultLanguages" */
+    /**
+     * 兜底 sentinel: 业务侧显式声明 "用全局 yml 配置的 defaultLanguages"
+     */
     AUTO(),
 
-    /** 简体中文 + 英文混合（默认） */
+    /**
+     * 简体中文 + 英文混合（默认）
+     */
     CHINESE_SIMPLIFIED_AND_ENGLISH("zh-CN", "en"),
-    /** 仅简体中文 */
+    /**
+     * 仅简体中文
+     */
     CHINESE_SIMPLIFIED("zh-CN"),
-    /** 仅英文 */
+    /**
+     * 仅英文
+     */
     ENGLISH("en"),
-    /** 繁体中文 */
+    /**
+     * 繁体中文
+     */
     CHINESE_TRADITIONAL("zh-TW"),
-    /** 日文 */
+    /**
+     * 日文
+     */
     JAPANESE("ja"),
-    /** 韩文 */
+    /**
+     * 韩文
+     */
     KOREAN("ko"),
-    /** 阿拉伯数字单字符识别（验证码 / 票据号） */
+    /**
+     * 阿拉伯数字单字符识别（验证码 / 票据号）
+     */
     DIGITS_ONLY("en"),
-    /** 纯拉丁字母（含英法德西意） */
+    /**
+     * 纯拉丁字母（含英法德西意）
+     */
     LATIN("en", "fr", "de", "es", "it"),
 
-    /** 阿拉伯文 */
+    /**
+     * 阿拉伯文
+     */
     ARABIC("ar"),
-    /** 俄文 */
+    /**
+     * 俄文
+     */
     RUSSIAN("ru"),
-    /** 印地文 */
+    /**
+     * 印地文
+     */
     HINDI("hi"),
-    /** 泰文 */
+    /**
+     * 泰文
+     */
     THAI("th"),
-    /** 越南文 */
+    /**
+     * 越南文
+     */
     VIETNAMESE("vi"),
-    /** 希腊文 */
+    /**
+     * 希腊文
+     */
     GREEK("el"),
-    /** 土耳其文 */
+    /**
+     * 土耳其文
+     */
     TURKISH("tr");
 
     private final String[] tags;

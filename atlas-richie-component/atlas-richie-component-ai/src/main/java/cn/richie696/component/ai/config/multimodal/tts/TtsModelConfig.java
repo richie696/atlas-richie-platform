@@ -28,6 +28,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class TtsModelConfig extends AbstractAudioModelConfig {
 
-    /** 厂商(枚举)— 见 {@link TtsProvider}。 */
+    /**
+     * 厂商(枚举)— 见 {@link TtsProvider}。
+     */
     private TtsProvider provider;
 }

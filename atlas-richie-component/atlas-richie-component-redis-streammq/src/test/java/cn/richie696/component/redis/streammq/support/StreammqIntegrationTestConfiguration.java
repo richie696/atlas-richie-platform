@@ -15,49 +15,27 @@
  */
 package cn.richie696.component.redis.streammq.support;
 
+import cn.richie696.component.cache.config.CacheAutoConfiguration;
 import cn.richie696.component.cache.local.config.LocalCacheAutoConfiguration;
 import cn.richie696.component.cache.redis.config.base.RedisBaseAutoConfiguration;
-import cn.richie696.component.redis.streammq.StreamMQ;
 import cn.richie696.component.redis.streammq.config.monitor.RedisStreamMonitoringAutoConfiguration;
 import cn.richie696.component.redis.streammq.config.stream.RedisStreamAutoConfiguration;
-import cn.richie696.component.redis.streammq.config.stream.RedisStreamIdempotencyProperties;
-import cn.richie696.component.redis.streammq.config.stream.RedisStreamProperties;
 import cn.richie696.component.redis.streammq.config.tracing.RedisStreamTracingAutoConfiguration;
-import cn.richie696.component.redis.streammq.manage.RedisStreamManager;
-import cn.richie696.component.redis.streammq.stream.RedisStreamReactor;
-import cn.richie696.component.redis.streammq.tracing.RedisStreamTracingUtils;
 import cn.richie696.component.redis.streammq.utils.DeadLetterQueueUtil;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 
 @SpringBootConfiguration
 @EnableAutoConfiguration
-@EnableConfigurationProperties({
-        RedisStreamProperties.class,
-        RedisStreamIdempotencyProperties.class
-})
 @Import({
+        CacheAutoConfiguration.class,
         RedisBaseAutoConfiguration.class,
         LocalCacheAutoConfiguration.class,
         RedisStreamAutoConfiguration.class,
         RedisStreamMonitoringAutoConfiguration.class,
         RedisStreamTracingAutoConfiguration.class,
-        StreamMQ.class,
-        RedisStreamManager.class,
-        RedisStreamReactor.class,
         DeadLetterQueueUtil.class,
-        RedisStreamTracingUtils.class,
 })
-@ComponentScan(
-        basePackages = "cn.richie696.component.cache",
-        excludeFilters = @ComponentScan.Filter(
-                type = FilterType.ASSIGNABLE_TYPE,
-                classes = cn.richie696.component.cache.redis.manage.RedisNotificationManager.class
-        )
-)
 public class StreammqIntegrationTestConfiguration {
 }

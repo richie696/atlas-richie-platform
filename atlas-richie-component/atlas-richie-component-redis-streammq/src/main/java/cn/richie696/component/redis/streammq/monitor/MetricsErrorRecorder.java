@@ -45,9 +45,9 @@ public final class MetricsErrorRecorder {
     /**
      * 记录超时错误
      *
-     * @param metrics 指标对象
+     * @param metrics   指标对象
      * @param streamKey 流名称
-     * @param t 异常对象
+     * @param t         异常对象
      */
     public static void recordTimeoutIfAny(RedisStreamMetrics metrics, String streamKey, Throwable t) {
         if (isTimeout(t)) {
@@ -58,9 +58,9 @@ public final class MetricsErrorRecorder {
     /**
      * 记录连接错误
      *
-     * @param metrics 指标对象
+     * @param metrics   指标对象
      * @param streamKey 流名称
-     * @param t 异常对象
+     * @param t         异常对象
      */
     public static void recordConnectionIfAny(RedisStreamMetrics metrics, String streamKey, Throwable t) {
         if (isConnection(t)) {
@@ -71,9 +71,9 @@ public final class MetricsErrorRecorder {
     /**
      * 识别序列化错误并计数
      *
-     * @param metrics 指标对象
+     * @param metrics   指标对象
      * @param streamKey 流名称
-     * @param t 异常对象
+     * @param t         异常对象
      */
     public static void recordSerializationIfAny(RedisStreamMetrics metrics, String streamKey, Throwable t) {
         if (isSerialization(t)) {
@@ -87,7 +87,8 @@ public final class MetricsErrorRecorder {
         // Lettuce
         if (classNameEquals(root, "io.lettuce.core.RedisCommandTimeoutException")) return true;
         // Jedis 常见超时：一般为 JedisConnectionException 的具体消息，但不稳定；尽量兼容
-        if (classNameEquals(root, "redis.clients.jedis.exceptions.JedisConnectionException") && containsTimeout(root)) return true;
+        if (classNameEquals(root, "redis.clients.jedis.exceptions.JedisConnectionException") && containsTimeout(root))
+            return true;
         // Netty 低层超时
         if (classNameEquals(root, "java.net.SocketTimeoutException")) return true;
         return false;

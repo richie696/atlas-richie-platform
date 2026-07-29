@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.messaging.filter;
 
+import cn.richie696.component.messaging.config.CanaryInstanceManager;
 import cn.richie696.contract.constant.GlobalConstants;
 import cn.richie696.contract.gateway.config.DeployConfig;
-import cn.richie696.component.messaging.config.CanaryInstanceManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

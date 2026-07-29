@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.mfa.validation.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.cache.ops.CollectionOps;
 import cn.richie696.component.cache.ops.KeyOps;
@@ -36,18 +37,16 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Set;
 
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 

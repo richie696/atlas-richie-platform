@@ -54,7 +54,9 @@ import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
  * @version 1.0
  * @since 2025-08-13
  */
-public sealed class MqttEventPublisher permits AbstractMqttClientApi, ConnectionMonitor {
+public sealed
+
+class MqttEventPublisher permits AbstractMqttClientApi, ConnectionMonitor {
 
     /**
      * 发布连接状态事件
@@ -144,7 +146,7 @@ public sealed class MqttEventPublisher permits AbstractMqttClientApi, Connection
      * @return 发布结果，包含成功状态和失败原因
      */
     protected static PublishResult<NetworkTypeEnum> publishNetworkType(NetworkTypeEnum networkType) {
-     return MqttEventBus.broadcastNetworkType(networkType);
+        return MqttEventBus.broadcastNetworkType(networkType);
     }
 
     /**

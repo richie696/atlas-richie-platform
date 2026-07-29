@@ -28,8 +28,8 @@ import org.springframework.data.redis.connection.stream.RecordId;
  * @param body   消息体
  */
 public record StreamMessage<T>(
-        String stream,
-        RecordId id,
-        T body
-) {
-}
+String stream,
+RecordId id,
+T body
+){
+        }

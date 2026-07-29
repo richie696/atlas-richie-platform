@@ -18,18 +18,14 @@ package cn.richie696.component.desensitize.core.annotation;
 import cn.richie696.component.desensitize.core.model.MaskScene;
 import cn.richie696.component.desensitize.core.model.MaskType;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * 标记敏感字段，供 API 序列化与安全日志序列化使用。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @Documented
 @Target(ElementType.FIELD)

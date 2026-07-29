@@ -16,21 +16,8 @@
 package cn.richie696.component.nats.integration;
 
 import cn.richie696.component.nats.support.NatsIntegrationTestSupport;
-import io.nats.client.Connection;
-import io.nats.client.ConsumerContext;
-import io.nats.client.FetchConsumer;
-import io.nats.client.JetStream;
-import io.nats.client.JetStreamManagement;
-import io.nats.client.Message;
-import io.nats.client.Nats;
-import io.nats.client.StreamContext;
-import io.nats.client.api.AckPolicy;
-import io.nats.client.api.ConsumerConfiguration;
-import io.nats.client.api.DeliverPolicy;
-import io.nats.client.api.PublishAck;
-import io.nats.client.api.RetentionPolicy;
-import io.nats.client.api.StorageType;
-import io.nats.client.api.StreamConfiguration;
+import io.nats.client.*;
+import io.nats.client.api.*;
 import io.nats.client.impl.Headers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

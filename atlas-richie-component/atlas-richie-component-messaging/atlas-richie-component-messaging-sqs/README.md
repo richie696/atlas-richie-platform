@@ -56,12 +56,12 @@ spring:
 
 ### AWS SQS Binder 配置
 
-| 配置项                                           | 说明             | 默认值 |
-|-----------------------------------------------|----------------|-----|
-| `spring.cloud.aws.sqs.region`                 | AWS 区域         | -   |
-| `spring.cloud.aws.sqs.credentials.access-key` | AWS Access Key | -   |
-| `spring.cloud.aws.sqs.credentials.secret-key` | AWS Secret Key | -   |
-| `spring.cloud.aws.sqs.queue-name`             | SQS Queue 名称   | -   |
+| 配置项                                        | 说明           | 默认值 |
+|-----------------------------------------------|----------------|--------|
+| `spring.cloud.aws.sqs.region`                 | AWS 区域       | -      |
+| `spring.cloud.aws.sqs.credentials.access-key` | AWS Access Key | -      |
+| `spring.cloud.aws.sqs.credentials.secret-key` | AWS Secret Key | -      |
+| `spring.cloud.aws.sqs.queue-name`             | SQS Queue 名称 | -      |
 
 ### 详细配置
 

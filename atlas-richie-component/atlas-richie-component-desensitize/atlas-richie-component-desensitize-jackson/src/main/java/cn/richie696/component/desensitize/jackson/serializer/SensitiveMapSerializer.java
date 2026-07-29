@@ -31,8 +31,8 @@ import java.util.Optional;
  * Map 序列化：按 {@code sensitive-keys} 脱敏 entry value。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class SensitiveMapSerializer extends StdSerializer<Map<?, ?>> {
 
@@ -52,9 +52,9 @@ public class SensitiveMapSerializer extends StdSerializer<Map<?, ?>> {
     /**
      * 构造 Map 脱敏序列化器。
      *
-     * @param maskingService 脱敏服务
+     * @param maskingService       脱敏服务
      * @param sensitiveKeyRegistry 敏感键注册表
-     * @param scene 脱敏场景
+     * @param scene                脱敏场景
      */
     public SensitiveMapSerializer(
             MaskingService maskingService,
@@ -70,8 +70,8 @@ public class SensitiveMapSerializer extends StdSerializer<Map<?, ?>> {
      * 序列化 Map，并按敏感键规则处理字符串值。
      *
      * @param value Map 值
-     * @param gen Json 生成器
-     * @param ctxt 序列化上下文
+     * @param gen   Json 生成器
+     * @param ctxt  序列化上下文
      */
     @Override
     /**

@@ -34,11 +34,10 @@ import java.util.Objects;
  * <p><strong>body 序列化约定</strong>：业务方在策略里直接生成 JSON 字符串；
  * 本组件不强制使用 Jackson，避免强依赖。
  *
- * @param status HTTP 状态码（200 ~ 599）
- * @param body   响应 body 字符串
- * @param headers 附加响应 header；null 视为空
+ * @param status       HTTP 状态码（200 ~ 599）
+ * @param body         响应 body 字符串
+ * @param headers      附加响应 header；null 视为空
  * @param strategyName 命中的策略名（用于日志 / 排查）
- *
  * @author richie696
  * @since 2026-07
  */
@@ -59,14 +58,14 @@ public record DegradeResult(int status,
     /**
      * 紧凑构造器（最常用）：无附加 header。
      */
-    public static DegradeResult of(int status, String body, String strategyName) {
+    public static DegradeResult of ( int status, String body, String strategyName){
         return new DegradeResult(status, body, null, strategyName);
     }
 
     /**
      * 带 header 的构造器。
      */
-    public static DegradeResult of(int status, String body, Map<String, String> headers, String strategyName) {
+    public static DegradeResult of ( int status, String body, Map < String, String > headers, String strategyName){
         return new DegradeResult(status, body, headers, strategyName);
     }
 }

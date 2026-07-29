@@ -23,22 +23,15 @@ import cn.richie696.component.web.core.spi.WebInterceptorChain;
 import cn.richie696.component.web.core.spi.WebRequestContext;
 import cn.richie696.component.web.core.spi.support.DefaultWebInterceptorChain;
 import cn.richie696.component.web.core.spi.support.MutableWebRequestContext;
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * 跨容器适配层入口：{@code jakarta.servlet.Filter} → {@link WebRequestContext} → 拦截器链驱动。

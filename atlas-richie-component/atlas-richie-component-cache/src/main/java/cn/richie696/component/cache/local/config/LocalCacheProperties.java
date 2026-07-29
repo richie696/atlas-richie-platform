@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.cache.local.config;
 
-import cn.richie696.context.utils.data.Collections;
 import cn.richie696.component.cache.local.enums.CacheProvider;
+import cn.richie696.context.utils.data.Collections;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -31,14 +31,18 @@ import java.util.Set;
  * @since 2023-12-28 17:18:32
  */
 @Data
-@ConfigurationProperties(prefix = "spring.data.local")
+@ConfigurationProperties(prefix = "platform.component.cache.local")
 public class LocalCacheProperties implements Serializable {
 
-    /** 默认构造函数，供配置绑定使用。 */
+    /**
+     * 默认构造函数，供配置绑定使用。
+     */
     public LocalCacheProperties() {
     }
 
-    /** 缓存提供者（如 EHCACHE、CAFFEINE、CACHE2K） */
+    /**
+     * 缓存提供者（如 EHCACHE、CAFFEINE、CACHE2K）
+     */
     private CacheProvider provider = CacheProvider.EHCACHE;
 
     /**

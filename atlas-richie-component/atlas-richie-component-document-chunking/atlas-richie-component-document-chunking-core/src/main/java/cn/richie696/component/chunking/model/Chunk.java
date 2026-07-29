@@ -11,10 +11,10 @@ package cn.richie696.component.chunking.model;
  *
  * <p>本类不可变；任何 {@link #text()}、区间、序号的修改都应生成新的实例。</p>
  *
- * @param ordinal 当前切片在所属结果序列中的位置；从 0 起严格递增 1，由组件自身负责
- * @param text 切片文本；非空、已剥离前后空白；长度与 {@code charEnd - charStart} 相等
+ * @param ordinal   当前切片在所属结果序列中的位置；从 0 起严格递增 1，由组件自身负责
+ * @param text      切片文本；非空、已剥离前后空白；长度与 {@code charEnd - charStart} 相等
  * @param charStart 切片起始字符下标（左闭），相对原始输入字符串；满足 {@code 0 <= charStart < charEnd}
- * @param charEnd 切片结束字符下标（右开），相对原始输入字符串
+ * @param charEnd   切片结束字符下标（右开），相对原始输入字符串
  */
 public record Chunk(int ordinal, String text, int charStart, int charEnd) {
     /**

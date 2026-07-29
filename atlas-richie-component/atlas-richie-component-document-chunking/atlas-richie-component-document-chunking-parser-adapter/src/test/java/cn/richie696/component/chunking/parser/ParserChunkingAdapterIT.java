@@ -19,11 +19,7 @@ import cn.richie696.component.chunking.ChunkingService;
 import cn.richie696.component.chunking.DefaultChunkingService;
 import cn.richie696.component.chunking.model.ChunkingRule;
 import cn.richie696.component.parser.exception.DocumentParseException;
-import cn.richie696.component.parser.model.ParsedImage;
-import cn.richie696.component.parser.model.ParsedSection;
-import cn.richie696.component.parser.model.ReadEvent;
-import cn.richie696.component.parser.model.ReadResult;
-import cn.richie696.component.parser.model.ReadSummary;
+import cn.richie696.component.parser.model.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -282,7 +278,8 @@ class ParserChunkingAdapterIT {
 
     @SpringBootConfiguration
     @Import(ParserChunkingAdapterIT.ParsedReaderConfig.class)
-    static class TestConfig { }
+    static class TestConfig {
+    }
 
     @Configuration
     static class ParsedReaderConfig {
@@ -300,7 +297,9 @@ class ParserChunkingAdapterIT {
 
     // ============================================================== Helpers
 
-    /** 同步、需求驱动的虚拟发布器，下游请求时按顺序发放 items 然后以 onComplete 收尾。 */
+    /**
+     * 同步、需求驱动的虚拟发布器，下游请求时按顺序发放 items 然后以 onComplete 收尾。
+     */
     private static final class SyncPublisher<T> implements Flow.Publisher<T> {
         private final List<T> items;
 
@@ -354,16 +353,23 @@ class ParserChunkingAdapterIT {
         AtomicBoolean completedRef = new AtomicBoolean();
 
         publisher.subscribe(new Flow.Subscriber<>() {
-            @Override public void onSubscribe(Flow.Subscription s) {
+            @Override
+            public void onSubscribe(Flow.Subscription s) {
                 s.request(Long.MAX_VALUE);
             }
-            @Override public void onNext(T item) {
+
+            @Override
+            public void onNext(T item) {
                 received.add(item);
             }
-            @Override public void onError(Throwable t) {
+
+            @Override
+            public void onError(Throwable t) {
                 errorRef.set(t);
             }
-            @Override public void onComplete() {
+
+            @Override
+            public void onComplete() {
                 completedRef.set(true);
             }
         });

@@ -1,6 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>cn.richie696.base</groupId>
@@ -10,7 +10,9 @@
     </parent>
 
     <name>atlas-richie-component</name>
-    <description>Atlas Richie Component 是面向企业级应用的基础组件平台，提供缓存、数据访问、HTTP 通信、数据脱敏、消息集成、对象存储、向量检索、搜索与可观测性等标准化能力，支持多实现适配、配置驱动切换与稳定演进。</description>
+    <description>Atlas Richie Component 是面向企业级应用的基础组件平台，提供缓存、数据访问、HTTP
+        通信、数据脱敏、消息集成、对象存储、向量检索、搜索与可观测性等标准化能力，支持多实现适配、配置驱动切换与稳定演进。
+    </description>
 
     <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-component</artifactId>

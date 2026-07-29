@@ -12,7 +12,9 @@
 
     <artifactId>atlas-richie-component-nats</artifactId>
     <name>atlas-richie-component-nats</name>
-    <description>Richie NATS 生产级组件 — 连接管理 / 消息总线 / RPC 端点 / 链路追踪 / 上下文透传 / 幂等去重 / JetStream</description>
+    <description>Richie NATS 生产级组件 — 连接管理 / 消息总线 / RPC 端点 / 链路追踪 / 上下文透传 / 幂等去重 /
+        JetStream
+    </description>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -79,21 +81,21 @@
                 <configuration>
                     <!-- 白名单：仅统计可单测覆盖的实现类与纯逻辑（IT 覆盖的 Manager/有界结构不计入） -->
                     <includes>
-                        <include>com/richie/component/nats/pipeline/**</include>
-                        <include>com/richie/component/nats/strategy/**</include>
-                        <include>com/richie/component/nats/bus/**</include>
-                        <include>com/richie/component/nats/connection/NatsAuthConfigurator*</include>
-                        <include>com/richie/component/nats/exception/**</include>
+                        <include>cn/richie696/component/nats/pipeline/**</include>
+                        <include>cn/richie696/component/nats/strategy/**</include>
+                        <include>cn/richie696/component/nats/bus/**</include>
+                        <include>cn/richie696/component/nats/connection/NatsAuthConfigurator*</include>
+                        <include>cn/richie696/component/nats/exception/**</include>
                     </includes>
                     <excludes>
                         <!-- 需真实 NATS 服务器，由 IT 覆盖 -->
-                        <exclude>com/richie/component/nats/connection/NatsConnectionManager</exclude>
-                        <exclude>com/richie/component/nats/connection/JetStreamManagementService</exclude>
+                        <exclude>cn/richie696/component/nats/connection/NatsConnectionManager</exclude>
+                        <exclude>cn/richie696/component/nats/connection/JetStreamManagementService</exclude>
                         <!-- 需 Redis 依赖，可选实现 -->
-                        <exclude>com/richie/component/nats/strategy/RedisNatsIdempotentChecker</exclude>
+                        <exclude>cn/richie696/component/nats/strategy/RedisNatsIdempotentChecker</exclude>
                         <!-- 配置属性与门面 -->
-                        <exclude>com/richie/component/nats/NatsComponent</exclude>
-                        <exclude>com/richie/component/nats/NatsConstants</exclude>
+                        <exclude>cn/richie696/component/nats/NatsComponent</exclude>
+                        <exclude>cn/richie696/component/nats/NatsConstants</exclude>
                     </excludes>
                     <rules>
                         <rule>
@@ -113,18 +115,18 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/nats/pipeline/**</include>
-                                <include>com/richie/component/nats/strategy/**</include>
-                                <include>com/richie/component/nats/bus/**</include>
-                                <include>com/richie/component/nats/connection/NatsAuthConfigurator*</include>
-                                <include>com/richie/component/nats/exception/**</include>
+                                <include>cn/richie696/component/nats/pipeline/**</include>
+                                <include>cn/richie696/component/nats/strategy/**</include>
+                                <include>cn/richie696/component/nats/bus/**</include>
+                                <include>cn/richie696/component/nats/connection/NatsAuthConfigurator*</include>
+                                <include>cn/richie696/component/nats/exception/**</include>
                             </includes>
                             <excludes>
-                                <exclude>com/richie/component/nats/connection/NatsConnectionManager</exclude>
-                                <exclude>com/richie/component/nats/connection/JetStreamManagementService</exclude>
-                                <exclude>com/richie/component/nats/strategy/RedisNatsIdempotentChecker</exclude>
-                                <exclude>com/richie/component/nats/NatsComponent</exclude>
-                                <exclude>com/richie/component/nats/NatsConstants</exclude>
+                                <exclude>cn/richie696/component/nats/connection/NatsConnectionManager</exclude>
+                                <exclude>cn/richie696/component/nats/connection/JetStreamManagementService</exclude>
+                                <exclude>cn/richie696/component/nats/strategy/RedisNatsIdempotentChecker</exclude>
+                                <exclude>cn/richie696/component/nats/NatsComponent</exclude>
+                                <exclude>cn/richie696/component/nats/NatsConstants</exclude>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>
                                 <exclude>cn.richie696.component.**.config.**</exclude>
                                 <exclude>cn.richie696.component.**.enums.**</exclude>

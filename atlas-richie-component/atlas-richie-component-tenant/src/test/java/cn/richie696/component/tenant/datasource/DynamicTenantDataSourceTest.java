@@ -28,9 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.withSettings;
+import static org.mockito.Mockito.*;
 
 @DisplayName("DynamicTenantDataSource — 动态租户数据源路由")
 class DynamicTenantDataSourceTest {
@@ -117,7 +115,10 @@ class DynamicTenantDataSourceTest {
         dynamicDs.addTenantDataSource("2001", tenantDs);
         Map<String, DataSource> map = dynamicDs.getTenantDataSources();
         // 尝试修改不应影响内部状态
-        try { map.put("3001", sharedDs); } catch (UnsupportedOperationException ignored) {}
+        try {
+            map.put("3001", sharedDs);
+        } catch (UnsupportedOperationException ignored) {
+        }
         assertThat(dynamicDs.getTenantDataSources()).doesNotContainKey("3001");
     }
 }

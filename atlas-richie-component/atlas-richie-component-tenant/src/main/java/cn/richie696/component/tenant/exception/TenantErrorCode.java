@@ -147,7 +147,7 @@ public enum TenantErrorCode {
      * 或调整 {@code schema-tables} 配置去除该表。
      */
     TENANT_TENANT_ID_COLUMN_MISSING(500,
-        "Table {0} is missing tenant_id column '{1}' required by multi-tenancy"),
+            "Table {0} is missing tenant_id column '{1}' required by multi-tenancy"),
 
     /**
      * 配置在 {@code multi-tenancy.ignore-tables} 的表名在数据库中不存在。
@@ -155,7 +155,7 @@ public enum TenantErrorCode {
      * 解决方案：修正 {@code ignore-tables} 配置中的表名，或确认该表应在多租户 SQL 改写范围内。
      */
     TENANT_IGNORE_TABLE_NOT_FOUND(500,
-        "Table '{0}' listed in multi-tenancy.ignore-tables does not exist in the database");
+            "Table '{0}' listed in multi-tenancy.ignore-tables does not exist in the database");
 
     // ==================== 枚举定义 ====================
 

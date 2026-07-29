@@ -132,11 +132,21 @@ public class PooledExecutor<T> {
     }
 
     // 内部访问器 — 给 PooledXxxModel.stream() 等流式 API 复用池组件
-    public List<T> perKeyModels() { return perKeyModels; }
-    public ApiKeyPool pool() { return pool; }
-    public ApiKeyValidator validator() { return validator; }
+    public List<T> perKeyModels() {
+        return perKeyModels;
+    }
 
-    /** 借一个 key — 供流式 API 使用(不立即归还,等订阅结束)。 */
+    public ApiKeyPool pool() {
+        return pool;
+    }
+
+    public ApiKeyValidator validator() {
+        return validator;
+    }
+
+    /**
+     * 借一个 key — 供流式 API 使用(不立即归还,等订阅结束)。
+     */
     public ApiKey borrow() {
         return pool.borrow();
     }

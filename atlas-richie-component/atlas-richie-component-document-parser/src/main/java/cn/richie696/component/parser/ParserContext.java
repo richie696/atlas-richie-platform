@@ -50,7 +50,7 @@ public record ParserContext(
     /**
      * 默认解析上下文(60 秒超时,无段落长度上限)。
      */
-    public static ParserContext defaults() {
+    public static ParserContext defaults () {
         return new ParserContext(Duration.ofSeconds(60), null, Map.of());
     }
 }

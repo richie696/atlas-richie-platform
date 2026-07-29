@@ -18,6 +18,7 @@ package cn.richie696.component.redis.streammq.stream;
 import cn.richie696.component.redis.streammq.StreamMQ;
 import cn.richie696.component.redis.streammq.function.StreamFunction;
 import org.springframework.data.redis.connection.stream.RecordId;
+import java.util.List;
 
 /**
  * Redis Stream 消息事件上下文
@@ -51,14 +52,13 @@ import org.springframework.data.redis.connection.stream.RecordId;
  * }</pre>
  *
  * @param streamKey Redis Stream 的键名，标识具体的消息流
- * @param group 消费者组名称，用于支持多消费者并行处理
- * @param recordId 消息记录的唯一标识符，用于消息确认和重复处理检测
- *
+ * @param group     消费者组名称，用于支持多消费者并行处理
+ * @param recordId  消息记录的唯一标识符，用于消息确认和重复处理检测
  * @author richie696
- * @since 2025-09-15
  * @see StreamFunction
  * @see RecordId
  * @see AbstractStreamConsumer
+ * @since 2025-09-15
  */
 public record EventContext(String streamKey, String group, RecordId recordId) {
 
@@ -69,11 +69,11 @@ public record EventContext(String streamKey, String group, RecordId recordId) {
 
         /** Stream 操作函数（由框架注入） */
         private static StreamFunction streamFunction;
-        
+
         static void setStreamFunction(StreamFunction stream) {
             streamFunction = stream;
         }
-        
+
         static StreamFunction getStreamFunction() {
             return streamFunction;
         }
@@ -84,7 +84,7 @@ public record EventContext(String streamKey, String group, RecordId recordId) {
      *
      * @param streamFunction StreamFunction 实例
      */
-    public static void setStreamFunction(StreamFunction streamFunction) {
+    public static void setStreamFunction (StreamFunction streamFunction){
         ContextHolder.setStreamFunction(streamFunction);
     }
 
@@ -111,7 +111,7 @@ public record EventContext(String streamKey, String group, RecordId recordId) {
      *
      * @throws RuntimeException 如果确认操作失败（如网络异常、Redis 服务不可用等）
      */
-    public void ack() {
+    public void ack () {
         // 优先使用静态持有的 StreamFunction 实例，fallback 到 StreamMQ
         StreamFunction stream = ContextHolder.getStreamFunction();
         if (stream == null) {

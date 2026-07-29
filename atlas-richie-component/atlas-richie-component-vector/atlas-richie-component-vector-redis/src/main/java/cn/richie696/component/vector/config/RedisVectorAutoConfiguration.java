@@ -20,8 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -63,8 +63,8 @@ public class RedisVectorAutoConfiguration {
      * {@link VectorProperties#getDefaultIndex()}，与后续所有向量检索共享同一索引。</p>
      *
      * @param redisConnectionFactory Spring Boot 自动注入的 Redis 连接工厂，必须是 Jedis 实现
-     * @param embeddingModel AI 组件提供的 EmbeddingModel，用于把文本转换为向量
-     * @param vectorProperties 通用向量配置，仅读取其默认索引名
+     * @param embeddingModel         AI 组件提供的 EmbeddingModel，用于把文本转换为向量
+     * @param vectorProperties       通用向量配置，仅读取其默认索引名
      * @return 已构建完成的 Redis 向量存储
      * @throws IllegalStateException 当前连接工厂不是 Jedis 实现时抛出，提示运维切换 client-type
      */

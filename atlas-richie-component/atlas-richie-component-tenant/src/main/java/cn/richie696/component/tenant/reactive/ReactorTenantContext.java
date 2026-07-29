@@ -35,9 +35,9 @@ import reactor.core.publisher.Mono;
  * </ul>
  *
  * @author richie696
- * @since 1.0.0
  * @see TenantContextKeys
  * @see TenantContext
+ * @since 1.0.0
  */
 public final class ReactorTenantContext {
 
@@ -112,10 +112,13 @@ public final class ReactorTenantContext {
                 return Mono.fromCallable(callable);
             }
             return Mono.fromCallable(() ->
-                TenantContext.runWithTenant(principal, (java.util.function.Supplier<T>) () -> {
-                    try { return callable.call(); }
-                    catch (Exception e) { throw new RuntimeException(e); }
-                }));
+                    TenantContext.runWithTenant(principal, (java.util.function.Supplier<T>) () -> {
+                        try {
+                            return callable.call();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }));
         });
     }
 
@@ -132,7 +135,7 @@ public final class ReactorTenantContext {
                 return Mono.fromRunnable(runnable);
             }
             return Mono.fromRunnable(() ->
-                TenantContext.runWithTenant(principal, runnable));
+                    TenantContext.runWithTenant(principal, runnable));
         });
     }
 }

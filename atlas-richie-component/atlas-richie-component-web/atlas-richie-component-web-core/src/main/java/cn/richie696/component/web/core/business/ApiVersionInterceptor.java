@@ -42,7 +42,9 @@ import org.springframework.core.Ordered;
  */
 public class ApiVersionInterceptor implements WebInterceptor, Ordered {
 
-    /** 拦截器在链中的位置。 */
+    /**
+     * 拦截器在链中的位置。
+     */
     public static final int ORDER = 280;
 
     private final String headerName;

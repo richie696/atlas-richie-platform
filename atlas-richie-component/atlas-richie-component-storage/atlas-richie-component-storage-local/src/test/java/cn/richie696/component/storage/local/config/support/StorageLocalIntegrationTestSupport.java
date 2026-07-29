@@ -93,7 +93,9 @@ public final class StorageLocalIntegrationTestSupport {
         return INSTANCE;
     }
 
-    /** JUnit {@code @EnabledIf} 入口。 */
+    /**
+     * JUnit {@code @EnabledIf} 入口。
+     */
     public static boolean isEnabled() {
         return REDIS.isAvailable() && MYSQL.isAvailable();
     }
@@ -108,7 +110,9 @@ public final class StorageLocalIntegrationTestSupport {
         appendComponentPropertyPairs(pairs);
     }
 
-    /** 供 {@link org.springframework.test.context.DynamicPropertySource} 与 Initializer 共用。 */
+    /**
+     * 供 {@link org.springframework.test.context.DynamicPropertySource} 与 Initializer 共用。
+     */
     public void registerProperties(DynamicPropertyRegistry registry) {
         List<String> pairs = new ArrayList<>();
         appendPropertyPairs(pairs);

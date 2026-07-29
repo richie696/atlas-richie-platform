@@ -57,11 +57,11 @@ public final class Tc3StsSigner implements StsSigner {
     private final String defaultEndpoint;
 
     /**
-     * @param vendor         厂商标识(例如 {@link StsTicket#VENDOR_HUNYUAN_TTS})
-     * @param secretId       TC3 SecretId
-     * @param secretKey      TC3 SecretKey
-     * @param region         TC3 区域(如 {@code ap-guangzhou})
-     * @param service        TC3 服务名(如 {@code tts} / {@code asr})
+     * @param vendor          厂商标识(例如 {@link StsTicket#VENDOR_HUNYUAN_TTS})
+     * @param secretId        TC3 SecretId
+     * @param secretKey       TC3 SecretKey
+     * @param region          TC3 区域(如 {@code ap-guangzhou})
+     * @param service         TC3 服务名(如 {@code tts} / {@code asr})
      * @param defaultEndpoint 缺省 endpoint(如 {@code tts.tencentcloudapi.com})
      */
     public Tc3StsSigner(String vendor, String secretId, String secretKey,

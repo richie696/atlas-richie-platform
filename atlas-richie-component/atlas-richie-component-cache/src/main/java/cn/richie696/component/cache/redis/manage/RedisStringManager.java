@@ -15,20 +15,20 @@
  */
 package cn.richie696.component.cache.redis.manage;
 
-import cn.richie696.context.utils.data.JsonUtils;
-import cn.richie696.context.bloom.BloomFilter;
 import cn.richie696.component.cache.commons.CacheKeyUtils;
 import cn.richie696.component.cache.config.CacheProperties;
 import cn.richie696.component.cache.enums.L2CachingRegion;
 import cn.richie696.component.cache.function.CacheFunction;
 import cn.richie696.component.cache.function.StringFunction;
-import cn.richie696.component.cache.ops.CacheInfrastructure;
 import cn.richie696.component.cache.local.manage.LocalCache;
+import cn.richie696.component.cache.ops.CacheInfrastructure;
 import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
 import cn.richie696.component.cache.redis.bean.MultiStringRedisTemplate;
 import cn.richie696.component.cache.redis.perf.RedisOperationCatalog;
 import cn.richie696.component.cache.redis.perf.RedisPerfGuard;
-import tools.jackson.core.type.TypeReference;
+import cn.richie696.context.bloom.BloomFilter;
+import cn.richie696.context.utils.data.JsonUtils;
+import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -36,12 +36,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.serializer.RedisSerializer;
-import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.type.TypeReference;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * String类型缓存管理器
@@ -60,26 +63,40 @@ import java.util.function.Supplier;
 @ConditionalOnExpression("'${platform.cache.cache-provider:REDIS}'=='REDIS'")
 public class RedisStringManager implements StringFunction {
 
-    /** 多数据源 Redis 模板（JSON 序列化） */
+    /**
+     * 多数据源 Redis 模板（JSON 序列化）
+     */
     @Qualifier("jsonTemplate")
     private final MultiRedisTemplate<Object> redisTemplate;
 
-    /** 多数据源 String 模板 */
+    /**
+     * 多数据源 String 模板
+     */
     private final MultiStringRedisTemplate stringRedisTemplate;
 
-    /** 缓存配置（含布隆过滤器等） */
+    /**
+     * 缓存配置（含布隆过滤器等）
+     */
     private final CacheProperties cacheProperties;
 
-    /** 布隆过滤器门面 */
+    /**
+     * 布隆过滤器门面
+     */
     private final BloomFilter bloomFilter;
 
-    /** 分布式锁管理器 */
+    /**
+     * 分布式锁管理器
+     */
     private final RedisLockManager lockManager;
 
-    /** 缓存框架内部基础设施（L2 开关、key 类型等） */
+    /**
+     * 缓存框架内部基础设施（L2 开关、key 类型等）
+     */
     private final CacheInfrastructure infra;
 
-    /** Redis 性能守卫（可选启用） */
+    /**
+     * Redis 性能守卫（可选启用）
+     */
     private final RedisPerfGuard redisPerfGuard;
 
     /**

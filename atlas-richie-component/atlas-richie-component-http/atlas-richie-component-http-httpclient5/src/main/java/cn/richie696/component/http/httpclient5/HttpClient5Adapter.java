@@ -15,18 +15,10 @@
  */
 package cn.richie696.component.http.httpclient5;
 
-import cn.richie696.component.http.core.AsyncCallback;
-import cn.richie696.component.http.core.HttpClient;
-import cn.richie696.component.http.core.HttpMethod;
-import cn.richie696.component.http.core.HttpRequest;
-import cn.richie696.component.http.core.HttpRequestSupport;
-import cn.richie696.component.http.core.HttpResponse;
-import cn.richie696.component.http.core.SseConnection;
-import cn.richie696.component.http.core.SseListener;
-import tools.jackson.core.type.TypeReference;
+import cn.richie696.component.http.core.*;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
-import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;
@@ -35,19 +27,21 @@ import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.util.Timeout;
+import tools.jackson.core.type.TypeReference;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.List;
 
 /**
  * 基于 Apache HttpClient5 的 {@link HttpClient} 实现。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class HttpClient5Adapter implements HttpClient {
 
@@ -60,17 +54,34 @@ public class HttpClient5Adapter implements HttpClient {
     }
 
     @Override
-    public HttpRequest get(String url) { return new HttpRequest(url, HttpMethod.GET, null).client(this); }
+    public HttpRequest get(String url) {
+        return new HttpRequest(url, HttpMethod.GET, null).client(this);
+    }
+
     @Override
-    public HttpRequest post(String url, Object body) { return new HttpRequest(url, HttpMethod.POST, body).client(this); }
+    public HttpRequest post(String url, Object body) {
+        return new HttpRequest(url, HttpMethod.POST, body).client(this);
+    }
+
     @Override
-    public HttpRequest post(String url) { return new HttpRequest(url, HttpMethod.POST, null).client(this); }
+    public HttpRequest post(String url) {
+        return new HttpRequest(url, HttpMethod.POST, null).client(this);
+    }
+
     @Override
-    public HttpRequest put(String url, Object body) { return new HttpRequest(url, HttpMethod.PUT, body).client(this); }
+    public HttpRequest put(String url, Object body) {
+        return new HttpRequest(url, HttpMethod.PUT, body).client(this);
+    }
+
     @Override
-    public HttpRequest delete(String url, Object body) { return new HttpRequest(url, HttpMethod.DELETE, body).client(this); }
+    public HttpRequest delete(String url, Object body) {
+        return new HttpRequest(url, HttpMethod.DELETE, body).client(this);
+    }
+
     @Override
-    public HttpRequest delete(String url) { return new HttpRequest(url, HttpMethod.DELETE, null).client(this); }
+    public HttpRequest delete(String url) {
+        return new HttpRequest(url, HttpMethod.DELETE, null).client(this);
+    }
 
     @Override
     public HttpResponse execute(HttpRequest request) {
@@ -83,9 +94,14 @@ public class HttpClient5Adapter implements HttpClient {
     }
 
     @Override
-    public <T> T execute(HttpRequest request, Class<T> type) { return execute(request).bodyAs(type); }
+    public <T> T execute(HttpRequest request, Class<T> type) {
+        return execute(request).bodyAs(type);
+    }
+
     @Override
-    public <T> T execute(HttpRequest request, TypeReference<T> typeRef) { return execute(request).bodyAs(typeRef); }
+    public <T> T execute(HttpRequest request, TypeReference<T> typeRef) {
+        return execute(request).bodyAs(typeRef);
+    }
 
     @Override
     public <T> void async(HttpRequest request, AsyncCallback<T> callback, Class<T> type) {

@@ -31,8 +31,8 @@ import java.util.Map;
  * 将对象 / Map 转为日志安全 JSON 字符串（不依赖 Jackson）。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class SafeLogSerializer {
 
@@ -54,7 +54,7 @@ public class SafeLogSerializer {
      * 构造日志安全序列化器。
      *
      * @param maskingService 脱敏服务
-     * @param ruleRegistry 字段规则注册表
+     * @param ruleRegistry   字段规则注册表
      */
     public SafeLogSerializer(MaskingService maskingService, MaskRuleRegistry ruleRegistry) {
         this.maskingService = maskingService;

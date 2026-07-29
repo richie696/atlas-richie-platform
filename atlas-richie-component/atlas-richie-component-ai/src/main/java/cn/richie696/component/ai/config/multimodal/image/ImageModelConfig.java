@@ -16,6 +16,8 @@
 package cn.richie696.component.ai.config.multimodal.image;
 
 import lombok.Data;
+import java.net.URL;
+import java.util.Set;
 
 /**
  * 文生图(Image)模型配置 — 映射 {@code platform.component.ai.image.<key>}。
@@ -27,21 +29,33 @@ import lombok.Data;
 @Data
 public class ImageModelConfig {
 
-    /** 厂商(枚举)— 见 {@link ImageProvider}。 */
+    /**
+     * 厂商(枚举)— 见 {@link ImageProvider}。
+     */
     private ImageProvider provider;
 
-    /** 业务可读标识(默认与 Map key 相同)。 */
+    /**
+     * 业务可读标识(默认与 Map key 相同)。
+     */
     private String name;
 
-    /** DashScope / 其他厂商的 API Key。 */
+    /**
+     * DashScope / 其他厂商的 API Key。
+     */
     private String apiKey;
 
-    /** API Key 池 — Token Plan 多 key 轮询 / 限流后冷却。YAML: {@code api-keys: [sk-1, sk-2]}。 */
+    /**
+     * API Key 池 — Token Plan 多 key 轮询 / 限流后冷却。YAML: {@code api-keys: [sk-1, sk-2]}。
+     */
     private java.util.Set<String> apiKeys = new java.util.LinkedHashSet<>();
 
-    /** 厂商端点 URL(为空时适配器回落到默认 URL)。 */
+    /**
+     * 厂商端点 URL(为空时适配器回落到默认 URL)。
+     */
     private String baseUrl;
 
-    /** 文生图模型名(例如 "wanx-v1"),为空时使用默认值。 */
+    /**
+     * 文生图模型名(例如 "wanx-v1"),为空时使用默认值。
+     */
     private String model;
 }

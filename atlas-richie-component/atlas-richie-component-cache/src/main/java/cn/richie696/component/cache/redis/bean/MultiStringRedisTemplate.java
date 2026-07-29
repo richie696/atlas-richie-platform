@@ -16,10 +16,10 @@
 package cn.richie696.component.cache.redis.bean;
 
 import cn.richie696.contract.exception.PlatformRuntimeException;
+import jakarta.annotation.Nonnull;
 import lombok.NoArgsConstructor;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import jakarta.annotation.Nonnull;
 
 import java.util.Map;
 import java.util.Objects;
@@ -43,11 +43,14 @@ import java.util.concurrent.ConcurrentHashMap;
 @NoArgsConstructor
 public class MultiStringRedisTemplate extends StringRedisTemplate {
 
-    /** 从库/分库前缀到 StringRedisTemplate 的映射（prefix -> template） */
+    /**
+     * 从库/分库前缀到 StringRedisTemplate 的映射（prefix -> template）
+     */
     private final Map<String, StringRedisTemplate> slaveTemplateMap = new ConcurrentHashMap<>();
 
     /**
      * Constructs a new {@link MultiStringRedisTemplate} instance.
+     *
      * @param connectionFactory RedisConnectionFactory
      */
     public MultiStringRedisTemplate(RedisConnectionFactory connectionFactory) {
@@ -56,6 +59,7 @@ public class MultiStringRedisTemplate extends StringRedisTemplate {
 
     /**
      * 设置子节点template
+     *
      * @param slaveTemplateMap 子节点template
      */
     public void setSlaveTemplateMap(Map<String, StringRedisTemplate> slaveTemplateMap) {
@@ -64,6 +68,7 @@ public class MultiStringRedisTemplate extends StringRedisTemplate {
 
     /**
      * 根据key获取对应的template
+     *
      * @param key key
      * @return template
      */
@@ -73,6 +78,7 @@ public class MultiStringRedisTemplate extends StringRedisTemplate {
 
     /**
      * 根据key获取对应的template
+     *
      * @param key key
      * @return template
      */

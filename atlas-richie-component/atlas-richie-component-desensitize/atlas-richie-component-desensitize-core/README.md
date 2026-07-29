@@ -1,8 +1,12 @@
 # Atlas Richie Desensitize Core (atlas-richie-component-desensitize-core)
 
-> Pure-Java desensitization core: rules, strategies, registries, the `MaskingService` facade, the static `DesensitizeUtils`, and Spring Boot auto-configuration. No Web / Jackson dependencies — reusable in **any** JVM runtime and easy to unit-test.
+> Pure-Java desensitization core: rules, strategies, registries, the `MaskingService` facade, the static
+> `DesensitizeUtils`, and Spring Boot auto-configuration. No Web / Jackson dependencies — reusable in **any** JVM runtime
+> and easy to unit-test.
 
-This is the **foundation layer** of `atlas-richie-component-desensitize`. It is consumed by the `desensitize-jackson` and `desensitize-logging` modules, and can be used directly in business code via `DesensitizeUtils.mask(...)` / `DesensitizeUtils.toSafeJson(...)`.
+This is the **foundation layer** of `atlas-richie-component-desensitize`. It is consumed by the `desensitize-jackson`
+and `desensitize-logging` modules, and can be used directly in business code via `DesensitizeUtils.mask(...)` /
+`DesensitizeUtils.toSafeJson(...)`.
 
 ---
 
@@ -14,35 +18,36 @@ This is the **foundation layer** of `atlas-richie-component-desensitize`. It is 
 - [📦 Key Classes](#📦-key-classes)
 - [⚙️ Configuration Reference](#⚙️-configuration-reference)
 - [🚀 Quick Start](#🚀-quick-start)
-  - [1. Add dependency](#1-add-dependency)
-  - [2. (Optional) Configure](#2-optional-configure)
-  - [3. Inject or call statically](#3-inject-or-call-statically)
+    - [1. Add dependency](#1-add-dependency)
+    - [2. (Optional) Configure](#2-optional-configure)
+    - [3. Inject or call statically](#3-inject-or-call-statically)
 - [🧪 Usage Examples & Effects](#🧪-usage-examples-&-effects)
-  - [A. Scalar masking](#a-scalar-masking)
-  - [B. Explicit scene](#b-explicit-scene)
-  - [C. Map masking (case-insensitive key lookup)](#c-map-masking-case-insensitive-key-lookup)
-  - [D. Bean → safe JSON](#d-bean-→-safe-json)
-  - [E. Map → safe string](#e-map-→-safe-string)
+    - [A. Scalar masking](#a-scalar-masking)
+    - [B. Explicit scene](#b-explicit-scene)
+    - [C. Map masking (case-insensitive key lookup)](#c-map-masking-case-insensitive-key-lookup)
+    - [D. Bean → safe JSON](#d-bean-→-safe-json)
+    - [E. Map → safe string](#e-map-→-safe-string)
 - [🔌 Extension Points](#🔌-extension-points)
-  - [1. Register a custom strategy](#1-register-a-custom-strategy)
-  - [2. Replace the permission evaluator](#2-replace-the-permission-evaluator)
-  - [3. Add a custom `MaskType`](#3-add-a-custom-masktype)
+    - [1. Register a custom strategy](#1-register-a-custom-strategy)
+    - [2. Replace the permission evaluator](#2-replace-the-permission-evaluator)
+    - [3. Add a custom `MaskType`](#3-add-a-custom-masktype)
 - [🧩 Integration with Other Modules](#🧩-integration-with-other-modules)
 - [📐 Built-in Strategies](#📐-built-in-strategies)
 - [🛡️ Permission Bypass](#🛡️-permission-bypass)
 - [📚 Further Reading](#📚-further-reading)
+
 ---
 
 ## 🎯 Purpose
 
-| Concern | How core solves it |
-|---------|--------------------|
-| Single source of truth for masking rules | `MaskRuleRegistry` merges YAML fields + `@Sensitive` annotations into one view |
-| Multiple scenes (API / LOG / AUDIT / EXCEPTION) | `MaskScene` enum + per-scene `sensitive-keys` overrides |
+| Concern                                                 | How core solves it                                                                         |
+|---------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| Single source of truth for masking rules                | `MaskRuleRegistry` merges YAML fields + `@Sensitive` annotations into one view             |
+| Multiple scenes (API / LOG / AUDIT / EXCEPTION)         | `MaskScene` enum + per-scene `sensitive-keys` overrides                                    |
 | Multiple data shapes (String / Map / Bean / Collection) | `MaskingService` (scalar + Map), `ObjectMaskingService` (Bean / Collection via reflection) |
-| Extensibility | SPI `MaskingStrategy` + `MaskType.CUSTOM` |
-| Testability | No Spring required for the model & strategy layers |
-| Static-callable API for any code path | `DesensitizeUtils.mask` / `toSafeJson` / `toSafeString` |
+| Extensibility                                           | SPI `MaskingStrategy` + `MaskType.CUSTOM`                                                  |
+| Testability                                             | No Spring required for the model & strategy layers                                         |
+| Static-callable API for any code path                   | `DesensitizeUtils.mask` / `toSafeJson` / `toSafeString`                                    |
 
 ## 🏗️ Module Position
 
@@ -62,71 +67,78 @@ flowchart TB
     LOG --> CORE
 ```
 
-You can depend on `desensitize-core` alone if you only need programmatic / log-safe desensitization (no Jackson serialization hooks). Add `desensitize-jackson` for REST API egress; add `desensitize-logging` for Logback `ConversionRule` / TurboFilter hooks.
+You can depend on `desensitize-core` alone if you only need programmatic / log-safe desensitization (no Jackson
+serialization hooks). Add `desensitize-jackson` for REST API egress; add `desensitize-logging` for Logback
+`ConversionRule` / TurboFilter hooks.
 
 ## 🧠 Design Philosophy
 
-1. **Pure-Java core, zero infrastructure coupling.** The core has no Spring Web, no Jackson, no SLF4J on the classpath. Models and strategies are plain POJOs that can be exercised in a unit test in milliseconds.
+1. **Pure-Java core, zero infrastructure coupling.** The core has no Spring Web, no Jackson, no SLF4J on the classpath.
+   Models and strategies are plain POJOs that can be exercised in a unit test in milliseconds.
 2. **Three orthogonal axes: Type × Scene × Rule.**
-   - **Type** (`MaskType`) — what kind of data (PHONE, ID_CARD, EMAIL, ...).
-   - **Scene** (`MaskScene`) — where the data is leaving the system (API_RESPONSE / LOG / AUDIT / EXCEPTION).
-   - **Rule** (`MaskRule`) — concrete masking parameters (keep-left, keep-right, mask-char, custom-strategy).
-3. **Static facade backed by Spring beans.** `DesensitizeUtils` keeps a `volatile` reference to the Spring-managed `MaskingService`, so business code can call `DesensitizeUtils.mask(...)` from anywhere without injecting a bean — while still benefiting from Spring lifecycle, configuration, and tests.
-4. **Annotation first, configuration second.** `@Sensitive` on a Bean field is the recommended API-side declaration. YAML `fields` and `sensitive-keys` cover edge cases (third-party DTOs, dynamic keys).
-5. **Permission bypass is an *exception*, not a default.** `MaskPermissionEvaluator` lets you opt into "admins see plaintext" while keeping everyone else masked.
+    - **Type** (`MaskType`) — what kind of data (PHONE, ID_CARD, EMAIL, ...).
+    - **Scene** (`MaskScene`) — where the data is leaving the system (API_RESPONSE / LOG / AUDIT / EXCEPTION).
+    - **Rule** (`MaskRule`) — concrete masking parameters (keep-left, keep-right, mask-char, custom-strategy).
+3. **Static facade backed by Spring beans.** `DesensitizeUtils` keeps a `volatile` reference to the Spring-managed
+   `MaskingService`, so business code can call `DesensitizeUtils.mask(...)` from anywhere without injecting a bean —
+   while still benefiting from Spring lifecycle, configuration, and tests.
+4. **Annotation first, configuration second.** `@Sensitive` on a Bean field is the recommended API-side declaration.
+   YAML `fields` and `sensitive-keys` cover edge cases (third-party DTOs, dynamic keys).
+5. **Permission bypass is an *exception*, not a default.** `MaskPermissionEvaluator` lets you opt into "admins see
+   plaintext" while keeping everyone else masked.
 
 ## 📦 Key Classes
 
-| Package | Type | Responsibility |
-|---------|------|---------------|
-| `model` | `MaskType` | `PHONE` / `ID_CARD` / `EMAIL` / `BANK_CARD` / `NAME` / `ADDRESS` / `PASSWORD` / `CUSTOM` |
-| `model` | `MaskScene` | `API_RESPONSE` / `LOG` / `AUDIT` / `EXCEPTION` |
-| `model` | `MaskRule` | `type`, `keepLeft`, `keepRight`, `maskChar`, `customStrategy`; provides `defaultKeepLeft/Right` |
-| `model` | `MaskContext` | record `(scene, fieldName, declaringClass, roles)`; `withRoles(...)` |
-| `annotation` | `@Sensitive` | field-level declaration: `type`, `scenes`, `customStrategy` |
-| `support` | `SensitiveLogArg` | `record(value, type)` wrapper for SLF4J parameters; factory methods per type |
-| `strategy` | `MaskingStrategy` | SPI: `supports(MaskType)` + `mask(raw, rule)` |
-| `strategy` | `AbstractKeepEdgeMaskingStrategy` | common "keep N left + keep N right" algorithm |
-| `strategy` | `*MaskingStrategy` | built-ins: `Phone`, `IdCard`, `BankCard`, `Name`, `Address`, `Password`, `Email` |
-| `strategy` | `MaskingStrategyRegistry` | SPI loader: indexes strategies by `supports` |
-| `registry` | `MaskRuleRegistry` | resolves a field's `MaskType` from `@Sensitive` → YAML `fields`; builds `MaskRule` from `type-rules` |
-| `registry` | `SensitiveKeyRegistry` | resolves Map key → `MaskType` with global + per-scene overrides (case-insensitive) |
-| `service` | `MaskingService` | `mask(String, MaskType[, MaskScene])` and `maskMap(Map[, MaskScene])` |
-| `service` | `DefaultMaskingService` | default impl; honors global toggle, scene toggle, permission evaluator |
-| `service` | `ObjectMaskingService` | `toSafeJson(Object)`, `toSafeString(Map)` for Bean / Map / Collection |
-| `service` | `DefaultObjectMaskingService` | default impl backed by reflection-based `SafeLogSerializer` |
-| `serializer` | `SafeLogSerializer` | pure-Java recursive serializer producing JSON-like strings; honors `@Sensitive` and `sensitive-keys`; MAX_DEPTH = 8 |
-| `permission` | `MaskPermissionEvaluator` | `@FunctionalInterface boolean shouldMask(MaskContext)` |
-| `permission` | `DefaultMaskPermissionEvaluator` | returns `true` unless `permission.enabled` AND current role is in `plainTextRoles` |
-| `util` | `DesensitizeUtils` | **static facade** — entry point for application code |
-| `config` | `DesensitizeProperties` | `@ConfigurationProperties("platform.component.desensitize")` |
-| `config` | `DesensitizeAutoConfiguration` | registers `MaskingService`, `MaskRuleRegistry`, `SensitiveKeyRegistry`, `MaskingStrategyRegistry`, `MaskPermissionEvaluator`, `SafeLogSerializer`, `ObjectMaskingService`, `DesensitizeUtilsInitializer` |
+| Package      | Type                              | Responsibility                                                                                                                                                                                           |
+|--------------|-----------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `model`      | `MaskType`                        | `PHONE` / `ID_CARD` / `EMAIL` / `BANK_CARD` / `NAME` / `ADDRESS` / `PASSWORD` / `CUSTOM`                                                                                                                 |
+| `model`      | `MaskScene`                       | `API_RESPONSE` / `LOG` / `AUDIT` / `EXCEPTION`                                                                                                                                                           |
+| `model`      | `MaskRule`                        | `type`, `keepLeft`, `keepRight`, `maskChar`, `customStrategy`; provides `defaultKeepLeft/Right`                                                                                                          |
+| `model`      | `MaskContext`                     | record `(scene, fieldName, declaringClass, roles)`; `withRoles(...)`                                                                                                                                     |
+| `annotation` | `@Sensitive`                      | field-level declaration: `type`, `scenes`, `customStrategy`                                                                                                                                              |
+| `support`    | `SensitiveLogArg`                 | `record(value, type)` wrapper for SLF4J parameters; factory methods per type                                                                                                                             |
+| `strategy`   | `MaskingStrategy`                 | SPI: `supports(MaskType)` + `mask(raw, rule)`                                                                                                                                                            |
+| `strategy`   | `AbstractKeepEdgeMaskingStrategy` | common "keep N left + keep N right" algorithm                                                                                                                                                            |
+| `strategy`   | `*MaskingStrategy`                | built-ins: `Phone`, `IdCard`, `BankCard`, `Name`, `Address`, `Password`, `Email`                                                                                                                         |
+| `strategy`   | `MaskingStrategyRegistry`         | SPI loader: indexes strategies by `supports`                                                                                                                                                             |
+| `registry`   | `MaskRuleRegistry`                | resolves a field's `MaskType` from `@Sensitive` → YAML `fields`; builds `MaskRule` from `type-rules`                                                                                                     |
+| `registry`   | `SensitiveKeyRegistry`            | resolves Map key → `MaskType` with global + per-scene overrides (case-insensitive)                                                                                                                       |
+| `service`    | `MaskingService`                  | `mask(String, MaskType[, MaskScene])` and `maskMap(Map[, MaskScene])`                                                                                                                                    |
+| `service`    | `DefaultMaskingService`           | default impl; honors global toggle, scene toggle, permission evaluator                                                                                                                                   |
+| `service`    | `ObjectMaskingService`            | `toSafeJson(Object)`, `toSafeString(Map)` for Bean / Map / Collection                                                                                                                                    |
+| `service`    | `DefaultObjectMaskingService`     | default impl backed by reflection-based `SafeLogSerializer`                                                                                                                                              |
+| `serializer` | `SafeLogSerializer`               | pure-Java recursive serializer producing JSON-like strings; honors `@Sensitive` and `sensitive-keys`; MAX_DEPTH = 8                                                                                      |
+| `permission` | `MaskPermissionEvaluator`         | `@FunctionalInterface boolean shouldMask(MaskContext)`                                                                                                                                                   |
+| `permission` | `DefaultMaskPermissionEvaluator`  | returns `true` unless `permission.enabled` AND current role is in `plainTextRoles`                                                                                                                       |
+| `util`       | `DesensitizeUtils`                | **static facade** — entry point for application code                                                                                                                                                     |
+| `config`     | `DesensitizeProperties`           | `@ConfigurationProperties("platform.component.desensitize")`                                                                                                                                             |
+| `config`     | `DesensitizeAutoConfiguration`    | registers `MaskingService`, `MaskRuleRegistry`, `SensitiveKeyRegistry`, `MaskingStrategyRegistry`, `MaskPermissionEvaluator`, `SafeLogSerializer`, `ObjectMaskingService`, `DesensitizeUtilsInitializer` |
 
 ## ⚙️ Configuration Reference
 
 `DesensitizeProperties` is bound to `platform.component.desensitize.*`.
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `enabled` | `boolean` | `true` | Global on/off. `false` short-circuits all masking (returns original). |
-| `default-mask-char` | `char` | `*` | Default mask character for all rules. |
-| `scenes.api-response` | `boolean` | `true` | API scene toggle. |
-| `scenes.log` | `boolean` | `true` | LOG scene toggle. |
-| `scenes.audit` | `boolean` | `true` | AUDIT scene toggle. |
-| `scenes.exception` | `boolean` | `true` | EXCEPTION scene toggle. |
-| `permission.enabled` | `boolean` | `false` | When `true`, look at `plainTextRoles` to bypass masking. |
-| `permission.plainTextRoles` | `Set<String>` | `[]` | Roles that see plaintext when `permission.enabled=true`. |
-| `sensitive-keys` | `Map<String, MaskType>` | `{}` | Global key-name → type. Used for API-returned `Map` and log `Map`. Case-insensitive. |
-| `type-rules.<TYPE>.keepLeft` | `Integer` | per-type default | Override default left retention (e.g. `PHONE → 3`). |
-| `type-rules.<TYPE>.keepRight` | `Integer` | per-type default | Override default right retention (e.g. `PHONE → 4`). |
-| `type-rules.<TYPE>.maskChar` | `Character` | `default-mask-char` | Per-type mask character override. |
-| `fields.<FQN>.<field>` | `MaskType` | `{}` | Class-name + field-name fallback when no `@Sensitive` annotation is present. |
-| `api-response.sensitive-keys` | `Map<String, MaskType>` | `{}` | Scene override (merged on top of global). |
-| `log.sensitive-keys` | `Map<String, MaskType>` | `{}` | LOG/AUDIT scene override (also used by logging module). |
-| `log-regex-fallback.enabled` | `boolean` | `false` | (Used by future regex fallback path) |
-| `log-regex-fallback.rules` | `Map<MaskType, String>` | `{}` | Regex patterns per type. |
-| `exception-regex-fallback.enabled` | `boolean` | `false` | (Used by future exception fallback path) |
-| `exception-regex-fallback.rules` | `Map<MaskType, String>` | `{}` | Regex patterns per type. |
+| Property                           | Type                    | Default             | Description                                                                          |
+|------------------------------------|-------------------------|---------------------|--------------------------------------------------------------------------------------|
+| `enabled`                          | `boolean`               | `true`              | Global on/off. `false` short-circuits all masking (returns original).                |
+| `default-mask-char`                | `char`                  | `*`                 | Default mask character for all rules.                                                |
+| `scenes.api-response`              | `boolean`               | `true`              | API scene toggle.                                                                    |
+| `scenes.log`                       | `boolean`               | `true`              | LOG scene toggle.                                                                    |
+| `scenes.audit`                     | `boolean`               | `true`              | AUDIT scene toggle.                                                                  |
+| `scenes.exception`                 | `boolean`               | `true`              | EXCEPTION scene toggle.                                                              |
+| `permission.enabled`               | `boolean`               | `false`             | When `true`, look at `plainTextRoles` to bypass masking.                             |
+| `permission.plainTextRoles`        | `Set<String>`           | `[]`                | Roles that see plaintext when `permission.enabled=true`.                             |
+| `sensitive-keys`                   | `Map<String, MaskType>` | `{}`                | Global key-name → type. Used for API-returned `Map` and log `Map`. Case-insensitive. |
+| `type-rules.<TYPE>.keepLeft`       | `Integer`               | per-type default    | Override default left retention (e.g. `PHONE → 3`).                                  |
+| `type-rules.<TYPE>.keepRight`      | `Integer`               | per-type default    | Override default right retention (e.g. `PHONE → 4`).                                 |
+| `type-rules.<TYPE>.maskChar`       | `Character`             | `default-mask-char` | Per-type mask character override.                                                    |
+| `fields.<FQN>.<field>`             | `MaskType`              | `{}`                | Class-name + field-name fallback when no `@Sensitive` annotation is present.         |
+| `api-response.sensitive-keys`      | `Map<String, MaskType>` | `{}`                | Scene override (merged on top of global).                                            |
+| `log.sensitive-keys`               | `Map<String, MaskType>` | `{}`                | LOG/AUDIT scene override (also used by logging module).                              |
+| `log-regex-fallback.enabled`       | `boolean`               | `false`             | (Used by future regex fallback path)                                                 |
+| `log-regex-fallback.rules`         | `Map<MaskType, String>` | `{}`                | Regex patterns per type.                                                             |
+| `exception-regex-fallback.enabled` | `boolean`               | `false`             | (Used by future exception fallback path)                                             |
+| `exception-regex-fallback.rules`   | `Map<MaskType, String>` | `{}`                | Regex patterns per type.                                                             |
 
 Minimal example:
 
@@ -181,7 +193,8 @@ platform:
 </dependencies>
 ```
 
-(`atlas-richie-component-desensitize-core` is automatically registered with Spring Boot auto-configuration through `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`.)
+(`atlas-richie-component-desensitize-core` is automatically registered with Spring Boot auto-configuration through
+`META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`.)
 
 ### 2. (Optional) Configure
 
@@ -293,7 +306,8 @@ DesensitizeUtils.toSafeJson(user);
 // -> {"phone":"138****8000","idCard":"110101********1234"}
 ```
 
-`toSafeJson` uses reflection (no Jackson needed). It walks the class hierarchy, respects `@Sensitive.scenes()`, and applies `MaskType` resolution through `MaskRuleRegistry`.
+`toSafeJson` uses reflection (no Jackson needed). It walks the class hierarchy, respects `@Sensitive.scenes()`, and
+applies `MaskType` resolution through `MaskRuleRegistry`.
 
 ### E. Map → safe string
 
@@ -323,7 +337,8 @@ public class OrderIdMaskingStrategy implements MaskingStrategy {
 }
 ```
 
-Pair it with a custom rule via `@Sensitive(type = MaskType.CUSTOM, customStrategy = "...")`. (The lookup chain is planned in V2; for now route by `MaskType.CUSTOM` and read parameters from `rule.customStrategy()`.)
+Pair it with a custom rule via `@Sensitive(type = MaskType.CUSTOM, customStrategy = "...")`. (The lookup chain is
+planned in V2; for now route by `MaskType.CUSTOM` and read parameters from `rule.customStrategy()`.)
 
 ### 2. Replace the permission evaluator
 
@@ -340,34 +355,37 @@ public class RoleAwareMaskPermissionEvaluator implements MaskPermissionEvaluator
 }
 ```
 
-The default `DefaultMaskPermissionEvaluator` returns `true` (i.e. "should mask") unless `permission.enabled=true` and a role in `plainTextRoles` is present.
+The default `DefaultMaskPermissionEvaluator` returns `true` (i.e. "should mask") unless `permission.enabled=true` and a
+role in `plainTextRoles` is present.
 
 ### 3. Add a custom `MaskType`
 
-`MaskType` is an enum. To extend without modifying core, use `MaskType.CUSTOM` and dispatch on `rule.customStrategy()` inside your strategy.
+`MaskType` is an enum. To extend without modifying core, use `MaskType.CUSTOM` and dispatch on `rule.customStrategy()`
+inside your strategy.
 
 ## 🧩 Integration with Other Modules
 
-| Consumer | What it gets from core |
-|----------|------------------------|
+| Consumer              | What it gets from core                                                         |
+|-----------------------|--------------------------------------------------------------------------------|
 | `desensitize-jackson` | `MaskingService`, `SensitiveKeyRegistry`, `@Sensitive` annotation, `MaskScene` |
-| `desensitize-logging` | `DesensitizeUtils`, `SensitiveLogArg`, `MaskScene`, `sensitive-keys` |
-| Application code | `DesensitizeUtils` static facade for log + debug output |
+| `desensitize-logging` | `DesensitizeUtils`, `SensitiveLogArg`, `MaskScene`, `sensitive-keys`           |
+| Application code      | `DesensitizeUtils` static facade for log + debug output                        |
 
 ## 📐 Built-in Strategies
 
-| `MaskType` | Algorithm | Default keep | Example in → out |
-|------------|-----------|--------------|------------------|
-| `PHONE` | keep edge | 3 + 4 | `13812348000` → `138****8000` |
-| `ID_CARD` | keep edge | 6 + 4 | `110101199001011234` → `110101********1234` |
-| `BANK_CARD` | keep edge | 4 + 4 | `6222021234567890` → `6222***********7890` |
-| `EMAIL` | keep first local char | 1 + 0 | `zhangsan@example.com` → `z***@example.com` |
-| `NAME` | keep edge | 1 + 0 | `ZhangSan` → `Z*****` |
-| `ADDRESS` | keep edge | 6 + 0 | `北京市朝阳区望京东路四号` → `北京市朝******` |
-| `PASSWORD` | full mask | 0 + 0 | `supersecret` → `***********` |
-| `CUSTOM` | (no built-in; bring your own) | 0 + 0 | – |
+| `MaskType`  | Algorithm                     | Default keep | Example in → out                              |
+|-------------|-------------------------------|--------------|-----------------------------------------------|
+| `PHONE`     | keep edge                     | 3 + 4        | `13812348000` → `138****8000`                 |
+| `ID_CARD`   | keep edge                     | 6 + 4        | `110101199001011234` → `110101********1234`   |
+| `BANK_CARD` | keep edge                     | 4 + 4        | `6222021234567890` → `6222***********7890`    |
+| `EMAIL`     | keep first local char         | 1 + 0        | `zhangsan@example.com` → `z***@example.com`   |
+| `NAME`      | keep edge                     | 1 + 0        | `ZhangSan` → `Z*****`                         |
+| `ADDRESS`   | keep edge                     | 6 + 0        | `北京市朝阳区望京东路四号` → `北京市朝******` |
+| `PASSWORD`  | full mask                     | 0 + 0        | `supersecret` → `***********`                 |
+| `CUSTOM`    | (no built-in; bring your own) | 0 + 0        | –                                             |
 
-`AbstractKeepEdgeMaskingStrategy.mask` is shared by `PHONE` / `ID_CARD` / `BANK_CARD` / `NAME` / `ADDRESS`. If `keepLeft + keepRight >= raw.length()`, the entire string is replaced with the mask char (i.e. fully masked).
+`AbstractKeepEdgeMaskingStrategy.mask` is shared by `PHONE` / `ID_CARD` / `BANK_CARD` / `NAME` / `ADDRESS`. If
+`keepLeft + keepRight >= raw.length()`, the entire string is replaced with the mask char (i.e. fully masked).
 
 ## 🛡️ Permission Bypass
 
@@ -382,7 +400,9 @@ platform:
           - ROLE_AUDIT_PLAINTEXT
 ```
 
-When enabled, calls carrying a `MaskContext` whose roles intersect `plain-text-roles` return the **original** string. Use this to allow "user viewing own profile" or "auditor viewing plaintext with audit trail" without disabling the scene entirely.
+When enabled, calls carrying a `MaskContext` whose roles intersect `plain-text-roles` return the **original** string.
+Use this to allow "user viewing own profile" or "auditor viewing plaintext with audit trail" without disabling the scene
+entirely.
 
 Programmatic usage:
 
@@ -395,5 +415,9 @@ maskingService.mask("13812348000", ctx, MaskType.PHONE);
 ## 📚 Further Reading
 
 - **Parent component**: [`../README.md`](../README.md) — overall design, sequence diagrams, configuration model.
-- **Jackson integration**: [`../atlas-richie-component-desensitize-jackson/README.md`](../atlas-richie-component-desensitize-jackson/README.md) — `@Sensitive` + `Map` desensitization for REST responses.
-- **Logging integration**: [`../atlas-richie-component-desensitize-logging/README.md`](../atlas-richie-component-desensitize-logging/README.md) — Logback `ConversionRule` / TurboFilter hooks.
+- **Jackson integration**: [
+  `../atlas-richie-component-desensitize-jackson/README.md`](../atlas-richie-component-desensitize-jackson/README.md) —
+  `@Sensitive` + `Map` desensitization for REST responses.
+- **Logging integration**: [
+  `../atlas-richie-component-desensitize-logging/README.md`](../atlas-richie-component-desensitize-logging/README.md) —
+  Logback `ConversionRule` / TurboFilter hooks.

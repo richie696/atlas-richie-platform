@@ -45,18 +45,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 @EnabledIf("isDockerAvailable")
 @SpringBootTest(
-    classes = S3AutoConfiguration.class,
-    webEnvironment = SpringBootTest.WebEnvironment.NONE
+        classes = S3AutoConfiguration.class,
+        webEnvironment = SpringBootTest.WebEnvironment.NONE
 )
 @TestPropertySource(properties = {
-    "platform.component.storage.object.engine=aws_s3",
-    "platform.component.storage.object.endpoint=http://127.0.0.1:${rustfs.port}",
-    "platform.component.storage.object.access-key-id=rustfsadmin",
-    "platform.component.storage.object.access-key-secret=rustfsadmin",
-    "platform.component.storage.object.bucket-name=rustfs-test-bucket",
-    "platform.component.storage.object.region=us-east-1",
-    "platform.component.storage.object.base-path=test",
-    "platform.component.storage.object.auto-create-bucket=true"
+        "platform.component.storage.object.engine=aws_s3",
+        "platform.component.storage.object.endpoint=http://127.0.0.1:${rustfs.port}",
+        "platform.component.storage.object.access-key-id=rustfsadmin",
+        "platform.component.storage.object.access-key-secret=rustfsadmin",
+        "platform.component.storage.object.bucket-name=rustfs-test-bucket",
+        "platform.component.storage.object.region=us-east-1",
+        "platform.component.storage.object.base-path=test",
+        "platform.component.storage.object.auto-create-bucket=true"
 })
 class S3AutoConfigurationRustFSIT {
 
@@ -78,7 +78,7 @@ class S3AutoConfigurationRustFSIT {
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) {
         registry.add("platform.component.storage.object.endpoint",
-            () -> "http://127.0.0.1:" + rustfsContainer.getMappedPort(9000));
+                () -> "http://127.0.0.1:" + rustfsContainer.getMappedPort(9000));
     }
 
     @Autowired

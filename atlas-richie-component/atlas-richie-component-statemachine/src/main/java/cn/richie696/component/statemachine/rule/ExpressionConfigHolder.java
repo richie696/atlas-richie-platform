@@ -28,7 +28,6 @@ import java.util.Set;
  * <p>
  * 静态配置持有者，用于在 StateTransitionRule（record 类型）中访问表达式配置。
  * 因为 Java record 无法直接使用 Spring 依赖注入，所以使用静态方式持有配置。
- * 
  *
  * @author richie696
  * @since 1.0.0
@@ -47,7 +46,6 @@ public class ExpressionConfigHolder {
      * <p>
      * 返回表达式执行时间的慢查询阈值（毫秒）。
      * 如果配置为 null，则返回默认值 50 毫秒。
-     * 
      *
      * @return 慢查询阈值（毫秒）
      */
@@ -60,7 +58,6 @@ public class ExpressionConfigHolder {
      * <p>
      * 返回是否启用表达式安全检查。
      * 如果配置为 null，则默认启用安全检查。
-     * 
      *
      * @return true 表示启用安全检查，false 表示不启用
      */
@@ -73,7 +70,6 @@ public class ExpressionConfigHolder {
      * <p>
      * 返回是否启用表达式执行的详细日志记录。
      * 如果配置为 null 或未启用，则返回 false。
-     * 
      *
      * @return true 表示启用详细日志，false 表示不启用
      */
@@ -86,28 +82,27 @@ public class ExpressionConfigHolder {
      * <p>
      * 返回表达式安全黑名单集合，包含默认黑名单和自定义黑名单。
      * 黑名单用于防止执行危险的方法或类（如 Runtime.exec、System.exit 等）。
-     * 
      *
      * @return 安全黑名单集合（包含默认和自定义黑名单）
      */
     public static Set<String> getSecurityBlacklist() {
         Set<String> blacklist = new HashSet<>();
-        
+
         // 默认黑名单
         blacklist.addAll(Arrays.asList(
-            "java.lang.Runtime",
-            "ProcessBuilder",
-            "System.exit",
-            "Class.forName",
-            "ClassLoader",
-            "java.lang.reflect",
-            "new java.io",
-            "new java.net",
-            "java.nio.file",
-            "Thread.",
-            "Executors",
-            "System.setProperty",
-            "getClass()"
+                "java.lang.Runtime",
+                "ProcessBuilder",
+                "System.exit",
+                "Class.forName",
+                "ClassLoader",
+                "java.lang.reflect",
+                "new java.io",
+                "new java.net",
+                "java.nio.file",
+                "Thread.",
+                "Executors",
+                "System.setProperty",
+                "getClass()"
         ));
 
         // 从配置中添加自定义黑名单

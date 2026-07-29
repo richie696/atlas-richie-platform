@@ -42,14 +42,13 @@ import java.util.Map;
  *   <li>{@code meta} — 永不 null, 至少含 {@code "format"} key 标识来源 parser</li>
  * </ul>
  *
- * @param format        MIME 类型, 如 {@code "image/png"}, {@code "image/jpeg"}
- * @param data          图片原始字节
- * @param name          图片名称 (可选, 来自 docx/pptx 嵌入信息)
- * @param pageNumber    所在 PDF 页码 (PDF 场景)
- * @param slideNumber   所在 PPT slide 编号 (PPT 场景)
- * @param sectionPath   层级路径, 如 {@code /file.docx/Page[3]/Image[1]}
- * @param meta          附加元数据 (宽/高/DPI/坐标等可选信息)
- *
+ * @param format      MIME 类型, 如 {@code "image/png"}, {@code "image/jpeg"}
+ * @param data        图片原始字节
+ * @param name        图片名称 (可选, 来自 docx/pptx 嵌入信息)
+ * @param pageNumber  所在 PDF 页码 (PDF 场景)
+ * @param slideNumber 所在 PPT slide 编号 (PPT 场景)
+ * @param sectionPath 层级路径, 如 {@code /file.docx/Page[3]/Image[1]}
+ * @param meta        附加元数据 (宽/高/DPI/坐标等可选信息)
  * @author richie696
  * @version 1.0
  * @since 2026-07-08

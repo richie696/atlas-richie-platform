@@ -23,50 +23,75 @@ import cn.richie696.contract.model.TenantPrincipal;
 import org.apache.ibatis.reflection.DefaultReflectorFactory;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("TenantMetaObjectHandler — INSERT 自动填充 tenant_id")
 class TenantMetaObjectHandlerTest {
 
-    /** 测试 Bean — 含 tenantId 字段 */
+    /**
+     * 测试 Bean — 含 tenantId 字段
+     */
     static class DemoEntity {
         private Long id;
         private Long tenantId;
         private String name;
 
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
-        public Long getTenantId() { return tenantId; }
-        public void setTenantId(Long tenantId) { this.tenantId = tenantId; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public Long getTenantId() {
+            return tenantId;
+        }
+
+        public void setTenantId(Long tenantId) {
+            this.tenantId = tenantId;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 
-    /** 测试 Bean — 不含 tenantId 字段,验证 getter 缺失场景 */
+    /**
+     * 测试 Bean — 不含 tenantId 字段,验证 getter 缺失场景
+     */
     static class NoTenantEntity {
         private Long id;
         private String name;
 
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 
     private static MetaObject metaFor(Object bean) {
         return MetaObject.forObject(bean,
-            SystemMetaObject.DEFAULT_OBJECT_FACTORY,
-            SystemMetaObject.DEFAULT_OBJECT_WRAPPER_FACTORY,
-            new DefaultReflectorFactory());
+                SystemMetaObject.DEFAULT_OBJECT_FACTORY,
+                SystemMetaObject.DEFAULT_OBJECT_WRAPPER_FACTORY,
+                new DefaultReflectorFactory());
     }
 
     private MultiTenancyProperties properties;
@@ -139,12 +164,12 @@ class TenantMetaObjectHandlerTest {
             DemoEntity entity = new DemoEntity();
 
             BusinessException ex = assertThrows(BusinessException.class,
-                () -> handler.insertFill(metaFor(entity)));
+                    () -> handler.insertFill(metaFor(entity)));
 
             assertTrue(ex.getMessage().contains("Tenant context not bound"),
-                "异常消息应明确指出 'Tenant context not bound'");
+                    "异常消息应明确指出 'Tenant context not bound'");
             assertTrue(ex.getMessage().contains("multi-tenancy.enforce-auth-tenant=false"),
-                "异常消息应提示如何关闭 enforce 模式");
+                    "异常消息应提示如何关闭 enforce 模式");
         }
 
         @Test

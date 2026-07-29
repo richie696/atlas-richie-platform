@@ -56,7 +56,17 @@ public final class StreammqRedisIntegrationTestSupport implements RedisIntegrati
 
     @Override
     public void appendPropertyPairs(List<String> pairs) {
+        int before = pairs.size();
         DELEGATE.appendPropertyPairs(pairs);
+        // AtlasRedisProperties 绑定前缀为 platform.component.cache.redis，
+        // 而 DELEGATE 只输出 spring.data.redis.*，需同时映射到组件前缀。
+        for (int i = before; i < pairs.size(); i++) {
+            String pair = pairs.get(i);
+            if (pair.startsWith("spring.data.redis.")) {
+                String suffix = pair.substring("spring.data.redis.".length());
+                pairs.add("platform.component.cache.redis." + suffix);
+            }
+        }
     }
 
     private static void appendComponentProperties(List<String> pairs) {

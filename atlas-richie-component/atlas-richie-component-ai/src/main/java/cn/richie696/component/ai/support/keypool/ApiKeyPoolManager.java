@@ -24,6 +24,8 @@ import org.springframework.stereotype.Component;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * API Key 池管理器 — 按"业务名"懒加载创建 {@link ApiKeyPool}。
@@ -80,7 +82,9 @@ public class ApiKeyPoolManager {
         });
     }
 
-    /** 关闭所有池 — Spring bean 销毁时调用。 */
+    /**
+     * 关闭所有池 — Spring bean 销毁时调用。
+     */
     public void closeAll() {
         pools.forEach((name, p) -> {
             try {
@@ -92,7 +96,9 @@ public class ApiKeyPoolManager {
         pools.clear();
     }
 
-    /** 健康检查:列出所有池状态。 */
+    /**
+     * 健康检查:列出所有池状态。
+     */
     public java.util.Map<String, PoolStats> stats() {
         java.util.Map<String, PoolStats> result = new java.util.LinkedHashMap<>();
         pools.forEach((name, p) -> result.put(name, new PoolStats(p.getTotalKeys(), p.getNumActive(), p.getNumCooldown())));
@@ -103,8 +109,11 @@ public class ApiKeyPoolManager {
         return businessName;
     }
 
-    /** 池统计快照。 */
-    public record PoolStats(int totalKeys, int numActive, int numCooldown) {}
+    /**
+     * 池统计快照。
+     */
+    public record PoolStats(int totalKeys, int numActive, int numCooldown) {
+    }
 
     /**
      * 关闭(池 enabled=false)时的退化实现 — 每次取第一个 key,不做冷却/限流处理。

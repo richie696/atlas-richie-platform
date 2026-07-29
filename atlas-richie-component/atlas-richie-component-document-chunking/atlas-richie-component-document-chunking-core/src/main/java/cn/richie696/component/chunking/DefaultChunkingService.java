@@ -5,11 +5,7 @@ import cn.richie696.component.chunking.model.ChunkingResult;
 import cn.richie696.component.chunking.model.ChunkingRule;
 import cn.richie696.component.chunking.spi.SemanticBoundaryAdvisor;
 import cn.richie696.component.chunking.spi.TokenCounter;
-import cn.richie696.component.chunking.strategy.ChunkingStrategy;
-import cn.richie696.component.chunking.strategy.ChunkingStrategyFactory;
-import cn.richie696.component.chunking.strategy.SemanticChunkingStrategy;
-import cn.richie696.component.chunking.strategy.StreamingChunkingStrategy;
-import cn.richie696.component.chunking.strategy.StreamingStrategyResolver;
+import cn.richie696.component.chunking.strategy.*;
 
 import java.util.List;
 import java.util.Objects;
@@ -27,12 +23,16 @@ public final class DefaultChunkingService implements ChunkingService, StreamingS
     private final ChunkingRule defaultRule;
     private final ChunkingStrategyFactory strategyFactory;
 
-    /** 用于脱离 Spring 的快速调用：RECURSIVE、近似 token 计数器与默认保护阈值。 */
+    /**
+     * 用于脱离 Spring 的快速调用：RECURSIVE、近似 token 计数器与默认保护阈值。
+     */
     public DefaultChunkingService() {
         this(ChunkingRule.recursiveDefaults(1_600, 160), approximateTokenCounter(), 80, 10_000, null);
     }
 
-    /** 构造一个只包含八种确定性策略的服务。 */
+    /**
+     * 构造一个只包含八种确定性策略的服务。
+     */
     public DefaultChunkingService(ChunkingRule defaultRule, TokenCounter tokenCounter,
                                   int minChunkCharacters, int maxChunksPerDocument) {
         this(defaultRule, tokenCounter, minChunkCharacters, maxChunksPerDocument, null);
@@ -114,12 +114,12 @@ public final class DefaultChunkingService implements ChunkingService, StreamingS
     private static boolean isPunctuation(char character) {
         return switch (Character.getType(character)) {
             case Character.CONNECTOR_PUNCTUATION,
-                    Character.DASH_PUNCTUATION,
-                    Character.START_PUNCTUATION,
-                    Character.END_PUNCTUATION,
-                    Character.INITIAL_QUOTE_PUNCTUATION,
-                    Character.FINAL_QUOTE_PUNCTUATION,
-                    Character.OTHER_PUNCTUATION -> true;
+                 Character.DASH_PUNCTUATION,
+                 Character.START_PUNCTUATION,
+                 Character.END_PUNCTUATION,
+                 Character.INITIAL_QUOTE_PUNCTUATION,
+                 Character.FINAL_QUOTE_PUNCTUATION,
+                 Character.OTHER_PUNCTUATION -> true;
             default -> false;
         };
     }

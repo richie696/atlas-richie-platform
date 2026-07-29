@@ -55,11 +55,11 @@ spring:
 
 ### GCP Pub/Sub Binder 配置
 
-| 配置项                                               | 说明           | 默认值 |
-|---------------------------------------------------|--------------|-----|
-| `spring.cloud.gcp.pubsub.project-id`              | GCP 项目ID     | -   |
-| `spring.cloud.gcp.pubsub.credentials.location`    | 凭证文件路径       | -   |
-| `spring.cloud.gcp.pubsub.credentials.encoded-key` | Base64 编码的凭证 | -   |
+| 配置项                                            | 说明              | 默认值 |
+|---------------------------------------------------|-------------------|--------|
+| `spring.cloud.gcp.pubsub.project-id`              | GCP 项目ID        | -      |
+| `spring.cloud.gcp.pubsub.credentials.location`    | 凭证文件路径      | -      |
+| `spring.cloud.gcp.pubsub.credentials.encoded-key` | Base64 编码的凭证 | -      |
 
 ### 详细配置
 

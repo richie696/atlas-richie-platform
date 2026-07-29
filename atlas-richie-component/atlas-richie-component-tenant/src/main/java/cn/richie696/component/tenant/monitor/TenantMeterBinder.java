@@ -90,48 +90,48 @@ public class TenantMeterBinder implements MeterBinder {
         circuitBreaker.getAllStatuses().forEach((key, snapshot) -> {
             List<Tag> tags = List.of(Tag.of("datasource", key));
             Gauge.builder("tenant.circuit.status", circuitBreaker, cb -> {
-                CircuitStatus st = cb.getStatus(key);
-                return switch (st) {
-                    case CLOSED -> 0;
-                    case OPEN -> 1;
-                    case HALF_OPEN -> 2;
-                };
-            })
-                .tags(tags)
-                .description("Circuit breaker status: 0=CLOSED, 1=OPEN, 2=HALF_OPEN")
-                .register(registry);
+                        CircuitStatus st = cb.getStatus(key);
+                        return switch (st) {
+                            case CLOSED -> 0;
+                            case OPEN -> 1;
+                            case HALF_OPEN -> 2;
+                        };
+                    })
+                    .tags(tags)
+                    .description("Circuit breaker status: 0=CLOSED, 1=OPEN, 2=HALF_OPEN")
+                    .register(registry);
 
             Gauge.builder("tenant.circuit.failures", circuitBreaker, cb -> {
-                    var all = cb.getAllStatuses();
-                    var snap = all.get(key);
-                    return snap != null ? (double) snap.failures() : 0.0;
-                })
-                .tags(tags)
-                .description("Current consecutive failure count")
-                .register(registry);
+                        var all = cb.getAllStatuses();
+                        var snap = all.get(key);
+                        return snap != null ? (double) snap.failures() : 0.0;
+                    })
+                    .tags(tags)
+                    .description("Current consecutive failure count")
+                    .register(registry);
         });
 
         // ==================== SQL 改写指标 ====================
 
         Gauge.builder("tenant.sql.rewrite.attempts", metricsCollector, TenantMetricsCollector::getLineRewriteAttempts)
-            .tag("type", "line")
-            .description("Column mode SQL rewrite attempts")
-            .register(registry);
+                .tag("type", "line")
+                .description("Column mode SQL rewrite attempts")
+                .register(registry);
 
         Gauge.builder("tenant.sql.rewrite.success", metricsCollector, TenantMetricsCollector::getLineRewriteSuccess)
-            .tag("type", "line")
-            .description("Column mode SQL rewrite success count")
-            .register(registry);
+                .tag("type", "line")
+                .description("Column mode SQL rewrite success count")
+                .register(registry);
 
         Gauge.builder("tenant.sql.rewrite.attempts", metricsCollector, TenantMetricsCollector::getTableRewriteAttempts)
-            .tag("type", "table")
-            .description("Table mode SQL rewrite attempts")
-            .register(registry);
+                .tag("type", "table")
+                .description("Table mode SQL rewrite attempts")
+                .register(registry);
 
         Gauge.builder("tenant.sql.rewrite.success", metricsCollector, TenantMetricsCollector::getTableRewriteSuccess)
-            .tag("type", "table")
-            .description("Table mode SQL rewrite success count")
-            .register(registry);
+                .tag("type", "table")
+                .description("Table mode SQL rewrite success count")
+                .register(registry);
 
         // ==================== 租户缓存指标 ====================
 
@@ -139,20 +139,20 @@ public class TenantMeterBinder implements MeterBinder {
         CachingTenantInfoProvider cache = cachingProvider != null ? cachingProvider.getIfUnique() : null;
         if (cache != null) {
             Gauge.builder("tenant.cache.size", cache, CachingTenantInfoProvider::size)
-                .description("Tenant info cache entry count")
-                .register(registry);
+                    .description("Tenant info cache entry count")
+                    .register(registry);
 
             Gauge.builder("tenant.cache.hits", metricsCollector, TenantMetricsCollector::getCacheHits)
-                .description("Tenant info cache hit count")
-                .register(registry);
+                    .description("Tenant info cache hit count")
+                    .register(registry);
 
             Gauge.builder("tenant.cache.misses", metricsCollector, TenantMetricsCollector::getCacheMisses)
-                .description("Tenant info cache miss count")
-                .register(registry);
+                    .description("Tenant info cache miss count")
+                    .register(registry);
 
             Gauge.builder("tenant.cache.hit.ratio", metricsCollector, TenantMetricsCollector::getCacheHitRatio)
-                .description("Tenant info cache hit ratio (0.0 ~ 1.0)")
-                .register(registry);
+                    .description("Tenant info cache hit ratio (0.0 ~ 1.0)")
+                    .register(registry);
         }
 
         log.info("TenantMeterBinder registered: circuit, sql.rewrite, cache metrics");

@@ -56,12 +56,12 @@ spring:
 
 ### AWS SNS Binder 配置
 
-| 配置项                                           | 说明             | 默认值 |
-|-----------------------------------------------|----------------|-----|
-| `spring.cloud.aws.sns.region`                 | AWS 区域         | -   |
-| `spring.cloud.aws.sns.credentials.access-key` | AWS Access Key | -   |
-| `spring.cloud.aws.sns.credentials.secret-key` | AWS Secret Key | -   |
-| `spring.cloud.aws.sns.topic-name`             | SNS Topic 名称   | -   |
+| 配置项                                        | 说明           | 默认值 |
+|-----------------------------------------------|----------------|--------|
+| `spring.cloud.aws.sns.region`                 | AWS 区域       | -      |
+| `spring.cloud.aws.sns.credentials.access-key` | AWS Access Key | -      |
+| `spring.cloud.aws.sns.credentials.secret-key` | AWS Secret Key | -      |
+| `spring.cloud.aws.sns.topic-name`             | SNS Topic 名称 | -      |
 
 ### 详细配置
 

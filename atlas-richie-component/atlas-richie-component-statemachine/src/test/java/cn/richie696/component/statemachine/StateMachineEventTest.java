@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class StateMachineEventTest {
 
-    enum TestEvent { CONFIRM, CANCEL }
+    enum TestEvent {CONFIRM, CANCEL}
 
     @Test
     void testOf_WithEnum() {

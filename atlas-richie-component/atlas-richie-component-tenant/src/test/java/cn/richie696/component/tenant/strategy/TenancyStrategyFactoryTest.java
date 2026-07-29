@@ -34,8 +34,15 @@ class TenancyStrategyFactoryTest {
 
     private cn.richie696.component.tenant.spi.TenantInfoProvider noop() {
         return new cn.richie696.component.tenant.spi.TenantInfoProvider() {
-            @Override public cn.richie696.component.tenant.model.TenantInfo getTenantInfo(Long tenantId) { return null; }
-            @Override public boolean exists(Long tenantId) { return false; }
+            @Override
+            public cn.richie696.component.tenant.model.TenantInfo getTenantInfo(Long tenantId) {
+                return null;
+            }
+
+            @Override
+            public boolean exists(Long tenantId) {
+                return false;
+            }
         };
     }
 

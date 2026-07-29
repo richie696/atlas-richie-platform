@@ -102,19 +102,19 @@ public final class InMemoryStorageEngineSupport {
 
         @Override
         public <T> cn.richie696.component.storage.bean.DownloadResponse<T> getData(@NonNull String key,
-                                                                                 @NonNull TypeReference<T> typeReference) {
+                                                                                   @NonNull TypeReference<T> typeReference) {
             return new cn.richie696.component.storage.bean.DownloadResponse<>();
         }
 
         @Override
         public cn.richie696.component.storage.bean.DownloadResponse<byte[]> getObject(@NonNull String key, @NonNull File targetPath,
-                                                                                    boolean returnData) {
+                                                                                      boolean returnData) {
             return new cn.richie696.component.storage.bean.DownloadResponse<>();
         }
 
         @Override
         public cn.richie696.component.storage.bean.DownloadResponse<byte[]> getResumableObject(@NonNull String key,
-                                                                                             @NonNull String targetPath, boolean returnData) {
+                                                                                               @NonNull String targetPath, boolean returnData) {
             return new cn.richie696.component.storage.bean.DownloadResponse<>();
         }
 

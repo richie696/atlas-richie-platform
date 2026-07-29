@@ -72,7 +72,9 @@ class IdempotentMessageDecoratorTest {
         NatsIdempotentChecker checker = mock(NatsIdempotentChecker.class);
         when(checker.isFirstTime(anyString(), anyLong())).thenReturn(true);
 
-        NatsMessageHandler inner = msg -> { throw new RuntimeException("processing error"); };
+        NatsMessageHandler inner = msg -> {
+            throw new RuntimeException("processing error");
+        };
 
         IdempotentMessageDecorator decorator = new IdempotentMessageDecorator(checker, 60_000L);
         NatsMessageHandler handler = decorator.decorate(inner);

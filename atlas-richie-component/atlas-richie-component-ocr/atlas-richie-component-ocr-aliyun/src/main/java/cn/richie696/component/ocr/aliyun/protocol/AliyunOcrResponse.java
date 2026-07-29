@@ -55,22 +55,22 @@ public record AliyunOcrResponse(
      * ({@code [[x,y],[x,y],[x,y],[x,y]]})。
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record AliyunWordBlock(
+    public record AliyunWordBlock (
             @JsonProperty("word") String word,
             @JsonProperty("prob") Integer prob,
-            @JsonProperty("pos") List<List<Integer>> pos,
-            @JsonProperty("lines") List<AliyunWordLine> lines
-    ) {
+            @JsonProperty("pos") List < List < Integer >> pos,
+            @JsonProperty("lines") List < AliyunWordLine > lines
+    ){
     }
 
     /**
      * 阿里云读光响应词级块 {@code lines} 数组元素 —— 行级子结构。
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record AliyunWordLine(
+    public record AliyunWordLine (
             @JsonProperty("word") String word,
             @JsonProperty("prob") Integer prob,
-            @JsonProperty("pos") List<List<Integer>> pos
-    ) {
+            @JsonProperty("pos") List < List < Integer >> pos
+    ){
     }
 }

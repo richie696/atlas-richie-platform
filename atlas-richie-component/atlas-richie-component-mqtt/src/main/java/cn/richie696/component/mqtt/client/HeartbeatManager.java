@@ -134,7 +134,7 @@ public class HeartbeatManager {
      * </ul>
      *
      * @param properties MQTT客户端配置，包含心跳间隔等配置
-     * @param clientId 客户端唯一标识
+     * @param clientId   客户端唯一标识
      * @throws IllegalArgumentException 当参数为null时
      */
     public HeartbeatManager(MqttClientProperties properties, String clientId) {
@@ -312,7 +312,7 @@ public class HeartbeatManager {
     /**
      * 处理心跳事件发布失败
      *
-     * @param heartbeat 发布失败的心跳信息
+     * @param heartbeat     发布失败的心跳信息
      * @param publishResult 发布结果
      */
     private void handleHeartbeatPublishFailure(HeartbeatInfo heartbeat, PublishResult<HeartbeatEvent> publishResult) {

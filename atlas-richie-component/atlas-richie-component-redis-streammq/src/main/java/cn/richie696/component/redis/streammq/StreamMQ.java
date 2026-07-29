@@ -17,8 +17,6 @@ package cn.richie696.component.redis.streammq;
 
 import cn.richie696.component.redis.streammq.function.StreamFunction;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -35,8 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @version 1.0.0
  * @since 2026/06/05
  */
-@Component
-public class StreamMQ {
+public final class StreamMQ {
 
     private static final AtomicReference<StreamMQDelegate> DELEGATE = new AtomicReference<>();
 
@@ -58,28 +55,31 @@ public class StreamMQ {
     }
 
     // ========================================================================
-    //  Spring 注入
+    //  内部初始化（由 auto-configuration 调用）
     // ========================================================================
 
-    @Autowired
-    public void setDelegate(StreamMQDelegate delegate) {
-        if (StreamMQ.DELEGATE.get() == null) {
-            synchronized (StreamMQ.class) {
-                if (StreamMQ.DELEGATE.get() == null) {
-                    StreamMQ.DELEGATE.set(delegate);
-                }
-            }
-        }
+    /**
+     * 初始化委托引用（仅由 auto-configuration 调用）。
+     *
+     * @param streamFunction Stream 消息队列操作接口的 Spring Bean
+     */
+    public static void initialize(StreamFunction streamFunction) {
+        DELEGATE.compareAndSet(null, new StreamMQDelegate(streamFunction));
     }
+
+    // ========================================================================
+    //  内部委托
+    // ========================================================================
 
     /**
      * StreamMQ 内部委托，持有所有 Stream/Messaging 操作的 bean 引用。
      */
-    @Component
     @RequiredArgsConstructor
     static class StreamMQDelegate {
 
-        /** Stream 消息队列操作接口 */
+        /**
+         * Stream 消息队列操作接口
+         */
         private final StreamFunction streamFn;
 
     }

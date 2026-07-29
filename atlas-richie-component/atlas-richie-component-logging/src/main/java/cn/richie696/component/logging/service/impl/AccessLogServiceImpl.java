@@ -45,8 +45,8 @@ public class AccessLogServiceImpl
     /**
      * 异步将单条访问日志放入本地缓存，后续由定时任务批量持久化。
      *
-     * @param cacheName      缓存区域（如 ACCESS_LOG）
-     * @param accessLogInfo  访问日志信息
+     * @param cacheName     缓存区域（如 ACCESS_LOG）
+     * @param accessLogInfo 访问日志信息
      */
     @Async
     @Override

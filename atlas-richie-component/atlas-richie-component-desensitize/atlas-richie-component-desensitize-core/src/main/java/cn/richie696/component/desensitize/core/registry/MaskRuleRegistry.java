@@ -30,8 +30,8 @@ import java.util.Optional;
  * 合并 YAML 字段规则与 {@link Sensitive} 注解元数据。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class MaskRuleRegistry {
 
@@ -53,8 +53,8 @@ public class MaskRuleRegistry {
      * 解析字段在指定场景下的脱敏类型。
      *
      * @param declaringClass 字段所属类型
-     * @param fieldName 字段名
-     * @param scene 脱敏场景
+     * @param fieldName      字段名
+     * @param scene          脱敏场景
      * @return 脱敏类型（若存在）
      */
     public Optional<MaskType> resolveFieldType(Class<?> declaringClass, String fieldName, MaskScene scene) {

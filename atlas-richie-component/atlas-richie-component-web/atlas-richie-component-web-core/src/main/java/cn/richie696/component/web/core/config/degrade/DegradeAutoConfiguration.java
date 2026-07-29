@@ -15,16 +15,16 @@
  */
 package cn.richie696.component.web.core.config.degrade;
 
+import cn.richie696.component.web.core.degrade.DefaultDegradeStrategyRegistry;
 import cn.richie696.component.web.core.degrade.DegradeInterceptor;
 import cn.richie696.component.web.core.degrade.DegradeStrategy;
 import cn.richie696.component.web.core.degrade.DegradeStrategyRegistry;
-import cn.richie696.component.web.core.degrade.DefaultDegradeStrategyRegistry;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 

@@ -30,8 +30,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * close() 幂等：重复关闭不会抛异常。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 class JdkSseConnection implements SseConnection {
 

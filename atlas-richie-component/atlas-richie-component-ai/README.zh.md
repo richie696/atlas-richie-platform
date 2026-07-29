@@ -7,55 +7,54 @@
 - [🎙 实时语音对话 (WebSocket + STS)](#-实时语音对话-websocket--sts)
 - [🔑 API Key 池](#-api-key-池)
 - [🤖 当前支持模型](#-当前支持模型)
-  - [1) 组件内置 Provider(配置文件模式)](#1-组件内置-provider配置文件模式)
-  - [2) 动态模式的未知 Provider 兜底](#2-动态模式的未知-provider-兜底)
+    - [1) 组件内置 Provider (配置文件模式)](#1-组件内置-provider配置文件模式)
+    - [2) 动态模式的未知 Provider 兜底](#2-动态模式的未知-provider-兜底)
 - [📦 依赖](#-依赖)
 - [🔌 EmbeddingModel 自动注入](#-embeddingmodel-自动注入)
 - [🚀 使用方式一:配置文件初始化](#-使用方式一配置文件初始化)
-- [🚀 使用方式二:数据库配置 + 动态初始化(推荐业务场景)](#-使用方式二数据库配置--动态初始化推荐业务场景)
-  - [0) 关闭配置文件初始化(仅动态初始化模式)](#0-关闭配置文件初始化仅动态初始化模式)
-  - [1) 业务系统构造模型配置列表](#1-业务系统构造模型配置列表)
-  - [2) 调用组件动态初始化](#2-调用组件动态初始化)
+- [🚀 使用方式二:数据库配置 + 动态初始化 (推荐业务场景)](#-使用方式二数据库配置--动态初始化推荐业务场景)
+    - [0) 关闭配置文件初始化 (仅动态初始化模式)](#0-关闭配置文件初始化仅动态初始化模式)
+    - [1) 业务系统构造模型配置列表](#1-业务系统构造模型配置列表)
+    - [2) 调用组件动态初始化](#2-调用组件动态初始化)
 - [💡 统一调用示例](#-统一调用示例)
 - [🔌 AiChatService 接口](#-aichatservice-接口)
 - [📊 关键数据结构](#-关键数据结构)
-  - [1) `AiRequest`](#1-airequest)
-  - [2) `ModelOptions`(动态初始化输入)](#2-modeloptions动态初始化输入)
-  - [3) `AiResponse`](#3-airesponse)
-  - [4) `AiStreamChunk`(流式输出片段)](#4-aistreamchunk流式输出片段)
-  - [5) `AiHealthResult`(健康检查结果)](#5-aihealthresult健康检查结果)
-  - [6) `AiModelInfo`(模型信息)](#6-aimodelinfo模型信息)
-- [📐 参数说明(AiModelOptions)](#-参数说明aimodeloptions)
+    - [1) `AiRequest`](#1-airequest)
+    - [2) `ModelOptions`(动态初始化输入)](#2-modeloptions动态初始化输入)
+    - [3) `AiResponse`](#3-airesponse)
+    - [4) `AiStreamChunk`(流式输出片段)](#4-aistreamchunk流式输出片段)
+    - [5) `AiHealthResult`(健康检查结果)](#5-aihealthresult健康检查结果)
+    - [6) `AiModelInfo`(模型信息)](#6-aimodelinfo模型信息)
+- [📐 参数说明 (AiModelOptions)](#-参数说明aimodeloptions)
 - [📏 默认与覆盖规则](#-默认与覆盖规则)
 - [🏭 生产建议](#-生产建议)
 - [📕 完整配置参考](#-完整配置参考)
-  - [platform.component.ai 配置树](#platformcomponentai-配置树)
-  - [自动注册 Bean 清单](#自动注册-bean-清单)
-  - [路由决策链](#路由决策链)
+    - [platform.component.ai 配置树](#platformcomponentai-配置树)
+    - [自动注册 Bean 清单](#自动注册-bean-清单)
+    - [路由决策链](#路由决策链)
 - [🔨 Tool Calling 功能](#-tool-calling-功能)
-  - [1) 注册工具](#1-注册工具)
-  - [2) 调用时声明工具](#2-调用时声明工具)
-  - [3) 注意事项](#3-注意事项)
+    - [1) 注册工具](#1-注册工具)
+    - [2) 调用时声明工具](#2-调用时声明工具)
+    - [3) 注意事项](#3-注意事项)
 - [⚠️ 错误码参考](#-错误码参考)
 - [🔧 📐 接口实现文档](#-接口实现文档)
-  - [整体组件关系](#整体组件关系)
-  - [1. `call(AiRequest request)` — 同步调用](#1-callairequest-request--同步调用)
-  - [2. `callAsync(AiRequest request)` — 异步调用](#2-callasyncairequest-request--异步调用)
-  - [3. `stream(AiRequest request)` — 流式调用](#3-streamairequest-request--流式调用)
-  - [4. `callWithModel(String modelName, AiRequest request)` — 指定模型调用](#4-callwithmodelstring-modelname-airequest-request--指定模型调用)
-  - [5. `initializeModels(List<ModelOptions>)` — 动态初始化](#5-initializemodelslistmodeloptions--动态初始化)
-  - [6. `removeModel(String modelName)` — 移除模型](#6-removemodelstring-modelname--移除模型)
-  - [7. `probe(String modelName)` — 单个模型健康探测](#7-probestring-modelname--单个模型健康探测)
-  - [8. `probeAll()` — 全模型健康探测](#8-probeall--全模型健康探测)
-  - [9. `getAvailableModels()` — 获取所有可用模型](#9-getavailablemodels--获取所有可用模型)
-  - [10. `getModelInfo(String modelName)` — 获取指定模型](#10-getmodelinfostring-modelname--获取指定模型)
-  - [11. `isModelAvailable(String modelName)` — 检查模型可用](#11-ismodelavailablestring-modelname--检查模型可用)
-  - [12. `getDefaultModel()` — 获取默认模型](#12-getdefaultmodel--获取默认模型)
-  - [13. `setDefaultModel(String modelName)` — 设置默认模型](#13-setdefaultmodelstring-modelname--设置默认模型)
+    - [整体组件关系](#整体组件关系)
+    - [1. `call(AiRequest request)` — 同步调用](#1-callairequest-request--同步调用)
+    - [2. `callAsync(AiRequest request)` — 异步调用](#2-callasyncairequest-request--异步调用)
+    - [3. `stream(AiRequest request)` — 流式调用](#3-streamairequest-request--流式调用)
+    - [4.
+      `callWithModel(String modelName, AiRequest request)` — 指定模型调用](#4-callwithmodelstring-modelname-airequest-request--指定模型调用)
+    - [5. `initializeModels(List<ModelOptions>)` — 动态初始化](#5-initializemodelslistmodeloptions--动态初始化)
+    - [6. `removeModel(String modelName)` — 移除模型](#6-removemodelstring-modelname--移除模型)
+    - [7. `probe(String modelName)` — 单个模型健康探测](#7-probestring-modelname--单个模型健康探测)
+    - [8. `probeAll()` — 全模型健康探测](#8-probeall--全模型健康探测)
+    - [9. `getAvailableModels()` — 获取所有可用模型](#9-getavailablemodels--获取所有可用模型)
+    - [10. `getModelInfo(String modelName)` — 获取指定模型](#10-getmodelinfostring-modelname--获取指定模型)
+    - [11. `isModelAvailable(String modelName)` — 检查模型可用](#11-ismodelavailablestring-modelname--检查模型可用)
+    - [12. `getDefaultModel()` — 获取默认模型](#12-getdefaultmodel--获取默认模型)
+    - [13. `setDefaultModel(String modelName)` — 设置默认模型](#13-setdefaultmodelstring-modelname--设置默认模型)
 
 ------
-
-
 
 ## 概述
 
@@ -75,17 +74,20 @@
 - 动态模型注册：支持 `initializeModels(List<ModelOptions>)` 运行时装载
 - 兼容协议兜底：动态注册遇到未知 provider 时，自动降级为 OpenAI 协议
 - 统一响应结构：包含内容、耗时、模型信息、token 使用统计
-- **实时语音对话 (WebSocket + STS)** — 业务侧只依赖 `VoiceChatService`,无需感知任何 vendor 字符串。详见 [实时语音对话 (WebSocket + STS)](#-实时语音对话-websocket--sts) 章节。
-- **API Key 池** — Token Plan 场景下通过 Commons Pool2 自动轮换 key,限流时切换到下一个。详见 [API Key 池](#-api-key-池) 章节。
+- **实时语音对话 (WebSocket + STS)** — 业务侧只依赖 `VoiceChatService`,无需感知任何 vendor
+  字符串。详见 [实时语音对话 (WebSocket + STS)](#-实时语音对话-websocket--sts) 章节。
+- **API Key 池** — Token Plan 场景下通过 Commons Pool2 自动轮换 key,限流时切换到下一个。详见 [API Key 池](#-api-key-池)
+  章节。
 
 ## 实时语音对话 (WebSocket + STS)
 
-为多家厂商(Zhipu / DashScope / Doubao / Hunyuan)实时语音对话设计的统一 SPI,将所有 vendor 特定的鉴权和协议细节收敛到两个接口后面:
+为多家厂商 (Zhipu / DashScope / Doubao / Hunyuan)实时语音对话设计的统一 SPI,将所有 vendor
+特定的鉴权和协议细节收敛到两个接口后面:
 
-- `VoiceChatService` — 业务侧入口(`open(businessName, config)`)
-- `StsTicket` — 不透明短时凭证(业务侧调 `asBearerHeaders()` / `asTc3Headers()` / `asHeaderMap()` 不感知 vendor)
+- `VoiceChatService` — 业务侧入口 (`open(businessName, config)`)
+- `StsTicket` — 不透明短时凭证 (业务侧调 `asBearerHeaders()` / `asTc3Headers()` / `asHeaderMap()` 不感知 vendor)
 
-### 
+###  
 
 ### 快速开始
 
@@ -147,6 +149,7 @@ platform:
 ```
 
 **强制规则**(由 ArchUnit 静态守护):
+
 - `api/voicechat/*` 与 `service/voicechat/*` **禁止**依赖 `provider/*`
 - 业务侧只引用接口,vendor 由配置决定,不写死在代码里
 - 切换 vendor = 改一行 YAML,业务代码零改动
@@ -155,17 +158,17 @@ platform:
 
 单测覆盖了 SPI 行为,但生产前必须用真实厂商端点和凭证验证 WebSocket 握手机制。需准备以下环境变量后执行 `mvn verify -Pit`:
 
-| 厂商 | 端点 | 鉴权 | 环境变量 |
-|------|------|------|----------|
-| Zhipu | `wss://open.bigmodel.cn/api/paas/v4/realtime` | Bearer | `ZHIPU_REALTIME_API_KEY` |
-| DashScope | `wss://dashscope.aliyuncs.com/api-ws/v1/realtime` | Bearer | `DASHSCOPE_API_KEY` |
-| Doubao TTS 双向 | `wss://openspeech.bytedance.com/api/v3/tts/bidirection` | X-Api-Key | `DOUBAO_APP_ID` / `DOUBAO_TOKEN` / `DOUBAO_RESOURCE_ID` |
-| Doubao STT 流式 | `wss://openspeech.bytedance.com/api/v2/asr` | X-Api-Key | 同上 |
-| Hunyuan STT 流式 | TC3 over WS (`asr.tencentcloudapi.com:443`) | TC3-HMAC-SHA256 | `HUNYUAN_SECRET_ID` / `HUNYUAN_SECRET_KEY` |
+| 厂商             | 端点                                                    | 鉴权            | 环境变量                                                |
+|------------------|---------------------------------------------------------|-----------------|---------------------------------------------------------|
+| Zhipu            | `wss://open.bigmodel.cn/api/paas/v4/realtime`           | Bearer          | `ZHIPU_REALTIME_API_KEY`                                |
+| DashScope        | `wss://dashscope.aliyuncs.com/api-ws/v1/realtime`       | Bearer          | `DASHSCOPE_API_KEY`                                     |
+| Doubao TTS 双向  | `wss://openspeech.bytedance.com/api/v3/tts/bidirection` | X-Api-Key       | `DOUBAO_APP_ID` / `DOUBAO_TOKEN` / `DOUBAO_RESOURCE_ID` |
+| Doubao STT 流式  | `wss://openspeech.bytedance.com/api/v2/asr`             | X-Api-Key       | 同上                                                    |
+| Hunyuan STT 流式 | TC3 over WS (`asr.tencentcloudapi.com:443`)             | TC3-HMAC-SHA256 | `HUNYUAN_SECRET_ID` / `HUNYUAN_SECRET_KEY`              |
 
 ### BFF Controller 完整代码
 
-AI 组件**不依赖** `spring-boot-starter-webflux`(作为原子能力组件),BFF controller 放在**业务项目**。
+AI 组件 **不依赖** `spring-boot-starter-webflux`(作为原子能力组件),BFF controller 放在 **业务项目**。
 
 ### 仅通过 YAML 切换 vendor
 
@@ -202,7 +205,8 @@ platform:
 
 ## 🔑 API Key 池
 
-智谱、DashScope、豆包、腾讯混元等厂商普遍售卖 **Token Plan** 批量 API key —— 因为单 key 厂商限制 1~4 并发,高峰期甚至会被压缩到 1 并发。本组件内置 **commons-pool2 key 池**,触发限流时自动切换 key,无需业务方手工实现轮换。
+智谱、DashScope、豆包、腾讯混元等厂商普遍售卖 **Token Plan** 批量 API key —— 因为单 key 厂商限制 1~4 并发,高峰期甚至会被压缩到
+1 并发。本组件内置 **commons-pool2 key 池**,触发限流时自动切换 key,无需业务方手工实现轮换。
 
 ### 为什么需要 Key 池
 
@@ -278,27 +282,28 @@ platform:
 
 1. `ApiKeyPoolManager.getPool(businessName, keys)` 懒加载创建 `GenericObjectPool<ApiKey>`
 2. 多 key 业务:`AiChatClientFactory` 预建 N 个 `ChatModel`(每个烧入自己的 API key),用 `PooledChatModel` 包装
-3. 每次调用:borrow → 调 per-key model → 限流时 `invalidate(key)` 试下一个 → `retry-rounds` 轮后抛 `KeyPoolExhaustedException(businessName, retryRounds, totalKeys, numCooldown, lastError)`
+3. 每次调用:borrow → 调 per-key model → 限流时 `invalidate(key)` 试下一个 → `retry-rounds` 轮后抛
+   `KeyPoolExhaustedException(businessName, retryRounds, totalKeys, numCooldown, lastError)`
 
 ### 限流检测
 
-`DefaultApiKeyValidator` 在以下情况标记 key 失效(从池移除 + 进入冷却):
+`DefaultApiKeyValidator` 在以下情况标记 key 失效 (从池移除 + 进入冷却):
 
 - HTTP 状态码 **429 / 403 / 503**(Too Many Requests / Forbidden / Service Unavailable)
 - 错误信息含以下关键词:`rate limit` / `quota` / `too many requests` / `throttled` / `exceeded`
-- 通过常用字段名(`statusCode` / `status` / `code`)反射读出状态码
+- 通过常用字段名 (`statusCode` / `status` / `code`)反射读出状态码
 
 **401 Unauthorized 不会触发 invalidate** —— 这是配置错误,应该 fail-fast 让运维立刻发现。
 
 ### 失败模式
 
-| 场景 | 行为 |
-|---|---|
-| 单 key + 调用成功 | borrow → return |
-| 多 key + 第一个 key 限流 | invalidate + 轮询下一个 key(第 2 轮) |
-| 多 key + 全部 key 限流 | 抛 `KeyPoolExhaustedException`(完整上下文:`retryRounds` / `totalKeys` / `numCooldown`) |
-| 所有 key 都在冷却 | borrow() 阻塞到 `max-wait-millis`,超时后抛 |
-| `enabled: false` | NoOp 池 —— 每次拿到第一个 key,不做轮换 |
+| 场景                     | 行为                                                                                   |
+|--------------------------|----------------------------------------------------------------------------------------|
+| 单 key + 调用成功        | borrow → return                                                                        |
+| 多 key + 第一个 key 限流 | invalidate + 轮询下一个 key(第 2 轮)                                                   |
+| 多 key + 全部 key 限流   | 抛 `KeyPoolExhaustedException`(完整上下文:`retryRounds` / `totalKeys` / `numCooldown`) |
+| 所有 key 都在冷却        | borrow() 阻塞到 `max-wait-millis`,超时后抛                                             |
+| `enabled: false`         | NoOp 池 —— 每次拿到第一个 key,不做轮换                                                 |
 
 ### 监控
 
@@ -314,7 +319,8 @@ public Map<String, PoolStats> stats() {
 
 ### 详细设计
 
-完整 SPI、配置树、实装状态、测试矩阵(13 单测 + 9 集成)、已知技术债(LIFO 借出顺序)见 [`R-N-DESIGN.md` §15](./R-N-DESIGN.md#15-api-key-池token-plan-场景-rn5)。
+完整 SPI、配置树、实装状态、测试矩阵 (13 单测 + 9 集成)、已知技术债 (LIFO 借出顺序)见 [
+`R-N-DESIGN.md` §15](./R-N-DESIGN.md#15-api-key-池token-plan-场景-rn5)。
 
 ## 当前支持模型
 
@@ -349,9 +355,10 @@ public Map<String, PoolStats> stats() {
 
 ## EmbeddingModel 自动注入
 
-从当前版本开始，`richie-component-ai` 在配置文件初始化模式下会自动注册 `EmbeddingModel` Bean（Bean 名称：`aiEmbeddingModel`）。
+从当前版本开始，`richie-component-ai` 在配置文件初始化模式下会自动注册 `EmbeddingModel` Bean（Bean 名称：
+`aiEmbeddingModel`）。
 
-- 默认策略：**跟随默认模型**（即 `platform.component.ai.models` 中第一个模型）
+- 默认策略： **跟随默认模型**（即 `platform.component.ai.models` 中第一个模型）
 - 适用场景：`richie-component-vector` 与各 provider 子组件需要 `EmbeddingModel` 时可直接复用
 - 覆盖机制：业务侧若自行声明 `EmbeddingModel` Bean，会覆盖默认自动注入
 
@@ -441,8 +448,8 @@ platform:
 - 组件启动时不会构造任何 `ChatClient`
 - 必须先调用 `initializeModels(List<ModelOptions>)` 才可执行 AI 调用
 - 若在初始化前调用 `AiChatService.call/callAsync/callWithModel`，将返回：
-  - `errorCode = MODEL_NOT_INITIALIZED`
-  - `errorMessage = AI模型尚未初始化，无法执行调用，请先通过配置文件或 initializeModels 完成初始化`
+    - `errorCode = MODEL_NOT_INITIALIZED`
+    - `errorMessage = AI模型尚未初始化，无法执行调用，请先通过配置文件或 initializeModels 完成初始化`
 
 ### 1) 业务系统构造模型配置列表
 
@@ -538,11 +545,13 @@ void initializeModels(List<ModelOptions> modelOptionsList);
 - `metadata`：请求元数据（用户 ID、会话 ID 等，不影响 AI 回复）
 
 消息类型 `AiRequest.Message`：
+
 - `role`：角色（`system` / `user` / `assistant`）
 - `content`：消息内容
 - `name`：消息名称（可选）
 
 请求级参数 `AiRequest.ModelOptions`（与配置参数结构一致，在请求中覆盖默认值）：
+
 - `model` / `maxTokens` / `temperature` / `topP` / `topK`
 - `frequencyPenalty` / `presencePenalty` / `stop`
 - `logprobs` / `topLogprobs` / `enableThinking` / `thinkingBudgetTokens`
@@ -581,6 +590,7 @@ void initializeModels(List<ModelOptions> modelOptionsList);
 - `errorCode` / `errorMessage`：错误信息
 
 工厂方法：
+
 - `AiStreamChunk.delta(text, modelName, provider)`：增量块
 - `AiStreamChunk.finished(modelName, provider, usage)`：终态块（含用量统计）
 - `AiStreamChunk.error(message, code)`：错误块
@@ -625,24 +635,24 @@ void initializeModels(List<ModelOptions> modelOptionsList);
 
 各 Provider 能力矩阵：
 
-| 参数 | OpenAI | DeepSeek | Anthropic | MiniMax | Ollama |
-|---|---|---|---|---|---|
-| `temperature` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `topP` | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `topK` | ❌ | ❌ | ✅ | ❌ | ❌ |
-| `frequencyPenalty` | ✅ | ✅ | ❌ | ✅ | ❌ |
-| `presencePenalty` | ✅ | ✅ | ❌ | ✅ | ❌ |
-| `stop` | ✅ | ✅ | ❌ | ✅ | ✅ |
-| `logprobs` / `topLogprobs` | ✅ | ✅ | ❌ | ❌ | ❌ |
-| `enableThinking` | ❌ | ❌ | ✅ | ❌ | ❌ |
+| 参数                       | OpenAI | DeepSeek | Anthropic | MiniMax | Ollama |
+|----------------------------|--------|----------|-----------|---------|--------|
+| `temperature`              | ✅     | ✅       | ✅        | ✅      | ✅     |
+| `topP`                     | ✅     | ✅       | ✅        | ✅      | ❌     |
+| `topK`                     | ❌     | ❌       | ✅        | ❌      | ❌     |
+| `frequencyPenalty`         | ✅     | ✅       | ❌        | ✅      | ❌     |
+| `presencePenalty`          | ✅     | ✅       | ❌        | ✅      | ❌     |
+| `stop`                     | ✅     | ✅       | ❌        | ✅      | ✅     |
+| `logprobs` / `topLogprobs` | ✅     | ✅       | ❌        | ❌      | ❌     |
+| `enableThinking`           | ❌     | ❌       | ✅        | ❌      | ❌     |
 
 ## 默认与覆盖规则
 
 - 启动时：先加载配置文件模型
 - 运行时：调用 `initializeModels(...)` 后新增/覆盖同名模型
 - 默认模型：
-  - 如果未主动设置，使用当前可用模型集合中的第一个
-  - 若当前默认模型被覆盖或不可用，会自动回退到可用模型
+    - 如果未主动设置，使用当前可用模型集合中的第一个
+    - 若当前默认模型被覆盖或不可用，会自动回退到可用模型
 
 ## 生产建议
 
@@ -653,13 +663,14 @@ void initializeModels(List<ModelOptions> modelOptionsList);
 
 ## 多模态向量模型（CLIP 等效）
 
-通过阿里百炼（DashScope）`multimodal-embedding-v1` 把文本与图像投影到同一 **1024 维**向量空间，业务侧可借此实现"以文搜图 / 以图搜图 / 文-图混合检索"等跨模态语义检索场景。
+通过阿里百炼（DashScope）`multimodal-embedding-v1` 把文本与图像投影到同一 **1024 维**向量空间，业务侧可借此实现"以文搜图 /
+以图搜图 / 文-图混合检索"等跨模态语义检索场景。
 
 ### 与文生图（`image`）的差异
 
-| 能力 | 配置键 | 工厂方法 | 输出 |
-|---|---|---|---|
-| 文生图 | `platform.component.ai.image.<key>` | `createImageModel` | 像素图 |
+| 能力       | 配置键                                        | 工厂方法                    | 输出        |
+|------------|-----------------------------------------------|-----------------------------|-------------|
+| 文生图     | `platform.component.ai.image.<key>`           | `createImageModel`          | 像素图      |
 | 多模态向量 | `platform.component.ai.image-embedding.<key>` | `createImageEmbeddingModel` | 1024 维向量 |
 
 两者配置键不同避免误用；vendor 枚举也不同（`ImageProvider` vs `ImageEmbeddingProvider`）。
@@ -722,13 +733,13 @@ if (model instanceof BailianImageEmbeddingAdapter bailian) {
 
 **Phase C (patch15, 2026-07-22) 已扩展为 3 个 vendor**：
 
-| Vendor (枚举) | 适配器 | 协议 | 维度 | 是否真 CLIP | 推荐场景 |
-|---|---|---|---|---|---|
-| **BAILIAN** (DashScope) | `BailianImageEmbeddingAdapter` | DashScope multimodal-embedding-v1 | **1024**(硬编码) | ✅ 是 | **生产推荐** — 文本+图像共享空间 |
-| **OLLAMA** | `OllamaImageEmbeddingAdapter` | Ollama `/api/embed` | **768**(`nomic-embed-text` 默认) | ❌ 否(挂名) | **本地开发** — Ollama 原生无 CLIP 协议,仅承担挂名 image-embedding 入口的文本向量化 |
-| **TEI** (HuggingFace) | `TeiImageEmbeddingAdapter` | TEI OpenAI 兼容 `/v1/embeddings` | 由部署模型决定(`dimensions()` 返回 0) | ⚠️ 取决于部署模型(加载 CLIP 类模型则支持) | **自托管推荐** — 当前仅文本分支,image 端点待后续 sprint |
+| Vendor (枚举)           | 适配器                         | 协议                              | 维度                                  | 是否真 CLIP                               | 推荐场景                                                                           |
+|-------------------------|--------------------------------|-----------------------------------|---------------------------------------|-------------------------------------------|------------------------------------------------------------------------------------|
+| **BAILIAN** (DashScope) | `BailianImageEmbeddingAdapter` | DashScope multimodal-embedding-v1 | **1024**(硬编码)                      | ✅ 是                                     | **生产推荐** — 文本+图像共享空间                                                   |
+| **OLLAMA**              | `OllamaImageEmbeddingAdapter`  | Ollama `/api/embed`               | **768**(`nomic-embed-text` 默认)      | ❌ 否(挂名)                               | **本地开发** — Ollama 原生无 CLIP 协议,仅承担挂名 image-embedding 入口的文本向量化 |
+| **TEI** (HuggingFace)   | `TeiImageEmbeddingAdapter`     | TEI OpenAI 兼容 `/v1/embeddings`  | 由部署模型决定(`dimensions()` 返回 0) | ⚠️ 取决于部署模型(加载 CLIP 类模型则支持) | **自托管推荐** — 当前仅文本分支,image 端点待后续 sprint                            |
 
-**配置示例(3 vendor 全形态)**:
+**配置示例 (3 vendor 全形态)**:
 
 ```yaml
 platform:
@@ -755,9 +766,11 @@ platform:
           api-key: ${TEI_BEARER_KEY}          # 可选 — 反代鉴权
 ```
 
-**业务侧维度约束**: vector store 创建索引时,`vector.dimensions` 必须与所选 vendor 的实际维度对齐 — Bailian 1024 / Ollama 768 / TEI 由部署模型决定;否则写入时 Qdrant/Milvus 等会报 dimension mismatch。
+**业务侧维度约束**: vector store 创建索引时,`vector.dimensions` 必须与所选 vendor 的实际维度对齐 — Bailian 1024 / Ollama
+768 / TEI 由部署模型决定;否则写入时 Qdrant/Milvus 等会报 dimension mismatch。
 
-**完整设计与协议细节**: 见 [`R-N-DESIGN.md` §附录 G](./R-N-DESIGN.md#附录-g-phase-c-ai-模块扩展与测试-vector_service_v2_design-113-落地)。
+**完整设计与协议细节**: 见 [
+`R-N-DESIGN.md` §附录 G](./R-N-DESIGN.md#附录-g-phase-c-ai-模块扩展与测试-vector_service_v2_design-113-落地)。
 
 ## 完整配置参考
 
@@ -804,13 +817,13 @@ platform:
 
 ### 自动注册 Bean 清单
 
-| Bean 类型 | Bean 名称 | 注册条件 |
-|---|---|---|
-| `Map<String, ChatClient>` | `aiChatClients` | `config-initialization-enabled = true` |
-| `EmbeddingModel` | `aiEmbeddingModel` | 上述条件 + 模型非空 + `@ConditionalOnMissingBean` |
-| `AiModelProperties` | — | `@EnableConfigurationProperties` |
-| `ToolRegistry` | — | 始终注册（`@Component`） |
-| `retryTemplate` | — | 由 `spring-ai-autoconfigure-retry` 自动注册 |
+| Bean 类型                 | Bean 名称          | 注册条件                                          |
+|---------------------------|--------------------|---------------------------------------------------|
+| `Map<String, ChatClient>` | `aiChatClients`    | `config-initialization-enabled = true`            |
+| `EmbeddingModel`          | `aiEmbeddingModel` | 上述条件 + 模型非空 + `@ConditionalOnMissingBean` |
+| `AiModelProperties`       | —                  | `@EnableConfigurationProperties`                  |
+| `ToolRegistry`            | —                  | 始终注册（`@Component`）                          |
+| `retryTemplate`           | —                  | 由 `spring-ai-autoconfigure-retry` 自动注册       |
 
 ### 路由决策链
 
@@ -875,19 +888,19 @@ AiResponse response = aiModelService.call(
 
 ## 错误码参考
 
-| 错误码 | 触发条件 | 来源方法 |
-|---|---|---|
-| `MODEL_NOT_INITIALIZED` | `chatClients` 为空时调用 `call` / `stream` | `checkInitialized()` |
-| `NO_MODEL_AVAILABLE` | 路由解析后的模型调用链为空 | `resolveChain()` |
-| `CIRCUIT_OPEN` | 模型处于熔断打开状态，跳过该模型 | `circuitBreaker.allow()` |
-| `ALL_MODELS_FAILED` | 链中所有模型均调用失败 | `call()` / `stream()` |
-| `MODEL_UNAVAILABLE` | 模型对应的 `ChatClient` 在调用时不存在 | `callSingleModel()` |
-| `STREAM_FAILED` | 流式调用中途发生异常 | `stream()` onErrorResume |
-| `UNKNOWN_ERROR` | `AiResponse.failure(msg)` 无参版本的默认错误码 | — |
+| 错误码                  | 触发条件                                       | 来源方法                 |
+|-------------------------|------------------------------------------------|--------------------------|
+| `MODEL_NOT_INITIALIZED` | `chatClients` 为空时调用 `call` / `stream`     | `checkInitialized()`     |
+| `NO_MODEL_AVAILABLE`    | 路由解析后的模型调用链为空                     | `resolveChain()`         |
+| `CIRCUIT_OPEN`          | 模型处于熔断打开状态，跳过该模型               | `circuitBreaker.allow()` |
+| `ALL_MODELS_FAILED`     | 链中所有模型均调用失败                         | `call()` / `stream()`    |
+| `MODEL_UNAVAILABLE`     | 模型对应的 `ChatClient` 在调用时不存在         | `callSingleModel()`      |
+| `STREAM_FAILED`         | 流式调用中途发生异常                           | `stream()` onErrorResume |
+| `UNKNOWN_ERROR`         | `AiResponse.failure(msg)` 无参版本的默认错误码 | —                        |
 
 ## 📐 接口实现文档
 
-> 本节按 `AiChatService` 接口的 13 个 public API 逐个说明**业务流程**、**时序关系**和**实现逻辑**。
+> 本节按 `AiChatService` 接口的 13 个 public API 逐个说明 **业务流程**、 **时序关系**和 **实现逻辑**。
 > 实现版本：M8（2.0.0-M8），已集成 Observation、Spring 7 内建 Retry、Tool Calling 三大扩展点。
 
 ### 整体组件关系
@@ -977,10 +990,13 @@ sequenceDiagram
 
 #### 实现逻辑
 
-1. **初始化检查**（`checkInitialized`）：`chatClients` 为空时立即返回 `MODEL_NOT_INITIALIZED` 错误（业务侧可据此触发"先初始化"分支）。
-2. **模型链解析**（`resolveChain`）：委托 `AiModelRouter` 合并 `request.modelName` + `request.fallbackModelNames` + `request.scene` 路由 + 全局 `fallbackModels`，输出有序候选列表。
+1. **初始化检查**（`checkInitialized`）：`chatClients` 为空时立即返回 `MODEL_NOT_INITIALIZED`
+   错误（业务侧可据此触发"先初始化"分支）。
+2. **模型链解析**（`resolveChain`）：委托 `AiModelRouter` 合并 `request.modelName` + `request.fallbackModelNames` +
+   `request.scene` 路由 + 全局 `fallbackModels`，输出有序候选列表。
 3. **熔断保护**：对每个候选模型，先询问 `AiModelCircuitBreaker.allow(modelName, resilience)`；熔断中直接跳过（不计入失败统计）。
-4. **单次调用**（`callSingleModel`）：取 `ChatClient` → 注入 `messages` + 请求级 `options` + `tools` → `.call()` → 包装成 `AiResponse`（含 `Usage` + `duration`）。
+4. **单次调用**（`callSingleModel`）：取 `ChatClient` → 注入 `messages` + 请求级 `options` + `tools` → `.call()` → 包装成
+   `AiResponse`（含 `Usage` + `duration`）。
 5. **成功路径**：调 `recordSuccess` 重置该模型失败计数，立即返回。
 6. **失败路径**：调 `recordFailure` 累计失败次数；连续 `failureThreshold` 次后熔断打开 `openDurationMs` 毫秒；继续链中下一个。
 7. **兜底返回**：遍历结束仍有失败则返回最后一次失败响应；若链中无任何模型被尝试，返回 `ALL_MODELS_FAILED`。
@@ -1015,7 +1031,9 @@ sequenceDiagram
 
 #### 实现逻辑
 
-最简包装：`CompletableFuture.supplyAsync(() -> call(request), defaultExecutor)`，把同步逻辑卸载到 `ForkJoinPool.commonPool()`。所有路由 / 熔断 / 重试 / 工具调用语义与 `call` 一致。业务侧可用 `thenAccept` / `thenApply` / `exceptionally` 链式处理结果与异常。
+最简包装：`CompletableFuture.supplyAsync(() -> call(request), defaultExecutor)`，把同步逻辑卸载到
+`ForkJoinPool.commonPool()`。所有路由 / 熔断 / 重试 / 工具调用语义与 `call` 一致。业务侧可用 `thenAccept` / `thenApply` /
+`exceptionally` 链式处理结果与异常。
 
 ### 3. `stream(AiRequest request)` — 流式调用
 
@@ -1062,10 +1080,12 @@ sequenceDiagram
 
 #### 实现逻辑
 
-1. 初始化 + 链解析 + 熔断判断与 `call` 一致，但**只取首个可用模型**（不熔断、不缺失）开始流式，不做链路 fallback。
-2. `ChatClient.prompt().stream().chatResponse()` 拿到 `Flux<ChatResponse>`，逐片段提取 `getOutput().getText()`，过滤空值，包装为 `AiStreamChunk.delta(text, modelName, provider)`。
+1. 初始化 + 链解析 + 熔断判断与 `call` 一致，但 **只取首个可用模型**（不熔断、不缺失）开始流式，不做链路 fallback。
+2. `ChatClient.prompt().stream().chatResponse()` 拿到 `Flux<ChatResponse>`，逐片段提取 `getOutput().getText()`，过滤空值，包装为
+   `AiStreamChunk.delta(text, modelName, provider)`。
 3. 流自然结束时追加 `AiStreamChunk.finished(modelName, provider, usage)` 终态块（含 `Usage`）。
-4. **异常路径**：`onErrorResume` 触发 `circuitBreaker.recordFailure` + 返回 `AiStreamChunk.error(message, STREAM_FAILED)`，消费方按错误码识别。
+4. **异常路径**：`onErrorResume` 触发 `circuitBreaker.recordFailure` + 返回 `AiStreamChunk.error(message, STREAM_FAILED)`
+   ，消费方按错误码识别。
 5. **不重试**：流中途出错直接失败，不调用 `recordSuccess`（避免半成功状态）。
 
 ### 4. `callWithModel(String modelName, AiRequest request)` — 指定模型调用
@@ -1094,7 +1114,9 @@ sequenceDiagram
 
 #### 实现逻辑
 
-转发器：把 `modelName` 写入 `AiRequest.modelName` 后委托 `call`。`call` 内部 `resolveChain` 会把 `modelName` 提到链首位。**注意**：`callWithModel` 失败时仍会按 `request.fallbackModelNames` / 全局 fallback 链回退——若不想回退，业务侧须把 `request.fallbackModelNames` 设为空。
+转发器：把 `modelName` 写入 `AiRequest.modelName` 后委托 `call`。`call` 内部 `resolveChain` 会把 `modelName` 提到链首位。
+**注意**：`callWithModel` 失败时仍会按 `request.fallbackModelNames` / 全局 fallback 链回退——若不想回退，业务侧须把
+`request.fallbackModelNames` 设为空。
 
 ### 5. `initializeModels(List<ModelOptions>)` — 动态初始化
 
@@ -1142,9 +1164,11 @@ sequenceDiagram
 
 `synchronized` 保护并发初始化安全。
 
-1. 委托 `AiChatClientFactory.createChatClients(modelOptionsList)` 构造 `ChatClient` 映射（含 OpenAI 兼容降级、ZHIPUAI/MOONSHOT 复用 OpenAI 路径、未知 provider 兜底）。
-2. 每个 `ModelOptions` 转 `AiModelProperties.AiModel` 存入 `runtimeModels`（`getCurrentModels` = `properties.models` ∪ `runtimeModels`）。
-3. `chatClients.putAll(dynamicClients)`：**同名模型被覆盖**——这是动态初始化的核心优势，常见于多租户/多业务线热更新。
+1. 委托 `AiChatClientFactory.createChatClients(modelOptionsList)` 构造 `ChatClient` 映射（含 OpenAI 兼容降级、ZHIPUAI/MOONSHOT
+   复用 OpenAI 路径、未知 provider 兜底）。
+2. 每个 `ModelOptions` 转 `AiModelProperties.AiModel` 存入 `runtimeModels`（`getCurrentModels` = `properties.models` ∪
+   `runtimeModels`）。
+3. `chatClients.putAll(dynamicClients)`： **同名模型被覆盖**——这是动态初始化的核心优势，常见于多租户/多业务线热更新。
 4. 失效 `modelInfoCache`，下次 `getModelInfo` 按新数据重建。
 5. 默认模型回退：若当前 `defaultModel` 不在新 `chatClients` 中，重置为 `chatClients.keySet().iterator().next()`。
 
@@ -1181,7 +1205,8 @@ sequenceDiagram
 
 #### 实现逻辑
 
-`synchronized` 保护。`properties.models`（配置文件初始化的）**不被清理**——下次 `getCurrentModels` 仍会包含配置模型。若需彻底移除配置模型，业务侧可重置 `chatClients` 引用或调用 `initializeModels` 不传该模型。INFO 日志记录操作。
+`synchronized` 保护。`properties.models`（配置文件初始化的） **不被清理**——下次 `getCurrentModels`
+仍会包含配置模型。若需彻底移除配置模型，业务侧可重置 `chatClients` 引用或调用 `initializeModels` 不传该模型。INFO 日志记录操作。
 
 ### 7. `probe(String modelName)` — 单个模型健康探测
 
@@ -1227,7 +1252,8 @@ sequenceDiagram
 #### 实现逻辑
 
 1. 校验 `modelName` 非空 + `chatClients.containsKey`；任一不过返回 `unhealthy`。
-2. 若 `health-check.live-probe = false`（默认 `true`），仅返回 ChatClient 存在性（`healthy` + `liveProbe=false` + `0ms`）——不消耗 token。
+2. 若 `health-check.live-probe = false`（默认 `true`），仅返回 ChatClient 存在性（`healthy` + `liveProbe=false` + `0ms`
+   ）——不消耗 token。
 3. 若启用 live probe：构造最小请求（`maxTokens = probeMaxTokens`，默认 1），调用 `callSingleModel` 测量实际耗时。
 4. 返回 `AiHealthResult`（含 `modelName` / `provider` / `liveProbe` / `durationMs` / `errorMessage`）。
 5. **不参与熔断**：探测调用不计入 `recordSuccess` / `recordFailure`，避免误判业务流量。
@@ -1258,7 +1284,8 @@ sequenceDiagram
 
 #### 实现逻辑
 
-`chatClients.keySet().stream().map(this::probe).toList()`，**串行**调用，N 个模型 × probe 平均延迟 = 总延迟。若模型数量大或 probe 耗时长，建议改造为 `parallelStream` 或 `Flux.parallel()`。
+`chatClients.keySet().stream().map(this::probe).toList()`， **串行**调用，N 个模型 × probe 平均延迟 = 总延迟。若模型数量大或
+probe 耗时长，建议改造为 `parallelStream` 或 `Flux.parallel()`。
 
 ### 9. `getAvailableModels()` — 获取所有可用模型
 
@@ -1342,8 +1369,9 @@ sequenceDiagram
 
 走 `modelInfoCache.computeIfAbsent(name, ...)` 缓存：
 
-- **命中**：直接返回（O(1)）
-- **未命中**：合并配置+runtime 查模型；存在则构造完整 `AiModelInfo`（含 `description` + `capabilities` + `defaultModel` 标志）；不存在则返回 `AiModelInfo.unavailable(name, "UNKNOWN", "模型配置不存在")`
+- **命中**：直接返回（O (1)）
+- **未命中**：合并配置+runtime 查模型；存在则构造完整 `AiModelInfo`（含 `description` + `capabilities` + `defaultModel`
+  标志）；不存在则返回 `AiModelInfo.unavailable(name, "UNKNOWN", "模型配置不存在")`
 - **写时填充缓存**（在 `getAvailableModels` 路径已写），后续查询走缓存
 
 ### 11. `isModelAvailable(String modelName)` — 检查模型可用
@@ -1374,7 +1402,8 @@ sequenceDiagram
 
 #### 实现逻辑
 
-`chatClients.containsKey(modelName) && !circuitBreaker.isOpen(modelName)`——**仅看 ChatClient 存在 + 熔断状态**，不发起实际调用。常用于路由前快速判断、业务侧模型切换前检查。
+`chatClients.containsKey(modelName) && !circuitBreaker.isOpen(modelName)`—— **仅看 ChatClient 存在 + 熔断状态**
+，不发起实际调用。常用于路由前快速判断、业务侧模型切换前检查。
 
 ### 12. `getDefaultModel()` — 获取默认模型
 
@@ -1402,7 +1431,8 @@ sequenceDiagram
 
 #### 实现逻辑
 
-懒加载：首次访问时若 `defaultModel == null`，取 `getCurrentModels().keySet().iterator().next()`（即配置或动态初始化的首个模型）。`LinkedHashMap` 保证插入顺序，所以**配置文件中第一个模型就是默认**。
+懒加载：首次访问时若 `defaultModel == null`，取 `getCurrentModels().keySet().iterator().next()`（即配置或动态初始化的首个模型）。
+`LinkedHashMap` 保证插入顺序，所以 **配置文件中第一个模型就是默认**。
 
 ### 13. `setDefaultModel(String modelName)` — 设置默认模型
 

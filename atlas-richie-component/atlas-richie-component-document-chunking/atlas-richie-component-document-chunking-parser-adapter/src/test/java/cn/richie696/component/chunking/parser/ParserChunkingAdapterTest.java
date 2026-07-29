@@ -20,11 +20,7 @@ import cn.richie696.component.chunking.model.Chunk;
 import cn.richie696.component.chunking.model.ChunkingResult;
 import cn.richie696.component.chunking.model.ChunkingRule;
 import cn.richie696.component.parser.exception.DocumentParseException;
-import cn.richie696.component.parser.model.ParsedImage;
-import cn.richie696.component.parser.model.ParsedSection;
-import cn.richie696.component.parser.model.ReadEvent;
-import cn.richie696.component.parser.model.ReadResult;
-import cn.richie696.component.parser.model.ReadSummary;
+import cn.richie696.component.parser.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -46,9 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * {@link ParserChunkingAdapter} 的核心门面。用 Mockito 替身 {@link ChunkingService}，
@@ -318,7 +312,8 @@ class ParserChunkingAdapterTest {
             Flow.Publisher<ReadEvent> p = subscriber -> {
                 AtomicInteger idx = new AtomicInteger();
                 subscriber.onSubscribe(new Flow.Subscription() {
-                    @Override public synchronized void request(long n) {
+                    @Override
+                    public synchronized void request(long n) {
                         if (n <= 0) return;
                         upstreamRequested.addAndGet(n);
                         long left = n;
@@ -329,7 +324,9 @@ class ParserChunkingAdapterTest {
                             subscriber.onComplete();
                         }
                     }
-                    @Override public synchronized void cancel() {
+
+                    @Override
+                    public synchronized void cancel() {
                         upstreamCancelled.set(true);
                     }
                 });
@@ -337,13 +334,23 @@ class ParserChunkingAdapterTest {
 
             AtomicReference<Flow.Subscription> downstreamSubRef = new AtomicReference<>();
             adapter.adapt(p, smallRule).subscribe(new Flow.Subscriber<>() {
-                @Override public void onSubscribe(Flow.Subscription s) {
+                @Override
+                public void onSubscribe(Flow.Subscription s) {
                     downstreamSubRef.set(s);
                     s.request(7L);
                 }
-                @Override public void onNext(ChunkedSection cs) { }
-                @Override public void onError(Throwable t) { }
-                @Override public void onComplete() { }
+
+                @Override
+                public void onNext(ChunkedSection cs) {
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                }
+
+                @Override
+                public void onComplete() {
+                }
             });
 
             assertThat(upstreamRequested.get()).isGreaterThanOrEqualTo(1L);
@@ -509,7 +516,8 @@ class ParserChunkingAdapterTest {
             Flow.Publisher<ReadEvent> p = subscriber -> {
                 AtomicInteger idx = new AtomicInteger();
                 subscriber.onSubscribe(new Flow.Subscription() {
-                    @Override public synchronized void request(long n) {
+                    @Override
+                    public synchronized void request(long n) {
                         if (n <= 0) return;
                         upstreamRequested.addAndGet(n);
                         long left = n;
@@ -520,7 +528,9 @@ class ParserChunkingAdapterTest {
                             subscriber.onComplete();
                         }
                     }
-                    @Override public synchronized void cancel() {
+
+                    @Override
+                    public synchronized void cancel() {
                         upstreamCancelled.set(true);
                     }
                 });
@@ -528,13 +538,23 @@ class ParserChunkingAdapterTest {
 
             AtomicReference<Flow.Subscription> downstreamSubRef = new AtomicReference<>();
             adapter.adaptEvents(p, smallRule).subscribe(new Flow.Subscriber<>() {
-                @Override public void onSubscribe(Flow.Subscription s) {
+                @Override
+                public void onSubscribe(Flow.Subscription s) {
                     downstreamSubRef.set(s);
                     s.request(13L);
                 }
-                @Override public void onNext(ChunkingEvent ev) { }
-                @Override public void onError(Throwable t) { }
-                @Override public void onComplete() { }
+
+                @Override
+                public void onNext(ChunkingEvent ev) {
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                }
+
+                @Override
+                public void onComplete() {
+                }
             });
 
             assertThat(upstreamRequested.get()).isGreaterThanOrEqualTo(1L);
@@ -609,13 +629,24 @@ class ParserChunkingAdapterTest {
             AtomicReference<Throwable> errorRef = new AtomicReference<>();
 
             adapter.adaptEvents(pub, rule).subscribe(new Flow.Subscriber<>() {
-                @Override public void onSubscribe(Flow.Subscription s) {
+                @Override
+                public void onSubscribe(Flow.Subscription s) {
                     downstreamSubRef.set(s);
                     s.request(0L);
                 }
-                @Override public void onNext(ChunkingEvent ev) { }
-                @Override public void onError(Throwable t) { errorRef.set(t); }
-                @Override public void onComplete() { }
+
+                @Override
+                public void onNext(ChunkingEvent ev) {
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    errorRef.set(t);
+                }
+
+                @Override
+                public void onComplete() {
+                }
             });
 
             assertThat(errorRef.get()).isInstanceOf(IllegalArgumentException.class);
@@ -810,15 +841,26 @@ class ParserChunkingAdapterTest {
             AtomicBoolean onErrorCalled = new AtomicBoolean();
 
             adapter.adaptEvents(pub, smallRule).subscribe(new Flow.Subscriber<>() {
-                @Override public void onSubscribe(Flow.Subscription s) {
+                @Override
+                public void onSubscribe(Flow.Subscription s) {
                     downstreamSubRef.set(s);
                     s.request(1L); // 先拿 1 个 Section
                 }
-                @Override public void onNext(ChunkingEvent ev) {
+
+                @Override
+                public void onNext(ChunkingEvent ev) {
                     downstreamSubRef.get().cancel(); // 拿到第一个事件立刻取消
                 }
-                @Override public void onError(Throwable t) { onErrorCalled.set(true); }
-                @Override public void onComplete() { onCompleteCalled.set(true); }
+
+                @Override
+                public void onError(Throwable t) {
+                    onErrorCalled.set(true);
+                }
+
+                @Override
+                public void onComplete() {
+                    onCompleteCalled.set(true);
+                }
             });
 
             // 由于 cancel 已发生：后续 Finished 也被 quietly discard（pendingEvents.clear 与 cancelled 标志）
@@ -886,8 +928,13 @@ class ParserChunkingAdapterTest {
         public void subscribe(Flow.Subscriber<? super T> subscriber) {
             if (failOnSubscribe) {
                 subscriber.onSubscribe(new Flow.Subscription() {
-                    @Override public void request(long n) { }
-                    @Override public void cancel() { }
+                    @Override
+                    public void request(long n) {
+                    }
+
+                    @Override
+                    public void cancel() {
+                    }
                 });
                 subscriber.onError(failure);
                 return;
@@ -925,7 +972,9 @@ class ParserChunkingAdapterTest {
         }
     }
 
-    /** 一次订阅的完整结果（items + error + completion）。 */
+    /**
+     * 一次订阅的完整结果（items + error + completion）。
+     */
     private static final class DrainResult<T> {
         final java.util.List<T> items;
         final Throwable error;
@@ -948,16 +997,23 @@ class ParserChunkingAdapterTest {
         AtomicBoolean completedRef = new AtomicBoolean();
 
         publisher.subscribe(new Flow.Subscriber<>() {
-            @Override public void onSubscribe(Flow.Subscription s) {
+            @Override
+            public void onSubscribe(Flow.Subscription s) {
                 s.request(Long.MAX_VALUE);
             }
-            @Override public void onNext(T item) {
+
+            @Override
+            public void onNext(T item) {
                 received.add(item);
             }
-            @Override public void onError(Throwable t) {
+
+            @Override
+            public void onError(Throwable t) {
                 errorRef.set(t);
             }
-            @Override public void onComplete() {
+
+            @Override
+            public void onComplete() {
                 completedRef.set(true);
             }
         });

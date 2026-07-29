@@ -32,7 +32,9 @@ import org.springframework.stereotype.Component;
 @Order(20)
 public class TenantIdDimension implements KeyDimension {
 
-    /** 默认 tenant header 名；与 {@code TenantInterceptor} 默认配置一致。 */
+    /**
+     * 默认 tenant header 名；与 {@code TenantInterceptor} 默认配置一致。
+     */
     public static final String DEFAULT_HEADER = "X-Tenant-Id";
 
     @Override

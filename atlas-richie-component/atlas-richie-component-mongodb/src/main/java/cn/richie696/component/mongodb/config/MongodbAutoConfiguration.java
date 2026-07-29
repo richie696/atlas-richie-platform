@@ -158,7 +158,7 @@ public class MongodbAutoConfiguration {
      * MongoTemplate Bean实例
      *
      * @param mongoClient MongoClient 实例
-     * @param config MongodbConfig 配置参数
+     * @param config      MongodbConfig 配置参数
      * @return MongoTemplate 实例
      */
     @Bean

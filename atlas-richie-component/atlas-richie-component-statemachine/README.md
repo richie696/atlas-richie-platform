@@ -1,57 +1,61 @@
 # Atlas Richie Statemachine Component (atlas-richie-component-statemachine)
 
-> Lightweight **state machine** built on [Easy Rules 4.1.0](https://github.com/j-easy/easy-rules). Configuration-driven states / transitions, SpEL condition/action evaluation with sandbox safety, Redis single-source-of-truth, Redis Stream async persistence, and **Spring event** listeners. Multi-state-machine support per business object.
+> Lightweight **state machine** built on [Easy Rules 4.1.0](https://github.com/j-easy/easy-rules). Configuration-driven
+> states / transitions, SpEL condition/action evaluation with sandbox safety, Redis single-source-of-truth, Redis Stream
+> async persistence, and **Spring event** listeners. Multi-state-machine support per business object.
 
 ---
 
 ## 📖 Contents
 
 - [📖 Overview](#📖-overview)
-  - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
+    - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
 - [✨ Features](#✨-features)
-  - [Core capabilities](#core-capabilities)
-  - [Design choices](#design-choices)
+    - [Core capabilities](#core-capabilities)
+    - [Design choices](#design-choices)
 - [🏗️ Architecture & Module Layout](#🏗️-architecture-&-module-layout)
 - [🚀 Quick Start](#🚀-quick-start)
-  - [1. Add the dependency](#1-add-the-dependency)
-  - [2. Configure](#2-configure)
-  - [3. Define the state machine YAML](#3-define-the-state-machine-yaml)
-  - [4. Define enums + trigger transitions](#4-define-enums-+-trigger-transitions)
+    - [1. Add the dependency](#1-add-the-dependency)
+    - [2. Configure](#2-configure)
+    - [3. Define the state machine YAML](#3-define-the-state-machine-yaml)
+    - [4. Define enums + trigger transitions](#4-define-enums-+-trigger-transitions)
 - [🔧 Core Capabilities](#🔧-core-capabilities)
-  - [1. Static facade `StateMachine.fire`](#1-static-facade-statemachinefire)
-  - [2. SpEL sandbox](#2-spel-sandbox)
-  - [3. Redis single source of truth](#3-redis-single-source-of-truth)
-  - [4. Async DB persistence via Redis Stream](#4-async-db-persistence-via-redis-stream)
-  - [5. Spring events](#5-spring-events)
+    - [1. Static facade `StateMachine.fire`](#1-static-facade-statemachinefire)
+    - [2. SpEL sandbox](#2-spel-sandbox)
+    - [3. Redis single source of truth](#3-redis-single-source-of-truth)
+    - [4. Async DB persistence via Redis Stream](#4-async-db-persistence-via-redis-stream)
+    - [5. Spring events](#5-spring-events)
 - [⚙️ Configuration Reference](#⚙️-configuration-reference)
 - [🎯 Best Practices](#🎯-best-practices)
 - [⚠️ Known Limitations](#⚠️-known-limitations)
 - [❓ FAQ](#❓-faq)
-  - [Q1: Why SpEL and not MVEL?](#q1-why-spel-and-not-mvel?)
-  - [Q2: Can I have multiple state machines per business object?](#q2-can-i-have-multiple-state-machines-per-business-object?)
-  - [Q3: How do I handle terminal states?](#q3-how-do-i-handle-terminal-states?)
-  - [Q4: Can I dispatch events from outside `StateMachine.fire`?](#q4-can-i-dispatch-events-from-outside-statemachinefire?)
-  - [Q5: What if Redis is down?](#q5-what-if-redis-is-down?)
+    - [Q1: Why SpEL and not MVEL?](#q1-why-spel-and-not-mvel?)
+    - [Q2: Can I have multiple state machines per business object?](#q2-can-i-have-multiple-state-machines-per-business-object?)
+    - [Q3: How do I handle terminal states?](#q3-how-do-i-handle-terminal-states?)
+    - [Q4: Can I dispatch events from outside
+      `StateMachine.fire`?](#q4-can-i-dispatch-events-from-outside-statemachinefire?)
+    - [Q5: What if Redis is down?](#q5-what-if-redis-is-down?)
 - [📚 Further Reading](#📚-further-reading)
+
 ---
 
 ## 📖 Overview
 
-| Item | Value |
-|------|-------|
-| **Artifact** | `cn.richie696.component:atlas-richie-component-statemachine` |
-| **Category** | Domain logic — state machine |
+| Item                  | Value                                                                                    |
+|-----------------------|------------------------------------------------------------------------------------------|
+| **Artifact**          | `cn.richie696.component:atlas-richie-component-statemachine`                             |
+| **Category**          | Domain logic — state machine                                                             |
 | **Hard dependencies** | `easy-rules` 4.1.0, `atlas-richie-component-cache` (Redis), `atlas-richie-component-dao` |
-| **Compatible with** | JDK 17+, Spring Boot 4.x |
+| **Compatible with**   | JDK 17+, Spring Boot 4.x                                                                 |
 
 ### `What` this component is — and what it isn't
 
-| ✅ It gives you | ❌ It does not give you |
-|-----------------|------------------------|
-| Configuration-driven state machines | A workflow engine (BPMN / Camunda) |
-| SpEL sandbox (safe expression eval) | A rule engine for arbitrary business rules |
+| ✅ It gives you                                     | ❌ It does not give you                    |
+|-----------------------------------------------------|--------------------------------------------|
+| Configuration-driven state machines                 | A workflow engine (BPMN / Camunda)         |
+| SpEL sandbox (safe expression eval)                 | A rule engine for arbitrary business rules |
 | Redis single source of truth + async DB persistence | Long-running saga (use Temporal / Cadence) |
-| Multi-state-machine per business object | Visual designer (use Eclipse Stardust) |
+| Multi-state-machine per business object             | Visual designer (use Eclipse Stardust)     |
 
 ## ✨ Features
 
@@ -59,7 +63,7 @@
 
 - ✅ **Easy Rules 4.1.0** — proven rule engine under the hood.
 - ✅ **SpEL sandbox** — read-only data binding; blocks method calls, type refs, constructors.
-- ✅ **Redis single source of truth** — `getCurrentState` is O(1).
+- ✅ **Redis single source of truth** — `getCurrentState` is O (1).
 - ✅ **Redis Stream async persistence** — durable replayable audit trail.
 - ✅ **Cache warm-up** — pre-load state from DB on startup.
 - ✅ **State history** — full audit, default 7 days TTL.
@@ -212,11 +216,13 @@ List<StateHistory> history = StateMachine.getStateHistory(sm, businessId);
 ### 2) `SpEL` sandbox
 
 Allowed:
+
 - `context.attributes['key']`
 - `#currentState == 'PENDING'`
 - `#event == 'CONFIRM'`
 
 Blocked:
+
 - `T(java.lang.Runtime)` (type refs)
 - `new File(...)` (constructors)
 - `context.toString()` (method calls)
@@ -224,11 +230,12 @@ Blocked:
 
 ### 3) `Redis` single source of truth
 
-Current state and history live in Redis. `getCurrentState` is O(1) — `O(1)` Redis `GET`. Reads never hit the DB.
+Current state and history live in Redis. `getCurrentState` is O (1) — `O(1)` Redis `GET`. Reads never hit the DB.
 
 ### 4) `Async` `DB` persistence via `Redis` `Stream`
 
-Each state change → publish `StateSyncMessage` to Redis Stream. A consumer (`StateSyncStreamConsumer`) reads in batch and writes to DB asynchronously.
+Each state change → publish `StateSyncMessage` to Redis Stream. A consumer (`StateSyncStreamConsumer`) reads in batch
+and writes to DB asynchronously.
 
 ### 5) `Spring` events
 
@@ -242,19 +249,19 @@ public void onChange(StateChangeApplicationEvent event) {
 
 ## ⚙️ Configuration Reference
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `enabled` | boolean | `true` | Master switch |
-| `db-persistence-mode` | enum | `ASYNC` | `ASYNC` (Redis Stream) or `SYNC` |
-| `strict-persistence-mode` | boolean | `true` | Block ASYNC downgrade when global is SYNC |
-| `state-machine.enable-history` | boolean | `true` | Record full transition history |
-| `state-machine.enable-events` | boolean | `true` | Publish Spring events on transition |
-| `storage.type` | enum | `redis` | `redis` / `memory` |
-| `storage.timeout` | long | `604800000` | History TTL (ms), 7 days |
-| `storage.db.enabled` | boolean | `false` | Async DB persistence |
-| `storage.db.batch-size` | int | `100` | DB batch write size |
-| `expression.slow-threshold-ms` | long | `1000` | WARN threshold for slow expressions |
-| `expression.enable-security-check` | boolean | `true` | Enable sandbox + blacklist |
+| Property                           | Type    | Default     | Description                               |
+|------------------------------------|---------|-------------|-------------------------------------------|
+| `enabled`                          | boolean | `true`      | Master switch                             |
+| `db-persistence-mode`              | enum    | `ASYNC`     | `ASYNC` (Redis Stream) or `SYNC`          |
+| `strict-persistence-mode`          | boolean | `true`      | Block ASYNC downgrade when global is SYNC |
+| `state-machine.enable-history`     | boolean | `true`      | Record full transition history            |
+| `state-machine.enable-events`      | boolean | `true`      | Publish Spring events on transition       |
+| `storage.type`                     | enum    | `redis`     | `redis` / `memory`                        |
+| `storage.timeout`                  | long    | `604800000` | History TTL (ms), 7 days                  |
+| `storage.db.enabled`               | boolean | `false`     | Async DB persistence                      |
+| `storage.db.batch-size`            | int     | `100`       | DB batch write size                       |
+| `expression.slow-threshold-ms`     | long    | `1000`      | WARN threshold for slow expressions       |
+| `expression.enable-security-check` | boolean | `true`      | Enable sandbox + blacklist                |
 
 ## 🎯 Best Practices
 
@@ -266,18 +273,19 @@ public void onChange(StateChangeApplicationEvent event) {
 
 ## ⚠️ Known Limitations
 
-| Limitation | Impact | Workaround |
-|------------|--------|------------|
-| **Redis is required for production** | No Redis = no SSOT | Use `storage.type: memory` for dev only |
+| Limitation                                      | Impact                          | Workaround                                    |
+|-------------------------------------------------|---------------------------------|-----------------------------------------------|
+| **Redis is required for production**            | No Redis = no SSOT              | Use `storage.type: memory` for dev only       |
 | **SpEL sandbox blocks legitimate method calls** | Some expressions need rewriting | Whitelist via `expression.security-blacklist` |
-| **ASYNC mode has eventual consistency** | DB write may lag Redis by ms–s | Use SYNC for critical consistency |
-| **No visual debugger** | Hard to trace complex flows | Use `StateHistory` + structured logs |
+| **ASYNC mode has eventual consistency**         | DB write may lag Redis by ms–s  | Use SYNC for critical consistency             |
+| **No visual debugger**                          | Hard to trace complex flows     | Use `StateHistory` + structured logs          |
 
 ## ❓ FAQ
 
 ### `Q1` — `Why` `SpEL` and not `MVEL`?
 
-MVEL is unmaintained (last release 2017) and had RCE issues. SpEL is maintained by Spring and has a native sandbox (`SimpleEvaluationContext.forReadOnlyDataBinding()`).
+MVEL is unmaintained (last release 2017) and had RCE issues. SpEL is maintained by Spring and has a native sandbox
+(`SimpleEvaluationContext.forReadOnlyDataBinding()`).
 
 ### `Q2` — `Can` `I` have multiple state machines per business object?
 
@@ -300,7 +308,8 @@ Read fallbacks: throws `StateStorageUnavailableException`. You catch it in `Stat
 - **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
 - **Cache (Redis)** — required for SSOT
 - **Messaging (Redis Stream)** — required for async persistence
-- External: [Easy Rules](https://github.com/j-easy/easy-rules) · [Spring SpEL](https://docs.spring.io/spring-framework/reference/core/expressions.html)
+-
+External: [Easy Rules](https://github.com/j-easy/easy-rules) · [Spring SpEL](https://docs.spring.io/spring-framework/reference/core/expressions.html)
 
 ---
 

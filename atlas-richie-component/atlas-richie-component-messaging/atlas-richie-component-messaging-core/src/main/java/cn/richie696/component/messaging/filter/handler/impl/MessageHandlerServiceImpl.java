@@ -15,11 +15,11 @@
  */
 package cn.richie696.component.messaging.filter.handler.impl;
 
-import cn.richie696.context.common.api.SpringContextHolder;
 import cn.richie696.component.messaging.config.MessagingProperties;
 import cn.richie696.component.messaging.event.MessageEvent;
 import cn.richie696.component.messaging.filter.datasource.DatasourceHandler;
 import cn.richie696.component.messaging.filter.handler.MessageHandlerService;
+import cn.richie696.context.common.api.SpringContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
@@ -27,8 +27,8 @@ import org.springframework.stereotype.Service;
 /**
  * 消息处理器接口实现类
  * <p>
- *     本接口作用包括但不限于给消息队列收发的消息进行加工处
- *     理、幂等去重、校验判断等所有和消息处理有关的逻辑。
+ * 本接口作用包括但不限于给消息队列收发的消息进行加工处
+ * 理、幂等去重、校验判断等所有和消息处理有关的逻辑。
  *
  * @author richie696
  * @version 1.0
@@ -38,7 +38,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MessageHandlerServiceImpl implements MessageHandlerService {
 
-    /** 消息组件配置，用于选择幂等去重数据源 */
+    /**
+     * 消息组件配置，用于选择幂等去重数据源
+     */
     private final MessagingProperties properties;
 
     /**

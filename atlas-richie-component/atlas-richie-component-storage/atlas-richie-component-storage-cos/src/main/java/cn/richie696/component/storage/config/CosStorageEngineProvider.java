@@ -15,15 +15,15 @@
  */
 package cn.richie696.component.storage.config;
 
+import cn.richie696.component.storage.bean.ObjectConfig;
+import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.impl.CosStorageEngine;
+import cn.richie696.component.storage.enums.StorageEngineEnum;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.region.Region;
-import cn.richie696.component.storage.bean.ObjectConfig;
-import cn.richie696.component.storage.core.StorageEngine;
-import cn.richie696.component.storage.core.impl.CosStorageEngine;
-import cn.richie696.component.storage.enums.StorageEngineEnum;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

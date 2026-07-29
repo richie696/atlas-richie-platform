@@ -2,14 +2,16 @@
 
 ## 概述
 
-`richie-component-storage-minio` 是 MinIO 对象存储的实现，基于 MinIO Java SDK 提供完整的 MinIO 存储能力。MinIO 是一个高性能、S3 兼容的对象存储服务，适合私有云和边缘计算场景。
+`richie-component-storage-minio` 是 MinIO 对象存储的实现，基于 MinIO Java SDK 提供完整的 MinIO 存储能力。MinIO 是一个高性能、S3
+兼容的对象存储服务，适合私有云和边缘计算场景。
 
 ## 核心特性
 
 - ✅ **S3 兼容** - 完全兼容 AWS S3 API
 - ✅ **私有部署** - 支持私有云和本地部署
 - ✅ **高性能** - 分布式架构，支持高并发
-- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非 Spring 环境
+- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非
+  Spring 环境
 - ✅ **自动配置** - Spring Boot 自动配置
 
 ## 双模式架构
@@ -44,13 +46,13 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 每个实现包都提供 `StorageEngineProvider` SPI 实现，`MinioStorageEngineProvider` 负责：
 
-| 方法                           | 说明                                                          |
-|------------------------------|-------------------------------------------------------------|
-| `supportedEngineType()`      | 返回 `StorageEngineEnum.MINIO`                                |
-| `create(properties)`         | 从配置创建 `MinioAsyncClient` 和 `MinioStorageEngine`             |
+| 方法                         | 说明                                                            |
+|------------------------------|-----------------------------------------------------------------|
+| `supportedEngineType()`      | 返回 `StorageEngineEnum.MINIO`                                  |
+| `create(properties)`         | 从配置创建 `MinioAsyncClient` 和 `MinioStorageEngine`           |
 | `validate(properties)`       | 校验 endpoint / accessKeyId / accessKeySecret / bucketName 必填 |
-| `afterPropertiesSet(engine)` | 手动模式下触发桶探测与前缀校验                                             |
-| `destroy(engine)`            | 释放客户端资源                                                     |
+| `afterPropertiesSet(engine)` | 手动模式下触发桶探测与前缀校验                                  |
+| `destroy(engine)`            | 释放客户端资源                                                  |
 
 自动模式下 Provider 在 `MinioAutoConfiguration` 中注册为 Bean；手动模式下由 Registry 通过 SPI 发现。
 
@@ -58,24 +60,24 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 引擎创建前会通过 `ConfigValidation` 工具类校验必填参数，校验失败时抛出 `IllegalArgumentException`：
 
-| 参数              | 校验规则 |
-|-----------------|------|
-| endpoint        | 非空   |
-| accessKeyId     | 非空   |
-| accessKeySecret | 非空   |
-| bucketName      | 非空   |
+| 参数            | 校验规则 |
+|-----------------|----------|
+| endpoint        | 非空     |
+| accessKeyId     | 非空     |
+| accessKeySecret | 非空     |
+| bucketName      | 非空     |
 
 ## 直传策略 (DirectUploadPolicy)
 
 MinIO 引擎支持通过预签名 URL 实现客户端直传到对象存储，减少服务端流量压力：
 
-| 字段        | 说明           |
-|-----------|--------------|
-| uploadUrl | 预签名上传 URL    |
+| 字段      | 说明             |
+|-----------|------------------|
+| uploadUrl | 预签名上传 URL   |
 | method    | HTTP 方法（PUT） |
-| headers   | 签名头信息        |
-| expireAt  | 策略过期时间       |
-| success   | 策略是否可用       |
+| headers   | 签名头信息       |
+| expireAt  | 策略过期时间     |
+| success   | 策略是否可用     |
 
 ```java
 DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
@@ -152,26 +154,26 @@ public class FileService {
 
 MinIO 与其他云存储的主要配置差异：
 
-| 配置项             | MinIO                   | AWS S3                            | 其他云存储     |
-|-----------------|-------------------------|-----------------------------------|-----------|
-| **engine 值**    | `MINIO`                 | `AWS_S3`                          | 各不相同      |
+| 配置项            | MinIO                   | AWS S3                            | 其他云存储         |
+|-------------------|-------------------------|-----------------------------------|--------------------|
+| **engine 值**     | `MINIO`                 | `AWS_S3`                          | 各不相同           |
 | **endpoint 格式** | `http://host:port`      | `s3.region.amazonaws.com`         | 各云服务商格式不同 |
-| **region**      | 可选（默认：us-east-1）        | 必填                                | 必填        |
-| **访问密钥名称**      | Access Key / Secret Key | Access Key ID / Secret Access Key | 各云服务商命名不同 |
-| **部署方式**        | 私有部署                    | 公有云                               | 公有云       |
-| **S3 兼容性**      | ✅ 完全兼容                  | ✅ 原生                              | ✅ 兼容      |
+| **region**        | 可选（默认：us-east-1） | 必填                              | 必填               |
+| **访问密钥名称**  | Access Key / Secret Key | Access Key ID / Secret Access Key | 各云服务商命名不同 |
+| **部署方式**      | 私有部署                | 公有云                            | 公有云             |
+| **S3 兼容性**     | ✅ 完全兼容             | ✅ 原生                           | ✅ 兼容            |
 
 ### endpoint 配置
 
 MinIO 的 endpoint 格式：
 
 - **HTTP**: `http://host:port`
-  - 示例：`http://localhost:9000`
-  - 示例：`http://minio.example.com:9000`
+    - 示例：`http://localhost:9000`
+    - 示例：`http://minio.example.com:9000`
 
 - **HTTPS**: `https://host:port`
-  - 示例：`https://minio.example.com:9000`
-  - 需要配置 SSL 证书
+    - 示例：`https://minio.example.com:9000`
+    - 需要配置 SSL 证书
 
 - **自定义域名**: 可通过反向代理配置自定义域名
 
@@ -184,14 +186,14 @@ MinIO 的 region 是可选的，默认为 `us-east-1`。如果使用分布式部
 MinIO 使用 Access Key 和 Secret Key 进行身份验证：
 
 1. **默认凭证**（仅用于开发测试）:
-   - Access Key: `minioadmin`
-   - Secret Key: `minioadmin`
+    - Access Key: `minioadmin`
+    - Secret Key: `minioadmin`
 
 2. **生产环境**:
-   - 通过 MinIO 控制台或 `mc` 命令行工具创建用户和访问密钥
-   - 遵循最小权限原则
+    - 通过 MinIO 控制台或 `mc` 命令行工具创建用户和访问密钥
+    - 遵循最小权限原则
 
-> **安全提示**: 
+> **安全提示**:
 > - 生产环境必须修改默认凭证
 > - 不要将访问密钥提交到代码仓库
 > - 使用环境变量或密钥管理服务
@@ -245,6 +247,7 @@ UploadResponse response = storageEngine.putObject("file.txt", file);
 ### 2. 私有部署
 
 MinIO 支持私有部署，适合：
+
 - 私有云环境
 - 边缘计算场景
 - 数据安全要求高的场景
@@ -253,6 +256,7 @@ MinIO 支持私有部署，适合：
 ### 3. 高性能
 
 MinIO 采用分布式架构，支持：
+
 - 高并发访问
 - 水平扩展
 - 数据冗余
@@ -261,27 +265,27 @@ MinIO 采用分布式架构，支持：
 ## 最佳实践
 
 1. **部署方式**
-   - 开发/测试：单节点部署
-   - 生产环境：分布式部署（至少 4 个节点）
+    - 开发/测试：单节点部署
+    - 生产环境：分布式部署（至少 4 个节点）
 
 2. **访问凭证管理**
-   - 生产环境必须修改默认凭证
-   - 使用 IAM 策略控制访问权限
-   - 定期轮换访问密钥
+    - 生产环境必须修改默认凭证
+    - 使用 IAM 策略控制访问权限
+    - 定期轮换访问密钥
 
 3. **存储桶管理**
-   - 为不同业务创建不同的存储桶
-   - 设置存储桶的访问策略
-   - 启用版本控制（如需要）
+    - 为不同业务创建不同的存储桶
+    - 设置存储桶的访问策略
+    - 启用版本控制（如需要）
 
 4. **监控和告警**
-   - 监控 MinIO 服务状态
-   - 监控存储空间使用情况
-   - 设置告警规则
+    - 监控 MinIO 服务状态
+    - 监控存储空间使用情况
+    - 设置告警规则
 
 5. **备份策略**
-   - 定期备份重要数据
-   - 使用 MinIO 的复制功能实现异地备份
+    - 定期备份重要数据
+    - 使用 MinIO 的复制功能实现异地备份
 
 ## 常见问题
 

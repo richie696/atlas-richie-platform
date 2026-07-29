@@ -25,27 +25,23 @@ import io.milvus.param.IndexType;
 import io.milvus.param.MetricType;
 import io.milvus.param.R;
 import io.milvus.param.RpcStatus;
-import io.milvus.param.collection.CreateCollectionParam;
-import io.milvus.param.collection.DescribeCollectionParam;
-import io.milvus.param.collection.GetCollectionStatisticsParam;
-import io.milvus.param.collection.HasCollectionParam;
-import io.milvus.param.control.ManualCompactParam;
 import io.milvus.param.alias.AlterAliasParam;
 import io.milvus.param.alias.CreateAliasParam;
+import io.milvus.param.collection.*;
+import io.milvus.param.control.ManualCompactParam;
 import io.milvus.param.dml.DeleteParam;
-import io.milvus.param.dml.SearchParam;
 import io.milvus.param.dml.InsertParam;
 import io.milvus.param.dml.QueryParam;
-import io.milvus.param.collection.FlushParam;
+import io.milvus.param.dml.SearchParam;
 import io.milvus.param.index.CreateIndexParam;
 import org.junit.jupiter.api.BeforeEach;
-import org.springframework.ai.document.Document;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 
@@ -73,7 +69,7 @@ class MilvusVectorServiceImplTest {
     private MilvusConfig milvusConfig;
     private MilvusVectorServiceImpl service;
 
-@BeforeEach
+    @BeforeEach
     void setUp() {
         milvusConfig = new MilvusConfig();
         milvusConfig.setHost("localhost");

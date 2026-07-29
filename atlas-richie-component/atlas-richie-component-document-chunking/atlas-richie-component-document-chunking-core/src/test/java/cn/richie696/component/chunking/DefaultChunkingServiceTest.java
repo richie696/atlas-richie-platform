@@ -15,10 +15,12 @@
  */
 package cn.richie696.component.chunking;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import cn.richie696.component.chunking.model.Chunk;
+import cn.richie696.component.chunking.model.ChunkingResult;
 import cn.richie696.component.chunking.model.ChunkingRule;
 import cn.richie696.component.chunking.model.ChunkingRule.Strategy;
-import cn.richie696.component.chunking.model.ChunkingResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -28,8 +30,6 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DefaultChunkingServiceTest {

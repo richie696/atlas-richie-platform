@@ -58,7 +58,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/oauth/dcr/**</include>
+                        <include>cn/richie696/component/oauth/dcr/**</include>
                     </includes>
                     <excludes>
                         <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>
@@ -72,7 +72,7 @@
                         <configuration combine.self="override">
                             <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
                             <includes>
-                                <include>com/richie/component/oauth/dcr/**</include>
+                                <include>cn/richie696/component/oauth/dcr/**</include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

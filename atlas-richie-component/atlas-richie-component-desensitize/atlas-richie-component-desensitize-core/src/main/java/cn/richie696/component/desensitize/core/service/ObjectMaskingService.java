@@ -21,8 +21,8 @@ import java.util.Map;
  * 对象 / Map 安全序列化（日志等场景）。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public interface ObjectMaskingService {
 

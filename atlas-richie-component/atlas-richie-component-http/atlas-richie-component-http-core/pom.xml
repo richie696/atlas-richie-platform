@@ -38,7 +38,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/http/core/**</include>
+                        <include>cn/richie696/component/http/core/**</include>
                     </includes>
                     <excludes>
                         <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

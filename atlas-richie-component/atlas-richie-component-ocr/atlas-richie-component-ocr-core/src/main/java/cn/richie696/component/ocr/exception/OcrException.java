@@ -27,15 +27,17 @@ import java.util.List;
  * @version 1.0.0
  * @since 2026-07-10
  */
-public abstract sealed class OcrException extends RuntimeException
+public abstract sealed
+
+class OcrException extends RuntimeException
         permits OcrException.ConfigMissing,
-                OcrException.ProviderUnavailable,
-                OcrException.Unrecognized,
-                OcrException.SidecarUnavailable,
-                OcrException.VlmTimeout,
-                OcrException.VlmOutOfMemory,
-                OcrException.ImageTooLargeForSync,
-                OcrException.NoAvailableProvider {
+        OcrException.ProviderUnavailable,
+        OcrException.Unrecognized,
+        OcrException.SidecarUnavailable,
+        OcrException.VlmTimeout,
+        OcrException.VlmOutOfMemory,
+        OcrException.ImageTooLargeForSync,
+        OcrException.NoAvailableProvider {
 
     private OcrException(String message) {
         super(message);
@@ -67,12 +69,16 @@ public abstract sealed class OcrException extends RuntimeException
         /**
          * @return Provider 名
          */
-        public String provider() { return provider; }
+        public String provider() {
+            return provider;
+        }
 
         /**
          * @return 缺失的配置项 key
          */
-        public String key() { return key; }
+        public String key() {
+            return key;
+        }
     }
 
     /**
@@ -107,12 +113,16 @@ public abstract sealed class OcrException extends RuntimeException
         /**
          * @return Provider 名
          */
-        public String provider() { return provider; }
+        public String provider() {
+            return provider;
+        }
 
         /**
          * @return HTTP 状态码（{@code null} 表示非 HTTP 错误）
          */
-        public Integer httpStatus() { return httpStatus; }
+        public Integer httpStatus() {
+            return httpStatus;
+        }
     }
 
     /**
@@ -135,12 +145,16 @@ public abstract sealed class OcrException extends RuntimeException
         /**
          * @return Provider 名
          */
-        public String provider() { return provider; }
+        public String provider() {
+            return provider;
+        }
 
         /**
          * @return 拒识原因
          */
-        public String reason() { return reason; }
+        public String reason() {
+            return reason;
+        }
     }
 
     /**
@@ -164,12 +178,16 @@ public abstract sealed class OcrException extends RuntimeException
         /**
          * @return Provider 名
          */
-        public String provider() { return provider; }
+        public String provider() {
+            return provider;
+        }
 
         /**
          * @return Sidecar 地址
          */
-        public String endpoint() { return endpoint; }
+        public String endpoint() {
+            return endpoint;
+        }
     }
 
     /**
@@ -195,17 +213,23 @@ public abstract sealed class OcrException extends RuntimeException
         /**
          * @return Provider 名
          */
-        public String provider() { return provider; }
+        public String provider() {
+            return provider;
+        }
 
         /**
          * @return 实际耗时（毫秒）
          */
-        public long elapsedMs() { return elapsedMs; }
+        public long elapsedMs() {
+            return elapsedMs;
+        }
 
         /**
          * @return 预算耗时（毫秒）
          */
-        public long budgetMs() { return budgetMs; }
+        public long budgetMs() {
+            return budgetMs;
+        }
     }
 
     /**
@@ -217,9 +241,9 @@ public abstract sealed class OcrException extends RuntimeException
         private final int availableVramMb;
 
         /**
-         * @param provider         Provider 名
-         * @param requiredVramMb   所需显存（MB, 推断失败时实际请求量）
-         * @param availableVramMb  当前可用显存（MB）
+         * @param provider        Provider 名
+         * @param requiredVramMb  所需显存（MB, 推断失败时实际请求量）
+         * @param availableVramMb 当前可用显存（MB）
          */
         public VlmOutOfMemory(String provider, int requiredVramMb, int availableVramMb) {
             super("OCR VLM[" + provider + "] OOM: requires " + requiredVramMb + "MB, only " + availableVramMb + "MB available");
@@ -231,17 +255,23 @@ public abstract sealed class OcrException extends RuntimeException
         /**
          * @return Provider 名
          */
-        public String provider() { return provider; }
+        public String provider() {
+            return provider;
+        }
 
         /**
          * @return 所需显存（MB）
          */
-        public int requiredVramMb() { return requiredVramMb; }
+        public int requiredVramMb() {
+            return requiredVramMb;
+        }
 
         /**
          * @return 当前可用显存（MB）
          */
-        public int availableVramMb() { return availableVramMb; }
+        public int availableVramMb() {
+            return availableVramMb;
+        }
     }
 
     /**
@@ -267,17 +297,23 @@ public abstract sealed class OcrException extends RuntimeException
         /**
          * @return Provider 名
          */
-        public String provider() { return provider; }
+        public String provider() {
+            return provider;
+        }
 
         /**
          * @return 图片实际字节数
          */
-        public long imageBytes() { return imageBytes; }
+        public long imageBytes() {
+            return imageBytes;
+        }
 
         /**
          * @return 同步接口阈值（字节）
          */
-        public long thresholdBytes() { return thresholdBytes; }
+        public long thresholdBytes() {
+            return thresholdBytes;
+        }
     }
 
     /**
@@ -310,12 +346,16 @@ public abstract sealed class OcrException extends RuntimeException
         /**
          * @return 所有尝试过的 Provider 名列表（不可变）
          */
-        public List<String> attempted() { return attempted; }
+        public List<String> attempted() {
+            return attempted;
+        }
 
         /**
          * @return 路由上下文（tenantId / GPU 可用性 等）
          */
-        public String context() { return context; }
+        public String context() {
+            return context;
+        }
     }
 
 }

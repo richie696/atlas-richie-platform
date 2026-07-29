@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import cn.richie696.component.web.core.protection.AnomalyDetectionInterceptor;
+import java.util.Map;
 
 class AnomalyDetectionInterceptorTest {
 

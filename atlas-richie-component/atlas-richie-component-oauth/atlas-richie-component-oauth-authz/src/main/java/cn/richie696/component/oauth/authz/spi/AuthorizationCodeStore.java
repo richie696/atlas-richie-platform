@@ -32,14 +32,14 @@ public interface AuthorizationCodeStore {
     /**
      * 存储授权码
      *
-     * @param code                 授权码
+     * @param code                授权码
      * @param clientId            客户端 ID
-     * @param redirectUri          重定向 URI
-     * @param codeChallenge        PKCE code_challenge
-     * @param codeChallengeMethod  PKCE method (S256 或 plain)
-     * @param scopes               申请的 scopes
+     * @param redirectUri         重定向 URI
+     * @param codeChallenge       PKCE code_challenge
+     * @param codeChallengeMethod PKCE method (S256 或 plain)
+     * @param scopes              申请的 scopes
      * @param userId              用户 ID
-     * @param ttlSeconds           有效期（秒，默认 600）
+     * @param ttlSeconds          有效期（秒，默认 600）
      */
     void storeAuthorizationCode(
             String code,

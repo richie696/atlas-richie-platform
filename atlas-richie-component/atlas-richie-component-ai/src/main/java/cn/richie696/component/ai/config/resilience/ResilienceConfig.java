@@ -25,12 +25,18 @@ import lombok.Data;
 @Data
 public class ResilienceConfig {
 
-    /** 是否启用简易熔断(连续失败后临时跳过该模型)。 */
+    /**
+     * 是否启用简易熔断(连续失败后临时跳过该模型)。
+     */
     private boolean circuitBreakerEnabled = true;
 
-    /** 触发熔断的连续失败次数。 */
+    /**
+     * 触发熔断的连续失败次数。
+     */
     private int failureThreshold = 3;
 
-    /** 熔断打开时长(毫秒)。 */
+    /**
+     * 熔断打开时长(毫秒)。
+     */
     private long openDurationMs = 60_000L;
 }

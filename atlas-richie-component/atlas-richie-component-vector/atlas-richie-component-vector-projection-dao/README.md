@@ -1,13 +1,11 @@
 # Vector Projection DAO Plugin
 
-`atlas-richie-component-vector-projection-dao` 将业务文档在向量库中的数据视为**可重建投影**。
-它只管理投影版本、`vectorId` manifest、延迟清理与 Outbox；不管理业务文档表，不判断用户权限，
-也不负责解析、切片或模型调用。
+`atlas-richie-component-vector-projection-dao` 将业务文档在向量库中的数据视为 **可重建投影**。 它只管理投影版本、
+`vectorId` manifest、延迟清理与 Outbox；不管理业务文档表，不判断用户权限， 也不负责解析、切片或模型调用。
 
 ## 何时引入
 
-适用于需要文档更新、删除、版本保留、失败重试或多 provider 精确清理的商用 RAG。简单的一次性
-向量写入无需引入。
+适用于需要文档更新、删除、版本保留、失败重试或多 provider 精确清理的商用 RAG。简单的一次性 向量写入无需引入。
 
 ```xml
 <dependency>
@@ -26,8 +24,8 @@ platform:
         delete-batch-size: 200
 ```
 
-执行 [schema/vector-projection-schema.sql](src/main/resources/schema/vector-projection-schema.sql) 中的 DDL，
-或将其转换为项目自己的 Flyway/Liquibase migration。插件不会自动建表。
+执行 [schema/vector-projection-schema.sql](src/main/resources/schema/vector-projection-schema.sql) 中的 DDL， 或将其转换为项目自己的
+Flyway/Liquibase migration。插件不会自动建表。
 
 ## 生命周期
 

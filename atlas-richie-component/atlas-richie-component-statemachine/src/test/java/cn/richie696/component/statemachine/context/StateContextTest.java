@@ -92,17 +92,17 @@ class StateContextTest {
     @Test
     void testUpdateTime() {
         LocalDateTime before = context.getUpdateTime();
-        
+
         // 等待一小段时间确保时间不同
         try {
             Thread.sleep(10);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        
+
         context.updateTime();
         LocalDateTime after = context.getUpdateTime();
-        
+
         assertTrue(after.isAfter(before) || after.equals(before));
     }
 
@@ -111,9 +111,9 @@ class StateContextTest {
         Map<String, Object> attrs = new HashMap<>();
         attrs.put("key1", "value1");
         attrs.put("key2", 123);
-        
+
         context.setAttributes(attrs);
-        
+
         assertEquals("value1", context.getAttribute("key1"));
         assertEquals(123, context.getAttribute("key2"));
     }
@@ -123,7 +123,7 @@ class StateContextTest {
         context.setCurrentState("PENDING");
         context.setPreviousState(null);
         context.setEvent("CONFIRM");
-        
+
         assertEquals("PENDING", context.getCurrentState());
         assertNull(context.getPreviousState());
         assertEquals("CONFIRM", context.getEvent());

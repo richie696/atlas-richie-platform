@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.ai.config.chat;
 
+import lombok.Data;
+
 import java.util.LinkedHashSet;
 import java.util.Set;
-
-import lombok.Data;
 
 /**
  * 大语言模型(Chat)条目配置 — 映射 {@code platform.component.ai.models.<key>}。
@@ -31,18 +31,28 @@ import lombok.Data;
 @Data
 public class AiChatModel {
 
-    /** 提供方(LLM 域),见 {@link LlmProvider}。 */
+    /**
+     * 提供方(LLM 域),见 {@link LlmProvider}。
+     */
     private LlmProvider provider;
 
-    /** API Key(Chat 端鉴权)。 */
+    /**
+     * API Key(Chat 端鉴权)。
+     */
     private String apiKey;
 
-    /** API Key 池 — Token Plan 多 key 轮询 / 限流后冷却。YAML: {@code api-keys: [sk-1, sk-2]}。 */
+    /**
+     * API Key 池 — Token Plan 多 key 轮询 / 限流后冷却。YAML: {@code api-keys: [sk-1, sk-2]}。
+     */
     private Set<String> apiKeys = new LinkedHashSet<>();
 
-    /** 厂商端点 URL(为空时由 {@code provider} + Spring AI 默认回落)。 */
+    /**
+     * 厂商端点 URL(为空时由 {@code provider} + Spring AI 默认回落)。
+     */
     private String baseUrl;
 
-    /** 推理参数。 */
+    /**
+     * 推理参数。
+     */
     private AiChatModelOptions options;
 }

@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.mfa.validation.dto.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.mfa.core.constant.MfaStatusEnum;
 import cn.richie696.component.mfa.core.crypto.provider.LocalKeyManagementEngine;
@@ -35,8 +36,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.time.Instant;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class MfaValidationServiceIT extends AbstractMfaRedisIntegrationTest {
 

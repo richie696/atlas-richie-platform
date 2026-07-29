@@ -83,25 +83,37 @@ import java.time.Duration;
  * @since 2025-09-15 16:46:38
  */
 @Data
-@ConfigurationProperties(prefix = "platform.cache.redis.stream.monitoring")
+@ConfigurationProperties(prefix = "platform.component.cache.redis.stream.monitoring")
 public class RedisStreamMonitoringProperties {
 
-    /** 是否启用 Redis Stream 监控（总开关） */
+    /**
+     * 是否启用 Redis Stream 监控（总开关）
+     */
     private boolean enabled = false;
 
-    /** 健康检查配置 */
+    /**
+     * 健康检查配置
+     */
     private HealthCheck healthCheck = new HealthCheck();
 
-    /** 指标采集配置 */
+    /**
+     * 指标采集配置
+     */
     private Metrics metrics = new Metrics();
 
-    /** 性能指标配置 */
+    /**
+     * 性能指标配置
+     */
     private Performance performance = new Performance();
 
-    /** 错误监控配置 */
+    /**
+     * 错误监控配置
+     */
     private ErrorMonitoring errorMonitoring = new ErrorMonitoring();
 
-    /** 业务监控配置 */
+    /**
+     * 业务监控配置
+     */
     private BusinessMonitoring businessMonitoring = new BusinessMonitoring();
 
     /**
@@ -142,13 +154,19 @@ public class RedisStreamMonitoringProperties {
     @Data
     public static class Metrics {
 
-        /** 是否上报指标 */
+        /**
+         * 是否上报指标
+         */
         private boolean enabled = false;
 
-        /** 是否开启直方图与分位数 */
+        /**
+         * 是否开启直方图与分位数
+         */
         private boolean detailed = true;
 
-        /** 采样率（0.0 - 1.0） */
+        /**
+         * 采样率（0.0 - 1.0）
+         */
         private double samplingRate = 1.0;
     }
 
@@ -161,16 +179,24 @@ public class RedisStreamMonitoringProperties {
     @Data
     public static class Performance {
 
-        /** 是否启用性能统计 */
+        /**
+         * 是否启用性能统计
+         */
         private boolean enabled = false;
 
-        /** 是否记录处理耗时 */
+        /**
+         * 是否记录处理耗时
+         */
         private boolean recordProcessingTime = true;
 
-        /** 是否记录拉取耗时 */
+        /**
+         * 是否记录拉取耗时
+         */
         private boolean recordPollingTime = true;
 
-        /** 是否记录发布耗时 */
+        /**
+         * 是否记录发布耗时
+         */
         private boolean recordPublishingTime = true;
     }
 
@@ -187,13 +213,19 @@ public class RedisStreamMonitoringProperties {
     @Data
     public static class ErrorMonitoring {
 
-        /** 是否启用错误指标采集 */
+        /**
+         * 是否启用错误指标采集
+         */
         private boolean enabled = false;
 
-        /** 是否按异常类型分类 */
+        /**
+         * 是否按异常类型分类
+         */
         private boolean classifyByType = true;
 
-        /** 是否记录堆栈（开销较大） */
+        /**
+         * 是否记录堆栈（开销较大）
+         */
         private boolean recordStackTrace = false;
     }
 
@@ -206,16 +238,24 @@ public class RedisStreamMonitoringProperties {
     @Data
     public static class BusinessMonitoring {
 
-        /** 是否启用业务监控 */
+        /**
+         * 是否启用业务监控
+         */
         private boolean enabled = false;
 
-        /** 是否记录消息计数 */
+        /**
+         * 是否记录消息计数
+         */
         private boolean recordMessageCount = true;
 
-        /** 是否记录重试计数 */
+        /**
+         * 是否记录重试计数
+         */
         private boolean recordRetryCount = true;
 
-        /** 是否记录确认计数 */
+        /**
+         * 是否记录确认计数
+         */
         private boolean recordAckCount = true;
     }
 }

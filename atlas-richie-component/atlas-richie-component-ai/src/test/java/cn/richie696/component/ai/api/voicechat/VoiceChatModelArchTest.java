@@ -22,7 +22,6 @@ import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.Test;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * ArchUnit 静态守护 — 原则 J 包隔离规则 (RN.4-alpha voice-chat SPI 范围内)。

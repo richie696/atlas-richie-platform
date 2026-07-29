@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.redis.streammq.utils;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import cn.richie696.component.redis.streammq.StreamMQ;
 import cn.richie696.component.redis.streammq.bean.DeadLetterMessage;
 import cn.richie696.component.redis.streammq.function.StreamFunction;
@@ -23,13 +24,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.data.redis.connection.stream.RecordId;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class DeadLetterQueueUtilTest {
 

@@ -1,56 +1,59 @@
 # Atlas Richie MFA Component (atlas-richie-component-mfa)
 
-> Enterprise-grade **multi-factor authentication** component for the Richie Platform. Implements TOTP / HOTP per RFC 6238 / 4226, with optional SMS / email channels and risk-based step-up. Uses a **split architecture**: `mfa-validation` (read-only, zero-DB) runs in the gateway; `mfa-management` (CRUD + Liquibase) runs in the general service.
+> Enterprise-grade **multi-factor authentication** component for the Richie Platform. Implements TOTP / HOTP per RFC
+> 6238 / 4226, with optional SMS / email channels and risk-based step-up. Uses a **split architecture**: `mfa-validation`
+> (read-only, zero-DB) runs in the gateway; `mfa-management` (CRUD + Liquibase) runs in the general service.
 
 ---
 
 ## 📖 Contents
 
 - [📖 Overview](#📖-overview)
-  - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
+    - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
 - [✨ Features](#✨-features)
-  - [Core capabilities](#core-capabilities)
-  - [Design choices](#design-choices)
+    - [Core capabilities](#core-capabilities)
+    - [Design choices](#design-choices)
 - [🏗️ Architecture & Module Layout](#🏗️-architecture-&-module-layout)
 - [🚀 Quick Start](#🚀-quick-start)
-  - [1. Add the dependency](#1-add-the-dependency)
-  - [2. Configure](#2-configure)
-  - [3. Bind and verify](#3-bind-and-verify)
+    - [1. Add the dependency](#1-add-the-dependency)
+    - [2. Configure](#2-configure)
+    - [3. Bind and verify](#3-bind-and-verify)
 - [🔧 Core Capabilities](#🔧-core-capabilities)
-  - [1. Bind / unbind device](#1-bind-/-unbind-device)
-  - [2. Code generation](#2-code-generation)
-  - [3. Code verification](#3-code-verification)
-  - [4. Recovery codes](#4-recovery-codes)
+    - [1. Bind / unbind device](#1-bind-/-unbind-device)
+    - [2. Code generation](#2-code-generation)
+    - [3. Code verification](#3-code-verification)
+    - [4. Recovery codes](#4-recovery-codes)
 - [⚙️ Configuration Reference](#⚙️-configuration-reference)
 - [🎯 Best Practices](#🎯-best-practices)
 - [⚠️ Known Limitations](#⚠️-known-limitations)
 - [❓ FAQ](#❓-faq)
-  - [Q1: Why split into validation and management?](#q1-why-split-into-validation-and-management?)
-  - [Q2: Can the same MFA secret work across multiple devices?](#q2-can-the-same-mfa-secret-work-across-multiple-devices?)
-  - [Q3: How does tenant detection work?](#q3-how-does-tenant-detection-work?)
-  - [Q4: Can I use my own SMS provider?](#q4-can-i-use-my-own-sms-provider?)
-  - [Q5: Are recovery codes one-time use?](#q5-are-recovery-codes-one-time-use?)
+    - [Q1: Why split into validation and management?](#q1-why-split-into-validation-and-management?)
+    - [Q2: Can the same MFA secret work across multiple devices?](#q2-can-the-same-mfa-secret-work-across-multiple-devices?)
+    - [Q3: How does tenant detection work?](#q3-how-does-tenant-detection-work?)
+    - [Q4: Can I use my own SMS provider?](#q4-can-i-use-my-own-sms-provider?)
+    - [Q5: Are recovery codes one-time use?](#q5-are-recovery-codes-one-time-use?)
 - [📚 Further Reading](#📚-further-reading)
+
 ---
 
 ## 📖 Overview
 
-| Item | Value |
-|------|-------|
-| **Artifact** | `cn.richie696.component:atlas-richie-component-mfa` |
-| **Category** | Identity & access — multi-factor authentication |
+| Item                  | Value                                                                                                              |
+|-----------------------|--------------------------------------------------------------------------------------------------------------------|
+| **Artifact**          | `cn.richie696.component:atlas-richie-component-mfa`                                                                |
+| **Category**          | Identity & access — multi-factor authentication                                                                    |
 | **Hard dependencies** | `atlas-richie-context`, `atlas-richie-component-cache` (read-only for validation), Liquibase + DB (for management) |
-| **Architecture** | **Split**: `mfa-validation` (gateway-side, no DB) + `mfa-management` (general-service side, DB) |
+| **Architecture**      | **Split**: `mfa-validation` (gateway-side, no DB) + `mfa-management` (general-service side, DB)                    |
 
 ### `What` this component is — and what it isn't
 
-| ✅ It gives you | ❌ It does not give you |
-|-----------------|------------------------|
-| TOTP / HOTP per RFC 6238 / 4226 | A user table — you provide `userId`, the component handles the rest |
-| SMS / email second-factor channels | An OAuth server (combine with `atlas-richie-component-oauth`) |
-| Recovery codes | Biometric / WebAuthn (planned) |
-| Risk-based step-up policy | Tenant management UI |
-| Tenant-aware (optional) — auto-detects `platform.gateway.tenant.enable` | A drop-in replacement for a hard-token YubiKey |
+| ✅ It gives you                                                         | ❌ It does not give you                                             |
+|-------------------------------------------------------------------------|---------------------------------------------------------------------|
+| TOTP / HOTP per RFC 6238 / 4226                                         | A user table — you provide `userId`, the component handles the rest |
+| SMS / email second-factor channels                                      | An OAuth server (combine with `atlas-richie-component-oauth`)       |
+| Recovery codes                                                          | Biometric / WebAuthn (planned)                                      |
+| Risk-based step-up policy                                               | Tenant management UI                                                |
+| Tenant-aware (optional) — auto-detects `platform.gateway.tenant.enable` | A drop-in replacement for a hard-token YubiKey                      |
 
 ## ✨ Features
 
@@ -65,9 +68,11 @@
 
 ### `Design` choices
 
-- ✅ **Split architecture** — validation in gateway (stateless, fast, no DB); management in general service (writes, Liquibase).
+- ✅ **Split architecture** — validation in gateway (stateless, fast, no DB); management in general service (writes,
+  Liquibase).
 - ✅ **User-agnostic** — only consumes your `userId` (String), never touches your user table.
-- ✅ **Tenant opt-in** — `enableTenant=false` by default; auto-reads `platform.gateway.tenant.enable` if not set explicitly.
+- ✅ **Tenant opt-in** — `enableTenant=false` by default; auto-reads `platform.gateway.tenant.enable` if not set
+  explicitly.
 
 ## 🏗️ Architecture & Module Layout
 
@@ -176,16 +181,16 @@ boolean ok = recoveryCodeService.consume(userId, "ABCD-1234");
 
 ## ⚙️ Configuration Reference
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `enabled` | boolean | `true` | Master switch |
-| `enable-tenant` | boolean | auto | Auto-detects `platform.gateway.tenant.enable` |
-| `channel` | enum | `TOTP` | Default channel: `TOTP` / `SMS` / `EMAIL` |
-| `code-length` | int | `6` | OTP code length |
-| `code-ttl-seconds` | int | `30` | Code validity window |
-| `recovery-codes` | int | `10` | Number of recovery codes per device |
-| `rate-limit.max-attempts` | int | `5` | Lockout after N failed attempts |
-| `rate-limit.lockout-seconds` | int | `300` | Lockout duration |
+| Property                     | Type    | Default | Description                                   |
+|------------------------------|---------|---------|-----------------------------------------------|
+| `enabled`                    | boolean | `true`  | Master switch                                 |
+| `enable-tenant`              | boolean | auto    | Auto-detects `platform.gateway.tenant.enable` |
+| `channel`                    | enum    | `TOTP`  | Default channel: `TOTP` / `SMS` / `EMAIL`     |
+| `code-length`                | int     | `6`     | OTP code length                               |
+| `code-ttl-seconds`           | int     | `30`    | Code validity window                          |
+| `recovery-codes`             | int     | `10`    | Number of recovery codes per device           |
+| `rate-limit.max-attempts`    | int     | `5`     | Lockout after N failed attempts               |
+| `rate-limit.lockout-seconds` | int     | `300`   | Lockout duration                              |
 
 ## 🎯 Best Practices
 
@@ -197,18 +202,19 @@ boolean ok = recoveryCodeService.consume(userId, "ABCD-1234");
 
 ## ⚠️ Known Limitations
 
-| Limitation | Impact | Workaround |
-|------------|--------|------------|
-| **No WebAuthn / FIDO2 yet** | Can't replace hardware tokens | Use as 2nd factor alongside password |
-| **No built-in SMS provider** | You integrate Twilio / Aliyun yourself | Implement `SmsSender` SPI |
-| **Synchronous code verify only** | Latency on every login | Cache recent codes in Redis (TTL ≤ 30s) |
-| **Liquibase DDL bundled with management** | Upgrade requires careful review | Test on staging first |
+| Limitation                                | Impact                                 | Workaround                              |
+|-------------------------------------------|----------------------------------------|-----------------------------------------|
+| **No WebAuthn / FIDO2 yet**               | Can't replace hardware tokens          | Use as 2nd factor alongside password    |
+| **No built-in SMS provider**              | You integrate Twilio / Aliyun yourself | Implement `SmsSender` SPI               |
+| **Synchronous code verify only**          | Latency on every login                 | Cache recent codes in Redis (TTL ≤ 30s) |
+| **Liquibase DDL bundled with management** | Upgrade requires careful review        | Test on staging first                   |
 
 ## ❓ FAQ
 
 ### `Q1` — `Why` split into validation and management?
 
-Validation is stateless and runs in the hot path (gateway) — it must be fast and dependency-free. Management is stateful and runs in the general service where Liquibase + DB live.
+Validation is stateless and runs in the hot path (gateway) — it must be fast and dependency-free. Management is stateful
+and runs in the general service where Liquibase + DB live.
 
 ### `Q2` — `Can` the same `MFA` secret work across multiple devices?
 
@@ -216,7 +222,8 @@ No — each device binds a unique secret. A user can have N devices (e.g., phone
 
 ### `Q3` — `How` does tenant detection work?
 
-`enable-tenant=false` (default). If `platform.gateway.tenant.enable=true`, MFA auto-enables tenant mode. Both modules must agree.
+`enable-tenant=false` (default). If `platform.gateway.tenant.enable=true`, MFA auto-enables tenant mode. Both modules
+must agree.
 
 ### `Q4` — `Can` `I` use my own `SMS` provider?
 
@@ -232,7 +239,8 @@ Yes — each code is consumed on first use and cannot be reused.
 - **OAuth integration** — [`../atlas-richie-component-oauth/README.md`](../atlas-richie-component-oauth/README.md)
 - **Tenant component** — [`../atlas-richie-component-tenant/README.md`](../atlas-richie-component-tenant/README.md)
 - **Cache (Redis)** — used by validation module
-- External: [RFC 6238 (TOTP)](https://datatracker.ietf.org/doc/html/rfc6238) · [RFC 4226 (HOTP)](https://datatracker.ietf.org/doc/html/rfc4226)
+-
+External: [RFC 6238 (TOTP)](https://datatracker.ietf.org/doc/html/rfc6238) · [RFC 4226 (HOTP)](https://datatracker.ietf.org/doc/html/rfc4226)
 
 ---
 

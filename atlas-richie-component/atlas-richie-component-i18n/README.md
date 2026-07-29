@@ -1,54 +1,56 @@
 # Atlas Richie i18n Component (atlas-richie-component-i18n)
 
-> **Internationalization (i18n)** component. Bundles `MessageSource`, locale resolvers (header / cookie / session / database), resource bundle reload, and i18n-aware exception messages. One `LocaleResolver` for the whole platform.
+> **Internationalization (i18n)** component. Bundles `MessageSource`, locale resolvers (header / cookie / session /
+> database), resource bundle reload, and i18n-aware exception messages. One `LocaleResolver` for the whole platform.
 
 ---
 
 ## 📖 Contents
 
 - [📖 Overview](#📖-overview)
-  - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
+    - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
 - [✨ Features](#✨-features)
-  - [Core capabilities](#core-capabilities)
-  - [Design choices](#design-choices)
+    - [Core capabilities](#core-capabilities)
+    - [Design choices](#design-choices)
 - [🏗️ Architecture & Module Layout](#🏗️-architecture-&-module-layout)
 - [🚀 Quick Start](#🚀-quick-start)
-  - [1. Add the dependency](#1-add-the-dependency)
-  - [2. Add message bundles](#2-add-message-bundles)
-  - [3. Resolve a message](#3-resolve-a-message)
+    - [1. Add the dependency](#1-add-the-dependency)
+    - [2. Add message bundles](#2-add-message-bundles)
+    - [3. Resolve a message](#3-resolve-a-message)
 - [🔧 Core Capabilities](#🔧-core-capabilities)
-  - [1. Message bundles (multi-locale)](#1-message-bundles-multi-locale)
-  - [2. Locale resolution](#2-locale-resolution)
-  - [3. Parametrized messages](#3-parametrized-messages)
-  - [4. Hot reload](#4-hot-reload)
+    - [1. Message bundles (multi-locale)](#1-message-bundles-multi-locale)
+    - [2. Locale resolution](#2-locale-resolution)
+    - [3. Parametrized messages](#3-parametrized-messages)
+    - [4. Hot reload](#4-hot-reload)
 - [⚙️ Configuration Reference](#⚙️-configuration-reference)
 - [🎯 Best Practices](#🎯-best-practices)
 - [⚠️ Known Limitations](#⚠️-known-limitations)
 - [❓ FAQ](#❓-faq)
-  - [Q1: How does the resolver chain work?](#q1-how-does-the-resolver-chain-work?)
-  - [Q2: Can I add a new locale without redeploying?](#q2-can-i-add-a-new-locale-without-redeploying?)
-  - [Q3: How do I handle timezone + locale together?](#q3-how-do-i-handle-timezone-+-locale-together?)
-  - [Q4: Can I localize exception messages?](#q4-can-i-localize-exception-messages?)
+    - [Q1: How does the resolver chain work?](#q1-how-does-the-resolver-chain-work?)
+    - [Q2: Can I add a new locale without redeploying?](#q2-can-i-add-a-new-locale-without-redeploying?)
+    - [Q3: How do I handle timezone + locale together?](#q3-how-do-i-handle-timezone-+-locale-together?)
+    - [Q4: Can I localize exception messages?](#q4-can-i-localize-exception-messages?)
 - [📚 Further Reading](#📚-further-reading)
+
 ---
 
 ## 📖 Overview
 
-| Item | Value |
-|------|-------|
-| **Artifact** | `cn.richie696.component:atlas-richie-component-i18n` |
-| **Category** | Localization — multi-language resource bundles |
+| Item                  | Value                                                      |
+|-----------------------|------------------------------------------------------------|
+| **Artifact**          | `cn.richie696.component:atlas-richie-component-i18n`       |
+| **Category**          | Localization — multi-language resource bundles             |
 | **Hard dependencies** | `spring-context` (already in Boot), `atlas-richie-context` |
-| **Compatible with** | Java 17+, Spring Boot 4.x |
+| **Compatible with**   | Java 17+, Spring Boot 4.x                                  |
 
 ### `What` this component is — and what it isn't
 
-| ✅ It gives you | ❌ It does not give you |
-|-----------------|------------------------|
-| Locale resolution (header / cookie / DB) | ICU MessageFormat (use Java's built-in) |
-| Hot-reload of message bundles | Right-to-left (RTL) layout (frontend concern) |
-| Parametrized messages | Translation management UI (use Crowdin / Lokalise) |
-| Fallback locale chain | Time zone / currency formatting (use `NumberFormat` / `DateTimeFormatter`) |
+| ✅ It gives you                          | ❌ It does not give you                                                    |
+|------------------------------------------|----------------------------------------------------------------------------|
+| Locale resolution (header / cookie / DB) | ICU MessageFormat (use Java's built-in)                                    |
+| Hot-reload of message bundles            | Right-to-left (RTL) layout (frontend concern)                              |
+| Parametrized messages                    | Translation management UI (use Crowdin / Lokalise)                         |
+| Fallback locale chain                    | Time zone / currency formatting (use `NumberFormat` / `DateTimeFormatter`) |
 
 ## ✨ Features
 
@@ -191,16 +193,16 @@ Useful in dev: edit messages.properties, save, refresh — no restart.
 
 ## ⚙️ Configuration Reference
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `default-locale` | String | `en` | Default fallback locale |
-| `supported` | List<String> | `[en]` | Whitelist of allowed locales |
-| `resolver` | enum | `header` | `header` / `cookie` / `session` / `db` / `composite` |
-| `header-name` | String | `Accept-Language` | Header for `header` resolver |
-| `cookie-name` | String | `LOCALE` | Cookie name for `cookie` resolver |
-| `cookie-max-age` | int | `2592000` | Cookie TTL (s) |
-| `reload-seconds` | int | `0` | Hot-reload interval (0 = off) |
-| `encoding` | String | `UTF-8` | Properties file encoding |
+| Property         | Type         | Default           | Description                                          |
+|------------------|--------------|-------------------|------------------------------------------------------|
+| `default-locale` | String       | `en`              | Default fallback locale                              |
+| `supported`      | List<String> | `[en]`            | Whitelist of allowed locales                         |
+| `resolver`       | enum         | `header`          | `header` / `cookie` / `session` / `db` / `composite` |
+| `header-name`    | String       | `Accept-Language` | Header for `header` resolver                         |
+| `cookie-name`    | String       | `LOCALE`          | Cookie name for `cookie` resolver                    |
+| `cookie-max-age` | int          | `2592000`         | Cookie TTL (s)                                       |
+| `reload-seconds` | int          | `0`               | Hot-reload interval (0 = off)                        |
+| `encoding`       | String       | `UTF-8`           | Properties file encoding                             |
 
 ## 🎯 Best Practices
 
@@ -212,11 +214,11 @@ Useful in dev: edit messages.properties, save, refresh — no restart.
 
 ## ⚠️ Known Limitations
 
-| Limitation | Impact | Workaround |
-|------------|--------|------------|
-| **ResourceBundle caches in JVM** | Slow locale switching | Use `reload-seconds` in dev |
-| **No plural / gender support** | English "1 user" vs "2 users" hard | Custom `MessageSource` SPI |
-| **No DB-backed messages out of the box** | Translation requires redeploy | Implement `DbMessageSource` SPI |
+| Limitation                               | Impact                             | Workaround                      |
+|------------------------------------------|------------------------------------|---------------------------------|
+| **ResourceBundle caches in JVM**         | Slow locale switching              | Use `reload-seconds` in dev     |
+| **No plural / gender support**           | English "1 user" vs "2 users" hard | Custom `MessageSource` SPI      |
+| **No DB-backed messages out of the box** | Translation requires redeploy      | Implement `DbMessageSource` SPI |
 
 ## ❓ FAQ
 
@@ -234,13 +236,15 @@ Use `LocaleContextHolder.setLocale(locale)` + `TimeZone.setDefault(tz)` (request
 
 ### `Q4` — `Can` `I` localize exception messages?
 
-Yes — see [`atlas-richie-component-web` §2 Global exception handling](../atlas-richie-component-web/README.md#2-global-exception-handling).
+Yes — see [
+`atlas-richie-component-web` §2 Global exception handling](../atlas-richie-component-web/README.md#2-global-exception-handling).
 
 ## 📚 Further Reading
 
 - **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
 - **Web (consumes i18n)** — [`../atlas-richie-component-web/README.md`](../atlas-richie-component-web/README.md)
-- External: [Spring MessageSource](https://docs.spring.io/spring-framework/reference/core/beans/context-introduction.html#context-functionality-messagesource) · [ICU MessageFormat](https://unicode-org.github.io/icu/userguide/format_parse/messages.html)
+-
+External: [Spring MessageSource](https://docs.spring.io/spring-framework/reference/core/beans/context-introduction.html#context-functionality-messagesource) · [ICU MessageFormat](https://unicode-org.github.io/icu/userguide/format_parse/messages.html)
 
 ---
 

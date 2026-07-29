@@ -15,9 +15,6 @@
  */
 package cn.richie696.component.oauth.authz;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTCreator;
-import com.auth0.jwt.algorithms.Algorithm;
 import cn.richie696.component.oauth.authz.spi.AuthorizationCodeStore;
 import cn.richie696.component.oauth.core.ClientRegistry;
 import cn.richie696.component.oauth.core.config.OAuth2Properties;
@@ -26,15 +23,15 @@ import cn.richie696.component.oauth.core.model.TokenResponse;
 import cn.richie696.component.oauth.core.spi.TokenStore;
 import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.contract.gateway.model.OAuth2Constants;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTCreator;
+import com.auth0.jwt.algorithms.Algorithm;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
+import java.util.*;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;

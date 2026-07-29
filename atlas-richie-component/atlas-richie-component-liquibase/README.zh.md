@@ -1,56 +1,58 @@
 # Atlas Richie Liquibase组件 (atlas-richie-component-liquibase)
 
-> **Liquibase** 数据库迁移组件。预配置 Spring Boot 自动装配、多数据库支持（MySQL / PostgreSQL / Oracle / 达梦 / 人大金仓 / MSSQL）、changelog 生成、运行时校验、按数据库上下文隔离。可插入任何业务服务。
+> **Liquibase** 数据库迁移组件。预配置 Spring Boot 自动装配、多数据库支持（MySQL / PostgreSQL / Oracle / 达梦 / 人大金仓 /
+> MSSQL）、changelog 生成、运行时校验、按数据库上下文隔离。可插入任何业务服务。
 
 ---
 
 ## 📖 目录
 
 - [📖 概述](#📖-概述)
-  - [本模块的"是"与"不是"](#本模块的是与不是)
+    - [本模块的"是"与"不是"](#本模块的是与不是)
 - [✨ 功能特性](#✨-功能特性)
-  - [核心能力](#核心能力)
-  - [设计选择](#设计选择)
+    - [核心能力](#核心能力)
+    - [设计选择](#设计选择)
 - [🏗️ 架构与模块布局](#🏗️-架构与模块布局)
 - [🚀 快速开始](#🚀-快速开始)
-  - [1. 引入依赖](#1-引入依赖)
-  - [2. 添加 changelog 文件](#2-添加-changelog-文件)
-  - [3. 配置](#3-配置)
-  - [4. 启动应用](#4-启动应用)
+    - [1. 引入依赖](#1-引入依赖)
+    - [2. 添加 changelog 文件](#2-添加-changelog-文件)
+    - [3. 配置](#3-配置)
+    - [4. 启动应用](#4-启动应用)
 - [🔧 核心能力](#🔧-核心能力)
-  - [1. Spring Boot 自动装配](#1-spring-boot-自动装配)
-  - [2. 多数据库支持](#2-多数据库支持)
-  - [3. Changelog 格式](#3-changelog-格式)
-  - [4. 启动前校验](#4-启动前校验)
-  - [5. 测试 profile 跳过](#5-测试-profile-跳过)
+    - [1. Spring Boot 自动装配](#1-spring-boot-自动装配)
+    - [2. 多数据库支持](#2-多数据库支持)
+    - [3. Changelog 格式](#3-changelog-格式)
+    - [4. 启动前校验](#4-启动前校验)
+    - [5. 测试 profile 跳过](#5-测试-profile-跳过)
 - [⚙️ 配置参考](#⚙️-配置参考)
 - [🎯 最佳实践](#🎯-最佳实践)
 - [⚠️ 已知限制](#⚠️-已知限制)
 - [❓ 常见问题](#❓-常见问题)
-  - [Q1：为什么应用启动失败并报 "changelog parse error"？](#q1：为什么应用启动失败并报-changelog-parse-error？)
-  - [Q2：如何添加多租户迁移？](#q2：如何添加多租户迁移？)
-  - [Q3：能否在单元测试中禁用 Liquibase？](#q3：能否在单元测试中禁用-liquibase？)
-  - [Q4：如何协调跨服务的变更？](#q4：如何协调跨服务的变更？)
+    - [Q1：为什么应用启动失败并报 "changelog parse error"？](#q1：为什么应用启动失败并报-changelog-parse-error？)
+    - [Q2：如何添加多租户迁移？](#q2：如何添加多租户迁移？)
+    - [Q3：能否在单元测试中禁用 Liquibase？](#q3：能否在单元测试中禁用-liquibase？)
+    - [Q4：如何协调跨服务的变更？](#q4：如何协调跨服务的变更？)
 - [📚 相关文档](#📚-相关文档)
+
 ---
 
 ## 📖 概述
 
-| 项 | 值 |
-|---|---|
-| **坐标** | `cn.richie696.component:atlas-richie-component-liquibase` |
-| **类别** | 数据库——schema 迁移 |
-| **强依赖** | `liquibase-core`、Spring Boot |
-| **兼容** | MySQL、PostgreSQL、Oracle、达梦、人大金仓、MSSQL、SQLite（dev） |
+| 项         | 值                                                              |
+|------------|-----------------------------------------------------------------|
+| **坐标**   | `cn.richie696.component:atlas-richie-component-liquibase`       |
+| **类别**   | 数据库——schema 迁移                                             |
+| **强依赖** | `liquibase-core`、Spring Boot                                   |
+| **兼容**   | MySQL、PostgreSQL、Oracle、达梦、人大金仓、MSSQL、SQLite（dev） |
 
 ### 本模块的"是"与"不是"
 
-| ✅ 提供 | ❌ 不提供 |
-|--------|---------|
-| Spring Boot 自动装配 | 迁移编写工具（用 Liquibase CLI / IDE 插件） |
+| ✅ 提供                  | ❌ 不提供                                               |
+|--------------------------|---------------------------------------------------------|
+| Spring Boot 自动装配     | 迁移编写工具（用 Liquibase CLI / IDE 插件）             |
 | 多数据库支持（8 种方言） | 在线 schema 变更（用 gh-ost / pt-online-schema-change） |
-| 启动前校验 | 数据库连接池（用 HikariCP） |
-| 按数据库上下文隔离 | 跨库迁移协调 |
+| 启动前校验               | 数据库连接池（用 HikariCP）                             |
+| 按数据库上下文隔离       | 跨库迁移协调                                            |
 
 ## ✨ 功能特性
 
@@ -159,16 +161,16 @@ mvn spring-boot:run
 
 ### 2) 多数据库支持
 
-| 数据库 | 支持 | 说明 |
-|----------|---------|-------|
-| MySQL / MariaDB | ✓ | 默认方言 |
-| PostgreSQL | ✓ | 包括 `pgvector` 扩展 |
-| Oracle | ✓ | 12c+ |
-| **达梦 (DM)** | ✓ | 国产数据库 |
-| **人大金仓 (Kingbase)** | ✓ | 国产数据库 |
-| MSSQL | ✓ | 2016+ |
-| H2 | ✓ (test) | 内存库 |
-| SQLite | ✓ (dev) | 嵌入式 |
+| 数据库                  | 支持      | 说明                 |
+|-------------------------|-----------|----------------------|
+| MySQL / MariaDB         | ✓        | 默认方言             |
+| PostgreSQL              | ✓        | 包括 `pgvector` 扩展 |
+| Oracle                  | ✓        | 12c+                 |
+| **达梦 (DM)**           | ✓        | 国产数据库           |
+| **人大金仓 (Kingbase)** | ✓        | 国产数据库           |
+| MSSQL                   | ✓        | 2016+                |
+| H2                      | ✓ (test) | 内存库               |
+| SQLite                  | ✓ (dev)  | 嵌入式               |
 
 ### 3) `Changelog` 格式
 
@@ -213,14 +215,14 @@ spring:
 
 ## ⚙️ 配置参考
 
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `enabled` | boolean | `true` | 总开关 |
-| `change-log` | String | `classpath:db/changelog/master.xml` | Master changelog 路径 |
-| `default-schema` | String | – | 默认 schema 名 |
-| `drop-first` | boolean | `false` | 先 drop 所有表（仅 dev） |
-| `skip-on-test-profile` | boolean | `true` | `spring.profiles.active=test` 时跳过 |
-| `liquibase-contexts` | String | – | 逗号分隔的 context 过滤 |
+| 属性                   | 类型    | 默认值                              | 说明                                 |
+|------------------------|---------|-------------------------------------|--------------------------------------|
+| `enabled`              | boolean | `true`                              | 总开关                               |
+| `change-log`           | String  | `classpath:db/changelog/master.xml` | Master changelog 路径                |
+| `default-schema`       | String  | –                                   | 默认 schema 名                       |
+| `drop-first`           | boolean | `false`                             | 先 drop 所有表（仅 dev）             |
+| `skip-on-test-profile` | boolean | `true`                              | `spring.profiles.active=test` 时跳过 |
+| `liquibase-contexts`   | String  | –                                   | 逗号分隔的 context 过滤              |
 
 ## 🎯 最佳实践
 
@@ -232,11 +234,11 @@ spring:
 
 ## ⚠️ 已知限制
 
-| 限制 | 影响 | 临时方案 |
-|------|------|---------|
-| **无在线 schema 变更** | 大表 DDL 时锁定 | 外部使用 gh-ost / pt-osc |
-| **跨库迁移协调** | 多库应用需手动排序 | 按服务依赖顺序 changelog |
-| **无原生 GitOps** | 迁移在应用启动时执行 | 用 Liquibase Flow 或外部 runner |
+| 限制                   | 影响                 | 临时方案                        |
+|------------------------|----------------------|---------------------------------|
+| **无在线 schema 变更** | 大表 DDL 时锁定      | 外部使用 gh-ost / pt-osc        |
+| **跨库迁移协调**       | 多库应用需手动排序   | 按服务依赖顺序 changelog        |
+| **无原生 GitOps**      | 迁移在应用启动时执行 | 用 Liquibase Flow 或外部 runner |
 
 ## ❓ 常见问题
 
@@ -267,7 +269,8 @@ platform:
 
 - **父组件** — [`../README.zh.md`](../README.zh.md)
 - **DAO** — [`./atlas-richie-component-dao/README.zh.md`](./atlas-richie-component-dao/README.zh.md)
-- 外部：[Liquibase 文档](https://docs.liquibase.com/) · [Spring Boot Liquibase](https://docs.spring.io/spring-boot/how-to/data-initialization.html#using-liquibase)
+-
+外部：[Liquibase 文档](https://docs.liquibase.com/) · [Spring Boot Liquibase](https://docs.spring.io/spring-boot/how-to/data-initialization.html#using-liquibase)
 
 ---
 

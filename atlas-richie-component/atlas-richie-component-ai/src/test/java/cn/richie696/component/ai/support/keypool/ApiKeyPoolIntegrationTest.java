@@ -15,31 +15,24 @@
  */
 package cn.richie696.component.ai.support.keypool;
 
-import cn.richie696.component.ai.config.chat.AiChatModelOptions;
-
-import cn.richie696.component.ai.config.chat.LlmProvider;
-
-import cn.richie696.component.ai.config.chat.AiChatModel;
-
 import cn.richie696.component.ai.config.AiModelProperties;
+import cn.richie696.component.ai.config.chat.AiChatModel;
+import cn.richie696.component.ai.config.chat.AiChatModelOptions;
+import cn.richie696.component.ai.config.chat.LlmProvider;
 import cn.richie696.component.ai.config.keypool.KeyPoolProperties;
 import cn.richie696.component.ai.model.ModelOptions;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Phase 6 集成测试 — 端到端验证 ApiKeyPool + PooledChatModel + AiChatClientFactory 池化路径。
@@ -292,12 +285,16 @@ class ApiKeyPoolIntegrationTest {
         return new ApiKeyPoolImpl(name, linkedKeys, props);
     }
 
-    /** 构造一个能返回固定成功响应的 ChatModel stub。 */
+    /**
+     * 构造一个能返回固定成功响应的 ChatModel stub。
+     */
     private static ChatModel stubChatModel(String keyName, String response) {
         return stubChatModel(keyName, () -> successResponse(response));
     }
 
-    /** 构造一个按 lambda 行为工作的 ChatModel stub(支持抛异常)。 */
+    /**
+     * 构造一个按 lambda 行为工作的 ChatModel stub(支持抛异常)。
+     */
     private static ChatModel stubChatModel(String keyName, java.util.function.Supplier<ChatResponse> behavior) {
         return new ChatModel() {
             @Override

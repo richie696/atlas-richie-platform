@@ -41,7 +41,7 @@ public final class StatePersistenceModeResolver {
      * 2) 若 definition.dbPersistenceMode 有值，直接使用；
      * 3) 否则回落全局默认（未配置时回退 ASYNC）。
      *
-     * @param definition 状态机定义
+     * @param definition        状态机定义
      * @param globalDefaultMode 全局默认模式
      * @return 状态机级持久化模式，永不返回 null
      */
@@ -66,7 +66,7 @@ public final class StatePersistenceModeResolver {
      * 3) 未命中返回 empty。
      *
      * @param definition 状态机定义
-     * @param stateName 目标状态名
+     * @param stateName  目标状态名
      * @return 状态级模式，未配置或未命中返回 empty
      */
     public static Optional<DbPersistenceMode> resolveStateMode(StateMachineDefinition definition, String stateName) {

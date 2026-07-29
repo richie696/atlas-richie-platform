@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 package cn.richie696.component.web.tomcat.config;
+
 import cn.richie696.component.web.tomcat.executor.TomcatThreadPoolUpdater;
 import cn.richie696.component.web.tomcat.valve.JsonAccessLogValve;
 import cn.richie696.component.web.tomcat.valve.StatisticValve;
 import cn.richie696.component.web.tomcat.valve.TraceIdInjectValve;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.catalina.Context;
 import org.apache.catalina.Pipeline;
 import org.apache.catalina.core.StandardContext;
@@ -36,7 +38,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
-import io.micrometer.core.instrument.MeterRegistry;
 
 /**
  * Embedded Tomcat 专属自动配置
@@ -104,9 +105,9 @@ public class TomcatAutoConfiguration {
     }
 
     private static void injectValves(Context context,
-                                       ObjectProvider<TraceIdInjectValve> traceIdProvider,
-                                       ObjectProvider<StatisticValve> statisticProvider,
-                                       ObjectProvider<JsonAccessLogValve> accessLogProvider) {
+                                     ObjectProvider<TraceIdInjectValve> traceIdProvider,
+                                     ObjectProvider<StatisticValve> statisticProvider,
+                                     ObjectProvider<JsonAccessLogValve> accessLogProvider) {
         if (!(context instanceof StandardContext sc)) {
             return;
         }

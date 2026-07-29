@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.messaging.filter.handler.impl;
 
+import cn.richie696.component.messaging.config.MessagingProperties;
 import cn.richie696.component.messaging.enums.DatasourceTypeEnum;
 import cn.richie696.component.messaging.event.MessageEvent;
 import cn.richie696.component.messaging.filter.datasource.impl.MemoryDatasourceHandlerImpl;
-import cn.richie696.component.messaging.config.MessagingProperties;
 import cn.richie696.context.common.api.SpringContextHolder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

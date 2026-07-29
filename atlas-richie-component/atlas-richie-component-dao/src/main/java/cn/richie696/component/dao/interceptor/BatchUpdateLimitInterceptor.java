@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.dao.interceptor;
 
-import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.component.dao.config.DaoProperties;
+import cn.richie696.contract.exception.BusinessException;
 import com.baomidou.mybatisplus.extension.plugins.inner.InnerInterceptor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,17 +58,17 @@ public class BatchUpdateLimitInterceptor implements InnerInterceptor {
         int updateCount = getBatchUpdateCount(ms, parameter);
         if (updateCount > properties.getBatchUpdateLimit()) {
             String errorMsg = String.format(
-                "批量更新操作被拒绝：更新记录数 (%d) 超过配置的限制阈值 (%d)。请分批执行或调整配置参数 platform.component.dao.batch-update-limit",
-                updateCount, properties.getBatchUpdateLimit()
+                    "批量更新操作被拒绝：更新记录数 (%d) 超过配置的限制阈值 (%d)。请分批执行或调整配置参数 platform.component.dao.batch-update-limit",
+                    updateCount, properties.getBatchUpdateLimit()
             );
             log.warn("批量更新操作被拦截: MappedStatement={}, 更新记录数={}, 限制阈值={}",
-                ms.getId(), updateCount, properties.getBatchUpdateLimit());
+                    ms.getId(), updateCount, properties.getBatchUpdateLimit());
             throw new BusinessException(errorMsg);
         }
 
         if (updateCount > 1) {
             log.debug("批量更新操作通过检查: MappedStatement={}, 更新记录数={}, 限制阈值={}",
-                ms.getId(), updateCount, properties.getBatchUpdateLimit());
+                    ms.getId(), updateCount, properties.getBatchUpdateLimit());
         }
     }
 
@@ -79,7 +79,6 @@ public class BatchUpdateLimitInterceptor implements InnerInterceptor {
      * 1. updateBatchById(Collection) - 通过 Collection 参数传递多个实体
      * 2. update(Entity, Wrapper) - 通过 Wrapper 条件可能影响多行（通过 SQL 分析）
      * 3. 自定义批量更新 SQL - 通过 SQL 中的 IN 条件检测
-     * 
      *
      * @param ms        MappedStatement
      * @param parameter 参数对象

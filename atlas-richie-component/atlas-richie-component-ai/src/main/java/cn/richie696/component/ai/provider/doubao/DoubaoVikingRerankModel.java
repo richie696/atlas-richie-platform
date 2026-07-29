@@ -15,15 +15,14 @@
  */
 package cn.richie696.component.ai.provider.doubao;
 
-import cn.richie696.component.ai.provider.support.JsonSafe;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.ai.api.RerankModel;
 import cn.richie696.component.ai.api.RerankRequest;
 import cn.richie696.component.ai.api.RerankResponse;
 import cn.richie696.component.ai.api.RerankResult;
 import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
+import cn.richie696.component.ai.provider.support.JsonSafe;
 import cn.richie696.context.utils.data.JsonUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.crypto.Mac;
@@ -37,13 +36,10 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * 火山引擎 VikingDB 重排序（Rerank）模型适配器 —— 字节跳动豆包系。
@@ -91,42 +87,66 @@ public class DoubaoVikingRerankModel implements RerankModel {
 
     // ===== 端点常量 =====
 
-    /** VikingDB 知识库 Rerank REST 路径。 */
+    /**
+     * VikingDB 知识库 Rerank REST 路径。
+     */
     public static final String RERANK_PATH = "/api/knowledge/service/rerank";
 
-    /** 默认 Rerank 主机。 */
+    /**
+     * 默认 Rerank 主机。
+     */
     public static final String DEFAULT_HOST = "api-knowledgebase.mlp.cn-beijing.volces.com";
 
-    /** 默认协议。 */
+    /**
+     * 默认协议。
+     */
     public static final String DEFAULT_SCHEME = "https";
 
-    /** 默认服务区域（火山引擎固定 {@code cn-north-1}）。 */
+    /**
+     * 默认服务区域（火山引擎固定 {@code cn-north-1}）。
+     */
     public static final String DEFAULT_REGION = "cn-north-1";
 
-    /** VikingDB Rerank 服务名（固定 {@code air}）。 */
+    /**
+     * VikingDB Rerank 服务名（固定 {@code air}）。
+     */
     public static final String SERVICE_NAME = "air";
 
-    /** 当 {@link RerankRequest#getModel()} 为空时使用的默认模型。 */
+    /**
+     * 当 {@link RerankRequest#getModel()} 为空时使用的默认模型。
+     */
     public static final String DEFAULT_MODEL = "base-multilingual-rerank";
 
     // ===== 签名常量 =====
 
-    /** 算法前缀。 */
+    /**
+     * 算法前缀。
+     */
     public static final String ALGORITHM = "HMAC-SHA256";
 
-    /** 签名密钥前缀（AWS SigV4 兼容）。 */
+    /**
+     * 签名密钥前缀（AWS SigV4 兼容）。
+     */
     private static final String AWS4_PREFIX = "AWS4";
 
-    /** 请求体签名请求头。 */
+    /**
+     * 请求体签名请求头。
+     */
     public static final String HEADER_AUTHORIZATION = "Authorization";
 
-    /** 时间头。 */
+    /**
+     * 时间头。
+     */
     public static final String HEADER_X_DATE = "X-Date";
 
-    /** 请求体 SHA-256 摘要头。 */
+    /**
+     * 请求体 SHA-256 摘要头。
+     */
     public static final String HEADER_X_CONTENT_SHA256 = "X-Content-Sha256";
 
-    /** X-Date 格式 {@code yyyyMMddTHHmmssZ}。 */
+    /**
+     * X-Date 格式 {@code yyyyMMddTHHmmssZ}。
+     */
     private static final DateTimeFormatter X_DATE_FMT =
             DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");
 
@@ -263,7 +283,7 @@ public class DoubaoVikingRerankModel implements RerankModel {
 
         return jdkClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> RerankResponse.succeed(
-                        parseResponse(response, request.getDocuments()), Clock.systemUTC())
+                                parseResponse(response, request.getDocuments()), Clock.systemUTC())
                         .withDuration(System.currentTimeMillis() - start));
     }
 

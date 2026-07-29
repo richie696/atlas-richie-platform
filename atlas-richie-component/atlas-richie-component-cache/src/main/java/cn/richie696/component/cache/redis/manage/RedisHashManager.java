@@ -15,19 +15,19 @@
  */
 package cn.richie696.component.cache.redis.manage;
 
-import cn.richie696.context.utils.data.JsonUtils;
-import cn.richie696.context.bloom.BloomFilter;
 import cn.richie696.component.cache.commons.CacheKeyUtils;
 import cn.richie696.component.cache.config.CacheProperties;
 import cn.richie696.component.cache.enums.L2CachingRegion;
 import cn.richie696.component.cache.function.CacheFunction;
-import cn.richie696.component.cache.ops.CacheInfrastructure;
 import cn.richie696.component.cache.function.HashFunction;
 import cn.richie696.component.cache.local.manage.LocalCache;
+import cn.richie696.component.cache.ops.CacheInfrastructure;
 import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
 import cn.richie696.component.cache.redis.perf.RedisOperationCatalog;
 import cn.richie696.component.cache.redis.perf.RedisPerfGuard;
-import tools.jackson.core.type.TypeReference;
+import cn.richie696.context.bloom.BloomFilter;
+import cn.richie696.context.utils.data.JsonUtils;
+import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -37,14 +37,18 @@ import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.SessionCallback;
-import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.type.TypeReference;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Hash类型缓存管理器
@@ -59,32 +63,44 @@ import java.util.stream.Collectors;
 @ConditionalOnExpression("'${platform.cache.cache-provider:REDIS}'=='REDIS'")
 public class RedisHashManager implements HashFunction {
 
-    /** Redis 模板（JSON 序列化） */
+    /**
+     * Redis 模板（JSON 序列化）
+     */
     @Qualifier("jsonTemplate")
     private final MultiRedisTemplate<Object> redisTemplate;
 
-    /** 缓存配置 */
+    /**
+     * 缓存配置
+     */
     private final CacheProperties cacheProperties;
 
-    /** 布隆过滤器门面 */
+    /**
+     * 布隆过滤器门面
+     */
     private final BloomFilter bloomFilter;
 
-    /** 分布式锁管理器 */
+    /**
+     * 分布式锁管理器
+     */
     private final RedisLockManager lockManager;
 
-    /** 缓存框架内部基础设施（L2 开关、key 类型等） */
+    /**
+     * 缓存框架内部基础设施（L2 开关、key 类型等）
+     */
     private final CacheInfrastructure infra;
 
-    /** Redis 性能守卫（可选启用） */
+    /**
+     * Redis 性能守卫（可选启用）
+     */
     private final RedisPerfGuard redisPerfGuard;
 
     /**
      * 防缓存击穿：Hash对象（支持复杂类型）
      *
-     * @param key      缓存key
+     * @param key       缓存key
      * @param reference 缓存对象类型
-     * @param dbLoader 回源加载器
-     * @param timeout  超时时间
+     * @param dbLoader  回源加载器
+     * @param timeout   超时时间
      * @return 返回缓存对象
      */
     @Override
@@ -155,11 +171,11 @@ public class RedisHashManager implements HashFunction {
     /**
      * 防缓存击穿：Hash单项
      *
-     * @param key     资源键
-     * @param hashKey HASH资源键
-     * @param clazz   目标缓存类型
+     * @param key      资源键
+     * @param hashKey  HASH资源键
+     * @param clazz    目标缓存类型
      * @param dbLoader 回源加载器
-     * @param timeout 超时时间
+     * @param timeout  超时时间
      * @return 返回资源值
      */
     @Override
@@ -238,11 +254,11 @@ public class RedisHashManager implements HashFunction {
     /**
      * 防缓存击穿：Hash单项（支持复杂类型）
      *
-     * @param key     资源键
-     * @param hashKey HASH资源键
+     * @param key       资源键
+     * @param hashKey   HASH资源键
      * @param reference 目标缓存类型
-     * @param dbLoader 回源加载器
-     * @param timeout 超时时间
+     * @param dbLoader  回源加载器
+     * @param timeout   超时时间
      * @return 返回资源值
      */
     @Override
@@ -445,7 +461,7 @@ public class RedisHashManager implements HashFunction {
     /**
      * 获取Hash对象
      *
-     * @param key       缓存key
+     * @param key        缓存key
      * @param valueClass 目标类型
      * @return 返回对象
      */

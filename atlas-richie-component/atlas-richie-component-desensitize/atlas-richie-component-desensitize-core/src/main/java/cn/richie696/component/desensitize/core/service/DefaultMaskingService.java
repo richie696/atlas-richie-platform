@@ -34,8 +34,8 @@ import java.util.Optional;
  * {@link MaskingService} 默认实现。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class DefaultMaskingService implements MaskingService {
 
@@ -63,11 +63,11 @@ public class DefaultMaskingService implements MaskingService {
     /**
      * 构造默认脱敏服务。
      *
-     * @param properties 脱敏配置
-     * @param strategyRegistry 策略注册表
-     * @param ruleRegistry 规则注册表
+     * @param properties           脱敏配置
+     * @param strategyRegistry     策略注册表
+     * @param ruleRegistry         规则注册表
      * @param sensitiveKeyRegistry 敏感键注册表
-     * @param permissionEvaluator 权限评估器
+     * @param permissionEvaluator  权限评估器
      */
     public DefaultMaskingService(
             DesensitizeProperties properties,

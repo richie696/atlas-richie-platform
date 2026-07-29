@@ -58,7 +58,7 @@ public record ChunkedSection(int sectionIndex, String fileName, ParsedSection so
      * @param source       见 {@link #source()}，可空。
      * @param result       见 {@link #result()}。
      */
-    public ChunkedSection(int sectionIndex, String fileName, ParsedSection source, ChunkingResult result) {
+    public ChunkedSection( int sectionIndex, String fileName, ParsedSection source, ChunkingResult result){
         this(sectionIndex, fileName, source, result,
                 source == null ? List.of() : List.of(new SourceSpan(sectionIndex, source, 0, source.text().length())));
     }

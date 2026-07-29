@@ -2,7 +2,8 @@
 
 ## 概述
 
-`richie-component-storage-cos` 是腾讯云对象存储服务（COS）的实现，基于腾讯云 COS SDK 提供完整的 COS 存储能力，支持多可用区存储、图片处理等高级功能。
+`richie-component-storage-cos` 是腾讯云对象存储服务（COS）的实现，基于腾讯云 COS SDK 提供完整的 COS
+存储能力，支持多可用区存储、图片处理等高级功能。
 
 ## 核心特性
 
@@ -11,7 +12,8 @@
 - ✅ **图片处理** - 支持图片缩放、裁剪、水印等
 - ✅ **多种存储类型** - 支持标准、低频、归档、冷归档、深冷归档
 - ✅ **断点续传** - 支持大文件断点续传
-- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非 Spring 环境
+- ✅ **双模式架构** - 支持自动配置（Auto-Init）与手动注册（Manual Registry）两种初始化模式，灵活适配 Spring Boot 自动装配及非
+  Spring 环境
 - ✅ **自动配置** - Spring Boot 自动配置
 
 ## 双模式架构
@@ -46,13 +48,13 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 每个实现包都提供 `StorageEngineProvider` SPI 实现，`CosStorageEngineProvider` 负责：
 
-| 方法 | 说明 |
-|------|------|
-| `supportedEngineType()` | 返回 `StorageEngineEnum.TENCENT_COS` |
-| `create(properties)` | 从配置创建 `COSClient` 和 `CosStorageEngine` |
-| `validate(properties)` | 校验 endpoint / accessKeyId / accessKeySecret / bucketName 必填 |
-| `afterPropertiesSet(engine)` | 手动模式下触发桶探测与前缀校验 |
-| `destroy(engine)` | 释放客户端资源 |
+| 方法                         | 说明                                                            |
+|------------------------------|-----------------------------------------------------------------|
+| `supportedEngineType()`      | 返回 `StorageEngineEnum.TENCENT_COS`                            |
+| `create(properties)`         | 从配置创建 `COSClient` 和 `CosStorageEngine`                    |
+| `validate(properties)`       | 校验 endpoint / accessKeyId / accessKeySecret / bucketName 必填 |
+| `afterPropertiesSet(engine)` | 手动模式下触发桶探测与前缀校验                                  |
+| `destroy(engine)`            | 释放客户端资源                                                  |
 
 自动模式下 Provider 在 `CosAutoConfiguration` 中注册为 Bean；手动模式下由 Registry 通过 SPI 发现。
 
@@ -60,24 +62,24 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 引擎创建前会通过 `ConfigValidation` 工具类校验必填参数，校验失败时抛出 `IllegalArgumentException`：
 
-| 参数 | 校验规则 |
-|------|---------|
-| endpoint | 非空 |
-| accessKeyId | 非空 |
-| accessKeySecret | 非空 |
-| bucketName | 非空 |
+| 参数            | 校验规则 |
+|-----------------|----------|
+| endpoint        | 非空     |
+| accessKeyId     | 非空     |
+| accessKeySecret | 非空     |
+| bucketName      | 非空     |
 
 ## 直传策略 (DirectUploadPolicy)
 
 腾讯云 COS 引擎支持通过预签名 URL 实现客户端直传到对象存储，减少服务端流量压力：
 
-| 字段 | 说明 |
-|------|------|
-| uploadUrl | 预签名上传 URL |
-| method | HTTP 方法（PUT） |
-| headers | 签名头信息 |
-| expireAt | 策略过期时间 |
-| success | 策略是否可用 |
+| 字段      | 说明             |
+|-----------|------------------|
+| uploadUrl | 预签名上传 URL   |
+| method    | HTTP 方法（PUT） |
+| headers   | 签名头信息       |
+| expireAt  | 策略过期时间     |
+| success   | 策略是否可用     |
 
 ```java
 DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
@@ -161,28 +163,28 @@ public class FileService {
 
 腾讯云 COS 与其他云存储的主要配置差异：
 
-| 配置项 | 腾讯云 COS | 阿里云 OSS | AWS S3 |
-|--------|-----------|-----------|--------|
-| **engine 值** | `TENCENT_COS` | `ALIYUN_OSS` | `AWS_S3` |
-| **endpoint 格式** | `cos.region.myqcloud.com` | `oss-cn-region.aliyuncs.com` | `s3.region.amazonaws.com` |
-| **region 格式** | `ap-region` | `cn-region` | `us-east-1` |
-| **访问密钥名称** | SecretId / SecretKey | AccessKey ID / AccessKey Secret | Access Key ID / Secret Access Key |
-| **bucketName 格式** | `bucket-name-appid` | `bucket-name` | `bucket-name` |
-| **存储类型** | 11种（含多可用区） | 4种 | 15+种 |
-| **多可用区存储** | ✅ 支持 | ❌ 不支持 | ❌ 不支持 |
+| 配置项              | 腾讯云 COS                | 阿里云 OSS                      | AWS S3                            |
+|---------------------|---------------------------|---------------------------------|-----------------------------------|
+| **engine 值**       | `TENCENT_COS`             | `ALIYUN_OSS`                    | `AWS_S3`                          |
+| **endpoint 格式**   | `cos.region.myqcloud.com` | `oss-cn-region.aliyuncs.com`    | `s3.region.amazonaws.com`         |
+| **region 格式**     | `ap-region`               | `cn-region`                     | `us-east-1`                       |
+| **访问密钥名称**    | SecretId / SecretKey      | AccessKey ID / AccessKey Secret | Access Key ID / Secret Access Key |
+| **bucketName 格式** | `bucket-name-appid`       | `bucket-name`                   | `bucket-name`                     |
+| **存储类型**        | 11种（含多可用区）        | 4种                             | 15+种                             |
+| **多可用区存储**    | ✅ 支持                   | ❌ 不支持                       | ❌ 不支持                         |
 
 ### endpoint 配置
 
 腾讯云 COS 的 endpoint 格式：
 
 - **标准格式**: `cos.region.myqcloud.com`
-  - 示例：`cos.ap-guangzhou.myqcloud.com`
-  - 示例：`cos.ap-beijing.myqcloud.com`
-  - 示例：`cos.ap-shanghai.myqcloud.com`
+    - 示例：`cos.ap-guangzhou.myqcloud.com`
+    - 示例：`cos.ap-beijing.myqcloud.com`
+    - 示例：`cos.ap-shanghai.myqcloud.com`
 
 - **内网 endpoint**: `cos-internal.region.myqcloud.com`
-  - 适用于同区域 CVM 访问，免流量费
-  - 示例：`cos-internal.ap-guangzhou.myqcloud.com`
+    - 适用于同区域 CVM 访问，免流量费
+    - 示例：`cos-internal.ap-guangzhou.myqcloud.com`
 
 - **自定义域名**: 可在 COS 控制台绑定自定义域名
 
@@ -190,39 +192,39 @@ public class FileService {
 
 腾讯云 COS 支持的区域：
 
-| 区域 | 代码 |
-|------|------|
-| 广州 | `ap-guangzhou` |
-| 北京 | `ap-beijing` |
-| 上海 | `ap-shanghai` |
-| 成都 | `ap-chengdu` |
-| 重庆 | `ap-chongqing` |
-| 南京 | `ap-nanjing` |
-| 中国香港 | `ap-hongkong` |
-| 新加坡 | `ap-singapore` |
-| 孟买 | `ap-mumbai` |
-| 首尔 | `ap-seoul` |
-| 东京 | `ap-tokyo` |
-| 硅谷 | `na-siliconvalley` |
-| 弗吉尼亚 | `na-ashburn` |
-| 法兰克福 | `eu-frankfurt` |
+| 区域     | 代码               |
+|----------|--------------------|
+| 广州     | `ap-guangzhou`     |
+| 北京     | `ap-beijing`       |
+| 上海     | `ap-shanghai`      |
+| 成都     | `ap-chengdu`       |
+| 重庆     | `ap-chongqing`     |
+| 南京     | `ap-nanjing`       |
+| 中国香港 | `ap-hongkong`      |
+| 新加坡   | `ap-singapore`     |
+| 孟买     | `ap-mumbai`        |
+| 首尔     | `ap-seoul`         |
+| 东京     | `ap-tokyo`         |
+| 硅谷     | `na-siliconvalley` |
+| 弗吉尼亚 | `na-ashburn`       |
+| 法兰克福 | `eu-frankfurt`     |
 
 ### 存储类型
 
 腾讯云 COS 支持的存储类型（含多可用区）：
 
-| 存储类型 | 说明 | 适用场景 |
-|---------|------|---------|
-| `STANDARD` | 标准存储 | 频繁访问的数据 |
-| `STANDARD_IA` | 低频访问存储 | 不经常访问但需要快速访问的数据 |
-| `ARCHIVE` | 归档存储 | 长期保存、很少访问的数据 |
-| `COLD_ARCHIVE` | 冷归档存储 | 极长期保存、极少访问的数据 |
-| `DEEP_COLD_ARCHIVE` | 深冷归档存储 | 极长期保存、几乎不访问的数据 |
-| `MULTI_AZ_STANDARD` | 多可用区标准存储 | 需要高可用性的频繁访问数据 |
-| `MULTI_AZ_STANDARD_IA` | 多可用区低频访问存储 | 需要高可用性的偶尔访问数据 |
-| `MULTI_AZ_ARCHIVE` | 多可用区归档存储 | 需要高可用性的归档数据 |
-| `MULTI_AZ_COLD_ARCHIVE` | 多可用区冷归档存储 | 需要高可用性的冷归档数据 |
-| `MULTI_AZ_DEEP_COLD_ARCHIVE` | 多可用区深冷归档存储 | 需要高可用性的深冷归档数据 |
+| 存储类型                       | 说明                 | 适用场景                       |
+|--------------------------------|----------------------|--------------------------------|
+| `STANDARD`                     | 标准存储             | 频繁访问的数据                 |
+| `STANDARD_IA`                  | 低频访问存储         | 不经常访问但需要快速访问的数据 |
+| `ARCHIVE`                      | 归档存储             | 长期保存、很少访问的数据       |
+| `COLD_ARCHIVE`                 | 冷归档存储           | 极长期保存、极少访问的数据     |
+| `DEEP_COLD_ARCHIVE`            | 深冷归档存储         | 极长期保存、几乎不访问的数据   |
+| `MULTI_AZ_STANDARD`            | 多可用区标准存储     | 需要高可用性的频繁访问数据     |
+| `MULTI_AZ_STANDARD_IA`         | 多可用区低频访问存储 | 需要高可用性的偶尔访问数据     |
+| `MULTI_AZ_ARCHIVE`             | 多可用区归档存储     | 需要高可用性的归档数据         |
+| `MULTI_AZ_COLD_ARCHIVE`        | 多可用区冷归档存储   | 需要高可用性的冷归档数据       |
+| `MULTI_AZ_DEEP_COLD_ARCHIVE`   | 多可用区深冷归档存储 | 需要高可用性的深冷归档数据     |
 | `MULTI_AZ_INTELLIGENT_TIERING` | 多可用区智能分层存储 | 需要高可用性的访问模式未知数据 |
 
 > **注意**: 多可用区存储提供更高的可用性和数据持久性，但成本略高。
@@ -244,7 +246,7 @@ public class FileService {
 3. 创建子用户并分配 COS 访问权限
 4. 创建访问密钥
 
-> **安全提示**: 
+> **安全提示**:
 > - 使用 CAM 子用户，遵循最小权限原则
 > - 不要将访问密钥提交到代码仓库
 > - 使用环境变量或密钥管理服务（如腾讯云 KMS）
@@ -299,28 +301,28 @@ platform:
 ## 最佳实践
 
 1. **区域选择**
-   - 选择距离用户最近的区域，降低延迟
-   - 考虑数据合规要求
+    - 选择距离用户最近的区域，降低延迟
+    - 考虑数据合规要求
 
 2. **存储类型选择**
-   - 频繁访问：`STANDARD` 或 `MULTI_AZ_STANDARD`
-   - 偶尔访问：`STANDARD_IA` 或 `MULTI_AZ_STANDARD_IA`
-   - 长期归档：`ARCHIVE` 或 `MULTI_AZ_ARCHIVE`
-   - 需要高可用性：选择多可用区存储类型
+    - 频繁访问：`STANDARD` 或 `MULTI_AZ_STANDARD`
+    - 偶尔访问：`STANDARD_IA` 或 `MULTI_AZ_STANDARD_IA`
+    - 长期归档：`ARCHIVE` 或 `MULTI_AZ_ARCHIVE`
+    - 需要高可用性：选择多可用区存储类型
 
 3. **bucketName 配置**
-   - 必须包含 AppID，格式：`bucket-name-appid`
-   - AppID 可在腾讯云控制台查看
+    - 必须包含 AppID，格式：`bucket-name-appid`
+    - AppID 可在腾讯云控制台查看
 
 4. **访问凭证管理**
-   - 使用 CAM 子用户，遵循最小权限原则
-   - 使用环境变量或密钥管理服务
-   - 定期轮换访问密钥
+    - 使用 CAM 子用户，遵循最小权限原则
+    - 使用环境变量或密钥管理服务
+    - 定期轮换访问密钥
 
 5. **成本优化**
-   - 使用生命周期策略自动转换存储类型
-   - 删除不需要的对象
-   - 使用内网 endpoint 免流量费
+    - 使用生命周期策略自动转换存储类型
+    - 删除不需要的对象
+    - 使用内网 endpoint 免流量费
 
 ## 常见问题
 

@@ -43,12 +43,12 @@ public interface VectorProjectionWriter {
      *
      * @param versionId 目标投影版本标识；必须由
      *                  {@link VectorProjectionLifecycleService#beginRebuild} 生成且处于非终态。
-     * @param records 待写入的向量记录流；每条记录的 {@link cn.richie696.component.vector.model.VectorContent}
-     *                必须与目标 {@code embeddingSpaceId} 兼容。
+     * @param records   待写入的向量记录流；每条记录的 {@link cn.richie696.component.vector.model.VectorContent}
+     *                  必须与目标 {@code embeddingSpaceId} 兼容。
      * @return 写入过程中的批量操作事件流；调用方必须订阅该 Flux 才能保证 manifest 与
-     *         向量库写入同步完成。
+     * 向量库写入同步完成。
      * @throws IllegalArgumentException 当 versionId 为空或 records 为 {@code null} 时。
-     * @throws IllegalStateException 当 versionId 不存在，或版本已处于终态（CLEANED / FAILED）。
+     * @throws IllegalStateException    当 versionId 不存在，或版本已处于终态（CLEANED / FAILED）。
      */
     Flux<BulkOperationEvent> write(String versionId, Flux<VectorRecord> records);
 }

@@ -49,10 +49,10 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/storage/pool/SftpSessionPool</include>
+                        <include>cn/richie696/component/storage/pool/SftpSessionPool</include>
                     </includes>
                     <excludes>
-                        <exclude>com/richie/component/storage/pool/*$*</exclude>
+                        <exclude>cn/richie696/component/storage/pool/*$*</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -60,10 +60,10 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/storage/pool/SftpSessionPool</include>
+                                <include>cn/richie696/component/storage/pool/SftpSessionPool</include>
                             </includes>
                             <excludes>
-                                <exclude>com/richie/component/storage/pool/*$*</exclude>
+                                <exclude>cn/richie696/component/storage/pool/*$*</exclude>
                             </excludes>
                             <rules>
                                 <rule>

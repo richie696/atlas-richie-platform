@@ -32,6 +32,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * StorageEngineRegistry.refreshEngine 回滚语义测试
@@ -189,8 +192,10 @@ class RefreshEngineTest {
 
         ProgrammableProvider provider = new ProgrammableProvider(StorageEngineEnum.MINIO);
         provider.engineToReturn = newEngine;
-        provider.afterPropertiesSetBehavior = () -> { };
-        provider.destroyBehavior = engine -> { };
+        provider.afterPropertiesSetBehavior = () -> {
+        };
+        provider.destroyBehavior = engine -> {
+        };
         registerProvider(provider);
 
         registry.refreshEngine(StorageEngineEnum.MINIO, new StorageProperties());
@@ -205,8 +210,10 @@ class RefreshEngineTest {
 
         ProgrammableProvider provider = new ProgrammableProvider(StorageEngineEnum.MINIO);
         provider.engineToReturn = newEngine;
-        provider.afterPropertiesSetBehavior = () -> { };
-        provider.destroyBehavior = engine -> { };
+        provider.afterPropertiesSetBehavior = () -> {
+        };
+        provider.destroyBehavior = engine -> {
+        };
         registerProvider(provider);
 
         StorageEngine returned = registry.refreshEngine(
@@ -249,8 +256,10 @@ class RefreshEngineTest {
 
         ProgrammableProvider provider = new ProgrammableProvider(StorageEngineEnum.MINIO);
         provider.engineToReturn = newEngine;
-        provider.afterPropertiesSetBehavior = () -> { };
-        provider.destroyBehavior = engine -> { };
+        provider.afterPropertiesSetBehavior = () -> {
+        };
+        provider.destroyBehavior = engine -> {
+        };
         registerProvider(provider);
 
         StorageEngine returned = registry.refreshEngine(StorageEngineEnum.MINIO, new StorageProperties());
@@ -268,42 +277,64 @@ class RefreshEngineTest {
         }
 
         @Override
-        public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String key, java.util.@NonNull Map<?, ?> collection) { return null; }
+        public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String key, java.util.@NonNull Map<?, ?> collection) {
+            return null;
+        }
 
         @Override
-        public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String key, java.util.@NonNull Collection<?> collection) { return null; }
+        public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String key, java.util.@NonNull Collection<?> collection) {
+            return null;
+        }
 
         @Override
-        public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String key, @NonNull Object object) { return null; }
+        public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String key, @NonNull Object object) {
+            return null;
+        }
 
         @Override
-        public cn.richie696.component.storage.bean.UploadResponse putObject(@NonNull String key, java.io.@NonNull File file) { return null; }
+        public cn.richie696.component.storage.bean.UploadResponse putObject(@NonNull String key, java.io.@NonNull File file) {
+            return null;
+        }
 
         @Override
-        public cn.richie696.component.storage.bean.UploadResponse putObject(@NonNull String key, java.io.@NonNull InputStream inputStream) { return null; }
+        public cn.richie696.component.storage.bean.UploadResponse putObject(@NonNull String key, java.io.@NonNull InputStream inputStream) {
+            return null;
+        }
 
         @Override
         public cn.richie696.component.storage.bean.UploadResponse putImage(@NonNull String key, java.io.@NonNull File file,
-                                                                         cn.richie696.component.storage.bean.image.ImageOptions options) { return null; }
+                                                                           cn.richie696.component.storage.bean.image.ImageOptions options) {
+            return null;
+        }
 
         @Override
         public cn.richie696.component.storage.bean.UploadResponse putImage(@NonNull String key, java.io.@NonNull InputStream inputStream,
-                                                                         cn.richie696.component.storage.bean.image.ImageOptions options) { return null; }
+                                                                           cn.richie696.component.storage.bean.image.ImageOptions options) {
+            return null;
+        }
 
         @Override
         public <T> cn.richie696.component.storage.bean.DownloadResponse<T> getData(@NonNull String key,
-                                                                                 tools.jackson.core.type.@NonNull TypeReference<T> typeReference) { return null; }
+                                                                                   tools.jackson.core.type.@NonNull TypeReference<T> typeReference) {
+            return null;
+        }
 
         @Override
         public cn.richie696.component.storage.bean.DownloadResponse<byte[]> getObject(@NonNull String key, java.io.@NonNull File targetPath,
-                                                                                    boolean returnData) { return null; }
+                                                                                      boolean returnData) {
+            return null;
+        }
 
         @Override
         public cn.richie696.component.storage.bean.DownloadResponse<byte[]> getResumableObject(@NonNull String key, @NonNull String targetPath,
-                                                                                             boolean returnData) { return null; }
+                                                                                               boolean returnData) {
+            return null;
+        }
 
         @Override
-        public boolean existsObject(@NonNull String key) { return true; }
+        public boolean existsObject(@NonNull String key) {
+            return true;
+        }
     }
 
     /**
@@ -312,9 +343,12 @@ class RefreshEngineTest {
     static class ProgrammableProvider implements StorageEngineProvider {
         private final StorageEngineEnum type;
         StorageEngine engineToReturn;
-        Runnable validateBehavior = () -> { };
-        Runnable afterPropertiesSetBehavior = () -> { };
-        java.util.function.Consumer<StorageEngine> destroyBehavior = e -> { };
+        Runnable validateBehavior = () -> {
+        };
+        Runnable afterPropertiesSetBehavior = () -> {
+        };
+        java.util.function.Consumer<StorageEngine> destroyBehavior = e -> {
+        };
         final AtomicInteger destroyCallCount = new AtomicInteger();
         final java.util.List<StorageEngine> destroyedEngines = new java.util.ArrayList<>();
 

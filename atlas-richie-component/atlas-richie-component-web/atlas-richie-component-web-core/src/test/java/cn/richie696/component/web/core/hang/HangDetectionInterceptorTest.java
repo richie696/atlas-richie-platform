@@ -112,7 +112,13 @@ class HangDetectionInterceptorTest {
             ctx.setClientKey("client-1");
             ctx.setTraceId("trace-slow");
             WebInterceptorChain chain = new DefaultWebInterceptorChain(List.of(
-                    (c, ch) -> { try { Thread.sleep(300); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } }));
+                    (c, ch) -> {
+                        try {
+                            Thread.sleep(300);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }));
             interceptor.intercept(ctx, chain);
             await().atMost(1, TimeUnit.SECONDS).until(() -> received.get() != null);
             assertThat(received.get().path()).isEqualTo("/api/v1/upload");

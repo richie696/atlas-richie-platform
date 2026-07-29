@@ -33,10 +33,14 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class OperatorInfo implements Serializable {
 
-    /** 操作人 ID */
+    /**
+     * 操作人 ID
+     */
     private String id;
 
-    /** 操作人姓名 */
+    /**
+     * 操作人姓名
+     */
     private String name;
 
 }

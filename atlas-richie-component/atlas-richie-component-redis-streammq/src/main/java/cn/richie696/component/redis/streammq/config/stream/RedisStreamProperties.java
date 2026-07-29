@@ -54,7 +54,7 @@ import java.util.Map;
  * @since 2025-12-09
  */
 @Data
-@ConfigurationProperties(prefix = "platform.cache.redis.stream.consumers")
+@ConfigurationProperties(prefix = "platform.component.cache.redis.stream.consumers")
 public class RedisStreamProperties {
 
     /**
@@ -78,17 +78,17 @@ public class RedisStreamProperties {
      * Stream 清理服务配置
      */
     @Data
-    @ConfigurationProperties(prefix = "platform.cache.redis.stream.consumers.cleanup")
+    @ConfigurationProperties(prefix = "platform.component.cache.redis.stream.consumers.cleanup")
     public static class CleanupConfig {
 
         /**
          * 清理间隔
          * <p>
          * 默认1小时（PT1H）
-         * 
+         *
          * <p>
          * 支持 Spring Boot Duration 格式，例如：
-         * 
+         *
          * <ul>
          *   <li>{@code 1h} - 1小时</li>
          *   <li>{@code 30m} - 30分钟</li>
@@ -104,7 +104,7 @@ public class RedisStreamProperties {
          * 用于自动清理已消费的消息，这是全局默认值。
          * 如果某个消费者配置（{@code ConsumerConfig.maxLen}）没有设置或为 0，
          * 则使用此全局默认值进行清理。
-         * 
+         *
          * <ul>
          *   <li>设置为 0 或负数：不限制，不清理（默认）</li>
          *   <li>设置为正数：保留最新的 maxLen 条消息，自动清理旧消息</li>
@@ -112,7 +112,7 @@ public class RedisStreamProperties {
          * </ul>
          * <p>
          * <strong>优先级：</strong>
-         * 
+         *
          * <ol>
          *   <li>消费者配置的 {@code maxLen}（如果设置了且 > 0）</li>
          *   <li>全局默认值 {@code cleanup.defaultMaxLen}（如果设置了且 > 0）</li>
@@ -195,7 +195,7 @@ public class RedisStreamProperties {
          *   <li>消息量小、处理速度慢：保持默认值 1</li>
          *   <li>高并发场景：可以设置为 5-20</li>
          * </ul>
-         * 
+         *
          */
         private int count = 1;
 
@@ -203,7 +203,7 @@ public class RedisStreamProperties {
          * Stream 最大保留消息数（用于自动清理已消费的消息）
          * <p>
          * Redis Stream 类似于 Kafka，消息被 ACK 后不会自动删除，需要通过 XTRIM 命令清理。
-         * 
+         *
          * <ul>
          *   <li>设置为 0 或负数：不限制，不清理（默认）</li>
          *   <li>设置为正数：保留最新的 maxLen 条消息，自动清理旧消息</li>
@@ -211,7 +211,7 @@ public class RedisStreamProperties {
          * </ul>
          * <p>
          * <strong>注意：</strong>清理操作使用分布式锁确保多实例环境下只有一个实例执行。
-         * 
+         *
          */
         private Long maxLen = 0L;
     }

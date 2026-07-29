@@ -18,7 +18,7 @@ package cn.richie696.component.ocr.paddle.protocol;
 /**
  * PaddleOCR Provider 内部传输用 envelope —— 已 typed 反序列化的 stdout JSON 与耗时。
  *
- * @param envelope Python 子进程 stdout 的 typed 解析结果
+ * @param envelope  Python 子进程 stdout 的 typed 解析结果
  * @param latencyMs 子进程调用的墙钟耗时
  */
 public record PaddleResponse(

@@ -29,7 +29,6 @@ import java.util.Map;
  * Spring 应用事件，当状态机执行状态转换时发布。
  * 可以通过 Spring 的事件监听机制监听状态变更，执行相应的业务逻辑。
  *
- *
  * @author richie696
  * @since 1.0.0
  */
@@ -102,7 +101,6 @@ public class StateChangedEvent extends ApplicationEvent {
      * 从状态上下文创建状态变更事件
      * <p>
      * 便捷方法，从状态上下文对象创建状态变更事件。
-     *
      *
      * @param stateMachineName 状态机名称
      * @param businessId       业务对象ID

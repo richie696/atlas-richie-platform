@@ -21,9 +21,9 @@ import cn.richie696.component.desensitize.core.registry.SensitiveKeyRegistry;
 import cn.richie696.component.desensitize.core.service.MaskingService;
 import tools.jackson.databind.BeanDescription;
 import tools.jackson.databind.SerializationConfig;
+import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.ser.BeanPropertyWriter;
 import tools.jackson.databind.ser.ValueSerializerModifier;
-import tools.jackson.databind.ValueSerializer;
 
 import java.util.List;
 import java.util.Map;
@@ -32,8 +32,8 @@ import java.util.Map;
  * 为带 {@link Sensitive} 的 String 属性及 Map 属性绑定脱敏序列化器。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class SensitiveBeanSerializerModifier extends ValueSerializerModifier {
 
@@ -49,7 +49,7 @@ public class SensitiveBeanSerializerModifier extends ValueSerializerModifier {
     /**
      * 构造序列化器修饰器。
      *
-     * @param maskingService 脱敏服务
+     * @param maskingService       脱敏服务
      * @param sensitiveKeyRegistry 敏感键注册表
      */
     public SensitiveBeanSerializerModifier(MaskingService maskingService, SensitiveKeyRegistry sensitiveKeyRegistry) {
@@ -60,8 +60,8 @@ public class SensitiveBeanSerializerModifier extends ValueSerializerModifier {
     /**
      * 为 Bean 属性动态替换脱敏序列化器。
      *
-     * @param config 序列化配置
-     * @param beanDescRef Bean 描述提供者
+     * @param config         序列化配置
+     * @param beanDescRef    Bean 描述提供者
      * @param beanProperties 属性写入器列表
      * @return 处理后的属性写入器列表
      */

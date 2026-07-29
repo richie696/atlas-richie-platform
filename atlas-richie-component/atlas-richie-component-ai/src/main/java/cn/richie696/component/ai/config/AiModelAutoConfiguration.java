@@ -15,12 +15,10 @@
  */
 package cn.richie696.component.ai.config;
 
-import cn.richie696.component.ai.config.chat.AiChatModel;
-
-import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
-
 import cn.richie696.component.ai.api.voicechat.StsTicket;
 import cn.richie696.component.ai.api.voicechat.VoiceChatModel;
+import cn.richie696.component.ai.config.chat.AiChatModel;
+import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
 import cn.richie696.component.ai.provider.dashscope.DashScopeQwenOmniVoiceChatModel;
 import cn.richie696.component.ai.provider.doubao.DoubaoBidirectionTtsVoiceChatModel;
 import cn.richie696.component.ai.provider.doubao.DoubaoStreamingAsrVoiceChatModel;
@@ -28,16 +26,11 @@ import cn.richie696.component.ai.provider.hunyuan.HunyuanStreamingAsrVoiceChatMo
 import cn.richie696.component.ai.provider.zhipu.ZhipuRealtimeVoiceChatModel;
 import cn.richie696.component.ai.service.AiMultimodalService;
 import cn.richie696.component.ai.service.VoiceChatService;
-import cn.richie696.component.ai.service.impl.VoiceChatServiceImpl;
 import cn.richie696.component.ai.service.VoiceStsService;
-import cn.richie696.component.ai.service.impl.VoiceStsServiceImpl;
 import cn.richie696.component.ai.service.impl.AiMultimodalServiceImpl;
-import cn.richie696.component.ai.support.sign.AkSkHmacStsSigner;
-import cn.richie696.component.ai.support.sign.AppCodeStsSigner;
-import cn.richie696.component.ai.support.sign.BearerStsSigner;
-import cn.richie696.component.ai.support.sign.StsSigner;
-import cn.richie696.component.ai.support.sign.Tc3StsSigner;
-import cn.richie696.component.ai.support.sign.XApiKeyStsSigner;
+import cn.richie696.component.ai.service.impl.VoiceChatServiceImpl;
+import cn.richie696.component.ai.service.impl.VoiceStsServiceImpl;
+import cn.richie696.component.ai.support.sign.*;
 import cn.richie696.component.http.core.HttpClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -54,6 +47,7 @@ import org.springframework.context.annotation.Primary;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.List;
 
 /**
  * AI模型自动配置类
@@ -140,7 +134,7 @@ public class AiModelAutoConfiguration {
      */
     @Bean("aiMultimodalService")
     public AiMultimodalService aiMultimodalService(AiModelProperties properties,
-                                                        ObjectProvider<HttpClient> httpClientProvider) {
+                                                   ObjectProvider<HttpClient> httpClientProvider) {
         AiMultimodalServiceImpl service =
                 new AiMultimodalServiceImpl(properties, httpClientProvider);
         if (properties.isConfigInitializationEnabled()) {

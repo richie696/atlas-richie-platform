@@ -15,23 +15,20 @@
  */
 package cn.richie696.component.ai.provider.tei;
 
-import cn.richie696.component.ai.provider.bailian.BailianImageEmbeddingAdapter;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.ai.api.image.ImageEmbeddingModel;
+import cn.richie696.component.ai.provider.bailian.BailianImageEmbeddingAdapter;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.context.utils.data.JsonUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.ai.embedding.EmbeddingResponse;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Spring AI {@link org.springframework.ai.embedding.EmbeddingModel} 在 HuggingFace
@@ -119,9 +116,13 @@ public class TeiImageEmbeddingAdapter implements ImageEmbeddingModel {
 
     private final HttpClient httpClient;
     private final String baseUrl;
-    /** TEI 单容器服务单模型,默认 {@code null}(请求体不携带 {@code model} 字段)。 */
+    /**
+     * TEI 单容器服务单模型,默认 {@code null}(请求体不携带 {@code model} 字段)。
+     */
     private final String defaultModel;
-    /** 反代鉴权用 Bearer;{@code null} 或空白 → 不注入 Authorization 头。 */
+    /**
+     * 反代鉴权用 Bearer;{@code null} 或空白 → 不注入 Authorization 头。
+     */
     private final String apiKey;
 
     /**

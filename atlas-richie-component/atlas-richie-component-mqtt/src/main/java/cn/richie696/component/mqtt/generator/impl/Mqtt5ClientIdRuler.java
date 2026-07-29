@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.mqtt.generator.impl;
 
-import cn.richie696.contract.constant.GlobalConstants;
 import cn.richie696.component.mqtt.generator.ClientIdRuler;
+import cn.richie696.contract.constant.GlobalConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -66,8 +66,8 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author richie696
  * @version 1.0
- * @since 2025-01-04
  * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901059">MQTT 5.0 Specification - Client Identifier</a>
+ * @since 2025-01-04
  */
 @Slf4j
 @Component("mqtt5ClientIdRuler")
@@ -184,13 +184,13 @@ public class Mqtt5ClientIdRuler implements ClientIdRuler {
         // 使用时间戳和序列号生成唯一标识
         long timestamp = System.currentTimeMillis();
         long sequence = SEQUENCE.incrementAndGet();
-        
+
         // 组合时间戳和序列号，转换为字符串
         // 使用 Base36 编码（0-9, a-z），更紧凑
         String timestampStr = Long.toString(timestamp, 36);
         String sequenceStr = Long.toString(sequence, 36);
         String combined = timestampStr + sequenceStr;
-        
+
         // 如果长度不足 12 个字符，用随机字符补齐
         if (combined.length() < 12) {
             String randomSuffix = generateRandomString(12 - combined.length());
@@ -208,7 +208,7 @@ public class Mqtt5ClientIdRuler implements ClientIdRuler {
                 }
             }
         }
-        
+
         // 确保只包含字母和数字（Base36 字符集：0-9, a-z）
         return combined.toLowerCase().replaceAll("[^0-9a-z]", "0");
     }

@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.nats.pipeline;
 
-import cn.richie696.context.common.api.HeaderContextHolder;
 import cn.richie696.component.nats.strategy.NatsHeaderExtractor;
+import cn.richie696.context.common.api.HeaderContextHolder;
 import lombok.extern.slf4j.Slf4j;
 
 /**

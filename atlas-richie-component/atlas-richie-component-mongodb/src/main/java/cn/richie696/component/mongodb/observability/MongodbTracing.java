@@ -27,6 +27,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import java.lang.AutoCloseable;
 
 /**
  * MongoDB OpenTelemetry 链路追踪工具类
@@ -47,13 +48,19 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class MongodbTracing {
 
-    /** 全局 OpenTelemetry 实例（init 后赋值） */
+    /**
+     * 全局 OpenTelemetry 实例（init 后赋值）
+     */
     private static OpenTelemetry openTelemetry;
 
-    /** MongoDB 使用的 Tracer */
+    /**
+     * MongoDB 使用的 Tracer
+     */
     private static Tracer tracer;
 
-    /** 应用内注入的 OpenTelemetry，作为 fallback */
+    /**
+     * 应用内注入的 OpenTelemetry，作为 fallback
+     */
     @Autowired
     private OpenTelemetry autowiredOpenTelemetry;
 
@@ -78,9 +85,9 @@ public class MongodbTracing {
     /**
      * 创建一个 MongoDB 操作的 Span
      *
-     * @param operation 操作类型（find/insert/update/delete/count/save/drop）
+     * @param operation  操作类型（find/insert/update/delete/count/save/drop）
      * @param collection 集合名称
-     * @param statement 查询语句（截断至 1024 字符）
+     * @param statement  查询语句（截断至 1024 字符）
      * @return TracingScope 包含创建的 Span 和 Scope
      */
     public static TracingScope createSpan(String operation, String collection, String statement) {
@@ -100,7 +107,7 @@ public class MongodbTracing {
     /**
      * 记录异常到 Span
      *
-     * @param span 要记录的 Span
+     * @param span      要记录的 Span
      * @param throwable 异常对象
      */
     public static void recordError(Span span, Throwable throwable) {
@@ -113,7 +120,7 @@ public class MongodbTracing {
     /**
      * 记录成功状态到 Span
      *
-     * @param span 要记录的 Span
+     * @param span       要记录的 Span
      * @param durationMs 操作耗时（毫秒）
      */
     public static void recordSuccess(Span span, long durationMs) {
@@ -140,10 +147,14 @@ public class MongodbTracing {
     @Getter
     public static class TracingScope implements AutoCloseable {
 
-        /** 当前 Span */
+        /**
+         * 当前 Span
+         */
         private final Span span;
 
-        /** 当前 Scope（用于 makeCurrent） */
+        /**
+         * 当前 Scope（用于 makeCurrent）
+         */
         private final Scope scope;
 
         /**

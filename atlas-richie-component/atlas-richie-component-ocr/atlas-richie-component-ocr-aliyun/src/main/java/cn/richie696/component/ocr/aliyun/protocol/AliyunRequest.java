@@ -25,9 +25,9 @@ import cn.richie696.component.ocr.model.OcrOptions;
  *
  * <p>按阿里云协议要求，{@link #imageUrl()} 与 {@link #imageBase64()} 必须且只能有一个携带图片。
  *
- * @param imageUrl 图片公网访问地址；当 {@code imageBase64} 携带图片内容时为 {@code null}
+ * @param imageUrl    图片公网访问地址；当 {@code imageBase64} 携带图片内容时为 {@code null}
  * @param imageBase64 不带 {@code data:} URI 前缀的图片字节 Base64；使用 {@code imageUrl} 时为 {@code null}
- * @param options 调用侧 OCR 选项，会被转换为阿里云的 {@code table}、{@code hmode} 等请求字段
+ * @param options     调用侧 OCR 选项，会被转换为阿里云的 {@code table}、{@code hmode} 等请求字段
  */
 public record AliyunRequest(
         String imageUrl,

@@ -154,7 +154,6 @@ public class Mqtt5Config {
     private long messageExpiryInterval = 1800L;
 
 
-
     /**
      * 是否启用遗嘱消息
      * <p>
@@ -281,7 +280,6 @@ public class Mqtt5Config {
      * </ul>
      */
     private boolean enableUserProperties = true;
-
 
 
 }

@@ -13,41 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-  package cn.richie696.component.storage.core.impl;
+package cn.richie696.component.storage.core.impl;
 
-  import com.qcloud.cos.COSClient;
-  import com.qcloud.cos.http.HttpMethodName;
-  import com.qcloud.cos.model.*;
-  import com.qcloud.cos.model.ciModel.persistence.PicOperations;
-  import com.qcloud.cos.transfer.Download;
-  import com.qcloud.cos.transfer.TransferManager;
-  import com.qcloud.cos.transfer.TransferManagerConfiguration;
-  import com.qcloud.cos.utils.UrlEncoderUtils;
-  import cn.richie696.component.storage.bean.*;
-  import cn.richie696.component.storage.bean.image.ImageOptions;
-  import cn.richie696.component.storage.config.StorageProperties;
-  import cn.richie696.component.storage.converter.StorageTypeConverter;
-  import cn.richie696.component.storage.core.StorageEngine;
-  import cn.richie696.context.utils.data.JsonUtils;
-  import jakarta.annotation.Nonnull;
-  import lombok.extern.slf4j.Slf4j;
-  import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-  import org.springframework.stereotype.Service;
-  import tools.jackson.core.type.TypeReference;
+import cn.richie696.component.storage.bean.DirectDownloadPolicy;
+import cn.richie696.component.storage.bean.DirectUploadPolicy;
+import cn.richie696.component.storage.bean.DownloadResponse;
+import cn.richie696.component.storage.bean.UploadResponse;
+import cn.richie696.component.storage.bean.image.ImageOptions;
+import cn.richie696.component.storage.config.StorageProperties;
+import cn.richie696.component.storage.converter.StorageTypeConverter;
+import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.context.utils.data.JsonUtils;
+import com.qcloud.cos.COSClient;
+import com.qcloud.cos.http.HttpMethodName;
+import com.qcloud.cos.model.*;
+import com.qcloud.cos.model.ciModel.persistence.PicOperations;
+import com.qcloud.cos.transfer.Download;
+import com.qcloud.cos.transfer.TransferManager;
+import com.qcloud.cos.transfer.TransferManagerConfiguration;
+import com.qcloud.cos.utils.UrlEncoderUtils;
+import jakarta.annotation.Nonnull;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
+import tools.jackson.core.type.TypeReference;
 
-  import java.io.File;
-  import java.io.FileInputStream;
-  import java.io.IOException;
-  import java.io.InputStream;
-  import java.net.URL;
-  import java.time.Instant;
-  import java.time.OffsetDateTime;
-  import java.time.ZoneId;
-  import java.util.*;
-  import java.util.concurrent.Executors;
-  import java.util.function.Function;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.function.Function;
+import cn.richie696.component.storage.bean.DownloadContext;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-  /**
+/**
  * 腾讯云COS对象存储引擎
  *
  * @author richie696

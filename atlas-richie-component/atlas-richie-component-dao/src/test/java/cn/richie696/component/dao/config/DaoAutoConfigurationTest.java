@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.dao.config;
 
+import cn.richie696.component.dao.snowflake.IdBuilder;
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
-import cn.richie696.component.dao.snowflake.IdBuilder;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

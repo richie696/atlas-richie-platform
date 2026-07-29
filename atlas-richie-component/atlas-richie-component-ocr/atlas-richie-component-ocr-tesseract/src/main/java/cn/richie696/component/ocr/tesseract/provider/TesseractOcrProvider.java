@@ -15,13 +15,8 @@
  */
 package cn.richie696.component.ocr.tesseract.provider;
 
-import cn.richie696.component.ocr.model.Languages;
-import cn.richie696.component.ocr.model.OcrImage;
-import cn.richie696.component.ocr.model.OcrLine;
-import cn.richie696.component.ocr.model.OcrOptions;
-import cn.richie696.component.ocr.model.OcrResult;
-import cn.richie696.component.ocr.model.Point;
 import cn.richie696.component.ocr.exception.OcrException;
+import cn.richie696.component.ocr.model.*;
 import cn.richie696.component.ocr.provider.AbstractOcrProvider;
 import cn.richie696.component.ocr.tesseract.config.TesseractOcrProperties;
 import cn.richie696.component.ocr.tesseract.protocol.TesseractRequest;
@@ -36,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Tesseract OCR Provider 实现 — 通过 Tesseract CLI 子进程执行。
@@ -105,10 +101,10 @@ public class TesseractOcrProvider extends AbstractOcrProvider<TesseractRequest, 
      * <p>仅支持 {@link OcrImage.Bytes} 与 {@link OcrImage.Stream}；{@link OcrImage.Url}
      * 因 Tesseract CLI 无法直接拉取远程内容而被拒绝。
      *
-     * @param image 待识别图片，支持 {@code Bytes} 与 {@code Stream} 两种类型
+     * @param image   待识别图片，支持 {@code Bytes} 与 {@code Stream} 两种类型
      * @param options 调用选项，用于提取语言集合以映射到 Tesseract 语言码
      * @return 包含图片字节、语言、tessdata 路径与超时的 Tesseract 请求对象
-     * @throws OcrException.Unrecognized 当传入的 {@link OcrImage} 类型为 {@code Url} 时抛出
+     * @throws OcrException.Unrecognized        当传入的 {@link OcrImage} 类型为 {@code Url} 时抛出
      * @throws OcrException.ProviderUnavailable 当读取 {@link OcrImage.Stream} 输入流发生 {@link IOException} 时抛出
      */
     @Override
@@ -128,8 +124,8 @@ public class TesseractOcrProvider extends AbstractOcrProvider<TesseractRequest, 
      *
      * @param request 已构造好的 Tesseract 请求（图片字节、语言、tessdata 路径与超时）
      * @return 包含已解析的行列表、平均置信度与耗时的 Tesseract 响应
-     * @throws OcrException.Unrecognized 当子进程返回非零退出码、超时或被中断时抛出
-     * @throws OcrException.SidecarUnavailable 当 Tesseract CLI 不存在或临时文件 IO 失败时抛出
+     * @throws OcrException.Unrecognized        当子进程返回非零退出码、超时或被中断时抛出
+     * @throws OcrException.SidecarUnavailable  当 Tesseract CLI 不存在或临时文件 IO 失败时抛出
      * @throws OcrException.ProviderUnavailable 当发生其他未预期异常时抛出
      */
     @Override
@@ -202,7 +198,10 @@ public class TesseractOcrProvider extends AbstractOcrProvider<TesseractRequest, 
                 process.destroyForcibly();
             }
             if (tmpFile != null) {
-                try { Files.deleteIfExists(tmpFile); } catch (IOException ignored) { }
+                try {
+                    Files.deleteIfExists(tmpFile);
+                } catch (IOException ignored) {
+                }
             }
         }
     }
@@ -370,6 +369,7 @@ public class TesseractOcrProvider extends AbstractOcrProvider<TesseractRequest, 
             return new OcrLine(text.toString(), box, avgConf);
         }
     }
+
     private static String safeBody(String body) {
         if (body == null) return "<empty>";
         return body.length() > 200 ? body.substring(0, 200) + "..." : body;

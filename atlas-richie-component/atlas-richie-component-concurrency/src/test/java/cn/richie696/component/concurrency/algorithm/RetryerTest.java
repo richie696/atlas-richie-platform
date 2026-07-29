@@ -15,7 +15,6 @@
  */
 package cn.richie696.component.concurrency.algorithm;
 
-import cn.richie696.component.concurrency.algorithm.Retryer;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

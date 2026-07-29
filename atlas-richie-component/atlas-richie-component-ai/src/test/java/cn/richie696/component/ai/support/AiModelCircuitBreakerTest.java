@@ -16,10 +16,10 @@
 package cn.richie696.component.ai.support;
 
 import cn.richie696.component.ai.config.resilience.ResilienceConfig;
-
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AiModelCircuitBreakerTest {
 

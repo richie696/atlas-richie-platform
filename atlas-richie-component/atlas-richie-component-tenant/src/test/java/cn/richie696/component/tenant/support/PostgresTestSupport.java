@@ -108,7 +108,9 @@ public final class PostgresTestSupport {
         return Holder.INSTANCE;
     }
 
-    /** JUnit {@code @EnabledIf} 入口。 */
+    /**
+     * JUnit {@code @EnabledIf} 入口。
+     */
     public static boolean isEnabled() {
         return Holder.INSTANCE.isAvailable();
     }
@@ -133,7 +135,9 @@ public final class PostgresTestSupport {
         return password;
     }
 
-    /** 供 {@link TenantIntegrationTestInitializer} 调用，注入 Spring 属性。 */
+    /**
+     * 供 {@link TenantIntegrationTestInitializer} 调用，注入 Spring 属性。
+     */
     public void appendPropertyPairs(List<String> pairs) {
         if (jdbcUrl != null && !jdbcUrl.isBlank()) {
             pairs.add("spring.datasource.url=" + jdbcUrl);

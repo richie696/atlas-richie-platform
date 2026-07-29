@@ -39,10 +39,26 @@ public final class TableSuffixHolder {
 
     static {
         ContextRegistry.getInstance().registerThreadLocalAccessor(new ThreadLocalAccessor<String>() {
-            @Nonnull @Override public Object key() { return CONTEXT_KEY; }
-            @Override public String getValue() { return HOLDER.get(); }
-            @Override public void setValue(@Nonnull String value) { HOLDER.set(value); }
-            @Override public void setValue() { HOLDER.remove(); }
+            @Nonnull
+            @Override
+            public Object key() {
+                return CONTEXT_KEY;
+            }
+
+            @Override
+            public String getValue() {
+                return HOLDER.get();
+            }
+
+            @Override
+            public void setValue(@Nonnull String value) {
+                HOLDER.set(value);
+            }
+
+            @Override
+            public void setValue() {
+                HOLDER.remove();
+            }
         });
     }
 

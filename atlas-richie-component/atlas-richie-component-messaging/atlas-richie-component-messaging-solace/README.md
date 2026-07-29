@@ -59,13 +59,13 @@ spring:
 
 ### Solace PubSub+ Binder 配置
 
-| 配置项                                                  | 说明             | 默认值         |
-|------------------------------------------------------|----------------|-------------|
-| `spring.cloud.solace.host`                           | Solace 主机地址    | `localhost` |
+| 配置项                                               | 说明             | 默认值      |
+|------------------------------------------------------|------------------|-------------|
+| `spring.cloud.solace.host`                           | Solace 主机地址  | `localhost` |
 | `spring.cloud.solace.msg-vpn`                        | Message VPN 名称 | `default`   |
-| `spring.cloud.solace.client-username`                | 客户端用户名         | `default`   |
-| `spring.cloud.solace.client-password`                | 客户端密码          | `default`   |
-| `spring.cloud.solace.bindings.*.consumer.queue-name` | 消费者队列名称        | -           |
+| `spring.cloud.solace.client-username`                | 客户端用户名     | `default`   |
+| `spring.cloud.solace.client-password`                | 客户端密码       | `default`   |
+| `spring.cloud.solace.bindings.*.consumer.queue-name` | 消费者队列名称   | -           |
 
 ### 详细配置
 

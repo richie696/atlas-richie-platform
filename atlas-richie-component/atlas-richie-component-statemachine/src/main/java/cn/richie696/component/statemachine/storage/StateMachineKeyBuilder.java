@@ -68,7 +68,7 @@ public class StateMachineKeyBuilder {
      * <p>示例：platform:statemachine:state:order:123456
      *
      * @param stateMachineName 状态机名称
-     * @param businessId 业务对象ID（Long 类型）
+     * @param businessId       业务对象ID（Long 类型）
      * @return Redis key
      */
     public String buildCurrentStateKey(String stateMachineName, Long businessId) {
@@ -81,14 +81,14 @@ public class StateMachineKeyBuilder {
      * <p>示例：platform:statemachine:history:order:123456:1234567890
      *
      * @param stateMachineName 状态机名称
-     * @param businessId 业务对象ID（Long 类型）
-     * @param createTime 创建时间（用于生成时间戳）
+     * @param businessId       业务对象ID（Long 类型）
+     * @param createTime       创建时间（用于生成时间戳）
      * @return Redis key
      */
     public String buildHistoryKey(String stateMachineName, Long businessId, LocalDateTime createTime) {
         String timestamp = createTime != null
-            ? String.valueOf(createTime.toEpochSecond(java.time.ZoneOffset.UTC))
-            : String.valueOf(System.currentTimeMillis());
+                ? String.valueOf(createTime.toEpochSecond(java.time.ZoneOffset.UTC))
+                : String.valueOf(System.currentTimeMillis());
         return "%s:history:%s:%s:%s".formatted(getKeyPrefix(), stateMachineName, String.valueOf(businessId), timestamp);
     }
 
@@ -98,7 +98,7 @@ public class StateMachineKeyBuilder {
      * <p>示例：platform:statemachine:history:list:order:123456
      *
      * @param stateMachineName 状态机名称
-     * @param businessId 业务对象ID（Long 类型）
+     * @param businessId       业务对象ID（Long 类型）
      * @return Redis key
      */
     public String buildHistoryListKey(String stateMachineName, Long businessId) {
@@ -115,7 +115,7 @@ public class StateMachineKeyBuilder {
      * <p>示例：order:123456
      *
      * @param stateMachineName 状态机名称
-     * @param businessId 业务对象ID（Long 类型）
+     * @param businessId       业务对象ID（Long 类型）
      * @return 同步键字符串
      */
     public String buildSyncKey(String stateMachineName, Long businessId) {

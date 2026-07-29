@@ -37,7 +37,7 @@ public record OcrLine(String text, List<Point> box, float confidence) {
      * @param box        四点坐标（{@code null} 视为空列表）
      * @param confidence 行置信度（取值区间 [0.0, 1.0]）
      */
-    public OcrLine(String text, List<Point> box, float confidence) {
+    public OcrLine(String text, List < Point > box, float confidence){
         this.text = Objects.requireNonNull(text, "text");
         this.box = box != null ? List.copyOf(box) : List.of();
         this.confidence = confidence;
@@ -47,7 +47,7 @@ public record OcrLine(String text, List<Point> box, float confidence) {
      * @return 行内文本
      */
     @Override
-    public String text() {
+    public String text () {
         return text;
     }
 
@@ -55,7 +55,7 @@ public record OcrLine(String text, List<Point> box, float confidence) {
      * @return 四点坐标（顺序由 Provider 决定, 通常为顺时针左上→右上→右下→左下）
      */
     @Override
-    public List<Point> box() {
+    public List<Point> box () {
         return box;
     }
 
@@ -63,12 +63,12 @@ public record OcrLine(String text, List<Point> box, float confidence) {
      * @return 行置信度（取值区间 [0.0, 1.0]）
      */
     @Override
-    public float confidence() {
+    public float confidence () {
         return confidence;
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals (Object o){
         if (this == o) return true;
         if (!(o instanceof OcrLine(String text1, List<Point> box1, float confidence1))) return false;
         return Float.compare(confidence, confidence1) == 0

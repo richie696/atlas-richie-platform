@@ -23,6 +23,10 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import cn.richie696.component.web.core.business.IdempotencyCache;
+import cn.richie696.component.web.core.business.TenantInterceptor;
+import cn.richie696.component.web.core.business.IdempotencyInterceptor;
+import cn.richie696.component.web.core.business.ApiVersionInterceptor;
 
 /**
  * 业务能力集成集成测试：3 个拦截器链式工作（README.md §4.9）。

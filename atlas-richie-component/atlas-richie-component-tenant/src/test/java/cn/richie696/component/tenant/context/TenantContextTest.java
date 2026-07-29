@@ -17,11 +17,7 @@ package cn.richie696.component.tenant.context;
 
 import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.contract.model.TenantPrincipal;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -177,7 +173,8 @@ class TenantContextTest {
         void checkerIsInvokedOnRunWithTenant() {
             AtomicBoolean checked = new AtomicBoolean(false);
             TenantContext.setTransactionChecker(targetTenantId -> checked.set(true));
-            TenantContext.runWithTenant(principal(7001L), () -> {});
+            TenantContext.runWithTenant(principal(7001L), () -> {
+            });
             assertThat(checked.get()).isTrue();
         }
 
@@ -187,7 +184,8 @@ class TenantContextTest {
             TenantContext.setTransactionChecker(targetTenantId -> {
                 throw new RuntimeException("frozen");
             });
-            assertThatThrownBy(() -> TenantContext.runWithTenant(principal(8001L), () -> {}))
+            assertThatThrownBy(() -> TenantContext.runWithTenant(principal(8001L), () -> {
+            }))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("frozen");
         }

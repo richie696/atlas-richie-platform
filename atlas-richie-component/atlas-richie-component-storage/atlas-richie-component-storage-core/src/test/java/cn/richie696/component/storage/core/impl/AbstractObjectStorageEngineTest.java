@@ -214,6 +214,7 @@ class AbstractObjectStorageEngineTest {
             public String convertToEngineAcl(AclTypeEnum aclType) {
                 throw new RuntimeException("boom");
             }
+
             @Override
             public StorageEngineEnum getSupportedEngine() {
                 return StorageEngineEnum.AWS_S3;
@@ -258,31 +259,31 @@ class AbstractObjectStorageEngineTest {
 
         @Override
         public cn.richie696.component.storage.bean.UploadResponse putImage(@NonNull String key, java.io.@NonNull File file,
-                                                                         cn.richie696.component.storage.bean.image.ImageOptions options) {
+                                                                           cn.richie696.component.storage.bean.image.ImageOptions options) {
             return putObject(key, file);
         }
 
         @Override
         public cn.richie696.component.storage.bean.UploadResponse putImage(@NonNull String key, java.io.@NonNull InputStream inputStream,
-                                                                         cn.richie696.component.storage.bean.image.ImageOptions options) {
+                                                                           cn.richie696.component.storage.bean.image.ImageOptions options) {
             return putObject(key, inputStream);
         }
 
         @Override
         public <T> cn.richie696.component.storage.bean.DownloadResponse<T> getData(@NonNull String key,
-                                                                                 tools.jackson.core.type.@NonNull TypeReference<T> typeReference) {
+                                                                                   tools.jackson.core.type.@NonNull TypeReference<T> typeReference) {
             return new cn.richie696.component.storage.bean.DownloadResponse<>();
         }
 
         @Override
         public cn.richie696.component.storage.bean.DownloadResponse<byte[]> getObject(@NonNull String key, java.io.@NonNull File targetPath,
-                                                                                    boolean returnData) {
+                                                                                      boolean returnData) {
             return new cn.richie696.component.storage.bean.DownloadResponse<>();
         }
 
         @Override
         public cn.richie696.component.storage.bean.DownloadResponse<byte[]> getResumableObject(@NonNull String key,
-                                                                                             @NonNull String targetPath, boolean returnData) {
+                                                                                               @NonNull String targetPath, boolean returnData) {
             return new cn.richie696.component.storage.bean.DownloadResponse<>();
         }
 

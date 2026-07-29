@@ -22,18 +22,15 @@ import cn.richie696.component.ocr.aliyun.protocol.AliyunOcrPayload;
 import cn.richie696.component.ocr.aliyun.protocol.AliyunOcrResponse;
 import cn.richie696.component.ocr.aliyun.protocol.AliyunRequest;
 import cn.richie696.component.ocr.aliyun.protocol.AliyunResponse;
-import cn.richie696.component.ocr.model.OcrBlock;
-import cn.richie696.component.ocr.model.OcrImage;
-import cn.richie696.component.ocr.model.OcrLine;
-import cn.richie696.component.ocr.model.OcrOptions;
-import cn.richie696.component.ocr.model.OcrResult;
-import cn.richie696.component.ocr.model.Point;
 import cn.richie696.component.ocr.exception.OcrException;
+import cn.richie696.component.ocr.model.*;
 import cn.richie696.component.ocr.provider.AbstractOcrProvider;
 
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 阿里云读光 OCR Provider 实现。
@@ -56,15 +53,25 @@ import java.util.*;
  */
 public class AliyunOcrProvider extends AbstractOcrProvider<AliyunRequest, AliyunResponse> {
 
-    /** 默认阿里云读光 OCR HTTP JSON 服务端点。 */
+    /**
+     * 默认阿里云读光 OCR HTTP JSON 服务端点。
+     */
     private static final String DEFAULT_ENDPOINT = "https://ocr-api.cn-shanghai.aliyuncs.com";
-    /** 默认请求超时时间，单位毫秒。 */
+    /**
+     * 默认请求超时时间，单位毫秒。
+     */
     private static final long DEFAULT_TIMEOUT_MS = 30_000L;
-    /** 默认 model 值。 */
+    /**
+     * 默认 model 值。
+     */
     private static final String DEFAULT_MODEL = "standard-form";
-    /** 调用阿里云 OCR HTTP 接口的共享客户端（不是 vendor 配置，不走 props）。 */
+    /**
+     * 调用阿里云 OCR HTTP 接口的共享客户端（不是 vendor 配置，不走 props）。
+     */
     private final HttpClient httpClient;
-    /** 阿里云 OCR vendor 配置 Properties —— 每次调用 lazy 读取。 */
+    /**
+     * 阿里云 OCR vendor 配置 Properties —— 每次调用 lazy 读取。
+     */
     private final AliyunOcrProperties props;
 
     /**
@@ -73,7 +80,7 @@ public class AliyunOcrProvider extends AbstractOcrProvider<AliyunRequest, Aliyun
      * <p>仅保存 {@code props} 引用并 fast-fail 校验必填项
      * （{@code credentials.app-code}）；其他配置在每次调用时通过 {@code liveXxx()} 实时读取。
      *
-     * @param props 阿里云 OCR 私有配置属性，由 {@code platform.component.ocr.aliyun.*} 绑定得到
+     * @param props      阿里云 OCR 私有配置属性，由 {@code platform.component.ocr.aliyun.*} 绑定得到
      * @param httpClient 调用阿里云读光 OCR 端点的共享 HTTP 客户端，不能为 {@code null}
      * @throws OcrException.ConfigMissing 缺少 {@code credentials.app-code} 时抛出
      */

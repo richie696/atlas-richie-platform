@@ -52,10 +52,14 @@ import java.util.Map;
 @Slf4j
 public class ApiSignatureInterceptor implements WebInterceptor, Ordered {
 
-    /** 决策事件 attribute key。 */
+    /**
+     * 决策事件 attribute key。
+     */
     public static final String DECISION_ATTRIBUTE = "platform.web.signature-decision";
 
-    /** 拦截器在链中的位置。 */
+    /**
+     * 拦截器在链中的位置。
+     */
     public static final int ORDER = 220;
 
     public static final String HEADER_TIMESTAMP = "X-Timestamp";

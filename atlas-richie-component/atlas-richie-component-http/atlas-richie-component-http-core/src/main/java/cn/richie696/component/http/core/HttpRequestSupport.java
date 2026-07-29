@@ -17,9 +17,9 @@ package cn.richie696.component.http.core;
 
 import cn.richie696.context.utils.data.JsonUtils;
 
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.net.URLEncoder;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -31,8 +31,8 @@ import java.util.function.Supplier;
  * 跨 Provider 共享的 HTTP 请求辅助逻辑。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public final class HttpRequestSupport {
 

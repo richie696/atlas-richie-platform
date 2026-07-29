@@ -16,6 +16,7 @@
 package cn.richie696.component.cache.operations;
 
 import java.util.Objects;
+import java.util.List;
 
 /**
  * 有界 List 结构（队列 / 栈）容量治理常量。

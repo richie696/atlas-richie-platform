@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.lang.AutoCloseable;
 
 public final class LocalHttpServer implements AutoCloseable {
 
@@ -82,8 +83,8 @@ public final class LocalHttpServer implements AutoCloseable {
     /**
      * 发送单个 SSE 事件块并立即关闭流。
      *
-     * @param exchange    HTTP 交换句柄
-     * @param sseContent  SSE 格式文本（通常由 {@link #formatEvent(String)} 等工具方法生成）
+     * @param exchange   HTTP 交换句柄
+     * @param sseContent SSE 格式文本（通常由 {@link #formatEvent(String)} 等工具方法生成）
      * @throws IOException I/O 异常
      */
     public void respondSseAndClose(HttpExchange exchange, String sseContent) throws IOException {

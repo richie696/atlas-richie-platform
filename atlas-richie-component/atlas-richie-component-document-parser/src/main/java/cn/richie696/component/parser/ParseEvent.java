@@ -16,6 +16,7 @@
 package cn.richie696.component.parser;
 
 import cn.richie696.component.parser.exception.DocumentParseException;
+import java.net.URL;
 
 /**
  * 流式解析事件 — 业务方订阅此事件流即可拿到解析过程中所有产出。
@@ -46,15 +47,23 @@ import cn.richie696.component.parser.exception.DocumentParseException;
  * @version 1.0
  * @since 2026-07-08
  */
-public sealed interface ParseEvent {
+public sealed
 
-    /** 事件来源标识 (URL / FilePath / nameHint) */
+interface ParseEvent {
+
+    /**
+     * 事件来源标识 (URL / FilePath / nameHint)
+     */
     String sourceName();
 
-    /** 文本段落事件 — 解析出的一段文本 (段落 / 行 / 页 等) */
-    record Streaming(DocumentSegment segment) implements ParseEvent {
+    /**
+     * 文本段落事件 — 解析出的一段文本 (段落 / 行 / 页 等)
+     */
+    record Streaming(DocumentSegment segment) implements
+
+    ParseEvent {
         @Override
-        public String sourceName() {
+        public String sourceName () {
             return segment.sectionPath();
         }
     }
@@ -70,9 +79,11 @@ public sealed interface ParseEvent {
      *   <li>忽略 (业务不需要)</li>
      * </ul>
      */
-    record ImageStreaming(ImageSegment image) implements ParseEvent {
+    record ImageStreaming(ImageSegment image) implements
+
+    ParseEvent {
         @Override
-        public String sourceName() {
+        public String sourceName () {
             return image.sectionPath();
         }
     }
@@ -80,24 +91,30 @@ public sealed interface ParseEvent {
     /**
      * 完成事件 — 包含汇总 + 计数。
      *
-     * @param summary        常量空间的完成摘要（不含所有 Streaming 段）
-     * @param totalSegments  本次解析产出的文本段落数
-     * @param totalImages     本次解析产出的图片资源数
+     * @param summary       常量空间的完成摘要（不含所有 Streaming 段）
+     * @param totalSegments 本次解析产出的文本段落数
+     * @param totalImages   本次解析产出的图片资源数
      */
     record Finished(DocumentSummary summary, int totalSegments, int totalImages)
-            implements ParseEvent {
+            implements
+
+    ParseEvent {
         @Override
-        public String sourceName() {
+        public String sourceName () {
             return summary.metadata() != null
                     ? summary.metadata().getOrDefault("source", "unknown").toString()
                     : "unknown";
         }
     }
 
-    /** 失败事件 — 抛出 DocumentParseException */
-    record Failed(DocumentParseException error) implements ParseEvent {
+    /**
+     * 失败事件 — 抛出 DocumentParseException
+     */
+    record Failed(DocumentParseException error) implements
+
+    ParseEvent {
         @Override
-        public String sourceName() {
+        public String sourceName () {
             return error.getMessage();
         }
     }

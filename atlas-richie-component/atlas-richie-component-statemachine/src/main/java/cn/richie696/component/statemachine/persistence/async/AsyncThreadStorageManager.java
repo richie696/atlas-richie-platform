@@ -40,11 +40,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -155,11 +151,11 @@ public class AsyncThreadStorageManager {
     /**
      * 构造函数
      *
-     * @param stateStorage 状态存储
+     * @param stateStorage       状态存储
      * @param currentStateMapper 当前状态映射
-     * @param historyMapper 状态历史映射
-     * @param properties 状态机属性
-     * @param dataSource 数据源（用于自动检测数据库类型）
+     * @param historyMapper      状态历史映射
+     * @param properties         状态机属性
+     * @param dataSource         数据源（用于自动检测数据库类型）
      */
     public AsyncThreadStorageManager(
             StateStorage stateStorage,
@@ -255,7 +251,6 @@ public class AsyncThreadStorageManager {
      * 异步提交状态同步任务
      * <p>
      * 将状态同步键添加到共享缓冲区，当达到批量大小时自动刷写。
-     *
      *
      * @param stateMachineName 状态机名称
      * @param businessId       业务 ID
@@ -356,7 +351,7 @@ public class AsyncThreadStorageManager {
      * 同步数据容器
      *
      * @param currentStates 当前状态列表
-     * @param histories 历史记录列表
+     * @param histories     历史记录列表
      */
     private record SyncData(
             List<StateMachineStateCurrent> currentStates,
@@ -389,8 +384,8 @@ public class AsyncThreadStorageManager {
      * 读取并转换历史记录
      *
      * @param stateMachineName 状态机名称
-     * @param businessId 业务 ID
-     * @param historyBatch 历史记录批量
+     * @param businessId       业务 ID
+     * @param historyBatch     历史记录批量
      * @return 业务时间（最新历史记录的时间）
      */
     private LocalDateTime readAndConvertHistories(String stateMachineName, Long businessId,
@@ -421,14 +416,14 @@ public class AsyncThreadStorageManager {
     /**
      * 读取并转换当前状态
      *
-     * @param stateMachineName 状态机名称
-     * @param businessId 业务 ID
-     * @param businessTime 业务时间
+     * @param stateMachineName  状态机名称
+     * @param businessId        业务 ID
+     * @param businessTime      业务时间
      * @param currentStateBatch 当前状态列表
      */
     private void readAndConvertCurrentState(String stateMachineName, Long businessId,
-                                           LocalDateTime businessTime,
-                                           List<StateMachineStateCurrent> currentStateBatch) {
+                                            LocalDateTime businessTime,
+                                            List<StateMachineStateCurrent> currentStateBatch) {
         String currentState = stateStorage.getCurrentState(stateMachineName, businessId);
         if (currentState == null) {
             return;
@@ -651,10 +646,10 @@ public class AsyncThreadStorageManager {
     /**
      * 提取去重后的列表
      *
-     * @param list 结果集
+     * @param list   结果集
      * @param mapper 映射函数
-     * @param <T> 列表元素类型
-     * @param <R> 映射结果类型
+     * @param <T>    列表元素类型
+     * @param <R>    映射结果类型
      * @return 去重后的列表
      */
     private <T, R> List<R> extractDistinct(List<T> list, Function<T, R> mapper) {
@@ -698,7 +693,7 @@ public class AsyncThreadStorageManager {
     /**
      * 关闭执行器（通用方法）
      *
-     * @param executor 执行器
+     * @param executor     执行器
      * @param executorName 执行器名称（用于日志）
      */
     private void shutdownExecutor(ExecutorService executor, String executorName) {

@@ -53,7 +53,7 @@ public class PaddleVlOcrAutoConfiguration {
      * <p>触发条件：{@code platform.component.ocr.enabled=true}（默认 true）以及
      * {@code platform.component.ocr.vendor=paddle-vl}（注意 yaml 中使用连字符）。
      *
-     * @param props PaddleOCR-VL 配置属性（含 gRPC 端点、GPU 槽数、超时时间等）
+     * @param props      PaddleOCR-VL 配置属性（含 gRPC 端点、GPU 槽数、超时时间等）
      * @param httpClient 由 {@code OcrCoreAutoConfiguration} 注入的 {@code ocrHttpClient} HTTP 客户端
      * @return 已激活的 {@link PaddleVlOcrProvider} 实例
      */

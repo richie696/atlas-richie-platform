@@ -53,8 +53,8 @@ import java.util.concurrent.CompletableFuture;
  * }</pre>
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class HttpRequest {
 
@@ -129,22 +129,34 @@ public class HttpRequest {
     /**
      * 指定请求体为 JSON 格式（默认行为，通常无需显式调用）。
      */
-    public HttpRequest asJson()   { this.contentType = ContentType.JSON; return this; }
+    public HttpRequest asJson() {
+        this.contentType = ContentType.JSON;
+        return this;
+    }
 
     /**
      * 指定请求体为 XML 格式。
      */
-    public HttpRequest asXml()    { this.contentType = ContentType.XML; return this; }
+    public HttpRequest asXml() {
+        this.contentType = ContentType.XML;
+        return this;
+    }
 
     /**
      * 指定请求体为 SOAP 1.2 格式。
      */
-    public HttpRequest asSoap()   { this.contentType = ContentType.SOAP; return this; }
+    public HttpRequest asSoap() {
+        this.contentType = ContentType.SOAP;
+        return this;
+    }
 
     /**
      * 指定请求体为 {@code application/x-www-form-urlencoded} 格式。
      */
-    public HttpRequest asForm()   { this.contentType = ContentType.FORM; return this; }
+    public HttpRequest asForm() {
+        this.contentType = ContentType.FORM;
+        return this;
+    }
 
     // ====== Multipart ======
 
@@ -224,17 +236,49 @@ public class HttpRequest {
 
     // ====== Internal Getters ======
 
-    public String url()              { return url; }
-    public HttpMethod method()       { return method; }
-    public Object body()             { return body; }
-    public ContentType contentType() { return contentType; }
-    public String contentTypeMime()  { return contentType.mime(); }
-    public Map<String, String> params()         { return params; }
-    public Map<String, String> headers()        { return headerMap; }
-    public Duration timeout()                   { return timeout; }
-    public String multipartFieldName()          { return multipartFieldName; }
-    public String multipartFileName()           { return multipartFileName; }
-    public InputStream multipartData()          { return multipartData; }
+    public String url() {
+        return url;
+    }
+
+    public HttpMethod method() {
+        return method;
+    }
+
+    public Object body() {
+        return body;
+    }
+
+    public ContentType contentType() {
+        return contentType;
+    }
+
+    public String contentTypeMime() {
+        return contentType.mime();
+    }
+
+    public Map<String, String> params() {
+        return params;
+    }
+
+    public Map<String, String> headers() {
+        return headerMap;
+    }
+
+    public Duration timeout() {
+        return timeout;
+    }
+
+    public String multipartFieldName() {
+        return multipartFieldName;
+    }
+
+    public String multipartFileName() {
+        return multipartFileName;
+    }
+
+    public InputStream multipartData() {
+        return multipartData;
+    }
 
     // hidden reference to the actual HTTP client that executes this request
     private HttpClient client;

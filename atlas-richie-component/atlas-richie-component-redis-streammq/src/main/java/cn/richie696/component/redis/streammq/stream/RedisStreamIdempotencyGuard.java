@@ -19,7 +19,6 @@ import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
 import cn.richie696.component.redis.streammq.config.stream.RedisStreamIdempotencyProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.Map;
@@ -43,23 +42,28 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2025-09-16
  */
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class RedisStreamIdempotencyGuard {
 
-    /** Redis 模板 */
+    /**
+     * Redis 模板
+     */
     private final MultiRedisTemplate<Object> redisTemplate;
 
-    /** Stream 幂等配置 */
+    /**
+     * Stream 幂等配置
+     */
     private final RedisStreamIdempotencyProperties properties;
 
-    /** 内存已处理键缓存（key -> 过期时间戳） */
+    /**
+     * 内存已处理键缓存（key -> 过期时间戳）
+     */
     private final Map<String, Long> inMemorySeen = new ConcurrentHashMap<>();
 
     /**
      * 尝试获取处理权。
      *
-     * @param rawKey 业务幂等键（建议业务唯一键；无则可用 recordId）
+     * @param rawKey      业务幂等键（建议业务唯一键；无则可用 recordId）
      * @param ttlIfAbsent 若未配置则使用此 TTL
      * @return true 首次处理；false 重复，应该跳过
      */

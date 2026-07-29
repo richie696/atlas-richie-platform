@@ -15,10 +15,9 @@
  */
 package cn.richie696.component.redis.streammq.stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Sinks;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class PublishResultTest {
 

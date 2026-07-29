@@ -15,14 +15,6 @@
  */
 package cn.richie696.component.logging.handler;
 
-import cn.richie696.context.common.api.HeaderContextHolder;
-import cn.richie696.contract.model.LoginUserPrincipal;
-import cn.richie696.contract.model.ApiResult;
-import cn.richie696.contract.constant.GlobalConstants;
-import cn.richie696.context.utils.data.JsonUtils;
-import cn.richie696.context.utils.web.ServletUtils;
-import cn.richie696.context.utils.spring.JwtUtils;
-import cn.richie696.context.utils.spring.SpringBeanUtils;
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.concurrency.measurement.Stopwatch;
 import cn.richie696.component.dao.snowflake.IdBuilder;
@@ -32,27 +24,34 @@ import cn.richie696.component.logging.callback.LogLifecycleCallback;
 import cn.richie696.component.logging.config.OperateLogProperties;
 import cn.richie696.component.logging.domain.AccessLogInfo;
 import cn.richie696.component.logging.service.AccessLogService;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.beans.factory.ObjectProvider;
-import tools.jackson.databind.JsonNode;
-
+import cn.richie696.context.common.api.HeaderContextHolder;
+import cn.richie696.context.utils.data.JsonUtils;
+import cn.richie696.context.utils.spring.JwtUtils;
+import cn.richie696.context.utils.spring.SpringBeanUtils;
+import cn.richie696.context.utils.web.ServletUtils;
+import cn.richie696.contract.constant.GlobalConstants;
+import cn.richie696.contract.model.ApiResult;
+import cn.richie696.contract.model.LoginUserPrincipal;
+import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
-import jakarta.annotation.Nonnull;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
+import tools.jackson.databind.JsonNode;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -304,10 +303,10 @@ public class AccessLogAspect {
     /**
      * 设置操作人和租户信息（从 token 或登录响应中解析）。
      *
-     * @param logInfo       待填充的日志信息
-     * @param token         JWT 或会话 token
-     * @param url           请求 URL（用于判断是否登录接口）
-     * @param responseData  响应数据（登录接口时用于解析用户信息）
+     * @param logInfo      待填充的日志信息
+     * @param token        JWT 或会话 token
+     * @param url          请求 URL（用于判断是否登录接口）
+     * @param responseData 响应数据（登录接口时用于解析用户信息）
      * @throws Exception 解析异常
      */
     private void setOperatorAndTenant(AccessLogInfo logInfo, String token, String url, Object responseData) throws Exception {
@@ -478,8 +477,8 @@ public class AccessLogAspect {
      * @param elapsedTime  耗时（毫秒）
      */
     private void fillLogInfo(AccessLogInfo logInfo, AccessLog accessLog, OffsetDateTime operateTime,
-                            String url, HttpServletRequest request, String requestBody,
-                            String responseBody, long elapsedTime) {
+                             String url, HttpServletRequest request, String requestBody,
+                             String responseBody, long elapsedTime) {
         logInfo.setId(idBuilder.nextId())
                 .setTitle(accessLog == null ? "" : accessLog.value())
                 .setOperateTime(operateTime)

@@ -52,9 +52,9 @@ import java.util.Map;
 @ConditionalOnClass(name = "org.springframework.vault.authentication.ClientAuthentication")
 @ConditionalOnBean(VaultTemplate.class)
 @ConditionalOnProperty(
-    prefix = "platform.component.mfa.security.key-management",
-    name = "provider",
-    havingValue = "vault"
+        prefix = "platform.component.mfa.security.key-management",
+        name = "provider",
+        havingValue = "vault"
 )
 public class VaultKeyManagementEngine implements KeyManagementProvider {
 
@@ -316,10 +316,10 @@ public class VaultKeyManagementEngine implements KeyManagementProvider {
         String msg = e.getMessage();
         if (msg != null && msg.contains("route entry not found")) {
             return "Vault KV %s密钥失败: 在路径 [%s] 上未启用 KV Secrets Engine（或未启用 KV v2）。"
-                .formatted(action, kvPath)
-                + " 请在 Vault 中执行: vault secrets enable -path=%s -version=2 kv"
-                .formatted(kvPath)
-                + " 若 KV 已挂载在其他路径，请配置 platform.component.mfa.security.key-management.vault.kv-path=你的挂载路径";
+                    .formatted(action, kvPath)
+                    + " 请在 Vault 中执行: vault secrets enable -path=%s -version=2 kv"
+                    .formatted(kvPath)
+                    + " 若 KV 已挂载在其他路径，请配置 platform.component.mfa.security.key-management.vault.kv-path=你的挂载路径";
         }
         return "Vault KV %s密钥失败: %s".formatted(action, msg != null ? msg : e.toString());
     }

@@ -15,11 +15,11 @@
  */
 package cn.richie696.component.ocr.provider;
 
+import cn.richie696.component.ocr.exception.OcrException;
 import cn.richie696.component.ocr.model.MimeType;
 import cn.richie696.component.ocr.model.OcrImage;
 import cn.richie696.component.ocr.model.OcrOptions;
 import cn.richie696.component.ocr.model.OcrResult;
-import cn.richie696.component.ocr.exception.OcrException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

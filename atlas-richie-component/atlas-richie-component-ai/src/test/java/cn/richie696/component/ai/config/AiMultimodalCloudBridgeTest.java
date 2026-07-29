@@ -24,10 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.*;
 
 /**
  * {@link AiMultimodalCloudBridge} 测试（不依赖 spring-cloud-context）。
@@ -204,7 +201,8 @@ class AiMultimodalCloudBridgeTest {
 
     @Test
     void extractKeys_unrelatedEvent_returnsNull() {
-        ApplicationEvent event = new ApplicationEvent("source") {};
+        ApplicationEvent event = new ApplicationEvent("source") {
+        };
         Set<String> extracted = AiMultimodalCloudBridge.extractKeys(event);
         assertThat(extracted).isNull();
     }

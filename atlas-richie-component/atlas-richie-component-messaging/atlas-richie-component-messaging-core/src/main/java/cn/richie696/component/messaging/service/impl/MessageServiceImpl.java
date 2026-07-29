@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.messaging.service.impl;
 
-import cn.richie696.context.common.api.HeaderContextHolder;
-import cn.richie696.contract.constant.GlobalConstants;
 import cn.richie696.component.messaging.event.MessageEvent;
 import cn.richie696.component.messaging.service.MessageService;
+import cn.richie696.context.common.api.HeaderContextHolder;
+import cn.richie696.contract.constant.GlobalConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -45,7 +45,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MessageServiceImpl implements MessageService {
 
-    /** Spring Cloud Stream 桥接器，用于发送消息到 binding */
+    /**
+     * Spring Cloud Stream 桥接器，用于发送消息到 binding
+     */
     private final StreamBridge streamBridge;
 
     @Override

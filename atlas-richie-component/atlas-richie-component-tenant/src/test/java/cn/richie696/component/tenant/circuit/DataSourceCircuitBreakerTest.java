@@ -183,9 +183,9 @@ class DataSourceCircuitBreakerTest {
             int threads = 100;
             int failuresPerThread = 50;
             ExecutorService executor =
-                Executors.newFixedThreadPool(16);
+                    Executors.newFixedThreadPool(16);
             CountDownLatch latch =
-                new CountDownLatch(threads);
+                    new CountDownLatch(threads);
 
             for (int i = 0; i < threads; i++) {
                 executor.submit(() -> {
@@ -205,18 +205,18 @@ class DataSourceCircuitBreakerTest {
             // 应至少触发一次 OPEN(总失败数远超阈值 3)
             assertThat(breaker.isOpen("ds-concurrent")).isTrue();
             assertThat(breaker.getStatus("ds-concurrent"))
-                .isEqualTo(DataSourceCircuitBreaker.CircuitStatus.OPEN);
+                    .isEqualTo(DataSourceCircuitBreaker.CircuitStatus.OPEN);
 
             // onOpen 回调只触发一次
             AtomicInteger openCount =
-                new AtomicInteger(0);
+                    new AtomicInteger(0);
             DataSourceCircuitBreaker breaker2 = new DataSourceCircuitBreaker(props);
             breaker2.onOpen(k -> openCount.incrementAndGet());
 
             CountDownLatch latch2 =
-                new CountDownLatch(threads);
+                    new CountDownLatch(threads);
             ExecutorService executor2 =
-                Executors.newFixedThreadPool(16);
+                    Executors.newFixedThreadPool(16);
             for (int i = 0; i < threads; i++) {
                 executor2.submit(() -> {
                     try {
@@ -232,8 +232,8 @@ class DataSourceCircuitBreakerTest {
             executor2.shutdown();
 
             assertThat(openCount.get())
-                .as("OPEN 状态翻转的 CAS 保护 — onOpen 回调应仅触发一次")
-                .isEqualTo(1);
+                    .as("OPEN 状态翻转的 CAS 保护 — onOpen 回调应仅触发一次")
+                    .isEqualTo(1);
         }
 
         @Test
@@ -250,11 +250,11 @@ class DataSourceCircuitBreakerTest {
             // 100 并发 isOpen 调用:只一个返回 false (HALF_OPEN 探测)
             int threads = 100;
             ExecutorService executor =
-                Executors.newFixedThreadPool(16);
+                    Executors.newFixedThreadPool(16);
             CountDownLatch latch =
-                new CountDownLatch(threads);
+                    new CountDownLatch(threads);
             AtomicInteger allowedProbes =
-                new AtomicInteger(0);
+                    new AtomicInteger(0);
 
             for (int i = 0; i < threads; i++) {
                 executor.submit(() -> {
@@ -272,10 +272,10 @@ class DataSourceCircuitBreakerTest {
             executor.shutdown();
 
             assertThat(allowedProbes.get())
-                .as("HALF_OPEN 状态应仅放行 1 个探测请求")
-                .isEqualTo(1);
+                    .as("HALF_OPEN 状态应仅放行 1 个探测请求")
+                    .isEqualTo(1);
             assertThat(breaker.getStatus("ds-probe"))
-                .isEqualTo(DataSourceCircuitBreaker.CircuitStatus.HALF_OPEN);
+                    .isEqualTo(DataSourceCircuitBreaker.CircuitStatus.HALF_OPEN);
         }
 
         @Test
@@ -287,15 +287,15 @@ class DataSourceCircuitBreakerTest {
 
             breaker.recordSuccess("ds-reset");
             assertThat(breaker.getAllStatuses().get("ds-reset").failures())
-                .as("CLOSED 态成功应清零失败计数")
-                .isEqualTo(0);
+                    .as("CLOSED 态成功应清零失败计数")
+                    .isEqualTo(0);
 
             // 重新累计失败,需要达到阈值才能熔断
             breaker.recordFailure("ds-reset");
             breaker.recordFailure("ds-reset");
             assertThat(breaker.isOpen("ds-reset"))
-                .as("清零后,需要重新累计 3 次才会熔断")
-                .isFalse();
+                    .as("清零后,需要重新累计 3 次才会熔断")
+                    .isFalse();
         }
     }
 }

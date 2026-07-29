@@ -31,8 +31,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * 线程安全，{@link #close()} 方法可重复调用且保证幂等。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 class OkHttpSseConnection implements SseConnection {
 

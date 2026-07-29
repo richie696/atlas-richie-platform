@@ -18,11 +18,11 @@ package cn.richie696.component.ocr.baidu.provider;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.jdk.JdkHttpAdapter;
 import cn.richie696.component.ocr.baidu.config.BaiduOcrProperties;
+import cn.richie696.component.ocr.exception.OcrException;
 import cn.richie696.component.ocr.model.MimeType;
 import cn.richie696.component.ocr.model.OcrImage;
 import cn.richie696.component.ocr.model.OcrOptions;
 import cn.richie696.component.ocr.model.OcrResult;
-import cn.richie696.component.ocr.exception.OcrException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
@@ -34,10 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * BaiduOcrProvider 单测 —— 用 JDK 内置 HttpServer 起本地 mock 服务,

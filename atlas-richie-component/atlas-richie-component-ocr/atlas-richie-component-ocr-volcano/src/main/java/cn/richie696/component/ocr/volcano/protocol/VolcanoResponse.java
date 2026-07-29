@@ -23,11 +23,11 @@ package cn.richie696.component.ocr.volcano.protocol;
  *
  * <p>响应体以 typed {@link VolcanoOcrEnvelope} 暴露，不再使用 {@code JsonNode} 树遍历。
  *
+ * @param body      已 typed 反序列化的火山引擎 OCR 响应 envelope
+ * @param latencyMs 从请求发出到客户端收到响应的墙钟耗时，单位毫秒
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-12
- * @param body 已 typed 反序列化的火山引擎 OCR 响应 envelope
- * @param latencyMs 从请求发出到客户端收到响应的墙钟耗时，单位毫秒
  */
 public record VolcanoResponse(
         VolcanoOcrEnvelope body,

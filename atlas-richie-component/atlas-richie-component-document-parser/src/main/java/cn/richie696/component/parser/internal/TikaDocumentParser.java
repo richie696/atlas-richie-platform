@@ -15,14 +15,7 @@
  */
 package cn.richie696.component.parser.internal;
 
-import cn.richie696.component.parser.DocumentParser;
-import cn.richie696.component.parser.DocumentSegment;
-import cn.richie696.component.parser.DocumentSummary;
-import cn.richie696.component.parser.ImageSegment;
-import cn.richie696.component.parser.ParseEvent;
-import cn.richie696.component.parser.ParseListener;
-import cn.richie696.component.parser.ParserContext;
-import cn.richie696.component.parser.ParserSource;
+import cn.richie696.component.parser.*;
 import cn.richie696.component.parser.config.ParserProperties;
 import cn.richie696.component.parser.exception.DocumentParseException;
 import cn.richie696.component.parser.exception.ImageOnlyPdfException;
@@ -35,9 +28,9 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.IOException;
@@ -161,7 +154,9 @@ public final class TikaDocumentParser implements DocumentParser {
         }
     }
 
-    /** 逐 SAX 块发出文本，最多只保留当前块，避免全文 DOM 与全文字符串。 */
+    /**
+     * 逐 SAX 块发出文本，最多只保留当前块，避免全文 DOM 与全文字符串。
+     */
     private static final class StreamingTextHandler extends DefaultHandler {
         private static final Set<String> BLOCKS = Set.of("p", "div", "td", "th", "li",
                 "h1", "h2", "h3", "h4", "h5", "h6", "pre", "blockquote");

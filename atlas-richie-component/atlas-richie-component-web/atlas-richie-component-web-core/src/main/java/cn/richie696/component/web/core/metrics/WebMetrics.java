@@ -76,7 +76,9 @@ public final class WebMetrics {
     public static final String SSE_SEND = "web.sse.send";
     public static final String SSE_DISCONNECTED = "web.sse.disconnect";
 
-    /** CB state gauge 数值映射：CLOSED=0 / HALF_OPEN=1 / OPEN=2。 */
+    /**
+     * CB state gauge 数值映射：CLOSED=0 / HALF_OPEN=1 / OPEN=2。
+     */
     public static final double CB_STATE_CLOSED = 0d;
     public static final double CB_STATE_HALF_OPEN = 1d;
     public static final double CB_STATE_OPEN = 2d;
@@ -89,7 +91,9 @@ public final class WebMetrics {
         this.registry = registry;
     }
 
-    /** 空操作实例：registry=null，所有方法直接 return。 */
+    /**
+     * 空操作实例：registry=null，所有方法直接 return。
+     */
     public static WebMetrics noop() {
         return new WebMetrics(null);
     }

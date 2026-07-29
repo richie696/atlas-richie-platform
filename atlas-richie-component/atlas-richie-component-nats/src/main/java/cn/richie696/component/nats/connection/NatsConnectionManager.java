@@ -18,11 +18,7 @@ package cn.richie696.component.nats.connection;
 import cn.richie696.component.nats.config.NatsProperties;
 import cn.richie696.component.nats.enums.ConnectionState;
 import cn.richie696.component.nats.exception.NatsConnectionException;
-import io.nats.client.Connection;
-import io.nats.client.ConsumerContext;
-import io.nats.client.Nats;
-import io.nats.client.Options;
-import io.nats.client.StreamContext;
+import io.nats.client.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;

@@ -15,12 +15,12 @@
  */
 package cn.richie696.component.storage.config;
 
-import com.azure.storage.blob.BlobContainerClient;
-import com.azure.storage.blob.BlobServiceClientBuilder;
 import cn.richie696.component.storage.bean.ObjectConfig;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.core.impl.AzureBlobStorageEngine;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobServiceClientBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

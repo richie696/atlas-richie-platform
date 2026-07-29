@@ -71,12 +71,12 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/messaging/filter/**</include>
-                        <include>com/richie/component/messaging/service/impl/**</include>
-                        <include>com/richie/component/messaging/event/**</include>
+                        <include>cn/richie696/component/messaging/filter/**</include>
+                        <include>cn/richie696/component/messaging/service/impl/**</include>
+                        <include>cn/richie696/component/messaging/event/**</include>
                     </includes>
                     <excludes>
-                        <exclude>com/richie/component/messaging/filter/datasource/DatasourceHandler</exclude>
+                        <exclude>cn/richie696/component/messaging/filter/datasource/DatasourceHandler</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -85,12 +85,12 @@
                         <configuration combine.self="override">
                             <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
                             <includes>
-                                <include>com/richie/component/messaging/filter/**</include>
-                                <include>com/richie/component/messaging/service/impl/**</include>
-                                <include>com/richie/component/messaging/event/**</include>
+                                <include>cn/richie696/component/messaging/filter/**</include>
+                                <include>cn/richie696/component/messaging/service/impl/**</include>
+                                <include>cn/richie696/component/messaging/event/**</include>
                             </includes>
                             <excludes>
-                                <exclude>com/richie/component/messaging/filter/datasource/DatasourceHandler</exclude>
+                                <exclude>cn/richie696/component/messaging/filter/datasource/DatasourceHandler</exclude>
                             </excludes>
                             <rules>
                                 <rule>

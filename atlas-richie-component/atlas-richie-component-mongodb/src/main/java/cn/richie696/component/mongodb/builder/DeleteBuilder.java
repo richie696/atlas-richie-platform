@@ -24,6 +24,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+
 import java.util.Collection;
 
 public class DeleteBuilder<T> {
@@ -44,7 +45,7 @@ public class DeleteBuilder<T> {
     }
 
     public DeleteBuilder(Class<T> entityClass, MongoTemplate mongoTemplate, EntityIntrospector entityIntrospector,
-                        MongodbTracing tracing, MongodbMetricsRecorder metricsRecorder, MongodbSlowQueryLogger slowQueryLogger) {
+                         MongodbTracing tracing, MongodbMetricsRecorder metricsRecorder, MongodbSlowQueryLogger slowQueryLogger) {
         this.entityClass = entityClass;
         this.mongoTemplate = mongoTemplate;
         this.entityIntrospector = entityIntrospector;
@@ -150,7 +151,8 @@ public class DeleteBuilder<T> {
             }
             if (scope != null) MongodbTracing.recordSuccess(scope.getSpan(), System.currentTimeMillis() - start);
             if (sample != null) metricsRecorder.stop(sample, "delete", collection, true);
-            if (slowQueryLogger != null) slowQueryLogger.logIfSlow(collection, "delete", System.currentTimeMillis() - start);
+            if (slowQueryLogger != null)
+                slowQueryLogger.logIfSlow(collection, "delete", System.currentTimeMillis() - start);
             return result;
         } catch (Throwable t) {
             if (sample != null) metricsRecorder.stop(sample, "delete", collection, false);

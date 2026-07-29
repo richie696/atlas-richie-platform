@@ -54,7 +54,7 @@ public record NatsDeadLetterMessage(
      * @param originalHeaders 业务原始消息 headers(可为 {@code null})
      * @param type advisory 类型
      */
-    public static NatsDeadLetterMessage from(MessageInfo info, Headers originalHeaders, AdvisoryType type) {
+    public static NatsDeadLetterMessage from (MessageInfo info, Headers originalHeaders, AdvisoryType type){
         Objects.requireNonNull(info, "info");
         long retryCount = 0L;
         String traceparent = extractTraceparentIgnoreCase(originalHeaders);
@@ -69,7 +69,7 @@ public record NatsDeadLetterMessage(
      * @param headers 原消息 headers(可为 {@code null})
      * @return 第一个匹配的 traceparent 值;无匹配返回 {@code null}
      */
-    private static String extractTraceparentIgnoreCase(Headers headers) {
+    private static String extractTraceparentIgnoreCase (Headers headers){
         if (headers == null) {
             return null;
         }

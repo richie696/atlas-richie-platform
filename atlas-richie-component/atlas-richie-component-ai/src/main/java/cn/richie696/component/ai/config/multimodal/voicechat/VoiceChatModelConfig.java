@@ -32,6 +32,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class VoiceChatModelConfig extends AbstractAudioModelConfig {
 
-    /** 厂商(枚举)— 见 {@link VoiceChatProvider}。 */
+    /**
+     * 厂商(枚举)— 见 {@link VoiceChatProvider}。
+     */
     private VoiceChatProvider vendor;
 }

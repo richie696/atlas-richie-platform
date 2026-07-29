@@ -45,7 +45,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/http/jdk/JdkHttpAdapter*</include>
+                        <include>cn/richie696/component/http/jdk/JdkHttpAdapter*</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -53,7 +53,7 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/http/jdk/JdkHttpAdapter*</include>
+                                <include>cn/richie696/component/http/jdk/JdkHttpAdapter*</include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

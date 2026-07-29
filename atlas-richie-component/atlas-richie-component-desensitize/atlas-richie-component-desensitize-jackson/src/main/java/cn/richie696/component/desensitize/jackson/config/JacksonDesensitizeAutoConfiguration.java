@@ -15,13 +15,13 @@
  */
 package cn.richie696.component.desensitize.jackson.config;
 
-import cn.richie696.context.utils.data.JsonUtilsModuleCustomizer;
 import cn.richie696.component.desensitize.core.registry.SensitiveKeyRegistry;
 import cn.richie696.component.desensitize.core.service.MaskingService;
 import cn.richie696.component.desensitize.jackson.DesensitizeJacksonModule;
+import cn.richie696.context.utils.data.JsonUtilsModuleCustomizer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import tools.jackson.databind.JacksonModule;
 
@@ -31,8 +31,8 @@ import java.util.List;
  * Jackson 脱敏自动配置。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @AutoConfiguration(after = cn.richie696.component.desensitize.core.config.DesensitizeAutoConfiguration.class)
 @ConditionalOnClass(JacksonModule.class)
@@ -42,7 +42,7 @@ public class JacksonDesensitizeAutoConfiguration {
     /**
      * 注册 Jackson 脱敏模块。
      *
-     * @param maskingService 脱敏服务
+     * @param maskingService       脱敏服务
      * @param sensitiveKeyRegistry 敏感键注册表
      * @return Jackson 模块
      */

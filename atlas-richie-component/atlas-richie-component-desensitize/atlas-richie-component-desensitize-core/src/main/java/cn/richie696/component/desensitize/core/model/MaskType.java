@@ -19,8 +19,8 @@ package cn.richie696.component.desensitize.core.model;
  * 脱敏遮罩类型
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public enum MaskType {
     /**

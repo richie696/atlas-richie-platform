@@ -20,13 +20,13 @@ public interface TokenCounter {
      * “不超过 {@link cn.richie696.component.chunking.model.ChunkingRule#maxCharacters()} 个 token”的最大字符窗口，并以此作为
      * 切片长度上限；二分搜索期间同一前缀可能被多次统计。</p>
      *
-* <p><b>调用方契约（前置条件）：</b></p>
- * <ul>
- *   <li>同一输入多次调用必须返回相同结果；建议做内部缓存。</li>
- *   <li>对于 {@code null} 或空字符串应返回 {@code 0}，而非抛异常 —— 这能让切片器在
- *       边界探测时安全退化。</li>
- *   <li>不应持有可变状态或产生副作用；本接口可能被并发调用。</li>
- * </ul>
+     * <p><b>调用方契约（前置条件）：</b></p>
+     * <ul>
+     *   <li>同一输入多次调用必须返回相同结果；建议做内部缓存。</li>
+     *   <li>对于 {@code null} 或空字符串应返回 {@code 0}，而非抛异常 —— 这能让切片器在
+     *       边界探测时安全退化。</li>
+     *   <li>不应持有可变状态或产生副作用；本接口可能被并发调用。</li>
+     * </ul>
      *
      * @param text 待统计的文本；可能为 {@code null} 或空串
      * @return 该文本对应的 token 数；{@code null} / 空串应返回 {@code 0}

@@ -59,7 +59,9 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(VolcanoOcrProperties.class)
 public class VolcanoOcrAutoConfiguration {
 
-    /** 自动配置注册过程使用的日志记录器。 */
+    /**
+     * 自动配置注册过程使用的日志记录器。
+     */
     private static final Logger log = LoggerFactory.getLogger(VolcanoOcrAutoConfiguration.class);
 
     /**
@@ -68,7 +70,7 @@ public class VolcanoOcrAutoConfiguration {
      * <p>激活条件由主开关 {@code platform.component.ocr.enabled=true} 与 vendor 选择
      * {@code platform.component.ocr.vendor=volcano} 共同控制。
      *
-     * @param props 火山引擎 OCR 私有配置属性，由 {@code platform.component.ocr.volcano.*} 绑定得到，不能为 {@code null}
+     * @param props      火山引擎 OCR 私有配置属性，由 {@code platform.component.ocr.volcano.*} 绑定得到，不能为 {@code null}
      * @param httpClient OCR 专用 HTTP 客户端，用于调用火山引擎视觉智能 HTTP JSON 接口，不能为 {@code null}
      * @return 已完成配置加载的 {@link VolcanoOcrProvider}
      */
@@ -78,7 +80,7 @@ public class VolcanoOcrAutoConfiguration {
     @ConditionalOnProperty(prefix = OcrProperties.PREFIX, name = "vendor", havingValue = "volcano")
     @ConditionalOnMissingBean
     public VolcanoOcrProvider volcanoOcrProvider(VolcanoOcrProperties props,
-                                                  @Qualifier("ocrHttpClient") HttpClient httpClient) {
+                                                 @Qualifier("ocrHttpClient") HttpClient httpClient) {
         VolcanoOcrProvider provider = new VolcanoOcrProvider(props, httpClient);
         log.info("[OCR] Volcano provider activated: name={}, endpoint={}, region={}",
                 "volcano", props.getEndpoint(), props.getRegion());

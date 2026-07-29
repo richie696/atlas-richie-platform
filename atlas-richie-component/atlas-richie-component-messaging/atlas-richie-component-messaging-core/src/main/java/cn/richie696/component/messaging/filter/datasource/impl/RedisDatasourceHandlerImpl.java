@@ -101,24 +101,24 @@ public class RedisDatasourceHandlerImpl implements DatasourceHandler {
     @Override
     public boolean saveCache(Message<MessageEvent> message, long expired) {
         var key = getCacheKey(message);
-        
+
         // 使用原子操作 SET NX，无需分布式锁
         // 如果 key 不存在，则设置并返回 true；如果 key 已存在，则返回 false
         // 底层实现：Redis SET key value NX EX timeout（原子操作）
         boolean success = GlobalCache.value().setIfAbsent(key, "1", expired);
-        
+
         if (!success) {
             // 消息已存在（重复），返回 false
             if (log.isDebugEnabled()) {
-                log.debug("消息已存在，无法重复保存。key: {}, messageId: {}, topic: {}", 
+                log.debug("消息已存在，无法重复保存。key: {}, messageId: {}, topic: {}",
                         key, message.getPayload().getMessageId(), message.getPayload().getTopic());
             }
             return false;
         }
-        
+
         // 成功写入，消息标记为已处理
         if (log.isTraceEnabled()) {
-            log.trace("消息已保存到缓存。key: {}, messageId: {}, topic: {}, expired: {}ms", 
+            log.trace("消息已保存到缓存。key: {}, messageId: {}, topic: {}, expired: {}ms",
                     key, message.getPayload().getMessageId(), message.getPayload().getTopic(), expired);
         }
         return true;

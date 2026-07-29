@@ -56,11 +56,11 @@ spring:
 
 ### Azure Event Hubs Binder 配置
 
-| 配置项                                              | 说明               | 默认值 |
-|--------------------------------------------------|------------------|-----|
-| `spring.cloud.azure.eventhubs.connection-string` | Event Hubs 连接字符串 | -   |
-| `spring.cloud.azure.eventhubs.namespace`         | Event Hubs 命名空间  | -   |
-| `spring.cloud.azure.eventhubs.event-hub-name`    | Event Hub 名称     | -   |
+| 配置项                                           | 说明                  | 默认值 |
+|--------------------------------------------------|-----------------------|--------|
+| `spring.cloud.azure.eventhubs.connection-string` | Event Hubs 连接字符串 | -      |
+| `spring.cloud.azure.eventhubs.namespace`         | Event Hubs 命名空间   | -      |
+| `spring.cloud.azure.eventhubs.event-hub-name`    | Event Hub 名称        | -      |
 
 ### 详细配置
 

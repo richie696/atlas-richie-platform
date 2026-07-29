@@ -36,7 +36,6 @@ import java.util.Set;
  *                      {@link DefaultKnowledgeBaseVectorService} 将跳过 visibility 过滤，
  *                      仅保留 {@code tenantId/knowledgeBaseId/status} 三段基础断言，
  *                      实现"租户内全可见"语义
- *
  * @author richie696
  * @version 1.0
  * @since 2025-07-01

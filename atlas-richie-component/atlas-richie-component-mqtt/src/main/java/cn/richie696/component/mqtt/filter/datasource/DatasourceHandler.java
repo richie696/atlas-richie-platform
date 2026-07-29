@@ -51,7 +51,7 @@ public interface DatasourceHandler {
     /**
      * 保存消息数据的方法
      *
-     * @param hash 消息 payload 的 hash 值（通常使用 SHA-256 计算）
+     * @param hash    消息 payload 的 hash 值（通常使用 SHA-256 计算）
      * @param expired 该消息的过期时间（单位：毫秒）
      */
     void saveCache(String hash, long expired);

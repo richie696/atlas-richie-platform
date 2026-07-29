@@ -15,8 +15,6 @@
  */
 package cn.richie696.component.mfa.management.manager;
 
-import cn.richie696.context.common.api.LoginUserContextHolder;
-import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.component.mfa.core.config.MfaProperties;
 import cn.richie696.component.mfa.core.constant.MfaOperationTypeEnum;
 import cn.richie696.component.mfa.core.constant.MfaStatusEnum;
@@ -25,18 +23,19 @@ import cn.richie696.component.mfa.core.support.MfaTenantSupport;
 import cn.richie696.component.mfa.management.dto.LoginMfaCheckResult;
 import cn.richie696.component.mfa.management.dto.MfaBindResult;
 import cn.richie696.component.mfa.management.mapper.MfaUserMapper;
+import cn.richie696.component.mfa.management.util.MfaAuditEventPublisher;
 import cn.richie696.component.mfa.validation.dto.MfaValidationResult;
 import cn.richie696.component.mfa.validation.engine.TotpValidationEngine;
 import cn.richie696.component.mfa.validation.service.MfaValidationService;
-import cn.richie696.component.mfa.management.util.MfaAuditEventPublisher;
+import cn.richie696.context.common.api.LoginUserContextHolder;
+import cn.richie696.context.utils.data.JsonUtils;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import jakarta.annotation.PostConstruct;
 import tools.jackson.core.type.TypeReference;
 
 import java.time.OffsetDateTime;
@@ -163,9 +162,9 @@ public class MfaBindManager {
         log.info("tenantId: {}, userId: {}", tenantId, userId);
         log.info("生成的 plainSecret: {}", plainSecret);
         log.info("算法: {}, 位数: {}, 时间窗口: {}",
-            properties.getTotp().getAlgorithm(),
-            properties.getTotp().getDigits(),
-            properties.getTotp().getPeriod());
+                properties.getTotp().getAlgorithm(),
+                properties.getTotp().getDigits(),
+                properties.getTotp().getPeriod());
         log.info("=================================");
 
         // 2. 存储密钥到 KMS（返回密钥引用，不存储加密后的密钥到数据库）
@@ -289,7 +288,7 @@ public class MfaBindManager {
             // 发布审计事件：激活失败（用户信息不存在）
             if (auditEventPublisher != null) {
                 auditEventPublisher.publishFailure(tenantId, userId, MfaOperationTypeEnum.ACTIVATE, "TOTP", deviceId,
-                    "MFA_NOT_BOUND", "MFA用户信息不存在");
+                        "MFA_NOT_BOUND", "MFA用户信息不存在");
             }
             return false;
         }
@@ -298,8 +297,8 @@ public class MfaBindManager {
         log.info("=== MFA激活验证调试信息 ===");
         log.info("查询参数 - tenantId: {}, userId: {}, actualTenantId: {}", tenantId, userId, actualTenantId);
         log.info("查询结果 - id: {}, tenantId: {}, userId: {}, algorithm: {}, digits: {}, period: {}",
-            userInfo.getId(), userInfo.getTenantId(), userInfo.getUserId(),
-            userInfo.getAlgorithm(), userInfo.getDigits(), userInfo.getPeriod());
+                userInfo.getId(), userInfo.getTenantId(), userInfo.getUserId(),
+                userInfo.getAlgorithm(), userInfo.getDigits(), userInfo.getPeriod());
         log.info("用户输入的验证码: {}", code);
         log.info("===========================");
 
@@ -332,7 +331,7 @@ public class MfaBindManager {
             // 发布审计事件：激活失败（验证码错误）
             if (auditEventPublisher != null) {
                 auditEventPublisher.publishFailure(tenantId, userId, MfaOperationTypeEnum.ACTIVATE, "TOTP", deviceId,
-                    "MFA_CODE_INVALID", "验证码错误");
+                        "MFA_CODE_INVALID", "验证码错误");
             }
             return false;
         }
@@ -341,7 +340,7 @@ public class MfaBindManager {
         // 使用 LambdaUpdateWrapper 显式更新字段，确保状态和激活时间被正确更新
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<MfaUserInfo> updateWrapper =
-            new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<>();
+                new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<>();
         updateWrapper.eq(MfaUserInfo::getId, userInfo.getId())
                 .set(MfaUserInfo::getStatus, MfaStatusEnum.ENABLED)
                 .set(MfaUserInfo::getActivatedTime, now);
@@ -349,12 +348,12 @@ public class MfaBindManager {
         int updateCount = mfaUserMapper.update(null, updateWrapper);
         if (updateCount <= 0) {
             log.error("更新MFA状态失败，可能记录不存在或已被删除，tenantId: {}, userId: {}, id: {}, 更新行数: {}",
-                tenantId, userId, userInfo.getId(), updateCount);
+                    tenantId, userId, userInfo.getId(), updateCount);
             return false;
         }
 
         log.debug("MFA状态更新成功，tenantId: {}, userId: {}, id: {}, 更新行数: {}, 新状态: {}, 激活时间: {}",
-            tenantId, userId, userInfo.getId(), updateCount, MfaStatusEnum.ENABLED, now);
+                tenantId, userId, userInfo.getId(), updateCount, MfaStatusEnum.ENABLED, now);
 
         // 更新内存中的对象，用于后续缓存同步
         userInfo.setStatus(MfaStatusEnum.ENABLED);
@@ -399,7 +398,7 @@ public class MfaBindManager {
      *
      * @param tenantId 租户ID（可选，如果未启用租户则为 null）
      * @param userId   用户ID（必填，业务系统User表的主键ID）
-     * @param code      TOTP验证码（必填，6位数字）
+     * @param code     TOTP验证码（必填，6位数字）
      * @return 是否激活成功
      * <ul>
      *   <li>{@code true}：激活成功</li>
@@ -439,9 +438,9 @@ public class MfaBindManager {
      * 供业务系统（如 sample-mfa）在登录流程中调用：先根据请求头中的 deviceId（及可选 hardwareFingerprint）
      * 校验是否为可信设备；若是可信设备且未过期，则直接返回 false（不需要 MFA）；否则再查 MFA 绑定表。
      *
-     * @param tenantId           租户ID（可选，如果未启用租户则为 null）
-     * @param userId             用户ID（必填）
-     * @param deviceId           设备ID（请求头 X-Device-Id，可选）
+     * @param tenantId 租户ID（可选，如果未启用租户则为 null）
+     * @param userId   用户ID（必填）
+     * @param deviceId 设备ID（请求头 X-Device-Id，可选）
      * @return 是否需要 MFA 验证：false 表示不需要（可信设备或未绑定 MFA），true 表示需要
      */
     public boolean isTrustedDevice(String tenantId, String userId, String deviceId) {
@@ -457,18 +456,18 @@ public class MfaBindManager {
     /**
      * 登录时 MFA 校验（一次调用返回所需结果，供业务根据对象判断）
      *
-     * @param tenantId           租户ID（可选，如果未启用租户则为 null）
-     * @param userId             用户ID（必填）
-     * @param deviceId           设备ID（请求头 X-Device-Id，可选）
+     * @param tenantId 租户ID（可选，如果未启用租户则为 null）
+     * @param userId   用户ID（必填）
+     * @param deviceId 设备ID（请求头 X-Device-Id，可选）
      * @return 登录 MFA 校验结果（mfaRequired、mfaBound）
      */
     public LoginMfaCheckResult checkLoginMfa(String tenantId, String userId, String deviceId) {
         boolean trustedDevice = isTrustedDevice(tenantId, userId, deviceId);
         boolean mfaBound = isMfaBound(tenantId, userId);
         return LoginMfaCheckResult.builder()
-            .mfaRequired(mfaBound && !trustedDevice)
-            .mfaBound(mfaBound)
-            .build();
+                .mfaRequired(mfaBound && !trustedDevice)
+                .mfaBound(mfaBound)
+                .build();
     }
 
     /**
@@ -503,7 +502,7 @@ public class MfaBindManager {
             // 发布审计事件：解绑失败（用户信息不存在）
             if (auditEventPublisher != null) {
                 auditEventPublisher.publishFailure(tenantId, userId, MfaOperationTypeEnum.UNBIND, null, null,
-                    "MFA_NOT_BOUND", "MFA用户信息不存在");
+                        "MFA_NOT_BOUND", "MFA用户信息不存在");
             }
             return false;
         }
@@ -525,7 +524,7 @@ public class MfaBindManager {
         } catch (Exception e) {
             // 删除失败不影响解绑流程，只记录警告（可能密钥已被删除）
             log.warn("从密钥管理器删除密钥失败，但不影响解绑，tenantId: {}, userId: {}",
-                actualTenantId, userId, e);
+                    actualTenantId, userId, e);
         }
 
         // 4. 从缓存删除
@@ -570,7 +569,7 @@ public class MfaBindManager {
                     // 发布审计事件：备份码验证失败
                     if (auditEventPublisher != null) {
                         auditEventPublisher.publishFailure(tenantId, userId, MfaOperationTypeEnum.VERIFY, "BACKUP_CODE", null,
-                            "BACKUP_CODE_INVALID", "备份码无效");
+                                "BACKUP_CODE_INVALID", "备份码无效");
                     }
                 }
             } catch (Exception e) {
@@ -578,7 +577,7 @@ public class MfaBindManager {
                 // 发布审计事件：备份码验证异常
                 if (auditEventPublisher != null) {
                     auditEventPublisher.publishFailure(tenantId, userId, MfaOperationTypeEnum.VERIFY, "BACKUP_CODE", null,
-                        "BACKUP_CODE_ERROR", "备份码验证异常: " + e.getMessage());
+                            "BACKUP_CODE_ERROR", "备份码验证异常: " + e.getMessage());
                 }
             }
         }
@@ -612,8 +611,9 @@ public class MfaBindManager {
         List<String> hashedCodes;
         try {
             hashedCodes = JsonUtils.getInstance().deserialize(
-                userInfo.getBackupCodesHashed(),
-                new TypeReference<List<String>>() {}
+                    userInfo.getBackupCodesHashed(),
+                    new TypeReference<List<String>>() {
+                    }
             );
         } catch (Exception e) {
             log.warn("解析备份码 JSON 失败，userId: {}", userId, e);

@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.cache.bloom;
 
-import com.google.common.hash.Funnels;
 import cn.richie696.component.cache.config.CacheProperties;
 import cn.richie696.context.bloom.BloomFilter;
+import com.google.common.hash.Funnels;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;

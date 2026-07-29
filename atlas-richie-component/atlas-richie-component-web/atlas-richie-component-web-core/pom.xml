@@ -88,10 +88,10 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/web/exception/**</include>
-                                <include>com/richie/component/web/sse/SseManager</include>
-                                <include>com/richie/component/web/i18n/AcceptLanguageHeaderLocaleResolver</include>
-                                <include>com/richie/component/web/utils/WebUtils</include>
+                                <include>cn/richie696/component/web/exception/**</include>
+                                <include>cn/richie696/component/web/sse/SseManager</include>
+                                <include>cn/richie696/component/web/i18n/AcceptLanguageHeaderLocaleResolver</include>
+                                <include>cn/richie696/component/web/utils/WebUtils</include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

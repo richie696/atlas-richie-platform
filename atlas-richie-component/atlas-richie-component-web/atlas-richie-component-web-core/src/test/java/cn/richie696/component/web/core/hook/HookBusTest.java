@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import cn.richie696.component.web.core.hook.HookEvent;
 
 class HookBusTest {
 
@@ -52,7 +53,9 @@ class HookBusTest {
     void subscriberException_doesNotPropagate() {
         HookBus bus = new DefaultHookBus();
         AtomicInteger count = new AtomicInteger();
-        bus.subscribe(RequestCompletedEvent.class, e -> { throw new RuntimeException("boom"); });
+        bus.subscribe(RequestCompletedEvent.class, e -> {
+            throw new RuntimeException("boom");
+        });
         bus.subscribe(RequestCompletedEvent.class, e -> count.incrementAndGet());
         bus.publish(new RequestCompletedEvent("GET", "/", 200, 0L, 10L, false, false, null, "trace-1"));
         assertThat(count.get()).isEqualTo(1);
@@ -84,12 +87,18 @@ class HookBusTest {
     @Test
     void diagnosticView_showsSubscriberCounts() {
         HookBus bus = new DefaultHookBus();
-        bus.subscribe(RequestCompletedEvent.class, e -> {});
-        bus.subscribe(RequestCompletedEvent.class, e -> {});
-        bus.subscribe(HookBusTestMarker.class, e -> {});
+        bus.subscribe(RequestCompletedEvent.class, e -> {
+        });
+        bus.subscribe(RequestCompletedEvent.class, e -> {
+        });
+        bus.subscribe(HookBusTestMarker.class, e -> {
+        });
         assertThat(bus.diagnosticView()).containsExactlyInAnyOrder(
                 "RequestCompletedEvent→2", "HookBusTestMarker→1");
     }
 
-    record HookBusTestMarker(String payload) implements HookEvent {}
+    record HookBusTestMarker(String payload) implements
+
+    HookEvent {
+    }
 }

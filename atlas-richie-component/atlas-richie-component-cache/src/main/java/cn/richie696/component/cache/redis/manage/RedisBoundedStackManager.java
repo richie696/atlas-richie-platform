@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.cache.redis.manage;
 
-import cn.richie696.component.cache.ops.BoundedStackOps;
 import cn.richie696.component.cache.operations.BoundedListCapacityLimits;
 import cn.richie696.component.cache.operations.BoundedListRedisScripts;
 import cn.richie696.component.cache.operations.BoundedStack;
+import cn.richie696.component.cache.ops.BoundedStackOps;
 import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

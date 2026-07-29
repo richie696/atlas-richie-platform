@@ -62,7 +62,7 @@ public class CanaryInstanceManager {
      *
      * @param discoveryClient 服务发现客户端
      * @param applicationName 应用名称
-     * @param deployConfig 部署配置
+     * @param deployConfig    部署配置
      */
     public CanaryInstanceManager(
             DiscoveryClient discoveryClient,

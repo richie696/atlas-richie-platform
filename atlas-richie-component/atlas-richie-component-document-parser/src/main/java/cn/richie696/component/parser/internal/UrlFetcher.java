@@ -18,6 +18,7 @@ package cn.richie696.component.parser.internal;
 import cn.richie696.component.parser.ParserSource;
 import cn.richie696.component.parser.UrlFetchPolicy;
 import cn.richie696.component.parser.exception.DocumentParseException;
+
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +29,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Set;
+import java.net.URL;
 
 /**
  * URL 拉取器 — 三道防线之协议层 + 内容嗅探前置。
@@ -218,7 +220,7 @@ public final class UrlFetcher {
         return ((b[offset] & 0xFF) << 24)
                 | ((b[offset + 1] & 0xFF) << 16)
                 | ((b[offset + 2] & 0xFF) << 8)
-                |  (b[offset + 3] & 0xFF);
+                | (b[offset + 3] & 0xFF);
     }
 
     private static boolean isIpv4MappedIpv6(byte[] ipv6) {
@@ -326,7 +328,9 @@ public final class UrlFetcher {
         }
     }
 
-    /** 在未知或伪造 Content-Length 时仍强制执行下载大小上限。 */
+    /**
+     * 在未知或伪造 Content-Length 时仍强制执行下载大小上限。
+     */
     private static final class BoundedInputStream extends FilterInputStream {
         private final long maxBytes;
         private final URI uri;

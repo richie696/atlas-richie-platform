@@ -29,8 +29,8 @@ import org.slf4j.Marker;
  * <p>这样即使使用常规 `%msg` pattern，也能输出脱敏后的参数。</p>
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class SensitiveLogArgTurboFilter extends TurboFilter {
 

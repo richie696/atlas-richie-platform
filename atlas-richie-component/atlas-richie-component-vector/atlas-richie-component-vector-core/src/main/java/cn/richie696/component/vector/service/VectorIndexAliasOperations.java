@@ -32,9 +32,9 @@ public interface VectorIndexAliasOperations {
      * @param indexName 索引名称，非空
      * @param alias     别名，非空；命名约束同索引名
      * @return {@code true} = 创建成功；{@code false} = provider 报告失败
-     *         （已存在的别名、名称冲突等场景由 provider 决定返回 false 还是抛错）
+     * （已存在的别名、名称冲突等场景由 provider 决定返回 false 还是抛错）
      * @throws UnsupportedOperationException provider 不支持时抛出
-     * @throws IllegalArgumentException     {@code indexName} 或 {@code alias} 为空时
+     * @throws IllegalArgumentException      {@code indexName} 或 {@code alias} 为空时
      */
     boolean createAlias(String indexName, String alias);
 
@@ -43,14 +43,14 @@ public interface VectorIndexAliasOperations {
      *
      * <p>"原子"由 provider 端保证（Milvus 的 {@code alterAlias} 内部用事务），
      * 调用方仍应在切换前后用 {@code awaitIndexReady} 等待新索引就绪，避免 alias 切
-     过去但新索引尚未 ready 导致瞬时空命中。</p>
+     * 过去但新索引尚未 ready 导致瞬时空命中。</p>
      *
      * @param oldIndexName 当前指向别名 {@code alias} 的索引；非空
      * @param newIndexName 新目标索引；非空，且应当已经 ready
      * @param alias        待切换的别名；非空
      * @return {@code true} = 切换成功；{@code false} = 切换失败
      * @throws UnsupportedOperationException provider 不支持时抛出
-     * @throws IllegalArgumentException     任一参数为空时
+     * @throws IllegalArgumentException      任一参数为空时
      */
     boolean switchAlias(String oldIndexName, String newIndexName, String alias);
 }

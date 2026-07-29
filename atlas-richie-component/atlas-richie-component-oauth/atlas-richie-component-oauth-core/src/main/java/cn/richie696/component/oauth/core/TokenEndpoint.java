@@ -15,10 +15,6 @@
  */
 package cn.richie696.component.oauth.core;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTCreator;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.interfaces.Claim;
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.cache.redis.manage.CacheLock;
 import cn.richie696.component.oauth.core.config.OAuth2Properties;
@@ -27,9 +23,13 @@ import cn.richie696.component.oauth.core.model.ClientConfig;
 import cn.richie696.component.oauth.core.model.TokenIntrospection;
 import cn.richie696.component.oauth.core.model.TokenResponse;
 import cn.richie696.component.oauth.core.spi.TokenStore;
+import cn.richie696.context.utils.spring.JwtUtils;
 import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.contract.gateway.model.OAuth2Constants;
-import cn.richie696.context.utils.spring.JwtUtils;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTCreator;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.Claim;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -37,14 +37,12 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
-import java.util.Collections;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 /**
  * OAuth 2.1 Token 端点

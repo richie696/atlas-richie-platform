@@ -20,10 +20,8 @@ import cn.richie696.component.redis.streammq.config.monitor.RedisStreamMonitorin
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.data.redis.connection.stream.StreamInfo;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -49,25 +47,33 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2025-09-16
  */
 @Slf4j
-@Component
 @RequiredArgsConstructor
-@ConditionalOnClass({RedisStreamMetrics.class})
 public class RedisStreamBacklogMonitor {
 
-    /** Redis 模板（JSON 序列化） */
+    /**
+     * Redis 模板（JSON 序列化）
+     */
     @Qualifier("jsonTemplate")
     private final MultiRedisTemplate<Object> redisTemplate;
 
-    /** Stream 指标 */
+    /**
+     * Stream 指标
+     */
     private final RedisStreamMetrics metrics;
 
-    /** 监控配置 */
+    /**
+     * 监控配置
+     */
     private final RedisStreamMonitoringProperties properties;
 
-    /** 已监控的 Stream 键集合，避免重复扫描 */
+    /**
+     * 已监控的 Stream 键集合，避免重复扫描
+     */
     private final Set<String> monitoredStreams = ConcurrentHashMap.newKeySet();
 
-    /** 各 Stream 的积压统计信息 */
+    /**
+     * 各 Stream 的积压统计信息
+     */
     private final Map<String, BacklogInfo> backlogStats = new ConcurrentHashMap<>();
 
     /**
@@ -80,7 +86,7 @@ public class RedisStreamBacklogMonitor {
      * @param lastChecked    上次检查时间
      */
     public record BacklogInfo(String streamKey, long totalLength, long pendingCount,
-                             long consumerGroups, Instant lastChecked) {
+                              long consumerGroups, Instant lastChecked) {
     }
 
     /**
@@ -221,11 +227,11 @@ public class RedisStreamBacklogMonitor {
             long consumerGroups = groups.size();
 
             BacklogInfo info = new BacklogInfo(
-                streamKey,
-                totalLength,
-                backlog,
-                consumerGroups,
-                Instant.now()
+                    streamKey,
+                    totalLength,
+                    backlog,
+                    consumerGroups,
+                    Instant.now()
             );
 
             backlogStats.put(streamKey, info);
@@ -254,7 +260,7 @@ public class RedisStreamBacklogMonitor {
         Instant cutoff = Instant.now().minusSeconds(3600); // 1小时前
 
         backlogStats.entrySet().removeIf(entry ->
-            entry.getValue().lastChecked().isBefore(cutoff)
+                entry.getValue().lastChecked().isBefore(cutoff)
         );
     }
 }

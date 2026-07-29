@@ -7,7 +7,8 @@
 本组件旨在实现以下核心目标：
 
 1. **Gateway OAuth 2.0 → 2.1 升级**：将现有 Gateway 的 OAuth 实现从 2.0 升级到 2.1 标准，遵循 RFC 9000 系列规范
-2. **MCP 共享组件**：为 Model Context Protocol (MCP) 提供标准化的 OAuth 2.1 鉴权支持，使 MCP Server 和 MCP Client 能够无缝集成到现有认证体系
+2. **MCP 共享组件**：为 Model Context Protocol (MCP) 提供标准化的 OAuth 2.1 鉴权支持，使 MCP Server 和 MCP Client
+   能够无缝集成到现有认证体系
 3. **组件化复用**：通过 Maven 多模块设计，将 OAuth 功能拆分为可独立部署、可灵活组合的组件
 
 ### 1.2 模块关系图
@@ -95,15 +96,15 @@ flowchart LR
 
 ### 1.4 技术栈
 
-| 技术项 | 版本/规范 |
-|--------|-----------|
-| Java | JDK 25 |
-| Spring Boot | 4.0.6 |
-| Maven | 3.9+ |
-| OAuth | OAuth 2.1 (RFC 9000 系列) |
-| MCP | Model Context Protocol 2025-11-25 |
-| Redis | GlobalCache API |
-| JWT | auth0 java-jwt |
+| 技术项      | 版本/规范                         |
+|-------------|-----------------------------------|
+| Java        | JDK 25                            |
+| Spring Boot | 4.0.6                             |
+| Maven       | 3.9+                              |
+| OAuth       | OAuth 2.1 (RFC 9000 系列)         |
+| MCP         | Model Context Protocol 2025-11-25 |
+| Redis       | GlobalCache API                   |
+| JWT         | auth0 java-jwt                    |
 
 ---
 
@@ -111,14 +112,14 @@ flowchart LR
 
 ### 2.1 Package 结构
 
-| Package | 说明 | 源文件数 |
-|---------|------|----------|
-| `cn.richie696.component.oauth.core` | 核心组件：TokenEndpoint、ClientRegistry、ScopeResolver | 3 |
-| `cn.richie696.component.oauth.core.spi` | SPI 接口：TokenStore | 1 |
-| `cn.richie696.component.oauth.core.support` | SPI 实现：DefaultTokenStore | 1 |
-| `cn.richie696.component.oauth.core.model` | 领域模型：ClientConfig、TokenResponse 等 | 5 |
-| `cn.richie696.component.oauth.core.config` | 配置类：OAuth2Properties、OAuth2RedisKey、OAuth2AutoConfiguration | 3 |
-| `cn.richie696.component.oauth.core.exception` | 异常类：InvalidClientException、InvalidGrantException、TokenExpiredException | 3 |
+| Package                                       | 说明                                                                         | 源文件数 |
+|-----------------------------------------------|------------------------------------------------------------------------------|----------|
+| `cn.richie696.component.oauth.core`           | 核心组件：TokenEndpoint、ClientRegistry、ScopeResolver                       | 3        |
+| `cn.richie696.component.oauth.core.spi`       | SPI 接口：TokenStore                                                         | 1        |
+| `cn.richie696.component.oauth.core.support`   | SPI 实现：DefaultTokenStore                                                  | 1        |
+| `cn.richie696.component.oauth.core.model`     | 领域模型：ClientConfig、TokenResponse 等                                     | 5        |
+| `cn.richie696.component.oauth.core.config`    | 配置类：OAuth2Properties、OAuth2RedisKey、OAuth2AutoConfiguration            | 3        |
+| `cn.richie696.component.oauth.core.exception` | 异常类：InvalidClientException、InvalidGrantException、TokenExpiredException | 3        |
 
 ### 2.2 Package 地图
 
@@ -154,56 +155,59 @@ cn.richie696.component.oauth.core
 **类职责**：OAuth 2.1 Token 端点，负责 token 全生命周期管理：签发、刷新、验证、撤销。
 
 **构造函数**：
+
 ```java
 public TokenEndpoint(TokenStore tokenStore, ClientRegistry clientRegistry, OAuth2Properties properties)
 ```
 
 **公共方法**：
 
-| 方法签名 | 说明 | 返回类型 | 抛出异常 |
-|---------|------|---------|---------|
-| `TokenResponse generateToken(String clientId, String clientSecret, String ip)` | client_credentials 模式签发 token | `TokenResponse` | `BusinessException` |
-| `TokenResponse refreshToken(String refreshToken, String ip)` | refresh_token 模式刷新 token（带分布式锁） | `TokenResponse` | `BusinessException` |
-| `void revokeToken(String token, String tokenTypeHint)` | 撤销 token（access_token→黑名单，refresh_token→删除） | `void` | - |
-| `TokenIntrospection introspectToken(String accessToken)` | 内省 token（返回 active + clientId + scope） | `TokenIntrospection` | - |
-| `ClientConfig verifyAccessToken(String accessToken)` | 验证 JWT 签名、过期、黑名单；返回客户端配置或 null | `ClientConfig` | - |
-| `List<String> getIpWhitelist(String accessToken)` | 获取客户端的 IP 白名单 | `List<String>` | - |
+| 方法签名                                                                       | 说明                                                  | 返回类型             | 抛出异常            |
+|--------------------------------------------------------------------------------|-------------------------------------------------------|----------------------|---------------------|
+| `TokenResponse generateToken(String clientId, String clientSecret, String ip)` | client_credentials 模式签发 token                     | `TokenResponse`      | `BusinessException` |
+| `TokenResponse refreshToken(String refreshToken, String ip)`                   | refresh_token 模式刷新 token（带分布式锁）            | `TokenResponse`      | `BusinessException` |
+| `void revokeToken(String token, String tokenTypeHint)`                         | 撤销 token（access_token→黑名单，refresh_token→删除） | `void`               | -                   |
+| `TokenIntrospection introspectToken(String accessToken)`                       | 内省 token（返回 active + clientId + scope）          | `TokenIntrospection` | -                   |
+| `ClientConfig verifyAccessToken(String accessToken)`                           | 验证 JWT 签名、过期、黑名单；返回客户端配置或 null    | `ClientConfig`       | -                   |
+| `List<String> getIpWhitelist(String accessToken)`                              | 获取客户端的 IP 白名单                                | `List<String>`       | -                   |
 
 #### 2.3.2 ClientRegistry
 
 **类职责**：客户端注册中心，负责 OAuth 客户端配置的读写，数据存储在 Redis Hash。
 
 **构造函数**：
+
 ```java
 public ClientRegistry()
 ```
 
 **公共方法**：
 
-| 方法签名 | 说明 | 返回类型 |
-|---------|------|---------|
-| `<T> T getClientConfig(String clientId, ClientConfig.Field field)` | 从 Redis Hash 获取单个字段值 | `T` |
-| `Map<ClientConfig.Field, Object> getClientConfig(String clientId, Field f1, Field f2)` | 批量获取多个字段值 | `Map<Field, Object>` |
-| `boolean isClientValid(String clientId)` | 检查客户端是否启用 | `boolean` |
-| `boolean verifyClientSecret(String clientId, String clientSecret)` | 时序安全比较客户端密钥 | `boolean` |
-| `ClientConfig registerTestClient(String clientName)` | 注册测试客户端到 Redis | `ClientConfig` |
+| 方法签名                                                                               | 说明                         | 返回类型             |
+|----------------------------------------------------------------------------------------|------------------------------|----------------------|
+| `<T> T getClientConfig(String clientId, ClientConfig.Field field)`                     | 从 Redis Hash 获取单个字段值 | `T`                  |
+| `Map<ClientConfig.Field, Object> getClientConfig(String clientId, Field f1, Field f2)` | 批量获取多个字段值           | `Map<Field, Object>` |
+| `boolean isClientValid(String clientId)`                                               | 检查客户端是否启用           | `boolean`            |
+| `boolean verifyClientSecret(String clientId, String clientSecret)`                     | 时序安全比较客户端密钥       | `boolean`            |
+| `ClientConfig registerTestClient(String clientName)`                                   | 注册测试客户端到 Redis       | `ClientConfig`       |
 
 #### 2.3.3 ScopeResolver
 
 **类职责**：Scope 路径解析器，根据请求路径和 HTTP 方法使用 Ant 路径匹配查找接口所需的 Scope。
 
 **构造函数**：
+
 ```java
 public ScopeResolver()
 ```
 
 **公共方法**：
 
-| 方法签名 | 说明 | 返回类型 |
-|---------|------|---------|
-| `List<String> getRequiredScopes(String path, String method)` | 根据路径和方法获取所需 scopes（AntPath 匹配） | `List<String>` |
-| `boolean verifyScope(Set<String> tokenScopes, List<String> requiredScopes)` | 验证 token scopes 是否满足要求（OR 逻辑） | `boolean` |
-| `Set<String> extractScopesFromToken(String accessToken)` | 从 JWT 中解析 scope claim | `Set<String>` |
+| 方法签名                                                                    | 说明                                          | 返回类型       |
+|-----------------------------------------------------------------------------|-----------------------------------------------|----------------|
+| `List<String> getRequiredScopes(String path, String method)`                | 根据路径和方法获取所需 scopes（AntPath 匹配） | `List<String>` |
+| `boolean verifyScope(Set<String> tokenScopes, List<String> requiredScopes)` | 验证 token scopes 是否满足要求（OR 逻辑）     | `boolean`      |
+| `Set<String> extractScopesFromToken(String accessToken)`                    | 从 JWT 中解析 scope claim                     | `Set<String>`  |
 
 ### 2.4 TokenEndpoint 状态机
 
@@ -297,34 +301,34 @@ classDiagram
 
 **配置前缀**：`platform.component.oauth`
 
-| 属性名 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `enabled` | boolean | `false` | 是否启用 OAuth 2.1 组件 |
-| `tokenSecret` | String | - | Token 签发密钥（推荐 32 位） |
-| `defaultTokenValidDuration` | Integer | `2` | access_token 默认有效期（小时） |
-| `defaultRefreshTokenValidDuration` | Integer | `720` | refresh_token 默认有效期（小时，即 30 天） |
-| `revokePreviousTokensOnIssue` | boolean | `false` | 签发新 token 时是否立即作废旧 token |
-| `enableDailyIssueLimit` | boolean | `true` | 是否启用每日签发次数限制 |
+| 属性名                             | 类型    | 默认值  | 说明                                       |
+|------------------------------------|---------|---------|--------------------------------------------|
+| `enabled`                          | boolean | `false` | 是否启用 OAuth 2.1 组件                    |
+| `tokenSecret`                      | String  | -       | Token 签发密钥（推荐 32 位）               |
+| `defaultTokenValidDuration`        | Integer | `2`     | access_token 默认有效期（小时）            |
+| `defaultRefreshTokenValidDuration` | Integer | `720`   | refresh_token 默认有效期（小时，即 30 天） |
+| `revokePreviousTokensOnIssue`      | boolean | `false` | 签发新 token 时是否立即作废旧 token        |
+| `enableDailyIssueLimit`            | boolean | `true`  | 是否启用每日签发次数限制                   |
 
 ### 2.7 Redis Key Schema 表
 
-| Key 枚举 | 前缀 | 模板 | 说明 |
-|---------|------|------|------|
-| `OAUTH2_CLIENT_CONFIG` | `third-party-client:` | `third-party-client:%s` | 客户端配置（Hash） |
-| `OAUTH2_REFRESH_TOKEN` | `refresh-token:` | `refresh-token:%s` | Refresh Token 存储（Hash） |
-| `OAUTH2_CLIENT_REFRESH_TOKEN_INDEX` | `client-refresh-token:` | `client-refresh-token:%s` | 客户端 Refresh Token 索引 |
-| `OAUTH2_DAILY_TOKEN_ISSUE_COUNT` | `oauth2:daily:issue-count:` | `oauth2:daily:issue-count:%s` | 每日签发计数 |
-| `OAUTH2_REFRESH_TOKEN_LOCK` | `refresh-token-lock:` | `refresh-token-lock:%s` | Refresh Token 分布式锁 |
-| `OAUTH2_ACCESS_TOKEN_BLACKLIST` | `access-token-blacklist:` | `access-token-blacklist:%s` | Access Token 黑名单 |
-| `OAUTH2_ACCESS_TOKEN_IP_BIND` | `access-token-ip:` | `access-token-ip:%s` | Access Token IP 绑定 |
-| `OAUTH2_ANOMALY_REFRESH_COUNT` | `oauth2:anomaly:refresh:count:` | `oauth2:anomaly:refresh:count:%s` | 异常刷新计数 |
-| `OAUTH2_ANOMALY_RATELIMIT` | `oauth2:anomaly:ratelimit:oauth2:` | `oauth2:anomaly:ratelimit:oauth2:%s` | 异常限流计数 |
-| `OAUTH2_ANOMALY_TOKEN_IPS` | `oauth2:anomaly:token:ips:` | `oauth2:anomaly:token:ips:%s` | 异常 Token IP 列表 |
-| `OAUTH2_AUDIT_EVENTS` | `oauth2:audit:events` | `oauth2:audit:events` | 审计事件（List） |
-| `GATEWAY_API_INDEX` | `gateway:api:index` | `gateway:api:index` | 网关接口索引（Set） |
-| `GATEWAY_API_CONFIG` | `gateway:api:` | `gateway:api:%s` | 网关接口配置（Hash） |
-| `GATEWAY_API_SCOPES` | `gateway:api:scopes:` | `gateway:api:scopes:%s` | 接口对应 scopes（Set） |
-| `GATEWAY_SCOPE_CONFIG` | `gateway:scope:` | `gateway:scope:%s` | Scope 配置 |
+| Key 枚举                            | 前缀                               | 模板                                 | 说明                       |
+|-------------------------------------|------------------------------------|--------------------------------------|----------------------------|
+| `OAUTH2_CLIENT_CONFIG`              | `third-party-client:`              | `third-party-client:%s`              | 客户端配置（Hash）         |
+| `OAUTH2_REFRESH_TOKEN`              | `refresh-token:`                   | `refresh-token:%s`                   | Refresh Token 存储（Hash） |
+| `OAUTH2_CLIENT_REFRESH_TOKEN_INDEX` | `client-refresh-token:`            | `client-refresh-token:%s`            | 客户端 Refresh Token 索引  |
+| `OAUTH2_DAILY_TOKEN_ISSUE_COUNT`    | `oauth2:daily:issue-count:`        | `oauth2:daily:issue-count:%s`        | 每日签发计数               |
+| `OAUTH2_REFRESH_TOKEN_LOCK`         | `refresh-token-lock:`              | `refresh-token-lock:%s`              | Refresh Token 分布式锁     |
+| `OAUTH2_ACCESS_TOKEN_BLACKLIST`     | `access-token-blacklist:`          | `access-token-blacklist:%s`          | Access Token 黑名单        |
+| `OAUTH2_ACCESS_TOKEN_IP_BIND`       | `access-token-ip:`                 | `access-token-ip:%s`                 | Access Token IP 绑定       |
+| `OAUTH2_ANOMALY_REFRESH_COUNT`      | `oauth2:anomaly:refresh:count:`    | `oauth2:anomaly:refresh:count:%s`    | 异常刷新计数               |
+| `OAUTH2_ANOMALY_RATELIMIT`          | `oauth2:anomaly:ratelimit:oauth2:` | `oauth2:anomaly:ratelimit:oauth2:%s` | 异常限流计数               |
+| `OAUTH2_ANOMALY_TOKEN_IPS`          | `oauth2:anomaly:token:ips:`        | `oauth2:anomaly:token:ips:%s`        | 异常 Token IP 列表         |
+| `OAUTH2_AUDIT_EVENTS`               | `oauth2:audit:events`              | `oauth2:audit:events`                | 审计事件（List）           |
+| `GATEWAY_API_INDEX`                 | `gateway:api:index`                | `gateway:api:index`                  | 网关接口索引（Set）        |
+| `GATEWAY_API_CONFIG`                | `gateway:api:`                     | `gateway:api:%s`                     | 网关接口配置（Hash）       |
+| `GATEWAY_API_SCOPES`                | `gateway:api:scopes:`              | `gateway:api:scopes:%s`              | 接口对应 scopes（Set）     |
+| `GATEWAY_SCOPE_CONFIG`              | `gateway:scope:`                   | `gateway:scope:%s`                   | Scope 配置                 |
 
 ### 2.8 时序图
 
@@ -512,14 +516,16 @@ sequenceDiagram
 
 ### 3.1 设计目标
 
-实现 OAuth 2.1 Authorization Code + PKCE 流程，遵循 [MCP Authorization Spec (2025-11-25)](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) 规范。
+实现 OAuth 2.1 Authorization Code + PKCE
+流程，遵循 [MCP Authorization Spec (2025-11-25)](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)
+规范。
 
 ### 3.2 模块结构
 
 ```
 atlas-richie-component-oauth-authz
 ├── pom.xml
-└── src/main/java/com/richie/component/oauth/authz/
+└── src/main/java/cn/richie696/component/oauth/authz/
     ├── AuthorizationEndpoint.java        # 授权端点
     ├── AuthorizationCodeGrant.java      # 授权码模式处理
     ├── PKCESupport.java                 # PKCE S256 支持
@@ -539,6 +545,7 @@ atlas-richie-component-oauth-authz
 **Package**：`cn.richie696.component.oauth.authz`
 
 **构造函数**：
+
 ```java
 public AuthorizationEndpoint(
     ClientRegistry clientRegistry,
@@ -550,15 +557,15 @@ public AuthorizationEndpoint(
 
 **公共方法**：
 
-| 方法签名 | 说明 | 返回类型 |
-|---------|------|---------|
-| `void handleAuthorizationRequest(HttpServletRequest request, HttpServletResponse response)` | 处理 GET /authorize，重定向到登录页面 | `void` |
-| `void handleAuthorizationConsent(HttpServletRequest request, HttpServletResponse response)` | 处理 POST /authorize（用户同意授权），生成授权码并重定向 | `void` |
+| 方法签名                                                                                    | 说明                                                     | 返回类型 |
+|---------------------------------------------------------------------------------------------|----------------------------------------------------------|----------|
+| `void handleAuthorizationRequest(HttpServletRequest request, HttpServletResponse response)` | 处理 GET /authorize，重定向到登录页面                    | `void`   |
+| `void handleAuthorizationConsent(HttpServletRequest request, HttpServletResponse response)` | 处理 POST /authorize（用户同意授权），生成授权码并重定向 | `void`   |
 
 **内部方法（私有）**：
 
-| 方法签名 | 说明 | 返回类型 |
-|---------|------|---------|
+| 方法签名                                                                                                               | 说明             | 返回类型            |
+|------------------------------------------------------------------------------------------------------------------------|------------------|---------------------|
 | `AuthorizationCode generateAuthorizationCode(String clientId, String redirectUri, String codeChallenge, String state)` | 生成授权码并存储 | `AuthorizationCode` |
 
 #### 3.3.2 AuthorizationCodeStore (SPI)
@@ -1074,7 +1081,7 @@ sequenceDiagram
 ```
 atlas-richie-component-oauth-dcr
 ├── pom.xml
-└── src/main/java/com/richie/component/oauth/dcr/
+└── src/main/java/cn/richie696/component/oauth/dcr/
     ├── DynamicClientRegistrationEndpoint.java  # DCR 端点
     ├── ClientRegistrationRequest.java         # DCR 请求 DTO
     ├── ClientRegistrationResponse.java        # DCR 响应 DTO
@@ -1095,6 +1102,7 @@ atlas-richie-component-oauth-dcr
 **Package**：`cn.richie696.component.oauth.dcr`
 
 **构造函数**：
+
 ```java
 public DynamicClientRegistrationEndpoint(
     ClientRegistry clientRegistry,
@@ -1105,9 +1113,9 @@ public DynamicClientRegistrationEndpoint(
 
 **公共方法**：
 
-| 方法签名 | 说明 | 返回类型 |
-|---------|------|---------|
-| `ClientRegistrationResponse registerClient(ClientRegistrationRequest request, HttpServletRequest httpRequest)` | 处理客户端注册请求 | `ClientRegistrationResponse` |
+| 方法签名                                                                                                                      | 说明               | 返回类型                     |
+|-------------------------------------------------------------------------------------------------------------------------------|--------------------|------------------------------|
+| `ClientRegistrationResponse registerClient(ClientRegistrationRequest request, HttpServletRequest httpRequest)`                | 处理客户端注册请求 | `ClientRegistrationResponse` |
 | `ClientRegistrationResponse updateClient(String clientId, ClientRegistrationRequest request, HttpServletRequest httpRequest)` | 更新已注册的客户端 | `ClientRegistrationResponse` |
 
 #### 4.3.2 ClientRegistrationRequest
@@ -1558,12 +1566,12 @@ sequenceDiagram
 
 ### 5.1 MCP Role 与 OAuth Component 模块映射表
 
-| MCP Role | OAuth Role | Atlas OAuth Component | 说明 |
-|----------|-----------|---------------------|------|
-| MCP Server | Resource Server (受保护资源) | `oauth-core` | 使用 `verifyAccessToken` 验证访问令牌 |
-| MCP Client | OAuth Client | `oauth-authz` | 客户端 SDK，处理授权流程 |
-| Authorization Server | AS | `oauth-authz` | `AuthorizationEndpoint` + `TokenEndpoint` |
-| MCP Client (持有令牌) | OAuth Client | `oauth-authz` | `AuthorizationCodeGrant` 处理 code 换 token |
+| MCP Role              | OAuth Role                   | Atlas OAuth Component | 说明                                        |
+|-----------------------|------------------------------|-----------------------|---------------------------------------------|
+| MCP Server            | Resource Server (受保护资源) | `oauth-core`          | 使用 `verifyAccessToken` 验证访问令牌       |
+| MCP Client            | OAuth Client                 | `oauth-authz`         | 客户端 SDK，处理授权流程                    |
+| Authorization Server  | AS                           | `oauth-authz`         | `AuthorizationEndpoint` + `TokenEndpoint`   |
+| MCP Client (持有令牌) | OAuth Client                 | `oauth-authz`         | `AuthorizationCodeGrant` 处理 code 换 token |
 
 ### 5.2 MCP Server 集成 (Resource Server)
 
@@ -1673,12 +1681,12 @@ response.setHeader("WWW-Authenticate", wwwAuthenticate);
 
 MCP Server 应定义以下标准 Scope：
 
-| Scope | 说明 | 典型用途 |
-|-------|------|---------|
-| `mcp:read` | 读取 MCP 资源 | 查询工具列表、上下文等 |
-| `mcp:write` | 写入 MCP 资源 | 修改配置、上传文件等 |
-| `mcp:execute` | 执行 MCP 操作 | 调用工具、执行命令等 |
-| `mcp:admin` | 管理功能 | 用户管理、系统配置等 |
+| Scope         | 说明          | 典型用途               |
+|---------------|---------------|------------------------|
+| `mcp:read`    | 读取 MCP 资源 | 查询工具列表、上下文等 |
+| `mcp:write`   | 写入 MCP 资源 | 修改配置、上传文件等   |
+| `mcp:execute` | 执行 MCP 操作 | 调用工具、执行命令等   |
+| `mcp:admin`   | 管理功能      | 用户管理、系统配置等   |
 
 ### 5.5 Token Audience 绑定 (resource parameter)
 
@@ -1903,12 +1911,12 @@ public interface ClientIdMetadataDocumentResolver {
 **实现要点**：
 
 1. `AuthorizationEndpoint` 在处理授权请求时：
-   - 验证 `code_challenge` 存在
-   - 验证 `code_challenge_method` 为 `S256`（拒绝 `plain`）
+    - 验证 `code_challenge` 存在
+    - 验证 `code_challenge_method` 为 `S256`（拒绝 `plain`）
 
 2. `AuthorizationCodeGrant` 在交换 Token 时：
-   - 使用 `PKCESupport.verifyChallenge()` 验证 `code_verifier`
-   - 验证失败返回 `invalid_grant`
+    - 使用 `PKCESupport.verifyChallenge()` 验证 `code_verifier`
+    - 验证失败返回 `invalid_grant`
 
 ```java
 // AuthorizationEndpoint.handleAuthorizationRequest() 中的校验
@@ -1978,11 +1986,13 @@ if (boundIp != null && !boundIp.equals(requestIp)) {
 ### 7.5 每日签发次数限制
 
 **计算公式**：
+
 ```
 maxIssuesPerDay = max(24 / tokenValidDuration, 1) + 2
 ```
 
 **示例**：
+
 - Token 有效期 2 小时 → 每天最多 14 次
 - Token 有效期 4 小时 → 每天最多 8 次
 - Token 有效期 24 小时 → 每天最多 3 次
@@ -2036,12 +2046,12 @@ public boolean isUrlSafe(String url) {
 
 ### 8.1 新增 Redis Key
 
-| Key 枚举 | 前缀 | 模板 | 说明 |
-|---------|------|------|------|
-| `OAUTH2_AUTHZ_CODE` | `authz-code:` | `authz-code:%s` | 授权码存储（Hash） |
-| `OAUTH2_CLIENT_META` | `client-meta:` | `client-meta:%s` | 客户端元数据（Hash） |
-| `OAUTH2_REGISTRATION_TOKEN` | `reg-token:` | `reg-token:%s` | 注册 Access Token |
-| `OAUTH2_SSRF_DNS_CACHE` | `ssrf:dns:` | `ssrf:dns:%s` | SSRF DNS 缓存 |
+| Key 枚举                    | 前缀           | 模板             | 说明                 |
+|-----------------------------|----------------|------------------|----------------------|
+| `OAUTH2_AUTHZ_CODE`         | `authz-code:`  | `authz-code:%s`  | 授权码存储（Hash）   |
+| `OAUTH2_CLIENT_META`        | `client-meta:` | `client-meta:%s` | 客户端元数据（Hash） |
+| `OAUTH2_REGISTRATION_TOKEN` | `reg-token:`   | `reg-token:%s`   | 注册 Access Token    |
+| `OAUTH2_SSRF_DNS_CACHE`     | `ssrf:dns:`    | `ssrf:dns:%s`    | SSRF DNS 缓存        |
 
 ### 8.2 OAuth2RedisKey 扩展
 
@@ -2057,18 +2067,18 @@ OAUTH2_SSRF_DNS_CACHE("ssrf:dns:", "ssrf:dns:%s"),
 
 ## 9. 错误码规范
 
-| 错误码 | 错误类型 (RFC 6749) | 说明 |
-|--------|-------------------|------|
-| `invalid_request` | invalid_request | 请求参数缺失或无效 |
-| `invalid_client` | invalid_client | 客户端认证失败 |
-| `invalid_grant` | invalid_grant | 授权码/刷新令牌无效或已过期 |
-| `unauthorized_client` | unauthorized_client | 客户端未被授权使用此 grant type |
-| `unsupported_grant_type` | unsupported_grant_type | 不支持的 grant type |
-| `invalid_token` | invalid_token | Access Token 无效或已过期 |
-| `insufficient_scope` | insufficient_scope | Token scope 不足 |
-| `access_denied` | access_denied | 用户拒绝授权 |
-| `rate_limit_exceeded` | (扩展) | 请求频率超限 |
-| `ip_not_allowed` | (扩展) | IP 不在白名单中 |
+| 错误码                   | 错误类型 (RFC 6749)    | 说明                            |
+|--------------------------|------------------------|---------------------------------|
+| `invalid_request`        | invalid_request        | 请求参数缺失或无效              |
+| `invalid_client`         | invalid_client         | 客户端认证失败                  |
+| `invalid_grant`          | invalid_grant          | 授权码/刷新令牌无效或已过期     |
+| `unauthorized_client`    | unauthorized_client    | 客户端未被授权使用此 grant type |
+| `unsupported_grant_type` | unsupported_grant_type | 不支持的 grant type             |
+| `invalid_token`          | invalid_token          | Access Token 无效或已过期       |
+| `insufficient_scope`     | insufficient_scope     | Token scope 不足                |
+| `access_denied`          | access_denied          | 用户拒绝授权                    |
+| `rate_limit_exceeded`    | (扩展)                 | 请求频率超限                    |
+| `ip_not_allowed`         | (扩展)                 | IP 不在白名单中                 |
 
 ---
 
@@ -2156,22 +2166,22 @@ public class OAuth2DCRAutoConfiguration {}
 
 ## 12. 参考规范
 
-| 规范 | 标题 |
-|------|------|
-| RFC 6749 | OAuth 2.0 Authorization Framework |
-| RFC 6750 | OAuth 2.0 Bearer Token Usage |
-| RFC 7009 | OAuth 2.0 Token Revocation |
-| RFC 7519 | JSON Web Token (JWT) |
-| RFC 7521 | Assertion Framework for OAuth 2.0 |
-| RFC 7591 | OAuth 2.0 Dynamic Client Registration Protocol |
-| RFC 7592 | OAuth 2.0 Dynamic Client Registration Management Protocol |
-| RFC 7636 | PKCE for OAuth 2.0 |
-| RFC 7662 | OAuth 2.0 Token Introspection |
-| RFC 8414 | OAuth 2.0 Authorization Server Metadata |
-| RFC 8707 | Resource Indicators for OAuth 2.0 |
-| RFC 9728 | Protected Resource Metadata |
-| OAuth 2.1 | OAuth 2.1 Authorization Framework (draft) |
-| MCP Authorization | Model Context Protocol Authorization Spec (2025-11-25) |
+| 规范              | 标题                                                      |
+|-------------------|-----------------------------------------------------------|
+| RFC 6749          | OAuth 2.0 Authorization Framework                         |
+| RFC 6750          | OAuth 2.0 Bearer Token Usage                              |
+| RFC 7009          | OAuth 2.0 Token Revocation                                |
+| RFC 7519          | JSON Web Token (JWT)                                      |
+| RFC 7521          | Assertion Framework for OAuth 2.0                         |
+| RFC 7591          | OAuth 2.0 Dynamic Client Registration Protocol            |
+| RFC 7592          | OAuth 2.0 Dynamic Client Registration Management Protocol |
+| RFC 7636          | PKCE for OAuth 2.0                                        |
+| RFC 7662          | OAuth 2.0 Token Introspection                             |
+| RFC 8414          | OAuth 2.0 Authorization Server Metadata                   |
+| RFC 8707          | Resource Indicators for OAuth 2.0                         |
+| RFC 9728          | Protected Resource Metadata                               |
+| OAuth 2.1         | OAuth 2.1 Authorization Framework (draft)                 |
+| MCP Authorization | Model Context Protocol Authorization Spec (2025-11-25)    |
 
 ---
 

@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.dao.handler;
 
+import cn.richie696.component.dao.config.DaoProperties;
 import cn.richie696.context.common.api.LoginUserContextHolder;
 import cn.richie696.contract.model.LoginUserPrincipal;
-import cn.richie696.component.dao.config.DaoProperties;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.reflection.MetaObject;
@@ -37,7 +37,9 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class DefaultFieldHandler implements MetaObjectHandler {
 
-    /** DAO 配置，用于判断是否启用默认字段填充 */
+    /**
+     * DAO 配置，用于判断是否启用默认字段填充
+     */
     private final DaoProperties daoProperties;
     private static final String CREATE_ID = "createId";
     private static final String UPDATE_ID = "updateId";

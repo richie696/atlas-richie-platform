@@ -28,6 +28,7 @@ import java.time.Duration;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
 
 /**
  * 默认 {@link ApiKeyPool} 实现 — 基于 Apache Commons Pool2 {@code GenericObjectPool}。
@@ -59,7 +60,9 @@ public class ApiKeyPoolImpl implements ApiKeyPool {
 
     private static final Logger log = LoggerFactory.getLogger(ApiKeyPoolImpl.class);
 
-    /** "全部 key 都被借出" 的等待上限,防止 borrowObject 永久阻塞。 */
+    /**
+     * "全部 key 都被借出" 的等待上限,防止 borrowObject 永久阻塞。
+     */
     private static final Duration BORROW_WAIT = Duration.ofSeconds(2);
 
     private final String poolName;

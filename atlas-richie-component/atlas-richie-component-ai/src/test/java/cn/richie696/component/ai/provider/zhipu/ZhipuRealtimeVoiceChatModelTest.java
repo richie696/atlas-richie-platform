@@ -18,8 +18,8 @@ package cn.richie696.component.ai.provider.zhipu;
 import cn.richie696.component.ai.api.voicechat.StsTicket;
 import cn.richie696.component.ai.api.voicechat.VoiceChatConfig;
 import cn.richie696.component.ai.api.voicechat.VoiceConversation;
-import cn.richie696.component.ai.support.sign.VendorStsContext;
 import cn.richie696.component.ai.service.VoiceStsService;
+import cn.richie696.component.ai.support.sign.VendorStsContext;
 import org.junit.jupiter.api.Test;
 
 import java.net.http.HttpClient;
@@ -28,10 +28,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ZhipuRealtimeVoiceChatModelTest {
 
@@ -49,7 +46,10 @@ class ZhipuRealtimeVoiceChatModelTest {
         assertTrue(models.length >= 1);
         boolean found = false;
         for (String m : models) {
-            if ("glm-4-voice".equals(m)) { found = true; break; }
+            if ("glm-4-voice".equals(m)) {
+                found = true;
+                break;
+            }
         }
         assertTrue(found);
     }
@@ -96,7 +96,10 @@ class ZhipuRealtimeVoiceChatModelTest {
             assertNotNull(conv.events());
         } finally {
             if (ref.get() != null) {
-                try { ref.get().close(); } catch (Exception ignore) {}
+                try {
+                    ref.get().close();
+                } catch (Exception ignore) {
+                }
             }
         }
     }
@@ -128,17 +131,51 @@ class ZhipuRealtimeVoiceChatModelTest {
                     .build();
         }
 
-        @Override public StsTicket sign(String v, String c, String m) { throw new UnsupportedOperationException(); }
-        @Override public StsTicket sign(String v, String c, String m, int t, Map<String, Object> a) { throw new UnsupportedOperationException(); }
-        @Override public List<String> listRegisteredVendors() { return List.of(); }
-        @Override public int signerCount() { return 0; }
+        @Override
+        public StsTicket sign(String v, String c, String m) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public StsTicket sign(String v, String c, String m, int t, Map<String, Object> a) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<String> listRegisteredVendors() {
+            return List.of();
+        }
+
+        @Override
+        public int signerCount() {
+            return 0;
+        }
     }
 
     private static final class ThrowingStsService implements VoiceStsService {
-        @Override public StsTicket sign(VendorStsContext ctx) { throw new IllegalStateException("simulated STS failure"); }
-        @Override public StsTicket sign(String v, String c, String m) { throw new IllegalStateException("simulated STS failure"); }
-        @Override public StsTicket sign(String v, String c, String m, int t, Map<String, Object> a) { throw new IllegalStateException("simulated STS failure"); }
-        @Override public List<String> listRegisteredVendors() { return List.of(); }
-        @Override public int signerCount() { return 0; }
+        @Override
+        public StsTicket sign(VendorStsContext ctx) {
+            throw new IllegalStateException("simulated STS failure");
+        }
+
+        @Override
+        public StsTicket sign(String v, String c, String m) {
+            throw new IllegalStateException("simulated STS failure");
+        }
+
+        @Override
+        public StsTicket sign(String v, String c, String m, int t, Map<String, Object> a) {
+            throw new IllegalStateException("simulated STS failure");
+        }
+
+        @Override
+        public List<String> listRegisteredVendors() {
+            return List.of();
+        }
+
+        @Override
+        public int signerCount() {
+            return 0;
+        }
     }
 }

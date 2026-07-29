@@ -15,17 +15,10 @@
  */
 package cn.richie696.component.http.okhttp;
 
-import cn.richie696.component.http.core.AsyncCallback;
-import cn.richie696.component.http.core.HttpClient;
-import cn.richie696.component.http.core.HttpMethod;
-import cn.richie696.component.http.core.HttpRequest;
-import cn.richie696.component.http.core.HttpRequestSupport;
-import cn.richie696.component.http.core.HttpResponse;
-import cn.richie696.component.http.core.SseConnection;
-import cn.richie696.component.http.core.SseListener;
+import cn.richie696.component.http.core.*;
 import jakarta.annotation.Nonnull;
-import tools.jackson.core.type.TypeReference;
 import okhttp3.*;
+import tools.jackson.core.type.TypeReference;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -33,13 +26,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.List;
 
 /**
  * 基于 OkHttp 的 {@link HttpClient} 实现。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class OkHttpAdapter implements HttpClient {
 

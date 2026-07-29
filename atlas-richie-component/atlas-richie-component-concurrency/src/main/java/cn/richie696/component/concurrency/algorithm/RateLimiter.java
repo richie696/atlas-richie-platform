@@ -17,12 +17,9 @@ package cn.richie696.component.concurrency.algorithm;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.lang.AutoCloseable;
 
 /**
  * 令牌桶限流器 —— 控制单位时间内的最大并发操作数。
@@ -151,18 +148,18 @@ public final class RateLimiter implements AutoCloseable {
      * <p>桶容量等于 {@code permits}，每个 {@code timeout} 时间窗口补充一次。
      * 该变体适用于 SLA 严苛场景 —— 当令牌耗尽时调用方立即放弃，而非阻塞挂起。</p>
      *
-     * @param permits  每个补充周期内允许通过的令牌数（必须 ≥ 1）
-     * @param timeout  既作为令牌补充周期，也作为 {@link #tryAcquire()} 的最大等待时长
+     * @param permits 每个补充周期内允许通过的令牌数（必须 ≥ 1）
+     * @param timeout 既作为令牌补充周期，也作为 {@link #tryAcquire()} 的最大等待时长
      * @return 非阻塞限流器实例
      * @throws NullPointerException     如果 {@code timeout} 为 null
      * @throws IllegalArgumentException 如果参数非法
      * @deprecated 自 1.0.0 起，{@code try*} 前缀约定为<b>严格非阻塞</b>，本工厂隐式让
-     *             {@link #tryAcquire()} 在工厂参数 {@code timeout} 内等待，违反该约定。
-     *             请改用 {@link #ofTokensPerDuration(int, Duration)}（或
-     *             {@link #builder()}）创建限流器，再通过新的
-     *             {@link #tryAcquire(Duration) tryAcquire(Duration)} /
-     *             {@link #tryAcquire(int, Duration)} 显式表达阻塞等待语义。本方法保留仅为
-     *             向后兼容。
+     * {@link #tryAcquire()} 在工厂参数 {@code timeout} 内等待，违反该约定。
+     * 请改用 {@link #ofTokensPerDuration(int, Duration)}（或
+     * {@link #builder()}）创建限流器，再通过新的
+     * {@link #tryAcquire(Duration) tryAcquire(Duration)} /
+     * {@link #tryAcquire(int, Duration)} 显式表达阻塞等待语义。本方法保留仅为
+     * 向后兼容。
      */
     @Deprecated
     public static RateLimiter ofTryAcquireTimeout(int permits, Duration timeout) {
@@ -236,14 +233,14 @@ public final class RateLimiter implements AutoCloseable {
     /**
      * 如果令牌不足，在指定超时内等待 {@code permits} 个令牌，超时后仍无令牌则返回 {@code false}。
      *
-      * <p>这是显式的<b>限时阻塞</b>语义，与 {@link #tryAcquire(int)} 的<b>非阻塞</b>语义
-      * 彻底分离 —— 两者共用 {@code try*} 前缀但语义不同，调用方应根据需要选择合适的方法：</p>
-      * <ul>
-      *   <li>立即判断 → {@link #tryAcquire(int)}</li>
-      *   <li>限时等待 → {@link #tryAcquire(int, Duration)}</li>
-      *   <li>无限等待 → {@link #acquire(int)}</li>
-      * </ul>
-      * <p>调用方应根据需要选择合适的方法。</p>
+     * <p>这是显式的<b>限时阻塞</b>语义，与 {@link #tryAcquire(int)} 的<b>非阻塞</b>语义
+     * 彻底分离 —— 两者共用 {@code try*} 前缀但语义不同，调用方应根据需要选择合适的方法：</p>
+     * <ul>
+     *   <li>立即判断 → {@link #tryAcquire(int)}</li>
+     *   <li>限时等待 → {@link #tryAcquire(int, Duration)}</li>
+     *   <li>无限等待 → {@link #acquire(int)}</li>
+     * </ul>
+     * <p>调用方应根据需要选择合适的方法。</p>
      *
      * <p>等待期间线程被中断时恢复中断标志并返回 {@code false}。</p>
      *
@@ -289,9 +286,9 @@ public final class RateLimiter implements AutoCloseable {
      * 唤醒被中断时立即抛出 {@link InterruptedException}，并恢复线程中断标志。</p>
      *
      * @param permits 要获取的令牌数（必须 ≥ 1）
-     * @throws InterruptedException       如果等待期间线程被中断
-     * @throws IllegalArgumentException   如果 {@code permits} &lt; 1
-     * @throws IllegalStateException      如果限流器已关闭
+     * @throws InterruptedException     如果等待期间线程被中断
+     * @throws IllegalArgumentException 如果 {@code permits} &lt; 1
+     * @throws IllegalStateException    如果限流器已关闭
      */
     public void acquire(int permits) throws InterruptedException {
         if (permits < 1) {
@@ -312,7 +309,7 @@ public final class RateLimiter implements AutoCloseable {
      *
      * @param permits 要获取的令牌数（必须 ≥ 1）
      * @return 是否成功获取令牌（{@code false} 表示因并发被关闭导致 {@link Semaphore} 中断，
-     *         实际场景几乎不会发生，仅作为非阻塞契约返回）
+     * 实际场景几乎不会发生，仅作为非阻塞契约返回）
      * @throws IllegalArgumentException 如果 {@code permits} &lt; 1
      */
     public boolean acquireUninterruptibly(int permits) {
@@ -427,8 +424,8 @@ public final class RateLimiter implements AutoCloseable {
          * @param enabled 是否启用兼容行为
          * @return 当前构建器
          * @deprecated 自 1.0.0 起 {@link RateLimiter#tryAcquire() tryAcquire()} 已统一为严格非阻塞，
-         *             该设置不再影响 {@code tryAcquire} 行为。请改用 {@link RateLimiter#tryAcquire(Duration)}
-         *             显式表达阻塞等待语义。本方法保留仅为兼容旧版调用代码。
+         * 该设置不再影响 {@code tryAcquire} 行为。请改用 {@link RateLimiter#tryAcquire(Duration)}
+         * 显式表达阻塞等待语义。本方法保留仅为兼容旧版调用代码。
          */
         @Deprecated
         public Builder tryAcquireTimeoutEnabled(boolean enabled) {

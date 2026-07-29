@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import cn.richie696.component.web.core.reload.Reloadable;
 
 class DefaultHotReloadRegistryTest {
 
@@ -63,8 +64,14 @@ class DefaultHotReloadRegistryTest {
         AtomicInteger accepts = new AtomicInteger();
         Reloadable<String> r = new Reloadable<>() {
             private String current = "initial";
-            @Override public String currentState() { return current; }
-            @Override public void accept(String newState) {
+
+            @Override
+            public String currentState() {
+                return current;
+            }
+
+            @Override
+            public void accept(String newState) {
                 accepts.incrementAndGet();
                 this.current = newState;
             }
@@ -100,9 +107,23 @@ class DefaultHotReloadRegistryTest {
 
     private static class StringReloadable implements Reloadable<String> {
         private final String state;
-        StringReloadable(String state) { this.state = state; }
-        @Override public String currentState() { return state; }
-        @Override public void accept(String newState) {}
-        @Override public String name() { return "StringReloadable"; }
+
+        StringReloadable(String state) {
+            this.state = state;
+        }
+
+        @Override
+        public String currentState() {
+            return state;
+        }
+
+        @Override
+        public void accept(String newState) {
+        }
+
+        @Override
+        public String name() {
+            return "StringReloadable";
+        }
     }
 }

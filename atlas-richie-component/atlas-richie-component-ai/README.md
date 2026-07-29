@@ -7,64 +7,68 @@
 - [🎙 Real-Time Voice Chat (WebSocket + STS)](#-real-time-voice-chat-websocket--sts)
 - [🔑 API Key Pool](#-api-key-pool)
 - [🤖 Currently Supported Models](#-currently-supported-models)
-  - [1) Built-in Providers (Configuration File Mode)](#1-built-in-providers-configuration-file-mode)
-  - [2) Unknown Provider Fallback in Dynamic Mode](#2-unknown-provider-fallback-in-dynamic-mode)
+    - [1) Built-in Providers (Configuration File Mode)](#1-built-in-providers-configuration-file-mode)
+    - [2) Unknown Provider Fallback in Dynamic Mode](#2-unknown-provider-fallback-in-dynamic-mode)
 - [📦 Dependency](#-dependency)
 - [🔌 EmbeddingModel Auto-Configuration](#-embeddingmodel-auto-configuration)
 - [🚀 Usage Method 1: Configuration File Initialization](#-usage-method-1-configuration-file-initialization)
 - [🚀 Usage Method 2: Database Configuration + Dynamic Initialization (Recommended)](#-usage-method-2-database-configuration--dynamic-initialization-recommended)
-  - [0) Disable Configuration File Initialization (Dynamic-Only Mode)](#0-disable-configuration-file-initialization-dynamic-only-mode)
-  - [1) Construct Model Configuration List](#1-construct-model-configuration-list)
-  - [2) Invoke Dynamic Initialization](#2-invoke-dynamic-initialization)
+    - [0) Disable Configuration File Initialization (Dynamic-Only Mode)](#0-disable-configuration-file-initialization-dynamic-only-mode)
+    - [1) Construct Model Configuration List](#1-construct-model-configuration-list)
+    - [2) Invoke Dynamic Initialization](#2-invoke-dynamic-initialization)
 - [💡 Unified Call Examples](#-unified-call-examples)
 - [🔌 AiChatService Interface](#-aichatservice-interface)
 - [📊 Key Data Structures](#-key-data-structures)
-  - [1) `AiRequest`](#1-airequest)
-  - [2) `ModelOptions` (Dynamic Initialization Input)](#2-modeloptions-dynamic-initialization-input)
-  - [3) `AiResponse`](#3-airesponse)
-  - [4) `AiStreamChunk` (Stream Output Chunk)](#4-aistreamchunk-stream-output-chunk)
-  - [5) `AiHealthResult` (Health Check Result)](#5-aihealthresult-health-check-result)
-  - [6) `AiModelInfo` (Model Information)](#6-aimodelinfo-model-information)
+    - [1) `AiRequest`](#1-airequest)
+    - [2) `ModelOptions` (Dynamic Initialization Input)](#2-modeloptions-dynamic-initialization-input)
+    - [3) `AiResponse`](#3-airesponse)
+    - [4) `AiStreamChunk` (Stream Output Chunk)](#4-aistreamchunk-stream-output-chunk)
+    - [5) `AiHealthResult` (Health Check Result)](#5-aihealthresult-health-check-result)
+    - [6) `AiModelInfo` (Model Information)](#6-aimodelinfo-model-information)
 - [📐 Parameters Reference (AiModelOptions)](#-parameters-reference-aimodeloptions)
 - [📏 Default & Override Rules](#-default--override-rules)
 - [🏭 Production Recommendations](#-production-recommendations)
 - [📕 Complete Configuration Reference](#-complete-configuration-reference)
-  - [platform.component.ai Configuration Tree](#platformcomponentai-configuration-tree)
-  - [Auto-Registered Beans](#auto-registered-beans)
-  - [Routing Decision Chain](#routing-decision-chain)
+    - [platform.component.ai Configuration Tree](#platformcomponentai-configuration-tree)
+    - [Auto-Registered Beans](#auto-registered-beans)
+    - [Routing Decision Chain](#routing-decision-chain)
 - [🔨 Tool Calling](#-tool-calling)
-  - [1) Register Tools](#1-register-tools)
-  - [2) Declare Tools at Invocation Time](#2-declare-tools-at-invocation-time)
-  - [3) Notes](#3-notes)
+    - [1) Register Tools](#1-register-tools)
+    - [2) Declare Tools at Invocation Time](#2-declare-tools-at-invocation-time)
+    - [3) Notes](#3-notes)
 - [⚠️ Error Code Reference](#-error-code-reference)
 - [🔧 📐 API Implementation Documentation](#-api-implementation-documentation)
-  - [Overall Component Architecture](#overall-component-architecture)
-  - [1. `call(AiRequest request)` — Synchronous Call](#1-callairequest-request--synchronous-call)
-  - [2. `callAsync(AiRequest request)` — Asynchronous Call](#2-callasyncairequest-request--asynchronous-call)
-  - [3. `stream(AiRequest request)` — Streaming Call](#3-streamairequest-request--streaming-call)
-  - [4. `callWithModel(String modelName, AiRequest request)` — Specify Model Call](#4-callwithmodelstring-modelname-airequest-request--specify-model-call)
-  - [5. `initializeModels(List<ModelOptions>)` — Dynamic Initialization](#5-initializemodelslistmodeloptions--dynamic-initialization)
-  - [6. `removeModel(String modelName)` — Remove Model](#6-removemodelstring-modelname--remove-model)
-  - [7. `probe(String modelName)` — Single Model Health Probe](#7-probestring-modelname--single-model-health-probe)
-  - [8. `probeAll()` — Probe All Models](#8-probeall--probe-all-models)
-  - [9. `getAvailableModels()` — Get All Available Models](#9-getavailablemodels--get-all-available-models)
-  - [10. `getModelInfo(String modelName)` — Get Model Info](#10-getmodelinfostring-modelname--get-model-info)
-  - [11. `isModelAvailable(String modelName)` — Check Model Availability](#11-ismodelavailablestring-modelname--check-model-availability)
-  - [12. `getDefaultModel()` — Get Default Model](#12-getdefaultmodel--get-default-model)
-  - [13. `setDefaultModel(String modelName)` — Set Default Model](#13-setdefaultmodelstring-modelname--set-default-model)
+    - [Overall Component Architecture](#overall-component-architecture)
+    - [1. `call(AiRequest request)` — Synchronous Call](#1-callairequest-request--synchronous-call)
+    - [2. `callAsync(AiRequest request)` — Asynchronous Call](#2-callasyncairequest-request--asynchronous-call)
+    - [3. `stream(AiRequest request)` — Streaming Call](#3-streamairequest-request--streaming-call)
+    - [4.
+      `callWithModel(String modelName, AiRequest request)` — Specify Model Call](#4-callwithmodelstring-modelname-airequest-request--specify-model-call)
+    - [5.
+      `initializeModels(List<ModelOptions>)` — Dynamic Initialization](#5-initializemodelslistmodeloptions--dynamic-initialization)
+    - [6. `removeModel(String modelName)` — Remove Model](#6-removemodelstring-modelname--remove-model)
+    - [7. `probe(String modelName)` — Single Model Health Probe](#7-probestring-modelname--single-model-health-probe)
+    - [8. `probeAll()` — Probe All Models](#8-probeall--probe-all-models)
+    - [9. `getAvailableModels()` — Get All Available Models](#9-getavailablemodels--get-all-available-models)
+    - [10. `getModelInfo(String modelName)` — Get Model Info](#10-getmodelinfostring-modelname--get-model-info)
+    - [11.
+      `isModelAvailable(String modelName)` — Check Model Availability](#11-ismodelavailablestring-modelname--check-model-availability)
+    - [12. `getDefaultModel()` — Get Default Model](#12-getdefaultmodel--get-default-model)
+    - [13.
+      `setDefaultModel(String modelName)` — Set Default Model](#13-setdefaultmodelstring-modelname--set-default-model)
 
 ------
 
-
-
 ## Overview
 
-`richie-component-ai` is a unified LLM integration component based on Spring AI, designed to let business systems manage and invoke different models through a unified interface.
+`richie-component-ai` is a unified LLM integration component based on Spring AI, designed to let business systems manage
+and invoke different models through a unified interface.
 
 The component supports two initialization modes simultaneously:
 
 - **Configuration File Initialization**: Define models via `application.yml`
-- **Runtime Dynamic Initialization**: Business systems load model configurations from a database and inject them at runtime
+- **Runtime Dynamic Initialization**: Business systems load model configurations from a database and inject them at
+  runtime
 
 Both modes can coexist; runtime dynamic initialization can override models with the same name.
 
@@ -73,29 +77,35 @@ Both modes can coexist; runtime dynamic initialization can override models with 
 - Unified invocation interface: Call different vendor models through the same `AiChatService`
 - Multi-model management: List available models, switch default model, invoke by model name
 - Dynamic model registration: Support `initializeModels(List<ModelOptions>)` for runtime loading
-- Compatibility fallback: Unknown providers during dynamic registration automatically degrade to OpenAI-compatible protocol
+- Compatibility fallback: Unknown providers during dynamic registration automatically degrade to OpenAI-compatible
+  protocol
 - Unified response structure: Includes content, duration, model info, token usage statistics
-- **Real-Time Voice Chat (WebSocket + STS)** — Business code uses `VoiceChatService` only, no vendor strings in business branches. See [Real-Time Voice Chat (WebSocket + STS)](#-real-time-voice-chat-websocket--sts) section.
-- **API Key Pool** — Token Plan rotation via Commons Pool2. Per-business-name pool with auto-failover on rate limit. See [API Key Pool](#-api-key-pool-rn5) section.
+- **Real-Time Voice Chat (WebSocket + STS)** — Business code uses `VoiceChatService` only, no vendor strings in business
+  branches. See [Real-Time Voice Chat (WebSocket + STS)](#-real-time-voice-chat-websocket--sts) section.
+- **API Key Pool** — Token Plan rotation via Commons Pool2. Per-business-name pool with auto-failover on rate limit.
+  See [API Key Pool](#-api-key-pool-rn5) section.
 
 ## Real-Time Voice Chat (WebSocket + STS)
 
-Unified SPI for real-time voice conversations across vendors. See design in section below; for production use, vendors require real API keys and end-to-end IT against their WS endpoints before going live.
+Unified SPI for real-time voice conversations across vendors. See design in section below; for production use, vendors
+require real API keys and end-to-end IT against their WS endpoints before going live.
 
-A unified SPI for real-time voice conversations across vendors (Zhipu / DashScope / Doubao / Hunyuan) that hides all vendor-specific auth and protocol details behind two interfaces:
+A unified SPI for real-time voice conversations across vendors (Zhipu / DashScope / Doubao / Hunyuan) that hides all
+vendor-specific auth and protocol details behind two interfaces:
 
 - `VoiceChatService` — business entry point (`open(businessName, config)`)
-- `StsTicket` — opaque short-lived credential (business calls `asBearerHeaders()` / `asTc3Headers()` / `asHeaderMap()` without knowing the vendor)
+- `StsTicket` — opaque short-lived credential (business calls `asBearerHeaders()` / `asTc3Headers()` / `asHeaderMap()`
+  without knowing the vendor)
 
 ### Implementation Matrix (5 vendors, all ✅)
 
-| Vendor | Capability | Auth Domain | Impl Class | Status |
-|---|---|---|---|---|
-| Zhipu | VoiceChat (Realtime) | Bearer | `ZhipuRealtimeVoiceChatModel` | ✅ Unit + IT pending |
-| DashScope | VoiceChat (Realtime) | Bearer | `DashScopeQwenOmniVoiceChatModel` | ✅ Unit + IT pending |
-| Doubao | TTS bidirection | X-Api-Key | `DoubaoBidirectionTtsVoiceChatModel` | ✅ Unit + IT pending |
-| Doubao | STT streaming | X-Api-Key | `DoubaoStreamingAsrVoiceChatModel` | ✅ Unit + IT pending |
-| Hunyuan | STT streaming | TC3 | `HunyuanStreamingAsrVoiceChatModel` | ✅ Unit + IT pending |
+| Vendor    | Capability           | Auth Domain | Impl Class                           | Status               |
+|-----------|----------------------|-------------|--------------------------------------|----------------------|
+| Zhipu     | VoiceChat (Realtime) | Bearer      | `ZhipuRealtimeVoiceChatModel`        | ✅ Unit + IT pending |
+| DashScope | VoiceChat (Realtime) | Bearer      | `DashScopeQwenOmniVoiceChatModel`    | ✅ Unit + IT pending |
+| Doubao    | TTS bidirection      | X-Api-Key   | `DoubaoBidirectionTtsVoiceChatModel` | ✅ Unit + IT pending |
+| Doubao    | STT streaming        | X-Api-Key   | `DoubaoStreamingAsrVoiceChatModel`   | ✅ Unit + IT pending |
+| Hunyuan   | STT streaming        | TC3         | `HunyuanStreamingAsrVoiceChatModel`  | ✅ Unit + IT pending |
 
 ### Quick Start
 
@@ -157,25 +167,29 @@ platform:
 ```
 
 **Rules** (enforced by ArchUnit):
+
 - `api/voicechat/*` and `service/voicechat/*` MUST NOT depend on `provider/*`
 - Business code uses interfaces only; vendor is configured, not coded
 - Switching vendor = one YAML line, no code changes
 
 ### Caveat: Real-Vendor WebSocket IT
 
-Unit tests cover the SPI behavior, but real-vendor WebSocket handshakes must be validated before production use. To run end-to-end IT with real vendor endpoints, prepare the following environment variables and run `mvn verify -Pit`:
+Unit tests cover the SPI behavior, but real-vendor WebSocket handshakes must be validated before production use. To run
+end-to-end IT with real vendor endpoints, prepare the following environment variables and run `mvn verify -Pit`:
 
-| Vendor | Endpoint | Auth | Env Vars |
-|--------|----------|------|----------|
-| Zhipu | `wss://open.bigmodel.cn/api/paas/v4/realtime` | Bearer | `ZHIPU_REALTIME_API_KEY` |
-| DashScope | `wss://dashscope.aliyuncs.com/api-ws/v1/realtime` | Bearer | `DASHSCOPE_API_KEY` |
-| Doubao TTS bidirection | `wss://openspeech.bytedance.com/api/v3/tts/bidirection` | X-Api-Key | `DOUBAO_APP_ID`, `DOUBAO_TOKEN`, `DOUBAO_RESOURCE_ID` |
-| Doubao STT stream | `wss://openspeech.bytedance.com/api/v2/asr` | X-Api-Key | same as above |
-| Hunyuan STT stream | TC3 over WS (`asr.tencentcloudapi.com:443`) | TC3-HMAC-SHA256 | `HUNYUAN_SECRET_ID`, `HUNYUAN_SECRET_KEY` |
+| Vendor                 | Endpoint                                                | Auth            | Env Vars                                              |
+|------------------------|---------------------------------------------------------|-----------------|-------------------------------------------------------|
+| Zhipu                  | `wss://open.bigmodel.cn/api/paas/v4/realtime`           | Bearer          | `ZHIPU_REALTIME_API_KEY`                              |
+| DashScope              | `wss://dashscope.aliyuncs.com/api-ws/v1/realtime`       | Bearer          | `DASHSCOPE_API_KEY`                                   |
+| Doubao TTS bidirection | `wss://openspeech.bytedance.com/api/v3/tts/bidirection` | X-Api-Key       | `DOUBAO_APP_ID`, `DOUBAO_TOKEN`, `DOUBAO_RESOURCE_ID` |
+| Doubao STT stream      | `wss://openspeech.bytedance.com/api/v2/asr`             | X-Api-Key       | same as above                                         |
+| Hunyuan STT stream     | TC3 over WS (`asr.tencentcloudapi.com:443`)             | TC3-HMAC-SHA256 | `HUNYUAN_SECRET_ID`, `HUNYUAN_SECRET_KEY`             |
 
 ### BFF Controller Example
 
-The AI component does **not** depend on `spring-boot-starter-webflux` (it's an atomic capability). The BFF controller lives in your **business project**. Full copy-paste-ready code is in [`R-N-DESIGN.md` §14.13](./R-N-DESIGN.md) — includes:
+The AI component does **not** depend on `spring-boot-starter-webflux` (it's an atomic capability). The BFF controller
+lives in your **business project**. Full copy-paste-ready code is in [`R-N-DESIGN.md` §14.13](./R-N-DESIGN.md) —
+includes:
 
 - `pom.xml` dependencies
 - Full `application.yml` with 5 vendor configs
@@ -209,13 +223,17 @@ platform:
 +         model: qwen-omni-turbo-realtime
 ```
 
-Restart, and `VoiceChatService` automatically routes to `aiDashscopeVoiceChatModel` bean. Business controller code: zero changes.
+Restart, and `VoiceChatService` automatically routes to `aiDashscopeVoiceChatModel` bean. Business controller code: zero
+changes.
 
 ### Detailed Design
 
 ## 🔑 API Key Pool
 
-Many vendors (Zhipu, DashScope, Doubao, Hunyuan, etc.) sell **Token Plan** API keys in batches because each key is rate-limited to ~1–4 concurrent calls. During peak traffic a single key can be throttled to just 1 concurrent call. This component provides an out-of-the-box **commons-pool2-backed key pool** that rotates keys automatically on rate-limit and falls back across the pool.
+Many vendors (Zhipu, DashScope, Doubao, Hunyuan, etc.) sell **Token Plan** API keys in batches because each key is
+rate-limited to ~1–4 concurrent calls. During peak traffic a single key can be throttled to just 1 concurrent call. This
+component provides an out-of-the-box **commons-pool2-backed key pool** that rotates keys automatically on rate-limit and
+falls back across the pool.
 
 ### Why a Key Pool
 
@@ -290,8 +308,10 @@ Same `api-keys` Set applies to `rerank` / `image` / `tts` / `stt` / `voice-chat`
 ```
 
 1. `ApiKeyPoolManager.getPool(businessName, keys)` lazily creates a `GenericObjectPool<ApiKey>`
-2. For multi-key business, `AiChatClientFactory` pre-builds N `ChatModel` instances (one per key, each carries its own API key) and wraps them in `PooledChatModel`
-3. On every call: borrow → invoke per-key model → on rate-limit `invalidate(key)` and try next → after `retry-rounds` give up, throw `KeyPoolExhaustedException(businessName, retryRounds, totalKeys, numCooldown, lastError)`
+2. For multi-key business, `AiChatClientFactory` pre-builds N `ChatModel` instances (one per key, each carries its own
+   API key) and wraps them in `PooledChatModel`
+3. On every call: borrow → invoke per-key model → on rate-limit `invalidate(key)` and try next → after `retry-rounds`
+   give up, throw `KeyPoolExhaustedException(businessName, retryRounds, totalKeys, numCooldown, lastError)`
 
 ### Rate-Limit Detection
 
@@ -305,13 +325,13 @@ Same `api-keys` Set applies to `rerank` / `image` / `tts` / `stt` / `voice-chat`
 
 ### Failure Model
 
-| Scenario | Behavior |
-|---|---|
-| Single key + call succeeds | borrow → return |
-| Multi-key + first call rate-limited | invalidate + retry on next key (round 2) |
-| Multi-key + ALL keys rate-limited | throw `KeyPoolExhaustedException` (full context: `retryRounds`, `totalKeys`, `numCooldown`) |
-| All keys in cooldown | borrow() blocks up to `max-wait-millis`, then throws |
-| `enabled: false` | NoOp pool — every call gets the first key, no rotation |
+| Scenario                            | Behavior                                                                                    |
+|-------------------------------------|---------------------------------------------------------------------------------------------|
+| Single key + call succeeds          | borrow → return                                                                             |
+| Multi-key + first call rate-limited | invalidate + retry on next key (round 2)                                                    |
+| Multi-key + ALL keys rate-limited   | throw `KeyPoolExhaustedException` (full context: `retryRounds`, `totalKeys`, `numCooldown`) |
+| All keys in cooldown                | borrow() blocks up to `max-wait-millis`, then throws                                        |
+| `enabled: false`                    | NoOp pool — every call gets the first key, no rotation                                      |
 
 ### Monitoring
 
@@ -327,7 +347,9 @@ public Map<String, PoolStats> stats() {
 
 ### Detailed Design
 
-See the [API Key Pool](#-api-key-pool) section above for configuration syntax, working principles, rate-limit detection rules, and failure models. The pool SPI is implemented in `cn.richie696.component.ai.support.keypool` with `ApiKeyPool` (interface) + `ApiKeyPoolImpl` (GenericObjectPool wrapper) + `ApiKeyPoolManager` (per-business-name factory).
+See the [API Key Pool](#-api-key-pool) section above for configuration syntax, working principles, rate-limit detection
+rules, and failure models. The pool SPI is implemented in `cn.richie696.component.ai.support.keypool` with `ApiKeyPool`
+(interface) + `ApiKeyPoolImpl` (GenericObjectPool wrapper) + `ApiKeyPoolManager` (per-business-name factory).
 
 ## Currently Supported Models
 
@@ -362,7 +384,8 @@ When calling `initializeModels(List<ModelOptions>)`, `ModelOptions.provider` is 
 
 ## EmbeddingModel Auto-Configuration
 
-Starting from the current version, `richie-component-ai` automatically registers an `EmbeddingModel` Bean (Bean name: `aiEmbeddingModel`) in configuration file initialization mode.
+Starting from the current version, `richie-component-ai` automatically registers an `EmbeddingModel` Bean (Bean name:
+`aiEmbeddingModel`) in configuration file initialization mode.
 
 - Default strategy: **Follows the default model** (i.e., the first model in `platform.component.ai.models`)
 - Use case: `richie-component-vector` and other provider sub-components can reuse the `EmbeddingModel` directly
@@ -454,8 +477,8 @@ Behavior:
 - No `ChatClient` instances are created at component startup
 - `initializeModels(List<ModelOptions>)` must be called before any AI invocation
 - If `AiChatService.call/callAsync/callWithModel` is called before initialization, it returns:
-  - `errorCode = MODEL_NOT_INITIALIZED`
-  - `errorMessage = AI model not initialized. Please initialize via configuration file or initializeModels first.`
+    - `errorCode = MODEL_NOT_INITIALIZED`
+    - `errorMessage = AI model not initialized. Please initialize via configuration file or initializeModels first.`
 
 ### 1) Construct Model Configuration List
 
@@ -563,11 +586,13 @@ Flux<AiStreamChunk> stream(AiRequest request);
 - `metadata`: Request metadata (user ID, session ID, etc., does not affect AI responses)
 
 Message type `AiRequest.Message`:
+
 - `role`: Role (`system` / `user` / `assistant`)
 - `content`: Message content
 - `name`: Message name (optional)
 
 Request-level parameters `AiRequest.ModelOptions` (same structure as config parameters, overrides defaults per request):
+
 - `model` / `maxTokens` / `temperature` / `topP` / `topK`
 - `frequencyPenalty` / `presencePenalty` / `stop`
 - `logprobs` / `topLogprobs` / `enableThinking` / `thinkingBudgetTokens`
@@ -606,6 +631,7 @@ Factory methods:
 - `errorCode` / `errorMessage`: Error info
 
 Factory methods:
+
 - `AiStreamChunk.delta(text, modelName, provider)`: Incremental chunk
 - `AiStreamChunk.finished(modelName, provider, usage)`: Final chunk (with usage stats)
 - `AiStreamChunk.error(message, code)`: Error chunk
@@ -650,31 +676,33 @@ Provider-specific parameters:
 
 Provider capability matrix:
 
-| Parameter | OpenAI | DeepSeek | Anthropic | MiniMax | Ollama |
-|---|---|---|---|---|---|
-| `temperature` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `topP` | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `topK` | ❌ | ❌ | ✅ | ❌ | ❌ |
-| `frequencyPenalty` | ✅ | ✅ | ❌ | ✅ | ❌ |
-| `presencePenalty` | ✅ | ✅ | ❌ | ✅ | ❌ |
-| `stop` | ✅ | ✅ | ❌ | ✅ | ✅ |
-| `logprobs` / `topLogprobs` | ✅ | ✅ | ❌ | ❌ | ❌ |
-| `enableThinking` | ❌ | ❌ | ✅ | ❌ | ❌ |
+| Parameter                  | OpenAI | DeepSeek | Anthropic | MiniMax | Ollama |
+|----------------------------|--------|----------|-----------|---------|--------|
+| `temperature`              | ✅     | ✅       | ✅        | ✅      | ✅     |
+| `topP`                     | ✅     | ✅       | ✅        | ✅      | ❌     |
+| `topK`                     | ❌     | ❌       | ✅        | ❌      | ❌     |
+| `frequencyPenalty`         | ✅     | ✅       | ❌        | ✅      | ❌     |
+| `presencePenalty`          | ✅     | ✅       | ❌        | ✅      | ❌     |
+| `stop`                     | ✅     | ✅       | ❌        | ✅      | ✅     |
+| `logprobs` / `topLogprobs` | ✅     | ✅       | ❌        | ❌      | ❌     |
+| `enableThinking`           | ❌     | ❌       | ✅        | ❌      | ❌     |
 
 ## Default & Override Rules
 
 - Startup: Configuration file models are loaded first
 - Runtime: Calling `initializeModels(...)` adds/overrides models with the same name
 - Default model:
-  - If not explicitly set, the first model in the current model collection is used
-  - If the current default model is overridden or becomes unavailable, it automatically falls back to the first available model
+    - If not explicitly set, the first model in the current model collection is used
+    - If the current default model is overridden or becomes unavailable, it automatically falls back to the first
+      available model
 
 ## Production Recommendations
 
 - Never hardcode API keys in code or plaintext configuration; use a configuration center or secret management service
 - Perform connectivity probing before dynamic initialization, then persist and activate
 - Maintain model routing strategies per tenant, business line, or scenario (model name mapping)
-- Add circuit breaker / degradation strategies for call failures to prevent upstream model fluctuations from impacting the main service chain
+- Add circuit breaker / degradation strategies for call failures to prevent upstream model fluctuations from impacting
+  the main service chain
 
 ## Complete Configuration Reference
 
@@ -721,13 +749,13 @@ platform:
 
 ### Auto-Registered Beans
 
-| Bean Type | Bean Name | Registration Condition |
-|---|---|---|
-| `Map<String, ChatClient>` | `aiChatClients` | `config-initialization-enabled = true` |
-| `EmbeddingModel` | `aiEmbeddingModel` | Above condition + non-empty models + `@ConditionalOnMissingBean` |
-| `AiModelProperties` | — | `@EnableConfigurationProperties` |
-| `ToolRegistry` | — | Always registered (`@Component`) |
-| `retryTemplate` | — | Auto-registered by `spring-ai-autoconfigure-retry` |
+| Bean Type                 | Bean Name          | Registration Condition                                           |
+|---------------------------|--------------------|------------------------------------------------------------------|
+| `Map<String, ChatClient>` | `aiChatClients`    | `config-initialization-enabled = true`                           |
+| `EmbeddingModel`          | `aiEmbeddingModel` | Above condition + non-empty models + `@ConditionalOnMissingBean` |
+| `AiModelProperties`       | —                  | `@EnableConfigurationProperties`                                 |
+| `ToolRegistry`            | —                  | Always registered (`@Component`)                                 |
+| `retryTemplate`           | —                  | Auto-registered by `spring-ai-autoconfigure-retry`               |
 
 ### Routing Decision Chain
 
@@ -782,29 +810,32 @@ AiResponse response = aiModelService.call(
 );
 ```
 
-Tool calling works with both synchronous `call()` and streaming `stream()`. Missing tool names silently log a WARN and are skipped.
+Tool calling works with both synchronous `call()` and streaming `stream()`. Missing tool names silently log a WARN and
+are skipped.
 
 ### 3) Notes
 
 - **Duplicate names**: First registered wins; duplicates are silently discarded
-- **Name matching**: Uses `ToolDefinition.name()` (typically matches the name in `FunctionToolCallback.builder(name, ...)`)
+- **Name matching**: Uses `ToolDefinition.name()` (typically matches the name in
+  `FunctionToolCallback.builder(name, ...)`)
 - **Activation**: Currently only explicitly enabled via `AiRequest.toolNames`; no global default tools
 
 ## Error Code Reference
 
-| Error Code | Trigger Condition | Source Method |
-|---|---|---|
-| `MODEL_NOT_INITIALIZED` | `chatClients` is empty when `call` / `stream` is invoked | `checkInitialized()` |
-| `NO_MODEL_AVAILABLE` | Resolved model chain is empty | `resolveChain()` |
-| `CIRCUIT_OPEN` | Model is in circuit-open state, skipped | `circuitBreaker.allow()` |
-| `ALL_MODELS_FAILED` | All models in the chain failed | `call()` / `stream()` |
-| `MODEL_UNAVAILABLE` | Corresponding `ChatClient` not found at call time | `callSingleModel()` |
-| `STREAM_FAILED` | Exception during streaming | `stream()` onErrorResume |
-| `UNKNOWN_ERROR` | Default error code for `AiResponse.failure(msg)` without explicit code | — |
+| Error Code              | Trigger Condition                                                      | Source Method            |
+|-------------------------|------------------------------------------------------------------------|--------------------------|
+| `MODEL_NOT_INITIALIZED` | `chatClients` is empty when `call` / `stream` is invoked               | `checkInitialized()`     |
+| `NO_MODEL_AVAILABLE`    | Resolved model chain is empty                                          | `resolveChain()`         |
+| `CIRCUIT_OPEN`          | Model is in circuit-open state, skipped                                | `circuitBreaker.allow()` |
+| `ALL_MODELS_FAILED`     | All models in the chain failed                                         | `call()` / `stream()`    |
+| `MODEL_UNAVAILABLE`     | Corresponding `ChatClient` not found at call time                      | `callSingleModel()`      |
+| `STREAM_FAILED`         | Exception during streaming                                             | `stream()` onErrorResume |
+| `UNKNOWN_ERROR`         | Default error code for `AiResponse.failure(msg)` without explicit code | —                        |
 
 ## 📐 API Implementation Documentation
 
-> This section documents the **business flow**, **sequence diagram**, and **implementation logic** for each of the 13 public API methods in `AiChatService`.
+> This section documents the **business flow**, **sequence diagram**, and **implementation logic** for each of the 13
+> public API methods in `AiChatService`.
 > Implementation version: M8 (2.0.0-M8), with Observation, Spring 7 built-in Retry, and Tool Calling integrated.
 
 ### Overall Component Architecture
@@ -894,13 +925,20 @@ sequenceDiagram
 
 #### Implementation Logic
 
-1. **Initialization check** (`checkInitialized`): Returns `MODEL_NOT_INITIALIZED` immediately when `chatClients` is empty.
-2. **Chain resolution** (`resolveChain`): Delegates to `AiModelRouter` to merge `request.modelName` + `request.fallbackModelNames` + `request.scene` routing + global `fallbackModels`, producing an ordered candidate list.
-3. **Circuit breaker protection**: For each candidate, first checks `AiModelCircuitBreaker.allow(modelName, resilience)`; circuit-open models are skipped (not counted as failures).
-4. **Single call** (`callSingleModel`): Gets `ChatClient` → injects `messages` + request-level `options` + `tools` → `.call()` → wraps into `AiResponse` (with `Usage` + `duration`).
+1. **Initialization check** (`checkInitialized`): Returns `MODEL_NOT_INITIALIZED` immediately when `chatClients` is
+   empty.
+2. **Chain resolution** (`resolveChain`): Delegates to `AiModelRouter` to merge `request.modelName` +
+   `request.fallbackModelNames` + `request.scene` routing + global `fallbackModels`, producing an ordered candidate
+   list.
+3. **Circuit breaker protection**: For each candidate, first checks
+   `AiModelCircuitBreaker.allow(modelName, resilience)`; circuit-open models are skipped (not counted as failures).
+4. **Single call** (`callSingleModel`): Gets `ChatClient` → injects `messages` + request-level `options` + `tools` →
+   `.call()` → wraps into `AiResponse` (with `Usage` + `duration`).
 5. **Success path**: Calls `recordSuccess` to reset the model's failure count, returns immediately.
-6. **Failure path**: Calls `recordFailure` to increment failure count; after `failureThreshold` consecutive failures, the circuit opens for `openDurationMs`; continues to the next model in chain.
-7. **Fallback**: If all models fail, returns the last failure; if no model was attempted at all, returns `ALL_MODELS_FAILED`.
+6. **Failure path**: Calls `recordFailure` to increment failure count; after `failureThreshold` consecutive failures,
+   the circuit opens for `openDurationMs`; continues to the next model in chain.
+7. **Fallback**: If all models fail, returns the last failure; if no model was attempted at all, returns
+   `ALL_MODELS_FAILED`.
 
 ### 2. `callAsync(AiRequest request)` — Asynchronous Call
 
@@ -932,7 +970,9 @@ sequenceDiagram
 
 #### Implementation Logic
 
-Simple wrapper: `CompletableFuture.supplyAsync(() -> call(request), defaultExecutor)`, offloading synchronous logic to `ForkJoinPool.commonPool()`. All routing / circuit breaker / retry / tool calling semantics are identical to `call`. Callers can use `thenAccept` / `thenApply` / `exceptionally` for chaining.
+Simple wrapper: `CompletableFuture.supplyAsync(() -> call(request), defaultExecutor)`, offloading synchronous logic to
+`ForkJoinPool.commonPool()`. All routing / circuit breaker / retry / tool calling semantics are identical to `call`.
+Callers can use `thenAccept` / `thenApply` / `exceptionally` for chaining.
 
 ### 3. `stream(AiRequest request)` — Streaming Call
 
@@ -979,10 +1019,14 @@ sequenceDiagram
 
 #### Implementation Logic
 
-1. Initialization check, chain resolution, and circuit breaker logic are the same as `call`, but **only the first available model** (not circuit-broken, not missing) starts streaming — no chain-level fallback.
-2. `ChatClient.prompt().stream().chatResponse()` returns `Flux<ChatResponse>`. Each chunk extracts `getOutput().getText()`, filters empty values, and wraps into `AiStreamChunk.delta(text, modelName, provider)`.
-3. When the stream ends naturally, an `AiStreamChunk.finished(modelName, provider, usage)` terminal chunk is appended (with `Usage`).
-4. **Error path**: `onErrorResume` triggers `circuitBreaker.recordFailure` + returns `AiStreamChunk.error(message, STREAM_FAILED)`. Callers identify the error by error code.
+1. Initialization check, chain resolution, and circuit breaker logic are the same as `call`, but **only the first
+   available model** (not circuit-broken, not missing) starts streaming — no chain-level fallback.
+2. `ChatClient.prompt().stream().chatResponse()` returns `Flux<ChatResponse>`. Each chunk extracts
+   `getOutput().getText()`, filters empty values, and wraps into `AiStreamChunk.delta(text, modelName, provider)`.
+3. When the stream ends naturally, an `AiStreamChunk.finished(modelName, provider, usage)` terminal chunk is appended
+   (with `Usage`).
+4. **Error path**: `onErrorResume` triggers `circuitBreaker.recordFailure` + returns
+   `AiStreamChunk.error(message, STREAM_FAILED)`. Callers identify the error by error code.
 5. **No retry**: Errors mid-stream fail immediately without calling `recordSuccess` (avoiding half-success state).
 
 ### 4. `callWithModel(String modelName, AiRequest request)` — Specify Model Call
@@ -1011,7 +1055,9 @@ sequenceDiagram
 
 #### Implementation Logic
 
-Forwarder: Writes `modelName` into `AiRequest.modelName` and delegates to `call`. Internally, `resolveChain` places `modelName` at the head of the chain. **Note**: If `callWithModel` fails, it still falls back through `request.fallbackModelNames` / global fallback chain — to prevent fallback, set `request.fallbackModelNames` to empty.
+Forwarder: Writes `modelName` into `AiRequest.modelName` and delegates to `call`. Internally, `resolveChain` places
+`modelName` at the head of the chain. **Note**: If `callWithModel` fails, it still falls back through
+`request.fallbackModelNames` / global fallback chain — to prevent fallback, set `request.fallbackModelNames` to empty.
 
 ### 5. `initializeModels(List<ModelOptions>)` — Dynamic Initialization
 
@@ -1059,11 +1105,15 @@ sequenceDiagram
 
 Protected by `synchronized` for concurrency safety.
 
-1. Delegates to `AiChatClientFactory.createChatClients(modelOptionsList)` to build the `ChatClient` map (with OpenAI-compatible fallback, ZHIPUAI/MOONSHOT via OpenAI path, unknown provider fallback).
-2. Each `ModelOptions` is converted to `AiModelProperties.AiModel` and stored in `runtimeModels` (`getCurrentModels` = `properties.models` ∪ `runtimeModels`).
-3. `chatClients.putAll(dynamicClients)`: **Models with the same name are overridden** — this is the core advantage of dynamic initialization, common in multi-tenant / multi-line hot-update scenarios.
+1. Delegates to `AiChatClientFactory.createChatClients(modelOptionsList)` to build the `ChatClient` map (with
+   OpenAI-compatible fallback, ZHIPUAI/MOONSHOT via OpenAI path, unknown provider fallback).
+2. Each `ModelOptions` is converted to `AiModelProperties.AiModel` and stored in `runtimeModels` (`getCurrentModels` =
+   `properties.models` ∪ `runtimeModels`).
+3. `chatClients.putAll(dynamicClients)`: **Models with the same name are overridden** — this is the core advantage of
+   dynamic initialization, common in multi-tenant / multi-line hot-update scenarios.
 4. Invalidates `modelInfoCache`; subsequent `getModelInfo` calls rebuild from new data.
-5. Default model fallback: If the current `defaultModel` is not in the new `chatClients`, it resets to `chatClients.keySet().iterator().next()`.
+5. Default model fallback: If the current `defaultModel` is not in the new `chatClients`, it resets to
+   `chatClients.keySet().iterator().next()`.
 
 ### 6. `removeModel(String modelName)` — Remove Model
 
@@ -1098,7 +1148,9 @@ sequenceDiagram
 
 #### Implementation Logic
 
-Protected by `synchronized`. `properties.models` (configuration file models) are **not cleaned** — subsequent `getCurrentModels` calls still include them. To fully remove a config model, businesses can reset the `chatClients` reference or call `initializeModels` without that model. INFO-level logging records the operation.
+Protected by `synchronized`. `properties.models` (configuration file models) are **not cleaned** — subsequent
+`getCurrentModels` calls still include them. To fully remove a config model, businesses can reset the `chatClients`
+reference or call `initializeModels` without that model. INFO-level logging records the operation.
 
 ### 7. `probe(String modelName)` — Single Model Health Probe
 
@@ -1144,10 +1196,13 @@ sequenceDiagram
 #### Implementation Logic
 
 1. Validates `modelName` is non-null + `chatClients.containsKey`; either check failing returns `unhealthy`.
-2. If `health-check.live-probe = false` (default `true`), only returns ChatClient existence (`healthy` + `liveProbe=false` + `0ms`) — no token consumption.
-3. If live probe is enabled: builds a minimal request (`maxTokens = probeMaxTokens`, default 1), calls `callSingleModel` to measure actual duration.
+2. If `health-check.live-probe = false` (default `true`), only returns ChatClient existence (`healthy` +
+   `liveProbe=false` + `0ms`) — no token consumption.
+3. If live probe is enabled: builds a minimal request (`maxTokens = probeMaxTokens`, default 1), calls `callSingleModel`
+   to measure actual duration.
 4. Returns `AiHealthResult` (with `modelName` / `provider` / `liveProbe` / `durationMs` / `errorMessage`).
-5. **Not counted for circuit breaker**: Probe calls do not affect `recordSuccess` / `recordFailure`, preventing business traffic misjudgment.
+5. **Not counted for circuit breaker**: Probe calls do not affect `recordSuccess` / `recordFailure`, preventing business
+   traffic misjudgment.
 
 ### 8. `probeAll()` — Probe All Models
 
@@ -1175,7 +1230,8 @@ sequenceDiagram
 
 #### Implementation Logic
 
-`chatClients.keySet().stream().map(this::probe).toList()`, **serial** invocation. Total latency = N models × average probe latency. For large model counts or slow probes, consider switching to `parallelStream` or `Flux.parallel()`.
+`chatClients.keySet().stream().map(this::probe).toList()`, **serial** invocation. Total latency = N models × average
+probe latency. For large model counts or slow probes, consider switching to `parallelStream` or `Flux.parallel()`.
 
 ### 9. `getAvailableModels()` — Get All Available Models
 
@@ -1216,7 +1272,8 @@ Merges `properties.models` (config) + `runtimeModels` (dynamic), builds `AiModel
 
 - `name` / `provider` / `description` (generated per provider via `getModelDescription` switch)
 - `defaultModel` flag (compared against current `defaultModel`)
-- `capabilities` (per-provider capability matrix: `temperature` / `topP` / `topK` / `frequencyPenalty` / `thinking` / `logprobs`, etc.)
+- `capabilities` (per-provider capability matrix: `temperature` / `topP` / `topK` / `frequencyPenalty` / `thinking` /
+  `logprobs`, etc.)
 - `available` (ChatClient exists + not circuit-broken; otherwise `false` + error reason)
 
 Also populates `modelInfoCache` (keyed by `modelName`), used by `getModelInfo` via `computeIfAbsent`.
@@ -1259,8 +1316,10 @@ sequenceDiagram
 
 Uses `modelInfoCache.computeIfAbsent(name, ...)` caching:
 
-- **Hit**: Returns directly (O(1))
-- **Miss**: Merges config + runtime to find the model; if found, builds full `AiModelInfo` (with `description` + `capabilities` + `defaultModel` flag); if not found, returns `AiModelInfo.unavailable(name, "UNKNOWN", "Model config not found")`
+- **Hit**: Returns directly (O (1))
+- **Miss**: Merges config + runtime to find the model; if found, builds full `AiModelInfo` (with `description` +
+  `capabilities` + `defaultModel` flag); if not found, returns
+  `AiModelInfo.unavailable(name, "UNKNOWN", "Model config not found")`
 - **Cache population**: Done during `getAvailableModels` path; subsequent queries use cache
 
 ### 11. `isModelAvailable(String modelName)` — Check Model Availability
@@ -1291,7 +1350,8 @@ sequenceDiagram
 
 #### Implementation Logic
 
-`chatClients.containsKey(modelName) && !circuitBreaker.isOpen(modelName)` — **only checks ChatClient existence + circuit breaker state**, no actual call. Commonly used for quick routing decisions and model switching checks.
+`chatClients.containsKey(modelName) && !circuitBreaker.isOpen(modelName)` — **only checks ChatClient existence + circuit
+breaker state**, no actual call. Commonly used for quick routing decisions and model switching checks.
 
 ### 12. `getDefaultModel()` — Get Default Model
 
@@ -1319,7 +1379,9 @@ sequenceDiagram
 
 #### Implementation Logic
 
-Lazy loading: On first access, if `defaultModel == null`, takes `getCurrentModels().keySet().iterator().next()` (the first model from config or dynamic init). `LinkedHashMap` preserves insertion order, so **the first model in the configuration file is the default**.
+Lazy loading: On first access, if `defaultModel == null`, takes `getCurrentModels().keySet().iterator().next()` (the
+first model from config or dynamic init). `LinkedHashMap` preserves insertion order, so **the first model in the
+configuration file is the default**.
 
 ### 13. `setDefaultModel(String modelName)` — Set Default Model
 
@@ -1354,4 +1416,5 @@ sequenceDiagram
 1. If not initialized, throws `IllegalStateException("AI model not initialized, cannot set default model")`.
 2. If model not in `getCurrentModels()`, throws `IllegalArgumentException("Model does not exist: %s")`.
 3. Otherwise assigns `this.defaultModel = modelName`, INFO-level log.
-4. **Not persisted**: Only modifies the runtime field; on restart, `getDefaultModel`'s lazy loading re-determines the default.
+4. **Not persisted**: Only modifies the runtime field; on restart, `getDefaultModel`'s lazy loading re-determines the
+   default.

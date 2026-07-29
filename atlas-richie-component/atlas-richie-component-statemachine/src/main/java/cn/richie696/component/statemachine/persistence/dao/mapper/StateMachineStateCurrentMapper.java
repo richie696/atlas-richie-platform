@@ -28,7 +28,6 @@ import java.util.List;
  * <p>
  * MyBatis Plus Mapper 接口，用于操作 statemachine_state_current 表。
  * 提供基础的 CRUD 操作，支持复合主键查询。
- * 
  *
  * @author richie696
  * @since 1.0.0

@@ -6,7 +6,8 @@
 
 ## 📖 概述
 
-**Richie Component Platform** 是 Richie 技术中台的核心组件库，提供统一、泛化、可复用的技术能力。通过**接口抽象层**屏蔽底层技术差异，业务代码只依赖接口不依赖实现——切换存储后端、消息队列、向量数据库时，一行 YAML 搞定，代码零改动。
+**Richie Component Platform** 是 Richie 技术中台的核心组件库，提供统一、泛化、可复用的技术能力。通过 **接口抽象层**
+屏蔽底层技术差异，业务代码只依赖接口不依赖实现——切换存储后端、消息队列、向量数据库时，一行 YAML 搞定，代码零改动。
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -413,11 +414,13 @@ platform.component.vector.provider: REDIS       # 或 Milvus / Qdrant / MongoDB
 
 ### 3. 分层隔离，各司其职
 
-基础设施组件（cache / web / logging）提供通用能力，不依赖业务。业务能力组件（statemachine / ai / mfa）在基础设施之上构建复合功能。上层依赖下层，下层不感知上层。
+基础设施组件（cache / web / logging）提供通用能力，不依赖业务。业务能力组件（statemachine / ai /
+mfa）在基础设施之上构建复合功能。上层依赖下层，下层不感知上层。
 
 ### 4. 可观测性内置
 
 每个组件在提供核心能力的同时，自动输出：
+
 - **Metrics** — Micrometer 指标，对接 Prometheus + Grafana
 - **Tracing** — OpenTelemetry 链路，对接 Jaeger / Tempo
 - **Logging** — 结构化日志，自动注入 traceId / tenantId

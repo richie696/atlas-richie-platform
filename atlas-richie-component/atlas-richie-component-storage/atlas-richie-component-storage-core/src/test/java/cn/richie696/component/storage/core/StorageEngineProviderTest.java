@@ -25,6 +25,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * 存储引擎 Provider SPI 单元测试
@@ -172,31 +174,31 @@ class StorageEngineProviderTest {
 
         @Override
         public cn.richie696.component.storage.bean.UploadResponse putImage(@NonNull String key, java.io.@NonNull File file,
-                                                                         cn.richie696.component.storage.bean.image.ImageOptions options) {
+                                                                           cn.richie696.component.storage.bean.image.ImageOptions options) {
             return null;
         }
 
         @Override
         public cn.richie696.component.storage.bean.UploadResponse putImage(@NonNull String key, java.io.@NonNull InputStream inputStream,
-                                                                         cn.richie696.component.storage.bean.image.ImageOptions options) {
+                                                                           cn.richie696.component.storage.bean.image.ImageOptions options) {
             return null;
         }
 
         @Override
         public <T> cn.richie696.component.storage.bean.DownloadResponse<T> getData(@NonNull String key,
-                                                                                 tools.jackson.core.type.@NonNull TypeReference<T> typeReference) {
+                                                                                   tools.jackson.core.type.@NonNull TypeReference<T> typeReference) {
             return null;
         }
 
         @Override
         public cn.richie696.component.storage.bean.DownloadResponse<byte[]> getObject(@NonNull String key, java.io.@NonNull File targetPath,
-                                                                                    boolean returnData) {
+                                                                                      boolean returnData) {
             return null;
         }
 
         @Override
         public cn.richie696.component.storage.bean.DownloadResponse<byte[]> getResumableObject(@NonNull String key, @NonNull String targetPath,
-                                                                                             boolean returnData) {
+                                                                                               boolean returnData) {
             return null;
         }
 

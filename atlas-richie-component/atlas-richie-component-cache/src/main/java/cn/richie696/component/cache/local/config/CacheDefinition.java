@@ -20,6 +20,7 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 import java.util.concurrent.TimeUnit;
+import java.util.Set;
 
 /**
  * 缓存定义

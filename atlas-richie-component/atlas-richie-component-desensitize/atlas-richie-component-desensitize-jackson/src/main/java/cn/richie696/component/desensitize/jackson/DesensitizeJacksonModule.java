@@ -26,15 +26,15 @@ import tools.jackson.databind.module.SimpleModule;
  * Jackson 脱敏模块。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class DesensitizeJacksonModule extends SimpleModule {
 
     /**
      * 构造 Jackson 脱敏模块并注册属性/Map 序列化器。
      *
-     * @param maskingService 脱敏服务
+     * @param maskingService       脱敏服务
      * @param sensitiveKeyRegistry 敏感键注册表
      */
     public DesensitizeJacksonModule(MaskingService maskingService, SensitiveKeyRegistry sensitiveKeyRegistry) {

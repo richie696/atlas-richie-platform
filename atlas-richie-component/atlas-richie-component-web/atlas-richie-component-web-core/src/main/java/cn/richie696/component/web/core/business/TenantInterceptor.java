@@ -45,13 +45,19 @@ import org.springframework.core.Ordered;
 @Slf4j
 public class TenantInterceptor implements WebInterceptor, Ordered {
 
-    /** ctx.attribute key。 */
+    /**
+     * ctx.attribute key。
+     */
     public static final String TENANT_ATTRIBUTE = "platform.web.tenant";
 
-    /** SLF4J MDC key。 */
+    /**
+     * SLF4J MDC key。
+     */
     public static final String MDC_KEY = "tenantId";
 
-    /** 拦截器在链中的位置。 */
+    /**
+     * 拦截器在链中的位置。
+     */
     public static final int ORDER = 260;
 
     private final String headerName;

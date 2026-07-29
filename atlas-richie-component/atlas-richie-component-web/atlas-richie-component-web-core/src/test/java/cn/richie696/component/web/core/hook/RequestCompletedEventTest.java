@@ -15,10 +15,9 @@
  */
 package cn.richie696.component.web.core.hook;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import cn.richie696.component.web.core.spi.support.MutableWebRequestContext;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class RequestCompletedEventTest {
 

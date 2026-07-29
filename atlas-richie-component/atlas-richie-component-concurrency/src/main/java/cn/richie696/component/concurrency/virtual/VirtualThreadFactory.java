@@ -195,6 +195,10 @@ public final class VirtualThreadFactory implements ThreadFactory {
      *
      * @param <T> 值类型
      */
-    public record ScopedValueBinding<T>(ScopedValue<T> key, T value) {
+    public record ScopedValueBinding<T>(
+    ScopedValue<T> key, T
+    value)
+
+    {
     }
 }

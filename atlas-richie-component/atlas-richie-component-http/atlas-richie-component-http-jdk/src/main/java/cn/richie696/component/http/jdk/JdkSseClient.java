@@ -17,8 +17,8 @@ package cn.richie696.component.http.jdk;
 
 import cn.richie696.component.http.core.SseConnection;
 import cn.richie696.component.http.core.SseEvent;
-import cn.richie696.component.http.core.SseListener;
 import cn.richie696.component.http.core.SseLineParser;
+import cn.richie696.component.http.core.SseListener;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -37,8 +37,8 @@ import java.util.concurrent.Future;
  * 并将解析出的事件通过 {@link SseListener} 回调传递给调用方。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 class JdkSseClient {
 

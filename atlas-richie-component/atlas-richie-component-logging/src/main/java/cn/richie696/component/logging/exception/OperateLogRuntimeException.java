@@ -24,7 +24,9 @@ package cn.richie696.component.logging.exception;
  */
 public class OperateLogRuntimeException extends RuntimeException {
 
-    /** 默认构造函数 */
+    /**
+     * 默认构造函数
+     */
     public OperateLogRuntimeException() {
     }
 

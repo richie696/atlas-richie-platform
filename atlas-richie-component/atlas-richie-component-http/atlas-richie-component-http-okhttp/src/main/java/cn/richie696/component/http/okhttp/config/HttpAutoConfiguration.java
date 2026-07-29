@@ -28,7 +28,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
-import javax.net.ssl.*;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -40,8 +42,8 @@ import java.util.concurrent.Executors;
  * OkHttp Provider 自动配置。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @Slf4j
 @AutoConfiguration
@@ -106,9 +108,18 @@ public class HttpAutoConfiguration {
     private static TrustManager[] trustAllCerts() {
         return new TrustManager[]{
                 new X509TrustManager() {
-                    @Override public void checkClientTrusted(X509Certificate[] chain, String authType) {}
-                    @Override public void checkServerTrusted(X509Certificate[] chain, String authType) {}
-                    @Override public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                    }
+
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                    }
+
+                    @Override
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
                 }
         };
     }

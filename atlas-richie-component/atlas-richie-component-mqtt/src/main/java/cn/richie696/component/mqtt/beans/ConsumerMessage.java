@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.mqtt.beans;
 
+import cn.richie696.component.mqtt.enums.QosEnum;
 import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.context.utils.security.HashUtils;
-import cn.richie696.component.mqtt.enums.QosEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -131,6 +131,7 @@ public class ConsumerMessage implements Serializable {
 
     /**
      * 获取 Payload 哈希值的方法
+     *
      * @return 返回 Payload 哈希值
      */
     public String calcHash() {

@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * <p>所有字段都可空（视轮询阶段而定）；{@code state} 终态为 {@code SUCCEEDED} 或 {@code FAILED}。
  *
- * @param state 任务状态
+ * @param state    任务状态
  * @param markdown 任务结果的 markdown 格式文本
  * @param errorMsg 错误信息
  * @author richie696

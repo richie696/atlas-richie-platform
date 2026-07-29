@@ -37,8 +37,8 @@ public interface VectorProjectionCleanupService {
      * @param maxVersions 单次调用允许处理的版本上限；必须为正整数，由调用方负责取值。
      * @return 实际完成清理的版本数量；返回 {@code 0} 表示当前没有到期版本或全部处理失败。
      * @throws IllegalArgumentException 当 {@code maxVersions} 不是正整数时抛出。
-     * @throws RuntimeException 实现自定义的异常，用于表达底层向量库或关系库失败；
-     *                          调用方应捕获并按可重试策略处理；已成功的部分满足幂等。
+     * @throws RuntimeException         实现自定义的异常，用于表达底层向量库或关系库失败；
+     *                                  调用方应捕获并按可重试策略处理；已成功的部分满足幂等。
      */
     int cleanupDueProjections(int maxVersions);
 }

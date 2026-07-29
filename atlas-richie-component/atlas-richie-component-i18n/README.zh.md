@@ -5,37 +5,38 @@
 ## 📖 目录
 
 - [✨ 功能特性](#✨-功能特性)
-  - [核心能力](#核心能力)
-  - [高级特性](#高级特性)
+    - [核心能力](#核心能力)
+    - [高级特性](#高级特性)
 - [🚀 快速开始](#🚀-快速开始)
-  - [1. 添加依赖](#1-添加依赖)
-  - [2. 配置国际化](#2-配置国际化)
-  - [3. 创建国际化资源文件](#3-创建国际化资源文件)
-  - [4. 使用国际化](#4-使用国际化)
+    - [1. 添加依赖](#1-添加依赖)
+    - [2. 配置国际化](#2-配置国际化)
+    - [3. 创建国际化资源文件](#3-创建国际化资源文件)
+    - [4. 使用国际化](#4-使用国际化)
 - [🔧 核心功能](#🔧-核心功能)
-  - [1. 资源文件国际化](#1-资源文件国际化)
-  - [2. 字典国际化](#2-字典国际化)
-  - [3. 自动注入字典（切面）](#3-自动注入字典（切面）)
-  - [4. Locale 获取流程](#4-locale-获取流程)
-  - [5. 自定义区域解析](#5-自定义区域解析)
+    - [1. 资源文件国际化](#1-资源文件国际化)
+    - [2. 字典国际化](#2-字典国际化)
+    - [3. 自动注入字典（切面）](#3-自动注入字典（切面）)
+    - [4. Locale 获取流程](#4-locale-获取流程)
+    - [5. 自定义区域解析](#5-自定义区域解析)
 - [⚙️ 配置说明](#⚙️-配置说明)
-  - [基础配置](#基础配置)
+    - [基础配置](#基础配置)
 - [🎯 最佳实践](#🎯-最佳实践)
-  - [1. 资源文件组织](#1-资源文件组织)
-  - [2. 资源文件命名规范](#2-资源文件命名规范)
-  - [3. 字典管理](#3-字典管理)
-  - [4. Controller 使用](#4-controller-使用)
-  - [5. 前端使用](#5-前端使用)
-  - [6. 性能优化](#6-性能优化)
+    - [1. 资源文件组织](#1-资源文件组织)
+    - [2. 资源文件命名规范](#2-资源文件命名规范)
+    - [3. 字典管理](#3-字典管理)
+    - [4. Controller 使用](#4-controller-使用)
+    - [5. 前端使用](#5-前端使用)
+    - [6. 性能优化](#6-性能优化)
 - [❓ 常见问题](#❓-常见问题)
-  - [Q1: 如何切换语言？](#q1-如何切换语言？)
-  - [Q2: 资源文件找不到怎么办？](#q2-资源文件找不到怎么办？)
-  - [Q3: 字典国际化不生效？](#q3-字典国际化不生效？)
-  - [Q4: 如何获取当前语言环境？](#q4-如何获取当前语言环境？)
-  - [Q5: 字典数据如何更新？](#q5-字典数据如何更新？)
-  - [Q6: 如何禁用切面国际化？](#q6-如何禁用切面国际化？)
-  - [Q7: 资源文件支持哪些格式？](#q7-资源文件支持哪些格式？)
+    - [Q1: 如何切换语言？](#q1-如何切换语言？)
+    - [Q2: 资源文件找不到怎么办？](#q2-资源文件找不到怎么办？)
+    - [Q3: 字典国际化不生效？](#q3-字典国际化不生效？)
+    - [Q4: 如何获取当前语言环境？](#q4-如何获取当前语言环境？)
+    - [Q5: 字典数据如何更新？](#q5-字典数据如何更新？)
+    - [Q6: 如何禁用切面国际化？](#q6-如何禁用切面国际化？)
+    - [Q7: 资源文件支持哪些格式？](#q7-资源文件支持哪些格式？)
 - [📎 📝 总结](#📎-📝-总结)
+
 ---
 
 ## ✨ 功能特性
@@ -311,6 +312,7 @@ public class UserController {
 ```
 
 **工作原理**：
+
 1. 切面拦截 Controller 方法
 2. 如果返回 `ResultVO` 且包含数据，提取数据中的 `@I18nDict` 字段
 3. 根据当前语言环境，从 Redis 缓存中获取对应的字典值
@@ -356,17 +358,17 @@ public class UserController {
 **Web 环境（HTTP 请求）**：
 
 1. **请求头解析**：
-   - 组件优先从请求头 `X_RD_REQUEST_LANGUAGE` 获取语言信息
-   - 如果请求头存在且格式正确，解析并返回对应的 Locale
-   - 请求头格式示例：`zh-CN`、`en-US`、`zh-CN,zh;q=0.9,en;q=0.8`
+    - 组件优先从请求头 `X_RD_REQUEST_LANGUAGE` 获取语言信息
+    - 如果请求头存在且格式正确，解析并返回对应的 Locale
+    - 请求头格式示例：`zh-CN`、`en-US`、`zh-CN,zh;q=0.9,en;q=0.8`
 
 2. **回退到配置的默认 Locale**：
-   - 如果请求头为空或解析失败，使用配置的 `defaultLocale`（默认：`Locale.CHINA`）
-   - 这确保了在没有请求头的情况下，也能使用预期的默认语言
+    - 如果请求头为空或解析失败，使用配置的 `defaultLocale`（默认：`Locale.CHINA`）
+    - 这确保了在没有请求头的情况下，也能使用预期的默认语言
 
 3. **回退到请求的 Locale**：
-   - 只有在配置的 `defaultLocale` 为 null 时，才使用 `request.getLocale()`
-   - `request.getLocale()` 来自浏览器的 `Accept-Language` 头
+    - 只有在配置的 `defaultLocale` 为 null 时，才使用 `request.getLocale()`
+    - `request.getLocale()` 来自浏览器的 `Accept-Language` 头
 
 **非 Web 环境（定时任务、消息队列等）**：
 
@@ -429,13 +431,13 @@ public class CustomLocaleResolver implements LocaleResolver {
 
 ### 基础配置
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `platform.component.i18n.path` | String | `i18n/messages` | 国际化资源文件路径（相对于 classpath） |
-| `platform.component.i18n.encoding` | String | `UTF-8` | 资源文件编码 |
-| `platform.component.i18n.default-locale` | String | `zh_CN` | 默认区域（语言） |
-| `platform.component.i18n.enable-i18n-control` | Boolean | `false` | 是否启用切面控制（推荐：true） |
-| `platform.component.i18n.enable-aspect-i18n` | Boolean | `false` | 是否启用切面国际化（需要配合 @I18nControl 使用） |
+| 配置项                                        | 类型    | 默认值          | 说明                                             |
+|-----------------------------------------------|---------|-----------------|--------------------------------------------------|
+| `platform.component.i18n.path`                | String  | `i18n/messages` | 国际化资源文件路径（相对于 classpath）           |
+| `platform.component.i18n.encoding`            | String  | `UTF-8`         | 资源文件编码                                     |
+| `platform.component.i18n.default-locale`      | String  | `zh_CN`         | 默认区域（语言）                                 |
+| `platform.component.i18n.enable-i18n-control` | Boolean | `false`         | 是否启用切面控制（推荐：true）                   |
+| `platform.component.i18n.enable-aspect-i18n`  | Boolean | `false`         | 是否启用切面国际化（需要配合 @I18nControl 使用） |
 
 ---
 
@@ -618,14 +620,16 @@ public class CustomLocaleResolver implements LocaleResolver {
 
 ### `Q2` — 资源文件找不到怎么办？
 
-**A:** 
+**A:**
+
 - 检查文件路径是否正确（默认：`classpath:i18n/messages`）
 - 检查文件命名是否正确（如：`messages_zh_CN.properties`）
 - 检查配置中的 `path` 是否正确
 
 ### `Q3` — 字典国际化不生效？
 
-**A:** 
+**A:**
+
 - 确保已启用切面：`enable-aspect-i18n: true`
 - 确保 Controller 上有 `@I18nControl` 注解
 - 确保字段上有 `@I18nDict` 注解
@@ -633,7 +637,7 @@ public class CustomLocaleResolver implements LocaleResolver {
 
 ### `Q4` — 如何获取当前语言环境？
 
-**A:** 
+**A:**
 
 ```java
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -662,7 +666,7 @@ String message = I18n.get("welcome.message");
 
 ### `Q5` — 字典数据如何更新？
 
-**A:** 
+**A:**
 
 ```java
 // 更新单个字典

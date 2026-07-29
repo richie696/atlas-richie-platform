@@ -62,47 +62,65 @@ public class GlobalCache {
     //  Ops 访问器 — 类型化数据操作
     // ========================================================================
 
-    /** KV 缓存 + 计数器操作 */
+    /**
+     * KV 缓存 + 计数器操作
+     */
     public static ValueOps value() {
         return DELEGATE.get().value();
     }
 
-    /** 结构化对象缓存操作（整体存取 JavaBean） */
+    /**
+     * 结构化对象缓存操作（整体存取 JavaBean）
+     */
     public static StructOps struct() {
         return DELEGATE.get().struct();
     }
 
-    /** Hash 字段级存取操作 */
+    /**
+     * Hash 字段级存取操作
+     */
     public static FieldOps field() {
         return DELEGATE.get().field();
     }
 
-    /** 无序集合操作 */
+    /**
+     * 无序集合操作
+     */
     public static CollectionOps collection() {
         return DELEGATE.get().collection();
     }
 
-    /** 有序集合 / 排行榜操作 */
+    /**
+     * 有序集合 / 排行榜操作
+     */
     public static RankingOps ranking() {
         return DELEGATE.get().ranking();
     }
 
-    /** 分布式锁操作 */
+    /**
+     * 分布式锁操作
+     */
     public static LockOps lock() {
         return DELEGATE.get().lock();
     }
 
-    /** 位图操作 */
+    /**
+     * 位图操作
+     */
     public static BitmapOps bitmap() {
         return DELEGATE.get().bitmap();
     }
 
-    /** 基数统计操作 */
+    /**
+     * 基数统计操作
+     */
     public static HyperLogOps hyperLog() {
         return DELEGATE.get().hyperLog();
     }
 
-    /** 地理位置操作 */
+    /**
+     * 地理位置操作
+     */
     public static GeoOps geo() {
         return DELEGATE.get().geo();
     }
@@ -114,12 +132,16 @@ public class GlobalCache {
         return DELEGATE.get().queue();
     }
 
-    /** 有界栈（LIFO，满时拒绝压入；主动拉，非消息队列） */
+    /**
+     * 有界栈（LIFO，满时拒绝压入；主动拉，非消息队列）
+     */
     public static BoundedStackOps stack() {
         return DELEGATE.get().stack();
     }
 
-    /** Key 元操作（过期时间、存在判断、删除、重命名等） */
+    /**
+     * Key 元操作（过期时间、存在判断、删除、重命名等）
+     */
     public static KeyOps key() {
         return DELEGATE.get().key();
     }

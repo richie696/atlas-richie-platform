@@ -20,7 +20,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Map;
 
 class SoftDeleteHandlerTest {
 

@@ -71,7 +71,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>com/richie/component/microservice/interceptor/**</include>
+                        <include>cn/richie696/component/microservice/interceptor/**</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -79,7 +79,7 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>com/richie/component/microservice/interceptor/**</include>
+                                <include>cn/richie696/component/microservice/interceptor/**</include>
                             </includes>
                             <excludes>
                                 <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>

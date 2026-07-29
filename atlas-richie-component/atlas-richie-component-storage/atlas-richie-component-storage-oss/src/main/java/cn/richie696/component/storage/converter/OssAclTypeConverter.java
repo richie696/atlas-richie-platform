@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.storage.converter;
 
-import com.aliyun.oss.model.CannedAccessControlList;
 import cn.richie696.component.storage.enums.AclTypeEnum;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
+import com.aliyun.oss.model.CannedAccessControlList;
 import jakarta.annotation.Nonnull;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -42,7 +42,8 @@ public class OssAclTypeConverter implements AclTypeConverter<CannedAccessControl
             case PRIVATE -> CannedAccessControlList.Private;
             case PUBLIC_READ -> CannedAccessControlList.PublicRead;
             case PUBLIC_READ_WRITE -> CannedAccessControlList.PublicReadWrite;
-            case AUTHENTICATED_READ, BUCKET_OWNER_READ, BUCKET_OWNER_FULL_CONTROL -> CannedAccessControlList.AuthenticatedRead;
+            case AUTHENTICATED_READ, BUCKET_OWNER_READ, BUCKET_OWNER_FULL_CONTROL ->
+                    CannedAccessControlList.AuthenticatedRead;
             default -> throw new IllegalArgumentException(
                     "不支持的 ACL 类型: %s. 仅支持: %s、%s、%s、%s、%s和%s。".formatted(aclType,
                             PRIVATE, PUBLIC_READ, PUBLIC_READ_WRITE, AUTHENTICATED_READ,

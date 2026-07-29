@@ -22,8 +22,8 @@ import cn.richie696.component.desensitize.core.model.MaskType;
  * 脱敏策略 SPI。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public interface MaskingStrategy {
 
@@ -38,7 +38,7 @@ public interface MaskingStrategy {
     /**
      * 对原始字符串执行脱敏。
      *
-     * @param raw 原始字符串
+     * @param raw  原始字符串
      * @param rule 脱敏规则
      * @return 脱敏结果
      */

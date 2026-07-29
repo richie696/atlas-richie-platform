@@ -1,6 +1,7 @@
 # Redis L2 Secondary Cache, Distributed Lock, and Performance Guard Design Notes
 
-This document describes the unified design of `richie-component-cache` 5.0 for **business query**, **distributed lock**, and **data access governance**.
+This document describes the unified design of `richie-component-cache` 5.0 for **business query**, **distributed lock**,
+and **data access governance**.
 
 ---
 
@@ -8,7 +9,8 @@ This document describes the unified design of `richie-component-cache` 5.0 for *
 
 ### 1.1 Goal
 
-Hot reads land in the **JVM local cache (L2)** first; on a miss, Redis is consulted. Write operations go through `GlobalCache` to dual-write L2 and Redis. Cross-instance consistency relies on Redis **keyspace notifications**.
+Hot reads land in the **JVM local cache (L2)** first; on a miss, Redis is consulted. Write operations go through
+`GlobalCache` to dual-write L2 and Redis. Cross-instance consistency relies on Redis **keyspace notifications**.
 
 ### 1.2 Configuration
 
@@ -24,17 +26,17 @@ spring:
         - SET
 ```
 
-| Config | Default | Description |
-|--------|---------|-------------|
-| `enable-l2-caching` | `false` | Master switch |
-| `l2-caching-data` | empty | Only the listed `KeyTypeEnum` values go through L2 |
+| Config              | Default | Description                                        |
+|---------------------|---------|----------------------------------------------------|
+| `enable-l2-caching` | `false` | Master switch                                      |
+| `l2-caching-data`   | empty   | Only the listed `KeyTypeEnum` values go through L2 |
 
 Independent local region (`spring.data.local`, can coexist with GlobalCache L2):
 
-| Enum | Cache name | Purpose |
-|------|------------|---------|
+| Enum           | Cache name     | Purpose                      |
+|----------------|----------------|------------------------------|
 | `GLOBAL_CACHE` | `global_cache` | `GlobalCache` unified region |
-| `ACCESS_LOG` | `access_log` | Access logs, etc. |
+| `ACCESS_LOG`   | `access_log`   | Access logs, etc.            |
 
 ### 1.3 Read Path
 
@@ -63,7 +65,8 @@ String v2 = GlobalCache.value().getWithLock("user:1", 3_600_000L,
 
 ### 1.4 Write Path
 
-Writes through `GlobalCache` synchronously update L2 (with `put` + `expiry`) when the corresponding `KeyTypeEnum` is enabled. TTL = business timeout + `CacheFunction.getRandomExtraMillis()` (1 to 10 minute random offset, anti-avalanche).
+Writes through `GlobalCache` synchronously update L2 (with `put` + `expiry`) when the corresponding `KeyTypeEnum` is
+enabled. TTL = business timeout + `CacheFunction.getRandomExtraMillis()` (1 to 10 minute random offset, anti-avalanche).
 
 ### 1.5 Cross-Instance Sync (CacheSyncListener)
 
@@ -72,7 +75,8 @@ When `enable-l2-caching=true`, the component sets `notify-keyspace-events KEA` a
 - `del` / `unlink` / `expired` → `LocalCache.remove`
 - `set` / `expire` → refresh L2 from Redis by type
 
-**Note**: Redis must support keyspace notifications. Bypassing `RedisTemplate` to write to Redis can cause brief L2 inconsistency. Stream idempotent-key events are ignored.
+**Note**: Redis must support keyspace notifications. Bypassing `RedisTemplate` to write to Redis can cause brief L2
+inconsistency. Stream idempotent-key events are ignored.
 
 ---
 
@@ -92,11 +96,11 @@ spring.data.redis:
   enable-local-lock: false
 ```
 
-| Item | Description |
-|------|-------------|
+| Item       | Description                                                                             |
+|------------|-----------------------------------------------------------------------------------------|
 | Local lock | Same-key high-frequency contention competes within the JVM first, easing Redis pressure |
-| Redisson | FencedLock implementation, reentrant, watchdog renewal |
-| Perf | Lock acquisition is wrapped by `RedisPerfGuard` + `LOCK_TRY` |
+| Redisson   | FencedLock implementation, reentrant, watchdog renewal                                  |
+| Perf       | Lock acquisition is wrapped by `RedisPerfGuard` + `LOCK_TRY`                            |
 
 ```java
 try (var lock = GlobalCache.lock().optimisticWithRenewal("lock:order:1", 30L)) {
@@ -104,7 +108,8 @@ try (var lock = GlobalCache.lock().optimisticWithRenewal("lock:order:1", 30L)) {
 }
 ```
 
-The data stampede prevention lock `lock:{businessKey}` is separated from the business lock key; on lock failure, the path re-reads L2.
+The data stampede prevention lock `lock:{businessKey}` is separated from the business lock key; on lock failure, the
+path re-reads L2.
 
 ---
 
@@ -112,7 +117,7 @@ The data stampede prevention lock `lock:{businessKey}` is separated from the bus
 
 ### 3.1 Capabilities
 
-- Non-O(1) WARN (`warn-non-o1`)
+- Non-O (1) WARN (`warn-non-o1`)
 - Latency `toc-soft-ms` / `toc-hard-ms`
 - `block-forbidden-tiers` blocks `LINEAR_N` / `WORSE`
 - String write anti-patterns (Collection / Map blobs, oversized JSON, etc.)
@@ -133,9 +138,11 @@ spring.data.redis.perf:
 
 ### 3.3 Integration
 
-Each `redis.manage.*Manager` wraps its calls with `redisPerfGuard.execute(...)`; `RedisStringManager` calls `checkStringWritePayload` before writing.
+Each `redis.manage.*Manager` wraps its calls with `redisPerfGuard.execute(...)`; `RedisStringManager` calls
+`checkStringWritePayload` before writing.
 
-`GlobalCache` static methods are annotated with `@apiNote` to indicate complexity and ToC recommendations; **an L2 hit does not change the Redis complexity, it only reduces latency**.
+`GlobalCache` static methods are annotated with `@apiNote` to indicate complexity and ToC recommendations; **an L2 hit
+does not change the Redis complexity, it only reduces latency**.
 
 ---
 
@@ -151,11 +158,11 @@ Each `redis.manage.*Manager` wraps its calls with `redisPerfGuard.execute(...)`;
 
 ## 5. Source Code Index
 
-| Class | Responsibility |
-|-------|----------------|
-| `GlobalCache` | L2, `getWithLocalCache*`, @apiNote |
-| `CacheSyncListener` | Keyspace → L2 |
+| Class                                   | Responsibility                     |
+|-----------------------------------------|------------------------------------|
+| `GlobalCache`                           | L2, `getWithLocalCache*`, @apiNote |
+| `CacheSyncListener`                     | Keyspace → L2                      |
 | `RedisLockManager` / `CacheLockManager` | Distributed lock + local lock pool |
-| `RedisPerfGuard` | Guard |
-| `RedisOperationCatalog` | Complexity metadata |
-| `RichieRedisProperties` | perf / L2 / lock switches |
+| `RedisPerfGuard`                        | Guard                              |
+| `RedisOperationCatalog`                 | Complexity metadata                |
+| `RichieRedisProperties`                 | perf / L2 / lock switches          |

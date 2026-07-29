@@ -18,12 +18,7 @@ package cn.richie696.component.concurrency.config;
 import cn.richie696.component.concurrency.config.properties.PoolProperties;
 import cn.richie696.component.concurrency.threadpool.DynamicExecutor;
 import cn.richie696.component.concurrency.threadpool.ThreadPoolConfigRefresher;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.*;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.ApplicationEvent;
@@ -128,7 +123,8 @@ class ThreadPoolConfigRefresherTest {
             // 执行前基线
             assertThat(orderExecutor.getCorePoolSize()).isEqualTo(4);
 
-            refresher.onApplicationEvent(new ApplicationEvent("test-source") {});
+            refresher.onApplicationEvent(new ApplicationEvent("test-source") {
+            });
 
             // 没有任何参数变化
             assertThat(orderExecutor.getCorePoolSize()).isEqualTo(4);

@@ -48,7 +48,7 @@ Surefire **排除** `*IT`，Failsafe **只跑** `*IT`，避免重复执行。
 ### 推荐目录结构（各组件 `src/test/java`）
 
 ```
-com/richie/component/{模块}/
+cn/richie696/component/{模块}/
 ├── commons/           # 纯工具、算法        → *Test.java
 ├── .../impl/          # 门面实现、委托逻辑   → *OpsImplTest.java
 ├── integration/       # 端到端集测          → *IT.java
@@ -449,7 +449,7 @@ coverage-reports/
 
 - test 依赖：`atlas-richie-testing-support`、`spring-boot-starter-test`
 - `pluginManagement`：surefire（排除 IT）、failsafe、jacoco 执行链
-- 默认 JaCoCo 门禁：**行覆盖率 ≥ 85%**（`com/richie/component/**`，排除 `cn.richie696.component.**.*AutoConfiguration` / `config` / `enums` 包）
+- 默认 JaCoCo 门禁：**行覆盖率 ≥ 85%**（`cn/richie696/component/**`，排除 `cn.richie696.component.**.*AutoConfiguration` / `config` / `enums` 包）
 - 覆盖率 HTML：`coverage-reports/{artifactId}/`
 
 高成熟度模块（如 cache）在自身 `pom.xml` **覆盖**更细 `includes` / `excludes` 白名单，阈值与父 POM 一致为 85%。

@@ -45,7 +45,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 2025-09-15 16:45:10
  */
 @Data
-@ConfigurationProperties(prefix = "platform.cache.redis.stream.tracing")
+@ConfigurationProperties(prefix = "platform.component.cache.redis.stream.tracing")
 public class RedisStreamTracingProperties {
 
     /**

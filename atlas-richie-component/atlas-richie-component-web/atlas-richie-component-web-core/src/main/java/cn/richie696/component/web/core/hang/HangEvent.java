@@ -35,17 +35,19 @@ public record HangEvent(
         String clientKey,
         String traceId,
         StackTraceElement[] stackTrace
-) implements HookEvent {
+) implements
+
+HookEvent {
 
     private static final int MAX_STACK_FRAMES = 50;
 
-    public static HangEvent of(String method, String path, long elapsedMillis,
-                               long thresholdMillis, String clientKey, String traceId) {
+    public static HangEvent of (String method, String path,long elapsedMillis,
+    long thresholdMillis, String clientKey, String traceId){
         return new HangEvent(method, path, elapsedMillis, thresholdMillis,
                 clientKey, traceId, stackOf(Thread.currentThread()));
     }
 
-    public static StackTraceElement[] stackOf(Thread thread) {
+    public static StackTraceElement[] stackOf (Thread thread){
         StackTraceElement[] full = thread.getStackTrace();
         if (full.length <= MAX_STACK_FRAMES) {
             return full;

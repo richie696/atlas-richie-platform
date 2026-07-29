@@ -26,13 +26,11 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.core.ResolvableType;
 
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.*;
 import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 线程池配置自动刷新器 —— 监听 Spring Cloud {@code EnvironmentChangeEvent}，
@@ -41,7 +39,7 @@ import java.util.concurrent.RejectedExecutionHandler;
  * <p>当配置中心（Nacos / Apollo / Spring Cloud Config 等）推送配置变更时，Spring 会发布
  * {@code EnvironmentChangeEvent}。本组件拦截该事件，从中提取
  * {@code platform.concurrency.thread-pools.*} 前缀的变更，逐池比对可调整参数
- *（corePoolSize / maximumPoolSize / keepAliveTime / rejectedHandler），
+ * （corePoolSize / maximumPoolSize / keepAliveTime / rejectedHandler），
  * 自动调用对应 {@link DynamicExecutor#onResize(PoolResizeEvent)} 完成动态调整。</p>
  *
  * <h2>使用方式</h2>
@@ -74,7 +72,9 @@ public class ThreadPoolConfigRefresher implements ApplicationListener<Applicatio
 
     private final Binder binder;
 
-    /** 上一次应用成功的配置快照。{@code volatile} 保证跨线程可见性。 */
+    /**
+     * 上一次应用成功的配置快照。{@code volatile} 保证跨线程可见性。
+     */
     private volatile Map<String, PoolProperties> snapshot;
 
     /**

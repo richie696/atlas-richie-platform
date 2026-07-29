@@ -15,26 +15,19 @@
  */
 package cn.richie696.component.ai.provider.hunyuan;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
 import cn.richie696.component.ai.provider.sign.Tc3Signer;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.context.utils.data.JsonUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.audio.tts.Speech;
-import org.springframework.ai.audio.tts.TextToSpeechMessage;
-import org.springframework.ai.audio.tts.TextToSpeechModel;
-import org.springframework.ai.audio.tts.TextToSpeechPrompt;
-import org.springframework.ai.audio.tts.TextToSpeechResponse;
+import org.springframework.ai.audio.tts.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.Map;
 
 /**
  * 腾讯混元（Hunyuan）语音合成（TTS）模型适配器，实现 Spring AI 标准 {@link TextToSpeechModel}。
@@ -57,13 +50,19 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class HunyuanTextToSpeechModel implements TextToSpeechModel {
 
-    /** TC3 服务名（TTS 接口固定为 {@code tts}）。 */
+    /**
+     * TC3 服务名（TTS 接口固定为 {@code tts}）。
+     */
     public static final String TC3_SERVICE = "tts";
 
-    /** TC3 接口 action 名。 */
+    /**
+     * TC3 接口 action 名。
+     */
     public static final String TC3_ACTION = "TextToVoice";
 
-    /** TC3 接口版本号。 */
+    /**
+     * TC3 接口版本号。
+     */
     public static final String TC3_VERSION = "2019-08-23";
 
     /**
@@ -72,10 +71,14 @@ public class HunyuanTextToSpeechModel implements TextToSpeechModel {
      */
     public static final String CONTENT_TYPE = "application/json; charset=utf-8";
 
-    /** 音频编码格式：mp3。 */
+    /**
+     * 音频编码格式：mp3。
+     */
     public static final String DEFAULT_CODEC = "mp3";
 
-    /** 当 {@code AbstractAudioModelConfig#getModel()} 解析为非法整数时使用的默认 VoiceType（云小宁）。 */
+    /**
+     * 当 {@code AbstractAudioModelConfig#getModel()} 解析为非法整数时使用的默认 VoiceType（云小宁）。
+     */
     public static final int DEFAULT_VOICE_TYPE = 0;
 
     private final AbstractAudioModelConfig cfg;
@@ -248,13 +251,17 @@ public class HunyuanTextToSpeechModel implements TextToSpeechModel {
 
     // ====== Hunyuan response DTOs ======
 
-    /** 顶层响应：{@code { "Response": { "Audio": "...", "RequestId": "..." } }}。 */
+    /**
+     * 顶层响应：{@code { "Response": { "Audio": "...", "RequestId": "..." } }}。
+     */
     static class TtsRawResponse {
         @JsonProperty("Response")
         public TtsRawInner response;
     }
 
-    /** {@code Response} 子对象。 */
+    /**
+     * {@code Response} 子对象。
+     */
     static class TtsRawInner {
         @JsonProperty("Audio")
         public String audio;

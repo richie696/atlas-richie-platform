@@ -15,12 +15,12 @@
  */
 package cn.richie696.component.mongodb.support;
 
-import com.mongodb.event.ServerListener;
-import com.mongodb.event.ServerMonitorListener;
 import cn.richie696.component.mongodb.config.MongodbAutoConfiguration;
 import cn.richie696.component.mongodb.listener.DefaultMongoServerListener;
 import cn.richie696.component.mongodb.listener.DefaultMongoServerMonitorListener;
 import cn.richie696.component.tenant.config.TenantAutoConfiguration;
+import com.mongodb.event.ServerListener;
+import com.mongodb.event.ServerMonitorListener;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

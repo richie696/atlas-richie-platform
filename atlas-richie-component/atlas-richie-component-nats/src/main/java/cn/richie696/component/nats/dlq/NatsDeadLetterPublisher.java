@@ -56,11 +56,11 @@ public class NatsDeadLetterPublisher {
      * <p>{@code dlqSubject} 由调用方(advisory consumer)按 {@code info.getSubject() + dlq.subjectSuffix}
      * 派生(如 {@code orders.persistent.dlq});{@code NatsProperties.Dlq.subjectSuffix} 默认 {@code .dlq}。
      *
-     * @param sourceStream 业务原 stream 名(如 {@code ORDERS})
-     * @param dlqSubject DLQ subject(如 {@code orders.persistent.dlq})
+     * @param sourceStream    业务原 stream 名(如 {@code ORDERS})
+     * @param dlqSubject      DLQ subject(如 {@code orders.persistent.dlq})
      * @param originalPayload 业务原 payload 字节
      * @param originalHeaders 业务原 headers(可为 {@code null};traceparent 已在其中)
-     * @param dlqMeta DLQ 消息元数据
+     * @param dlqMeta         DLQ 消息元数据
      * @throws RuntimeException 当 {@link JetStream#publish} 抛任何异常时(原异常透传)
      */
     public void publish(String sourceStream,

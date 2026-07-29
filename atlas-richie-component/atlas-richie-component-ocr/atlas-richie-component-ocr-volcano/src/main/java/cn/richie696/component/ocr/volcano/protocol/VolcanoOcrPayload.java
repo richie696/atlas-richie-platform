@@ -36,13 +36,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * <p>{@code @JsonInclude(NON_NULL)} 字段级策略: 字段均为非空常量或必填 base64，没有可省略字段；该注解保留以与
  * Aliyun 同类 record 保持一致风格，并防止未来加可空字段时误序列化。</p>
  *
+ * @param imageBase64      待识别图片的 base64 字符串
+ * @param approximatePixel 长边像素估值
+ * @param mode             识别模式
+ * @param filterThresh     低分文本过滤阈值
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-12
- * @param imageBase64 待识别图片的 base64 字符串
- * @param approximatePixel 长边像素估值
- * @param mode 识别模式
- * @param filterThresh 低分文本过滤阈值
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -60,7 +60,7 @@ public record VolcanoOcrPayload(
     private static final int DEFAULT_APPROXIMATE_PIXEL = 0;
 
     /** 构造 base64 image payload（火山引擎仅支持 base64，不支持 URL 直传）。 */
-    public static VolcanoOcrPayload ofBase64(String base64) {
+    public static VolcanoOcrPayload ofBase64 (String base64){
         return new VolcanoOcrPayload(
                 base64,
                 DEFAULT_APPROXIMATE_PIXEL,

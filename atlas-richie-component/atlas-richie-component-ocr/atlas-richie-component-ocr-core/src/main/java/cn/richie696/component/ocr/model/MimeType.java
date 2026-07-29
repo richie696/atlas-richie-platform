@@ -23,17 +23,29 @@ package cn.richie696.component.ocr.model;
  * @since 2026-07-10
  */
 public enum MimeType {
-    /** PNG 图像（{@code image/png}） */
+    /**
+     * PNG 图像（{@code image/png}）
+     */
     PNG("image/png"),
-    /** JPEG 图像（{@code image/jpeg}） */
+    /**
+     * JPEG 图像（{@code image/jpeg}）
+     */
     JPEG("image/jpeg"),
-    /** TIFF 图像（{@code image/tiff}, 扫描件常见） */
+    /**
+     * TIFF 图像（{@code image/tiff}, 扫描件常见）
+     */
     TIFF("image/tiff"),
-    /** BMP 位图（{@code image/bmp}, Windows 旧格式） */
+    /**
+     * BMP 位图（{@code image/bmp}, Windows 旧格式）
+     */
     BMP("image/bmp"),
-    /** WebP 图像（{@code image/webp}, 压缩率高） */
+    /**
+     * WebP 图像（{@code image/webp}, 压缩率高）
+     */
     WEBP("image/webp"),
-    /** PDF 文档（{@code application/pdf}, 仅部分 Provider 支持, MinerU / PaddleOCR-VL） */
+    /**
+     * PDF 文档（{@code application/pdf}, 仅部分 Provider 支持, MinerU / PaddleOCR-VL）
+     */
     PDF("application/pdf");
 
     private final String contentType;

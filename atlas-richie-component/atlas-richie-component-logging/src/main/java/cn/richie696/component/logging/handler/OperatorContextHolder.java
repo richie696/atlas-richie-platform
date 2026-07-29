@@ -38,10 +38,10 @@ public final class OperatorContextHolder {
     /**
      * 设置操作人信息的方法
      *
-     * @param token HttpServletSession ID
-     * @param operatorId 操作人ID
+     * @param token        HttpServletSession ID
+     * @param operatorId   操作人ID
      * @param operatorName 操作人名字
-     * @param expiredTime 信息过期时间（单位：毫秒）
+     * @param expiredTime  信息过期时间（单位：毫秒）
      */
     public static void setOperator(String token, String operatorId, String operatorName, long expiredTime) {
         GlobalCache.struct().set(OPERATOR_KEY + token, new OperatorInfo(operatorId, operatorName), expiredTime);

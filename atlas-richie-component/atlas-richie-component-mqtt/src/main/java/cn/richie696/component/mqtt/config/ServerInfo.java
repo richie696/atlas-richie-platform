@@ -22,6 +22,7 @@ import cn.richie696.component.mqtt.enums.ServerTypeEnum;
 import cn.richie696.component.mqtt.utils.Tools;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -94,8 +95,8 @@ public class ServerInfo {
      *           caCert: "/path/to/ca.crt"
      *           clientCert: "/path/to/client.crt"
      *           clientKey: "/path/to/client.key"
- * }</pre>
- */
+     * }</pre>
+     */
     @Data
     @ConfigurationProperties(prefix = "platform.component.mqtt.server.ssl")
     public static class Ssl {
@@ -554,6 +555,7 @@ public class ServerInfo {
      * <strong>默认值：</strong>
      * <p>null（不启用SSL）
      */
+    @NestedConfigurationProperty
     private Ssl ssl;
 
 
@@ -655,10 +657,10 @@ public class ServerInfo {
      * <p>使用HMAC-SHA1算法，以clientId为消息，password为密钥生成签名
      *
      * @param serverType MQTT服务器类型
-     * @param clientId 客户端ID，用于签名生成
+     * @param clientId   客户端ID，用于签名生成
      * @return 返回密码或签名
      * @throws NoSuchAlgorithmException 当签名算法不可用时
-     * @throws InvalidKeyException 当密钥无效时
+     * @throws InvalidKeyException      当密钥无效时
      */
     public String getPassword(ServerTypeEnum serverType, String clientId) throws NoSuchAlgorithmException, InvalidKeyException {
         return switch (serverType) {

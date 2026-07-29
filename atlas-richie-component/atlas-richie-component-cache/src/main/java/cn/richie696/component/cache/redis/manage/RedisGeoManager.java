@@ -49,11 +49,15 @@ import java.util.List;
 @ConditionalOnExpression("'${platform.cache.cache-provider:REDIS}'=='REDIS'")
 public class RedisGeoManager implements GeoFunction {
 
-    /** Redis 模板（JSON 序列化） */
+    /**
+     * Redis 模板（JSON 序列化）
+     */
     @Qualifier("jsonTemplate")
     private final MultiRedisTemplate<Object> redisTemplate;
 
-    /** Redis 性能守卫（可选启用） */
+    /**
+     * Redis 性能守卫（可选启用）
+     */
     private final RedisPerfGuard redisPerfGuard;
 
     /**

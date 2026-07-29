@@ -18,16 +18,16 @@ package cn.richie696.component.cache.redis.manage;
 import cn.richie696.component.cache.enums.L2CachingRegion;
 import cn.richie696.component.cache.function.SetFunction;
 import cn.richie696.component.cache.function.StringFunction;
+import cn.richie696.component.cache.local.manage.LocalCache;
 import cn.richie696.component.cache.ops.CacheInfrastructure;
 import cn.richie696.component.cache.ops.KeyOps;
-import cn.richie696.component.cache.local.manage.LocalCache;
 import cn.richie696.component.cache.redis.config.base.AtlasRedisProperties;
+import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
-import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Component;
 
 /**
@@ -51,19 +51,29 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(prefix = "spring.data.redis", name = "enable-l2-caching", havingValue = "true")
 public class CacheSyncListener implements MessageListener {
 
-    /** String 类型操作，用于获取/刷新字符串缓存 */
+    /**
+     * String 类型操作，用于获取/刷新字符串缓存
+     */
     private final StringFunction stringFunction;
 
-    /** 缓存框架内部基础设施（L2 开关、key 类型注册等） */
+    /**
+     * 缓存框架内部基础设施（L2 开关、key 类型注册等）
+     */
     private final CacheInfrastructure infra;
 
-    /** Key 元操作（获取 Redis key 类型等） */
+    /**
+     * Key 元操作（获取 Redis key 类型等）
+     */
     private final KeyOps keyOps;
 
-    /** Set 类型操作，用于刷新 Set 缓存 */
+    /**
+     * Set 类型操作，用于刷新 Set 缓存
+     */
     private final SetFunction setFunction;
 
-    /** Redis 配置（含 Stream 幂等前缀等） */
+    /**
+     * Redis 配置（含 Stream 幂等前缀等）
+     */
     private final AtlasRedisProperties properties;
 
     /**
@@ -136,8 +146,7 @@ public class CacheSyncListener implements MessageListener {
                             LocalCache.remove(L2CachingRegion.GLOBAL_CACHE, key);
                         }
                     }
-                    case LIST ->
-                        log.warn("Cache sync: LIST type key {} is not supported for local cache sync", key);
+                    case LIST -> log.warn("Cache sync: LIST type key {} is not supported for local cache sync", key);
                 }
             }
         } catch (Exception e) {

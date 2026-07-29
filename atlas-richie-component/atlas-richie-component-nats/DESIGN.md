@@ -4,37 +4,39 @@
 
 ### 1.1 组件定位
 
-NATS 组件是面向 AI Agent 服务端的消息通信基础设施封装，提供基于 NATS 的**异步消息发布/订阅**与**同步 RPC 对话**能力。
+NATS 组件是面向 AI Agent 服务端的消息通信基础设施封装，提供基于 NATS 的 **异步消息发布/订阅**与 **同步 RPC 对话**能力。
 
 NATS 在本组件中承担双重角色：
+
 - **异步通信**：JetStream Pub/Sub，用于事件驱动、任务分发等场景
 - **同步 RPC**：Request-Reply，用于 AI Agent 用户提问 → Agent 思考 → 响应的实时对话
 
 ### 1.2 设计目标
 
-| 目标 | 说明 |
-|------|------|
+| 目标           | 说明                                                                                   |
+|----------------|----------------------------------------------------------------------------------------|
 | **协议域隔离** | `NatsBus`（Core NATS）/ `JetStreamBus`（JetStream）/ `NatsEndpoint`（RPC）三个独立门面 |
-| **配置驱动** | `NatsProperties` 控制所有行为开关，`@ConditionalOnProperty` 按需装配 |
-| **最少知识** | 用户无需了解 Connection / Dispatcher / StreamContext / ConsumerContext 等底层 API |
-| **横切透明** | 链路追踪、上下文透传、幂等去重对用户完全透明 |
+| **配置驱动**   | `NatsProperties` 控制所有行为开关，`@ConditionalOnProperty` 按需装配                   |
+| **最少知识**   | 用户无需了解 Connection / Dispatcher / StreamContext / ConsumerContext 等底层 API      |
+| **横切透明**   | 链路追踪、上下文透传、幂等去重对用户完全透明                                           |
 
 ### 1.3 连接模型
 
-NATS 采用**单 TCP 连接多路复用**模型，一个连接可同时承载成百上千个订阅、并发发布和请求-响应操作，**无需连接池**。唯一需要多个连接的场景是隔离不同认证上下文或连接不同集群。
+NATS 采用 **单 TCP 连接多路复用**模型，一个连接可同时承载成百上千个订阅、并发发布和请求-响应操作， **无需连接池**
+。唯一需要多个连接的场景是隔离不同认证上下文或连接不同集群。
 
 ---
 
 ## 2. 设计原则
 
-| 原则 | 在本组件中的体现 |
-|------|-----------------|
-| 策略模式 | 序列化、去重、追踪等均为可替换策略接口（L1） |
-| 装饰器模式 | 订阅管道中各横切关注点通过装饰器链式组合（L4） |
-| 模板方法 | NatsBus / JetStreamBus 在每次操作中自动注入追踪/上下文（L5） |
-| 依赖倒置 | 所有横切关注点面向 L1 接口编程 |
-| Builder 模式 | 管道构建器 `NatsMessageHandlerPipeline` 支持灵活组合（L4） |
-| 工厂模式 | `NatsSubscriberFactory` 根据场景构建不同管道（L4） |
+| 原则         | 在本组件中的体现                                             |
+|--------------|--------------------------------------------------------------|
+| 策略模式     | 序列化、去重、追踪等均为可替换策略接口（L1）                 |
+| 装饰器模式   | 订阅管道中各横切关注点通过装饰器链式组合（L4）               |
+| 模板方法     | NatsBus / JetStreamBus 在每次操作中自动注入追踪/上下文（L5） |
+| 依赖倒置     | 所有横切关注点面向 L1 接口编程                               |
+| Builder 模式 | 管道构建器 `NatsMessageHandlerPipeline` 支持灵活组合（L4）   |
+| 工厂模式     | `NatsSubscriberFactory` 根据场景构建不同管道（L4）           |
 
 ---
 
@@ -82,6 +84,7 @@ cn.richie696.component.nats
 ```
 
 **设计要点：**
+
 - `ConnectionState` 包含 `isConnected()` 便捷方法
 - `NatsRpcException` 区分 Timeout / NoResponders 语义
 - `NatsConstants` 定义 header 命名空间（如 `NATS_TRACE_ID`）
@@ -90,7 +93,7 @@ cn.richie696.component.nats
 
 ### 4.2 L1 — 策略接口层
 
-定义所有可替换能力的**接口契约**，每个接口职责单一。
+定义所有可替换能力的 **接口契约**，每个接口职责单一。
 
 ```
 cn.richie696.component.nats.strategy
@@ -173,14 +176,14 @@ cn.richie696.component.nats.impl
 
 **实现要点：**
 
-| 实现类 | 依赖 | 说明 |
-|--------|------|------|
-| `JacksonNatsMessageSerializer` | `JsonUtils`（项目已有） | 与 messaging 组件保持一致 |
-| `DefaultNatsHeaderInjector/Extractor` | `HeaderContextHolder` | 透传 timezone/language/tenant/canary 等 |
-| `OpenTelemetryNatsTracingSupport` | `opentelemetry-api` | 实现 `TextMapSetter<Headers>` / `TextMapGetter<Headers>` |
-| `MemoryNatsIdempotentChecker` | `ConcurrentHashMap` | 单实例部署使用 |
-| `RedisNatsIdempotentChecker` | `GlobalCache`（cache 组件） | 多实例部署使用，SET NX 原子操作 |
-| `DefaultNatsErrorStrategy` | 无外部依赖 | 日志记录 + 条件重试 |
+| 实现类                                | 依赖                        | 说明                                                     |
+|---------------------------------------|-----------------------------|----------------------------------------------------------|
+| `JacksonNatsMessageSerializer`        | `JsonUtils`（项目已有）     | 与 messaging 组件保持一致                                |
+| `DefaultNatsHeaderInjector/Extractor` | `HeaderContextHolder`       | 透传 timezone/language/tenant/canary 等                  |
+| `OpenTelemetryNatsTracingSupport`     | `opentelemetry-api`         | 实现 `TextMapSetter<Headers>` / `TextMapGetter<Headers>` |
+| `MemoryNatsIdempotentChecker`         | `ConcurrentHashMap`         | 单实例部署使用                                           |
+| `RedisNatsIdempotentChecker`          | `GlobalCache`（cache 组件） | 多实例部署使用，SET NX 原子操作                          |
+| `DefaultNatsErrorStrategy`            | 无外部依赖                  | 日志记录 + 条件重试                                      |
 
 ---
 
@@ -239,7 +242,8 @@ public class JetStreamManagementService {
 }
 ```
 
-> **注**：jnats 2.25.3 引入了新的简化 JetStream API（`StreamContext` / `ConsumerContext`），替代旧版 `JetStream` / `JetStreamManagement` 上下文。`NatsConnectionManager` 统一使用新 API。
+> **注**：jnats 2.25.3 引入了新的简化 JetStream API（`StreamContext` / `ConsumerContext`），替代旧版 `JetStream` /
+> `JetStreamManagement` 上下文。`NatsConnectionManager` 统一使用新 API。
 
 ---
 
@@ -283,11 +287,11 @@ public class NatsMessageHandlerPipeline {
 
 **各装饰器职责：**
 
-| 装饰器 | 执行位置 | 职责 |
-|--------|---------|------|
-| `TracingMessageDecorator` | 最外层 | 提取 trace context + 创建 span + 结束 span |
-| `ContextRestorationDecorator` | 中间层 | NATS Headers → HeaderContextHolder |
-| `IdempotentMessageDecorator` | 内层（可选） | messageId 去重，重复则跳过 |
+| 装饰器                        | 执行位置     | 职责                                       |
+|-------------------------------|--------------|--------------------------------------------|
+| `TracingMessageDecorator`     | 最外层       | 提取 trace context + 创建 span + 结束 span |
+| `ContextRestorationDecorator` | 中间层       | NATS Headers → HeaderContextHolder         |
+| `IdempotentMessageDecorator`  | 内层（可选） | messageId 去重，重复则跳过                 |
 
 **NatsSubscriberFactory — 根据场景构建不同管道：**
 
@@ -305,7 +309,7 @@ public class NatsSubscriberFactory {
 
 ### 4.6 L5 — 协议域隔离门面层
 
-对外暴露的核心 API，遵循**外观模式 + 协议域隔离 + 最少知识原则**。
+对外暴露的核心 API，遵循 **外观模式 + 协议域隔离 + 最少知识原则**。
 
 三个门面按协议域完全隔离，每个门面内部 API 语义一致，用户选类即选协议。
 
@@ -349,6 +353,7 @@ public class NatsBus {
 ```
 
 **每次 publish / subscribe / request 内部自动完成（用户无感知）：**
+
 1. `serializer.serialize(message)` → `byte[]`
 2. `headerInjector.inject(headers)` 写入上下文（tenant/language/canary 等）
 3. `tracingSupport.startProducerSpan()` 或 `startClientSpan()` + W3C 注入
@@ -356,6 +361,7 @@ public class NatsBus {
 5. `tracingSupport.finishSpan()` 结束 span
 
 **每次收到消息自动完成（用户无感知）：**
+
 1. 管道自动：提取 trace context → 创建 CONSUMER span → 恢复上下文
 2. `serializer.deserialize(data, type)` → 业务对象
 3. 执行业务 Handler
@@ -386,6 +392,7 @@ public class JetStreamBus {
 ```
 
 **每次 publish 内部自动完成（用户无感知）：**
+
 1. `serializer.serialize(message)` → `byte[]`
 2. `headerInjector.inject(headers)` 写入上下文
 3. `tracingSupport.startProducerSpan()` + W3C 注入
@@ -393,6 +400,7 @@ public class JetStreamBus {
 5. `tracingSupport.finishSpan()` 结束 span
 
 **每次 consume 收到消息自动完成（用户无感知）：**
+
 1. 管道自动：提取 trace context → 创建 CONSUMER span → 恢复上下文 → 去重检查
 2. `serializer.deserialize(data, type)` → 业务对象
 3. 执行业务 Handler
@@ -419,6 +427,7 @@ public class NatsEndpoint {
 ```
 
 **每次收到 RPC 请求自动完成（用户无感知）：**
+
 1. 管道自动：提取 trace context → 创建 SERVER span → 恢复上下文
 2. `serializer.deserialize(data, requestType)` → `T`
 3. 执行业务 Handler：`handler.apply(request)` → `R`
@@ -460,68 +469,68 @@ cn.richie696.component.nats.config
 
 **NatsProperties 设计理念：**
 
-> 封装组件 ≠ 屏蔽驱动能力。组件应**暴露 jnats 原生驱动的全部配置能力**，仅在以下情况隐藏：
+> 封装组件 ≠ 屏蔽驱动能力。组件应 **暴露 jnats 原生驱动的全部配置能力**，仅在以下情况隐藏：
 > - 组件内部已托管（如 `errorListener` / `connectionListener` / `executor`）
 > - 仅用于测试的内部参数（如 `bufferSize` / `dataPortType`）
 >
-> 所有暴露项均提供**组件默认值**，使用者可零配置启动，按需覆盖。
+> 所有暴露项均提供 **组件默认值**，使用者可零配置启动，按需覆盖。
 
 **配置属性映射关系：**
 
-| NatsProperties 配置项 | jnats Options.Builder 方法 | 组件默认值 | jnats 默认值 | 说明 |
-|---|---|---|---|---|
-| `server` | `server()` / `servers()` | `nats://localhost:4222` | — | 支持逗号分隔多地址 |
-| `connection.name` | `connectionName()` | `nats-client` | null | 连接名称 |
-| `connection.connection-timeout` | `connectionTimeout()` | `5s` | `2s` | 连接超时 |
-| `connection.drain-timeout` | — (组件层 drain) | `30s` | — | 优雅关闭超时 |
-| `connection.no-echo` | `noEcho()` | `false` | `false` | 禁用自身消息回显 |
-| `connection.no-randomize` | `noRandomize()` | `false` | `false` | 禁用服务器池随机化 |
-| `connection.inbox-prefix` | `inboxPrefix()` | `_INBOX` | `_INBOX` | Inbox 前缀 |
-| `connection.support-utf8-subjects` | `supportUTF8Subjects()` | `false` | `false` | UTF-8 Subject 支持 |
-| `reconnect.enabled` | `noReconnect()` (取反) | `true` | `true` | 重连开关 |
-| `reconnect.max-reconnects` | `maxReconnects()` | `-1` | `60` | 最大重连次数（-1=无限） |
-| `reconnect.reconnect-wait` | `reconnectWait()` | `2s` | `2s` | 重连等待间隔 |
-| `reconnect.jitter` | `reconnectJitter()` | `100ms` | `100ms` | 重连抖动（非TLS） |
-| `reconnect.jitter-tls` | `reconnectJitterTls()` | `1s` | `1s` | 重连抖动（TLS） |
-| `reconnect.buffer-size` | `reconnectBufferSize()` | `8388608` (8MB) | `8MB` | 重连缓冲区大小 |
-| `reconnect.retry-on-failed-connect` | `retryOnFailedConnect()` | `false` | `false` | 首次连接失败直接进入重连 |
-| `ping.interval` | `pingInterval()` | `20s` | `2min` | Ping 间隔 |
-| `ping.max-outstanding` | `maxPingsOut()` | `2` | `2` | 最大未响应 Ping 数 |
-| `tls.enabled` | `sslContext()` / `secure()` | `false` | `false` | TLS 总开关 |
-| `tls.keystore-path` | `sslContext()` | — | — | KeyStore 路径 |
-| `tls.keystore-password` | `sslContext()` | — | — | KeyStore 密码 |
-| `tls.truststore-path` | `sslContext()` | — | — | TrustStore 路径 |
-| `tls.truststore-password` | `sslContext()` | — | — | TrustStore 密码 |
-| `tls.opentls` | `opentls()` | `false` | `false` | 接受任意证书（调试用） |
-| `protocol.verbose` | `verbose()` | `false` | `false` | 协议 Verbose 模式 |
-| `protocol.pedantic` | `pedantic()` | `false` | `false` | 协议 Pedantic 模式 |
-| `protocol.no-headers` | `noHeaders()` | `false` | `false` | 禁用 Headers 支持 |
-| `protocol.no-responders` | `noResponders()` | `false` | `false` | 禁用 No-Responders 支持 |
-| `protocol.max-control-line` | `maxControlLine()` | `4096` | `4096` | 控制行最大字节数 |
-| `request.old-style` | `oldRequestStyle()` | `false` | `false` | 使用旧版请求模式 |
-| `request.cleanup-interval` | `requestCleanupInterval()` | `5s` | `5s` | 请求 Future 清理间隔 |
-| `queue.max-outgoing-messages` | `maxMessagesInOutgoingQueue()` | `-1` | `-1` | 发送队列最大消息数（-1=无限） |
-| `queue.discard-when-full` | `discardMessagesWhenOutgoingQueueFull()` | `false` | `false` | 队列满时丢弃消息 |
-| `auth.type` | — | `none` | — | 认证方式 |
-| `auth.token` | `token()` | — | — | Token 认证 |
-| `auth.username` / `auth.password` | `userInfo()` | — | — | 用户名密码认证 |
-| `auth.nkey` | `authHandler(NKeyAuthHandler)` | — | — | NKey 认证 |
-| `auth.credentials-file` | `credentialPath()` | — | — | 凭证文件路径 |
-| `auth.jwt` | `jwt()` | — | — | JWT Token |
-| `auth.seed` | `seed()` | — | — | NKey Seed |
+| NatsProperties 配置项               | jnats Options.Builder 方法               | 组件默认值              | jnats 默认值 | 说明                          |
+|-------------------------------------|------------------------------------------|-------------------------|--------------|-------------------------------|
+| `server`                            | `server()` / `servers()`                 | `nats://localhost:4222` | —            | 支持逗号分隔多地址            |
+| `connection.name`                   | `connectionName()`                       | `nats-client`           | null         | 连接名称                      |
+| `connection.connection-timeout`     | `connectionTimeout()`                    | `5s`                    | `2s`         | 连接超时                      |
+| `connection.drain-timeout`          | — (组件层 drain)                         | `30s`                   | —            | 优雅关闭超时                  |
+| `connection.no-echo`                | `noEcho()`                               | `false`                 | `false`      | 禁用自身消息回显              |
+| `connection.no-randomize`           | `noRandomize()`                          | `false`                 | `false`      | 禁用服务器池随机化            |
+| `connection.inbox-prefix`           | `inboxPrefix()`                          | `_INBOX`                | `_INBOX`     | Inbox 前缀                    |
+| `connection.support-utf8-subjects`  | `supportUTF8Subjects()`                  | `false`                 | `false`      | UTF-8 Subject 支持            |
+| `reconnect.enabled`                 | `noReconnect()` (取反)                   | `true`                  | `true`       | 重连开关                      |
+| `reconnect.max-reconnects`          | `maxReconnects()`                        | `-1`                    | `60`         | 最大重连次数（-1=无限）       |
+| `reconnect.reconnect-wait`          | `reconnectWait()`                        | `2s`                    | `2s`         | 重连等待间隔                  |
+| `reconnect.jitter`                  | `reconnectJitter()`                      | `100ms`                 | `100ms`      | 重连抖动（非TLS）             |
+| `reconnect.jitter-tls`              | `reconnectJitterTls()`                   | `1s`                    | `1s`         | 重连抖动（TLS）               |
+| `reconnect.buffer-size`             | `reconnectBufferSize()`                  | `8388608` (8MB)         | `8MB`        | 重连缓冲区大小                |
+| `reconnect.retry-on-failed-connect` | `retryOnFailedConnect()`                 | `false`                 | `false`      | 首次连接失败直接进入重连      |
+| `ping.interval`                     | `pingInterval()`                         | `20s`                   | `2min`       | Ping 间隔                     |
+| `ping.max-outstanding`              | `maxPingsOut()`                          | `2`                     | `2`          | 最大未响应 Ping 数            |
+| `tls.enabled`                       | `sslContext()` / `secure()`              | `false`                 | `false`      | TLS 总开关                    |
+| `tls.keystore-path`                 | `sslContext()`                           | —                       | —            | KeyStore 路径                 |
+| `tls.keystore-password`             | `sslContext()`                           | —                       | —            | KeyStore 密码                 |
+| `tls.truststore-path`               | `sslContext()`                           | —                       | —            | TrustStore 路径               |
+| `tls.truststore-password`           | `sslContext()`                           | —                       | —            | TrustStore 密码               |
+| `tls.opentls`                       | `opentls()`                              | `false`                 | `false`      | 接受任意证书（调试用）        |
+| `protocol.verbose`                  | `verbose()`                              | `false`                 | `false`      | 协议 Verbose 模式             |
+| `protocol.pedantic`                 | `pedantic()`                             | `false`                 | `false`      | 协议 Pedantic 模式            |
+| `protocol.no-headers`               | `noHeaders()`                            | `false`                 | `false`      | 禁用 Headers 支持             |
+| `protocol.no-responders`            | `noResponders()`                         | `false`                 | `false`      | 禁用 No-Responders 支持       |
+| `protocol.max-control-line`         | `maxControlLine()`                       | `4096`                  | `4096`       | 控制行最大字节数              |
+| `request.old-style`                 | `oldRequestStyle()`                      | `false`                 | `false`      | 使用旧版请求模式              |
+| `request.cleanup-interval`          | `requestCleanupInterval()`               | `5s`                    | `5s`         | 请求 Future 清理间隔          |
+| `queue.max-outgoing-messages`       | `maxMessagesInOutgoingQueue()`           | `-1`                    | `-1`         | 发送队列最大消息数（-1=无限） |
+| `queue.discard-when-full`           | `discardMessagesWhenOutgoingQueueFull()` | `false`                 | `false`      | 队列满时丢弃消息              |
+| `auth.type`                         | —                                        | `none`                  | —            | 认证方式                      |
+| `auth.token`                        | `token()`                                | —                       | —            | Token 认证                    |
+| `auth.username` / `auth.password`   | `userInfo()`                             | —                       | —            | 用户名密码认证                |
+| `auth.nkey`                         | `authHandler(NKeyAuthHandler)`           | —                       | —            | NKey 认证                     |
+| `auth.credentials-file`             | `credentialPath()`                       | —                       | —            | 凭证文件路径                  |
+| `auth.jwt`                          | `jwt()`                                  | —                       | —            | JWT Token                     |
+| `auth.seed`                         | `seed()`                                 | —                       | —            | NKey Seed                     |
 
 **隐藏项（组件内部托管，不暴露）：**
 
-| jnats Options.Builder 方法 | 隐藏原因 |
-|---|---|
-| `errorListener()` | 组件内部 `DefaultNatsErrorStrategy` 已托管 |
-| `connectionListener()` | 组件内部 `NatsConnectionManager` 已托管 |
-| `executor()` | 组件使用线程池组件统一管理 |
-| `bufferSize()` | 仅用于测试，生产环境无需调整 |
-| `dataPortType()` | 底层数据传输类型，不应暴露 |
-| `authHandler()` | 使用简化配置替代自定义 AuthHandler |
-| `traceConnection()` | 仅用于驱动调试，通过 `logging.level` 控制 |
-| `turnOnAdvancedStats()` | 高级统计，非通用需求 |
+| jnats Options.Builder 方法 | 隐藏原因                                   |
+|----------------------------|--------------------------------------------|
+| `errorListener()`          | 组件内部 `DefaultNatsErrorStrategy` 已托管 |
+| `connectionListener()`     | 组件内部 `NatsConnectionManager` 已托管    |
+| `executor()`               | 组件使用线程池组件统一管理                 |
+| `bufferSize()`             | 仅用于测试，生产环境无需调整               |
+| `dataPortType()`           | 底层数据传输类型，不应暴露                 |
+| `authHandler()`            | 使用简化配置替代自定义 AuthHandler         |
+| `traceConnection()`        | 仅用于驱动调试，通过 `logging.level` 控制  |
+| `turnOnAdvancedStats()`    | 高级统计，非通用需求                       |
 
 **NatsProperties Java 类结构：**
 
@@ -567,7 +576,9 @@ public class NatsProperties {
 }
 ```
 
-**`toOptionsBuilder()` 方法职责**：将 NatsProperties 全量配置转换为 `Options.Builder`，供 `NatsConnectionManager` 调用 `Nats.connect(options.build())`。该方法内部按分组依次应用：server → auth → connection → reconnect → ping → protocol → request → queue → TLS。
+**`toOptionsBuilder()` 方法职责**：将 NatsProperties 全量配置转换为 `Options.Builder`，供 `NatsConnectionManager` 调用
+`Nats.connect(options.build())`。该方法内部按分组依次应用：server → auth → connection → reconnect → ping → protocol →
+request → queue → TLS。
 
 ---
 
@@ -843,56 +854,56 @@ NATS Request 消息到达
 
 ## 8. 类清单总览
 
-| 层 | 包 | 类名 | 类型 | 说明 |
-|----|-----|------|------|------|
-| L0 | enums | `ConnectionState` | enum | 连接状态 |
-| L0 | enums | `AuthType` | enum | 认证类型 |
-| L0 | exception | `NatsException` | class | 统一异常基类 |
-| L0 | exception | `NatsConnectionException` | class | 连接异常 |
-| L0 | exception | `NatsRpcException` | class | RPC 异常 |
-| L0 | exception | `NatsSerializationException` | class | 序列化异常 |
-| L0 | constant | `NatsConstants` | class | 常量定义 |
-| L1 | strategy.serializer | `NatsMessageSerializer` | interface | 序列化契约 |
-| L1 | strategy.header | `NatsHeaderInjector` | interface | Header 注入契约 |
-| L1 | strategy.header | `NatsHeaderExtractor` | interface | Header 提取契约 |
-| L1 | strategy.tracing | `NatsTracingSupport` | interface | 追踪契约 |
-| L1 | strategy.idempotent | `NatsIdempotentChecker` | interface | 去重契约 |
-| L1 | strategy.error | `NatsErrorStrategy` | interface | 错误处理契约 |
-| L2 | impl.serializer | `JacksonNatsMessageSerializer` | class | Jackson 实现 |
-| L2 | impl.header | `DefaultNatsHeaderInjector` | class | 默认注入实现 |
-| L2 | impl.header | `DefaultNatsHeaderExtractor` | class | 默认提取实现 |
-| L2 | impl.tracing | `OpenTelemetryNatsTracingSupport` | class | OTel 实现 |
-| L2 | impl.idempotent | `MemoryNatsIdempotentChecker` | class | 内存去重实现 |
-| L2 | impl.idempotent | `RedisNatsIdempotentChecker` | class | Redis 去重实现 |
-| L2 | impl.error | `DefaultNatsErrorStrategy` | class | 默认错误策略 |
-| L3 | connection | `NatsConnectionManager` | class | 连接管理（新 API: StreamContext） |
-| L3 | connection | `NatsConnectionListener` | interface | 连接事件监听 |
-| L3 | connection | `NatsAuthConfigurator` | class | 认证配置 |
-| L3 | jetstream | `JetStreamManagementService` | class | JetStream 管理 |
-| L4 | pipeline | `NatsMessageHandler` | interface | 消息处理函数式接口 |
-| L4 | pipeline | `NatsMessageHandlerPipeline` | class | 管道构建器 |
-| L4 | pipeline.decorator | `TracingMessageDecorator` | class | 追踪装饰器 |
-| L4 | pipeline.decorator | `ContextRestorationDecorator` | class | 上下文恢复装饰器 |
-| L4 | pipeline.decorator | `IdempotentMessageDecorator` | class | 去重装饰器 |
-| L4 | pipeline | `NatsSubscriberFactory` | class | 订阅者工厂 |
-| L5 | bus | `NatsBus` | class | Core NATS 门面（publish + subscribe + request） |
-| L5 | stream | `JetStreamBus` | class | JetStream 门面（publish + consume + fetch + next） |
-| L5 | endpoint | `NatsEndpoint` | class | RPC 端点注册 |
-| L6 | - | `NatsComponent` | class | 统一门面 + SmartLifecycle |
-| L7 | config | `NatsProperties` | class | 配置属性（15 个内部静态类） |
-| L7 | config | `NatsProperties.Auth` | inner class | 认证配置 |
-| L7 | config | `NatsProperties.Connection` | inner class | 连接配置 |
-| L7 | config | `NatsProperties.Reconnect` | inner class | 重连配置 |
-| L7 | config | `NatsProperties.Ping` | inner class | Ping 配置 |
-| L7 | config | `NatsProperties.Tls` | inner class | TLS/SSL 配置 |
-| L7 | config | `NatsProperties.Protocol` | inner class | 协议配置 |
-| L7 | config | `NatsProperties.Request` | inner class | Request 配置 |
-| L7 | config | `NatsProperties.Queue` | inner class | 发送队列配置 |
-| L7 | config | `NatsProperties.Tracing` | inner class | 链路追踪配置 |
-| L7 | config | `NatsProperties.HeaderPropagation` | inner class | 上下文透传配置 |
-| L7 | config | `NatsProperties.Idempotent` | inner class | 幂等去重配置 |
-| L7 | config | `NatsProperties.Error` | inner class | 错误处理配置 |
-| L7 | config | `NatsProperties.JetStream` | inner class | JetStream 总配置 |
-| L7 | config | `NatsProperties.StreamDefinition` | inner class | Stream 定义 |
-| L7 | config | `NatsProperties.ConsumerDefinition` | inner class | Consumer 定义 |
-| L7 | config | `NatsAutoConfiguration` | class | 自动配置 |
+| 层 | 包                  | 类名                                | 类型        | 说明                                               |
+|----|---------------------|-------------------------------------|-------------|----------------------------------------------------|
+| L0 | enums               | `ConnectionState`                   | enum        | 连接状态                                           |
+| L0 | enums               | `AuthType`                          | enum        | 认证类型                                           |
+| L0 | exception           | `NatsException`                     | class       | 统一异常基类                                       |
+| L0 | exception           | `NatsConnectionException`           | class       | 连接异常                                           |
+| L0 | exception           | `NatsRpcException`                  | class       | RPC 异常                                           |
+| L0 | exception           | `NatsSerializationException`        | class       | 序列化异常                                         |
+| L0 | constant            | `NatsConstants`                     | class       | 常量定义                                           |
+| L1 | strategy.serializer | `NatsMessageSerializer`             | interface   | 序列化契约                                         |
+| L1 | strategy.header     | `NatsHeaderInjector`                | interface   | Header 注入契约                                    |
+| L1 | strategy.header     | `NatsHeaderExtractor`               | interface   | Header 提取契约                                    |
+| L1 | strategy.tracing    | `NatsTracingSupport`                | interface   | 追踪契约                                           |
+| L1 | strategy.idempotent | `NatsIdempotentChecker`             | interface   | 去重契约                                           |
+| L1 | strategy.error      | `NatsErrorStrategy`                 | interface   | 错误处理契约                                       |
+| L2 | impl.serializer     | `JacksonNatsMessageSerializer`      | class       | Jackson 实现                                       |
+| L2 | impl.header         | `DefaultNatsHeaderInjector`         | class       | 默认注入实现                                       |
+| L2 | impl.header         | `DefaultNatsHeaderExtractor`        | class       | 默认提取实现                                       |
+| L2 | impl.tracing        | `OpenTelemetryNatsTracingSupport`   | class       | OTel 实现                                          |
+| L2 | impl.idempotent     | `MemoryNatsIdempotentChecker`       | class       | 内存去重实现                                       |
+| L2 | impl.idempotent     | `RedisNatsIdempotentChecker`        | class       | Redis 去重实现                                     |
+| L2 | impl.error          | `DefaultNatsErrorStrategy`          | class       | 默认错误策略                                       |
+| L3 | connection          | `NatsConnectionManager`             | class       | 连接管理（新 API: StreamContext）                  |
+| L3 | connection          | `NatsConnectionListener`            | interface   | 连接事件监听                                       |
+| L3 | connection          | `NatsAuthConfigurator`              | class       | 认证配置                                           |
+| L3 | jetstream           | `JetStreamManagementService`        | class       | JetStream 管理                                     |
+| L4 | pipeline            | `NatsMessageHandler`                | interface   | 消息处理函数式接口                                 |
+| L4 | pipeline            | `NatsMessageHandlerPipeline`        | class       | 管道构建器                                         |
+| L4 | pipeline.decorator  | `TracingMessageDecorator`           | class       | 追踪装饰器                                         |
+| L4 | pipeline.decorator  | `ContextRestorationDecorator`       | class       | 上下文恢复装饰器                                   |
+| L4 | pipeline.decorator  | `IdempotentMessageDecorator`        | class       | 去重装饰器                                         |
+| L4 | pipeline            | `NatsSubscriberFactory`             | class       | 订阅者工厂                                         |
+| L5 | bus                 | `NatsBus`                           | class       | Core NATS 门面（publish + subscribe + request）    |
+| L5 | stream              | `JetStreamBus`                      | class       | JetStream 门面（publish + consume + fetch + next） |
+| L5 | endpoint            | `NatsEndpoint`                      | class       | RPC 端点注册                                       |
+| L6 | -                   | `NatsComponent`                     | class       | 统一门面 + SmartLifecycle                          |
+| L7 | config              | `NatsProperties`                    | class       | 配置属性（15 个内部静态类）                        |
+| L7 | config              | `NatsProperties.Auth`               | inner class | 认证配置                                           |
+| L7 | config              | `NatsProperties.Connection`         | inner class | 连接配置                                           |
+| L7 | config              | `NatsProperties.Reconnect`          | inner class | 重连配置                                           |
+| L7 | config              | `NatsProperties.Ping`               | inner class | Ping 配置                                          |
+| L7 | config              | `NatsProperties.Tls`                | inner class | TLS/SSL 配置                                       |
+| L7 | config              | `NatsProperties.Protocol`           | inner class | 协议配置                                           |
+| L7 | config              | `NatsProperties.Request`            | inner class | Request 配置                                       |
+| L7 | config              | `NatsProperties.Queue`              | inner class | 发送队列配置                                       |
+| L7 | config              | `NatsProperties.Tracing`            | inner class | 链路追踪配置                                       |
+| L7 | config              | `NatsProperties.HeaderPropagation`  | inner class | 上下文透传配置                                     |
+| L7 | config              | `NatsProperties.Idempotent`         | inner class | 幂等去重配置                                       |
+| L7 | config              | `NatsProperties.Error`              | inner class | 错误处理配置                                       |
+| L7 | config              | `NatsProperties.JetStream`          | inner class | JetStream 总配置                                   |
+| L7 | config              | `NatsProperties.StreamDefinition`   | inner class | Stream 定义                                        |
+| L7 | config              | `NatsProperties.ConsumerDefinition` | inner class | Consumer 定义                                      |
+| L7 | config              | `NatsAutoConfiguration`             | class       | 自动配置                                           |

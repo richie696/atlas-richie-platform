@@ -21,8 +21,8 @@ package cn.richie696.component.http.core;
  * 对应 {@code platform.component.http.provider} 的可选值。
  *
  * @author richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public enum HttpProvider {
 

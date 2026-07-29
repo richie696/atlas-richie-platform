@@ -37,7 +37,9 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class RerankResponse extends AiModelResponse<RerankResponse> {
 
-    /** 按相关性降序的重排序结果列表。 */
+    /**
+     * 按相关性降序的重排序结果列表。
+     */
     private List<RerankResult> results;
 
     /**

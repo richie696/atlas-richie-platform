@@ -16,8 +16,8 @@
 package cn.richie696.component.messaging.pulsar.config;
 
 import cn.richie696.component.messaging.config.CanaryInstanceManager;
-import cn.richie696.contract.gateway.config.DeployConfig;
 import cn.richie696.component.messaging.filter.CanaryMessageFilter;
+import cn.richie696.contract.gateway.config.DeployConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

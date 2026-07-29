@@ -42,9 +42,9 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(
-    prefix = "platform.component.mfa.security.key-management",
-    name = "provider",
-    havingValue = "kms"
+        prefix = "platform.component.mfa.security.key-management",
+        name = "provider",
+        havingValue = "kms"
 )
 public class CloudKmsProvider implements KeyManagementProvider {
 
@@ -84,7 +84,7 @@ public class CloudKmsProvider implements KeyManagementProvider {
         }
 
         log.info("云KMS提供方初始化成功，服务商: {}, 区域: {}, 密钥ID: {}",
-            provider.getDesc(), cloudKmsConfig.getRegion(), keyId);
+                provider.getDesc(), cloudKmsConfig.getRegion(), keyId);
     }
 
     /**

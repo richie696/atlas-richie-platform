@@ -47,7 +47,7 @@ public final class DefaultFallbacks {
      * 查询操作的降级方法 - 返回空列表。
      *
      * @param entityClass 实体类（降级时忽略）
-     * @param <T>        实体类型
+     * @param <T>         实体类型
      * @return 空列表
      */
     public static <T> List<T> query(Class<T> entityClass) {
@@ -58,7 +58,7 @@ public final class DefaultFallbacks {
      * 计数操作的降级方法 - 返回零。
      *
      * @param entityClass 实体类（降级时忽略）
-     * @param <T>        实体类型
+     * @param <T>         实体类型
      * @return 0L
      */
     public static <T> Long count(Class<T> entityClass) {
@@ -69,7 +69,7 @@ public final class DefaultFallbacks {
      * one() 操作的降级方法 - 返回 null。
      *
      * @param entityClass 实体类（降级时忽略）
-     * @param <T>        实体类型
+     * @param <T>         实体类型
      * @return null
      */
     public static <T> T one(Class<T> entityClass) {
@@ -80,7 +80,7 @@ public final class DefaultFallbacks {
      * oneOpt() 操作的降级方法 - 返回空 Optional。
      *
      * @param entityClass 实体类（降级时忽略）
-     * @param <T>        实体类型
+     * @param <T>         实体类型
      * @return Optional.empty()
      */
     public static <T> Optional<T> oneOpt(Class<T> entityClass) {
@@ -91,7 +91,7 @@ public final class DefaultFallbacks {
      * pageResult() 操作的降级方法 - 返回空 PageResult。
      *
      * @param entityClass 实体类（降级时忽略）
-     * @param <T>        实体类型
+     * @param <T>         实体类型
      * @return 空 PageResult
      */
     public static <T> PageResult<T> pageResult(Class<T> entityClass) {
@@ -202,7 +202,7 @@ public final class DefaultFallbacks {
      * </pre>
      *
      * @param entityClass 实体类（降级时忽略）
-     * @param <T>        实体类型
+     * @param <T>         实体类型
      * @return 返回空结果的 QueryBuilder
      */
     public static <T> QueryBuilder<T> queryBuilder(Class<T> entityClass) {
@@ -213,7 +213,7 @@ public final class DefaultFallbacks {
      * 返回一个在执行时返回 0 的降级 UpdateBuilder。
      *
      * @param entityClass 实体类（降级时忽略）
-     * @param <T>        实体类型
+     * @param <T>         实体类型
      * @return 返回 0 的 UpdateBuilder
      */
     public static <T> UpdateBuilder<T> updateBuilder(Class<T> entityClass) {
@@ -224,7 +224,7 @@ public final class DefaultFallbacks {
      * 返回一个在执行时返回 0 的降级 DeleteBuilder。
      *
      * @param entityClass 实体类（降级时忽略）
-     * @param <T>        实体类型
+     * @param <T>         实体类型
      * @return 返回 0 的 DeleteBuilder
      */
     public static <T> DeleteBuilder<T> deleteBuilder(Class<T> entityClass) {

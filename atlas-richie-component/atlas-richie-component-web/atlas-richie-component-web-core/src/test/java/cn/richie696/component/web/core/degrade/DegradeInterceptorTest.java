@@ -30,6 +30,12 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import cn.richie696.component.web.core.degrade.DefaultDegradeStrategyRegistry;
+import cn.richie696.component.web.core.degrade.DegradeInterceptor;
+import cn.richie696.component.web.core.degrade.Trigger;
+import cn.richie696.component.web.core.degrade.DegradeResult;
+import cn.richie696.component.web.core.degrade.DegradeStrategy;
+import java.util.List;
 
 /**
  * {@link DegradeInterceptor} 行为测试（4 个触发场景 + 兜底 + 跳过）。
@@ -155,11 +161,28 @@ class DegradeInterceptorTest {
     @Test
     void evaluateStrategyReceivesContext() throws Exception {
         registry.register("ctx-aware", new DegradeStrategy() {
-            @Override public String name() { return "ctx-aware"; }
-            @Override public Set<Trigger> triggers() { return Set.of(Trigger.EXCEPTION); }
-            @Override public int order() { return 0; }
-            @Override public boolean matches(Trigger t) { return t == Trigger.EXCEPTION; }
-            @Override public DegradeResult build(Trigger t, Map<String, Object> c) {
+            @Override
+            public String name() {
+                return "ctx-aware";
+            }
+
+            @Override
+            public Set<Trigger> triggers() {
+                return Set.of(Trigger.EXCEPTION);
+            }
+
+            @Override
+            public int order() {
+                return 0;
+            }
+
+            @Override
+            public boolean matches(Trigger t) {
+                return t == Trigger.EXCEPTION;
+            }
+
+            @Override
+            public DegradeResult build(Trigger t, Map<String, Object> c) {
                 Throwable ex = (Throwable) c.get("exception");
                 return DegradeResult.of(503,
                         "{\"path\":\"" + c.get("path") + "\",\"msg\":\"" + ex.getMessage() + "\"}",
@@ -203,8 +226,11 @@ class DegradeInterceptorTest {
 
     private static WebInterceptorChain noopChain() {
         return new WebInterceptorChain() {
-            @Override public void proceed(WebRequestContext ctx) { /* no-op */ }
-            @Override public java.util.List<cn.richie696.component.web.core.spi.WebInterceptor> interceptors() {
+            @Override
+            public void proceed(WebRequestContext ctx) { /* no-op */ }
+
+            @Override
+            public java.util.List<cn.richie696.component.web.core.spi.WebInterceptor> interceptors() {
                 return java.util.List.of();
             }
         };
@@ -212,11 +238,30 @@ class DegradeInterceptorTest {
 
     private static DegradeStrategy strategy(String name, int order, Trigger trigger, DegradeResult result) {
         return new DegradeStrategy() {
-            @Override public String name() { return name; }
-            @Override public Set<Trigger> triggers() { return Set.of(trigger); }
-            @Override public int order() { return order; }
-            @Override public boolean matches(Trigger t) { return t == trigger; }
-            @Override public DegradeResult build(Trigger t, Map<String, Object> ctx) { return result; }
+            @Override
+            public String name() {
+                return name;
+            }
+
+            @Override
+            public Set<Trigger> triggers() {
+                return Set.of(trigger);
+            }
+
+            @Override
+            public int order() {
+                return order;
+            }
+
+            @Override
+            public boolean matches(Trigger t) {
+                return t == trigger;
+            }
+
+            @Override
+            public DegradeResult build(Trigger t, Map<String, Object> ctx) {
+                return result;
+            }
         };
     }
 

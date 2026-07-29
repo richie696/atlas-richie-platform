@@ -2,7 +2,8 @@
 
 ## Overview
 
-`richie-component-storage-local` is a local file storage implementation that provides high-performance local file storage capabilities. It supports file metadata management, cache optimization, content deduplication, and more.
+`richie-component-storage-local` is a local file storage implementation that provides high-performance local file
+storage capabilities. It supports file metadata management, cache optimization, content deduplication, and more.
 
 ## Core Features
 
@@ -12,7 +13,8 @@
 - ✅ **Content Deduplication** - SHA-256-based content fingerprinting for deduplication
 - ✅ **Path Safety** - Prevents directory traversal attacks
 - ✅ **Automatic Cleanup** - Supports scheduled cleanup tasks for cold data
-- ✅ **Dual-Mode Architecture** - Supports two initialization modes: Auto-Init and Manual Registry, flexibly adapting to Spring Boot auto-configuration and non-Spring environments
+- ✅ **Dual-Mode Architecture** - Supports two initialization modes: Auto-Init and Manual Registry, flexibly adapting to
+  Spring Boot auto-configuration and non-Spring environments
 - ✅ **Database Schema Management** - Supports automatic table creation and Liquibase migrations
 
 ## Dual-Mode Architecture
@@ -47,21 +49,23 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 `LocalStorageEngineProvider` implements the `StorageEngineProvider` SPI and is responsible for:
 
-| Method | Description |
-|------|------|
-| `supportedEngineType()` | Returns `StorageEngineEnum.LOCAL` |
-| `create(properties)` | Creates a `LocalStorageEngine` instance from the configuration |
-| `validate(properties)` | Validates the local storage path and other configurations |
+| Method                  | Description                                                    |
+|-------------------------|----------------------------------------------------------------|
+| `supportedEngineType()` | Returns `StorageEngineEnum.LOCAL`                              |
+| `create(properties)`    | Creates a `LocalStorageEngine` instance from the configuration |
+| `validate(properties)`  | Validates the local storage path and other configurations      |
 
-In auto mode, the provider is registered as a Bean in `LocalAutoConfiguration`. In manual mode, it is discovered by the Registry through SPI.
+In auto mode, the provider is registered as a Bean in `LocalAutoConfiguration`. In manual mode, it is discovered by the
+Registry through SPI.
 
 ## Parameter Validation (ConfigValidation)
 
-Before the engine is created, the `ConfigValidation` utility class validates required parameters. If validation fails, an `IllegalArgumentException` is thrown:
+Before the engine is created, the `ConfigValidation` utility class validates required parameters. If validation fails,
+an `IllegalArgumentException` is thrown:
 
-| Parameter | Validation Rule |
-|------|---------|
-| path | Non-null (local storage path) |
+| Parameter | Validation Rule               |
+|-----------|-------------------------------|
+| path      | Non-null (local storage path) |
 
 ## Quick Start
 
@@ -160,19 +164,19 @@ public class FileService {
 
 The main configuration differences between local storage and cloud storage:
 
-| Configuration | Local Storage | Cloud Storage |
-|--------|---------|--------|
-| **Configuration Prefix** | `platform.component.storage.local` | `platform.component.storage.object` |
-| **engine Field** | Not required | Required (e.g. `MINIO`, `AWS_S3`, etc.) |
-| **endpoint** | Not required | Required |
-| **region** | Not required | Required (for some cloud storage) |
-| **accessKeyId** | Not required | Required |
-| **accessKeySecret** | Not required | Required |
-| **bucketName** | Not required | Required |
-| **path** | **Required** (storage path) | Not required |
-| **Cache Configuration** | **Supported** (three-level cache) | Not supported |
-| **Database Metadata** | **Supported** | Not supported |
-| **Content Deduplication** | **Supported** (SHA-256) | Not supported |
+| Configuration             | Local Storage                      | Cloud Storage                           |
+|---------------------------|------------------------------------|-----------------------------------------|
+| **Configuration Prefix**  | `platform.component.storage.local` | `platform.component.storage.object`     |
+| **engine Field**          | Not required                       | Required (e.g. `MINIO`, `AWS_S3`, etc.) |
+| **endpoint**              | Not required                       | Required                                |
+| **region**                | Not required                       | Required (for some cloud storage)       |
+| **accessKeyId**           | Not required                       | Required                                |
+| **accessKeySecret**       | Not required                       | Required                                |
+| **bucketName**            | Not required                       | Required                                |
+| **path**                  | **Required** (storage path)        | Not required                            |
+| **Cache Configuration**   | **Supported** (three-level cache)  | Not supported                           |
+| **Database Metadata**     | **Supported**                      | Not supported                           |
+| **Content Deduplication** | **Supported** (SHA-256)            | Not supported                           |
 
 ### Path Configuration
 
@@ -252,29 +256,30 @@ platform:
 ## Best Practices
 
 1. **Path Organization**
-   - Organize paths by business dimension: `/user/{userId}/avatar.jpg`
-   - Organize paths by date dimension: `/2024/01/15/document.pdf`
-   - Avoid overly deep directory hierarchies
+    - Organize paths by business dimension: `/user/{userId}/avatar.jpg`
+    - Organize paths by date dimension: `/2024/01/15/document.pdf`
+    - Avoid overly deep directory hierarchies
 
 2. **Cache Strategy**
-   - Small files (< 1MB) will have their content cached automatically
-   - Large files only cache metadata, not content
-   - Adjust cache TTLs based on your business scenario
+    - Small files (< 1MB) will have their content cached automatically
+    - Large files only cache metadata, not content
+    - Adjust cache TTLs based on your business scenario
 
 3. **Database Metadata**
-   - Enable database metadata management for easier file querying and statistics
-   - Periodically clean up expired metadata records
+    - Enable database metadata management for easier file querying and statistics
+    - Periodically clean up expired metadata records
 
 4. **Storage Path**
-   - Use an absolute path in production environments
-   - Make sure the application has read/write permissions
-   - Consider disk space and backup strategy
+    - Use an absolute path in production environments
+    - Make sure the application has read/write permissions
+    - Consider disk space and backup strategy
 
 ## Frequently Asked Questions
 
 ### Q: Does local storage support distributed deployment?
 
-A: No. Local storage is based on the file system, and in a multi-instance deployment, each instance can only access its own local file system. For distributed storage, use cloud storage or MinIO.
+A: No. Local storage is based on the file system, and in a multi-instance deployment, each instance can only access its
+own local file system. For distributed storage, use cloud storage or MinIO.
 
 ### Q: How do I migrate files from local storage?
 
@@ -282,7 +287,8 @@ A: Copy the file directory directly, and make sure the database metadata is migr
 
 ### Q: What is the cache invalidation strategy?
 
-A: It is a time-based expiration strategy. The file existence cache is 1 hour, the metadata cache is 30 minutes, and the content cache is 10 minutes.
+A: It is a time-based expiration strategy. The file existence cache is 1 hour, the metadata cache is 30 minutes, and the
+content cache is 10 minutes.
 
 ### Q: How do I clear the cache?
 

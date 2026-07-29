@@ -24,8 +24,8 @@ import java.util.Set;
  * 默认权限评估：未启用权限模块时始终脱敏；启用后命中明文角色则跳过脱敏。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class DefaultMaskPermissionEvaluator implements MaskPermissionEvaluator {
 

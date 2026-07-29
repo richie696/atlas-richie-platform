@@ -23,8 +23,8 @@ import org.springframework.stereotype.Component;
  * 姓名脱敏：保留首字符。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 @Component
 public class NameMaskingStrategy implements MaskingStrategy {
@@ -43,7 +43,7 @@ public class NameMaskingStrategy implements MaskingStrategy {
     /**
      * 保留姓名首字符，其余替换为掩码字符。
      *
-     * @param raw 原始字符串
+     * @param raw  原始字符串
      * @param rule 脱敏规则
      * @return 脱敏结果
      */

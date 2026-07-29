@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-/** 以模型 token 预算而不是字符数确定边界的策略。 */
+/**
+ * 以模型 token 预算而不是字符数确定边界的策略。
+ */
 public final class TokenChunkingStrategy implements StreamingChunkingStrategy {
 
     private final TokenCounter tokenCounter;

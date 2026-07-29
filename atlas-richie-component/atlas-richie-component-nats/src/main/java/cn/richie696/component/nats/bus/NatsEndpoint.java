@@ -71,7 +71,7 @@ public class NatsEndpoint {
      * @param <R>         响应泛型
      */
     public <T, R> void registerHandler(String subject, Class<T> requestType,
-                                        Function<T, R> handler) {
+                                       Function<T, R> handler) {
         registerHandler(subject, null, requestType, handler);
     }
 
@@ -86,7 +86,7 @@ public class NatsEndpoint {
      * @param <R>         响应泛型
      */
     public <T, R> void registerHandler(String subject, String queueGroup,
-                                        Class<T> requestType, Function<T, R> handler) {
+                                       Class<T> requestType, Function<T, R> handler) {
         Connection conn = connectionManager.getConnection();
 
         // 构建 RPC 管道 Handler：反序列化 → 执行 → 序列化 → 回复

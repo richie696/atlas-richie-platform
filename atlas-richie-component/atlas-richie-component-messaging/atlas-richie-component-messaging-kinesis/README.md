@@ -56,12 +56,12 @@ spring:
 
 ### AWS Kinesis Binder 配置
 
-| 配置项                                               | 说明                | 默认值 |
-|---------------------------------------------------|-------------------|-----|
-| `spring.cloud.aws.kinesis.region`                 | AWS 区域            | -   |
-| `spring.cloud.aws.kinesis.credentials.access-key` | AWS Access Key    | -   |
-| `spring.cloud.aws.kinesis.credentials.secret-key` | AWS Secret Key    | -   |
-| `spring.cloud.aws.kinesis.stream-name`            | Kinesis Stream 名称 | -   |
+| 配置项                                            | 说明                | 默认值 |
+|---------------------------------------------------|---------------------|--------|
+| `spring.cloud.aws.kinesis.region`                 | AWS 区域            | -      |
+| `spring.cloud.aws.kinesis.credentials.access-key` | AWS Access Key      | -      |
+| `spring.cloud.aws.kinesis.credentials.secret-key` | AWS Secret Key      | -      |
+| `spring.cloud.aws.kinesis.stream-name`            | Kinesis Stream 名称 | -      |
 
 ### 详细配置
 

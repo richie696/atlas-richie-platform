@@ -18,13 +18,15 @@ package cn.richie696.component.web.core.degrade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import cn.richie696.component.web.core.degrade.DefaultDegradeStrategyRegistry;
+import cn.richie696.component.web.core.degrade.Trigger;
+import cn.richie696.component.web.core.degrade.DegradeStrategy;
 
 /**
  * {@link DefaultDegradeStrategyRegistry} 测试。
@@ -122,11 +124,28 @@ class DefaultDegradeStrategyRegistryTest {
 
     private static DegradeStrategy strategy(String name, int order, Trigger trigger) {
         return new DegradeStrategy() {
-            @Override public String name() { return name; }
-            @Override public Set<Trigger> triggers() { return Set.of(trigger); }
-            @Override public int order() { return order; }
-            @Override public boolean matches(Trigger t) { return t == trigger; }
-            @Override public DegradeResult build(Trigger t, Map<String, Object> ctx) {
+            @Override
+            public String name() {
+                return name;
+            }
+
+            @Override
+            public Set<Trigger> triggers() {
+                return Set.of(trigger);
+            }
+
+            @Override
+            public int order() {
+                return order;
+            }
+
+            @Override
+            public boolean matches(Trigger t) {
+                return t == trigger;
+            }
+
+            @Override
+            public DegradeResult build(Trigger t, Map<String, Object> ctx) {
                 return DegradeResult.of(503, "degraded:" + name, name);
             }
         };

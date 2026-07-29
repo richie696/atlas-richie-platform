@@ -26,15 +26,15 @@ import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.endpoint.annotation.Selector;
 import org.springframework.boot.actuate.endpoint.annotation.WriteOperation;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.data.redis.connection.stream.StreamInfo;
-import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Redis Stream 自定义管理端点
@@ -76,29 +76,39 @@ import java.util.stream.Collectors;
  * @since 2025-09-15
  */
 @Slf4j
-@Component
 @Endpoint(id = "redis-stream")
 @RequiredArgsConstructor
-@ConditionalOnClass({MeterRegistry.class})
 public class RedisStreamEndpoint {
 
-    /** Redis 模板（JSON 序列化） */
+    /**
+     * Redis 模板（JSON 序列化）
+     */
     @Qualifier("jsonTemplate")
     private final MultiRedisTemplate<Object> redisTemplate;
 
-    /** Stream 指标 */
+    /**
+     * Stream 指标
+     */
     private final RedisStreamMetrics metrics;
 
-    /** 指标注册表 */
+    /**
+     * 指标注册表
+     */
     private final MeterRegistry meterRegistry;
 
-    /** 健康检查指示器 */
+    /**
+     * 健康检查指示器
+     */
     private final RedisStreamHealthIndicator healthIndicator;
 
-    /** 监控配置 */
+    /**
+     * 监控配置
+     */
     private final RedisStreamMonitoringProperties properties;
 
-    /** 积压监控器 */
+    /**
+     * 积压监控器
+     */
     private final RedisStreamBacklogMonitor backlogMonitor;
 
     /**
@@ -561,8 +571,8 @@ public class RedisStreamEndpoint {
     /**
      * 获取计数器值
      *
-     * @param name  指标名称
-     * @param tags  指标标签（如 stream、group）
+     * @param name 指标名称
+     * @param tags 指标标签（如 stream、group）
      * @return 计数值，不存在或异常时为 0.0
      */
     private double getCounterValue(String name, String... tags) {

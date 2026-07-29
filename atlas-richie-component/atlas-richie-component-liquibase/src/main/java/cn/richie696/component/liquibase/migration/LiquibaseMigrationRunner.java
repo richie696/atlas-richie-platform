@@ -45,13 +45,21 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class LiquibaseMigrationRunner implements SmartInitializingSingleton {
 
-    /** 数据源 */
+    /**
+     * 数据源
+     */
     private final DataSource dataSource;
-    /** Liquibase 配置 */
+    /**
+     * Liquibase 配置
+     */
     private final LiquibaseProperties properties;
-    /** 组件注册的 changelog 注册表 */
+    /**
+     * 组件注册的 changelog 注册表
+     */
     private final ChangeLogRegistry registry;
-    /** changelog 路径解析器 */
+    /**
+     * changelog 路径解析器
+     */
     private final ChangeLogResolver changeLogResolver;
 
     @Override

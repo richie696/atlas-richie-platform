@@ -320,10 +320,10 @@ public class WebProperties {
 
     /**
      * 平台防护层子域。前缀：{@code platform.component.web.protection}。
-* <p><strong>Gateway 模式下需按子项区分</strong>：
- * <ul>
- *   <li>{@code request-size}：gateway 层 body size 限制已生效，<strong>建议禁用</strong></li>
- * </ul>
+     * <p><strong>Gateway 模式下需按子项区分</strong>：
+     * <ul>
+     *   <li>{@code request-size}：gateway 层 body size 限制已生效，<strong>建议禁用</strong></li>
+     * </ul>
      */
     @NestedConfigurationProperty
     private PlatformProtectionProperties protection = new PlatformProtectionProperties();

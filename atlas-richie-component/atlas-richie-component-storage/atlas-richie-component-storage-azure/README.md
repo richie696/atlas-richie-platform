@@ -2,14 +2,16 @@
 
 ## Overview
 
-`richie-component-storage-azure` is the implementation of Microsoft Azure Blob Storage, built on the Azure Storage SDK for Java to deliver complete Azure Blob storage capabilities.
+`richie-component-storage-azure` is the implementation of Microsoft Azure Blob Storage, built on the Azure Storage SDK
+for Java to deliver complete Azure Blob storage capabilities.
 
 ## Core Features
 
 - ✅ **Azure Blob Compatible** - Full support for the Azure Blob Storage API
 - ✅ **Multiple Access Tiers** - Hot, Cool, and Archive access tiers
 - ✅ **Resumable Upload** - Resumable upload support for large files
-- ✅ **Dual-Mode Architecture** - Supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to Spring Boot auto-configuration and non-Spring environments
+- ✅ **Dual-Mode Architecture** - Supports both Auto-Init and Manual Registry initialization modes, flexibly adapting to
+  Spring Boot auto-configuration and non-Spring environments
 - ✅ **Auto-Configuration** - Spring Boot auto-configuration
 
 ## Dual-Mode Architecture
@@ -41,39 +43,43 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 ## StorageEngineProvider
 
-Each implementation package provides a `StorageEngineProvider` SPI implementation. `AzureBlobStorageEngineProvider` is responsible for:
+Each implementation package provides a `StorageEngineProvider` SPI implementation. `AzureBlobStorageEngineProvider` is
+responsible for:
 
-| Method | Description |
-|------|------|
-| `supportedEngineType()` | Returns `StorageEngineEnum.AZURE_BLOB` |
-| `create(properties)` | Creates an engine instance from configuration |
-| `validate(properties)` | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
-| `destroy(engine)` | Releases resources |
+| Method                  | Description                                                                       |
+|-------------------------|-----------------------------------------------------------------------------------|
+| `supportedEngineType()` | Returns `StorageEngineEnum.AZURE_BLOB`                                            |
+| `create(properties)`    | Creates an engine instance from configuration                                     |
+| `validate(properties)`  | Validates that endpoint / accessKeyId / accessKeySecret / bucketName are required |
+| `destroy(engine)`       | Releases resources                                                                |
 
-In auto mode, the Provider is registered as a Bean in `AzureBlobAutoConfiguration`. In manual mode, it is discovered by the Registry through SPI.
+In auto mode, the Provider is registered as a Bean in `AzureBlobAutoConfiguration`. In manual mode, it is discovered by
+the Registry through SPI.
 
 ## Config Validation
 
-Before the engine is created, the `ConfigValidation` utility validates the required parameters. If validation fails, an `IllegalArgumentException` is thrown:
+Before the engine is created, the `ConfigValidation` utility validates the required parameters. If validation fails, an
+`IllegalArgumentException` is thrown:
 
-| Parameter | Validation Rule |
-|------|---------|
-| endpoint | Non-empty |
-| accessKeyId | Non-empty |
-| accessKeySecret | Non-empty |
-| bucketName | Non-empty |
+| Parameter       | Validation Rule |
+|-----------------|-----------------|
+| endpoint        | Non-empty       |
+| accessKeyId     | Non-empty       |
+| accessKeySecret | Non-empty       |
+| bucketName      | Non-empty       |
 
 ## Direct Upload Policy
 
-The Azure Blob engine supports client-side direct upload to object storage through SAS-signed URLs, reducing server-side traffic pressure:
+The Azure Blob engine supports client-side direct upload to object storage through SAS-signed URLs, reducing server-side
+traffic pressure:
 
-| Field | Description |
-|------|------|
-| uploadUrl | Presigned upload URL |
-| method | HTTP method (PUT) |
-| headers | Signature headers |
-| expireAt | Policy expiration time |
-| success | Whether the policy is usable |
+| Field     | Description                  |
+|-----------|------------------------------|
+| uploadUrl | Presigned upload URL         |
+| method    | HTTP method (PUT)            |
+| headers   | Signature headers            |
+| expireAt  | Policy expiration time       |
+| success   | Whether the policy is usable |
 
 ```java
 DirectUploadPolicy policy = storageEngine.issueDirectUploadPolicy(
@@ -151,23 +157,23 @@ public class FileService {
 
 The main configuration differences between Azure Blob Storage and other cloud storage providers:
 
-| Configuration Item | Azure Blob | AWS S3 | Alibaba Cloud OSS |
-|--------|-----------|--------|-----------|
-| **engine value** | `AZURE_BLOB` | `AWS_S3` | `ALIYUN_OSS` |
-| **endpoint format** | `account.blob.core.windows.net` | `s3.region.amazonaws.com` | `oss-cn-region.aliyuncs.com` |
-| **region format** | Azure region code (e.g., `eastus`) | AWS region code (e.g., `us-east-1`) | Alibaba Cloud region code (e.g., `cn-hangzhou`) |
-| **Access key names** | Storage Account Name / Storage Account Key | Access Key ID / Secret Access Key | AccessKey ID / AccessKey Secret |
-| **Bucket name** | Container Name | Bucket Name | Bucket Name |
-| **Access tiers** | Hot, Cool, Archive | Storage tiers (15+) | Storage tiers (4) |
-| **Connection string** | ✅ Supported | ❌ Not supported | ❌ Not supported |
+| Configuration Item    | Azure Blob                                 | AWS S3                              | Alibaba Cloud OSS                               |
+|-----------------------|--------------------------------------------|-------------------------------------|-------------------------------------------------|
+| **engine value**      | `AZURE_BLOB`                               | `AWS_S3`                            | `ALIYUN_OSS`                                    |
+| **endpoint format**   | `account.blob.core.windows.net`            | `s3.region.amazonaws.com`           | `oss-cn-region.aliyuncs.com`                    |
+| **region format**     | Azure region code (e.g., `eastus`)         | AWS region code (e.g., `us-east-1`) | Alibaba Cloud region code (e.g., `cn-hangzhou`) |
+| **Access key names**  | Storage Account Name / Storage Account Key | Access Key ID / Secret Access Key   | AccessKey ID / AccessKey Secret                 |
+| **Bucket name**       | Container Name                             | Bucket Name                         | Bucket Name                                     |
+| **Access tiers**      | Hot, Cool, Archive                         | Storage tiers (15+)                 | Storage tiers (4)                               |
+| **Connection string** | ✅ Supported                               | ❌ Not supported                    | ❌ Not supported                                |
 
 ### endpoint Configuration
 
 Azure Blob Storage endpoint format:
 
 - **Standard format**: `account.blob.core.windows.net`
-  - Example: `mystorageaccount.blob.core.windows.net`
-  - `account` is the storage account name
+    - Example: `mystorageaccount.blob.core.windows.net`
+    - `account` is the storage account name
 
 - **Custom domain**: You can configure a custom domain in the Azure portal
 
@@ -175,17 +181,17 @@ Azure Blob Storage endpoint format:
 
 Regions supported by Azure Blob Storage:
 
-| Region | Code |
-|------|------|
-| East US | `eastus` |
-| West US | `westus` |
-| Central US | `centralus` |
-| West Europe | `westeurope` |
-| North Europe | `northeurope` |
-| East Asia | `eastasia` |
+| Region         | Code            |
+|----------------|-----------------|
+| East US        | `eastus`        |
+| West US        | `westus`        |
+| Central US     | `centralus`     |
+| West Europe    | `westeurope`    |
+| North Europe   | `northeurope`   |
+| East Asia      | `eastasia`      |
 | Southeast Asia | `southeastasia` |
-| China East | `chinaeast` |
-| China North | `chinanorth` |
+| China East     | `chinaeast`     |
+| China North    | `chinanorth`    |
 
 ### Access Credentials
 
@@ -195,7 +201,7 @@ Azure Blob Storage uses the storage account name and storage account key for aut
 2. Create a storage account
 3. Retrieve the storage account name and key from "Access Keys"
 
-> **Security Tips**: 
+> **Security Tips**:
 > - Use Shared Access Signatures (SAS) instead of storage account keys when possible
 > - Do not commit access keys to source control
 > - Use Azure Key Vault to manage keys
@@ -204,58 +210,65 @@ Azure Blob Storage uses the storage account name and storage account key for aut
 
 Azure Blob Storage supports three access tiers:
 
-| Access Tier | Description | Suitable Scenario |
-|--------|------|---------|
-| **Hot** | Frequently accessed data | Active data |
-| **Cool** | Infrequently accessed data | Backup data |
-| **Archive** | Rarely accessed data | Long-term archiving |
+| Access Tier | Description                | Suitable Scenario   |
+|-------------|----------------------------|---------------------|
+| **Hot**     | Frequently accessed data   | Active data         |
+| **Cool**    | Infrequently accessed data | Backup data         |
+| **Archive** | Rarely accessed data       | Long-term archiving |
 
-> **Note**: The access tier concept in Azure Blob Storage is similar to storage tiers in other cloud storage services, but is configured differently.
+> **Note**: The access tier concept in Azure Blob Storage is similar to storage tiers in other cloud storage services,
+> but is configured differently.
 
 ## Feature Details
 
 ### 1. Connection String Support
 
-Azure Blob Storage supports authentication using a connection string. This component authenticates through accessKeyId (storage account name) and accessKeySecret (storage account key). The connection string approach can be used directly through the Azure SDK.
+Azure Blob Storage supports authentication using a connection string. This component authenticates through accessKeyId
+(storage account name) and accessKeySecret (storage account key). The connection string approach can be used directly
+through the Azure SDK.
 
 ### 2. Automatic Access Tier Setting
 
-When uploading files, the access tier can be set automatically based on configuration (lifecycle policies must be configured in the Azure portal or through the SDK).
+When uploading files, the access tier can be set automatically based on configuration (lifecycle policies must be
+configured in the Azure portal or through the SDK).
 
 ### 3. Shared Access Signature (SAS)
 
-Azure Blob Storage supports using SAS (Shared Access Signature) for temporary authorized access, which is suitable for generating temporary URLs for direct client-side upload or download.
+Azure Blob Storage supports using SAS (Shared Access Signature) for temporary authorized access, which is suitable for
+generating temporary URLs for direct client-side upload or download.
 
 ## Best Practices
 
 1. **Region Selection**
-   - Choose the region closest to your users to minimize latency
-   - Consider data compliance requirements
+    - Choose the region closest to your users to minimize latency
+    - Consider data compliance requirements
 
 2. **Access Tier Selection**
-   - Frequent access: Hot tier
-   - Occasional access: Cool tier
-   - Long-term archiving: Archive tier
+    - Frequent access: Hot tier
+    - Occasional access: Cool tier
+    - Long-term archiving: Archive tier
 
 3. **Access Credential Management**
-   - Use SAS instead of storage account keys when possible
-   - Use Azure Key Vault to manage keys
-   - Rotate access keys regularly
+    - Use SAS instead of storage account keys when possible
+    - Use Azure Key Vault to manage keys
+    - Rotate access keys regularly
 
 4. **Cost Optimization**
-   - Use lifecycle policies to automatically transition access tiers
-   - Delete unnecessary blobs
-   - Use the Cool or Archive tier to store infrequently accessed data
+    - Use lifecycle policies to automatically transition access tiers
+    - Delete unnecessary blobs
+    - Use the Cool or Archive tier to store infrequently accessed data
 
 ## FAQ
 
 ### Q: What is the difference between Azure Blob Storage and AWS S3?
 
-A: Azure Blob Storage is Azure's object storage service. Its API differs from S3, but the features are similar. This component provides a unified interface that hides the underlying differences.
+A: Azure Blob Storage is Azure's object storage service. Its API differs from S3, but the features are similar. This
+component provides a unified interface that hides the underlying differences.
 
 ### Q: How do I configure access tiers?
 
-A: You can set the default access tier for a container in the Azure portal, or use lifecycle policies to automatically transition access tiers.
+A: You can set the default access tier for a container in the Azure portal, or use lifecycle policies to automatically
+transition access tiers.
 
 ### Q: Does it support custom domains?
 
@@ -263,7 +276,8 @@ A: Yes. After configuring a custom domain in the Azure portal, use the custom do
 
 ### Q: How do I migrate from S3 to Azure Blob?
 
-A: Because the APIs differ, code changes are required. However, this component provides a unified interface, so you only need to change the configuration.
+A: Because the APIs differ, code changes are required. However, this component provides a unified interface, so you only
+need to change the configuration.
 
 ## Related Documentation
 

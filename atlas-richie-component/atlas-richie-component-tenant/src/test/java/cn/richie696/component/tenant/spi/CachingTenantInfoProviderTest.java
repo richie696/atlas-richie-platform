@@ -18,21 +18,13 @@ package cn.richie696.component.tenant.spi;
 import cn.richie696.component.tenant.model.IsolationMode;
 import cn.richie696.component.tenant.model.TenantInfo;
 import cn.richie696.component.tenant.model.TenantStatus;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @DisplayName("CachingTenantInfoProvider 装饰器单测")
 class CachingTenantInfoProviderTest {
@@ -54,9 +46,9 @@ class CachingTenantInfoProviderTest {
 
     private static TenantInfo tenant(long id) {
         return new TenantInfo()
-            .setTenantId(id)
-            .setMode(IsolationMode.COLUMN)
-            .setStatus(TenantStatus.ACTIVE);
+                .setTenantId(id)
+                .setMode(IsolationMode.COLUMN)
+                .setStatus(TenantStatus.ACTIVE);
     }
 
     @Nested
@@ -220,7 +212,7 @@ class CachingTenantInfoProviderTest {
         @DisplayName("delegate 为 null 抛 NullPointerException")
         void nullDelegateRejected() {
             org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class,
-                () -> new CachingTenantInfoProvider(null, 60, 1000));
+                    () -> new CachingTenantInfoProvider(null, 60, 1000));
         }
 
         @Test

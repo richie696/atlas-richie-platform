@@ -1,57 +1,59 @@
 # Atlas Richie NATS Component (atlas-richie-component-nats)
 
-> Production-grade **NATS** client component. Connection management, message bus, RPC endpoints, distributed tracing, context propagation, idempotency, **JetStream** persistent streams, and Key-Value / Object Store.
+> Production-grade **NATS** client component. Connection management, message bus, RPC endpoints, distributed tracing,
+> context propagation, idempotency, **JetStream** persistent streams, and Key-Value / Object Store.
 
 ---
 
 ## 📖 Contents
 
 - [📖 Overview](#📖-overview)
-  - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
+    - [What this component is — and what it isn't](#what-this-component-is-—-and-what-it-isnt)
 - [✨ Features](#✨-features)
-  - [Core capabilities](#core-capabilities)
-  - [Design choices](#design-choices)
+    - [Core capabilities](#core-capabilities)
+    - [Design choices](#design-choices)
 - [🏗️ Architecture & Module Layout](#🏗️-architecture-&-module-layout)
 - [🚀 Quick Start](#🚀-quick-start)
-  - [1. Add the dependency](#1-add-the-dependency)
-  - [2. Configure](#2-configure)
-  - [3. Publish a message](#3-publish-a-message)
-  - [4. Subscribe](#4-subscribe)
+    - [1. Add the dependency](#1-add-the-dependency)
+    - [2. Configure](#2-configure)
+    - [3. Publish a message](#3-publish-a-message)
+    - [4. Subscribe](#4-subscribe)
 - [🔧 Core Capabilities](#🔧-core-capabilities)
-  - [1. Core pub/sub](#1-core-pub/sub)
-  - [2. Request / reply (RPC)](#2-request-/-reply-rpc)
-  - [3. JetStream persistent streams](#3-jetstream-persistent-streams)
-  - [4. Key-Value & Object Store](#4-key-value-&-object-store)
-  - [5. Idempotency](#5-idempotency)
+    - [1. Core pub/sub](#1-core-pub/sub)
+    - [2. Request / reply (RPC)](#2-request-/-reply-rpc)
+    - [3. JetStream persistent streams](#3-jetstream-persistent-streams)
+    - [4. Key-Value & Object Store](#4-key-value-&-object-store)
+    - [5. Idempotency](#5-idempotency)
 - [⚙️ Configuration Reference](#⚙️-configuration-reference)
 - [🎯 Best Practices](#🎯-best-practices)
 - [⚠️ Known Limitations](#⚠️-known-limitations)
 - [❓ FAQ](#❓-faq)
-  - [Q1: NATS vs Kafka — when to choose?](#q1-nats-vs-kafka-—-when-to-choose?)
-  - [Q2: Can I use both NATS core and JetStream in the same app?](#q2-can-i-use-both-nats-core-and-jetstream-in-the-same-app?)
-  - [Q3: How do I trace NATS calls across services?](#q3-how-do-i-trace-nats-calls-across-services?)
-  - [Q4: What happens if the broker is down?](#q4-what-happens-if-the-broker-is-down?)
+    - [Q1: NATS vs Kafka — when to choose?](#q1-nats-vs-kafka-—-when-to-choose?)
+    - [Q2: Can I use both NATS core and JetStream in the same app?](#q2-can-i-use-both-nats-core-and-jetstream-in-the-same-app?)
+    - [Q3: How do I trace NATS calls across services?](#q3-how-do-i-trace-nats-calls-across-services?)
+    - [Q4: What happens if the broker is down?](#q4-what-happens-if-the-broker-is-down?)
 - [📚 Further Reading](#📚-further-reading)
+
 ---
 
 ## 📖 Overview
 
-| Item | Value |
-|------|-------|
-| **Artifact** | `cn.richie696.component:atlas-richie-component-nats` |
-| **Category** | Messaging — NATS pub/sub + JetStream |
-| **Hard dependencies** | `io.nats:jnats` (JetStream client) |
-| **Compatible with** | NATS Server 2.10+, JetStream enabled |
+| Item                  | Value                                                |
+|-----------------------|------------------------------------------------------|
+| **Artifact**          | `cn.richie696.component:atlas-richie-component-nats` |
+| **Category**          | Messaging — NATS pub/sub + JetStream                 |
+| **Hard dependencies** | `io.nats:jnats` (JetStream client)                   |
+| **Compatible with**   | NATS Server 2.10+, JetStream enabled                 |
 
 ### `What` this component is — and what it isn't
 
-| ✅ It gives you | ❌ It does not give you |
-|-----------------|------------------------|
-| Connection management + auto-reconnect | A NATS server (run nats-server separately) |
-| Request / reply RPC pattern | Cluster orchestration (use nats-box / helm) |
-| JetStream durable streams + KV / Object Store | Long-running saga (use Temporal) |
-| Idempotency via JetStream message dedup | MQTT 5.0 (use [`atlas-richie-component-mqtt`](../atlas-richie-component-mqtt/README.md)) |
-| Tracing integration (W3C traceparent) | Schema registry (define Protobuf manually) |
+| ✅ It gives you                               | ❌ It does not give you                                                                  |
+|-----------------------------------------------|------------------------------------------------------------------------------------------|
+| Connection management + auto-reconnect        | A NATS server (run nats-server separately)                                               |
+| Request / reply RPC pattern                   | Cluster orchestration (use nats-box / helm)                                              |
+| JetStream durable streams + KV / Object Store | Long-running saga (use Temporal)                                                         |
+| Idempotency via JetStream message dedup       | MQTT 5.0 (use [`atlas-richie-component-mqtt`](../atlas-richie-component-mqtt/README.md)) |
+| Tracing integration (W3C traceparent)         | Schema registry (define Protobuf manually)                                               |
 
 ## ✨ Features
 
@@ -239,15 +241,15 @@ jetStreamPublisher.publish(
 
 ## ⚙️ Configuration Reference
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `servers` | List<String> | – | NATS server URLs |
-| `connection.name` | String | – | Client name (visible in `nats conns`) |
-| `connection.reconnect-wait-seconds` | int | `2` | Initial reconnect wait |
-| `connection.reconnect-wait-max-seconds` | int | `30` | Max reconnect wait |
-| `connection.ping-interval-seconds` | int | `60` | PING interval |
-| `jetstream.enabled` | boolean | `true` | Enable JetStream |
-| `jetstream.domain` | String | – | JS domain (prefix) |
+| Property                                | Type         | Default | Description                           |
+|-----------------------------------------|--------------|---------|---------------------------------------|
+| `servers`                               | List<String> | –       | NATS server URLs                      |
+| `connection.name`                       | String       | –       | Client name (visible in `nats conns`) |
+| `connection.reconnect-wait-seconds`     | int          | `2`     | Initial reconnect wait                |
+| `connection.reconnect-wait-max-seconds` | int          | `30`    | Max reconnect wait                    |
+| `connection.ping-interval-seconds`      | int          | `60`    | PING interval                         |
+| `jetstream.enabled`                     | boolean      | `true`  | Enable JetStream                      |
+| `jetstream.domain`                      | String       | –       | JS domain (prefix)                    |
 
 ## 🎯 Best Practices
 
@@ -259,11 +261,11 @@ jetStreamPublisher.publish(
 
 ## ⚠️ Known Limitations
 
-| Limitation | Impact | Workaround |
-|------------|--------|------------|
-| **No built-in schema validation** | Wrong message types fail at consumer | Protobuf / Avro + CI |
-| **Limited cross-region replication** | Geo-replicated JetStream is complex | Use leaf nodes + sync replicas |
-| **JetStream dedup window is per-stream** | Configurable but finite | Set `max-age` ≥ dedup window |
+| Limitation                               | Impact                               | Workaround                     |
+|------------------------------------------|--------------------------------------|--------------------------------|
+| **No built-in schema validation**        | Wrong message types fail at consumer | Protobuf / Avro + CI           |
+| **Limited cross-region replication**     | Geo-replicated JetStream is complex  | Use leaf nodes + sync replicas |
+| **JetStream dedup window is per-stream** | Configurable but finite              | Set `max-age` ≥ dedup window   |
 
 ## ❓ FAQ
 
@@ -277,7 +279,8 @@ Yes — they share the same connection. Configure both as needed.
 
 ### `Q3` — `How` do `I` trace `NATS` calls across services?
 
-The component auto-propagates `traceparent` headers. Wire with [`atlas-richie-component-tracing`](../atlas-richie-component-tracing/README.md).
+The component auto-propagates `traceparent` headers. Wire with [
+`atlas-richie-component-tracing`](../atlas-richie-component-tracing/README.md).
 
 ### `Q4` — `What` happens if the broker is down?
 
@@ -287,7 +290,8 @@ Auto-reconnect with backoff. Pending publishes are buffered; JetStream publishes
 
 - **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
 - **Tracing** — [`../atlas-richie-component-tracing/README.md`](../atlas-richie-component-tracing/README.md)
-- **Microservice** — [`../atlas-richie-component-microservice/README.md`](../atlas-richie-component-microservice/README.md)
+- **Microservice** — [
+  `../atlas-richie-component-microservice/README.md`](../atlas-richie-component-microservice/README.md)
 - External: [NATS docs](https://docs.nats.io/) · [JetStream](https://docs.nats.io/nats-concepts/jetstream)
 
 ---

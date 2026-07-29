@@ -15,11 +15,11 @@
  */
 package cn.richie696.component.ai.provider.pangu;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
 import cn.richie696.component.ai.provider.sign.AppCodeSigner;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.core.HttpRequest;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.ai.audio.transcription.AudioTranscription;
 import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
 import org.springframework.ai.audio.transcription.AudioTranscriptionResponse;
@@ -43,7 +43,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public class PanguTranscriptionModel implements TranscriptionModel {
 
-    /** 当前冲刺约定的盘古 STT 默认端点。 */
+    /**
+     * 当前冲刺约定的盘古 STT 默认端点。
+     */
     public static final String DEFAULT_STT_URL =
             "https://pangu.cn-north-4.myhuaweicloud.com/v1.0/voice/asr/sentence";
 
@@ -90,7 +92,7 @@ public class PanguTranscriptionModel implements TranscriptionModel {
      *
      * @param prompt Spring AI 语音转写提示
      * @return 异步语音转写响应
-     * @throws NullPointerException 当提示为空时
+     * @throws NullPointerException     当提示为空时
      * @throws IllegalArgumentException 当音频资源不可读时
      */
     public CompletableFuture<AudioTranscriptionResponse> callAsync(
@@ -171,13 +173,17 @@ public class PanguTranscriptionModel implements TranscriptionModel {
         return new AudioTranscriptionResponse(new AudioTranscription(raw.result.text));
     }
 
-    /** 盘古 STT 顶层响应。 */
+    /**
+     * 盘古 STT 顶层响应。
+     */
     private static final class PanguSttRawResponse {
         @JsonProperty("result")
         public PanguSttRawResult result;
     }
 
-    /** 盘古 STT 结果。 */
+    /**
+     * 盘古 STT 结果。
+     */
     private static final class PanguSttRawResult {
         @JsonProperty("text")
         public String text;

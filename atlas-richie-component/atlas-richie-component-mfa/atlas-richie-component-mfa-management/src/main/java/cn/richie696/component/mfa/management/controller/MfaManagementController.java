@@ -15,14 +15,14 @@
  */
 package cn.richie696.component.mfa.management.controller;
 
-import cn.richie696.component.mfa.management.dto.*;
-import cn.richie696.contract.model.ApiResult;
 import cn.richie696.component.mfa.core.config.MfaProperties;
 import cn.richie696.component.mfa.core.entity.MfaTrustedDevice;
 import cn.richie696.component.mfa.core.support.MfaTenantSupport;
+import cn.richie696.component.mfa.management.dto.*;
 import cn.richie696.component.mfa.management.manager.MfaBindManager;
 import cn.richie696.component.mfa.management.manager.MfaStatusManager;
 import cn.richie696.component.mfa.management.manager.TrustedDeviceManager;
+import cn.richie696.contract.model.ApiResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;

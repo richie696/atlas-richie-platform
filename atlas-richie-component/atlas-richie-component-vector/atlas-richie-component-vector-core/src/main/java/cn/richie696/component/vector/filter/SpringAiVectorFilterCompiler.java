@@ -3,6 +3,7 @@ package cn.richie696.component.vector.filter;
 import cn.richie696.component.vector.model.VectorFilter;
 
 import java.util.stream.Collectors;
+import java.util.List;
 
 /**
  * Spring AI metadata filter DSL 编译器；仅适用于明确声明支持该 DSL 的 provider。
@@ -43,12 +44,15 @@ public final class SpringAiVectorFilterCompiler implements VectorFilterCompiler 
         return switch (filter) {
             case VectorFilter.Eq eq -> field(eq.field()) + " == " + literal(eq.value());
             case VectorFilter.In in -> field(in.field()) + " IN " + list(in.values());
-            case VectorFilter.ContainsAny containsAny -> field(containsAny.field()) + " IN " + list(containsAny.values());
+            case VectorFilter.ContainsAny containsAny ->
+                    field(containsAny.field()) + " IN " + list(containsAny.values());
             case VectorFilter.Range range -> range(range);
             case VectorFilter.Exists exists -> field(exists.field()) + " != null";
             case VectorFilter.Not not -> "NOT (" + compile(not.filter()) + ")";
-            case VectorFilter.And and -> and.filters().stream().map(this::compile).collect(Collectors.joining(" AND ", "(", ")"));
-            case VectorFilter.Or or -> or.filters().stream().map(this::compile).collect(Collectors.joining(" OR ", "(", ")"));
+            case VectorFilter.And and ->
+                    and.filters().stream().map(this::compile).collect(Collectors.joining(" AND ", "(", ")"));
+            case VectorFilter.Or or ->
+                    or.filters().stream().map(this::compile).collect(Collectors.joining(" OR ", "(", ")"));
         };
     }
 
@@ -59,13 +63,18 @@ public final class SpringAiVectorFilterCompiler implements VectorFilterCompiler 
                 + field(range.field()) + " <= " + literal(range.lessThanOrEqual()) + ")";
     }
 
-    private String list(java.util.List<?> values) { return values.stream().map(this::literal).collect(Collectors.joining(", ", "[", "]")); }
+    private String list(java.util.List<?> values) {
+        return values.stream().map(this::literal).collect(Collectors.joining(", ", "[", "]"));
+    }
+
     private String literal(Object value) {
         if (value instanceof Number || value instanceof Boolean) return String.valueOf(value);
         return "'" + String.valueOf(value).replace("'", "\\'") + "'";
     }
+
     private String field(String field) {
-        if (!field.matches("[A-Za-z_][A-Za-z0-9_]*")) throw new IllegalArgumentException("illegal filter field: " + field);
+        if (!field.matches("[A-Za-z_][A-Za-z0-9_]*"))
+            throw new IllegalArgumentException("illegal filter field: " + field);
         return field;
     }
 }

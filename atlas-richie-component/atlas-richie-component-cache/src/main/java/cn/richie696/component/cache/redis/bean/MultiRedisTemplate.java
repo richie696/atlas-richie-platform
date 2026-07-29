@@ -15,8 +15,9 @@
  */
 package cn.richie696.component.cache.redis.bean;
 
-import cn.richie696.contract.exception.PlatformRuntimeException;
 import cn.richie696.component.cache.commons.CacheKeyUtils;
+import cn.richie696.contract.exception.PlatformRuntimeException;
+import jakarta.annotation.Nonnull;
 import lombok.Getter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.redis.connection.DataType;
@@ -24,13 +25,16 @@ import org.springframework.data.redis.connection.SortParameters;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.core.query.SortQuery;
 import org.springframework.data.redis.core.query.SortQueryBuilder;
-import jakarta.annotation.Nonnull;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -45,19 +49,22 @@ import java.util.concurrent.TimeUnit;
  *   <li>兼容原生 {@code RedisTemplate} 的各类操作</li>
  * </ul>
  *
+ * @param <V> value类型
  * @author richie696
  * @version 1.0
  * @since 2023-07-05 17:47:47
- * @param <V> value类型
  */
 @Getter
 public class MultiRedisTemplate<V> extends RedisTemplate<String, V> {
 
-    /** 从库/分库前缀到 RedisTemplate 的映射（prefix -> template） */
+    /**
+     * 从库/分库前缀到 RedisTemplate 的映射（prefix -> template）
+     */
     private final Map<String, MultiRedisTemplate<V>> slaveTemplateMap = new ConcurrentHashMap<>();
 
     /**
      * 设置子节点template
+     *
      * @param slaveTemplateMap 子节点template
      */
     public void setSlaveTemplateMap(Map<String, MultiRedisTemplate<V>> slaveTemplateMap) {
@@ -66,6 +73,7 @@ public class MultiRedisTemplate<V> extends RedisTemplate<String, V> {
 
     /**
      * 根据key获取对应的template
+     *
      * @param key must not be {@literal null}.
      * @return 返回删除结果
      */

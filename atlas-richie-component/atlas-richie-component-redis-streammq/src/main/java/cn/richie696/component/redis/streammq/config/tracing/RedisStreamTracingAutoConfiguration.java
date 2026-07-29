@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.redis.streammq.config.tracing;
 
+import cn.richie696.component.redis.streammq.tracing.RedisStreamTracingUtils;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
@@ -59,7 +60,9 @@ import java.util.List;
 @ConditionalOnProperty(prefix = "platform.cache.redis.stream.tracing", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class RedisStreamTracingAutoConfiguration {
 
-    /** 链路追踪配置属性 */
+    /**
+     * 链路追踪配置属性
+     */
     private final RedisStreamTracingProperties props;
 
     /**
@@ -156,6 +159,14 @@ public class RedisStreamTracingAutoConfiguration {
                 props.getServiceName(), props.getServiceVersion(), exporters.size());
 
         return sdk;
+    }
+
+    /**
+     * Redis Stream 链路追踪工具类（依赖 OpenTelemetry）。
+     */
+    @Bean
+    public RedisStreamTracingUtils redisStreamTracingUtils() {
+        return new RedisStreamTracingUtils();
     }
 }
 

@@ -2,14 +2,18 @@
 
 ## Overview
 
-`richie-component-storage-ftp` is an FTP (File Transfer Protocol) file transfer implementation built on Apache Commons Net 3.x's `FTPClient`. It provides FTP/FTPS file storage capabilities with a built-in Apache Commons Pool 2 connection pool for reuse. It is designed for integrating with traditional FTP servers or SSL/TLS-enabled FTPS servers.
+`richie-component-storage-ftp` is an FTP (File Transfer Protocol) file transfer implementation built on Apache Commons
+Net 3.x's `FTPClient`. It provides FTP/FTPS file storage capabilities with a built-in Apache Commons Pool 2 connection
+pool for reuse. It is designed for integrating with traditional FTP servers or SSL/TLS-enabled FTPS servers.
 
 ## Core Features
 
 - ✅ **FTP/FTPS Protocols** - Supports both plain FTP and SSL/TLS-encrypted FTPS
 - ✅ **Multiple Authentication Methods** - Supports regular username/password login and anonymous login
-- ✅ **Dual-Mode Architecture** - Supports two initialization modes: Auto-Init and Manual Registry, flexibly adapting to Spring Boot auto-configuration and non-Spring environments
-- ✅ **Connection Pool Reuse** - Built on Apache Commons Pool 2 to reuse `FTPClient` instances, avoiding the overhead of frequent connections
+- ✅ **Dual-Mode Architecture** - Supports two initialization modes: Auto-Init and Manual Registry, flexibly adapting to
+  Spring Boot auto-configuration and non-Spring environments
+- ✅ **Connection Pool Reuse** - Built on Apache Commons Pool 2 to reuse `FTPClient` instances, avoiding the overhead of
+  frequent connections
 - ✅ **Auto-Configuration** - Spring Boot auto-configuration
 
 ## Dual-Mode Architecture
@@ -44,23 +48,25 @@ UploadResponse response = storageEngineRegistry.getCurrentEngine()
 
 `FtpStorageEngineProvider` implements the `StorageEngineProvider` SPI and is responsible for:
 
-| Method | Description |
-|------|------|
-| `supportedEngineType()` | Returns `StorageEngineEnum.FTP` |
-| `create(properties)` | Creates the `FtpClientPool` and `FtpStorageEngine` |
-| `validate(properties)` | Validates that `FtpConfig` and `host` are required |
-| `destroy(engine)` | Closes the FTP client and releases the connection pool |
+| Method                  | Description                                            |
+|-------------------------|--------------------------------------------------------|
+| `supportedEngineType()` | Returns `StorageEngineEnum.FTP`                        |
+| `create(properties)`    | Creates the `FtpClientPool` and `FtpStorageEngine`     |
+| `validate(properties)`  | Validates that `FtpConfig` and `host` are required     |
+| `destroy(engine)`       | Closes the FTP client and releases the connection pool |
 
-In auto mode, the provider is registered as a Bean in `FtpAutoConfiguration`. In manual mode, it is discovered by the Registry through SPI.
+In auto mode, the provider is registered as a Bean in `FtpAutoConfiguration`. In manual mode, it is discovered by the
+Registry through SPI.
 
 ## Parameter Validation (ConfigValidation)
 
-Before the engine is created, the `ConfigValidation` utility class validates required parameters. If validation fails, an `IllegalArgumentException` is thrown:
+Before the engine is created, the `ConfigValidation` utility class validates required parameters. If validation fails,
+an `IllegalArgumentException` is thrown:
 
-| Parameter | Validation Rule |
-|------|---------|
-| ftp | Non-null (`FtpConfig`) |
-| host | Non-null |
+| Parameter | Validation Rule        |
+|-----------|------------------------|
+| ftp       | Non-null (`FtpConfig`) |
+| host      | Non-null               |
 
 ## Quick Start
 
@@ -137,20 +143,20 @@ public class FileService {
 
 The main configuration differences between FTP and other storage methods:
 
-| Configuration | FTP | Object Storage | Local Storage |
-|--------|-----|---------|---------|
-| **Configuration Prefix** | `platform.component.storage.ftp` | `platform.component.storage.object` | `platform.component.storage.local` |
-| **enable Field** | **Required** (true/false) | Not required | Not required |
-| **host** | **Required** (FTP server address) | Not required | Not required |
-| **port** | **Required** (default: 21) | Not required | Not required |
-| **ftpType** | **Required** (FTP/FTPS) | Not required | Not required |
-| **loginType** | **Required** (NORMAL/ANONYMOUS) | Not required | Not required |
-| **username** | Required for NORMAL login | Not required | Not required |
-| **password** | Required for NORMAL login | Not required | Not required |
-| **basePath** | Optional (default: /) | Not required | Not required |
-| **engine** | Not required | Required | Not required |
-| **endpoint** | Not required | Required | Not required |
-| **region** | Not required | Required (for some) | Not required |
+| Configuration            | FTP                               | Object Storage                      | Local Storage                      |
+|--------------------------|-----------------------------------|-------------------------------------|------------------------------------|
+| **Configuration Prefix** | `platform.component.storage.ftp`  | `platform.component.storage.object` | `platform.component.storage.local` |
+| **enable Field**         | **Required** (true/false)         | Not required                        | Not required                       |
+| **host**                 | **Required** (FTP server address) | Not required                        | Not required                       |
+| **port**                 | **Required** (default: 21)        | Not required                        | Not required                       |
+| **ftpType**              | **Required** (FTP/FTPS)           | Not required                        | Not required                       |
+| **loginType**            | **Required** (NORMAL/ANONYMOUS)   | Not required                        | Not required                       |
+| **username**             | Required for NORMAL login         | Not required                        | Not required                       |
+| **password**             | Required for NORMAL login         | Not required                        | Not required                       |
+| **basePath**             | Optional (default: /)             | Not required                        | Not required                       |
+| **engine**               | Not required                      | Required                            | Not required                       |
+| **endpoint**             | Not required                      | Required                            | Not required                       |
+| **region**               | Not required                      | Required (for some)                 | Not required                       |
 
 ### Protocol Types
 
@@ -226,15 +232,15 @@ platform:
 
 `FtpClientPool` is implemented on top of Apache Commons Pool 2. The default configuration is as follows:
 
-| Configuration | Default | Description |
-|--------|-------|------|
-| `maxTotal` | 8 | Maximum number of connections |
-| `maxIdle` | 4 | Maximum number of idle connections |
-| `minIdle` | 1 | Minimum number of idle connections |
-| `testOnBorrow` | true | Validate connection availability on borrow |
-| `testWhileIdle` | true | Validate connection availability while idle |
-| `connectTimeout` | 15 seconds | Connection timeout |
-| `dataTimeout` | 30 seconds | Data transfer timeout |
+| Configuration    | Default    | Description                                 |
+|------------------|------------|---------------------------------------------|
+| `maxTotal`       | 8          | Maximum number of connections               |
+| `maxIdle`        | 4          | Maximum number of idle connections          |
+| `minIdle`        | 1          | Minimum number of idle connections          |
+| `testOnBorrow`   | true       | Validate connection availability on borrow  |
+| `testWhileIdle`  | true       | Validate connection availability while idle |
+| `connectTimeout` | 15 seconds | Connection timeout                          |
+| `dataTimeout`    | 30 seconds | Data transfer timeout                       |
 
 > See `cn.richie696.component.storage.bean.FtpConfig` for the detailed field definitions.
 
@@ -264,14 +270,17 @@ platform:
         systemKey: UNIX            # Directory listing parser (UNIX/VMS/WINDOWS, etc.)
 ```
 
-Supported `SystemKey` values: `UNIX`, `UNIX_LTRIM`, `VMS`, `WINDOWS`, `OS/2`, `OS/400`, `AS/400`, `MVS`, `L8`, `NETWARE`, `MACOS_PETER`, corresponding to different FTP server implementations.
+Supported `SystemKey` values: `UNIX`, `UNIX_LTRIM`, `VMS`, `WINDOWS`, `OS/2`, `OS/400`, `AS/400`, `MVS`, `L8`,
+`NETWARE`, `MACOS_PETER`, corresponding to different FTP server implementations.
 
 ### Active/Passive Mode
 
 FTP supports two connection modes for data transfer:
 
-- **Passive Mode (PASV, default)**: The client opens the data connection, and the server responds. Suitable for scenarios where the client is behind a firewall/router.
-- **Active Mode (PORT)**: The server opens the data connection back to the client, which requires allowing inbound ports on the client.
+- **Passive Mode (PASV, default)**: The client opens the data connection, and the server responds. Suitable for
+  scenarios where the client is behind a firewall/router.
+- **Active Mode (PORT)**: The server opens the data connection back to the client, which requires allowing inbound ports
+  on the client.
 
 ```yaml
 platform:
@@ -285,11 +294,15 @@ platform:
 
 ### 1. FTP and FTPS Dual Protocol Support
 
-Based on `ftpType`, the component automatically selects `FTPClient` (plain) or `FTPSClient` (SSL/TLS). FTPS enables encryption on both the control connection and the data connection, satisfying scenarios with strict transmission security requirements.
+Based on `ftpType`, the component automatically selects `FTPClient` (plain) or `FTPSClient` (SSL/TLS). FTPS enables
+encryption on both the control connection and the data connection, satisfying scenarios with strict transmission
+security requirements.
 
 ### 2. Connection Pool Reuse
 
-`FtpClientPool` is built on Apache Commons Pool 2. It borrows and returns `FTPClient` instances on demand, avoiding the need to establish a new TCP connection for every operation, significantly improving throughput and reducing the risk of connection storms.
+`FtpClientPool` is built on Apache Commons Pool 2. It borrows and returns `FTPClient` instances on demand, avoiding the
+need to establish a new TCP connection for every operation, significantly improving throughput and reducing the risk of
+connection storms.
 
 ### 3. Automatic Directory Creation
 
@@ -297,54 +310,64 @@ When uploading a file, if the target directory does not exist, it is created aut
 
 ### 4. Character Set and Server Adaptation
 
-The `charset` and `serverLanguageCode` settings handle file name encoding issues across FTP servers in different regions. The `systemKey` setting switches the directory listing parser to adapt to Windows / UNIX / VMS / AS400 servers.
+The `charset` and `serverLanguageCode` settings handle file name encoding issues across FTP servers in different
+regions. The `systemKey` setting switches the directory listing parser to adapt to Windows / UNIX / VMS / AS400 servers.
 
 ## Best Practices
 
 1. **Protocol and Authentication Selection**
-   - Public, open, or non-sensitive scenarios: use anonymous ANONYMOUS for downloads only
-   - Trusted internal network environments: use plain FTP with username and password
-   - Sensitive data: use FTPS (SSL/TLS) encrypted transmission
+    - Public, open, or non-sensitive scenarios: use anonymous ANONYMOUS for downloads only
+    - Trusted internal network environments: use plain FTP with username and password
+    - Sensitive data: use FTPS (SSL/TLS) encrypted transmission
 
 2. **Security**
-   - Do not hardcode passwords in configuration files
-   - Use environment variables or a secrets management service
-   - Prefer FTPS over plain FTP
-   - Rotate usernames and passwords regularly
+    - Do not hardcode passwords in configuration files
+    - Use environment variables or a secrets management service
+    - Prefer FTPS over plain FTP
+    - Rotate usernames and passwords regularly
 
 3. **Network Configuration**
-   - In passive mode (default), make sure the application server can reach the FTP server's high ports for outbound traffic
-   - In active mode, make sure the FTP server can connect back to the application server
-   - Configure firewall rules to allow FTP control/data ports
-   - Consider using a leased line or VPN to improve transfer stability
+    - In passive mode (default), make sure the application server can reach the FTP server's high ports for outbound
+      traffic
+    - In active mode, make sure the FTP server can connect back to the application server
+    - Configure firewall rules to allow FTP control/data ports
+    - Consider using a leased line or VPN to improve transfer stability
 
 4. **Connection Pool Tuning**
-   - High-concurrency upload scenarios: increase `maxTotal` appropriately, and raise `maxIdle` accordingly to reduce jitter
-   - Low-frequency scenarios: keep the default 8/4/1 to avoid occupying too many FTP server sessions
-   - Long idle scenarios: keep `testWhileIdle=true` so the pool automatically reclaims invalid connections
+    - High-concurrency upload scenarios: increase `maxTotal` appropriately, and raise `maxIdle` accordingly to reduce
+      jitter
+    - Low-frequency scenarios: keep the default 8/4/1 to avoid occupying too many FTP server sessions
+    - Long idle scenarios: keep `testWhileIdle=true` so the pool automatically reclaims invalid connections
 
 5. **Path Management**
-   - Use `basePath` to organize file structure
-   - Avoid overly deep directory hierarchies
-   - Periodically clean up unneeded files
+    - Use `basePath` to organize file structure
+    - Avoid overly deep directory hierarchies
+    - Periodically clean up unneeded files
 
 ## Frequently Asked Questions
 
 ### Q: What is the difference between FTP and SFTP?
 
-A: FTP and SFTP are two completely different protocols. FTP is based on plain TCP, with usernames, passwords, and file contents transmitted in cleartext. SFTP is based on encrypted SSH transport and is more secure. This component implements FTP/FTPS. For SFTP, use `richie-component-storage-sftp`.
+A: FTP and SFTP are two completely different protocols. FTP is based on plain TCP, with usernames, passwords, and file
+contents transmitted in cleartext. SFTP is based on encrypted SSH transport and is more secure. This component
+implements FTP/FTPS. For SFTP, use `richie-component-storage-sftp`.
 
 ### Q: How should I choose between FTP and FTPS?
 
-A: For open public network environments or scenarios with security requirements, FTPS is recommended. Simply set `ftpType: FTPS`, with no code changes required. FTPS uses the same port 21 as FTP and upgrades the connection via SSL/TLS handshake.
+A: For open public network environments or scenarios with security requirements, FTPS is recommended. Simply set
+`ftpType: FTPS`, with no code changes required. FTPS uses the same port 21 as FTP and upgrades the connection via
+SSL/TLS handshake.
 
 ### Q: Why does an uploaded file with a Chinese name show garbled characters?
 
-A: Make sure `charset` matches the server's character set. The common practice is to keep `UTF-8` and pair it with `serverLanguageCode: zh`. If the server is Windows, you can also set `systemKey: WINDOWS`.
+A: Make sure `charset` matches the server's character set. The common practice is to keep `UTF-8` and pair it with
+`serverLanguageCode: zh`. If the server is Windows, you can also set `systemKey: WINDOWS`.
 
 ### Q: What should I do if an upload fails with a connection timeout?
 
-A: First check the network and firewall: in passive mode you need to allow the FTP server's data ports to connect back to the client; in active mode you need to open inbound ports on the application server. You can also increase `connectTimeout` / `dataTimeout` appropriately.
+A: First check the network and firewall: in passive mode you need to allow the FTP server's data ports to connect back
+to the client; in active mode you need to open inbound ports on the application server. You can also increase
+`connectTimeout` / `dataTimeout` appropriately.
 
 ### Q: How can I test the FTP connection?
 
@@ -360,11 +383,14 @@ lftp -e "set ssl:verify-certificate no; login ftpuser your-password; ls" ftps://
 
 ### Q: Does this support resumable uploads and presigned uploads?
 
-A: The FTP protocol itself does not support presigned direct upload URLs. `issueDirectUploadPolicy` always returns `fallback=true`, forcing the business side to use server-side proxy upload. Resumable uploads are also outside the scope of the FTP protocol. If you need these capabilities, use an object storage service.
+A: The FTP protocol itself does not support presigned direct upload URLs. `issueDirectUploadPolicy` always returns
+`fallback=true`, forcing the business side to use server-side proxy upload. Resumable uploads are also outside the scope
+of the FTP protocol. If you need these capabilities, use an object storage service.
 
 ### Q: Does this support image processing (`putImage`)?
 
-A: No. FTP has no native image processing capability. Calling `putImage` will throw an `UnsupportedOperationException`. For image processing, use an object storage engine.
+A: No. FTP has no native image processing capability. Calling `putImage` will throw an `UnsupportedOperationException`.
+For image processing, use an object storage engine.
 
 ## Related Documentation
 

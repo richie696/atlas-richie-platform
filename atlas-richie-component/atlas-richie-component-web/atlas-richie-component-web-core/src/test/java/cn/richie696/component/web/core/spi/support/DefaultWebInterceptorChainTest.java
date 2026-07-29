@@ -36,9 +36,20 @@ class DefaultWebInterceptorChainTest {
     void proceed_runsInterceptorsInRegistrationOrder() throws Exception {
         List<String> trace = new ArrayList<>();
         List<WebInterceptor> interceptors = List.of(
-                (ctx, chain) -> { trace.add("A:before"); chain.proceed(ctx); trace.add("A:after"); },
-                (ctx, chain) -> { trace.add("B:before"); chain.proceed(ctx); trace.add("B:after"); },
-                (ctx, chain) -> { trace.add("C:before"); /* 链末不 proceed */ trace.add("C:after"); }
+                (ctx, chain) -> {
+                    trace.add("A:before");
+                    chain.proceed(ctx);
+                    trace.add("A:after");
+                },
+                (ctx, chain) -> {
+                    trace.add("B:before");
+                    chain.proceed(ctx);
+                    trace.add("B:after");
+                },
+                (ctx, chain) -> {
+                    trace.add("C:before"); /* 链末不 proceed */
+                    trace.add("C:after");
+                }
         );
         DefaultWebInterceptorChain chain = new DefaultWebInterceptorChain(interceptors);
 
@@ -62,7 +73,11 @@ class DefaultWebInterceptorChainTest {
                     // 不调用 chain.proceed
                     trace.add("A:after");
                 },
-                (c, chain) -> { trace.add("B:before"); chain.proceed(c); trace.add("B:after"); }
+                (c, chain) -> {
+                    trace.add("B:before");
+                    chain.proceed(c);
+                    trace.add("B:after");
+                }
         );
         DefaultWebInterceptorChain chain = new DefaultWebInterceptorChain(interceptors);
 
@@ -83,7 +98,10 @@ class DefaultWebInterceptorChainTest {
         List<String> trace = new ArrayList<>();
         WebRequestContext ctx = newCtx();
         List<WebInterceptor> interceptors = List.of(
-                (c, chain) -> { trace.add("only"); chain.proceed(c); /* 链末 no-op，不抛 */ }
+                (c, chain) -> {
+                    trace.add("only");
+                    chain.proceed(c); /* 链末 no-op，不抛 */
+                }
         );
         DefaultWebInterceptorChain chain = new DefaultWebInterceptorChain(interceptors);
 
@@ -97,8 +115,12 @@ class DefaultWebInterceptorChainTest {
         WebRequestContext ctx = newCtx();
         IllegalStateException boom = new IllegalStateException("downstream boom");
         List<WebInterceptor> interceptors = List.of(
-                (c, chain) -> { chain.proceed(c); }, // 触发下游异常
-                (c, chain) -> { throw boom; }
+                (c, chain) -> {
+                    chain.proceed(c);
+                }, // 触发下游异常
+                (c, chain) -> {
+                    throw boom;
+                }
         );
         DefaultWebInterceptorChain chain = new DefaultWebInterceptorChain(interceptors);
 
@@ -112,8 +134,16 @@ class DefaultWebInterceptorChainTest {
         WebRequestContext ctx = newCtx();
         IllegalArgumentException boom = new IllegalArgumentException("dispatcher boom");
         List<WebInterceptor> interceptors = List.of(
-                (c, chain) -> { try { chain.proceed(c); } catch (Exception e) { /* 吞掉 —— 不应发生，但若发生 */ throw new RuntimeException("wrapper", e); } },
-                (c, chain) -> { throw boom; }
+                (c, chain) -> {
+                    try {
+                        chain.proceed(c);
+                    } catch (Exception e) { /* 吞掉 —— 不应发生，但若发生 */
+                        throw new RuntimeException("wrapper", e);
+                    }
+                },
+                (c, chain) -> {
+                    throw boom;
+                }
         );
         DefaultWebInterceptorChain chain = new DefaultWebInterceptorChain(interceptors);
 
@@ -124,21 +154,27 @@ class DefaultWebInterceptorChainTest {
 
     @Test
     void interceptors_returnsUnmodifiableList() {
-        List<WebInterceptor> interceptors = List.of((ctx, chain) -> {});
+        List<WebInterceptor> interceptors = List.of((ctx, chain) -> {
+        });
         DefaultWebInterceptorChain chain = new DefaultWebInterceptorChain(interceptors);
 
         List<WebInterceptor> view = chain.interceptors();
         assertThat(view).hasSize(1);
 
-        assertThatThrownBy(() -> view.add((ctx, ch) -> {}))
+        assertThatThrownBy(() -> view.add((ctx, ch) -> {
+        }))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
     void currentIndex_advancesAsProceedCalled() throws Exception {
         DefaultWebInterceptorChain chain = new DefaultWebInterceptorChain(List.of(
-                (ctx, c) -> { /* 0 */ c.proceed(ctx); },
-                (ctx, c) -> { /* 1 */ c.proceed(ctx); },
+                (ctx, c) -> { /* 0 */
+                    c.proceed(ctx);
+                },
+                (ctx, c) -> { /* 1 */
+                    c.proceed(ctx);
+                },
                 (ctx, c) -> { /* 2 —— 末尾 */ }
         ));
 

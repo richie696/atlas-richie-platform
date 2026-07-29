@@ -28,7 +28,7 @@ import org.springframework.context.annotation.Primary;
  * @since 2022-09-27
  */
 @Primary
-@ConfigurationProperties(prefix = "spring.cloud.stream.pulsar.binder")
+@ConfigurationProperties(prefix = "platform.component.messaging.pulsar.binder")
 public class PulsarBinderProperties extends PulsarBinderConfigurationProperties {
 
     /**

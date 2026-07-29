@@ -15,8 +15,8 @@ import cn.richie696.component.vector.model.VectorRecord;
  *       不会创建多条记录</li>
  *   <li><b>ID 生成</b>：未提供 {@code vectorId} 时由服务生成 UUID 并回填；
  *       返回值即实际写入的主键，业务方应保存用于后续 delete/update</li>
-     *   <li><b>模态路由</b>：根据 {@link VectorRecord#content} 自动选择文本 / 图像
-     *       嵌入模型，由 {@code AbstractVectorService.embedRecord} 统一编排</li>
+ *   <li><b>模态路由</b>：根据 {@link VectorRecord#content} 自动选择文本 / 图像
+ *       嵌入模型，由 {@code AbstractVectorService.embedRecord} 统一编排</li>
  * </ul>
  *
  * <p>调用关系：
@@ -48,11 +48,11 @@ public interface VectorRecordWriteOperations {
      *
      * @param record 待写入的记录；必须包含 {@code indexName} 和 {@code content}
      * @return 实际写入的 {@code vectorId}（若调用方传了 {@code id} 则原样返回，否则为新生成的 UUID）
-     * @throws IllegalArgumentException                     {@code record} / {@code indexName} /
-     *                                                       {@code content} 为空时
-     * @throws cn.richie696.component.vector.exceptions.UnsupportedModalityException                 写入图像内容但 provider 未配置
-     *                                                       image 嵌入模型时
-     * @throws IllegalStateException                        嵌入模型未配置时
+     * @throws IllegalArgumentException                                              {@code record} / {@code indexName} /
+     *                                                                               {@code content} 为空时
+     * @throws cn.richie696.component.vector.exceptions.UnsupportedModalityException 写入图像内容但 provider 未配置
+     *                                                                               image 嵌入模型时
+     * @throws IllegalStateException                                                 嵌入模型未配置时
      */
     String upsert(VectorRecord record);
 

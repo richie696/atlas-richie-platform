@@ -16,14 +16,17 @@
 package cn.richie696.component.cache.local.util;
 
 import jakarta.annotation.PreDestroy;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 防御性拷贝工具类
@@ -127,16 +130,16 @@ public class DefensiveCopyUtils {
      * 不可变类型集合（无需拷贝）
      */
     private static final Set<Class<?>> IMMUTABLE_TYPES = Set.of(
-        String.class, Integer.class, Long.class, Double.class, Float.class,
-        Boolean.class, Byte.class, Short.class, Character.class,
-        java.math.BigDecimal.class, java.math.BigInteger.class
+            String.class, Integer.class, Long.class, Double.class, Float.class,
+            Boolean.class, Byte.class, Short.class, Character.class,
+            java.math.BigDecimal.class, java.math.BigInteger.class
     );
 
     /**
      * 智能深拷贝
      *
      * @param original 原始对象
-     * @param <T> 对象类型
+     * @param <T>      对象类型
      * @return 拷贝后的对象，如果 original 为 null 则返回 null
      */
     @SuppressWarnings("unchecked")
@@ -185,8 +188,8 @@ public class DefensiveCopyUtils {
      * 深拷贝 Map
      *
      * @param original 原始 Map 对象
-     * @param <K> Key 类型
-     * @param <V> Value 类型
+     * @param <K>      Key 类型
+     * @param <V>      Value 类型
      * @return 拷贝后的 Map 对象
      */
     @SuppressWarnings("unchecked")
@@ -204,7 +207,7 @@ public class DefensiveCopyUtils {
      * 深拷贝 List
      *
      * @param original 原始 List 对象
-     * @param <T> 元素类型
+     * @param <T>      元素类型
      * @return 拷贝后的 List 对象
      */
     @SuppressWarnings("unchecked")
@@ -220,7 +223,7 @@ public class DefensiveCopyUtils {
      * 深拷贝 Set
      *
      * @param original 原始 Set 对象
-     * @param <T> 元素类型
+     * @param <T>      元素类型
      * @return 拷贝后的 Set 对象
      */
     @SuppressWarnings("unchecked")
@@ -237,7 +240,7 @@ public class DefensiveCopyUtils {
      * 从对象池获取 Fury 实例，使用后归还
      *
      * @param original 原始对象
-     * @param <T> 对象类型
+     * @param <T>      对象类型
      * @return 拷贝后的对象
      */
     @SuppressWarnings("unchecked")

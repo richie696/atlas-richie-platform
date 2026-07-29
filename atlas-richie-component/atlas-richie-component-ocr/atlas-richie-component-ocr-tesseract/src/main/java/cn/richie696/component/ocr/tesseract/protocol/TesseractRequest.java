@@ -21,13 +21,13 @@ package cn.richie696.component.ocr.tesseract.protocol;
  * <p>由 {@code TesseractOcrProvider.toProviderRequest} 构造,
  * 由 {@code TesseractOcrProvider.callProvider} 消费.
  *
+ * @param imageData    待识别的图片原始字节（Tesseract CLI 不支持 stdin + TSV, 故先物化为字节数组）
+ * @param language     Tesseract 语言码（多语言以 {@code eng+chi_sim} 形式拼接）
+ * @param tessdataPath Tesseract 训练数据目录绝对路径, 通过 {@code TESSDATA_PREFIX} 环境变量传入子进程
+ * @param timeoutMs    单次识别子进程的超时时间, 单位毫秒
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-11
- * @param imageData 待识别的图片原始字节（Tesseract CLI 不支持 stdin + TSV, 故先物化为字节数组）
- * @param language Tesseract 语言码（多语言以 {@code eng+chi_sim} 形式拼接）
- * @param tessdataPath Tesseract 训练数据目录绝对路径, 通过 {@code TESSDATA_PREFIX} 环境变量传入子进程
- * @param timeoutMs 单次识别子进程的超时时间, 单位毫秒
  */
 public record TesseractRequest(
         byte[] imageData,

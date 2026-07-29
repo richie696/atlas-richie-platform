@@ -22,8 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.qdrant.QdrantVectorStore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -44,7 +44,7 @@ public class QdrantVectorAutoConfiguration {
      * 典型配置：spring.ai.vectorstore.qdrant.*
      */
     @Bean
-    @ConditionalOnProperty(prefix = "platform.component.vector", name="provider", havingValue = "qdrant")
+    @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "qdrant")
     public VectorStore qdrantVectorStore(EmbeddingModel embeddingModel, QdRantConfig config, QdrantClient qdrantClient) {
         return QdrantVectorStore.builder(qdrantClient, embeddingModel)
                 .collectionName(config.getCollection())
@@ -56,7 +56,7 @@ public class QdrantVectorAutoConfiguration {
      * QdrantClient 客户端实例
      */
     @Bean
-    @ConditionalOnProperty(prefix = "platform.component.vector", name="provider", havingValue = "qdrant")
+    @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "qdrant")
     public QdrantClient qdrantClient(QdRantConfig config) {
         return new QdrantClient(QdrantGrpcClient.newBuilder(
                 config.getHost(),

@@ -33,9 +33,11 @@ import java.time.Instant;
 public record ReloadEvent(
         String name,
         Instant timestamp
-) implements HookEvent {
+) implements
 
-    public static ReloadEvent of(String name) {
+HookEvent {
+
+    public static ReloadEvent of (String name){
         return new ReloadEvent(name, Instant.now());
     }
 }

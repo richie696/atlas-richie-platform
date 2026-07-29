@@ -23,11 +23,11 @@ import cn.richie696.component.ocr.model.OcrOptions;
  * <p>vendor: {@code volcano}；API 协议类型: HTTP JSON 同步识别请求；
  * 配置方式: 由 {@code platform.component.ocr.volcano.*} 决定 endpoint、region 与 AWS4 凭据。</p>
  *
+ * @param imageBase64 不带 {@code data:} URI 前缀的图片字节 Base64
+ * @param options     调用侧 OCR 识别选项，会随请求上下文一起保留给 Provider 使用
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-12
- * @param imageBase64 不带 {@code data:} URI 前缀的图片字节 Base64
- * @param options 调用侧 OCR 识别选项，会随请求上下文一起保留给 Provider 使用
  */
 public record VolcanoRequest(String imageBase64, OcrOptions options) {
 }

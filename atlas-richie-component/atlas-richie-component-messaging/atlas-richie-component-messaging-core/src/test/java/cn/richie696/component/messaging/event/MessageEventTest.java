@@ -21,6 +21,7 @@ import tools.jackson.core.type.TypeReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import java.util.Map;
 
 class MessageEventTest {
 
@@ -72,7 +73,8 @@ class MessageEventTest {
     @Test
     void getBody_supportsTypeReference() {
         MessageEvent event = new MessageEvent("orders", java.util.Map.of("k", "v"));
-        assertThat(event.getBody(new TypeReference<java.util.Map<String, String>>() {}))
+        assertThat(event.getBody(new TypeReference<java.util.Map<String, String>>() {
+        }))
                 .containsEntry("k", "v");
     }
 }

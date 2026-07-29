@@ -57,10 +57,14 @@ import java.util.Base64;
  */
 public class ModalityAwareEmbeddingService {
 
-    /** 文本嵌入模型 — 必填。 */
+    /**
+     * 文本嵌入模型 — 必填。
+     */
     private EmbeddingModel textModel;
 
-    /** 图像嵌入模型 — 可选（CLIP/SigLIP 未配置时为 {@code null}）。 */
+    /**
+     * 图像嵌入模型 — 可选（CLIP/SigLIP 未配置时为 {@code null}）。
+     */
     @Nullable
     private EmbeddingModel imageModel;
 
@@ -74,8 +78,8 @@ public class ModalityAwareEmbeddingService {
      * @param textModel  文本嵌入模型，必填
      * @param imageModel 图像嵌入模型，可为 {@code null}
      */
-public ModalityAwareEmbeddingService(EmbeddingModel textModel,
-                                          @Nullable @Qualifier("imageEmbeddingModel") EmbeddingModel imageModel) {
+    public ModalityAwareEmbeddingService(EmbeddingModel textModel,
+                                         @Nullable @Qualifier("imageEmbeddingModel") EmbeddingModel imageModel) {
         if (textModel == null) {
             throw new IllegalArgumentException("textModel 不能为空 — 文本嵌入是基线能力");
         }

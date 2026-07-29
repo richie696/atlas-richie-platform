@@ -79,14 +79,14 @@ public class TenantHealthIndicator implements ApplicationRunner {
 
         if (tenantInfoProvider instanceof NoOpTenantInfoProvider) {
             String message = "TenantInfoProvider is still NoOpTenantInfoProvider. "
-                + "Multi-tenancy is enabled but no real SPI implementation has been provided. "
-                + "Please implement TenantInfoProvider (e.g. querying sys_tenant table) "
-                + "and register it as a Spring Bean to override the NoOp default.";
+                    + "Multi-tenancy is enabled but no real SPI implementation has been provided. "
+                    + "Please implement TenantInfoProvider (e.g. querying sys_tenant table) "
+                    + "and register it as a Spring Bean to override the NoOp default.";
             log.error("[多租户] {}", message);
             throw new IllegalStateException(message);
         }
 
         log.info("[多租户] SPI 健康检查通过: TenantInfoProvider={}",
-            tenantInfoProvider.getClass().getSimpleName());
+                tenantInfoProvider.getClass().getSimpleName());
     }
 }

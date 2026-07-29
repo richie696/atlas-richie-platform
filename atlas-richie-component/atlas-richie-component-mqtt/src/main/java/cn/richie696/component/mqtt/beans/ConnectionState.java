@@ -47,7 +47,7 @@ public enum ConnectionState {
     /**
      * 连接中
      */
-    CONNECTING, 
+    CONNECTING,
 
     /**
      * 网络恢复

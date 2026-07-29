@@ -15,7 +15,6 @@
  */
 package cn.richie696.component.mqtt.integration;
 
-import com.hivemq.client.mqtt.MqttClientState;
 import cn.richie696.component.mqtt.beans.ConnectionState;
 import cn.richie696.component.mqtt.beans.ConnectionStateEvent;
 import cn.richie696.component.mqtt.client.ConnectionManager;
@@ -23,6 +22,7 @@ import cn.richie696.component.mqtt.config.MqttClientProperties;
 import cn.richie696.component.mqtt.config.ServerInfo;
 import cn.richie696.component.mqtt.enums.NetworkTypeEnum;
 import cn.richie696.component.mqtt.support.MqttIntegrationTestSupport;
+import com.hivemq.client.mqtt.MqttClientState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;

@@ -17,11 +17,7 @@ package cn.richie696.component.tenant.interceptor;
 
 import cn.richie696.component.tenant.config.MultiTenancyProperties;
 import cn.richie696.component.tenant.context.TableSuffixHolder;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 

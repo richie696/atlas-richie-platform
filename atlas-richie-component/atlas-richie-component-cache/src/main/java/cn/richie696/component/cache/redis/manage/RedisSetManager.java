@@ -15,17 +15,18 @@
  */
 package cn.richie696.component.cache.redis.manage;
 
-import cn.richie696.context.utils.data.JsonUtils;
-import cn.richie696.context.bloom.BloomFilter;
 import cn.richie696.component.cache.config.CacheProperties;
 import cn.richie696.component.cache.enums.L2CachingRegion;
 import cn.richie696.component.cache.function.CacheFunction;
-import cn.richie696.component.cache.ops.CacheInfrastructure;
 import cn.richie696.component.cache.function.SetFunction;
 import cn.richie696.component.cache.local.manage.LocalCache;
+import cn.richie696.component.cache.ops.CacheInfrastructure;
 import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
 import cn.richie696.component.cache.redis.perf.RedisOperationCatalog;
 import cn.richie696.component.cache.redis.perf.RedisPerfGuard;
+import cn.richie696.context.bloom.BloomFilter;
+import cn.richie696.context.utils.data.JsonUtils;
+import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -33,7 +34,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.SessionCallback;
-import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -57,23 +57,35 @@ import java.util.stream.Collectors;
 @ConditionalOnExpression("'${platform.cache.cache-provider:REDIS}'=='REDIS'")
 public class RedisSetManager implements SetFunction {
 
-    /** Redis 模板（JSON 序列化） */
+    /**
+     * Redis 模板（JSON 序列化）
+     */
     @Qualifier("jsonTemplate")
     private final MultiRedisTemplate<Object> redisTemplate;
 
-    /** 缓存配置 */
+    /**
+     * 缓存配置
+     */
     private final CacheProperties cacheProperties;
 
-    /** 布隆过滤器门面 */
+    /**
+     * 布隆过滤器门面
+     */
     private final BloomFilter bloomFilter;
 
-    /** 分布式锁管理器 */
+    /**
+     * 分布式锁管理器
+     */
     private final RedisLockManager lockManager;
 
-    /** 缓存框架内部基础设施（L2 开关、key 类型等） */
+    /**
+     * 缓存框架内部基础设施（L2 开关、key 类型等）
+     */
     private final CacheInfrastructure infra;
 
-    /** Redis 性能守卫（可选启用） */
+    /**
+     * Redis 性能守卫（可选启用）
+     */
     private final RedisPerfGuard redisPerfGuard;
 
     /**

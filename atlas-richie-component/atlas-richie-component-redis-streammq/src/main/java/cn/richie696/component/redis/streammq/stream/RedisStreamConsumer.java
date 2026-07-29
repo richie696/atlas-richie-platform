@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.redis.streammq.stream;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.lang.annotation.ElementType;
@@ -44,6 +45,7 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@ConditionalOnProperty(prefix = "platform.cache.redis.stream", name = "enabled", havingValue = "true", matchIfMissing = true)
 @Component
 public @interface RedisStreamConsumer {
 

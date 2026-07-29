@@ -32,11 +32,11 @@ import java.util.List;
  *   <li>{@link LineText} —— 行级子结构（{@code Text} / {@code Confidence} / {@code Rect}）</li>
  * </ul>
  *
+ * @param responseMetadata 响应元数据
+ * @param result           结果
  * @author richie696
  * @version 1.0.0
  * @since 2026-07-12
- * @param responseMetadata 响应元数据
- * @param result 结果
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record VolcanoOcrEnvelope(
@@ -52,8 +52,9 @@ public record VolcanoOcrEnvelope(
      * @param error 错误信息
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record ResponseMetadata(
-            @JsonProperty("Error") ErrorBody error) {}
+    public record ResponseMetadata (
+            @JsonProperty("Error") ErrorBody error){
+    }
 
     /**
      * 错误信息
@@ -65,9 +66,10 @@ public record VolcanoOcrEnvelope(
      * @param message 错误消息
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record ErrorBody(
+    public record ErrorBody (
             @JsonProperty("Code") String code,
-            @JsonProperty("Message") String message) {}
+            @JsonProperty("Message") String message){
+    }
 
     /**
      * 结果
@@ -79,9 +81,10 @@ public record VolcanoOcrEnvelope(
      * @param texts 文本块列表
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Result(
+    public record Result (
             @JsonProperty("RequestId") String requestId,
-            @JsonProperty("Texts") List<TextBlock> texts) {}
+            @JsonProperty("Texts") List < TextBlock > texts){
+    }
 
     /**
      * 文本块
@@ -95,11 +98,12 @@ public record VolcanoOcrEnvelope(
      * @param lineTexts 行级文本列表
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record TextBlock(
+    public record TextBlock (
             @JsonProperty("Text") String text,
             @JsonProperty("Confidence") Double confidence,
             @JsonProperty("Rect") Rect rect,
-            @JsonProperty("LineTexts") List<LineText> lineTexts) {}
+            @JsonProperty("LineTexts") List < LineText > lineTexts){
+    }
 
     /**
      * 行级文本
@@ -112,10 +116,11 @@ public record VolcanoOcrEnvelope(
      * @param rect 文本位置
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record LineText(
+    public record LineText (
             @JsonProperty("Text") String text,
             @JsonProperty("Confidence") Double confidence,
-            @JsonProperty("Rect") Rect rect) {}
+            @JsonProperty("Rect") Rect rect){
+    }
 
     /**
      * 文本位置
@@ -129,9 +134,10 @@ public record VolcanoOcrEnvelope(
      * @param height 高度
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Rect(
+    public record Rect (
             @JsonProperty("X") Integer x,
             @JsonProperty("Y") Integer y,
             @JsonProperty("Width") Integer width,
-            @JsonProperty("Height") Integer height) {}
+            @JsonProperty("Height") Integer height){
+    }
 }

@@ -15,12 +15,12 @@
  */
 package cn.richie696.component.desensitize.jackson.config;
 
-import cn.richie696.context.utils.data.JsonUtils;
-import cn.richie696.context.utils.data.config.JsonUtilsModuleAutoConfiguration;
 import cn.richie696.component.desensitize.core.annotation.Sensitive;
 import cn.richie696.component.desensitize.core.config.DesensitizeAutoConfiguration;
 import cn.richie696.component.desensitize.core.model.MaskScene;
 import cn.richie696.component.desensitize.core.model.MaskType;
+import cn.richie696.context.utils.data.JsonUtils;
+import cn.richie696.context.utils.data.config.JsonUtilsModuleAutoConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -29,12 +29,13 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * JacksonDesensitizeAutoConfigurationTest 测试类。
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 class JacksonDesensitizeAutoConfigurationTest {
 

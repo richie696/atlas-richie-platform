@@ -19,7 +19,6 @@ import cn.richie696.component.redis.streammq.StreamMQ;
 import cn.richie696.component.redis.streammq.bean.DeadLetterMessage;
 import cn.richie696.component.redis.streammq.stream.EventContext;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -52,7 +51,6 @@ import java.io.StringWriter;
  * @since 2025-12-09
  */
 @Slf4j
-@Component
 public class DeadLetterQueueUtil {
 
     /**
@@ -84,9 +82,9 @@ public class DeadLetterQueueUtil {
      * 发送消息到死信队列（使用默认策略）
      *
      * @param originalMessage 原始消息
-     * @param error 异常信息
-     * @param ctx 事件上下文
-     * @param sourceConsumer 来源消费者类
+     * @param error           异常信息
+     * @param ctx             事件上下文
+     * @param sourceConsumer  来源消费者类
      */
     public static void sendToDeadLetterQueue(Object originalMessage, Throwable error, EventContext ctx, Class<?> sourceConsumer) {
         sendToDeadLetterQueue(originalMessage, error, ctx, sourceConsumer, DeadLetterStrategy.GLOBAL);
@@ -96,13 +94,13 @@ public class DeadLetterQueueUtil {
      * 发送消息到死信队列（指定策略）
      *
      * @param originalMessage 原始消息
-     * @param error 异常信息
-     * @param ctx 事件上下文
-     * @param sourceConsumer 来源消费者类
-     * @param strategy 死信队列策略
+     * @param error           异常信息
+     * @param ctx             事件上下文
+     * @param sourceConsumer  来源消费者类
+     * @param strategy        死信队列策略
      */
     public static void sendToDeadLetterQueue(Object originalMessage, Throwable error, EventContext ctx,
-                                    Class<?> sourceConsumer, DeadLetterStrategy strategy) {
+                                             Class<?> sourceConsumer, DeadLetterStrategy strategy) {
         try {
             // 构建死信队列消息
             DeadLetterMessage deadLetterMessage = buildDeadLetterMessage(originalMessage, error, ctx, sourceConsumer);
@@ -129,7 +127,7 @@ public class DeadLetterQueueUtil {
      * @return 死信消息对象
      */
     private static DeadLetterMessage buildDeadLetterMessage(Object originalMessage, Throwable error,
-                                                   EventContext ctx, Class<?> sourceConsumer) {
+                                                            EventContext ctx, Class<?> sourceConsumer) {
         return DeadLetterMessage.of(originalMessage, error, ctx, sourceConsumer.getSimpleName());
     }
 
@@ -141,7 +139,7 @@ public class DeadLetterQueueUtil {
      * @param strategy          发送策略
      */
     private static void sendToDeadLetterQueues(DeadLetterMessage deadLetterMessage, String originalStreamKey,
-                                      DeadLetterStrategy strategy) {
+                                               DeadLetterStrategy strategy) {
         switch (strategy) {
             case GLOBAL:
                 sendToDeadLetterQueue(deadLetterMessage, "dlq:global");
@@ -171,7 +169,7 @@ public class DeadLetterQueueUtil {
     /**
      * 发送到指定死信队列
      *
-     * @param deadLetterMessage  死信消息
+     * @param deadLetterMessage   死信消息
      * @param deadLetterStreamKey 死信队列 Stream 键
      */
     private static void sendToDeadLetterQueue(DeadLetterMessage deadLetterMessage, String deadLetterStreamKey) {

@@ -29,9 +29,9 @@ package cn.richie696.component.web.core.spi;
  * </ul>
  *
  * @param interceptor 触发决策的拦截器名（{@code SimpleName}），便于日志检索；如 {@code "RateLimitInterceptor"}
- * @param key 决策键（rate-limit / circuit-breaker 使用的 key），可空
- * @param status 决策 HTTP 状态码（如 429 / 503）
- * @param reason 决策原因（自由文本，brief），如 {@code "rate_limit.exceeded"} / {@code "circuit_breaker.open"}
+ * @param key         决策键（rate-limit / circuit-breaker 使用的 key），可空
+ * @param status      决策 HTTP 状态码（如 429 / 503）
+ * @param reason      决策原因（自由文本，brief），如 {@code "rate_limit.exceeded"} / {@code "circuit_breaker.open"}
  * @author richie696
  * @since 2026-07
  */
@@ -44,21 +44,21 @@ public record WebFilterDecision(
     /**
      * 限流拒绝事件的便捷工厂。
      */
-    public static WebFilterDecision rateLimitDeny(String interceptor, String key, int status) {
+    public static WebFilterDecision rateLimitDeny (String interceptor, String key,int status){
         return new WebFilterDecision(interceptor, key, status, "rate_limit.exceeded");
     }
 
     /**
      * 熔断拒绝事件的便捷工厂。
      */
-    public static WebFilterDecision circuitBreakerDeny(String interceptor, String key, int status) {
+    public static WebFilterDecision circuitBreakerDeny (String interceptor, String key,int status){
         return new WebFilterDecision(interceptor, key, status, "circuit_breaker.open");
     }
 
     /**
      * 是否为 deny 决策（4xx / 5xx）。
      */
-    public boolean isDeny() {
+    public boolean isDeny () {
         return status >= 400;
     }
 }

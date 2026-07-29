@@ -39,7 +39,9 @@ import java.util.Optional;
 @Slf4j
 public class RequestSizeGuard {
 
-    /** HTTP/1.1 标准：name + ": " + value + "\r\n" 每条 header 占用的字节开销近似值。 */
+    /**
+     * HTTP/1.1 标准：name + ": " + value + "\r\n" 每条 header 占用的字节开销近似值。
+     */
     private static final int HEADER_LINE_OVERHEAD_BYTES = 4;
 
     private final long maxBodyBytes;

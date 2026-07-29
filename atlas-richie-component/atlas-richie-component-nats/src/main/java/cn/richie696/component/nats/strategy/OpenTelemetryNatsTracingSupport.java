@@ -30,6 +30,7 @@ import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapSetter;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import java.lang.Iterable;
 
 /**
  * 基于 OpenTelemetry 的 NATS 链路追踪实现
@@ -47,10 +48,14 @@ public class OpenTelemetryNatsTracingSupport implements NatsTracingSupport {
     private static final AttributeKey<String> MESSAGING_DESTINATION = AttributeKey.stringKey("messaging.destination.name");
     private static final AttributeKey<String> MESSAGING_OPERATION = AttributeKey.stringKey("messaging.operation");
 
-    /** W3C 标准 TextMap 注入器 — 将 trace context 写入 NATS Headers */
+    /**
+     * W3C 标准 TextMap 注入器 — 将 trace context 写入 NATS Headers
+     */
     private static final TextMapSetter<Headers> SETTER = Headers::put;
 
-    /** W3C 标准 TextMap 提取器 — 从 NATS Headers 中提取 trace context */
+    /**
+     * W3C 标准 TextMap 提取器 — 从 NATS Headers 中提取 trace context
+     */
     private static final TextMapGetter<Headers> GETTER = new TextMapGetter<>() {
         @Override
         public Iterable<String> keys(Headers headers) {

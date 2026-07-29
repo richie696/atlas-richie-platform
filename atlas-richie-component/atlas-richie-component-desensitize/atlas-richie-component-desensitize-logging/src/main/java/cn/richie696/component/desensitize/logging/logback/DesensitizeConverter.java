@@ -31,8 +31,8 @@ import cn.richie696.component.desensitize.logging.service.LoggingMaskingService;
  * }</pre>
  *
  * @author @richie696
- * @since 1.0.0
  * @version 1.0
+ * @since 1.0.0
  */
 public class DesensitizeConverter extends ClassicConverter {
 
@@ -40,6 +40,7 @@ public class DesensitizeConverter extends ClassicConverter {
 
     /**
      * convert。
+     *
      * @param event 参数
      * @return 处理结果
      */

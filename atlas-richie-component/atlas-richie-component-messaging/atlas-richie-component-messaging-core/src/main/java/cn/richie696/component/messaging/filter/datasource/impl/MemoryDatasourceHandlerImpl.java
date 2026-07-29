@@ -64,7 +64,7 @@ public class MemoryDatasourceHandlerImpl implements DatasourceHandler {
      * 注意：内存实现使用 ConcurrentHashMap，put 操作是线程安全的，但检查+写入不是原子操作。
      * 在高并发场景下，建议使用 Redis 实现（RedisDatasourceHandlerImpl）。
      *
-     * @param message   带保存的消息
+     * @param message 带保存的消息
      * @param expired 该消息的过期时间（单位：毫秒）
      * @return 返回保存结果（true：成功保存，消息首次处理；false：消息已存在，重复消息）
      */
@@ -77,7 +77,7 @@ public class MemoryDatasourceHandlerImpl implements DatasourceHandler {
             // 消息已存在（重复），返回 false
             if (log.isDebugEnabled()) {
                 log.debug("消息已存在，无法重复保存。key: {}, messageId: {}", key, message.getPayload().getMessageId());
-        }
+            }
             return false;
         }
         // 成功写入，消息标记为已处理

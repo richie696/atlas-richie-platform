@@ -15,19 +15,17 @@
  */
 package cn.richie696.component.ai.provider.support;
 
+import cn.richie696.component.ai.api.RerankModel;
+import cn.richie696.component.ai.api.image.ImageEmbeddingModel;
 import cn.richie696.component.ai.config.AiModelProperties;
 import cn.richie696.component.ai.config.multimodal.image.ImageEmbeddingModelConfig;
 import cn.richie696.component.ai.config.multimodal.image.ImageEmbeddingProvider;
-import cn.richie696.component.ai.config.multimodal.rerank.RerankProvider;
-
-import cn.richie696.component.ai.api.RerankModel;
 import cn.richie696.component.ai.config.multimodal.rerank.RerankModelConfig;
-
-import cn.richie696.component.ai.api.image.ImageEmbeddingModel;
+import cn.richie696.component.ai.config.multimodal.rerank.RerankProvider;
 import cn.richie696.component.ai.provider.bailian.BailianImageEmbeddingAdapter;
 import cn.richie696.component.ai.provider.bailian.BailianRerankModel;
-import cn.richie696.component.ai.provider.pangu.PanguRerankModel;
 import cn.richie696.component.ai.provider.ollama.OllamaImageEmbeddingAdapter;
+import cn.richie696.component.ai.provider.pangu.PanguRerankModel;
 import cn.richie696.component.ai.provider.tei.TeiImageEmbeddingAdapter;
 import cn.richie696.component.ai.provider.zhipu.ZhipuRerankModel;
 import cn.richie696.component.ai.support.keypool.ApiKeyPoolManager;
@@ -36,16 +34,14 @@ import cn.richie696.component.http.core.HttpRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.embedding.EmbeddingRequest;
 
+import java.util.LinkedHashSet;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.LinkedHashSet;
-import java.util.List;
+import static org.mockito.Mockito.*;
 
 /**
  * {@link MultimodalModelFactory#createRerankModel(RerankModelConfig, HttpClient)}

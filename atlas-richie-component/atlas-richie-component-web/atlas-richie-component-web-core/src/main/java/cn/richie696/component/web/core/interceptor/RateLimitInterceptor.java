@@ -19,11 +19,7 @@ import cn.richie696.component.concurrency.algorithm.RateLimiter;
 import cn.richie696.component.concurrency.registry.RateLimiterRegistry;
 import cn.richie696.component.web.core.config.ratelimit.RateLimitProperties;
 import cn.richie696.component.web.core.metrics.WebMetrics;
-import cn.richie696.component.web.core.spi.KeyResolver;
-import cn.richie696.component.web.core.spi.WebFilterDecision;
-import cn.richie696.component.web.core.spi.WebInterceptor;
-import cn.richie696.component.web.core.spi.WebInterceptorChain;
-import cn.richie696.component.web.core.spi.WebRequestContext;
+import cn.richie696.component.web.core.spi.*;
 import cn.richie696.contract.model.ApiResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
@@ -78,7 +74,9 @@ public class RateLimitInterceptor implements WebInterceptor, Ordered {
      */
     public static final String ATTR_KEY = "rate_limit.key";
 
-    /** 未命中 routes 时的默认 pattern 标记。 */
+    /**
+     * 未命中 routes 时的默认 pattern 标记。
+     */
     static final String GLOBAL_PATTERN = "__global__";
 
     private static final AntPathMatcher ANT_MATCHER = new AntPathMatcher();
@@ -210,5 +208,6 @@ public class RateLimitInterceptor implements WebInterceptor, Ordered {
      * route 匹配结果：{@code pattern} 始终非 null（未匹配时为 {@link #GLOBAL_PATTERN}）；
      * {@code routeConfig} 在未匹配或 routes 为空时为 null。
      */
-    record MatchedRoute(String pattern, RateLimitProperties.RouteConfig routeConfig) {}
+    record MatchedRoute(String pattern, RateLimitProperties.RouteConfig routeConfig) {
+    }
 }

@@ -15,30 +15,23 @@
  */
 package cn.richie696.component.ai.provider.zhipu;
 
-import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
-
 import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
-
+import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
 import cn.richie696.component.http.core.HttpResponse;
 import cn.richie696.context.utils.data.JsonUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
+import org.springframework.ai.audio.transcription.AudioTranscriptionResponse;
 import org.springframework.ai.audio.tts.TextToSpeechOptions;
 import org.springframework.ai.audio.tts.TextToSpeechPrompt;
 import org.springframework.ai.audio.tts.TextToSpeechResponse;
-import org.springframework.ai.audio.transcription.AudioTranscriptionResponse;
 import org.springframework.core.io.Resource;
 
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * 智谱 GLM-TTS / GLM-ASR 适配器的纯单元测试（hermetic —— 不发起真实网络请求）。

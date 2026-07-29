@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.messaging.config;
 
+import cn.richie696.component.messaging.filter.CanaryMessageFilter;
 import cn.richie696.contract.constant.GlobalConstants;
 import cn.richie696.contract.gateway.config.DeployConfig;
-import cn.richie696.component.messaging.filter.CanaryMessageFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,9 +49,13 @@ import java.util.Map;
 @RefreshScope
 public class CanaryInstanceManager {
 
-    /** 服务发现客户端，用于获取当前实例列表与元数据 */
+    /**
+     * 服务发现客户端，用于获取当前实例列表与元数据
+     */
     private final DiscoveryClient discoveryClient;
-    /** 当前应用名 */
+    /**
+     * 当前应用名
+     */
     private final String applicationName;
 
     /**
@@ -59,7 +63,9 @@ public class CanaryInstanceManager {
      */
     private final DeployConfig deployConfig;
 
-    /** 灰度消息过滤器（可选），配置刷新时用于清除其缓存 */
+    /**
+     * 灰度消息过滤器（可选），配置刷新时用于清除其缓存
+     */
     @Autowired(required = false)
     private CanaryMessageFilter canaryMessageFilter;
 
@@ -68,7 +74,7 @@ public class CanaryInstanceManager {
      *
      * @param discoveryClient 服务发现客户端
      * @param applicationName 当前应用名
-     * @param deployConfig     Gateway 灰度配置
+     * @param deployConfig    Gateway 灰度配置
      */
     public CanaryInstanceManager(
             DiscoveryClient discoveryClient,

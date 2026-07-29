@@ -17,16 +17,8 @@ package cn.richie696.component.parser;
 
 import cn.richie696.component.parser.config.ParserProperties;
 import cn.richie696.component.parser.exception.DocumentParseException;
-import cn.richie696.component.parser.internal.Format;
-import cn.richie696.component.parser.internal.FormatDetector;
-import cn.richie696.component.parser.internal.ParserRouter;
-import cn.richie696.component.parser.internal.ReadEventAdapter;
-import cn.richie696.component.parser.internal.UrlFetcher;
-import cn.richie696.component.parser.model.ParsedSection;
-import cn.richie696.component.parser.model.ReadEvent;
-import cn.richie696.component.parser.model.ReadListener;
-import cn.richie696.component.parser.model.ReadResult;
-import cn.richie696.component.parser.model.ReadSummary;
+import cn.richie696.component.parser.internal.*;
+import cn.richie696.component.parser.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 
@@ -41,6 +33,10 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.lang.AutoCloseable;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 文档解析门面 — 业务方接触的唯一公开 API。
@@ -77,13 +73,17 @@ public class DocumentReader {
 
     // ============ Batch sync reads ============
 
-    /** 同步解析本地文件, 返回 {@link ReadResult}; 失败抛 {@link DocumentParseException}。 */
+    /**
+     * 同步解析本地文件, 返回 {@link ReadResult}; 失败抛 {@link DocumentParseException}。
+     */
     public ReadResult read(File file) {
         log.info("read() entry: file={}", file);
         return read(file, defaultContext());
     }
 
-    /** 使用调用方指定的资源限制同步解析本地文件。 */
+    /**
+     * 使用调用方指定的资源限制同步解析本地文件。
+     */
     public ReadResult read(File file, ParserContext context) {
         Objects.requireNonNull(file, "file must not be null");
         return runSync(sourceFromFile(file), file.getName(), context);
@@ -100,19 +100,25 @@ public class DocumentReader {
         return read(in, nameHint, defaultContext());
     }
 
-    /** 使用调用方指定的资源限制同步解析输入流。 */
+    /**
+     * 使用调用方指定的资源限制同步解析输入流。
+     */
     public ReadResult read(InputStream in, String nameHint, ParserContext context) {
         Objects.requireNonNull(in, "in must not be null");
         return runSync(new ParserSource.StreamSource(in, nameHint), nameHint, context);
     }
 
-    /** 同步解析 URL, 走 {@link UrlFetcher} 三道防线。 */
+    /**
+     * 同步解析 URL, 走 {@link UrlFetcher} 三道防线。
+     */
     public ReadResult read(URL url) {
         log.info("read() entry: url={}", url);
         return read(url, defaultContext());
     }
 
-    /** 使用调用方指定的资源限制同步解析 URL。 */
+    /**
+     * 使用调用方指定的资源限制同步解析 URL。
+     */
     public ReadResult read(URL url, ParserContext context) {
         Objects.requireNonNull(url, "url must not be null");
         return runSync(
@@ -161,7 +167,9 @@ public class DocumentReader {
         readStreaming(file, listener, defaultContext());
     }
 
-    /** 使用调用方指定的资源限制流式解析本地文件。 */
+    /**
+     * 使用调用方指定的资源限制流式解析本地文件。
+     */
     public void readStreaming(File file, ReadListener listener, ParserContext context) {
         Objects.requireNonNull(file, "file must not be null");
         Objects.requireNonNull(listener, "listener must not be null");
@@ -180,7 +188,9 @@ public class DocumentReader {
         readStreaming(in, nameHint, listener, defaultContext());
     }
 
-    /** 使用调用方指定的资源限制流式解析输入流。 */
+    /**
+     * 使用调用方指定的资源限制流式解析输入流。
+     */
     public void readStreaming(InputStream in, String nameHint, ReadListener listener, ParserContext context) {
         Objects.requireNonNull(in, "in must not be null");
         Objects.requireNonNull(listener, "listener must not be null");
@@ -198,7 +208,9 @@ public class DocumentReader {
         return readPublisher(file, defaultContext());
     }
 
-    /** 使用调用方指定的资源限制发布文件解析事件。 */
+    /**
+     * 使用调用方指定的资源限制发布文件解析事件。
+     */
     public Flow.Publisher<ReadEvent> readPublisher(File file, ParserContext context) {
         Objects.requireNonNull(file, "file must not be null");
         return new ReadEventPublisher(listener -> readStreaming(file, listener, context));
@@ -212,7 +224,9 @@ public class DocumentReader {
         return readPublisher(in, nameHint, defaultContext());
     }
 
-    /** 使用调用方指定的资源限制发布输入流解析事件。取消订阅时会关闭输入流。 */
+    /**
+     * 使用调用方指定的资源限制发布输入流解析事件。取消订阅时会关闭输入流。
+     */
     public Flow.Publisher<ReadEvent> readPublisher(InputStream in, String nameHint, ParserContext context) {
         Objects.requireNonNull(in, "in must not be null");
         return new ReadEventPublisher(listener -> readStreaming(in, nameHint, listener, context), in);
@@ -261,7 +275,9 @@ public class DocumentReader {
         return sink.toResult();
     }
 
-    /** 对公开 listener API 统一把基础设施失败映射为终止事件；同步 API 则保留异常语义。 */
+    /**
+     * 对公开 listener API 统一把基础设施失败映射为终止事件；同步 API 则保留异常语义。
+     */
     private void runStreamForListener(ParserSource source, String displayName, ReadListener listener,
                                       ParserContext context) {
         try {
@@ -303,7 +319,7 @@ public class DocumentReader {
     }
 
     private @NonNull ParseListener getParseListener(String displayName, ReadListener outListener,
-                                                     ParserContext context) {
+                                                    ParserContext context) {
         Instant deadline = Instant.now().plus(context.timeout());
         return event -> {
             if (Instant.now().isAfter(deadline)) {
@@ -388,7 +404,9 @@ public class DocumentReader {
 
     // ============ Accumulators ============
 
-    /** 同步模式累加器 — 把 Section / Image 收进 ReadResult; Failed 直接抛出。 */
+    /**
+     * 同步模式累加器 — 把 Section / Image 收进 ReadResult; Failed 直接抛出。
+     */
     private static final class SyncAccumulator implements ReadListener {
         private final List<ParsedSection> sections = new ArrayList<>();
         private final List<cn.richie696.component.parser.model.ParsedImage> images = new ArrayList<>();
@@ -417,7 +435,9 @@ public class DocumentReader {
         }
     }
 
-    /** 把内部 ParseListener 桥接为对外 ReadListener (sync 路径使用, 简化累加)。 */
+    /**
+     * 把内部 ParseListener 桥接为对外 ReadListener (sync 路径使用, 简化累加)。
+     */
     private static final class ReadEventRecorder {
         private ReadEventRecorder() {
         }
@@ -432,7 +452,9 @@ public class DocumentReader {
         void start(ReadListener listener);
     }
 
-    /** 单订阅、按 demand 阻塞解析线程的 Flow Publisher。 */
+    /**
+     * 单订阅、按 demand 阻塞解析线程的 Flow Publisher。
+     */
     private static final class ReadEventPublisher implements Flow.Publisher<ReadEvent> {
         private final StreamingStarter starter;
         private final AutoCloseable closeOnCancel;
@@ -558,10 +580,12 @@ public class DocumentReader {
 
         private static final class EmptySubscription implements Flow.Subscription {
             @Override
-            public void request(long n) { }
+            public void request(long n) {
+            }
 
             @Override
-            public void cancel() { }
+            public void cancel() {
+            }
         }
     }
 }

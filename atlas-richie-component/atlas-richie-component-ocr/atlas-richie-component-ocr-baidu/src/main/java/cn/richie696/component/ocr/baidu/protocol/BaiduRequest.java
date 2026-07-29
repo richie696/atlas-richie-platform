@@ -27,10 +27,10 @@ import cn.richie696.component.ocr.model.OcrOptions;
  * {@link #languageType()} 为百度原生语言代码，例如 {@code CHN_ENG}、{@code ENG}、{@code JAP}，
  * 由 {@code BaiduOcrProvider} 根据调用侧 {@link OcrOptions#languages()} 推导。
  *
- * @param imageUrl 图片公网访问地址；当 {@code imageBase64} 携带图片内容时为 {@code null}
- * @param imageBase64 不带 {@code data:} URI 前缀的图片字节 Base64；使用 {@code imageUrl} 时为 {@code null}
+ * @param imageUrl     图片公网访问地址；当 {@code imageBase64} 携带图片内容时为 {@code null}
+ * @param imageBase64  不带 {@code data:} URI 前缀的图片字节 Base64；使用 {@code imageUrl} 时为 {@code null}
  * @param languageType 百度原生语言代码，不能为 {@code null}
- * @param options 调用侧 OCR 选项，会被转换为百度的 {@code recognize_granularity}、{@code prob} 等请求字段
+ * @param options      调用侧 OCR 选项，会被转换为百度的 {@code recognize_granularity}、{@code prob} 等请求字段
  */
 public record BaiduRequest(
         String imageUrl,

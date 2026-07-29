@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * @param createdAt       连接建立时刻
  * @param tags            业务标签集合（线程安全；用于 broadcastByTag）
  * @param lastHeartbeatAt 最近一次成功心跳的 epoch millis（用于 stale 检测）
- *
  * @author richie696
  * @since 2026-07
  */
@@ -49,19 +48,19 @@ public record SseConnection(String clientId,
                 new AtomicLong(System.currentTimeMillis()));
     }
 
-    public void tag(String tag) {
+    public void tag (String tag){
         tags.add(tag);
     }
 
-    public void untag(String tag) {
+    public void untag (String tag){
         tags.remove(tag);
     }
 
-    public boolean hasTag(String tag) {
+    public boolean hasTag (String tag){
         return tags.contains(tag);
     }
 
-    public void touch() {
+    public void touch () {
         lastHeartbeatAt.set(System.currentTimeMillis());
     }
 }

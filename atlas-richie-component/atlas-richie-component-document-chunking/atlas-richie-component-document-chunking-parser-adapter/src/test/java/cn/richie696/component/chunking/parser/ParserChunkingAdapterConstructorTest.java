@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.chunking.parser;
 
+import static org.mockito.ArgumentMatchers.eq;
 import cn.richie696.component.chunking.ChunkingService;
 import cn.richie696.component.chunking.model.Chunk;
 import cn.richie696.component.chunking.model.ChunkingResult;
@@ -36,11 +37,8 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -261,16 +259,23 @@ class ParserChunkingAdapterConstructorTest {
         AtomicBoolean completedRef = new AtomicBoolean();
 
         publisher.subscribe(new Flow.Subscriber<>() {
-            @Override public void onSubscribe(Flow.Subscription s) {
+            @Override
+            public void onSubscribe(Flow.Subscription s) {
                 s.request(Long.MAX_VALUE);
             }
-            @Override public void onNext(T item) {
+
+            @Override
+            public void onNext(T item) {
                 received.add(item);
             }
-            @Override public void onError(Throwable t) {
+
+            @Override
+            public void onError(Throwable t) {
                 errorRef.set(t);
             }
-            @Override public void onComplete() {
+
+            @Override
+            public void onComplete() {
                 completedRef.set(true);
             }
         });

@@ -15,14 +15,14 @@
  */
 package cn.richie696.component.storage.config;
 
-import com.ksyun.ks3.http.HttpClientConfig;
-import com.ksyun.ks3.service.Ks3;
-import com.ksyun.ks3.service.Ks3Client;
-import com.ksyun.ks3.service.Ks3ClientConfig;
 import cn.richie696.component.storage.bean.ObjectConfig;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.core.impl.Ks3StorageEngine;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
+import com.ksyun.ks3.http.HttpClientConfig;
+import com.ksyun.ks3.service.Ks3;
+import com.ksyun.ks3.service.Ks3Client;
+import com.ksyun.ks3.service.Ks3ClientConfig;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

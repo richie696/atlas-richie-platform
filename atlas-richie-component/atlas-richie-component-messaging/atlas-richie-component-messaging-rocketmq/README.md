@@ -55,11 +55,11 @@ spring:
 
 ### RocketMQ Binder 配置
 
-| 配置项                                               | 说明              | 默认值 |
-|---------------------------------------------------|-----------------|-----|
-| `spring.cloud.stream.rocketmq.binder.name-server` | Name Server 地址  | -   |
-| `spring.cloud.stream.rocketmq.binder.access-key`  | Access Key（阿里云） | -   |
-| `spring.cloud.stream.rocketmq.binder.secret-key`  | Secret Key（阿里云） | -   |
+| 配置项                                            | 说明                 | 默认值 |
+|---------------------------------------------------|----------------------|--------|
+| `spring.cloud.stream.rocketmq.binder.name-server` | Name Server 地址     | -      |
+| `spring.cloud.stream.rocketmq.binder.access-key`  | Access Key（阿里云） | -      |
+| `spring.cloud.stream.rocketmq.binder.secret-key`  | Secret Key（阿里云） | -      |
 
 ### 详细配置
 

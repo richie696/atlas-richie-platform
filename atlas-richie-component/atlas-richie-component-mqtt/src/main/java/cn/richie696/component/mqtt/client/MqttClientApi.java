@@ -90,6 +90,7 @@ public interface MqttClientApi {
 
     /**
      * 获取根主题的方法
+     *
      * @return 返回根主题
      */
     String getParentTopic();
@@ -134,7 +135,7 @@ public interface MqttClientApi {
      *
      * @param sharedTopic 完整的共享订阅 topic（格式：$share/{groupId}/businessTopic，如：$share/GID_AGENT_DEVICE/device/+/status）
      * @param callback    业务回调函数
-     * @throws IllegalArgumentException     如果 topic 格式不正确
+     * @throws IllegalArgumentException      如果 topic 格式不正确
      * @throws UnsupportedOperationException 如果使用 MQTT 3.1.1 客户端
      */
     void registerSharedConsumer(@Nonnull String sharedTopic, @Nonnull Consumer<ConsumerMessage> callback);
@@ -149,7 +150,7 @@ public interface MqttClientApi {
      * 如果使用 MQTT 3.1.1 客户端调用此方法会抛出 {@link UnsupportedOperationException}。
      *
      * @param sharedTopic 完整的共享订阅 topic（格式：$share/{groupId}/businessTopic，如：$share/GID_AGENT_DEVICE/device/+/status）
-     * @throws IllegalArgumentException     如果 topic 格式不正确
+     * @throws IllegalArgumentException      如果 topic 格式不正确
      * @throws UnsupportedOperationException 如果使用 MQTT 3.1.1 客户端
      */
     void unregisterSharedConsumer(@Nonnull String sharedTopic);
@@ -186,7 +187,7 @@ public interface MqttClientApi {
      * 初始化MQTT客户端的方法
      *
      * @param serverInfo MQTT 服务器信息
-     * @param enable 是否启动MQTT
+     * @param enable     是否启动MQTT
      */
     void initialClient(@Nonnull MqttServerInfo serverInfo, boolean enable);
 

@@ -15,9 +15,6 @@
  */
 package cn.richie696.component.storage.core.impl;
 
-import com.aliyun.oss.*;
-import com.aliyun.oss.internal.OSSHeaders;
-import com.aliyun.oss.model.*;
 import cn.richie696.component.storage.bean.DirectDownloadPolicy;
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
@@ -27,6 +24,9 @@ import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.converter.StorageTypeConverter;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.context.utils.data.JsonUtils;
+import com.aliyun.oss.*;
+import com.aliyun.oss.internal.OSSHeaders;
+import com.aliyun.oss.model.*;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -42,6 +42,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
+import java.io.File;
 
 
 /**

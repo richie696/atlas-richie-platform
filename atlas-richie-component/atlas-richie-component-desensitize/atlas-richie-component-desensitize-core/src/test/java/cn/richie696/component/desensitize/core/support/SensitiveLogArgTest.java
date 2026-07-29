@@ -15,10 +15,9 @@
  */
 package cn.richie696.component.desensitize.core.support;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import cn.richie696.component.desensitize.core.model.MaskType;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class SensitiveLogArgTest {
 
