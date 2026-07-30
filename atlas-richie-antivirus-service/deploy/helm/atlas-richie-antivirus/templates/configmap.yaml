@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "atlas-richie-antivirus.fullname" . }}
+  labels:
+    {{- include "atlas-richie-antivirus.labels" . | nindent 4 }}
+data:
+  SERVER_PORT: {{ .Values.service.port | quote }}
+  NACOS_SERVER_ADDR: {{ .Values.config.nacosServerAddr | quote }}
+  NACOS_NAMESPACE: {{ .Values.config.nacosNamespace | quote }}
+  NACOS_GROUP: {{ .Values.config.nacosGroup | quote }}
+  SPRING_DATA_REDIS_HOST: {{ .Values.config.redisHost | quote }}
+  SPRING_DATA_REDIS_PORT: {{ .Values.config.redisPort | quote }}
+  ANTIVIRUS_TASK_TTL: {{ .Values.config.taskTtl | quote }}
+  ANTIVIRUS_WORKER_CONCURRENCY: {{ .Values.config.workerConcurrency | quote }}
+  ANTIVIRUS_SCAN_LEASE_DURATION: {{ .Values.config.scanLeaseDuration | quote }}
+  ANTIVIRUS_RECOVERY_RETRY_DELAY: {{ .Values.config.recoveryRetryDelay | quote }}
+  ANTIVIRUS_RECOVERY_POLL_INTERVAL_MS: {{ .Values.config.recoveryPollIntervalMs | quote }}
+  ANTIVIRUS_RECOVERY_BATCH_SIZE: {{ .Values.config.recoveryBatchSize | quote }}
+  ANTIVIRUS_CLAMAV_ENABLED: "true"
+  ANTIVIRUS_CLAMAV_SOCKET_PATH: /tmp/clamd.sock
+  ANTIVIRUS_MAX_FILE_SIZE_BYTES: {{ .Values.config.maxFileSizeBytes | quote }}
+  ANTIVIRUS_MIME_PROBE_BYTES: {{ .Values.config.mimeProbeBytes | quote }}
+  ANTIVIRUS_DOWNLOAD_ALLOW_HTTP: {{ .Values.config.downloadAllowHttp | quote }}
+  ANTIVIRUS_DOWNLOAD_CONNECT_TIMEOUT: {{ .Values.config.downloadConnectTimeout | quote }}
+  ANTIVIRUS_DOWNLOAD_REQUEST_TIMEOUT: {{ .Values.config.downloadRequestTimeout | quote }}
+  ANTIVIRUS_DOWNLOAD_MAX_REDIRECTS: {{ .Values.config.downloadMaxRedirects | quote }}

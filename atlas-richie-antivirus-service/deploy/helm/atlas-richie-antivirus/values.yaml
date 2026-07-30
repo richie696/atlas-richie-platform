@@ -1,0 +1,72 @@
+replicaCount: 1
+
+image:
+  repository: registry.example.com/platform/atlas-richie-antivirus-service
+  tag: latest
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+service:
+  type: ClusterIP
+  port: 9600
+
+config:
+  nacosServerAddr: nacos:8848
+  nacosNamespace: public
+  nacosGroup: global
+  redisHost: redis
+  redisPort: "6379"
+  taskTtl: 72h
+  workerConcurrency: "4"
+  scanLeaseDuration: 10m
+  recoveryRetryDelay: 10s
+  recoveryPollIntervalMs: "10000"
+  recoveryBatchSize: "100"
+  maxFileSizeBytes: "209715200"
+  mimeProbeBytes: "65536"
+  downloadAllowHttp: "false"
+  downloadConnectTimeout: 5s
+  downloadRequestTimeout: 3m
+  downloadMaxRedirects: "3"
+
+# Secret 中按需提供 NACOS_USERNAME、NACOS_PASSWORD、
+# SPRING_DATA_REDIS_PASSWORD 等敏感环境变量。
+existingSecret: ""
+
+clamav:
+  maxThreads: 4
+  maxQueue: 8
+  streamMaxLength: 200M
+  maxScanTime: 120000
+  maxFileSize: 200M
+  maxScanSize: 400M
+  maxRecursion: 16
+  maxFiles: 10000
+
+# Java 与 ClamAV 位于同一容器，资源限制是两者的合计。
+resources:
+  requests:
+    cpu: "1"
+    memory: 2Gi
+    ephemeral-storage: 1Gi
+  limits:
+    cpu: "4"
+    memory: 5Gi
+    ephemeral-storage: 4Gi
+
+podSecurityContext:
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

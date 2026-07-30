@@ -1,0 +1,18 @@
+spring:
+  config:
+    import:
+      - optional:nacos:platform-cache.yaml?refreshEnabled=true
+      - optional:nacos:platform-antivirus.yaml?refreshEnabled=true
+  cloud:
+    nacos:
+      server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+      username: ${NACOS_USERNAME:}
+      password: ${NACOS_PASSWORD:}
+      discovery:
+        namespace: ${NACOS_NAMESPACE:public}
+        group: ${NACOS_GROUP:global}
+      config:
+        namespace: ${NACOS_NAMESPACE:public}
+        group: ${NACOS_GROUP:global}
+        file-extension: yaml
+        refresh-enabled: true

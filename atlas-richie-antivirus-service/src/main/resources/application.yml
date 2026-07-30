@@ -1,0 +1,70 @@
+server:
+  port: ${SERVER_PORT:9600}
+
+spring:
+  application:
+    name: platform-antivirus-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized
+
+platform:
+  component:
+    cache:
+      redis:
+        host: ${REDIS_HOST:127.0.0.1}
+        port: ${REDIS_PORT:6379}
+        password: ${REDIS_PASSWORD:}
+        timeout: ${REDIS_TIMEOUT:3s}
+        # 扫描任务由多个 Pod 共享，禁止本地二级缓存返回过期任务状态。
+        enable-l2-caching: false
+        stream:
+          enabled: true
+          consumers:
+            enabled: true
+            configs:
+              antivirus-scan-worker:
+                stream-key: ${ANTIVIRUS_TASK_STREAM:antivirus-scan-requests}
+                group: ${ANTIVIRUS_STREAM_GROUP:antivirus-service}
+                consumer: ${ANTIVIRUS_STREAM_CONSUMER:${HOSTNAME:antivirus-local}}
+                target-type: cn.richie696.antivirus.model.ScanRequestedEvent
+                # 消费者在原子登记恢复时间后手动 ACK。
+                auto-ack: false
+                concurrency: ${ANTIVIRUS_WORKER_CONCURRENCY:1}
+                count: ${ANTIVIRUS_STREAM_BATCH_SIZE:1}
+                error-strategy: NO_ACK
+                idempotency-enabled: false
+                auto-start: true
+                max-len: ${ANTIVIRUS_STREAM_MAX_LEN:10000}
+  antivirus:
+    task-ttl: ${ANTIVIRUS_TASK_TTL:72h}
+    task-key-prefix: ${ANTIVIRUS_TASK_KEY_PREFIX:antivirus:scan:task:}
+    task-stream: ${ANTIVIRUS_TASK_STREAM:antivirus-scan-requests}
+    recovery:
+      lease-duration: ${ANTIVIRUS_SCAN_LEASE_DURATION:10m}
+      retry-delay: ${ANTIVIRUS_RECOVERY_RETRY_DELAY:10s}
+      lease-key-prefix: ${ANTIVIRUS_LEASE_KEY_PREFIX:antivirus:scan:lease:}
+      schedule-key: ${ANTIVIRUS_RECOVERY_SCHEDULE_KEY:antivirus:scan:recovery}
+      poll-interval-ms: ${ANTIVIRUS_RECOVERY_POLL_INTERVAL_MS:10000}
+      batch-size: ${ANTIVIRUS_RECOVERY_BATCH_SIZE:100}
+    download:
+      allow-http: ${ANTIVIRUS_DOWNLOAD_ALLOW_HTTP:false}
+      connect-timeout: ${ANTIVIRUS_DOWNLOAD_CONNECT_TIMEOUT:5s}
+      request-timeout: ${ANTIVIRUS_DOWNLOAD_REQUEST_TIMEOUT:3m}
+      max-redirects: ${ANTIVIRUS_DOWNLOAD_MAX_REDIRECTS:3}
+    local:
+      enabled: ${ANTIVIRUS_LOCAL_ENABLED:false}
+      allowed-paths: ${ANTIVIRUS_LOCAL_ALLOWED_PATHS:/tmp}
+    clamav:
+      enabled: ${ANTIVIRUS_CLAMAV_ENABLED:false}
+      socket-path: ${ANTIVIRUS_CLAMAV_SOCKET_PATH:/tmp/clamd.sock}
+      max-file-size-bytes: ${ANTIVIRUS_MAX_FILE_SIZE_BYTES:209715200}
+      mime-probe-bytes: ${ANTIVIRUS_MIME_PROBE_BYTES:65536}

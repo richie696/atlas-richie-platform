@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "atlas-richie-antivirus.fullname" . }}-clamav
+  labels:
+    {{- include "atlas-richie-antivirus.labels" . | nindent 4 }}
+data:
+  clamd.conf: |
+    Foreground yes
+    User clamav
+    DatabaseDirectory /var/lib/clamav
+    LocalSocket /tmp/clamd.sock
+    LocalSocketGroup clamav
+    LocalSocketMode 660
+    FixStaleSocket yes
+    MaxThreads {{ .Values.clamav.maxThreads }}
+    MaxQueue {{ .Values.clamav.maxQueue }}
+    StreamMaxLength {{ .Values.clamav.streamMaxLength }}
+    MaxScanTime {{ .Values.clamav.maxScanTime }}
+    MaxFileSize {{ .Values.clamav.maxFileSize }}
+    MaxScanSize {{ .Values.clamav.maxScanSize }}
+    MaxRecursion {{ .Values.clamav.maxRecursion }}
+    MaxFiles {{ .Values.clamav.maxFiles }}
+    ReadTimeout 120
+    CommandReadTimeout 30
+    SelfCheck 600
