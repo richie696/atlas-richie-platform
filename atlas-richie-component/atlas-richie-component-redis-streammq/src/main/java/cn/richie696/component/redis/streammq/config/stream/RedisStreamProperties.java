@@ -60,7 +60,7 @@ public class RedisStreamProperties {
     /**
      * 是否启用消费者自动配置（为true时，通过配置文件自动加载消费者类，为false时，通过消费者构造函数初始化）
      */
-    private boolean enabled = true;
+    private boolean enabled = false;
 
     /**
      * 消费者配置映射

@@ -15,11 +15,14 @@
  */
 package cn.richie696.component.redis.streammq.stream;
 
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+
+import java.lang.reflect.AnnotatedElement;
 
 /**
  * 校验标了 {@link RedisStreamConsumer} 的 Bean 必须继承 {@link AbstractStreamConsumer}。
@@ -31,7 +34,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
  * <ul>
  *   <li>使用 {@link AopUtils#getTargetClass(Object)} 解析 AOP 代理后的原始类，
  *       保证 CGLIB / JDK 动态代理场景下也能正确识别继承关系与注解。</li>
- *   <li>使用 {@link AnnotatedElementUtils#findMergedAnnotation(Class, Class)} 处理
+ *   <li>使用 {@link AnnotatedElementUtils#findMergedAnnotation(AnnotatedElement, Class)} 处理
  *       元注解合并场景，与 Spring Boot 的注解处理逻辑保持一致。</li>
  * </ul>
  *
@@ -42,7 +45,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 public class RedisStreamConsumerValidator implements BeanPostProcessor {
 
     @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+    public Object postProcessAfterInitialization(@Nonnull Object bean, @Nonnull String beanName) throws BeansException {
         Class<?> targetClass = AopUtils.getTargetClass(bean);
 
         RedisStreamConsumer annotation = AnnotatedElementUtils.findMergedAnnotation(

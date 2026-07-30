@@ -25,6 +25,7 @@ import cn.richie696.component.redis.streammq.manage.RedisStreamManager;
 import cn.richie696.component.redis.streammq.monitor.RedisStreamMetrics;
 import cn.richie696.component.redis.streammq.stream.RedisStreamCleanup;
 import cn.richie696.component.redis.streammq.stream.RedisStreamConsumerValidator;
+import cn.richie696.component.redis.streammq.stream.RedisStreamIdempotencyGuard;
 import cn.richie696.component.redis.streammq.stream.RedisStreamReactor;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.api.OpenTelemetry;
@@ -79,6 +80,9 @@ public class RedisStreamAutoConfiguration {
 
     /**
      * Stream 管理器：实现 {@link StreamFunction}，封装发布/确认/事件流。
+     *
+     * <p>该 Bean 同时作为 {@link StreamFunction} 的唯一来源，
+     * 无需额外暴露 {@code StreamFunction} 类型 Bean（Spring 可按类型直接注入此 Bean）。
      */
     @Bean
     public RedisStreamManager redisStreamManager(
@@ -89,14 +93,6 @@ public class RedisStreamAutoConfiguration {
             RedisStreamMetrics metrics,
             RedisPerfGuard redisPerfGuard) {
         return new RedisStreamManager(redisTemplate, stringRedisTemplate, openTelemetry, reactor, metrics, redisPerfGuard);
-    }
-
-    /**
-     * 将 {@link RedisStreamManager} 暴露为 {@link StreamFunction} 接口（供静态门面 {@link StreamMQ} 使用）。
-     */
-    @Bean
-    public StreamFunction streamFunction(RedisStreamManager manager) {
-        return manager;
     }
 
     /**
@@ -115,6 +111,17 @@ public class RedisStreamAutoConfiguration {
         StreamMQ.initialize(streamFunction);
         log.info("StreamMQ 静态门面已初始化");
         return new Object();
+    }
+
+    /**
+     * Stream 幂等性守卫：消费侧防重放（内存快速去重 + Redis 兜底）。
+     */
+    @Bean
+    public RedisStreamIdempotencyGuard redisStreamIdempotencyGuard(
+            @Qualifier("jsonTemplate") MultiRedisTemplate<Object> redisTemplate,
+            RedisStreamIdempotencyProperties properties) {
+        log.info("配置 Redis Stream 幂等性守卫");
+        return new RedisStreamIdempotencyGuard(redisTemplate, properties);
     }
 
     /**
