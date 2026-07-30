@@ -46,7 +46,6 @@ import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.ser.std.StdSerializer;
 import tools.jackson.databind.util.StdDateFormat;
-import tools.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.time.ZonedDateTime;
@@ -300,10 +299,7 @@ public class JsonUtils {
         if (config.writeSelfReferencesAsNull != null) {
             jsonBuilder.configure(SerializationFeature.WRITE_SELF_REFERENCES_AS_NULL, config.writeSelfReferencesAsNull);
         }
-        // Jackson 3.0: WRITE_DATES_WITH_ZONE_ID 已被移除，通过自定义序列化器实现
-        // 创建 JavaTimeModule，并根据配置决定是否包含 ZoneId
-        JavaTimeModule javaTimeModule = new JavaTimeModule();
-
+        // Jackson 3.1.4+ databind 内置 JavaTimeModule；jsr310 不再单独引入。
         if (config.writeDatesWithZoneId != null && config.writeDatesWithZoneId) {
             SimpleModule zoneIdModule = getZoneIdModule();
             jsonBuilder.addModule(zoneIdModule);
@@ -349,7 +345,7 @@ public class JsonUtils {
             jsonBuilder.addModule(module);
         }
 
-        return jsonBuilder.addModule(javaTimeModule).build();
+        return jsonBuilder.build();
     }
 
     private static @Nonnull SimpleModule getZoneIdModule() {

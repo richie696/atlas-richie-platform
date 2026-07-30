@@ -92,7 +92,6 @@
         <mcp-bom.version>2.0.0</mcp-bom.version>
         <jackson-bom.version>3.2.1</jackson-bom.version>
         <jackson-annotations.version>2.22</jackson-annotations.version>
-        <jackson-datatype-jsr310.version>3.0.0-rc2</jackson-datatype-jsr310.version>
         <grpc-bom.version>1.82.0</grpc-bom.version>
         <jnats.version>2.25.3</jnats.version>
         <sentinel.version>1.8.10</sentinel.version>
@@ -178,11 +177,6 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
                 <version>${jackson-annotations.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>tools.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>${jackson-datatype-jsr310.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.modelcontextprotocol.sdk</groupId>

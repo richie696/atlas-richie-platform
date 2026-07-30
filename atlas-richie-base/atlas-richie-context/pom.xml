@@ -54,38 +54,6 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.zipkin.brave</groupId>-->
-<!--            <artifactId>brave-context-log4j2</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.zipkin.brave</groupId>-->
-<!--            <artifactId>brave-instrumentation-spring-web</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.zipkin.brave</groupId>-->
-<!--            <artifactId>brave-instrumentation-spring-rabbit</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.zipkin.brave</groupId>-->
-<!--            <artifactId>brave-instrumentation-kafka-clients</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.zipkin.brave</groupId>-->
-<!--            <artifactId>brave-instrumentation-httpclient</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.zipkin.brave</groupId>-->
-<!--            <artifactId>brave-instrumentation-httpasyncclient</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.zipkin.brave</groupId>-->
-<!--            <artifactId>brave-instrumentation-spring-webmvc</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.zipkin.brave</groupId>-->
-<!--            <artifactId>brave-instrumentation-jms</artifactId>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>core</artifactId>
@@ -113,10 +81,6 @@
         <dependency>
             <groupId>tools.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-xml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>tools.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -175,14 +139,12 @@
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-core</artifactId>
-            <version>${mybatis-plus.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-extension</artifactId>
-            <version>${mybatis-plus.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
