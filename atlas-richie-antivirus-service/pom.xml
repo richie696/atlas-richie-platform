@@ -24,6 +24,40 @@
         <jib.allow.insecure.registries>false</jib.allow.insecure.registries>
     </properties>
 
+    <profiles>
+        <!-- jib-maven-plugin 3.5.1 的 <platforms> 配置节点没有公开 setter（IDEA 会标红），
+             需要通过 jib.container.platforms 系统属性按宿主架构自动选择 base image 平台。 -->
+        <profile>
+            <id>jib-platform-arm64</id>
+            <activation>
+                <os><arch>aarch64</arch></os>
+            </activation>
+            <properties>
+                <jib.container.platforms>linux/arm64</jib.container.platforms>
+            </properties>
+        </profile>
+        <profile>
+            <id>jib-platform-x86_64</id>
+            <activation>
+                <os><arch>amd64</arch></os>
+            </activation>
+            <properties>
+                <jib.container.platforms>linux/amd64</jib.container.platforms>
+            </properties>
+        </profile>
+        <!-- Windows x64：jib 端可在 Windows 上构建 OCI tarball，由 CI 在 Linux 上 docker load。
+             这里仅提供与 aarch64/amd64 等价的属性，避免未匹配 profile 时静默回退。 -->
+        <profile>
+            <id>jib-platform-windows</id>
+            <activation>
+                <os><family>windows</family></os>
+            </activation>
+            <properties>
+                <jib.container.platforms>linux/amd64</jib.container.platforms>
+            </properties>
+        </profile>
+    </profiles>
+
     <dependencies>
         <dependency>
             <groupId>cn.richie696.base</groupId>
@@ -121,12 +155,6 @@
                             <description>${project.description}</description>
                         </labels>
                     </container>
-                    <platforms>
-                        <platform>
-                            <os>linux</os>
-                            <architecture>arm64</architecture>
-                        </platform>
-                    </platforms>
                     <outputPaths>
                         <tar>${project.build.directory}/${project.artifactId}-image.tar</tar>
                         <digest>${project.build.directory}/${project.artifactId}-image.digest</digest>
