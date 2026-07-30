@@ -18,11 +18,13 @@ package cn.richie696.component.storage.core.impl;
 import cn.richie696.component.storage.bean.DirectDownloadPolicy;
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
+import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.converter.StorageTypeConverter;
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.context.utils.data.JsonUtils;
 import com.obs.services.ObsClient;
 import com.obs.services.exception.ObsException;
@@ -318,6 +320,34 @@ public final class ObsStorageEngine extends AbstractObjectStorageEngine<ObsClien
         } finally {
             destroy(client);
         }
+    }
+
+    @Override
+    public ObjectStatResponse statObject(@Nonnull String key) {
+        String realKey = getRealPath(key);
+        ObsClient client = getClient(ObsClient.class);
+        try {
+            ObjectMetadata metadata = client.getObjectMetadata(getBucketName(), realKey);
+            Map<String, String> checksums = new java.util.LinkedHashMap<>();
+            if (metadata.getContentMd5() != null) checksums.put("MD5", metadata.getContentMd5());
+            if (metadata.getCrc64() != null) checksums.put("CRC64_ECMA", metadata.getCrc64());
+            return ObjectStatResponse.builder().success(true).exists(true).bucketName(getBucketName()).key(key)
+                    .contentLength(metadata.getContentLength()).contentType(metadata.getContentType()).contentEncoding(metadata.getContentEncoding())
+                    .lastModified(metadata.getLastModified() == null ? null : OffsetDateTime.ofInstant(metadata.getLastModified().toInstant(), ZoneId.systemDefault()))
+                    .storageClass(metadata.getStorageClass()).etag(metadata.getEtag()).checksums(Map.copyOf(checksums))
+                    .userMetadata(Map.of()).build();
+        } catch (ObsException e) {
+            return ObjectStatResponse.builder().success(false).exists(false).errorCode(e.getErrorCode()).errorMessage(e.getMessage())
+                    .bucketName(getBucketName()).key(key).build();
+        } finally { destroy(client); }
+    }
+
+    @Override
+    public void readObject(@Nonnull String key, @Nonnull ObjectStreamConsumer consumer) {
+        ObsClient client = getClient(ObsClient.class);
+        try (InputStream inputStream = client.getObject(getBucketName(), getRealPath(key)).getObjectContent()) { consumer.accept(inputStream); }
+        catch (IOException e) { throw new UncheckedIOException("读取 OBS 对象流失败: " + key, e); }
+        finally { destroy(client); }
     }
 
     @Override

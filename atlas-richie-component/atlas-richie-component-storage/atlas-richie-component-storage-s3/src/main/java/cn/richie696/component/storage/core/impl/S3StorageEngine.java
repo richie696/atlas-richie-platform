@@ -18,11 +18,13 @@ package cn.richie696.component.storage.core.impl;
 import cn.richie696.component.storage.bean.DirectDownloadPolicy;
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
+import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.converter.StorageTypeConverter;
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.context.utils.data.JsonUtils;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +48,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.io.File;
@@ -389,6 +392,53 @@ public final class S3StorageEngine extends AbstractObjectStorageEngine<S3Client>
         } catch (SdkException e) {
             log.error("检查对象存在性时发生异常: {}", e.getMessage());
             return false;
+        }
+    }
+
+    @Override
+    public ObjectStatResponse statObject(@Nonnull String key) {
+        String realKey = getRealPath(key);
+        var client = getClient(S3Client.class);
+        try {
+            HeadObjectResponse metadata = client.headObject(HeadObjectRequest.builder()
+                    .bucket(getBucketName()).key(realKey).build());
+            Map<String, String> checksums = new LinkedHashMap<>();
+            if (metadata.checksumCRC32() != null) checksums.put("CRC32", metadata.checksumCRC32());
+            if (metadata.checksumCRC32C() != null) checksums.put("CRC32C", metadata.checksumCRC32C());
+            if (metadata.checksumSHA1() != null) checksums.put("SHA1", metadata.checksumSHA1());
+            if (metadata.checksumSHA256() != null) checksums.put("SHA256", metadata.checksumSHA256());
+            return ObjectStatResponse.builder().success(true).exists(true)
+                    .bucketName(getBucketName()).key(key)
+                    .versionId(metadata.versionId()).contentLength(metadata.contentLength())
+                    .contentType(metadata.contentType()).contentEncoding(metadata.contentEncoding())
+                    .lastModified(metadata.lastModified() == null ? null
+                            : OffsetDateTime.ofInstant(metadata.lastModified(), java.time.ZoneId.systemDefault()))
+                    .storageClass(metadata.storageClassAsString())
+                    .etag(metadata.eTag()).checksums(Map.copyOf(checksums))
+                    .userMetadata(metadata.metadata() == null ? Map.of() : Map.copyOf(metadata.metadata())).build();
+        } catch (AwsServiceException e) {
+            if (e.statusCode() == 404) {
+                return ObjectStatResponse.builder().success(true).exists(false).requestId(e.requestId())
+                        .bucketName(getBucketName()).key(key).build();
+            }
+            return ObjectStatResponse.builder().success(false).exists(false).errorCode(e.awsErrorDetails() == null
+                            ? null : e.awsErrorDetails().errorCode()).errorMessage(e.getMessage())
+                    .requestId(e.requestId()).bucketName(getBucketName()).key(key).build();
+        } catch (SdkException e) {
+            return ObjectStatResponse.builder().success(false).exists(false).errorCode(e.getClass().getSimpleName())
+                    .errorMessage(e.getMessage()).bucketName(getBucketName()).key(key).build();
+        }
+    }
+
+    @Override
+    public void readObject(@Nonnull String key, @Nonnull ObjectStreamConsumer consumer) {
+        String realKey = getRealPath(key);
+        var client = getClient(S3Client.class);
+        try (InputStream inputStream = client.getObject(GetObjectRequest.builder()
+                .bucket(getBucketName()).key(realKey).build())) {
+            consumer.accept(inputStream);
+        } catch (IOException e) {
+            throw new UncheckedIOException("读取 S3 对象流失败: " + key, e);
         }
     }
 

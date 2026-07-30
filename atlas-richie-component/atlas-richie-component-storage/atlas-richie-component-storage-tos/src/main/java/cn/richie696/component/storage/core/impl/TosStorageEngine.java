@@ -18,11 +18,13 @@ package cn.richie696.component.storage.core.impl;
 import cn.richie696.component.storage.bean.DirectDownloadPolicy;
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
+import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.converter.StorageTypeConverter;
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.context.utils.data.JsonUtils;
 import com.volcengine.tos.TOSV2;
 import com.volcengine.tos.TosClientException;
@@ -346,6 +348,37 @@ public final class TosStorageEngine extends AbstractObjectStorageEngine<TOSV2> i
         } finally {
             destroy(client);
         }
+    }
+
+    @Override
+    public ObjectStatResponse statObject(@Nonnull String key) {
+        String realKey = getRealPath(key);
+        TOSV2 client = getClient(TOSV2.class);
+        try {
+            HeadObjectV2Output metadata = client.headObject(new HeadObjectV2Input().setBucket(getBucketName()).setKey(realKey));
+            Map<String, String> checksums = new java.util.LinkedHashMap<>();
+            if (metadata.getContentMD5() != null) checksums.put("MD5", metadata.getContentMD5());
+            if (metadata.getHashCrc64ecma() != null) checksums.put("CRC64_ECMA", metadata.getHashCrc64ecma());
+            return ObjectStatResponse.builder().success(true).exists(true).bucketName(getBucketName()).key(key)
+                    .versionId(metadata.getVersionID()).contentLength(metadata.getContentLength()).contentType(metadata.getContentType())
+                    .contentEncoding(metadata.getContentEncoding()).lastModified(metadata.getLastModifiedInDate() == null ? null
+                            : OffsetDateTime.ofInstant(metadata.getLastModifiedInDate().toInstant(), java.time.ZoneId.systemDefault()))
+                    .storageClass(metadata.getStorageClass() == null ? null : metadata.getStorageClass().toString()).etag(metadata.getEtag())
+                    .checksums(Map.copyOf(checksums)).userMetadata(metadata.getCustomMetadata() == null ? Map.of() : Map.copyOf(metadata.getCustomMetadata())).build();
+        } catch (TosServerException e) {
+            return ObjectStatResponse.builder().success(false).exists(false).errorCode(e.getCode()).errorMessage(e.getMessage())
+                    .requestId(e.getRequestID()).bucketName(getBucketName()).key(key).build();
+        } catch (Exception e) { return ObjectStatResponse.builder().success(false).exists(false).errorCode(e.getClass().getSimpleName()).errorMessage(e.getMessage()).bucketName(getBucketName()).key(key).build(); }
+        finally { destroy(client); }
+    }
+
+    @Override
+    public void readObject(@Nonnull String key, @Nonnull ObjectStreamConsumer consumer) {
+        TOSV2 client = getClient(TOSV2.class);
+        try (GetObjectV2Output object = client.getObject(new GetObjectV2Input().setBucket(getBucketName()).setKey(getRealPath(key)));
+             InputStream inputStream = object.getContent()) { consumer.accept(inputStream); }
+        catch (IOException e) { throw new UncheckedIOException("读取 TOS 对象流失败: " + key, e); }
+        finally { destroy(client); }
     }
 
     @Override

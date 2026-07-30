@@ -18,14 +18,17 @@ package cn.richie696.component.storage.core.impl;
 import cn.richie696.component.storage.bean.DirectDownloadPolicy;
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
+import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.component.storage.exception.StorageException;
 import cn.richie696.component.storage.support.ObjectStorageStartupProbe;
 import cn.richie696.context.utils.data.JsonUtils;
 import io.minio.*;
+import io.minio.errors.ErrorResponseException;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -341,6 +344,41 @@ public final class MinioStorageEngine extends AbstractObjectStorageEngine<MinioA
             return future.get() != null;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    @Override
+    public ObjectStatResponse statObject(@Nonnull String key) {
+        String realKey = getRealPath(key);
+        try {
+            StatObjectResponse metadata = minioClient.statObject(StatObjectArgs.builder()
+                    .bucket(getBucketName()).object(realKey).build()).get();
+            return ObjectStatResponse.builder().success(true).exists(true).bucketName(getBucketName()).key(key)
+                    .versionId(metadata.versionId()).contentLength(metadata.size()).contentType(metadata.contentType())
+                    .lastModified(metadata.lastModified() == null ? null : metadata.lastModified().toOffsetDateTime())
+                    .etag(metadata.etag())
+                    .checksums(Map.of()).userMetadata(Map.of()).build();
+        } catch (Exception e) {
+            Throwable cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof ErrorResponseException error
+                    && ("NoSuchKey".equals(error.errorResponse().code()) || "NoSuchObject".equals(error.errorResponse().code()))) {
+                return ObjectStatResponse.builder().success(true).exists(false).bucketName(getBucketName()).key(key).build();
+            }
+            return ObjectStatResponse.builder().success(false).exists(false).errorCode(cause.getClass().getSimpleName())
+                    .errorMessage(cause.getMessage()).bucketName(getBucketName()).key(key).build();
+        }
+    }
+
+    @Override
+    public void readObject(@Nonnull String key, @Nonnull ObjectStreamConsumer consumer) {
+        String realKey = getRealPath(key);
+        try (InputStream inputStream = minioClient.getObject(GetObjectArgs.builder()
+                .bucket(getBucketName()).object(realKey).build()).get()) {
+            consumer.accept(inputStream);
+        } catch (IOException e) {
+            throw new UncheckedIOException("读取 MinIO 对象流失败: " + key, e);
+        } catch (Exception e) {
+            throw new IllegalStateException("读取 MinIO 对象流失败: " + key, e);
         }
     }
 

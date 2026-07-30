@@ -18,10 +18,12 @@ package cn.richie696.component.storage.local.core.impl;
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.storage.bean.DownloadResponse;
 import cn.richie696.component.storage.bean.LocalConfig;
+import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.core.impl.AbstractDestroyEngine;
+import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.component.storage.local.repository.entity.FileMetadata;
 import cn.richie696.component.storage.local.repository.mapper.FileMetadataMapper;
 import cn.richie696.context.utils.data.JsonUtils;
@@ -258,6 +260,42 @@ public final class LocalStorageEngine extends AbstractDestroyEngine<Void> {
         GlobalCache.value().set(cacheKey, fileExists, FILE_EXISTS_TTL);
 
         return fileExists;
+    }
+
+    @Override
+    public ObjectStatResponse statObject(@Nonnull String key) {
+        Path absolutePath = getAbsolutePath(key);
+        try {
+            if (!Files.exists(absolutePath, LinkOption.NOFOLLOW_LINKS)) {
+                return ObjectStatResponse.builder().success(true).exists(false).key(key).build();
+            }
+            return ObjectStatResponse.builder()
+                    .success(true)
+                    .exists(true)
+                    .key(key)
+                    .contentLength(Files.size(absolutePath))
+                    .contentType(Objects.requireNonNullElse(Files.probeContentType(absolutePath), "application/octet-stream"))
+                    .lastModified(OffsetDateTime.ofInstant(Files.getLastModifiedTime(absolutePath).toInstant(),
+                            java.time.ZoneId.systemDefault()))
+                    .checksums(Map.of())
+                    .userMetadata(Map.of())
+                    .build();
+        } catch (IOException e) {
+            return ObjectStatResponse.builder()
+                    .success(false).exists(false).key(key)
+                    .errorCode(e.getClass().getSimpleName()).errorMessage(e.getMessage())
+                    .build();
+        }
+    }
+
+    @Override
+    public void readObject(@Nonnull String key, @Nonnull ObjectStreamConsumer consumer) {
+        Path absolutePath = getAbsolutePath(key);
+        try (InputStream inputStream = Files.newInputStream(absolutePath)) {
+            consumer.accept(inputStream);
+        } catch (IOException e) {
+            throw new UncheckedIOException("读取本地对象流失败: " + key, e);
+        }
     }
 
     private Path getAbsolutePath(String key) {

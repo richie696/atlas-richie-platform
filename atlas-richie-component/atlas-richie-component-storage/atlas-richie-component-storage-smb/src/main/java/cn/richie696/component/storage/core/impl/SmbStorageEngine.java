@@ -17,10 +17,12 @@ package cn.richie696.component.storage.core.impl;
 
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
+import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.context.utils.security.HashUtils;
 import jakarta.annotation.Nonnull;
@@ -156,6 +158,22 @@ public final class SmbStorageEngine implements StorageEngine {
             log.error("Failed to check SMB existence: key={}", key, e);
             return false;
         }
+    }
+
+    @Override
+    public ObjectStatResponse statObject(@Nonnull String key) {
+        try (var file = new SmbFile(smbUrl(key), cifsContext)) {
+            if (!file.exists()) return ObjectStatResponse.builder().success(true).exists(false).key(key).build();
+            return ObjectStatResponse.builder().success(true).exists(true).bucketName("smb").key(key)
+                    .contentLength(file.length()).lastModified(OffsetDateTime.ofInstant(java.time.Instant.ofEpochMilli(file.lastModified()), java.time.ZoneId.systemDefault()))
+                    .checksums(Map.of()).userMetadata(Map.of()).build();
+        } catch (Exception e) { return ObjectStatResponse.builder().success(false).exists(false).key(key).errorCode(e.getClass().getSimpleName()).errorMessage(e.getMessage()).build(); }
+    }
+
+    @Override
+    public void readObject(@Nonnull String key, @Nonnull ObjectStreamConsumer consumer) {
+        try (var file = new SmbFile(smbUrl(key), cifsContext); InputStream inputStream = file.getInputStream()) { consumer.accept(inputStream); }
+        catch (IOException e) { throw new UncheckedIOException("读取 SMB 对象流失败: " + key, e); }
     }
 
     @Override

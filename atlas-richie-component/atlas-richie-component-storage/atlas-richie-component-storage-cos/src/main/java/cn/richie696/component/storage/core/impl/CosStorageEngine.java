@@ -16,15 +16,20 @@
 package cn.richie696.component.storage.core.impl;
 
 import cn.richie696.component.storage.bean.DirectDownloadPolicy;
+import cn.richie696.component.storage.bean.DirectUploadRequest;
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
+import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.converter.StorageTypeConverter;
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.context.utils.data.JsonUtils;
 import com.qcloud.cos.COSClient;
+import com.qcloud.cos.Headers;
+import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.http.HttpMethodName;
 import com.qcloud.cos.model.*;
 import com.qcloud.cos.model.ciModel.persistence.PicOperations;
@@ -42,6 +47,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -206,17 +212,30 @@ public final class CosStorageEngine extends AbstractObjectStorageEngine<COSClien
 
     @Override
     public DirectUploadPolicy issueDirectUploadPolicy(@Nonnull String key, int expireSeconds) {
-        int safeExpire = Math.max(expireSeconds, 60);
-        String realKey = getRealPath(key);
+        return issueDirectUploadPolicy(DirectUploadRequest.builder()
+                .key(key)
+                .expireSeconds(expireSeconds)
+                .build());
+    }
+
+    @Override
+    public DirectUploadPolicy issueDirectUploadPolicy(@Nonnull DirectUploadRequest request) {
+        int safeExpire = Math.max(request.getExpireSeconds(), 60);
+        String realKey = getRealPath(request.getKey());
         COSClient cosClient = getClient(COSClient.class);
         try {
             Date expiration = Date.from(Instant.now().plusSeconds(safeExpire));
-            URL url = cosClient.generatePresignedUrl(getBucketName(), realKey, expiration, HttpMethodName.PUT);
+            Map<String, String> headers = buildDirectUploadHeaders(request);
+            GeneratePresignedUrlRequest presignedRequest = new GeneratePresignedUrlRequest(
+                    getBucketName(), realKey, HttpMethodName.PUT);
+            presignedRequest.setExpiration(expiration);
+            headers.forEach(presignedRequest::putCustomRequestHeader);
+            URL url = cosClient.generatePresignedUrl(presignedRequest);
             return DirectUploadPolicy.builder()
                     .success(true)
                     .method("PUT")
                     .uploadUrl(url.toString())
-                    .headers(Map.of())
+                    .headers(Map.copyOf(headers))
                     .formFields(Map.of())
                     .bucketName(getBucketName())
                     .key(realKey)
@@ -225,7 +244,84 @@ public final class CosStorageEngine extends AbstractObjectStorageEngine<COSClien
                     .build();
         } catch (Exception e) {
             log.warn("COS 预签名签发失败，降级兜底直传链接。key={}, error={}", realKey, e.getMessage());
-            return buildFallbackDirectUploadPolicy(key, safeExpire);
+            return buildFallbackDirectUploadPolicy(request.getKey(), safeExpire);
+        } finally {
+            destroy(cosClient);
+        }
+    }
+
+    @Override
+    public ObjectStatResponse statObject(@Nonnull String key) {
+        String realKey = getRealPath(key);
+        COSClient cosClient = getClient(COSClient.class);
+        try {
+            ObjectMetadata metadata = cosClient.getObjectMetadata(getBucketName(), realKey);
+            Map<String, String> checksums = new LinkedHashMap<>();
+            putIfNotBlank(checksums, "MD5", metadata.getContentMD5());
+            putIfNotBlank(checksums, "CRC64_ECMA", metadata.getCrc64Ecma());
+            putIfNotBlank(checksums, "CRC32C", metadata.getCrc32c());
+            return ObjectStatResponse.builder()
+                    .success(true)
+                    .exists(true)
+                    .requestId(metadata.getRequestId())
+                    .bucketName(getBucketName())
+                    .key(key)
+                    .versionId(metadata.getVersionId())
+                    .contentLength(metadata.getContentLength())
+                    .contentType(metadata.getContentType())
+                    .contentEncoding(metadata.getContentEncoding())
+                    .lastModified(metadata.getLastModified() == null ? null
+                            : OffsetDateTime.ofInstant(metadata.getLastModified().toInstant(), ZoneId.systemDefault()))
+                    .storageClass(metadata.getStorageClass())
+                    .etag(metadata.getETag())
+                    .checksums(Map.copyOf(checksums))
+                    .userMetadata(metadata.getUserMetadata() == null ? Map.of() : Map.copyOf(metadata.getUserMetadata()))
+                    .build();
+        } catch (CosServiceException e) {
+            if (e.getStatusCode() == 404) {
+                return ObjectStatResponse.builder()
+                        .success(true)
+                        .exists(false)
+                        .requestId(e.getRequestId())
+                        .bucketName(getBucketName())
+                        .key(key)
+                        .build();
+            }
+            log.warn("COS 对象探测失败。key={}, code={}, requestId={}, error={}",
+                    realKey, e.getErrorCode(), e.getRequestId(), e.getErrorMessage());
+            return ObjectStatResponse.builder()
+                    .success(false)
+                    .exists(false)
+                    .errorCode(e.getErrorCode())
+                    .errorMessage(e.getErrorMessage())
+                    .requestId(e.getRequestId())
+                    .bucketName(getBucketName())
+                    .key(key)
+                    .build();
+        } catch (Exception e) {
+            log.warn("COS 对象探测异常。key={}, error={}", realKey, e.getMessage());
+            return ObjectStatResponse.builder()
+                    .success(false)
+                    .exists(false)
+                    .errorCode(e.getClass().getSimpleName())
+                    .errorMessage(e.getMessage())
+                    .bucketName(getBucketName())
+                    .key(key)
+                    .build();
+        } finally {
+            destroy(cosClient);
+        }
+    }
+
+    @Override
+    public void readObject(@Nonnull String key, @Nonnull ObjectStreamConsumer consumer) {
+        String realKey = getRealPath(key);
+        COSClient cosClient = getClient(COSClient.class);
+        try (COSObject cosObject = cosClient.getObject(getBucketName(), realKey);
+             InputStream inputStream = cosObject.getObjectContent()) {
+            consumer.accept(inputStream);
+        } catch (IOException e) {
+            throw new UncheckedIOException("读取 COS 对象流失败: " + key, e);
         } finally {
             destroy(cosClient);
         }
@@ -278,12 +374,14 @@ public final class CosStorageEngine extends AbstractObjectStorageEngine<COSClien
         var upload = transferManager.upload(putObjectRequest);
         try {
             var result = upload.waitForUploadResult();
+            Map<String, String> checksums = new LinkedHashMap<>();
+            putIfNotBlank(checksums, "CRC64_ECMA", result.getCrc64Ecma());
             return UploadResponse.builder()
                     .success(true)
                     .requestId(result.getRequestId())
                     .key(getResourceKey(key))
                     .uploadTime(OffsetDateTime.now())
-                    .hashValue(result.getCrc64Ecma())
+                    .checksums(Map.copyOf(checksums))
                     .bucketName(getBucketName())
                     .versionId(result.getVersionId())
                     .url("https://" + getBucketName() + "." + objectConfig().getEndpoint() + "/" + key)
@@ -325,6 +423,43 @@ public final class CosStorageEngine extends AbstractObjectStorageEngine<COSClien
         var headerString = JsonUtils.getInstance().serialize(picOperations);
         Objects.requireNonNull(headerString, "图片处理参数序列化失败。");
         putObjectRequest.putCustomRequestHeader("Pic-Operations", headerString);
+    }
+
+    private Map<String, String> buildDirectUploadHeaders(DirectUploadRequest request) {
+        Map<String, String> headers = new LinkedHashMap<>();
+        if (request.getContentLength() != null && request.getContentLength() >= 0) {
+            headers.put(Headers.CONTENT_LENGTH, String.valueOf(request.getContentLength()));
+        }
+        putIfNotBlank(headers, Headers.CONTENT_TYPE, request.getContentType());
+        if (request.getChecksums() != null) {
+            request.getChecksums().forEach((algorithm, value) -> {
+                if (algorithm == null || value == null || value.isBlank()) {
+                    return;
+                }
+                switch (algorithm.toUpperCase(Locale.ROOT)) {
+                    case "MD5" -> headers.put(Headers.CONTENT_MD5, value);
+                    case "CRC64_ECMA" -> headers.put(Headers.COS_HASH_CRC64_ECMA, value);
+                    case "CRC32C" -> headers.put(Headers.COS_HASH_CRC32_C, value);
+                    // COS 没有 SHA-256 HEAD 字段；将客户端提供的期望值以签名用户元数据保存，供后续核验。
+                    case "SHA256" -> headers.put("x-cos-meta-sha256", value);
+                    default -> log.debug("COS 预签名不支持 checksum 算法: {}", algorithm);
+                }
+            });
+        }
+        if (request.getUserMetadata() != null) {
+            request.getUserMetadata().forEach((name, value) -> {
+                if (name != null && !name.isBlank() && value != null && !value.isBlank()) {
+                    headers.putIfAbsent("x-cos-meta-" + name.replaceFirst("(?i)^x-cos-meta-", ""), value);
+                }
+            });
+        }
+        return headers;
+    }
+
+    private static void putIfNotBlank(Map<String, String> values, String key, String value) {
+        if (value != null && !value.isBlank()) {
+            values.put(key, value);
+        }
     }
 
     private <T> DownloadResponse<T> download(boolean returnData, String key, File targetFilePath, Function<DownloadContext, Download> function) {

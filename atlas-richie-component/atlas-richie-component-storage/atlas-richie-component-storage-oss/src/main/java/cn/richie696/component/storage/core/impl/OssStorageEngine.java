@@ -18,11 +18,13 @@ package cn.richie696.component.storage.core.impl;
 import cn.richie696.component.storage.bean.DirectDownloadPolicy;
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
+import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.converter.StorageTypeConverter;
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.context.utils.data.JsonUtils;
 import com.aliyun.oss.*;
 import com.aliyun.oss.internal.OSSHeaders;
@@ -40,6 +42,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.io.File;
@@ -380,6 +383,52 @@ public final class OssStorageEngine extends AbstractObjectStorageEngine<OSS> imp
         var ossClient = getClient(OSS.class);
         try {
             return ossClient.doesObjectExist(getBucketName(), key);
+        } finally {
+            destroy(ossClient);
+        }
+    }
+
+    @Override
+    public ObjectStatResponse statObject(@Nonnull String key) {
+        String realKey = getRealPath(key);
+        OSS ossClient = getClient(OSS.class);
+        try {
+            ObjectMetadata metadata = ossClient.getObjectMetadata(getBucketName(), realKey);
+            Map<String, String> checksums = new LinkedHashMap<>();
+            if (metadata.getContentMD5() != null) checksums.put("MD5", metadata.getContentMD5());
+            if (metadata.getServerCRC() != null) checksums.put("CRC64_ECMA", metadata.getServerCRC().toString());
+            return ObjectStatResponse.builder().success(true).exists(true).bucketName(getBucketName()).key(key)
+                    .contentLength(metadata.getContentLength()).contentType(metadata.getContentType())
+                    .contentEncoding(metadata.getContentEncoding())
+                    .lastModified(metadata.getLastModified() == null ? null
+                            : OffsetDateTime.ofInstant(metadata.getLastModified().toInstant(), ZoneId.systemDefault()))
+                    .storageClass(metadata.getObjectStorageClass() == null ? null : metadata.getObjectStorageClass().toString())
+                    .etag(metadata.getETag()).checksums(Map.copyOf(checksums))
+                    .userMetadata(metadata.getUserMetadata() == null ? Map.of() : Map.copyOf(metadata.getUserMetadata())).build();
+        } catch (OSSException e) {
+            if ("NoSuchKey".equals(e.getErrorCode()) || "NoSuchObject".equals(e.getErrorCode())) {
+                return ObjectStatResponse.builder().success(true).exists(false).requestId(e.getRequestId())
+                        .bucketName(getBucketName()).key(key).build();
+            }
+            return ObjectStatResponse.builder().success(false).exists(false).errorCode(e.getErrorCode())
+                    .errorMessage(e.getMessage()).requestId(e.getRequestId()).bucketName(getBucketName()).key(key).build();
+        } catch (Exception e) {
+            return ObjectStatResponse.builder().success(false).exists(false).errorCode(e.getClass().getSimpleName())
+                    .errorMessage(e.getMessage()).bucketName(getBucketName()).key(key).build();
+        } finally {
+            destroy(ossClient);
+        }
+    }
+
+    @Override
+    public void readObject(@Nonnull String key, @Nonnull ObjectStreamConsumer consumer) {
+        String realKey = getRealPath(key);
+        OSS ossClient = getClient(OSS.class);
+        try (OSSObject object = ossClient.getObject(getBucketName(), realKey);
+             InputStream inputStream = object.getObjectContent()) {
+            consumer.accept(inputStream);
+        } catch (IOException e) {
+            throw new UncheckedIOException("读取 OSS 对象流失败: " + key, e);
         } finally {
             destroy(ossClient);
         }

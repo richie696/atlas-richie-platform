@@ -17,10 +17,12 @@ package cn.richie696.component.storage.core.impl;
 
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
+import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.component.storage.pool.SftpSessionPool;
 import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.context.utils.security.HashUtils;
@@ -197,6 +199,33 @@ public final class SftpStorageEngine implements StorageEngine {
         } finally {
             release(session);
         }
+    }
+
+    @Override
+    public ObjectStatResponse statObject(@Nonnull String key) {
+        ClientSession session = null;
+        try {
+            session = acquire();
+            try (var sftp = SftpClientFactory.instance().createSftpClient(session)) {
+                var attrs = sftp.stat(realPath(key));
+                return ObjectStatResponse.builder().success(true).exists(true).bucketName("sftp").key(key)
+                        .contentLength(attrs.getSize()).lastModified(attrs.getModifyTime() == null ? null
+                                : OffsetDateTime.ofInstant(attrs.getModifyTime().toInstant(), java.time.ZoneId.systemDefault()))
+                        .checksums(Map.of()).userMetadata(Map.of()).build();
+            }
+        } catch (Exception e) { return ObjectStatResponse.builder().success(false).exists(false).key(key).errorCode(e.getClass().getSimpleName()).errorMessage(e.getMessage()).build(); }
+        finally { release(session); }
+    }
+
+    @Override
+    public void readObject(@Nonnull String key, @Nonnull ObjectStreamConsumer consumer) {
+        ClientSession session = null;
+        try {
+            session = acquire();
+            try (var sftp = SftpClientFactory.instance().createSftpClient(session);
+                 InputStream inputStream = sftp.read(realPath(key), BUFFER_SIZE, READ_MODE)) { consumer.accept(inputStream); }
+        } catch (IOException e) { throw new UncheckedIOException("读取 SFTP 对象流失败: " + key, e); }
+        finally { release(session); }
     }
 
     @Override

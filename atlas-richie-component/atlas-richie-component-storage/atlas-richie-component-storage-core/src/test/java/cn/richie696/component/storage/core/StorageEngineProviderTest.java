@@ -17,6 +17,7 @@ package cn.richie696.component.storage.core;
 
 import cn.richie696.component.storage.config.StorageEngineProvider;
 import cn.richie696.component.storage.config.StorageProperties;
+import cn.richie696.component.storage.bean.DirectUploadRequest;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
@@ -142,8 +143,44 @@ class StorageEngineProviderTest {
         assertThat(provider).isInstanceOf(StorageEngineProvider.class);
     }
 
+    @Test
+    void statObject_defaultImplementation_shouldPreserveExistsObjectCompatibility() {
+        DirectStorageEngine engine = new MinimalStorageEngine();
+
+        var result = engine.statObject("missing-key");
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.isExists()).isFalse();
+        assertThat(result.getKey()).isEqualTo("missing-key");
+    }
+
+    @Test
+    void issueDirectUploadPolicy_requestOverload_shouldUseCompatibleFallback() {
+        DirectStorageEngine engine = new MinimalStorageEngine();
+
+        var policy = engine.issueDirectUploadPolicy(DirectUploadRequest.builder()
+                .key("document.pdf")
+                .expireSeconds(10)
+                .contentLength(42L)
+                .contentType("application/pdf")
+                .build());
+
+        assertThat(policy.isSuccess()).isFalse();
+        assertThat(policy.isFallback()).isTrue();
+        assertThat(policy.getKey()).isEqualTo("document.pdf");
+    }
+
+    @Test
+    void readObject_defaultImplementation_shouldFailWhenLegacyDownloadFails() {
+        DirectStorageEngine engine = new MinimalStorageEngine();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> engine.readObject("key", inputStream -> { }))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
     /**
-     * 最小的 StorageEngine 实现，覆盖接口中所有抽象方法。
+     * 最小的 {@link StorageEngine} 实现，覆盖 {@link ServerStorageEngine} 中所有抽象方法。
+     * {@link DirectStorageEngine} 的方法全部使用默认实现（兜底策略 + 委托到 {@code getObject}）。
      * 仅用于 Provider 的契约测试，不进行实际存储操作。
      */
     static class MinimalStorageEngine implements StorageEngine {

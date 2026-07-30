@@ -20,6 +20,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 /**
  * 上传结果
@@ -63,9 +64,13 @@ public class UploadResponse implements Serializable {
     private String versionId;
 
     /**
-     * 云端计算的文件哈希值
+     * @deprecated 算法不明的值不可用于完整性校验；请改用 {@link #checksums}。
      */
+    @Deprecated(since = "2026", forRemoval = false)
     private String hashValue;
+
+    /** 云端返回的校验值，键为明确的算法名称。 */
+    private Map<String, String> checksums;
 
     /**
      * 上传时间

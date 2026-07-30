@@ -17,10 +17,12 @@ package cn.richie696.component.storage.core.impl;
 
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
+import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.component.storage.pool.FtpClientPool;
 import cn.richie696.context.utils.data.JsonUtils;
 import cn.richie696.context.utils.security.HashUtils;
@@ -217,6 +219,35 @@ public class FtpStorageEngine extends AbstractDestroyEngine<FTPClient> implement
         } finally {
             release(client);
         }
+    }
+
+    @Override
+    public ObjectStatResponse statObject(@Nonnull String key) {
+        FTPClient client = null;
+        try {
+            client = acquire(); client.changeWorkingDirectory(dir(key));
+            var files = client.listFiles(name(key));
+            if (files.length == 0) return ObjectStatResponse.builder().success(true).exists(false).key(key).build();
+            var file = files[0];
+            return ObjectStatResponse.builder().success(true).exists(true).bucketName("ftp").key(key)
+                    .contentLength(file.getSize()).lastModified(file.getTimestamp() == null ? null : file.getTimestamp().toInstant().atOffset(java.time.ZoneOffset.UTC))
+                    .checksums(Map.of()).userMetadata(Map.of()).build();
+        } catch (Exception e) { return ObjectStatResponse.builder().success(false).exists(false).key(key).errorCode(e.getClass().getSimpleName()).errorMessage(e.getMessage()).build(); }
+        finally { release(client); }
+    }
+
+    @Override
+    public void readObject(@Nonnull String key, @Nonnull ObjectStreamConsumer consumer) {
+        FTPClient client = null;
+        try {
+            client = acquire();
+            try (InputStream inputStream = client.retrieveFileStream(dir(key) + "/" + name(key))) {
+                if (inputStream == null) throw new IOException(client.getReplyString());
+                consumer.accept(inputStream);
+            }
+            if (!client.completePendingCommand()) throw new IOException(client.getReplyString());
+        } catch (IOException e) { throw new UncheckedIOException("读取 FTP 对象流失败: " + key, e); }
+        finally { release(client); }
     }
 
     @Override

@@ -18,11 +18,13 @@ package cn.richie696.component.storage.core.impl;
 import cn.richie696.component.storage.bean.DirectDownloadPolicy;
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
+import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.converter.StorageTypeConverter;
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.context.utils.data.JsonUtils;
 import com.ksyun.ks3.dto.CannedAccessControlList;
 import com.ksyun.ks3.dto.GetObjectResult;
@@ -313,6 +315,35 @@ public final class Ks3StorageEngine extends AbstractObjectStorageEngine<Ks3> imp
         } finally {
             destroy(client);
         }
+    }
+
+    @Override
+    public ObjectStatResponse statObject(@Nonnull String key) {
+        String realKey = getRealPath(key);
+        Ks3 client = getClient(Ks3.class);
+        try {
+            ObjectMetadata metadata = client.getObjectMetadata(getBucketName(), realKey);
+            Map<String, String> checksums = new java.util.LinkedHashMap<>();
+            if (metadata.getContentMD5() != null) checksums.put("MD5", metadata.getContentMD5());
+            if (metadata.getCrc64Ecma() != null) checksums.put("CRC64_ECMA", metadata.getCrc64Ecma());
+            return ObjectStatResponse.builder().success(true).exists(true).bucketName(getBucketName()).key(key)
+                    .contentLength(metadata.getContentLength()).contentType(metadata.getContentType()).contentEncoding(metadata.getContentEncoding())
+                    .lastModified(metadata.getLastModified() == null ? null : OffsetDateTime.ofInstant(metadata.getLastModified().toInstant(), java.time.ZoneId.systemDefault()))
+                    .storageClass(metadata.getStorageClass()).etag(metadata.getETag()).checksums(Map.copyOf(checksums))
+                    .userMetadata(Map.of()).build();
+        } catch (Ks3ServiceException e) {
+            return ObjectStatResponse.builder().success(false).exists(false).errorCode(e.getErrorCode()).errorMessage(e.getMessage())
+                    .requestId(e.getRequestId()).bucketName(getBucketName()).key(key).build();
+        } finally { destroy(client); }
+    }
+
+    @Override
+    public void readObject(@Nonnull String key, @Nonnull ObjectStreamConsumer consumer) {
+        Ks3 client = getClient(Ks3.class);
+        try (var object = client.getObject(new GetObjectRequest(getBucketName(), getRealPath(key))).getObject();
+             InputStream inputStream = object.getObjectContent()) { consumer.accept(inputStream); }
+        catch (IOException e) { throw new UncheckedIOException("读取 KS3 对象流失败: " + key, e); }
+        finally { destroy(client); }
     }
 
     @Override

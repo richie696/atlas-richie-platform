@@ -146,12 +146,12 @@ public final class AzureBlobStorageEngine extends AbstractObjectStorageEngine<Bl
         }
         var blobContainerClient = getClient(BlobContainerClient.class);
         var blobClient = blobContainerClient.getBlobClient(key);
-        byte[] bytes = blobClient.downloadContent().toBytes();
+        blobClient.downloadToFile(targetPath.getAbsolutePath(), true);
         return DownloadResponse.<byte[]>builder()
                 .success(true)
                 .bucketName(getBucketName())
                 .key(key)
-                .data(bytes)
+                .data(null)
                 .build();
     }
 
