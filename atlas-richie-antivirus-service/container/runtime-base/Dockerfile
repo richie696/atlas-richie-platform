@@ -1,4 +1,4 @@
-ARG JAVA_IMAGE=eclipse-temurin:25-jre
+ARG JAVA_IMAGE=azul/zulu-openjdk-debian:25-jre-latest
 ARG CLAMAV_IMAGE=clamav/clamav:latest-debian13-slim
 
 # Jib 不能执行 RUN，也不能合并两个基础镜像。这个基础镜像只负责把官方 JRE 和
@@ -7,7 +7,7 @@ FROM ${JAVA_IMAGE} AS java-runtime
 FROM ${CLAMAV_IMAGE}
 
 USER root
-COPY --from=java-runtime /opt/java/openjdk /opt/java/openjdk
+COPY --from=java-runtime /usr/lib/jvm/zulu25 /opt/java/openjdk
 
 ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
