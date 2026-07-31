@@ -5,6 +5,12 @@ spring:
   application:
     name: platform-antivirus-service
 
+grpc:
+  server:
+    port: ${GRPC_SERVER_PORT:9601}
+    reflection-service-enabled: true
+    address: 0.0.0.0
+
 management:
   endpoints:
     web:

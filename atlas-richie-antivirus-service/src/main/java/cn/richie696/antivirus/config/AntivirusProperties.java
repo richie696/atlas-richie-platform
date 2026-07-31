@@ -17,6 +17,7 @@ public class AntivirusProperties {
     private Clamav clamav = new Clamav();
     private Download download = new Download();
     private Local local = new Local();
+    private Grpc grpc = new Grpc();
 
     @Data
     public static class Recovery {
@@ -52,5 +53,15 @@ public class AntivirusProperties {
         private boolean enabled;
         /** 路径必须 resolve 到这些目录之一；防止任意文件读取。 */
         private List<String> allowedPaths = List.of();
+    }
+
+    @Data
+    public static class Grpc {
+        /** 默认 false；启用后 gRPC AntivirusService 才会监听 port。 */
+        private boolean enabled;
+        /** gRPC 监听端口；只有 enabled=true 才生效。 */
+        private int port = 9601;
+        /** Nacos 服务名；用于独立注册 gRPC 实例。 */
+        private String nacosServiceName = "platform-antivirus-service-grpc";
     }
 }

@@ -6,12 +6,14 @@ spring:
   cloud:
     nacos:
       server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
-      username: ${NACOS_USERNAME:}
-      password: ${NACOS_PASSWORD:}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
       discovery:
         namespace: ${NACOS_NAMESPACE:public}
         group: ${NACOS_GROUP:global}
       config:
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
         namespace: ${NACOS_NAMESPACE:public}
         group: ${NACOS_GROUP:global}
         file-extension: yaml

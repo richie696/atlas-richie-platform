@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package cn.richie696.antivirus.grpc.v1;
+
+option java_package = "cn.richie696.antivirus.grpc.v1";
+option java_multiple_files = true;
+option java_outer_classname = "AntivirusProto";
+
+// 与 REST /internal/v1/scans 一一对应；调用方可通过 Nacos 决定走 REST 还是 gRPC。
+service AntivirusService {
+  // 通过公网 URL 提交扫描任务；等价于 POST /internal/v1/scans
+  rpc SubmitScan(ScanRequest) returns (ScanTask);
+
+  // 通过本地文件路径提交扫描任务；等价于 POST /internal/v1/scans/local
+  rpc SubmitLocalScan(LocalScanRequest) returns (ScanTask);
+
+  // 查询扫描结果；等价于 GET /internal/v1/scans/{taskId}
+  rpc GetScanStatus(GetScanStatusRequest) returns (ScanTask);
+}
+
+message ScanRequest {
+  string file_id = 1;
+  string download_url = 2;
+  string file_name = 3;
+  optional int64 expected_size = 4;
+  string expected_etag = 5;
+}
+
+message LocalScanRequest {
+  string local_path = 1;
+  string file_name = 2;
+  optional int64 expected_size = 3;
+}
+
+message GetScanStatusRequest {
+  string task_id = 1;
+  string tenant_id = 2;
+}
+
+message ScanTask {
+  string task_id = 1;
+  string file_id = 2;
+  string tenant_id = 3;
+  string download_url = 4;
+  string local_path = 5;
+  string file_name = 6;
+  int64 expected_size = 7;
+  string expected_etag = 8;
+  int64 actual_size = 9;
+  ScanStatus status = 10;
+  string sha256 = 11;
+  string detected_mime_type = 12;
+  string threat_name = 13;
+  string engine_version = 14;
+  string signature_version = 15;
+  string error_message = 16;
+  int64 submitted_at_epoch_ms = 17;
+  int64 started_at_epoch_ms = 18;
+  int64 completed_at_epoch_ms = 19;
+}
+
+enum ScanStatus {
+  SCAN_STATUS_UNSPECIFIED = 0;
+  PENDING = 1;
+  SCANNING = 2;
+  CLEAN = 3;
+  INFECTED = 4;
+  FAILED = 5;
+}
