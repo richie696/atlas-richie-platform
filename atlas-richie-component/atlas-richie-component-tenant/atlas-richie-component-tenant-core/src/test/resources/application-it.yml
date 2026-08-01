@@ -1,0 +1,17 @@
+# 集测多租户配置
+# PostgreSQL 连接信息（host/port/password/database）由 TenantIntegrationTestInitializer 注入
+# Testcontainers 启动 postgres:16-alpine；IT_USE_EXTERNAL=true 时读取 TENANT_IT_PG_* 环境变量
+# 本文件只保留 Testcontainer 无法提供的组件专属属性
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+
+platform:
+  tenant:
+    enable: true
+    mode: COLUMN
+    tenant-id-header: X-Tenant-ID
+    tenant-id-column: tenant_id
+    schema-prefix: "tenant_"
+    schema-auto-create: true
+    microservice: false
