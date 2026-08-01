@@ -1228,6 +1228,8 @@ platform:
 | IP Rate Limiting            | `platform.gateway.security.security-threshold`   | 120           | Times/minute      |
 | SSO                         | `platform.gateway.sso.enable`                    | false         | Whether to enable |
 | Multi-Tenant                | `platform.gateway.tenant.enable`                 | false         | Whether to enable |
+| Tenant assertion secret     | `platform.tenant.gateway.identity-assertion-secret` | — | Shared HMAC secret with downstream tenant components |
+| Tenant assertion TTL        | `platform.tenant.gateway.identity-assertion-ttl-seconds` | 60 | Internal tenant assertion lifetime in seconds |
 | Canary Release              | `platform.gateway.deploy.enable`                 | false         | Whether to enable |
 
 ---

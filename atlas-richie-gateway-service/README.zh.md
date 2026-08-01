@@ -32,7 +32,7 @@
 
 > **互斥约束：** `platform.gateway.token.enable` 与 `platform.gateway.interface-auth.enable` **不能同时为 `true`**。启动时 `GatewayAuthConfigValidator` 会校验并失败，避免认证链冲突。
 
-跨服务共享配置（`token`、`tenant`、`deploy`、`audit-enabled`）在 **`atlas-richie-contract`** 的 `GatewayContract` 中，前缀 `platform.gateway`。网关专属配置（CSP、ECC、SSO、异常检测、防重复提交、硬件指纹、降级文案等）由 **`GatewayConfig`** 承载，前缀相同，字段各取所需。
+跨服务共享配置（`token`、`deploy`、`audit-enabled`）在 **`atlas-richie-contract`** 的 `GatewayContract` 中，前缀为 `platform.gateway.contract`。租户配置由 `atlas-richie-component-tenant-gateway` 统一提供，使用 `platform.tenant`。网关专属配置（CSP、ECC、SSO、异常检测、防重复提交、硬件指纹、降级文案等）由 **`GatewayConfig`** 承载。
 
 网关采用**配置化设计**：同一制品通过 Nacos 配置切换微服务 / OpenAPI / 内网形态，无需改代码。
 
@@ -243,7 +243,7 @@ atlas-richie-gateway-service/
 | 0 | `AuthenticationFilter` | 认证 | `token.enable` 且路径不在 `ignore-uri-list` |
 | 100 | `SsoFilter` | 认证 | SSO 开启 |
 | 200 | `DuplicateSubmitFilter` | 业务 | 防重复提交开启 |
-| 300 | `TenantFilter` | 业务 | `tenant.enabled`（契约） |
+| 300 | `TenantFilter` | 业务 | `platform.tenant.enable` |
 | 400 | `InterfaceAuthFilter` | 业务 | `interface-auth.enable`（OpenAPI） |
 | 401 | `OAuth2AnomalyDetectionFilter` | 业务 | OpenAPI + 异常检测 |
 | 402 | `OAuth2AuditFilter` | 业务 | `audit-enabled`（契约） |
@@ -304,8 +304,6 @@ platform:
         - (/actuator).+
     interface-auth:
       enable: false
-    tenant:
-      enabled: true
     deploy:
       enabled: true
     sso:
@@ -455,7 +453,7 @@ add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsaf
 
 ### 6. 多租户
 
-- **TenantFilter**：从 Token 解析租户；校验租户状态与过期；请求头约定见 `GatewayContract.tenant`
+- **TenantFilter**：由 `atlas-richie-component-tenant-gateway` 提供，从 Token 解析租户并校验状态与过期；配置使用 `platform.tenant.gateway`
 - 与业务库 `tenantId` 字段配合（参见 Base 包 `TenantAuditDomain`）
 
 ### 7. 国际化
@@ -641,14 +639,13 @@ spring:
 
 ### 共享契约（`GatewayContract`）
 
-前缀 `platform.gateway`，定义于 `atlas-richie-contract`：
+前缀 `platform.gateway.contract`，定义于 `atlas-richie-contract`：
 
 - `audit-enabled` — OAuth2 审计总开关
 - `token` — JWT 黑白名单、登录路径、MFA 登录 URI 等
-- `tenant` — 多租户过滤器
 - `deploy` — 灰度 / 金丝雀
 
-业务服务仅依赖 `atlas-richie-contract` 即可与网关对齐同一份 YAML 结构。
+租户消费者应引入租户组件并使用 `platform.tenant`；`atlas-richie-contract` 不再维护 Gateway 租户配置。
 
 ### 网关专属（`GatewayConfig`）
 
@@ -717,8 +714,6 @@ platform:
       login-uri-list: [/gateway/login]
       ignore-uri-list: [(/actuator).+]
       mfa-enabled-login-uri-list: [/gateway/login]
-    tenant:
-      enabled: true
     deploy:
       enabled: true
       canary-category: ID
@@ -740,6 +735,12 @@ platform:
       enable: true
       policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; base-uri 'self'"
       proxy-csp-configured: false
+
+platform.tenant:
+  enable: true
+  gateway:
+    identity-assertion-secret: ${TENANT_ASSERTION_SECRET}
+    identity-assertion-ttl-seconds: 60
 ```
 
 ### 配置项说明
@@ -827,7 +828,7 @@ java -jar atlas-richie-gateway-service-${revision}.jar \
 
 1. **二选一** 开启认证：`token.enable` 或 `interface-auth.enable`。
 2. Nacos 指向 `platform-gateway.yaml` 或 `platform-gateway-openapi.yaml`。
-3. `audit-enabled`、`tenant`、`deploy` 与下游、消息消费端保持一致（参见 [atlas-richie-base/README.zh.md](../atlas-richie-base/README.zh.md)）。
+3. `audit-enabled`、`deploy` 与下游、消息消费端保持一致；租户链路统一使用 `platform.tenant`（参见 [atlas-richie-base/README.zh.md](../atlas-richie-base/README.zh.md)）。
 
 ## 客户端 SDK
 

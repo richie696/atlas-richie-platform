@@ -120,21 +120,22 @@ Omit versions on managed dependencies; the BOM applies them.
 | Package | Contents | Typical consumers |
 |---------|----------|-------------------|
 | `cn.richie696.contract.model` | `ApiResult` unified API response; `LoginUserPrincipal`; `SearchRequest` pagination; `BaseStreamMessage` stream marker | All REST services, gateway |
-| `cn.richie696.contract.gateway.config` | `GatewayContract` (`platform.gateway` prefix); `TokenFilterConfig`; `TenantFilterConfig`; `DeployConfig` canary | Gateway, service interceptors, Messaging/MQTT/MFA |
+| `cn.richie696.contract.gateway.config` | `GatewayContract` (`platform.gateway.contract` prefix); `TokenFilterConfig`; `DeployConfig` canary | Gateway, service interceptors, Messaging/MQTT |
 | `cn.richie696.contract.gateway.model` | `OAuth2AuditEvent` / `OAuth2AuditEventType`; `OAuth2Constants` | Gateway audit publish, general-service consume |
 | `cn.richie696.contract.exception` | `BaseException`, `BusinessException`, `PlatformRuntimeException`, `PlatformDataAccessException` | Global exception handlers |
 | `cn.richie696.contract.constant` | `GlobalConstants` | Platform-wide |
 
 ### GatewayContract (core)
 
-Binds to configuration prefix **`platform.gateway`**. It shares the same prefix as the gateway-internal `GatewayConfig`; each `@ConfigurationProperties` type maps only its own fields, so **existing Nacos/YAML for deployed services need no change**.
+Binds to configuration prefix **`platform.gateway.contract`**, separate from the gateway-internal `GatewayConfig` settings.
 
 Shared cross-service fields:
 
 - **`auditEnabled`:** Master audit switch (publisher and consumer must agree)
 - **`token`:** Token filter allow/deny lists, login paths, etc.
-- **`tenant`:** Multi-tenant filter toggle and header conventions
 - **`deploy`:** Canary (gray) flags for gateway load balancing and async propagation
+
+Tenant configuration is maintained by `atlas-richie-component-tenant-common/core/gateway` under the `platform.tenant` prefix.
 
 Gateway-only settings (ECC encryption, SSO, circuit breaking, etc.) stay inside `atlas-richie-gateway-service` and are **not** part of this contract.
 

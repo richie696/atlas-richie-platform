@@ -1228,6 +1228,8 @@ platform:
 | IP限流    | `platform.gateway.security.security-threshold`   | 120   | 次/分钟 |
 | SSO     | `platform.gateway.sso.enable`                    | false | 是否启用 |
 | 多租户     | `platform.gateway.tenant.enable`                 | false | 是否启用 |
+| 租户断言密钥 | `platform.tenant.gateway.identity-assertion-secret` | — | Gateway 与下游租户组件共享的 HMAC 密钥 |
+| 租户断言有效期 | `platform.tenant.gateway.identity-assertion-ttl-seconds` | 60 | 内部租户断言有效期（秒） |
 | 灰度发布    | `platform.gateway.deploy.enable`                 | false | 是否启用 |
 
 ---
@@ -1544,6 +1546,4 @@ management:
 - 本文档保留所有核心功能和配置，以简洁的表格和图表呈现
 - 详细的使用示例请参考各章节
 - 客户端集成请查看 `client-library` 目录
-
-
 

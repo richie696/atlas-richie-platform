@@ -32,7 +32,7 @@
 
 > **Mutual exclusion:** `platform.gateway.token.enable` and `platform.gateway.interface-auth.enable` **cannot both be `true`**. `GatewayAuthConfigValidator` fails fast at startup if they conflict.
 
-Shared cross-service settings (`token`, `tenant`, `deploy`, `audit-enabled`) live in **`atlas-richie-contract`** as `GatewayContract` under prefix `platform.gateway`. Gateway-only settings (CSP, ECC, SSO, anomaly detection, duplicate submit, hardware fingerprint, fallback) are in **`GatewayConfig`** with the same prefix.
+Shared cross-service settings (`token`, `deploy`, `audit-enabled`) live in **`atlas-richie-contract`** as `GatewayContract` under prefix `platform.gateway.contract`. Tenant settings are provided by `atlas-richie-component-tenant-gateway` under `platform.tenant`. Gateway-only settings (CSP, ECC, SSO, anomaly detection, duplicate submit, hardware fingerprint, fallback) are in **`GatewayConfig`**.
 
 The gateway is **configuration-driven**: one artifact switches microservice / OpenAPI / internal personalities via Nacos without code changes.
 
@@ -243,7 +243,7 @@ Lower order values run first. All filters extend `AbstractBaseFilter` and skip l
 | 0 | `AuthenticationFilter` | Auth | `token.enable` + path not in `ignore-uri-list` |
 | 100 | `SsoFilter` | Auth | SSO enabled |
 | 200 | `DuplicateSubmitFilter` | Business | Duplicate submit enabled |
-| 300 | `TenantFilter` | Business | `tenant.enabled` (contract) |
+| 300 | `TenantFilter` | Business | `platform.tenant.enable` |
 | 400 | `InterfaceAuthFilter` | Business | `interface-auth.enable` (OpenAPI) |
 | 401 | `OAuth2AnomalyDetectionFilter` | Business | OpenAPI + anomaly config |
 | 402 | `OAuth2AuditFilter` | Business | `audit-enabled` (contract) |
@@ -306,8 +306,6 @@ platform:
         - (/actuator).+
     interface-auth:
       enable: false
-    tenant:
-      enabled: true
     deploy:
       enabled: true   # canary
     sso:
@@ -436,7 +434,7 @@ add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsaf
 
 ### 6. Multi-tenant
 
-`TenantFilter` + `GatewayContract.tenant`.
+`TenantFilter` from `atlas-richie-component-tenant-gateway` + `platform.tenant.gateway`.
 
 ### 7. i18n (35 locales)
 
@@ -551,14 +549,13 @@ spring:
 
 ### Shared contract (`GatewayContract`)
 
-Bound under `platform.gateway` in `atlas-richie-contract`:
+Bound under `platform.gateway.contract` in `atlas-richie-contract`:
 
 - `audit-enabled` — OAuth2 audit pipeline
 - `token` — JWT filter lists, blacklist path, MFA login URIs
-- `tenant` — multi-tenant filter
 - `deploy` — canary / gray release
 
-Business services can depend on `atlas-richie-contract` only to read the same YAML shape.
+Tenant consumers should depend on the tenant component and use `platform.tenant`; `atlas-richie-contract` no longer owns Gateway tenant configuration.
 
 ### Gateway-only (`GatewayConfig`)
 
@@ -592,13 +589,18 @@ platform.gateway:
     secret: <random>
     login-uri-list: [/gateway/login]
     ignore-uri-list: [(/actuator).+]
-  tenant.enabled: true
   deploy.enabled: true
   security.enable: true
   csp:
     enable: true
     policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; base-uri 'self'"
     proxy-csp-configured: false
+
+platform.tenant:
+  enable: true
+  gateway:
+    identity-assertion-secret: ${TENANT_ASSERTION_SECRET}
+    identity-assertion-ttl-seconds: 60
 ```
 
 Field reference: `token-valid-duration`, `expiration-renewal-time`, `security.rule`, `deploy.canary-category` — see [README.zh.md](README.zh.md#配置项说明) (Chinese table, same property names).
@@ -635,7 +637,7 @@ spring:
 
 1. Choose **one** auth switch: `token.enable` **or** `interface-auth.enable`.
 2. Point Nacos import to `platform-gateway.yaml` or `platform-gateway-openapi.yaml`.
-3. Align `audit-enabled`, `tenant`, and `deploy` with downstream consumers (see [atlas-richie-base/README.md](../atlas-richie-base/README.md)).
+3. Align `audit-enabled` and `deploy` with downstream consumers, and use the same `platform.tenant` settings for tenant propagation (see [atlas-richie-base/README.md](../atlas-richie-base/README.md)).
 
 ## Client SDKs
 

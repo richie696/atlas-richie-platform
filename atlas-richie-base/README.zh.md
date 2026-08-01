@@ -120,21 +120,22 @@ atlas-richie-base/
 | 包路径                                  | 主要内容                                                                                                | 典型使用方                         |
 |--------------------------------------|-----------------------------------------------------------------------------------------------------|-------------------------------|
 | `cn.richie696.contract.model`          | `ApiResult` 统一 API 响应；`LoginUserPrincipal` 登录用户主体；`SearchRequest` 分页查询；`BaseStreamMessage` 流消息标记    | 所有 REST 服务、网关                 |
-| `cn.richie696.contract.gateway.config` | `GatewayContract`（`platform.gateway` 前缀）；`TokenFilterConfig`；`TenantFilterConfig`；`DeployConfig` 灰度 | 网关、业务服务拦截器、Messaging/MQTT/MFA |
+| `cn.richie696.contract.gateway.config` | `GatewayContract`（`platform.gateway.contract` 前缀）；`TokenFilterConfig`；`DeployConfig` 灰度 | 网关、业务服务拦截器、Messaging/MQTT |
 | `cn.richie696.contract.gateway.model`  | `OAuth2AuditEvent` / `OAuth2AuditEventType`；`OAuth2Constants`                                       | 网关审计发布、general-service 消费     |
 | `cn.richie696.contract.exception`      | `BaseException`、`BusinessException`、`PlatformRuntimeException`、`PlatformDataAccessException`        | 全局异常处理                        |
 | `cn.richie696.contract.constant`       | `GlobalConstants` 平台级常量                                                                             | 全平台                           |
 
 ### GatewayContract（核心）
 
-绑定配置前缀 **`platform.gateway`**，与网关内部 `GatewayConfig` 共用同一前缀，各 `@ConfigurationProperties` 只映射自身字段，**已上线服务的 Nacos/YAML 无需改动**。
+绑定配置前缀 **`platform.gateway.contract`**，与网关内部 `GatewayConfig` 的配置职责分离。
 
 跨服务共享字段包括：
 
 - **`auditEnabled`**：审计总开关（网关发布与消费端须一致）
 - **`token`**：Token 过滤器黑白名单、登录路径等
-- **`tenant`**：多租户过滤器开关与请求头约定
 - **`deploy`**：灰度（金丝雀）标识，供网关负载均衡及异步链路透传
+
+多租户配置由 `atlas-richie-component-tenant-common/core/gateway` 统一维护，使用 `platform.tenant` 前缀。
 
 网关专属配置（ECC 加密、SSO、熔断等）保留在 `atlas-richie-gateway-service` 内部，**不在**本契约中。
 

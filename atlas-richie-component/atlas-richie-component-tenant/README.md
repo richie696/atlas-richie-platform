@@ -3,6 +3,7 @@
 ## 📖 Contents
 
 - [这是什么样的组件](#这是什么样的组件)
+- [模块结构与统一配置](#模块结构与统一配置)
 - [5种隔离模式--选型决策树](#5种隔离模式-选型决策树)
     - [对比矩阵](#对比矩阵)
     - [决策流程](#决策流程)
@@ -46,6 +47,7 @@
     - [灰度发布](#灰度发布)
 - [配置参考](#配置参考)
     - [完整配置项 (MultiTenancyProperties)](#完整配置项-multitenancyproperties)
+    - [Gateway 联动配置](#gateway-联动配置)
     - [通信框架依赖](#通信框架依赖)
     - [启动日志参考](#启动日志参考)
 - [SPI 扩展点](#spi-扩展点)
@@ -84,6 +86,8 @@
 `atlas-richie-component-tenant` 是 Atlas Richie 平台的多租户能力组件,覆盖 **从 HTTP 请求进入到 MyBatis SQL 执行**
 的完整链路:
 
+> 默认安全：仅引入依赖、未配置 `platform.tenant.enable=true` 时，组件不会注册 Filter、MyBatis 拦截器、`MetaObjectHandler`、线程池装饰器或租户上下文；系统即按无租户模式运行。需要多租户的项目再显式开启该配置。
+
 | 链路节点                 | 涉及的类                                             | 作用                                                                    |
 |--------------------------|------------------------------------------------------|-------------------------------------------------------------------------|
 | HTTP 请求进入            | `TenantIdentityFilter`                               | 从 JWT 提取租户 → 校验 → 绑定到线程上下文                               |
@@ -98,6 +102,35 @@
 | MyBatis 实体 INSERT 填充 | `TenantMetaObjectHandler`                            | 兜底,INSERT 时自动填 `tenantId`                                         |
 | 数据源熔断               | `DataSourceCircuitBreaker` + `DataSourceHealthProbe` | 失败计数 → 熔断 → 探测恢复                                              |
 | 异常处理                 | `TenantExceptionHandler` + `TenantErrorCode`         | 统一 4xx/5xx 响应                                                       |
+
+---
+
+## 模块结构与统一配置
+
+租户组件现在由一个 Maven 模块管理器和三个职责单一的子模块组成。`atlas-richie-component-tenant` 只负责聚合，不能作为运行时依赖直接引入：
+
+| 模块 | 职责 | 使用场景 |
+|------|------|----------|
+| `atlas-richie-component-tenant-common` | 共享配置模型和公共类型，不注册运行时自动配置 | 由 core / gateway 复用 |
+| `atlas-richie-component-tenant-core` | 服务侧租户上下文、Web 过滤器、MyBatis 隔离、数据源和健康检查 | 业务服务引入 |
+| `atlas-richie-component-tenant-gateway` | Gateway 租户拦截器、自动配置和可插拔 SPI | Gateway 服务引入 |
+
+业务服务请依赖 `atlas-richie-component-tenant-core`；需要复用公共配置模型时才单独依赖 `common`。所有租户配置统一挂在 `platform.tenant` 下，`enable` 是唯一总控开关：默认 `false`，未显式开启时不会注册租户基础设施，系统按无租户状态运行。
+
+```yaml
+platform:
+  tenant:
+    enable: false                 # 总控；多租户项目显式改为 true
+    mode: COLUMN
+    tenant-id-header: X-Tenant-ID
+    gateway:
+      identity-assertion-secret: ${TENANT_ASSERTION_SECRET}
+      identity-assertion-ttl-seconds: 60
+```
+
+新的 Gateway 配置统一使用 `platform.tenant.gateway.*`，不再使用 `platform.gateway.contract.tenant.*`。服务侧暂时保留顶层 `identity-assertion-secret` 作为迁移兼容入口；新项目应只配置 `gateway.identity-assertion-secret`，避免同一密钥配置两处。
+
+> Gateway 租户拦截器现已迁移到 `tenant-gateway`。Gateway 服务只保留 SignatureService 等业务适配器；过期通知、Token 作废和错误响应均可通过 SPI 替换。
 
 ---
 
@@ -139,6 +172,10 @@
   └─ 99% 情况 → COLUMN (默认)
 ```
 
+> 数据安全补充：当 `enable=true` 且 `enforce-auth-tenant=true` 时，
+> `TenantLineInnerInterceptor` 与 `TenantStrategyInterceptor` 在没有租户上下文时会拒绝执行租户 SQL，
+> 不会把缺失上下文的请求当作平台租户继续执行。平台管理任务应通过明确的超级管理员路径或显式绑定上下文运行。
+
 ### 实际选型经验
 
 | 业务类型                        | 推荐模式            | 理由                                |
@@ -158,16 +195,30 @@
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-tenant</artifactId>
+    <artifactId>atlas-richie-component-tenant-core</artifactId>
 </dependency>
 ```
 
-**零配置即可使用 COLUMN 模式 + Web 集成**。
+引入 `tenant-core` 后可按需使用 COLUMN 模式 + Web 集成（默认不启用）。
+
+Gateway 工程额外引入拦截器模块：
+
+```xml
+<dependency>
+    <groupId>cn.richie696.component</groupId>
+    <artifactId>atlas-richie-component-tenant-gateway</artifactId>
+</dependency>
+```
+
+该模块只在 `platform.tenant.enable=true` 时注册 `TenantFilter`；过期通知、Token 作废和错误响应可通过 Gateway 模块提供的 SPI 自定义。
+
+> 注意：组件总开关 `platform.tenant.enable` 默认是 `false`。
+> 上述能力只有在项目显式设置 `enable: true` 后才会注册；未启用时不会改变业务系统的租户行为。
 
 > 🧩 **租户信息缓存默认开启**：框架自动为 {@link TenantInfoProvider} 装饰 {@link
 > spi.cn.richie696.component.tenant.CachingTenantInfoProvider}，
 > 以 {@code ttl=60s}、{@code max-size=10000} 缓存 {@code getTenantInfo ()} 结果，避免每次 SQL 都穿透业务实现。
-> 可通过 {@code multi-tenancy.cache.tenant-info.enabled=false} 关闭。
+> 可通过 {@code platform.tenant.cache.enabled=false} 关闭。
 
 启动日志看到:
 
@@ -226,18 +277,19 @@ public class MyTenantInfoProvider implements TenantInfoProvider {
 > 🧩 **无需手写缓存**。框架内置 `CachingTenantInfoProvider` 自动装饰你的实现（
 > `@ConditionalOnProperty(matchIfMissing=true)`），
 > 以 JDK `ConcurrentHashMap` 实现 `ttl=60s`、`max-size=10000` 缓存，业务方只写纯 DB 查询即可。
-> 若需关闭内置缓存：`multi-tenancy.cache.tenant-info.enabled=false`。
+> 若需关闭内置缓存：`platform.tenant.cache.enabled=false`。
 
 ### 4) 配置 application.yml
 
 ```yaml
-multi-tenancy:
-  enabled: true
-  mode: COLUMN                  # 默认隔离模式
-  tenant-id-column: tenant_id
-  ignore-tables:                 # 字典表、配置表等不需要租户隔离
-    - sys_dict
-    - sys_config
+platform:
+  tenant:
+    enable: true
+    mode: COLUMN                  # 默认隔离模式
+    tenant-id-column: tenant_id
+      ignore-tables:                 # 字典表、配置表等不需要租户隔离
+        - sys_dict
+        - sys_config
 ```
 
 ### 5) 业务代码
@@ -257,6 +309,10 @@ public class OrderService {
 ```
 
 ### 6) 启动验证
+
+> 安全说明：下面的 `X-Tenant-ID` 示例仅适用于已显式开启
+> `allow-unsigned-tenant-header=true` 的受控内部调用/本地调试。生产请求应经 Gateway
+> 传递签名的 `X-Tenant-Assertion`，或在服务中配置 `jwt-secret` 独立验证 JWT；普通客户端不应自行提交租户 Header。
 
 ```bash
 curl -H "X-ACCESS-TOKEN: $JWT" -H "X-Tenant-ID: 1001" \
@@ -459,7 +515,7 @@ INSERT INTO orders (product, amount, tenant_id) VALUES ('X', 100, 1001);
 #### 配置
 
 ```yaml
-multi-tenancy:
+platform.tenant:
   mode: COLUMN
   tenant-id-column: tenant_id     # 可改为 org_id 等
   ignore-tables:                  # 不做租户隔离的表
@@ -499,6 +555,9 @@ public interface OrderMapper extends BaseMapper<Order> {
 | 不接 `TenantMetaObjectHandler`    | INSERT 不自动填 `tenant_id` → 数据 `tenant_id=0` 混在平台默认租户里 |
 | 不接 `TenantStrategyInterceptor`  | 不做租户信息查询,所有请求按 `mode` 配置走,无法按租户动态配置        |
 
+> 以上表格描述的是未接入拦截器的风险；即使 HTTP 层已经完成认证，仍必须保留数据层拦截器，
+> 因为 HTTP 身份认证本身不会给 SQL 自动增加租户隔离条件。
+
 #### 适用 / 不适用
 
 ✅ 适用: 租户数 10-1000,单租户数据量 < 100 万行 ❌ 不适用: 单租户数据量极大 (> 1000 万行,SQL 慢);合规要求物理隔离
@@ -530,7 +589,7 @@ SELECT * FROM orders_1001 WHERE id = 123;
 #### 配置
 
 ```yaml
-multi-tenancy:
+platform.tenant:
   mode: TABLE
   table-name-suffix: "_${tenant}"    # 默认,后缀模板
   ignore-tables:
@@ -604,7 +663,7 @@ CREATE TABLE orders_1003 (id BIGINT PRIMARY KEY, ...);
 #### 配置
 
 ```yaml
-multi-tenancy:
+platform.tenant:
   mode: SCHEMA
   schema-prefix: "tenant_"            # tenantId=1001 → schema "tenant_1001"
   schema-auto-create: true            # 首次访问自动 CREATE SCHEMA
@@ -647,7 +706,7 @@ multi-tenancy:
 #### 配置
 
 ```yaml
-multi-tenancy:
+platform.tenant:
   mode: DATABASE
   datasource:
     shared:                              # 可选:用于 sys_tenant 等平台表
@@ -756,7 +815,7 @@ TenantStrategyInterceptor 按 tenantInfo.mode 从工厂取策略
 #### 配置
 
 ```yaml
-multi-tenancy:
+platform.tenant:
   mode: HYBRID        # 全局声明为混合模式
   # 其他字段保持默认,实际行为按 sys_tenant 表走
 ```
@@ -796,6 +855,12 @@ UPDATE sys_tenant SET isolation_mode = 'COLUMN' WHERE id = 1003;
 5. **查租户信息** — `TenantInfoProvider.getTenantInfo(tenantId)`,校验存在/过期/迁移中
 6. **JWT ↔ Header 交叉校验** — 防 header 伪造
 7. **`runWithTenant` 包裹整条 chain** — 保证整个请求生命周期租户上下文一致
+
+> `X-Tenant-ID` 是传递/辅助校验信息，不是默认可信的身份来源。不要通过客户端直接提交该 Header 来选择租户。
+
+安全补充：实际解析优先验证 Gateway 签发的 `X-Tenant-Assertion`；如果服务配置了
+`jwt-secret`，则会先独立验证 JWT 再解析租户。只有显式设置
+`allow-unsigned-tenant-header=true` 时，普通 Header 才会作为遗留内部调用的降级来源。
 
 ### 超级管理员 (无租户用户)
 
@@ -861,6 +926,9 @@ public class MyWhitelistConfig {
 3. **降级从 Header** — `X-Tenant-ID` header
 4. **校验** — tenantId 格式 + `TenantInfoProvider` 验证存在/过期/迁移中
 5. **写入 Reactor Context** — `ReactorTenantContext.write(principal)` 供下游 reactive 算子读取
+
+安全补充：实际运行时优先验证 `X-Tenant-Assertion`；配置 `jwt-secret` 时先独立验签 JWT；
+未签名 `X-Tenant-ID` 仅在 `allow-unsigned-tenant-header=true` 时启用。
 
 #### `ReactorTenantContext`
 
@@ -1037,7 +1105,7 @@ CLOSED (正常) ── 连续失败 N 次 ──→ OPEN (熔断,直接拒绝)
 **配置**:
 
 ```yaml
-multi-tenancy:
+platform.tenant:
   circuit:
     failure-threshold: 5         # 连续失败 5 次熔断
     open-window-ms: 30000        # 熔断 30s 后进入半开
@@ -1061,7 +1129,7 @@ multi-tenancy:
 支持某租户走"灰度数据源"(独立 URL),与全量数据源物理隔离。
 
 ```yaml
-multi-tenancy:
+platform.tenant:
   datasource:
     tenants:
       "1001":
@@ -1081,26 +1149,70 @@ multi-tenancy:
 
 | 配置                                          | 默认值        | 说明                                                                            |
 |-----------------------------------------------|---------------|---------------------------------------------------------------------------------|
-| `multi-tenancy.enabled`                       | `true`        | 总开关。`false` 时所有拦截器/策略跳过                                           |
-| `multi-tenancy.mode`                          | `COLUMN`      | 全局默认模式 (Hybrid 时按 `sys_tenant.isolation_mode`)                          |
-| `multi-tenancy.tenant-id-header`              | `X-Tenant-ID` | 租户 ID header 名                                                               |
-| `multi-tenancy.enforce-auth-tenant`           | `true`        | 是否强制要求 JWT tenantId 存在且合法                                            |
-| `multi-tenancy.tenant-id-column`              | `tenant_id`   | Column 模式的列名                                                               |
-| `multi-tenancy.ignore-tables`                 | `[]`          | 跳过租户隔离的表名列表                                                          |
-| `multi-tenancy.table-name-suffix`             | `_${tenant}`  | Table 模式的表名后缀模板                                                        |
-| `multi-tenancy.schema-prefix`                 | `tenant_`     | Schema 模式的 schema 前缀                                                       |
-| `multi-tenancy.schema-auto-create`            | `false`       | Schema 模式是否自动 CREATE SCHEMA                                               |
-| `multi-tenancy.force-thread-local`            | `false`       | 强制 ThreadLocalHolder 降级                                                     |
-| `multi-tenancy.microservice`                  | `true`        | 是否微服务架构 (false 跳过通信框架检测)                                         |
-| `multi-tenancy.datasource.shared.*`           | —             | shared 数据源 (Database 模式 sys_tenant 表)                                     |
-| `multi-tenancy.datasource.tenants.*`          | `{}`          | 租户独立数据源 Map (key=tenantId)                                               |
-| `multi-tenancy.canary.tenants`                | `[]`          | 灰度租户列表                                                                    |
-| `multi-tenancy.circuit.failure-threshold`     | `5`           | 熔断失败阈值                                                                    |
-| `multi-tenancy.circuit.open-window-ms`        | `30000`       | 熔断打开后等待时间 (ms)                                                         |
-| `multi-tenancy.health.probe-interval-ms`      | `30000`       | 健康探测间隔 (ms)                                                               |
-| `multi-tenancy.cache.tenant-info.enabled`     | `true`        | 开启 {@link spi.cn.richie696.component.tenant.CachingTenantInfoProvider} 装饰器 |
-| `multi-tenancy.cache.tenant-info.ttl-seconds` | `60`          | 缓存 TTL（秒），过短命中率低，过长 sys_tenant 变更生效延迟                      |
-| `multi-tenancy.cache.tenant-info.max-size`    | `10000`       | 缓存最大租户数，超出按 LRU 淘汰一半，`<=0` 不限制                               |
+| `platform.tenant.enable`                       | `false`       | 总开关；仅为 `true` 时注册租户组件，未配置时完全按无租户模式运行                  |
+| `platform.tenant.mode`                          | `COLUMN`      | 全局默认模式 (Hybrid 时按 `sys_tenant.isolation_mode`)                          |
+| `platform.tenant.tenant-id-header`              | `X-Tenant-ID` | 租户 ID header 名                                                               |
+| `platform.tenant.gateway.identity-assertion-secret`     | —             | Gateway internal tenant assertion HMAC secret; must match Gateway in production |
+| `platform.tenant.gateway.identity-assertion-ttl-seconds` | `60`        | Gateway 内部租户身份断言有效期（秒）                                             |
+| `platform.tenant.jwt-secret`                    | —             | Secret for independent JWT verification when services are directly exposed     |
+| `platform.tenant.allow-unsigned-tenant-header`  | `false`       | Allow unsigned tenant headers; only enable for controlled legacy internal calls |
+| `platform.tenant.enforce-auth-tenant`           | `true`        | 是否强制要求 JWT tenantId 存在且合法                                            |
+| `platform.tenant.tenant-id-column`              | `tenant_id`   | Column 模式的列名                                                               |
+| `platform.tenant.ignore-tables`                 | `[]`          | 跳过租户隔离的表名列表                                                          |
+| `platform.tenant.table-name-suffix`             | `_${tenant}`  | Table 模式的表名后缀模板                                                        |
+| `platform.tenant.schema-prefix`                 | `tenant_`     | Schema 模式的 schema 前缀                                                       |
+| `platform.tenant.schema-auto-create`            | `false`       | Schema 模式是否自动 CREATE SCHEMA                                               |
+| `platform.tenant.force-thread-local`            | `false`       | 强制 ThreadLocalHolder 降级                                                     |
+| `platform.tenant.microservice`                  | `true`        | 是否微服务架构 (false 跳过通信框架检测)                                         |
+| `platform.tenant.datasource.shared.*`           | —             | shared 数据源 (Database 模式 sys_tenant 表)                                     |
+| `platform.tenant.datasource.tenants.*`          | `{}`          | 租户独立数据源 Map (key=tenantId)                                               |
+| `platform.tenant.canary.tenants`                | `[]`          | 灰度租户列表                                                                    |
+| `platform.tenant.circuit.failure-threshold`     | `5`           | 熔断失败阈值                                                                    |
+| `platform.tenant.circuit.open-window-ms`        | `30000`       | 熔断打开后等待时间 (ms)                                                         |
+| `platform.tenant.health.probe-interval-ms`      | `30000`       | 健康探测间隔 (ms)                                                               |
+| `platform.tenant.cache.enabled`     | `true`        | 开启 {@link spi.cn.richie696.component.tenant.CachingTenantInfoProvider} 装饰器 |
+| `platform.tenant.cache.ttl-seconds` | `60`          | 缓存 TTL（秒），过短命中率低，过长 sys_tenant 变更生效延迟                      |
+| `platform.tenant.cache.max-size`    | `10000`       | 缓存最大租户数，超出按 LRU 淘汰一半，`<=0` 不限制                               |
+
+> Security boundary: configure the same HMAC secret at
+> `platform.tenant.gateway.identity-assertion-secret` in Gateway and downstream services. Without assertions,
+> every downstream service must configure `jwt-secret` and verify JWT independently.
+> A plain `X-Tenant-ID` header is not trusted by default.
+
+### Gateway 联动配置
+
+推荐由 Gateway 完成用户 JWT 认证，再签发短期租户身份断言给下游服务：
+
+```yaml
+platform:
+  tenant:
+    enable: true
+    gateway:
+      identity-assertion-secret: ${TENANT_ASSERTION_SECRET}
+      identity-assertion-ttl-seconds: 60
+```
+
+业务服务使用相同的断言密钥：
+
+```yaml
+platform:
+  tenant:
+    enable: true
+    gateway:
+      identity-assertion-secret: ${TENANT_ASSERTION_SECRET}
+    allow-unsigned-tenant-header: false
+```
+
+如果业务服务不是通过 Gateway 进入，或采用每个服务独立验签模式，则配置：
+
+```yaml
+platform:
+  tenant:
+    enable: true
+    jwt-secret: ${JWT_SECRET}
+```
+
+启用租户组件的业务服务至少应满足其一：Gateway 断言模式、服务独立 JWT 验签模式，或仅限受控遗留调用的未签名 Header 模式。
 
 ### 通信框架依赖
 
@@ -1162,10 +1274,9 @@ public interface TenantInfoProvider {
 >
 > 若需关闭内置缓存（例如业务方希望使用自定义缓存策略），设置：
 > ```yaml
-> multi-tenancy:
+> platform.tenant:
 >   cache:
->     tenant-info:
->       enabled: false
+>     enabled: false
 > ```
 > 租户状态变更后可通过 {@code CachingTenantInfoProvider.invalidate (tenantId)} 主动失效缓存。
 
@@ -1348,6 +1459,10 @@ public class MultiTenancyProperties {
     }
 }
 ```
+
+> 代码示例保留了历史简化写法；实际配置前缀为
+> `platform.tenant`，且 `enabled` 默认值为 `false`。安全相关配置还包括：
+> `identity-assertion-secret`、`jwt-secret` 和 `allow-unsigned-tenant-header`，详见“配置参考”。
 
 ### `SPI` 实现接口
 
@@ -1565,7 +1680,7 @@ header 透传
 **原因**: `TenantLineInnerInterceptor` 和 `TenantStrategyInterceptor` **每次 SQL 都调用**
 `TenantInfoProvider.getTenantInfo(tenantId)`,如果实现里直接查 `sys_tenant` 表,等于每次业务查询都多一次 DB 查询
 
-**解决**: 框架已内置 `CachingTenantInfoProvider` 装饰器（默认开启，`multi-tenancy.cache.tenant-info.enabled=true`），
+**解决**: 框架已内置 `CachingTenantInfoProvider` 装饰器（默认开启，`platform.tenant.cache.enabled=true`），
 自动为业务实现的 `TenantInfoProvider` 叠加 JDK `ConcurrentHashMap` 缓存（`ttl=60s`、`max-size=10000`）。 **业务方只需写纯 DB
 查询实现，无需手写缓存**。
 
@@ -1698,7 +1813,7 @@ SELECT * FROM orders o JOIN users_1002 u ON o.user_id = u.id;
 <dependencies>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-tenant</artifactId>
+        <artifactId>atlas-richie-component-tenant-core</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </dependency>
     <dependency>
@@ -1806,7 +1921,7 @@ public class SysTenantInfoProvider implements TenantInfoProvider {
 ```
 
 > 🧩 **无需手写缓存**。框架内置 `CachingTenantInfoProvider` 装饰器已通过
-> `@ConditionalOnProperty(prefix="multi-tenancy.cache.tenant-info", name="enabled", matchIfMissing=true)`
+> `@ConditionalOnProperty(prefix="platform.tenant.cache", name="enabled", matchIfMissing=true)`
 > 自动装配，以 JDK `ConcurrentHashMap` 实现 `ttl=60s`、`max-size=10000` 缓存。
 > 业务方只需实现上述纯 DB 查询逻辑，缓存层由框架透明叠加。
 
@@ -1936,8 +2051,8 @@ mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl   # 开发环境看 SQL
 
-multi-tenancy:
-  enabled: true
+platform.tenant:
+  enable: true
   mode: COLUMN
   tenant-id-column: tenant_id
   enforce-auth-tenant: true
@@ -1951,8 +2066,8 @@ multi-tenancy:
 #### `TABLE` 模式
 
 ```yaml
-multi-tenancy:
-  enabled: true
+platform.tenant:
+  enable: true
   mode: TABLE
   table-name-suffix: "_${tenant}"     # orders → orders_1001
   ignore-tables:
@@ -1966,8 +2081,8 @@ multi-tenancy:
 #### `SCHEMA` 模式 (仅 `PG`/`Oracle`)
 
 ```yaml
-multi-tenancy:
-  enabled: true
+platform.tenant:
+  enable: true
   mode: SCHEMA
   schema-prefix: "tenant_"             # tenantId=1001 → schema "tenant_1001"
   schema-auto-create: true             # 首次访问自动 CREATE SCHEMA + 复制表结构
@@ -1986,8 +2101,8 @@ spring:
     username: platform
     password: ${PLATFORM_PWD}
 
-multi-tenancy:
-  enabled: true
+platform.tenant:
+  enable: true
   mode: DATABASE
   datasource:
     shared:                            # 共享数据源(可选,用于 sys_tenant 表)
