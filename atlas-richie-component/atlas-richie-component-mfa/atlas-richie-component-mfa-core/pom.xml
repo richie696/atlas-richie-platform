@@ -18,6 +18,13 @@
     <description>MFA核心模块 - 公共实体、枚举、工具类、配置类</description>
 
     <dependencies>
+        <!-- 统一租户开关与配置模型（不引入租户运行时实现） -->
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-component-tenant-common</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- 基础依赖 -->
         <dependency>
             <groupId>cn.richie696.component</groupId>

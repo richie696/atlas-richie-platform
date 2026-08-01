@@ -13,7 +13,7 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- 跨服务共享契约总集（GatewayContract / TokenFilterConfig / TenantFilterConfig /
+        <!-- 跨服务共享契约总集（GatewayContract / TokenFilterConfig /
              DeployConfig / OAuth2AuditEvent / BaseStreamMessage） -->
         <!-- 通过 compile 依赖 + 传递暴露，保证已上线业务服务升级后 import 路径零改动 -->
         <dependency>

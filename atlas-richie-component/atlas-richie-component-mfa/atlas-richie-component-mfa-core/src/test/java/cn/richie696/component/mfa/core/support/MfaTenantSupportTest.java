@@ -15,8 +15,7 @@
  */
 package cn.richie696.component.mfa.core.support;
 
-import cn.richie696.contract.gateway.config.GatewayContract;
-import cn.richie696.contract.gateway.config.TenantFilterConfig;
+import cn.richie696.component.tenant.config.MultiTenancyProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -25,26 +24,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MfaTenantSupportTest {
 
     @Test
-    void isTenantEnabled_prefersGatewayContract() {
+    void isTenantEnabled_readsUnifiedTenantProperties() {
         MfaTenantSupport support = new MfaTenantSupport();
-        TenantFilterConfig tenant = new TenantFilterConfig();
-        tenant.setEnable(true);
-        GatewayContract gatewayContract = new GatewayContract();
-        gatewayContract.setTenant(tenant);
-        TenantFilterConfig fallback = new TenantFilterConfig();
-        fallback.setEnable(false);
-        ReflectionTestUtils.setField(support, "gatewayContract", gatewayContract);
-        ReflectionTestUtils.setField(support, "tenantFilterConfig", fallback);
-
-        assertThat(support.isTenantEnabled()).isTrue();
-    }
-
-    @Test
-    void isTenantEnabled_fallsBackToTenantFilterConfig() {
-        MfaTenantSupport support = new MfaTenantSupport();
-        TenantFilterConfig tenantFilter = new TenantFilterConfig();
-        tenantFilter.setEnable(true);
-        ReflectionTestUtils.setField(support, "tenantFilterConfig", tenantFilter);
+        MultiTenancyProperties properties = new MultiTenancyProperties();
+        properties.setEnable(true);
+        ReflectionTestUtils.setField(support, "properties", properties);
 
         assertThat(support.isTenantEnabled()).isTrue();
     }

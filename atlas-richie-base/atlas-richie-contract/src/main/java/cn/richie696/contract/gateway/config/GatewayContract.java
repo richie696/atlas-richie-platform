@@ -29,7 +29,7 @@ import java.io.Serializable;
  * 共享的配置数据结构。网关签发 / 其它服务校验或消费时使用同一份结构，避免不同服务对同一配置
  * 存在数据结构漂移的风险。
  * <p>
- * 该类只包含真正需要跨服务使用的字段（token 黑白名单、租户开关、灰度策略、审计总开关）。
+ * 该类只包含真正需要跨服务使用的字段（token 黑白名单、灰度策略、审计总开关）。
  * gateway 内部专属的配置（ECC 加密、SSO、硬件指纹、异常检测、熔断策略等）不在本契约范围内，
  * 对应配置类位于 {@code richie-gateway-service} 工程内部，不对外暴露。
  * <p>
@@ -40,8 +40,8 @@ import java.io.Serializable;
  * {@code GatewayConfig} 与 {@code GatewayContract} 共存互不干扰。
  * <p>
  * <b>配置迁移说明</b>：原 yml 中位于 {@code platform.gateway.token / tenant / deploy /
- * audit-enabled} 下的配置项需迁移至 {@code platform.gateway.contract.token / tenant /
- * deploy / audit-enabled}，否则对应字段将无法被本契约读取。
+ * audit-enabled} 下的配置项需迁移至 {@code platform.gateway.contract.token /
+ * deploy / audit-enabled}，租户配置请使用独立租户组件的 {@code platform.tenant} 前缀。
  *
  * @author richie696
  * @version 1.1
@@ -75,15 +75,6 @@ public class GatewayContract implements Serializable {
      * 从 token 拿到 userId 后填充 {@code LoginUserContextHolder}。
      */
     private TokenFilterConfig token = new TokenFilterConfig();
-
-    /**
-     * 租户过滤器配置
-     * <p>
-     * gateway 使用：透传 / 校验租户请求头。
-     * <p>
-     * MFA 等组件使用：判断是否启用多租户，决定后续租户隔离逻辑。
-     */
-    private TenantFilterConfig tenant = new TenantFilterConfig();
 
     /**
      * 金丝雀（灰度）发布配置

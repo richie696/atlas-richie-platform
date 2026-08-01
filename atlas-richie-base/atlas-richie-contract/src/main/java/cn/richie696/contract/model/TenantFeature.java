@@ -20,8 +20,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * 租户功能全局开关
  *
- * <p>该标志位由 {@code atlas-richie-component-tenant} 在启动时自动设置为 {@code true}，
- * 实现租户模块的热插拔：只要该组件在 classpath 上且 Spring 上下文已刷新，此标志即为 {@code true}。</p>
+ * <p>该标志位由 {@code atlas-richie-component-tenant} 在配置
+ * {@code platform.tenant.enable=true} 后设置为 {@code true}。
+ * 仅组件位于 classpath 时保持 {@code false}，使业务系统按无租户模式运行。</p>
  *
  * <p>JwtUtils 在生成令牌时读取此标志决定是否向 JWT claims 中写入 {@code tenantEnabled=true}，
  * {@code TenantFilter} 再依据 JWT 中的 {@code tenantEnabled} 决定是否执行租户校验。</p>

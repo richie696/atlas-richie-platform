@@ -60,6 +60,12 @@ public interface GlobalConstants {
     String X_TENANT_ID = "x-rd-request-tenantid";
 
     /**
+     * 网关签发的内部租户身份断言。该 header 只能由受信任的网关生成，
+     * 下游服务必须验证其 HMAC 签名后才能建立租户上下文。
+     */
+    String X_TENANT_ASSERTION = "X-Tenant-Assertion";
+
+    /**
      * 店铺header
      */
     String X_RD_REQUEST_SHOP_CODE = "x-rd-request-shopcode";

@@ -20,7 +20,7 @@ import cn.richie696.component.cache.ops.KeyOps;
 import cn.richie696.component.cache.ops.ValueOps;
 import cn.richie696.component.mfa.core.config.properties.MfaLocalCryptoProperties;
 import cn.richie696.component.mfa.core.support.MfaTenantSupport;
-import cn.richie696.contract.gateway.config.TenantFilterConfig;
+import cn.richie696.component.tenant.config.MultiTenancyProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -149,10 +149,9 @@ class LocalKeyManagementEngineTest {
             cache.when(GlobalCache::value).thenReturn(valueOps);
 
             MfaTenantSupport tenantSupport = new MfaTenantSupport();
-            ReflectionTestUtils.setField(tenantSupport, "gatewayContract", null);
-            TenantFilterConfig tenantFilterConfig = new TenantFilterConfig();
-            tenantFilterConfig.setEnable(true);
-            ReflectionTestUtils.setField(tenantSupport, "tenantFilterConfig", tenantFilterConfig);
+            MultiTenancyProperties properties = new MultiTenancyProperties();
+            properties.setEnable(true);
+            ReflectionTestUtils.setField(tenantSupport, "properties", properties);
 
             LocalKeyManagementEngine tenantEngine = new LocalKeyManagementEngine(new MfaLocalCryptoProperties(), tenantSupport);
             tenantEngine.init();
@@ -209,10 +208,9 @@ class LocalKeyManagementEngineTest {
             cache.when(GlobalCache::key).thenReturn(keyOps);
 
             MfaTenantSupport tenantSupport = new MfaTenantSupport();
-            ReflectionTestUtils.setField(tenantSupport, "gatewayContract", null);
-            TenantFilterConfig tenantFilterConfig = new TenantFilterConfig();
-            tenantFilterConfig.setEnable(true);
-            ReflectionTestUtils.setField(tenantSupport, "tenantFilterConfig", tenantFilterConfig);
+            MultiTenancyProperties properties = new MultiTenancyProperties();
+            properties.setEnable(true);
+            ReflectionTestUtils.setField(tenantSupport, "properties", properties);
 
             LocalKeyManagementEngine tenantEngine = new LocalKeyManagementEngine(new MfaLocalCryptoProperties(), tenantSupport);
             tenantEngine.init();
