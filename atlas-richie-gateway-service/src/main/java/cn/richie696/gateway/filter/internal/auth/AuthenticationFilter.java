@@ -165,7 +165,17 @@ public class AuthenticationFilter extends AbstractBaseFilter {
             }
         }
         exchange.getResponse().getHeaders().set(JwtUtils.X_ACCESS_TOKEN, token);
-        return chain.filter(exchange);
+
+        // 租户相关 header 只能由 Gateway 的 TenantFilter 生成，先清理客户端传入值，
+        // 防止 TenantFilter 被关闭或未命中时仍把伪造租户上下文透传到下游。
+        ServerHttpRequest sanitizedRequest = exchange.getRequest().mutate()
+                .headers(headers -> {
+                    headers.remove(GlobalConstants.X_TENANT_ID);
+                    headers.remove("X-Tenant-ID");
+                    headers.remove(GlobalConstants.X_TENANT_ASSERTION);
+                })
+                .build();
+        return chain.filter(exchange.mutate().request(sanitizedRequest).build());
     }
 
     protected boolean enableVerifyFilter(ServerWebExchange exchange) {

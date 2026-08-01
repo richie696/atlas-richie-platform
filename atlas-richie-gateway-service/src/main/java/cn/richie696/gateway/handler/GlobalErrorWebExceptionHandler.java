@@ -15,8 +15,12 @@
  */
 package cn.richie696.gateway.handler;
 
+import cn.richie696.component.i18n.resolver.I18nResolver;
+import cn.richie696.contract.exception.I18nMessageKeyException;
+import cn.richie696.contract.model.ApiResult;
 import cn.richie696.gateway.error.ErrorStrategyContext;
 import jakarta.annotation.Nonnull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.web.WebProperties;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.webflux.autoconfigure.error.AbstractErrorWebExceptionHandler;
@@ -38,9 +42,12 @@ import java.util.List;
 
 @Component
 @Order(-2)
+@Slf4j
 public class GlobalErrorWebExceptionHandler extends AbstractErrorWebExceptionHandler {
 
+    private final ErrorAttributes errorAttributes;
     private final ErrorStrategyContext errorStrategyContext;
+    private final I18nResolver i18n;
 
     /**
      * 全局异常处理
@@ -57,9 +64,12 @@ public class GlobalErrorWebExceptionHandler extends AbstractErrorWebExceptionHan
                                           ApplicationContext applicationContext,
                                           ServerCodecConfigurer serverCodecConfigurer,
                                           List<ViewResolver> viewResolvers,
-                                          ErrorStrategyContext errorStrategyContext) {
+                                          ErrorStrategyContext errorStrategyContext,
+                                          I18nResolver i18n) {
         super(errorAttributes, resources, applicationContext);
+        this.errorAttributes = errorAttributes;
         this.errorStrategyContext = errorStrategyContext;
+        this.i18n = i18n;
         super.setMessageWriters(serverCodecConfigurer.getWriters());
         super.setMessageReaders(serverCodecConfigurer.getReaders());
         super.setViewResolvers(viewResolvers);
@@ -72,6 +82,11 @@ public class GlobalErrorWebExceptionHandler extends AbstractErrorWebExceptionHan
     }
 
     private Mono<ServerResponse> renderErrorResponse(ServerRequest request) {
+        I18nMessageKeyException messageKeyException = findMessageKeyException(request);
+        if (messageKeyException != null) {
+            return renderMessageKeyError(messageKeyException);
+        }
+
         // 定义需要的错误属性（包含堆栈跟踪信息，用于开发/测试环境）
         var options = ErrorAttributeOptions.of(
                 ErrorAttributeOptions.Include.MESSAGE,
@@ -92,6 +107,48 @@ public class GlobalErrorWebExceptionHandler extends AbstractErrorWebExceptionHan
         return ServerResponse.status(httpStatus)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(result);
+    }
+
+    /**
+     * 统一解析携带 messageKey 的异常，避免异常生产方依赖 I18n 模块。
+     */
+    private Mono<ServerResponse> renderMessageKeyError(I18nMessageKeyException exception) {
+        String message;
+        try {
+            message = i18n.get(exception.getMessageKey(), exception.getArguments());
+        } catch (Exception resolveError) {
+            log.error("国际化消息解析失败: messageKey={}", exception.getMessageKey(), resolveError);
+            message = exception.getMessageKey();
+        }
+
+        ApiResult<Void> result = new ApiResult<>();
+        result.setSuccess(false)
+                .setCode(exception.getErrorCode())
+                .setMsg(message);
+
+        HttpStatus status = HttpStatus.resolve(exception.getStatusCode());
+        if (status == null) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        return ServerResponse.status(status)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(result);
+    }
+
+    private I18nMessageKeyException findMessageKeyException(ServerRequest request) {
+        Throwable throwable = errorAttributes.getError(request);
+        if (throwable == null) {
+            return null;
+        }
+
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof I18nMessageKeyException messageKeyException) {
+                return messageKeyException;
+            }
+            current = current.getCause();
+        }
+        return null;
     }
 
 

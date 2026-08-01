@@ -41,7 +41,7 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- 跨服务共享契约：GatewayContract / TokenFilterConfig / TenantFilterConfig /
+        <!-- 跨服务共享契约：GatewayContract / TokenFilterConfig /
              DeployConfig / OAuth2AuditEvent / OAuth2AuditEventType / BaseStreamMessage -->
         <dependency>
             <groupId>cn.richie696.base</groupId>
@@ -60,6 +60,12 @@
         <dependency>
             <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-cache</artifactId>
+        </dependency>
+
+        <!-- 租户 Gateway 拦截器；业务适配器仍由本服务提供 -->
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-component-tenant-gateway</artifactId>
         </dependency>
 
         <dependency>

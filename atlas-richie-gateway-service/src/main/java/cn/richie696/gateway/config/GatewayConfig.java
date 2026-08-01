@@ -18,7 +18,6 @@ package cn.richie696.gateway.config;
 import cn.richie696.component.oauth.core.config.OAuth2Properties;
 import cn.richie696.contract.gateway.config.DeployConfig;
 import cn.richie696.contract.gateway.config.GatewayContract;
-import cn.richie696.contract.gateway.config.TenantFilterConfig;
 import cn.richie696.contract.gateway.config.TokenFilterConfig;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
@@ -41,7 +40,7 @@ import java.io.Serializable;
  * <p>
  * 跨服务共享的配置（令牌黑白名单、租户开关、灰度策略、审计总开关）已抽离到
  * {@link GatewayContract}，位于 {@code richie-contract} 模块。本类通过组合持有
- * {@link GatewayContract}，并将 {@link #getToken()} / {@link #getTenant()} /
+ * {@link GatewayContract}，并将 {@link #getToken()} /
  * {@link #getDeploy()} / {@link #isAuditEnabled()} 代理到契约聚合类，确保 gateway
  * 内部代码（约 30+ 处）的方法调用签名不变，迁移零改动。
  * <p>
@@ -121,7 +120,7 @@ public class GatewayConfig implements Serializable {
 
     // ------------------------------------------------------------------
     // 下列 getter 将共享契约字段"平展"到 GatewayConfig 对象上，保证 gateway 工程
-    // 内部遗留代码 gatewayConfig.getToken() / .getTenant() / .getDeploy() /
+    // 内部遗留代码 gatewayConfig.getToken() / .getDeploy() /
     // .isAuditEnabled() 的调用签名完全兼容。
     // ------------------------------------------------------------------
 
@@ -132,15 +131,6 @@ public class GatewayConfig implements Serializable {
      */
     public TokenFilterConfig getToken() {
         return contract.getToken();
-    }
-
-    /**
-     * 获取租户过滤器配置（代理到共享契约）
-     *
-     * @return 租户过滤器配置
-     */
-    public TenantFilterConfig getTenant() {
-        return contract.getTenant();
     }
 
     /**
