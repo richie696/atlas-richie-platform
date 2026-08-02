@@ -21,9 +21,14 @@ import cn.richie696.component.cache.redis.config.base.RedisBaseAutoConfiguration
 import cn.richie696.component.statemachine.config.StateMachineProperties;
 import cn.richie696.component.statemachine.storage.StateMachineKeyBuilder;
 import cn.richie696.component.statemachine.storage.impl.RedisStateStorage;
+import cn.richie696.context.bloom.BloomFilter;
 import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+
+import java.util.Set;
 
 @SpringBootConfiguration
 @EnableConfigurationProperties(StateMachineProperties.class)
@@ -35,4 +40,34 @@ import org.springframework.context.annotation.Import;
         StateMachineKeyBuilder.class
 })
 public class StatemachineIntegrationTestConfiguration {
+
+    /**
+     * 提供 noop {@link BloomFilter} 作为测试上下文兜底。本配置用 {@code @SpringBootConfiguration}
+     * 但未启用 {@code @EnableAutoConfiguration}，因此 {@code BloomFilterAutoConfiguration}
+     * 不会被自动装配，而 {@code RedisStringManager} 构造器要求 {@link BloomFilter} bean，
+     * 否则整个上下文加载失败。
+     */
+    @Bean
+    @ConditionalOnMissingBean(BloomFilter.class)
+    BloomFilter testBloomFilter() {
+        return new BloomFilter() {
+            @Override
+            public boolean mightContain(String key) {
+                return true;
+            }
+
+            @Override
+            public void put(String key) {
+            }
+
+            @Override
+            public void putAll(Set<String> keys) {
+            }
+
+            @Override
+            public boolean isExists() {
+                return false;
+            }
+        };
+    }
 }
