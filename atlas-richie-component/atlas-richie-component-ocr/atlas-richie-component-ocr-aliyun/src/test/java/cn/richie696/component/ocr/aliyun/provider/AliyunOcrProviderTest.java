@@ -175,6 +175,63 @@ class AliyunOcrProviderTest {
                 () -> new AliyunOcrProvider(baseProps(null), httpClient));
     }
 
+    @Test
+    void recognize_streamImage_sendsBase64Body() throws Exception {
+        AliyunOcrProvider provider = new AliyunOcrProvider(baseProps("test-app-code"), httpClient);
+
+        byte[] imageBytes = new byte[]{9, 8, 7};
+        OcrImage image = new OcrImage.Stream(
+                new java.io.ByteArrayInputStream(imageBytes), MimeType.PNG);
+        provider.recognize(image, OcrOptions.builder().build());
+
+        assertEquals(1, callCount.get());
+        assertNotNull(lastBodyFieldBody.get(), "Stream image should be sent as base64 body field");
+        assertEquals(java.util.Base64.getEncoder().encodeToString(imageBytes), lastBodyFieldBody.get());
+        assertTrue(lastBodyFieldUrl.get() == null);
+    }
+
+    @Test
+    void recognize_responseWithNestedLinesAndNullFields_parsesLineBlocks() throws Exception {
+        server.removeContext("/v1/ocr/recognize");
+        server.createContext("/v1/ocr/recognize", exchange -> {
+            callCount.incrementAndGet();
+            // word/prob/pos 全 null 走兜底；lines 嵌套含一条合法行 + 一条 null pos 行
+            respondJson(exchange, 200, "{\"content\":\"block\",\"prism_wnum\":100,"
+                    + "\"prism_wordsInfo\":[{\"word\":null,\"prob\":null,\"pos\":null,"
+                    + "\"lines\":[{\"word\":\"line-1\",\"prob\":88,"
+                    + "\"pos\":[[1,2],[3,2],[3,4],[1,4]]},{\"word\":null,\"prob\":null,\"pos\":null}]}],"
+                    + "\"requestId\":\"mock-req-2\",\"ret\":\"0\"}");
+        });
+
+        AliyunOcrProvider provider = new AliyunOcrProvider(baseProps("x"), httpClient);
+        OcrResult result = provider.recognize(
+                new OcrImage.Bytes(new byte[]{1}, MimeType.PNG), OcrOptions.builder().build());
+
+        assertEquals(1, result.blocks().size());
+        assertEquals(2, result.blocks().get(0).lines().size());
+        assertEquals("line-1", result.blocks().get(0).lines().get(0).text());
+        assertEquals(0.88f, result.blocks().get(0).lines().get(0).confidence(), 0.001f);
+        assertEquals(4, result.blocks().get(0).lines().get(0).box().size());
+        assertEquals(new cn.richie696.component.ocr.model.Point(1, 2),
+                result.blocks().get(0).lines().get(0).box().get(0));
+    }
+
+    @Test
+    void recognize_emptyBody_throwsProviderUnavailable() throws Exception {
+        server.removeContext("/v1/ocr/recognize");
+        server.createContext("/v1/ocr/recognize", exchange -> {
+            callCount.incrementAndGet();
+            respondJson(exchange, 200, "");
+        });
+
+        AliyunOcrProvider provider = new AliyunOcrProvider(baseProps("x"), httpClient);
+
+        assertThrows(OcrException.ProviderUnavailable.class,
+                () -> provider.recognize(
+                        new OcrImage.Bytes(new byte[]{1}, MimeType.PNG),
+                        OcrOptions.builder().build()));
+    }
+
     private static void respondJson(HttpExchange exchange, int status, String body) {
         try {
             byte[] bytes = body.getBytes(StandardCharsets.UTF_8);

@@ -107,4 +107,34 @@ class OcrExceptionTest {
                     e.getClass().getSimpleName() + " should be an OcrException");
         }
     }
+
+    @Test
+    void noAvailableProvider_singleNameWrapsIntoList() {
+        OcrException.NoAvailableProvider ex =
+                new OcrException.NoAvailableProvider("aliyun", "tenant-7");
+        org.junit.jupiter.api.Assertions.assertEquals(
+                java.util.List.of("aliyun"), ex.attempted());
+        org.junit.jupiter.api.Assertions.assertEquals("tenant-7", ex.context());
+        org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("aliyun"));
+        org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("tenant-7"));
+    }
+
+    @Test
+    void noAvailableProvider_listIsDefensivelyCopied() {
+        java.util.List<String> source = new java.util.ArrayList<>(java.util.List.of("a", "b"));
+        OcrException.NoAvailableProvider ex =
+                new OcrException.NoAvailableProvider(source, "gpu");
+        org.junit.jupiter.api.Assertions.assertEquals(java.util.List.of("a", "b"), ex.attempted());
+        source.clear();
+        org.junit.jupiter.api.Assertions.assertEquals(
+                java.util.List.of("a", "b"), ex.attempted(),
+                "attempted() should be an immutable snapshot");
+    }
+
+    @Test
+    void noAvailableProvider_nullListThrows() {
+        org.junit.jupiter.api.Assertions.assertThrows(
+                NullPointerException.class,
+                () -> new OcrException.NoAvailableProvider((java.util.List<String>) null, "ctx"));
+    }
 }

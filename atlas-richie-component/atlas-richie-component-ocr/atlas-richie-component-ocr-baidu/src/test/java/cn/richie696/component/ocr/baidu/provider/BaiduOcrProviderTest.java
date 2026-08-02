@@ -172,6 +172,53 @@ class BaiduOcrProviderTest {
                 () -> new BaiduOcrProvider(baseProps("test-key", null), httpClient));
     }
 
+    @Test
+    void recognize_urlImage_sendsFormRequestWithUrlField() throws Exception {
+        BaiduOcrProvider provider = new BaiduOcrProvider(baseProps("test-key", "test-secret"), httpClient);
+
+        OcrImage image = new OcrImage.Url("https://example.com/img.png");
+        OcrResult result = provider.recognize(image, OcrOptions.builder().build());
+
+        assertEquals(1, tokenCalls.get());
+        assertEquals(1, ocrCalls.get());
+        assertTrue(result.text().contains("你好世界"));
+        assertTrue(result.blocks().size() >= 2);
+    }
+
+    @Test
+    void recognize_streamImage_sendsBase64Body() throws Exception {
+        BaiduOcrProvider provider = new BaiduOcrProvider(baseProps("test-key", "test-secret"), httpClient);
+
+        OcrImage image = new OcrImage.Stream(
+                new java.io.ByteArrayInputStream(new byte[]{4, 5, 6}), MimeType.PNG);
+        OcrResult result = provider.recognize(image, OcrOptions.builder().build());
+
+        assertEquals(1, tokenCalls.get());
+        assertEquals(1, ocrCalls.get());
+        assertTrue(result.text().contains("你好世界"));
+    }
+
+    @Test
+    void recognize_multipleLanguages_resolveLanguageTypes() throws Exception {
+        BaiduOcrProvider provider = new BaiduOcrProvider(baseProps("test-key", "test-secret"), httpClient);
+
+        OcrImage image = new OcrImage.Bytes(new byte[]{1}, MimeType.PNG);
+
+        OcrOptions english = OcrOptions.builder().languages(cn.richie696.component.ocr.model.Languages.ENGLISH).build();
+        provider.recognize(image, english);
+        assertEquals("ENG", lastOcrLanguageType.get(), "ENGLISH should map to ENG");
+
+        OcrOptions traditional = OcrOptions.builder()
+                .languages(cn.richie696.component.ocr.model.Languages.CHINESE_TRADITIONAL).build();
+        provider.recognize(image, traditional);
+        assertEquals("CHT_ENG", lastOcrLanguageType.get());
+
+        OcrOptions japanese = OcrOptions.builder()
+                .languages(cn.richie696.component.ocr.model.Languages.JAPANESE).build();
+        provider.recognize(image, japanese);
+        assertEquals("JAP", lastOcrLanguageType.get());
+    }
+
     // --- helpers ---
 
     private static void respondJson(HttpExchange exchange, int status, String body) {

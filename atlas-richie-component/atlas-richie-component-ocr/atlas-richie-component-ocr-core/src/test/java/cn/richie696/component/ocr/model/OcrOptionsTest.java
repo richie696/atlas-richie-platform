@@ -133,4 +133,87 @@ class OcrOptionsTest {
         assertThrows(IllegalArgumentException.class,
                 () -> OcrOptions.builder().confidenceThreshold(1.1f).build());
     }
+
+    @Test
+    void preset_defaultOptions_usesBuilderDefaults() {
+        OcrOptions options = OcrOptions.defaultOptions();
+        assertEquals(0.6f, options.confidenceThreshold());
+        assertTrue(options.detectOrientation());
+        assertFalse(options.tableRecognition());
+        assertFalse(options.handwriting());
+        assertTrue(options.outputBoundingBoxes());
+    }
+
+    @Test
+    void preset_scanDocument_enablesOrientationTableAndBoxes() {
+        OcrOptions opts = OcrOptions.scanDocument();
+        assertTrue(opts.detectOrientation());
+        assertTrue(opts.tableRecognition());
+        assertTrue(opts.outputBoundingBoxes());
+        assertFalse(opts.handwriting());
+    }
+
+    @Test
+    void preset_mobilePhoto_enablesOrientationAndBoxes() {
+        OcrOptions opts = OcrOptions.mobilePhoto();
+        assertTrue(opts.detectOrientation());
+        assertFalse(opts.tableRecognition());
+        assertTrue(opts.outputBoundingBoxes());
+    }
+
+    @Test
+    void preset_handwrittenForm_enablesHandwritingAndBoxes() {
+        OcrOptions opts = OcrOptions.handwrittenForm();
+        assertTrue(opts.handwriting());
+        assertTrue(opts.outputBoundingBoxes());
+        assertFalse(opts.tableRecognition());
+    }
+
+    @Test
+    void builder_isFreshInstance() {
+        OcrOptions first = OcrOptions.builder().dpi(600).build();
+        assertEquals(600, first.dpi());
+        OcrOptions second = OcrOptions.builder().build();
+        assertEquals(300, second.dpi(), "each builder() call must start from defaults");
+    }
+
+    @Test
+    void equals_hashCode_compareAllFields() {
+        OcrOptions base = OcrOptions.builder()
+                .languages(Languages.JAPANESE)
+                .dpi(200)
+                .confidenceThreshold(0.7f)
+                .build();
+        OcrOptions same = OcrOptions.builder()
+                .languages(Languages.JAPANESE)
+                .dpi(200)
+                .confidenceThreshold(0.7f)
+                .build();
+        OcrOptions differentDpi = OcrOptions.builder()
+                .languages(Languages.JAPANESE)
+                .dpi(201)
+                .confidenceThreshold(0.7f)
+                .build();
+        assertEquals(base, same);
+        assertEquals(base.hashCode(), same.hashCode());
+        assertNotEquals(base, differentDpi);
+        assertNotEquals(base, null);
+        assertNotEquals(base, "not-an-options");
+    }
+
+    @Test
+    void toString_containsKeyFields() {
+        String s = OcrOptions.scanDocument().toString();
+        assertTrue(s.contains("OcrOptions"));
+        assertTrue(s.contains("tableRecognition"));
+        assertTrue(s.contains("dpi"));
+    }
+
+    @Test
+    void firstLanguage_returnsFirstOfSet() {
+        OcrOptions opts = OcrOptions.builder()
+                .languages(Languages.ENGLISH, Languages.JAPANESE)
+                .build();
+        assertEquals(Languages.ENGLISH, opts.firstLanguage());
+    }
 }
