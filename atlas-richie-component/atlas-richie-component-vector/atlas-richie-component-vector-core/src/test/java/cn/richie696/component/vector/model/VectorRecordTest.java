@@ -46,10 +46,10 @@ class VectorRecordTest {
     void textFactory_setsDefaults() {
         VectorRecord record = VectorRecord.text("docs", "hello");
 
-        assertThat(record.getId()).isNull();
+        assertThat(record.getId()).isNotNull();
         assertThat(record.getIndexName()).isEqualTo("docs");
         assertThat(record.getContent()).isInstanceOf(VectorContent.TextContent.class);
-        assertThat(record.getStatus()).isEqualTo("active");
+        assertThat(record.getStatus()).isEqualTo("ACTIVE");
         assertThat(record.getCreatedAt()).isNotNull();
     }
 

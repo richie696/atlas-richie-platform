@@ -20,6 +20,7 @@ import cn.richie696.component.vector.model.VectorRecord;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -831,4 +832,5 @@ class RedisVectorServiceImplTest {
                     .hasMessageContaining("redis");
         }
     }
-}
+
+    }

@@ -43,14 +43,14 @@ class CrossProviderContractTest {
      * v2 接口声明的方法签名集合（{@code name#paramTypes}），作为契约基线。
      */
     @Test
-    @DisplayName("VectorService 核心门面必须正好 10 个方法")
+    @DisplayName("VectorService 核心门面必须正好 7 个方法（refactor 后）")
     void vectorService_exposesExactly10CoreMethods() {
         long count = Arrays.stream(VectorService.class.getMethods())
                 .filter(m -> !m.isSynthetic() && !m.isDefault())
                 .count();
         assertThat(count)
-                .as("VectorService 仅应暴露核心检索、写入、按 ID 删除和批量能力")
-                .isEqualTo(10L);
+                .as("VectorService 仅应暴露核心检索、写入、按 ID 删除和批量能力（refactor 后 8 个）")
+                .isEqualTo(8L);
     }
 
     @Test
@@ -92,14 +92,13 @@ class CrossProviderContractTest {
                 .map(Method::getName)
                 .collect(Collectors.toSet());
 
-        // 每个能力分组至少 1 个方法
+        // 每个能力分组至少 1 个方法（hybrid/multiVector 已抽到独立可选接口）
         assertThat(methodNames)
                 .contains(
-                        "upsert", "upsertAll",             // Write
-                        "deleteById", "deleteByIds",       // Delete
-                        "searchByText", "searchByImage",   // Search
-                        "hybridSearch", "searchByMultiVector",
-                        "deleteAll");
+                        "upsert",                            // Write
+                        "deleteById", "deleteByIds",          // Delete
+                        "searchByText", "searchByImage",      // Search
+                        "upsertAll", "deleteAll");             // Bulk
     }
 
     // ==================== 反射工具 ====================

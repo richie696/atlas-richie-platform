@@ -1,5 +1,7 @@
 package cn.richie696.component.vector.bulk;
 
+import cn.richie696.component.vector.model.VectorRecord;
+
 /**
  * 单条记录在批量操作中的可观测处理阶段。
  *
@@ -18,7 +20,7 @@ package cn.richie696.component.vector.bulk;
  */
 public enum BulkProcessingStage {
     /**
-     * 嵌入阶段：调用 {@code EmbeddingModel} 把 {@link VectorRecord#content} 的内容转为稠密向量。
+     * 嵌入阶段：调用 {@code EmbeddingModel} 把 {@link VectorRecord} 的 {@code content} 转为稠密向量。
      *
      * <p>嵌入失败通常意味着：嵌入模型未配置（图像模态）、上游模型调用超时 / 限额、
      * 单条内容过长触发模型拒绝等。RAG 业务可在此阶段决定是否降级（切换更小模型）或跳过该条。</p>

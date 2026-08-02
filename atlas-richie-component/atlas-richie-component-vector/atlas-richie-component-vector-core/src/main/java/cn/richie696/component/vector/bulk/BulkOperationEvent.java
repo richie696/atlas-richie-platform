@@ -2,6 +2,8 @@ package cn.richie696.component.vector.bulk;
 
 import java.time.Instant;
 
+import cn.richie696.component.vector.model.VectorRecord;
+
 /**
  * 批量操作的领域事件流。
  *
@@ -92,7 +94,7 @@ interface BulkOperationEvent permits BulkOperationEvent.Started,
      * 单条记录成功落库的终态事件。
      *
      * <p>只在持久化阶段（{@link BulkProcessingStage#PERSISTING}）成功后 emit，携带 provider 分配的
-     * {@code vectorId}（与 {@link VectorRecord#id} 可能相同，也可能由库自生成）。
+     * {@code vectorId}（与 {@link VectorRecord} 的 {@code id} 可能相同，也可能由库自生成）。
      * 业务侧可借此机会把"已入库成功"与外部文档状态机对齐、清理重试表或推动下一阶段管线。</p>
      *
      * @param operationId 批次关联键。

@@ -50,7 +50,7 @@ public class PostgresqlVectorAutoConfiguration {
      * 构建 pgvector Spring AI {@link VectorStore}，作为 core 模块与
      * {@link PostgresqlVectorServiceImpl} 的桥接点。
      *
-     * <p>维度直接来自 {@link PostgresqlConfig#getEmbeddingDimension()}（缺省
+     * <p>维度直接来自 {@link PostgresqlConfig} 的 {@code embeddingDimension}（缺省
      * 1536，对齐 OpenAI text-embedding-3-small），由 {@link PgVectorStore} 在
      * 建表时透传给 {@code vector(N)} 列。其它通用索引字段（metric / indexType）
      * 由 {@link cn.richie696.component.vector.config.VectorProperties.IndexConfig}

@@ -615,7 +615,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
      * <p>公共入口（如 {@code searchByText} / {@code searchByImage}）先完成 embedding 后
      * 会落到本方法，本方法负责把向量下推到 Milvus SDK 并把结果翻译成 Spring AI
      * {@link Document}。距离 / 相似度换算由本类内的 {@link #distanceToSimilarity}
-     * 完成，规则随 {@link MilvusConfig#getMetricType()} 变化：COSINE / IP 下
+     * 完成，规则随 {@link MilvusConfig} 的 {@code metricType} 变化：COSINE / IP 下
      * {@code similarity = distance}，L2 下 {@code similarity = 1 / (1 + distance)}，
      * 最终裁剪到 {@code [0, 1]} 区间。返回的 Document 在 {@code metadata} 中附带
      * {@code "score"} 字段，并在写入结果集前已按 {@code minScore} 阈值过滤。</p>

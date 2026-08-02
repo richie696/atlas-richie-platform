@@ -555,10 +555,6 @@ class PostgresqlVectorServiceImplTest {
         @Test
         @DisplayName("should DELETE all rows and return affected row count")
         void truncateIndex_executesDeleteAndReturnsCount() {
-            when(jdbcTemplate.queryForObject(
-                    eq("SELECT COUNT(*) FROM vector_documents"),
-                    eq(Long.class)
-            )).thenReturn(42L);
             when(jdbcTemplate.update("DELETE FROM vector_documents")).thenReturn(42);
 
             long deleted = postgresqlVectorService.truncateIndex("documents");
@@ -570,10 +566,6 @@ class PostgresqlVectorServiceImplTest {
         @Test
         @DisplayName("should return zero and execute DELETE when index is empty")
         void truncateIndex_whenEmpty_shouldReturnZero() {
-            when(jdbcTemplate.queryForObject(
-                    eq("SELECT COUNT(*) FROM vector_empty"),
-                    eq(Long.class)
-            )).thenReturn(0L);
             when(jdbcTemplate.update("DELETE FROM vector_empty")).thenReturn(0);
 
             long deleted = postgresqlVectorService.truncateIndex("empty");
@@ -585,10 +577,6 @@ class PostgresqlVectorServiceImplTest {
         @Test
         @DisplayName("should wrap DELETE failure in RuntimeException")
         void truncateIndex_whenDeleteThrows_shouldWrapException() {
-            when(jdbcTemplate.queryForObject(
-                    eq("SELECT COUNT(*) FROM vector_broken"),
-                    eq(Long.class)
-            )).thenReturn(5L);
             when(jdbcTemplate.update("DELETE FROM vector_broken"))
                     .thenThrow(new RuntimeException("relation does not exist"));
 
