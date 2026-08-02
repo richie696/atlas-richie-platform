@@ -58,14 +58,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *   <li>不存在的 subject 抛异常</li>
  * </ul>
  *
- * <p>注意:本 IT 启用 {@code platform.nats.jetstream.enabled=true} 触发 JetStreamBus Bean 装配;
+ * <p>注意:本 IT 启用 {@code platform.component.nats.jetstream.enabled=true} 触发 JetStreamBus Bean 装配;
  * NatsComponent 启动时不会预置 stream(默认 properties.getJetstream().isEnabled() = false),
  * 各测试自行通过独立连接管理 stream/consumer 生命周期。</p>
  *
  * @author richie696
  */
 @SpringBootTest(classes = NatsAutoConfiguration.class,
-        properties = "platform.nats.jetstream.enabled=true")
+        properties = "platform.component.nats.jetstream.enabled=true")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @EnabledIf("cn.richie696.component.nats.support.NatsIntegrationTestSupport#isEnabled")
 class JetStreamBusFacadeIT {

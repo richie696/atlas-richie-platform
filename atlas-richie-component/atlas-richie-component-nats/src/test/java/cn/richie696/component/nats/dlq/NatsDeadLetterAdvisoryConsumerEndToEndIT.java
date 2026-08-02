@@ -108,31 +108,31 @@ class NatsDeadLetterAdvisoryConsumerEndToEndIT {
         // base NATS 连接属性(由 NatsIntegrationTestSupport 注入 testcontainers 启动参数)
         NatsIntegrationTestSupport.getInstance().registerNatsProperties(registry);
 
-        registry.add("platform.nats.jetstream.enabled", () -> "true");
-        registry.add("platform.nats.jetstream.auto-provision", () -> "true");
+        registry.add("platform.component.nats.jetstream.enabled", () -> "true");
+        registry.add("platform.component.nats.jetstream.auto-provision", () -> "true");
 
         // DLQ 开关必须设两路:
-        //   - platform.nats.jetstream.dlq.enabled 用于 @ConditionalOnProperty 装配 DLQ bean
-        //   - platform.nats.dlq.enabled 用于 @ConfigurationProperties 绑定到 NatsProperties.dlq.enabled
+        //   - platform.component.nats.jetstream.dlq.enabled 用于 @ConditionalOnProperty 装配 DLQ bean
+        //   - platform.component.nats.dlq.enabled 用于 @ConfigurationProperties 绑定到 NatsProperties.dlq.enabled
         //     (NatsProperties.dlq 是顶层 @NestedConfigurationProperty 字段,实际 binding 路径
-        //      是 platform.nats.dlq.enabled,该值决定 provisionDlqStreams 是否实际跑)
+        //      是 platform.component.nats.dlq.enabled,该值决定 provisionDlqStreams 是否实际跑)
         // 缺一会导致 Bean 不创建 OR Bean 装配了但 DLQ stream 没 provision
-        registry.add("platform.nats.jetstream.dlq.enabled", () -> "true");
-        registry.add("platform.nats.dlq.enabled", () -> "true");
+        registry.add("platform.component.nats.jetstream.dlq.enabled", () -> "true");
+        registry.add("platform.component.nats.dlq.enabled", () -> "true");
 
         // 业务 stream + consumer 配置 — 被 NatsComponent.start() → provisionAll(properties) 消费
         // (注意:NatsComponent phase = MAX_VALUE - 100 < AdvisoryConsumer phase = MAX_VALUE - 50,
         //  所以 stream 必先 provision 完成,advisory subscription 才注册)
-        registry.add("platform.nats.jetstream.streams[0].name", () -> STREAM_NAME);
-        registry.add("platform.nats.jetstream.streams[0].subjects[0]", () -> SUBJECT);
-        registry.add("platform.nats.jetstream.streams[0].storageType", () -> "file");
-        registry.add("platform.nats.jetstream.streams[0].retention", () -> "limits");
-        registry.add("platform.nats.jetstream.streams[0].discard", () -> "old");
-        registry.add("platform.nats.jetstream.streams[0].consumers[0].name", () -> BUSINESS_CONSUMER);
-        registry.add("platform.nats.jetstream.streams[0].consumers[0].ackPolicy", () -> "explicit");
-        registry.add("platform.nats.jetstream.streams[0].consumers[0].deliverPolicy", () -> "all");
-        registry.add("platform.nats.jetstream.streams[0].consumers[0].maxDeliver", () -> MAX_DELIVER);
-        registry.add("platform.nats.jetstream.streams[0].consumers[0].ackWait", () -> ACK_WAIT);
+        registry.add("platform.component.nats.jetstream.streams[0].name", () -> STREAM_NAME);
+        registry.add("platform.component.nats.jetstream.streams[0].subjects[0]", () -> SUBJECT);
+        registry.add("platform.component.nats.jetstream.streams[0].storageType", () -> "file");
+        registry.add("platform.component.nats.jetstream.streams[0].retention", () -> "limits");
+        registry.add("platform.component.nats.jetstream.streams[0].discard", () -> "old");
+        registry.add("platform.component.nats.jetstream.streams[0].consumers[0].name", () -> BUSINESS_CONSUMER);
+        registry.add("platform.component.nats.jetstream.streams[0].consumers[0].ackPolicy", () -> "explicit");
+        registry.add("platform.component.nats.jetstream.streams[0].consumers[0].deliverPolicy", () -> "all");
+        registry.add("platform.component.nats.jetstream.streams[0].consumers[0].maxDeliver", () -> MAX_DELIVER);
+        registry.add("platform.component.nats.jetstream.streams[0].consumers[0].ackWait", () -> ACK_WAIT);
 
         // 预创建 NATS 内部 advisory stream — nats 2.10 不会在启动时自动建,必须等首次 advisory
         // 事件才会 lazy 创建,导致 NatsDeadLetterAdvisoryConsumer 首次 js.subscribe 失败

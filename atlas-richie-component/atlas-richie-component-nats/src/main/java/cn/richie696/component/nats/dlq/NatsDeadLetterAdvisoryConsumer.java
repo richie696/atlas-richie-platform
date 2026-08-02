@@ -161,7 +161,7 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
             return;
         }
         if (!properties.getDlq().isEnabled()) {
-            log.info("DLQ disabled (platform.nats.jetstream.dlq.enabled=false), advisory consumer not started");
+            log.info("DLQ disabled (platform.component.nats.jetstream.dlq.enabled=false), advisory consumer not started");
             return;
         }
         if (!properties.getJetstream().isEnabled()) {

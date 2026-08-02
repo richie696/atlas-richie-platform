@@ -38,7 +38,7 @@ import org.springframework.context.annotation.Bean;
 /**
  * NATS 组件自动配置
  *
- * <p>根据 {@code platform.nats.*} 配置属性按需装配所有 Bean。
+ * <p>根据 {@code platform.component.nats.*} 配置属性按需装配所有 Bean。
  * 策略接口均提供默认实现，用户可通过自定义 Bean 替换。</p>
  *
  * @author richie696
@@ -46,7 +46,7 @@ import org.springframework.context.annotation.Bean;
  */
 @AutoConfiguration
 @EnableConfigurationProperties(NatsProperties.class)
-@ConditionalOnProperty(name = "platform.nats.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "platform.component.nats.enabled", havingValue = "true", matchIfMissing = true)
 public class NatsAutoConfiguration {
 
     // ==================== L1/L2 策略实现 ====================
@@ -72,7 +72,7 @@ public class NatsAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(NatsTracingSupport.class)
     @ConditionalOnClass(name = "io.opentelemetry.api.GlobalOpenTelemetry")
-    @ConditionalOnProperty(name = "platform.nats.tracing.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "platform.component.nats.tracing.enabled", havingValue = "true", matchIfMissing = true)
     public NatsTracingSupport natsTracingSupport(NatsProperties properties) {
         return new OpenTelemetryNatsTracingSupport(true);
     }
@@ -80,7 +80,7 @@ public class NatsAutoConfiguration {
     /**
      * 当 classpath 无 OpenTelemetry 时的 No-Op 追踪实现。
      * <p>本 Bean 仅在 OpenTelemetry 类存在且 {@code natsTracingSupport} 由于
-     * {@code platform.nats.tracing.enabled=false} 未创建时兜底。OTel 缺失时直接
+     * {@code platform.component.nats.tracing.enabled=false} 未创建时兜底。OTel 缺失时直接
      * 不创建，让下游 bean 装配以更明确的 {@code NoSuchBeanDefinitionException} 失败，
      * 而不是抛出误导性的 {@code NoClassDefFoundError}。</p>
      */
@@ -93,7 +93,7 @@ public class NatsAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(NatsIdempotentChecker.class)
-    @ConditionalOnProperty(name = "platform.nats.idempotent.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "platform.component.nats.idempotent.enabled", havingValue = "true")
     public NatsIdempotentChecker natsIdempotentChecker(NatsProperties properties) {
         return switch (properties.getIdempotent().getDatasource().toLowerCase()) {
             case "redis" -> redisIdempotentChecker(properties);
@@ -103,7 +103,7 @@ public class NatsAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(NatsIdempotentChecker.class)
-    @ConditionalOnProperty(name = "platform.nats.idempotent.enabled", havingValue = "false", matchIfMissing = true)
+    @ConditionalOnProperty(name = "platform.component.nats.idempotent.enabled", havingValue = "false", matchIfMissing = true)
     public NatsIdempotentChecker noopNatsIdempotentChecker() {
         // 幂等去重未启用时返回内存实现（SubscriberFactory 根据 enabled 标志决定是否使用）
         return new MemoryNatsIdempotentChecker();
@@ -125,7 +125,7 @@ public class NatsAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(JetStreamManagementService.class)
-    @ConditionalOnProperty(name = "platform.nats.jetstream.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "platform.component.nats.jetstream.enabled", havingValue = "true")
     public JetStreamManagementService jetStreamManagementService(NatsConnectionManager connectionManager) {
         return new JetStreamManagementService(connectionManager);
     }
@@ -173,7 +173,7 @@ public class NatsAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(JetStreamBus.class)
-    @ConditionalOnProperty(name = "platform.nats.jetstream.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "platform.component.nats.jetstream.enabled", havingValue = "true")
     public JetStreamBus jetStreamBus(NatsConnectionManager connectionManager,
                                      NatsMessageSerializer serializer,
                                      NatsHeaderInjector headerInjector,
@@ -227,14 +227,14 @@ public class NatsAutoConfiguration {
     // ==================== L7 DLQ (JetStream advisory 范式) ====================
 
     @Bean(destroyMethod = "")
-    @ConditionalOnProperty(name = "platform.nats.dlq.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "platform.component.nats.dlq.enabled", havingValue = "true")
     public NatsDeadLetterPublisher natsDeadLetterPublisher(NatsConnectionManager connectionManager,
                                                            NatsProperties properties) {
         return new NatsDeadLetterPublisher(natsJetStream(connectionManager), properties);
     }
 
     @Bean(destroyMethod = "stop")
-    @ConditionalOnProperty(name = "platform.nats.dlq.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "platform.component.nats.dlq.enabled", havingValue = "true")
     public NatsDeadLetterAdvisoryConsumer natsDeadLetterAdvisoryConsumer(NatsConnectionManager connectionManager,
                                                                          NatsDeadLetterPublisher natsDeadLetterPublisher,
                                                                          NatsProperties properties) {

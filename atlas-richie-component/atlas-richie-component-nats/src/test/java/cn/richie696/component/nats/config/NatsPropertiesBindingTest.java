@@ -35,20 +35,20 @@ class NatsPropertiesBindingTest {
 
     @SpringBootTest(classes = NatsPropertiesBindingTest.BindingConfig.class)
     @TestPropertySource(properties = {
-            "platform.nats.server=nats://cluster-a:4222,nats://cluster-b:4222",
-            "platform.nats.enabled=false",
-            "platform.nats.connection.name=custom-client",
-            "platform.nats.connection.connection-timeout=10s",
-            "platform.nats.reconnect.max-reconnects=5",
-            "platform.nats.reconnect.reconnect-wait=3s",
-            "platform.nats.auth.type=TOKEN",
-            "platform.nats.auth.token=my-secret",
-            "platform.nats.tracing.enabled=false",
-            "platform.nats.header-propagation.enabled=false",
-            "platform.nats.idempotent.enabled=true",
-            "platform.nats.idempotent.datasource=redis",
-            "platform.nats.idempotent.ttl=60000",
-            "platform.nats.jetstream.enabled=true"
+            "platform.component.nats.server=nats://cluster-a:4222,nats://cluster-b:4222",
+            "platform.component.nats.enabled=false",
+            "platform.component.nats.connection.name=custom-client",
+            "platform.component.nats.connection.connection-timeout=10s",
+            "platform.component.nats.reconnect.max-reconnects=5",
+            "platform.component.nats.reconnect.reconnect-wait=3s",
+            "platform.component.nats.auth.type=TOKEN",
+            "platform.component.nats.auth.token=my-secret",
+            "platform.component.nats.tracing.enabled=false",
+            "platform.component.nats.header-propagation.enabled=false",
+            "platform.component.nats.idempotent.enabled=true",
+            "platform.component.nats.idempotent.datasource=redis",
+            "platform.component.nats.idempotent.ttl=60000",
+            "platform.component.nats.jetstream.enabled=true"
     })
     static class Binding {
 

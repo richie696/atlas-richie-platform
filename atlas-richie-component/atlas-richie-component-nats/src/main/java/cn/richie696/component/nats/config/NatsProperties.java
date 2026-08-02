@@ -331,7 +331,7 @@ public class NatsProperties {
      * <p>与 JetStream 协同工作：当 JetStream consumer 重试耗尽时，将失败消息转发到 DLQ stream
      * 进行持久化与人工排查。本期仅暴露基础开关与命名规则，重路由/重投递逻辑见后续 Todo。</p>
      *
-     * <p>所有字段绑定配置前缀 {@code platform.nats.jetstream.dlq.<field>}，
+     * <p>所有字段绑定配置前缀 {@code platform.component.nats.jetstream.dlq.<field>}，
      * 顶层 {@code @ConfigurationProperties(prefix="platform.nats")} 已包含 {@code jetstream} 路径。</p>
      */
     @Data
@@ -340,7 +340,7 @@ public class NatsProperties {
          * 是否启用 DLQ 功能（opt-in 开关）
          *
          * <p>默认 {@code false}，需业务方显式开启。配置项：
-         * {@code platform.nats.jetstream.dlq.enabled}。</p>
+         * {@code platform.component.nats.jetstream.dlq.enabled}。</p>
          */
         private boolean enabled = false;
 
@@ -349,7 +349,7 @@ public class NatsProperties {
          *
          * <p>原 stream 名 + 此后缀 = DLQ stream 名。例如 {@code ORDERS} → {@code ORDERS-dlq}。
          * 默认 {@code "-dlq"}。配置项：
-         * {@code platform.nats.jetstream.dlq.stream-name-suffix}。</p>
+         * {@code platform.component.nats.jetstream.dlq.stream-name-suffix}。</p>
          */
         private String streamNameSuffix = "-dlq";
 
@@ -358,7 +358,7 @@ public class NatsProperties {
          *
          * <p>本期 advisory stream 由 NATS 自动管理，本字段留作未来扩展（例如自定义 advisory
          * 消费者或迁移到外部监控通道）。默认 {@code "NATS_DLQ_ADVISORY"}。配置项：
-         * {@code platform.nats.jetstream.dlq.advisory-stream-name}。</p>
+         * {@code platform.component.nats.jetstream.dlq.advisory-stream-name}。</p>
          */
         private String advisoryStreamName = "NATS_DLQ_ADVISORY";
 
@@ -367,7 +367,7 @@ public class NatsProperties {
          *
          * <p>订阅 NATS advisory 主题（js.consumer.delivery.term.*）的 consumer 名，
          * 用于感知原 consumer 重试耗尽事件并触发 DLQ 重路由。默认 {@code "nats-dlq-advisory"}。
-         * 配置项：{@code platform.nats.jetstream.dlq.advisory-consumer-name}。</p>
+         * 配置项：{@code platform.component.nats.jetstream.dlq.advisory-consumer-name}。</p>
          */
         private String advisoryConsumerName = "nats-dlq-advisory";
 
@@ -376,7 +376,7 @@ public class NatsProperties {
          *
          * <p>原 subject + 此后缀 = DLQ subject。例如 {@code orders.persistent} →
          * {@code orders.persistent.dlq}。默认 {@code ".dlq"}。配置项：
-         * {@code platform.nats.jetstream.dlq.subject-suffix}。</p>
+         * {@code platform.component.nats.jetstream.dlq.subject-suffix}。</p>
          */
         private String subjectSuffix = ".dlq";
 
@@ -385,7 +385,7 @@ public class NatsProperties {
          *
          * <p>多实例部署时，同一 queue group 内只有一例消费 advisory 消息，避免重复重路由。
          * 默认 {@code "nats-dlq-workers"}。配置项：
-         * {@code platform.nats.jetstream.dlq.queue-group}。</p>
+         * {@code platform.component.nats.jetstream.dlq.queue-group}。</p>
          */
         private String queueGroup = "nats-dlq-workers";
 
@@ -394,7 +394,7 @@ public class NatsProperties {
          *
          * <p>advisory consumer 自身投递失败的最大重试次数，超过后将停止消费并触发告警，
          * 防止 DLQ 通道自身进入死循环。默认 {@code 5}。配置项：
-         * {@code platform.nats.jetstream.dlq.advisory-max-deliver}。</p>
+         * {@code platform.component.nats.jetstream.dlq.advisory-max-deliver}。</p>
          */
         private long advisoryMaxDeliver = 5;
     }

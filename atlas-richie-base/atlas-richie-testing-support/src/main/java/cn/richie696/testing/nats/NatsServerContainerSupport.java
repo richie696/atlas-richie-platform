@@ -149,9 +149,9 @@ public final class NatsServerContainerSupport {
 
     public List<String> appendConnectionPropertyPairs(List<String> pairs) {
         if (host != null) {
-            pairs.add("platform.nats.server=" + getConnectionUrl());
+            pairs.add("platform.component.nats.server=" + getConnectionUrl());
         }
-        pairs.add("platform.nats.enabled=true");
+        pairs.add("platform.component.nats.enabled=true");
         return pairs;
     }
 
