@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Primary;
 /**
  * Pulsar Binder 配置属性。
  * <p>
- * 配置前缀：{@code spring.cloud.stream.pulsar.binder}，继承 Spring Cloud Stream Pulsar 默认配置。
+ * 配置前缀：{@code platform.component.messaging.pulsar.binder}，与 {@code @Primary} 配合覆盖 Spring Cloud Stream Pulsar 默认配置类。
  *
  * @author richie696
  * @since 2022-09-27

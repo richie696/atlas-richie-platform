@@ -151,7 +151,7 @@ public class RedisStreamManager implements StreamFunction {
      * @param streamKey Stream 键
      * @param dto       业务消息
      * @return Redis 记录 ID
-     * @apiNote <p><b>时间复杂度</b>：封装为脚本/负载相关（XADD + 序列化 + 分布式 ID），见 {@link RedisOperationCatalog#STREAM_XADD}。
+     * <p><b>时间复杂度</b>：封装为脚本/负载相关（XADD + 序列化 + 分布式 ID），见 {@link RedisOperationCatalog#STREAM_XADD}。
      * <p><b>严禁</b>：toC 同步路径上发布超大 payload 或极高频同 stream 写导致单 key 热点。
      * <p><b>可用</b>：异步任务、可靠投递、与消费组配合的写入。
      * <p><b>注意</b>：含一次 ID 生成（INCR）与一次 XADD；监控序列化大小与耗时。
@@ -258,7 +258,7 @@ public class RedisStreamManager implements StreamFunction {
      * @param streamKey Stream 键
      * @param group     消费组名
      * @param recordId  记录 ID
-     * @apiNote <p><b>时间复杂度</b>：{@code O(1)}（XACK）。
+     * <p><b>时间复杂度</b>：{@code O(1)}（XACK）。
      * <p><b>严禁</b>：在 toC 请求线程内批量 ACK 大量 pending（应异步或流水线）。
      * <p><b>可用</b>：消费者处理完成后确认。
      * <p><b>注意</b>：ACK 失败需结合 pending 监控与重试策略。

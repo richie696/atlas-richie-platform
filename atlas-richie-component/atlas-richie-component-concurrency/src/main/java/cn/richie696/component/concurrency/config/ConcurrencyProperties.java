@@ -69,7 +69,7 @@ import java.util.Map;
  * @author richie696
  * @since 1.0.0
  */
-@ConfigurationProperties(prefix = "platform.component.concurrency")
+@ConfigurationProperties(prefix = "platform.concurrency")
 @Data
 public class ConcurrencyProperties {
 

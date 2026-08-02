@@ -43,6 +43,17 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!--
+            mfa-core 声明 tenant-common 为 provided 作用域（由应用运行时提供），
+            但本模块单元测试需要加载 MfaTenantSupport（继承 MultiTenancyProperties），
+            故在 test scope 显式引入以满足 Mockito inline mock 与 Spring bean 装配的类加载需求。
+        -->
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-component-tenant-common</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- 加密库 -->
         <dependency>
             <groupId>org.bouncycastle</groupId>

@@ -55,7 +55,7 @@ public class RedisBitmapManager implements BitmapFunction {
      * @param key    Redis键
      * @param offset 位偏移（从0开始）
      * @param value  位值（true/false）
-     * @apiNote <p><b>时间复杂度</b>：{@code O(1)}（SETBIT）。
+     * <p><b>时间复杂度</b>：{@code O(1)}（SETBIT）。
      * <p><b>严禁</b>：在 toC 热路径对超大 offset 无界循环写位（业务侧放大为 {@code O(k)}）。
      * <p><b>可用</b>：签到、去重标记、布隆相关位图等。
      * <p><b>注意</b>：大 key 时仍占内存与网络带宽；勿与全量扫描类操作混用在高 QPS 链路。
@@ -74,7 +74,7 @@ public class RedisBitmapManager implements BitmapFunction {
      * @param key    Redis键
      * @param offset 位偏移（从0开始）
      * @return 指定位的布尔值，true表示1，false表示0
-     * @apiNote <p><b>时间复杂度</b>：{@code O(1)}（GETBIT）。
+     * <p><b>时间复杂度</b>：{@code O(1)}（GETBIT）。
      * <p><b>严禁</b>：循环内对同一 key 大量随机 offset 读导致 RTT 放大。
      * <p><b>可用</b>：与 {@link #setBit} 对称的读路径。
      * <p><b>注意</b>：热 key 时关注单 key QPS 与连接池。

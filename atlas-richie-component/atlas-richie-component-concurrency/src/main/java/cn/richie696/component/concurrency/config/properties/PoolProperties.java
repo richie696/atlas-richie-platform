@@ -33,7 +33,7 @@ import java.util.Map;
  * @since 1.0.0
  */
 @Data
-@ConfigurationProperties(prefix = "platform.component.concurrency.pool")
+@ConfigurationProperties(prefix = "platform.concurrency.pool")
 public class PoolProperties {
 
     /**

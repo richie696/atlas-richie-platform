@@ -44,7 +44,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 1.0.0
  */
 @Data
-@ConfigurationProperties(prefix = "platform.component.concurrency.rate-limiter")
+@ConfigurationProperties(prefix = "platform.concurrency.rate-limiter")
 public class RateLimiterProperties {
 
     /**

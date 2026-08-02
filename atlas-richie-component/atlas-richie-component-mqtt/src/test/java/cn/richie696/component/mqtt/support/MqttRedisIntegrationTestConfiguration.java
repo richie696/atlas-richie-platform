@@ -19,9 +19,12 @@ import cn.richie696.component.cache.config.CacheAutoConfiguration;
 import cn.richie696.component.cache.local.config.LocalCacheAutoConfiguration;
 import cn.richie696.component.cache.redis.config.base.RedisBaseAutoConfiguration;
 import cn.richie696.component.mqtt.filter.datasource.impl.RedisDatasourceHandlerImpl;
+import cn.richie696.context.bloom.BloomFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+
+import java.util.Set;
 
 @Configuration
 @Import({
@@ -34,5 +37,33 @@ public class MqttRedisIntegrationTestConfiguration {
     @Bean
     RedisDatasourceHandlerImpl redisDatasourceHandler() {
         return new RedisDatasourceHandlerImpl();
+    }
+
+    /**
+     * 提供 noop {@link BloomFilter} 作为测试上下文兜底。本配置只用 {@code @Configuration} 而非
+     * {@code @EnableAutoConfiguration}，因此不会自动装配 {@code BloomFilterAutoConfiguration}，
+     * 而 {@code RedisStringManager} 构造器要求 {@link BloomFilter} bean，否则整个上下文加载失败。
+     */
+    @Bean
+    BloomFilter testBloomFilter() {
+        return new BloomFilter() {
+            @Override
+            public boolean mightContain(String key) {
+                return true;
+            }
+
+            @Override
+            public void put(String key) {
+            }
+
+            @Override
+            public void putAll(Set<String> keys) {
+            }
+
+            @Override
+            public boolean isExists() {
+                return false;
+            }
+        };
     }
 }

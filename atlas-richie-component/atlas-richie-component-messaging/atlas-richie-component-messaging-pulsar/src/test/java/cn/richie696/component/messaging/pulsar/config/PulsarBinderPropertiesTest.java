@@ -28,6 +28,6 @@ class PulsarBinderPropertiesTest {
         assertThat(properties).isNotNull();
         assertThat(PulsarBinderProperties.class.getAnnotation(
                 org.springframework.boot.context.properties.ConfigurationProperties.class).prefix())
-                .isEqualTo("spring.cloud.stream.pulsar.binder");
+                .isEqualTo("platform.component.messaging.pulsar.binder");
     }
 }
