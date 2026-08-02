@@ -77,7 +77,7 @@ public class ConnectionResetInterceptor implements Interceptor {
         try {
             return invocation.proceed();
         } finally {
-            if (properties.isEnabled()) {
+            if (properties.isEnable()) {
                 // SQL 执行完毕后清理连接级别的线程局部变量
                 DataSourceContextHolder.clear();
                 TableSuffixHolder.clear();

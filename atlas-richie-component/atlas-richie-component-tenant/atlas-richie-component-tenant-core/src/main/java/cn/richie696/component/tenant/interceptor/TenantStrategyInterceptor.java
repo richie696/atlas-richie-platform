@@ -102,7 +102,7 @@ public class TenantStrategyInterceptor implements Interceptor {
      */
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
-        if (!properties.isEnabled()) {
+        if (!properties.isEnable()) {
             return invocation.proceed();
         }
 

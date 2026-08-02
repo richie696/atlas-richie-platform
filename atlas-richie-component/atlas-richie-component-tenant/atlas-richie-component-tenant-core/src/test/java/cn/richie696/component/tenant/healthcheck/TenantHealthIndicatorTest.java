@@ -34,7 +34,7 @@ class TenantHealthIndicatorTest {
 
     private MultiTenancyProperties props(boolean enabled) {
         MultiTenancyProperties p = new MultiTenancyProperties();
-        p.setEnabled(enabled);
+        p.setEnable(enabled);
         return p;
     }
 

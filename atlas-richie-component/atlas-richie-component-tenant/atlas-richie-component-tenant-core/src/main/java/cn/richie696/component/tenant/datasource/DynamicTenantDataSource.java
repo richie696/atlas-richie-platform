@@ -49,8 +49,11 @@ public class DynamicTenantDataSource extends AbstractRoutingDataSource {
 
     public DynamicTenantDataSource(DataSource sharedDataSource) {
         this.sharedDataSource = sharedDataSource;
-        setDefaultTargetDataSource(sharedDataSource);
-        afterPropertiesSet();
+        // Spring 7.x 的 AbstractRoutingDataSource.afterPropertiesSet() 严格校验
+        // targetDataSources != null,必须先调用 setTargetDataSources(...) 才能
+        // 通过 afterPropertiesSet() 校验;复用 rebuildTargetDataSources() 同时
+        // 保证初始状态与运行时动态增删后的状态结构一致
+        rebuildTargetDataSources();
     }
 
     @Override

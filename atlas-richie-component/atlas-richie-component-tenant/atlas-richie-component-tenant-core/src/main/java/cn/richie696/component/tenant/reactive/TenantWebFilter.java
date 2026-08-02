@@ -93,7 +93,7 @@ public class TenantWebFilter implements WebFilter {
     @Nonnull
     public Mono<Void> filter(@Nonnull ServerWebExchange exchange,
                              @Nonnull WebFilterChain chain) {
-        if (!properties.isEnabled()) {
+        if (!properties.isEnable()) {
             return chain.filter(exchange);
         }
 
@@ -222,7 +222,7 @@ public class TenantWebFilter implements WebFilter {
         String assertion = exchange.getRequest().getHeaders()
                 .getFirst(GlobalConstants.X_TENANT_ASSERTION);
         Long tenantId = TenantIdentityAssertionUtils.verify(assertion,
-                properties.getIdentityAssertionSecret(), System.currentTimeMillis());
+                properties.getGateway().getIdentityAssertionSecret(), System.currentTimeMillis());
         return tenantId == null ? null : new TenantPrincipal().setTenantId(tenantId);
     }
 

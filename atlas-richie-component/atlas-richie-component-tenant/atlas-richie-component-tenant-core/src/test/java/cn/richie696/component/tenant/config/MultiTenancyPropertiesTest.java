@@ -34,7 +34,7 @@ class MultiTenancyPropertiesTest {
         @Test
         @DisplayName("enable 默认 false，避免仅引入依赖即启用租户")
         void enableDefaultFalse() {
-            assertThat(new MultiTenancyProperties().isEnabled()).isFalse();
+            assertThat(new MultiTenancyProperties().isEnable()).isFalse();
         }
 
         @Test
@@ -180,11 +180,11 @@ class MultiTenancyPropertiesTest {
         @DisplayName("Gateway 密钥优先于旧版顶层兼容字段")
         void gatewaySecretTakesPrecedence() {
             MultiTenancyProperties props = new MultiTenancyProperties();
-            props.setIdentityAssertionSecret("legacy");
-            assertThat(props.getIdentityAssertionSecret()).isEqualTo("legacy");
+            props.getGateway().setIdentityAssertionSecret("legacy");
+            assertThat(props.getGateway().getIdentityAssertionSecret()).isEqualTo("legacy");
 
             props.getGateway().setIdentityAssertionSecret("gateway");
-            assertThat(props.getIdentityAssertionSecret()).isEqualTo("gateway");
+            assertThat(props.getGateway().getIdentityAssertionSecret()).isEqualTo("gateway");
         }
 
         @Test
@@ -192,7 +192,7 @@ class MultiTenancyPropertiesTest {
         void enableSwitch() {
             MultiTenancyProperties props = new MultiTenancyProperties();
             props.setEnable(true);
-            assertThat(props.isEnabled()).isTrue();
+            assertThat(props.isEnable()).isTrue();
         }
     }
 }

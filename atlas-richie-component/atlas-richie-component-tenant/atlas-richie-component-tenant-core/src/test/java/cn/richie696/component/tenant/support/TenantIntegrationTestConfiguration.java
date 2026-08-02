@@ -19,9 +19,16 @@ import cn.richie696.component.tenant.config.TenantAutoConfiguration;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
 
+/**
+ * IT 测试基础设施 — 显式开启租户组件，使 {@link TenantAutoConfiguration}
+ * 通过 {@code @ConditionalOnProperty(platform.tenant.enable=true)} 校验并加载,
+ * 注册 {@code MultiTenancyProperties} 等所有租户相关 Bean。
+ */
 @SpringBootConfiguration
 @EnableAutoConfiguration
 @Import(TenantAutoConfiguration.class)
+@TestPropertySource(properties = "platform.tenant.enable=true")
 public class TenantIntegrationTestConfiguration {
 }

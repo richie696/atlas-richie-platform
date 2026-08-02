@@ -92,6 +92,7 @@ class TableStrategyIT {
         connection.setAutoCommit(false);
 
         properties = new MultiTenancyProperties();
+        properties.setEnable(true);
         properties.setTableNameSuffix("_${tenant}");
 
         noopProvider = new TenantInfoProvider() {
@@ -454,7 +455,7 @@ class TableStrategyIT {
         @Test
         @DisplayName("enabled=false 时即使设置 suffix 也不改写")
         void disabledDoesNotRewrite() throws Exception {
-            properties.setEnabled(false);
+            properties.setEnable(false);
             TableSuffixHolder.set("_100");
             try {
                 String rewritten = applyTableRewrite("SELECT * FROM it_products");

@@ -73,7 +73,7 @@ public class TenantFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        if (!properties.isEnabled()) {
+        if (!properties.isEnable()) {
             return chain.filter(exchange);
         }
         return doFilter(exchange, chain);

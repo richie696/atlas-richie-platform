@@ -92,7 +92,7 @@ class TenantStrategyInterceptorTest {
 
     @Test
     void intercept_whenDisabled_shouldProceedDirectly() throws Throwable {
-        when(properties.isEnabled()).thenReturn(false);
+        when(properties.isEnable()).thenReturn(false);
         when(invocation.proceed()).thenReturn("result");
 
         Object result = interceptor.intercept(invocation);
@@ -106,7 +106,7 @@ class TenantStrategyInterceptorTest {
 
     @Test
     void intercept_whenNoTenantContext_shouldProceedDirectly() throws Throwable {
-        when(properties.isEnabled()).thenReturn(true);
+        when(properties.isEnable()).thenReturn(true);
         when(invocation.proceed()).thenReturn("result");
 
         Object result = interceptor.intercept(invocation);
@@ -118,7 +118,7 @@ class TenantStrategyInterceptorTest {
 
     @Test
     void intercept_whenTenantIdNull_shouldProceedDirectly() throws Throwable {
-        when(properties.isEnabled()).thenReturn(true);
+        when(properties.isEnable()).thenReturn(true);
         when(invocation.proceed()).thenReturn("ok");
 
         TenantPrincipal principal = new TenantPrincipal();
@@ -140,7 +140,7 @@ class TenantStrategyInterceptorTest {
 
     @Test
     void intercept_whenTenantInfoNull_shouldThrowTenantNotFoundException() {
-        when(properties.isEnabled()).thenReturn(true);
+        when(properties.isEnable()).thenReturn(true);
 
         TenantPrincipal principal = new TenantPrincipal();
         principal.setTenantId(1001L);
@@ -157,7 +157,7 @@ class TenantStrategyInterceptorTest {
 
     @Test
     void intercept_whenSharedCircuitBreakerOpen_shouldThrowDataSourceUnavailable() {
-        when(properties.isEnabled()).thenReturn(true);
+        when(properties.isEnable()).thenReturn(true);
 
         TenantPrincipal principal = new TenantPrincipal();
         principal.setTenantId(1001L);
@@ -177,7 +177,7 @@ class TenantStrategyInterceptorTest {
 
     @Test
     void intercept_whenTenantDsCircuitBreakerOpen_shouldThrowDataSourceUnavailable() {
-        when(properties.isEnabled()).thenReturn(true);
+        when(properties.isEnable()).thenReturn(true);
 
         TenantPrincipal principal = new TenantPrincipal();
         principal.setTenantId(1001L);
@@ -200,7 +200,7 @@ class TenantStrategyInterceptorTest {
 
     @Test
     void intercept_normalFlow_columnMode_shouldDelegateStrategyAndRecordSuccess() throws Throwable {
-        when(properties.isEnabled()).thenReturn(true);
+        when(properties.isEnable()).thenReturn(true);
 
         TenantPrincipal principal = new TenantPrincipal();
         principal.setTenantId(1001L);
@@ -227,7 +227,7 @@ class TenantStrategyInterceptorTest {
 
     @Test
     void intercept_normalFlow_databaseMode_shouldUseTenantDsKey() throws Throwable {
-        when(properties.isEnabled()).thenReturn(true);
+        when(properties.isEnable()).thenReturn(true);
 
         TenantPrincipal principal = new TenantPrincipal();
         principal.setTenantId(2002L);
@@ -256,7 +256,7 @@ class TenantStrategyInterceptorTest {
 
     @Test
     void intercept_whenProceedThrows_shouldRecordFailureAndRethrow() {
-        when(properties.isEnabled()).thenReturn(true);
+        when(properties.isEnable()).thenReturn(true);
 
         TenantPrincipal principal = new TenantPrincipal();
         principal.setTenantId(1001L);
@@ -285,7 +285,7 @@ class TenantStrategyInterceptorTest {
 
     @Test
     void intercept_whenProceedThrows_databaseMode_shouldRecordFailureOnTenantDs() {
-        when(properties.isEnabled()).thenReturn(true);
+        when(properties.isEnable()).thenReturn(true);
 
         TenantPrincipal principal = new TenantPrincipal();
         principal.setTenantId(3003L);

@@ -33,6 +33,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -60,7 +61,7 @@ class StartupSchemaValidatorTest {
 
     private MultiTenancyProperties columnProps() {
         MultiTenancyProperties p = new MultiTenancyProperties();
-        p.setEnabled(true);
+        p.setEnable(true);
         p.setMode(IsolationMode.COLUMN);
         return p;
     }
@@ -73,7 +74,7 @@ class StartupSchemaValidatorTest {
         @DisplayName("多租户关闭时跳过校验")
         void disabled() {
             MultiTenancyProperties p = new MultiTenancyProperties();
-            p.setEnabled(false);
+            p.setEnable(false);
             StartupSchemaValidator v = new StartupSchemaValidator(dataSource, p);
             assertThatCode(() -> v.run(args)).doesNotThrowAnyException();
         }
@@ -82,7 +83,7 @@ class StartupSchemaValidatorTest {
         @DisplayName("非 COLUMN 模式时跳过校验")
         void nonColumnModeSkipped() {
             MultiTenancyProperties p = new MultiTenancyProperties();
-            p.setEnabled(true);
+            p.setEnable(true);
             p.setMode(IsolationMode.SCHEMA);
             StartupSchemaValidator v = new StartupSchemaValidator(dataSource, p);
             assertThatCode(() -> v.run(args)).doesNotThrowAnyException();
@@ -135,7 +136,7 @@ class StartupSchemaValidatorTest {
         @DisplayName("ignoreTables 表名大小写不敏感")
         void ignoreTableCaseInsensitive() throws SQLException {
             MultiTenancyProperties p = columnProps();
-            p.setIgnoreTables(new ArrayList<>(Arrays.asList("ORDERS")));
+            p.setIgnoreTables(new ArrayList<>(List.of("ORDERS")));
 
             ResultSet rs = resultSetWithNames("orders");
             when(metaData.getTables(any(), any(), eq("%"), any())).thenReturn(rs);
@@ -178,7 +179,7 @@ class StartupSchemaValidatorTest {
         void missingTenantIdColumnThrows() throws SQLException {
             MultiTenancyProperties p = columnProps();
             p.getStartupValidation().setSchemaTables(
-                    new ArrayList<>(Arrays.asList("orders")));
+                    new ArrayList<>(List.of("orders")));
 
             ResultSet ordersCols = resultSetWithNames("id", "name");
             when(metaData.getColumns(any(), any(), eq("orders"), any())).thenReturn(ordersCols);
@@ -196,7 +197,7 @@ class StartupSchemaValidatorTest {
             MultiTenancyProperties p = columnProps();
             p.setTenantIdColumn("org_id");
             p.getStartupValidation().setSchemaTables(
-                    new ArrayList<>(Arrays.asList("orders")));
+                    new ArrayList<>(List.of("orders")));
 
             ResultSet ordersCols = resultSetWithNames("id", "org_id");
             when(metaData.getColumns(any(), any(), eq("orders"), any())).thenReturn(ordersCols);

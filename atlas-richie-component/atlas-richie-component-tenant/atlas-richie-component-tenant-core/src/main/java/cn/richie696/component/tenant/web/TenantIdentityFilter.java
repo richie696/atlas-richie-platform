@@ -114,7 +114,7 @@ public class TenantIdentityFilter extends OncePerRequestFilter {
                                     @Nonnull FilterChain filterChain)
             throws ServletException, IOException {
 
-        if (!properties.isEnabled()) {
+        if (!properties.isEnable()) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -234,17 +234,13 @@ public class TenantIdentityFilter extends OncePerRequestFilter {
             return null;
         }
 
-        try {
-            if (!JwtUtils.verify(token, properties.getJwtSecret())) {
-                log.warn("Rejecting unverified JWT used for tenant resolution");
-                return null;
-            }
-            TenantPrincipal principal = JwtUtils.getTenantPrincipal(token);
-            if (principal != null && principal.getTenantId() != null) {
-                return principal;
-            }
-        } catch (Exception e) {
-            log.debug("Failed to parse tenant from JWT: {}", e.getMessage());
+        if (!JwtUtils.verify(token, properties.getJwtSecret())) {
+            log.warn("Rejecting unverified JWT used for tenant resolution");
+            return null;
+        }
+        TenantPrincipal principal = JwtUtils.getTenantPrincipal(token);
+        if (principal != null && principal.getTenantId() != null) {
+            return principal;
         }
 
         return null;
@@ -256,7 +252,7 @@ public class TenantIdentityFilter extends OncePerRequestFilter {
     private TenantPrincipal resolveFromAssertion(HttpServletRequest request) {
         String assertion = request.getHeader(GlobalConstants.X_TENANT_ASSERTION);
         Long tenantId = TenantIdentityAssertionUtils.verify(assertion,
-                properties.getIdentityAssertionSecret(), System.currentTimeMillis());
+                properties.getGateway().getIdentityAssertionSecret(), System.currentTimeMillis());
         return tenantId == null ? null : new TenantPrincipal().setTenantId(tenantId);
     }
 

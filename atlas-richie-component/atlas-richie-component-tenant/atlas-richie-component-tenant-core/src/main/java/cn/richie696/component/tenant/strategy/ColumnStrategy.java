@@ -66,7 +66,7 @@ public class ColumnStrategy extends AbstractTenancyStrategy {
      *
      * @param invocation MyBatis 调用上下文（COLUMN 模式不读取）
      * @param tenantInfo 当前租户信息（COLUMN 模式不使用）
-     * @throws cn.richie696.component.tenant.exception.BusinessException 租户未绑定或 tenantId 非法时
+     * @throws cn.richie696.contract.exception.BusinessException 租户未绑定或 tenantId 非法时
      */
     @Override
     public void beforeSqlExecute(Invocation invocation, TenantInfo tenantInfo) {

@@ -85,10 +85,14 @@ class ColumnStrategyIT {
         connection.setAutoCommit(false);
 
         properties = new MultiTenancyProperties();
-        properties.setEnabled(true);
+        properties.setEnable(true);
         properties.setMode(IsolationMode.COLUMN);
         properties.setTenantIdColumn("tenant_id");
         properties.setIgnoreTables(Collections.emptyList());
+        // 列隔离 IT 需要在「未绑定租户上下文」场景下验证 SQL 原样返回
+        // (见 insertWithoutTenantNotRewritten / FeatureToggle.noTenantContextDoesNotRewrite);
+        // 关闭 enforceAuthTenant,让 TenantLineInnerInterceptor.intercept 直接走 invocation.proceed() 而不抛异常。
+        properties.setEnforceAuthTenant(false);
 
         interceptor = new TenantLineInnerInterceptor(properties, new TenantInfoProvider() {
             @Override
@@ -326,7 +330,7 @@ class ColumnStrategyIT {
         @Test
         @DisplayName("enabled=false 时即使绑定租户也不改写 SQL")
         void disabledDoesNotRewrite() throws Exception {
-            properties.setEnabled(false);
+            properties.setEnable(false);
 
             String rewritten = runInTenant(TENANT_100, () -> {
                 String r = applyRewrite("SELECT * FROM it_users");

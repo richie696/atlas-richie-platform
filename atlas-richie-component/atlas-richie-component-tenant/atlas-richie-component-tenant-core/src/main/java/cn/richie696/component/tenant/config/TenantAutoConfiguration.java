@@ -207,7 +207,7 @@ public class TenantAutoConfiguration {
          * <p>若两者均未引入，输出 WARN 日志（不阻断启动）。
          */
         private void diagnoseCommunicationFrameworks(MultiTenancyProperties props) {
-            if (!props.isEnabled()) {
+            if (!props.isEnable()) {
                 return;
             }
 

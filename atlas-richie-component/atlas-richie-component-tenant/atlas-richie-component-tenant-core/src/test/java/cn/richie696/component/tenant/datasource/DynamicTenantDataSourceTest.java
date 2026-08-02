@@ -20,16 +20,20 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import javax.sql.DataSource;
-import java.lang.reflect.Field;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.Mockito.mock;
 
+/**
+ * DynamicTenantDataSource 单元测试。
+ *
+ * <p>直接用真实父构造器，验证生产代码在 Spring 7.x 下不再抛
+ * {@code IllegalArgumentException("Property 'targetDataSources' is required")}。</p>
+ */
 @DisplayName("DynamicTenantDataSource — 动态租户数据源路由")
 class DynamicTenantDataSourceTest {
 
@@ -38,39 +42,22 @@ class DynamicTenantDataSourceTest {
     private DynamicTenantDataSource dynamicDs;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         sharedDs = mock(DataSource.class);
         tenantDs = mock(DataSource.class);
-        // 绕过 AbstractRoutingDataSource.afterPropertiesSet() 对 targetDataSources 的强制校验
-        dynamicDs = mock(DynamicTenantDataSource.class, withSettings()
-                .defaultAnswer(Mockito.CALLS_REAL_METHODS));
-        setField(dynamicDs, "sharedDataSource", sharedDs);
-        setField(dynamicDs, "tenantDataSources", new ConcurrentHashMap<>());
-        setField(dynamicDs, "lock", new Object());
-        // add/removeTenantDataSource 内部调用 rebuildTargetDataSources → afterPropertiesSet，
-        // 测试只需验证 tenantDataSources 管理逻辑，stub 掉父类初始化
-        doNothing().when(dynamicDs).setTargetDataSources(Mockito.anyMap());
-        doNothing().when(dynamicDs).afterPropertiesSet();
-    }
-
-    private static void setField(Object target, String name, Object value) throws Exception {
-        Class<?> cls = target.getClass();
-        while (cls != null) {
-            try {
-                Field f = cls.getDeclaredField(name);
-                f.setAccessible(true);
-                f.set(target, value);
-                return;
-            } catch (NoSuchFieldException e) {
-                cls = cls.getSuperclass();
-            }
-        }
-        throw new NoSuchFieldException(name);
+        assertThatCode(() -> dynamicDs = new DynamicTenantDataSource(sharedDs))
+                .doesNotThrowAnyException();
     }
 
     @AfterEach
     void tearDown() {
         DataSourceContextHolder.clear();
+    }
+
+    @Test
+    @DisplayName("构造器注入的 shared 数据源暴露给 getSharedDataSource()")
+    void getSharedDataSourceReturnsInjected() {
+        assertThat(dynamicDs.getSharedDataSource()).isSameAs(sharedDs);
     }
 
     @Test
@@ -104,12 +91,6 @@ class DynamicTenantDataSourceTest {
     }
 
     @Test
-    @DisplayName("getSharedDataSource 返回构造时注入的数据源")
-    void getSharedDataSourceReturnsInjected() {
-        assertThat(dynamicDs.getSharedDataSource()).isSameAs(sharedDs);
-    }
-
-    @Test
     @DisplayName("getTenantDataSources 返回只读副本")
     void getTenantDataSourcesIsReadOnly() {
         dynamicDs.addTenantDataSource("2001", tenantDs);
@@ -118,6 +99,7 @@ class DynamicTenantDataSourceTest {
         try {
             map.put("3001", sharedDs);
         } catch (UnsupportedOperationException ignored) {
+            // 也允许抛出 UnsupportedOperationException
         }
         assertThat(dynamicDs.getTenantDataSources()).doesNotContainKey("3001");
     }

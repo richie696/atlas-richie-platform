@@ -72,7 +72,7 @@ public class TenantHealthIndicator implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        if (!properties.isEnabled()) {
+        if (!properties.isEnable()) {
             log.debug("Multi-tenancy disabled, TenantHealthIndicator skipped");
             return;
         }

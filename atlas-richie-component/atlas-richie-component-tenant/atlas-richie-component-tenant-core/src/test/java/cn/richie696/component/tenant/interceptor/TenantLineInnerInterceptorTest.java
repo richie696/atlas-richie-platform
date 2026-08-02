@@ -49,7 +49,7 @@ class TenantLineInnerInterceptorTest {
     @BeforeEach
     void setUp() {
         props = new MultiTenancyProperties();
-        props.setEnabled(true);
+        props.setEnable(true);
         props.setEnforceAuthTenant(false);
         interceptor = new TenantLineInnerInterceptor(props, COLUMN_PROVIDER);
         TenantContext.init(new ThreadLocalHolder());

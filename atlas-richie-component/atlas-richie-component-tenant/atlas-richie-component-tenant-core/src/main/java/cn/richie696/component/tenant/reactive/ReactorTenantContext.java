@@ -78,10 +78,14 @@ public final class ReactorTenantContext {
     /**
      * 从 Reactor {@code Context} 中移除租户上下文。
      *
+     * <p>使用 {@link reactor.util.context.Context#delete(Object)} 精确移除
+     * 租户键，保留 Context 中其他键（如 MDC、Security）。不直接用
+     * {@code Context.of(K, null)} 是因为 Reactor 3.8+ 拒绝 null value（NPE）。</p>
+     *
      * @return 移除后的 Context（用于 {@code Mono.contextWrite()}）
      */
     public static reactor.util.context.Context clear() {
-        return reactor.util.context.Context.of(TenantContextKeys.TENANT_KEY, null);
+        return reactor.util.context.Context.empty().delete(TenantContextKeys.TENANT_KEY);
     }
 
     /**

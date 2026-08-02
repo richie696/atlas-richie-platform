@@ -88,7 +88,7 @@ public class HybridStrategy extends AbstractTenancyStrategy {
      *
      * @param invocation MyBatis 调用上下文（透传给目标策略）
      * @param tenantInfo 当前租户信息，{@code mode} 字段决定派发目标
-     * @throws cn.richie696.component.tenant.exception.BusinessException 租户未绑定 / tenantId 非法 / tenantInfo.mode == HYBRID 时
+     * @throws cn.richie696.contract.exception.BusinessException 租户未绑定 / tenantId 非法 / tenantInfo.mode == HYBRID 时
      */
     @Override
     public void beforeSqlExecute(Invocation invocation, TenantInfo tenantInfo) {

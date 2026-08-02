@@ -66,7 +66,7 @@ public class DatabaseStrategy extends AbstractTenancyStrategy {
      * @param invocation MyBatis 调用上下文（DATABASE 模式不读取）
      * @param tenantInfo 当前租户信息，用于读取 {@code dataSourceName}
      * @throws IllegalArgumentException                                  租户未配置数据源时
-     * @throws cn.richie696.component.tenant.exception.BusinessException 租户未绑定 / tenantId 非法 / dataSourceKey 不符合命名规范时
+     * @throws cn.richie696.contract.exception.BusinessException 租户未绑定 / tenantId 非法 / dataSourceKey 不符合命名规范时
      */
     @Override
     public void beforeSqlExecute(Invocation invocation, TenantInfo tenantInfo) {

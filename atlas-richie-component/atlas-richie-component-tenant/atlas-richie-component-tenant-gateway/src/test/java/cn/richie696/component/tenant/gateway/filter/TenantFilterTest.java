@@ -22,6 +22,8 @@ import cn.richie696.component.tenant.gateway.spi.AccessTokenRevoker;
 import cn.richie696.component.tenant.gateway.spi.TenantErrorResponder;
 import cn.richie696.component.tenant.gateway.spi.TenantExpiredNotifier;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
@@ -44,12 +46,17 @@ class TenantFilterTest {
     private RecordingNotifier notifier;
     private RecordingRevoker revoker;
     private TenantFilter filter;
+    private AtomicReference<String> unauthorizedMessageKey;
 
     @BeforeEach
     void setUp() {
         config = new MultiTenancyProperties();
         config.getGateway().setIdentityAssertionSecret(SECRET);
-        errorResponder = (exchange, messageKey) -> Mono.empty();
+        unauthorizedMessageKey = new AtomicReference<>();
+        errorResponder = (exchange, messageKey) -> {
+            unauthorizedMessageKey.set(messageKey);
+            return Mono.empty();
+        };
         notifier = new RecordingNotifier(true);
         revoker = new RecordingRevoker();
         filter = new TenantFilter(config, errorResponder, notifier, revoker);
@@ -124,6 +131,152 @@ class TenantFilterTest {
         assertThat(revoker.token).isNull();
     }
 
+    @Nested
+    @DisplayName("additional gateway branch coverage")
+    class AdditionalGatewayBranchCoverage {
+
+        @Test
+        void getOrder_returnsThreeHundred() {
+            assertThat(filter.getOrder()).isEqualTo(300);
+        }
+
+        @Test
+        void disabledTenant_stripsTenantHeadersAndContinuesChain() {
+            config.setEnable(true);
+            String token = tenantTokenWithClaims(false, "1001", String.valueOf(Instant.now().plusSeconds(60).getEpochSecond()));
+            AtomicReference<ServerWebExchange> captured = new AtomicReference<>();
+
+            StepVerifier.create(filter.filter(exchangeWithTokenAndHeaders(token), exchange -> {
+                captured.set(exchange);
+                return Mono.empty();
+            })).verifyComplete();
+
+            assertThat(captured.get().getRequest().getHeaders().getFirst("x-rd-request-tenantid"))
+                    .isNull();
+            assertThat(captured.get().getRequest().getHeaders().getFirst("X-Tenant-ID"))
+                    .isNull();
+            assertThat(captured.get().getRequest().getHeaders().getFirst("X-Tenant-Assertion"))
+                    .isNull();
+            assertThat(captured.get().getRequest().getHeaders().getFirst(JwtUtils.X_ACCESS_TOKEN))
+                    .isEqualTo(token);
+        }
+
+        @Test
+        void noToken_orBlankToken_respondsWithGatewayTip2() {
+            config.setEnable(true);
+            AtomicReference<ServerWebExchange> captured = new AtomicReference<>();
+            ServerWebExchange exchange = MockServerWebExchange.from(
+                    MockServerHttpRequest.get("/api/test").build());
+
+            StepVerifier.create(filter.filter(exchange, forwarded -> {
+                captured.set(forwarded);
+                return Mono.empty();
+            })).verifyComplete();
+
+            assertThat(unauthorizedMessageKey.get()).isEqualTo("MSG_GATEWAY_TIP_2");
+            assertThat(captured.get()).isNull();
+        }
+
+        @Test
+        void noToken_blankToken_respondsWithTip2() {
+            config.setEnable(true);
+            verifyUnauthorized(exchangeWithToken(""), "MSG_GATEWAY_TIP_2");
+        }
+
+        @Test
+        void unresolvableTenantIdHeader_respondsWithTip6() {
+            config.setEnable(true);
+            String token = tenantTokenWithClaims(true, "   ", String.valueOf(Instant.now().plusSeconds(60).getEpochSecond()));
+
+            verifyUnauthorized(exchangeWithToken(token), "MSG_GATEWAY_TIP_6");
+            assertThat(notifier.tenantId).isNull();
+            assertThat(revoker.token).isNull();
+        }
+
+        @Test
+        void unparseableTenantExpiredTimeClaim_respondsWithTip2() {
+            config.setEnable(true);
+            String token = tenantTokenWithClaims(true, "1001", "not-a-number");
+
+            verifyUnauthorized(exchangeWithToken(token), "MSG_GATEWAY_TIP_2");
+            assertThat(notifier.tenantId).isNull();
+            assertThat(revoker.token).isNull();
+        }
+
+        @Test
+        void expiredTime_negative_respondsWithTip2() {
+            config.setEnable(true);
+            String token = tenantTokenWithClaims(true, "1001", String.valueOf(Long.MIN_VALUE));
+
+            verifyUnauthorized(exchangeWithToken(token), "MSG_GATEWAY_TIP_2");
+            assertThat(notifier.tenantId).isNull();
+            assertThat(revoker.token).isNull();
+        }
+
+        @Test
+        void notifier_failure_doesNotPropagateError() {
+            config.setEnable(true);
+            notifier.failure = new IllegalStateException("notification failed");
+            String token = expiredTenantToken("1001");
+
+            verifyUnauthorized(exchangeWithToken(token), "MSG_GATEWAY_TIP_4");
+            assertThat(notifier.tenantId).isEqualTo("1001");
+            assertThat(revoker.token).isNull();
+        }
+
+        @Test
+        void revoker_failure_doesNotPropagateError() {
+            config.setEnable(true);
+            notifier.accept = true;
+            revoker.failure = new IllegalStateException("revocation failed");
+            String token = expiredTenantToken("1001");
+
+            verifyUnauthorized(exchangeWithToken(token), "MSG_GATEWAY_TIP_4");
+            assertThat(notifier.tenantId).isEqualTo("1001");
+            assertThat(revoker.token).isEqualTo(token);
+        }
+
+        @Test
+        void notification_succeeds_after_expiredTime() {
+            config.setEnable(true);
+            notifier.accept = true;
+            String token = expiredTenantToken("2002");
+
+            verifyUnauthorized(exchangeWithToken(token), "MSG_GATEWAY_TIP_4");
+            assertThat(notifier.tenantId).isEqualTo("2002");
+            assertThat(revoker.token).isEqualTo(token);
+        }
+
+        @Test
+        void assertionSecret_blank_isValidDebug() {
+            config.setEnable(true);
+            config.getGateway().setIdentityAssertionSecret("   ");
+            String token = tenantToken("1001", Instant.now().plusSeconds(60).getEpochSecond());
+            AtomicReference<ServerWebExchange> captured = new AtomicReference<>();
+
+            StepVerifier.create(filter.filter(exchangeWithTokenAndHeaders(token), exchange -> {
+                captured.set(exchange);
+                return Mono.empty();
+            })).verifyComplete();
+
+            assertThat(captured.get().getRequest().getHeaders().getFirst("x-rd-request-tenantid"))
+                    .isEqualTo("1001");
+            assertThat(captured.get().getRequest().getHeaders().getFirst("X-Tenant-Assertion"))
+                    .isNull();
+            assertThat(unauthorizedMessageKey.get()).isNull();
+        }
+
+        @Test
+        void blankExpiredTime_respondsWithTip2() {
+            config.setEnable(true);
+            String token = tenantTokenWithClaims(true, "1001", "   ");
+
+            verifyUnauthorized(exchangeWithToken(token), "MSG_GATEWAY_TIP_2");
+            assertThat(notifier.tenantId).isNull();
+            assertThat(revoker.token).isNull();
+        }
+    }
+
     private ServerWebExchange exchangeWithToken(String token) {
         return MockServerWebExchange.from(
                 MockServerHttpRequest.get("/api/test")
@@ -150,9 +303,28 @@ class TenantFilterTest {
         return JwtUtils.generateJwtToken(principal, SECRET, System.currentTimeMillis() + 60_000);
     }
 
+    private String tenantTokenWithClaims(boolean tenantEnabled, String tenantId, String tenantExpiredTime) {
+        LoginUserPrincipal principal = new LoginUserPrincipal()
+                .setUsername("user-1")
+                .setTenantEnabled(tenantEnabled);
+        principal.addParam("tenantId", tenantId);
+        principal.addParam("tenantExpiredTime", tenantExpiredTime);
+        return JwtUtils.generateJwtToken(principal, SECRET, System.currentTimeMillis() + 60_000);
+    }
+
+    private void verifyUnauthorized(ServerWebExchange exchange, String messageKey) {
+        StepVerifier.create(filter.filter(exchange, ignored -> Mono.empty())).verifyComplete();
+        assertThat(unauthorizedMessageKey.get()).isEqualTo(messageKey);
+    }
+
+    private String expiredTenantToken(String tenantId) {
+        return tenantToken(tenantId, Instant.now().minusSeconds(1).getEpochSecond());
+    }
+
     private static final class RecordingNotifier implements TenantExpiredNotifier {
         private boolean accept;
         private String tenantId;
+        private RuntimeException failure;
 
         private RecordingNotifier(boolean accept) {
             this.accept = accept;
@@ -161,16 +333,23 @@ class TenantFilterTest {
         @Override
         public Mono<Boolean> notifyExpired(String tenantId) {
             this.tenantId = tenantId;
+            if (failure != null) {
+                return Mono.error(failure);
+            }
             return Mono.just(accept);
         }
     }
 
     private static final class RecordingRevoker implements AccessTokenRevoker {
         private String token;
+        private RuntimeException failure;
 
         @Override
         public Mono<Void> revoke(String token) {
             this.token = token;
+            if (failure != null) {
+                return Mono.error(failure);
+            }
             return Mono.empty();
         }
     }

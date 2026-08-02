@@ -87,7 +87,7 @@ class HybridStrategyIT {
         connection.setAutoCommit(false);
 
         properties = new MultiTenancyProperties();
-        properties.setEnabled(true);
+        properties.setEnable(true);
         properties.setMode(IsolationMode.HYBRID);
 
         TenantInfoProvider noopProvider = new TenantInfoProvider() {

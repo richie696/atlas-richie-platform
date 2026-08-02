@@ -37,7 +37,7 @@ class ConnectionResetInterceptorTest {
     @BeforeEach
     void setUp() {
         props = new MultiTenancyProperties();
-        props.setEnabled(true);
+        props.setEnable(true);
         interceptor = new ConnectionResetInterceptor(props);
     }
 
@@ -84,7 +84,7 @@ class ConnectionResetInterceptorTest {
     @Test
     @DisplayName("enabled=false 时不清理（但 proceed 仍执行）")
     void disabledSkipsCleanup() throws Throwable {
-        props.setEnabled(false);
+        props.setEnable(false);
         DataSourceContextHolder.set("ds_1001");
 
         Invocation invocation = mock(Invocation.class);

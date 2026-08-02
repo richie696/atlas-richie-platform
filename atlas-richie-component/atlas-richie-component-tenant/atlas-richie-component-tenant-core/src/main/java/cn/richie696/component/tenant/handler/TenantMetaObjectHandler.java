@@ -31,7 +31,7 @@ import java.util.Objects;
  *   <li>已绑定租户上下文 → 填充当前租户 ID</li>
  *   <li>未绑定租户上下文 →
  *     <ul>
- *       <li>{@code enforceAuthTenant=true} → 抛 {@link cn.richie696.component.tenant.exception.BusinessException}
+ *       <li>{@code enforceAuthTenant=true} → 抛 {@link cn.richie696.contract.exception.BusinessException}
  *           fail-fast,避免 INSERT 静默写入平台默认租户导致数据归属错误</li>
  *       <li>{@code enforceAuthTenant=false} → 填 {@code 0L}(平台默认租户,向后兼容)</li>
  *     </ul>
