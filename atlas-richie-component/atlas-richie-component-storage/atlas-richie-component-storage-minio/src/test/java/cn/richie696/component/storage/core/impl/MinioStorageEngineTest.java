@@ -636,4 +636,82 @@ class MinioStorageEngineTest {
         assertThat(response.isSuccess()).isFalse();
         assertThat(response.getErrorMessage()).contains("Null value");
     }
+
+    // ==================== Coverage gap tests ====================
+
+    @Test
+    void statObject_returnsMetadata() throws Exception {
+        io.minio.StatObjectResponse statResp = mock(io.minio.StatObjectResponse.class);
+        lenient().when(statResp.size()).thenReturn(2048L);
+        lenient().when(statResp.etag()).thenReturn("etag-stat");
+        lenient().when(statResp.versionId()).thenReturn("v-stat");
+        lenient().when(statResp.contentType()).thenReturn("text/plain");
+        when(minioAsyncClient.statObject(any(io.minio.StatObjectArgs.class)))
+                .thenReturn(CompletableFuture.completedFuture(statResp));
+
+        cn.richie696.component.storage.bean.ObjectStatResponse meta = engine.statObject("test.txt");
+
+        assertThat(meta.isSuccess()).isTrue();
+        assertThat(meta.isExists()).isTrue();
+        assertThat(meta.getContentLength()).isEqualTo(2048L);
+        assertThat(meta.getEtag()).isEqualTo("etag-stat");
+        assertThat(meta.getVersionId()).isEqualTo("v-stat");
+        assertThat(meta.getContentType()).isEqualTo("text/plain");
+    }
+
+    @Test
+    void statObject_notFound_returnsExistsFalse() throws Exception {
+        io.minio.messages.ErrorResponse errResp = new io.minio.messages.ErrorResponse(
+                "NoSuchKey", null, null, null, null, null, null);
+        CompletableFuture<io.minio.StatObjectResponse> failed = CompletableFuture.failedFuture(
+                new io.minio.errors.ErrorResponseException(errResp, null, null));
+        when(minioAsyncClient.statObject(any(io.minio.StatObjectArgs.class))).thenReturn(failed);
+
+        cn.richie696.component.storage.bean.ObjectStatResponse meta = engine.statObject("missing.txt");
+
+        assertThat(meta.isSuccess()).isTrue();
+        assertThat(meta.isExists()).isFalse();
+        assertThat(meta.getBucketName()).isEqualTo("test-bucket");
+    }
+
+    @Test
+    void readObject_exception_wrapsAsIllegalState() throws Exception {
+        CompletableFuture<io.minio.GetObjectResponse> failed = CompletableFuture.failedFuture(
+                new RuntimeException("read failed"));
+        when(minioAsyncClient.getObject(any(io.minio.GetObjectArgs.class))).thenReturn(failed);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                engine.readObject("test.txt", inputStream -> { /* no-op */ }))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void issueDirectDownloadPolicy_returnsSignedUrl() throws Exception {
+        when(minioAsyncClient.getPresignedObjectUrl(any(io.minio.GetPresignedObjectUrlArgs.class)))
+                .thenReturn("https://minio.example.com/bucket/test.txt?X-Amz-Signature=abc");
+
+        cn.richie696.component.storage.bean.DirectDownloadPolicy policy =
+                engine.issueDirectDownloadPolicy("test.txt", 600);
+
+        assertThat(policy.isSuccess()).isTrue();
+        assertThat(policy.getDownloadUrl()).startsWith("https://minio.example.com");
+        assertThat(policy.getBucketName()).isEqualTo("test-bucket");
+        assertThat(policy.getKey()).isEqualTo("base/test.txt");
+        assertThat(policy.getExpireAt()).isNotNull();
+    }
+
+    @Test
+    void issueDirectDownloadPolicy_fallsBackOnPresignError() throws Exception {
+        when(minioAsyncClient.getPresignedObjectUrl(any(io.minio.GetPresignedObjectUrlArgs.class)))
+                .thenThrow(new RuntimeException("presign failed"));
+
+        cn.richie696.component.storage.bean.DirectDownloadPolicy policy =
+                engine.issueDirectDownloadPolicy("test.txt", 600);
+
+        // Falls back to a direct URL pattern
+        assertThat(policy.isSuccess()).isTrue();
+        assertThat(policy.isFallback()).isTrue();
+        assertThat(policy.getDownloadUrl()).contains("test-bucket");
+        assertThat(policy.getKey()).isEqualTo("base/test.txt");
+    }
 }

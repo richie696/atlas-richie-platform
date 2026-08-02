@@ -89,4 +89,15 @@ public interface StorageEngineProvider {
     default boolean supports(Class<? extends StorageEngine> engineClass) {
         return true;
     }
+
+    /**
+     * 判断当前 Provider 是否支持服务端引擎类型。
+     *
+     * <p>默认桥接旧版 {@code supports(Class<? extends StorageEngine>)}；新 Provider
+     * 可以覆盖本方法，从而不再依赖已废弃的聚合接口。</p>
+     */
+    @SuppressWarnings("unchecked")
+    default boolean supportsServerEngine(Class<? extends StorageEngine> engineClass) {
+        return supports((Class<? extends StorageEngine>) (Class<?>) engineClass);
+    }
 }

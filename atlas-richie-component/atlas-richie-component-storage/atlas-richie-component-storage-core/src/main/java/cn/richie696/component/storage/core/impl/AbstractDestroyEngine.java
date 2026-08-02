@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.storage.core.impl;
 
+import cn.richie696.component.storage.core.DirectStorageEngine;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.context.common.api.SpringContextHolder;
 
@@ -25,7 +26,7 @@ import cn.richie696.context.common.api.SpringContextHolder;
  * @author richie696
  * @since 2023-09-05
  */
-public abstract class AbstractDestroyEngine<T> implements StorageEngine {
+public abstract class AbstractDestroyEngine<T> implements StorageEngine, DirectStorageEngine {
 
     /**
      * 手动模式下直注的客户端（绕过 SpringContextHolder）。

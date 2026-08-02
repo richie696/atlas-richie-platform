@@ -32,9 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 
 /**
  * StorageEngineRegistry.refreshEngine 回滚语义测试
@@ -269,7 +266,7 @@ class RefreshEngineTest {
     /**
      * 简单的 StorageEngine stub
      */
-    static class StubEngine implements StorageEngine {
+    static class StubEngine implements StorageEngine, DirectStorageEngine {
         final String name;
 
         StubEngine(String name) {

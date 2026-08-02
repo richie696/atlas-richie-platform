@@ -23,6 +23,7 @@ import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.converter.StorageTypeConverter;
+import cn.richie696.component.storage.core.DirectStorageEngine;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.context.utils.data.JsonUtils;
@@ -59,7 +60,7 @@ import java.io.File;
 @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "huawei_obs")
 @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
         havingValue = "true", matchIfMissing = true)
-public final class ObsStorageEngine extends AbstractObjectStorageEngine<ObsClient> implements StorageEngine {
+public final class ObsStorageEngine extends AbstractObjectStorageEngine<ObsClient> implements StorageEngine, DirectStorageEngine {
 
     public ObsStorageEngine(StorageProperties properties,
                             StorageTypeConverter converter) {

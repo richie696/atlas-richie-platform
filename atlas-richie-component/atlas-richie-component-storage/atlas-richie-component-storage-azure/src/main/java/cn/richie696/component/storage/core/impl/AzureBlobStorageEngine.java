@@ -21,6 +21,7 @@ import cn.richie696.component.storage.bean.DownloadResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
+import cn.richie696.component.storage.core.DirectStorageEngine;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.context.utils.data.JsonUtils;
 import com.azure.storage.blob.BlobContainerClient;
@@ -51,7 +52,7 @@ import java.io.File;
 @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "azure_blob")
 @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
         havingValue = "true", matchIfMissing = true)
-public final class AzureBlobStorageEngine extends AbstractObjectStorageEngine<BlobContainerClient> implements StorageEngine {
+public final class AzureBlobStorageEngine extends AbstractObjectStorageEngine<BlobContainerClient> implements StorageEngine, DirectStorageEngine {
 
     /**
      * 构造函数

@@ -26,8 +26,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import java.util.Collection;
-import java.util.Map;
 
 /**
  * 存储引擎 Provider SPI 单元测试
@@ -179,11 +177,11 @@ class StorageEngineProviderTest {
     }
 
     /**
-     * 最小的 {@link StorageEngine} 实现，覆盖 {@link ServerStorageEngine} 中所有抽象方法。
+     * 最小的 {@link StorageEngine} 实现，覆盖 {@link StorageEngine} 中所有抽象方法。
      * {@link DirectStorageEngine} 的方法全部使用默认实现（兜底策略 + 委托到 {@code getObject}）。
      * 仅用于 Provider 的契约测试，不进行实际存储操作。
      */
-    static class MinimalStorageEngine implements StorageEngine {
+    static class MinimalStorageEngine implements StorageEngine, DirectStorageEngine {
         @Override
         public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String key, java.util.@NonNull Map<?, ?> collection) {
             return null;

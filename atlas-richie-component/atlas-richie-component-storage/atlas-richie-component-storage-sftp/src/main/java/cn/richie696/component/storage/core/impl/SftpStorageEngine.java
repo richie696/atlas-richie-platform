@@ -21,6 +21,7 @@ import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
+import cn.richie696.component.storage.core.DirectStorageEngine;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.component.storage.pool.SftpSessionPool;
@@ -53,7 +54,7 @@ import java.util.Set;
 @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
         havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
-public final class SftpStorageEngine implements StorageEngine {
+public final class SftpStorageEngine implements StorageEngine, DirectStorageEngine {
 
     private static final int BUFFER_SIZE = 65536;
     private static final EnumSet<OpenMode> READ_MODE = EnumSet.of(OpenMode.Read);

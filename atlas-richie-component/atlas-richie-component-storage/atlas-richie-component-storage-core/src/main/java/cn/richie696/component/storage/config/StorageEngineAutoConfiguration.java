@@ -56,7 +56,7 @@ public class StorageEngineAutoConfiguration {
     /**
      * JDK 动态代理 Bean（自动模式下作为 @Primary）
      * <p>
-     * 标记为 @Primary，确保业务代码 {@code @Autowired StorageEngine} 时注入的是代理对象。
+     * 标记为 @Primary，确保业务代码 {@code @Autowired ServerStorageEngine} 时注入的是代理对象。
      * 手动模式下此 Bean 仍然存在，但不会被用作 @Primary（由 defaultStorageEngine 替代）。
      */
     @Bean
@@ -159,10 +159,10 @@ public class StorageEngineAutoConfiguration {
     /**
      * 手动模式：默认引擎代理（@Primary）
      * <p>
-     * 业务代码 {@code @Autowired StorageEngine} 时注入此代理，
+     * 业务代码 {@code @Autowired ServerStorageEngine} 时注入此代理，
      * 代理委托到 Registry 中第一个注册的引擎。
      * <p>
-     * 使用 @ConditionalOnMissingBean(StorageEngine.class) 避免与自动模式的
+     * 使用 @ConditionalOnMissingBean(ServerStorageEngine.class) 避免与自动模式的
      * StorageEngineProxyFactoryBean 冲突。
      */
     @Bean
@@ -294,7 +294,7 @@ public class StorageEngineAutoConfiguration {
         }
         Map<String, StorageEngineProvider> providers = ctx.getBeansOfType(StorageEngineProvider.class);
         List<StorageEngineProvider> matched = providers.values().stream()
-                .filter(p -> p.supports(engine.getClass()))
+                .filter(p -> p.supportsServerEngine(engine.getClass()))
                 .toList();
         if (matched.isEmpty()) {
             log.warn("未找到支持 {} 的 StorageEngineProvider，请检查类路径与 @Bean 注册",

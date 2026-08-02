@@ -15,8 +15,6 @@
  */
 package cn.richie696.component.storage.core;
 
-import cn.richie696.component.storage.bean.DirectDownloadPolicy;
-import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
@@ -38,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * StorageEngineProxyFactoryBean 单元测试
  * <p>
  * 覆盖：FactoryBean 契约、代理对象创建、setDelegate 行为、未初始化时调用方法抛 IllegalStateException、
- * toString/hashCode/equals 行为、default 方法透传、InvocationTargetException 解包。
+ * toString/hashCode/equals 行为、InvocationTargetException 解包。
  */
 class StorageEngineProxyFactoryBeanTest {
 
@@ -134,7 +132,7 @@ class StorageEngineProxyFactoryBeanTest {
     void proxy_uninitializedCall_shouldThrowIllegalStateException() throws Exception {
         StorageEngineProxyFactoryBean factoryBean = new StorageEngineProxyFactoryBean();
         StorageEngine proxy = factoryBean.getObject();
-        assertThatThrownBy(() -> proxy.existsObject("key"))
+        assertThatThrownBy(() -> proxy.putData("key", "value"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("存储引擎未初始化");
     }
@@ -146,27 +144,15 @@ class StorageEngineProxyFactoryBeanTest {
         factoryBean.setDelegate(delegate);
         StorageEngine proxy = factoryBean.getObject();
 
-        boolean result = proxy.existsObject("test-key");
-        assertThat(result).isTrue();
-        assertThat(delegate.lastExistsKey).isEqualTo("test-key");
+        proxy.putData("test-key", "value");
+        assertThat(delegate.lastPutDataKey).isEqualTo("test-key");
     }
 
     @Test
-    void proxy_defaultMethod_shouldUseInvokeDefault() throws Exception {
+    void proxy_shouldExposeServerCapabilitiesOnly() throws Exception {
         StorageEngineProxyFactoryBean factoryBean = new StorageEngineProxyFactoryBean();
         StorageEngine proxy = factoryBean.getObject();
-        DirectUploadPolicy policy = proxy.issueDirectUploadPolicy("k", 10);
-        assertThat(policy).isNotNull();
-        assertThat(policy.isSuccess()).isFalse();
-    }
-
-    @Test
-    void proxy_defaultDownloadPolicy_shouldUseInvokeDefault() throws Exception {
-        StorageEngineProxyFactoryBean factoryBean = new StorageEngineProxyFactoryBean();
-        StorageEngine proxy = factoryBean.getObject();
-        DirectDownloadPolicy policy = proxy.issueDirectDownloadPolicy("k", 10);
-        assertThat(policy).isNotNull();
-        assertThat(policy.isSuccess()).isFalse();
+        assertThat(proxy).isNotInstanceOf(DirectStorageEngine.class);
     }
 
     @Test
@@ -174,7 +160,7 @@ class StorageEngineProxyFactoryBeanTest {
         StorageEngineProxyFactoryBean factoryBean = new StorageEngineProxyFactoryBean();
         factoryBean.setDelegate(new ThrowingEngine(new IllegalArgumentException("original cause")));
         StorageEngine proxy = factoryBean.getObject();
-        assertThatThrownBy(() -> proxy.existsObject("k"))
+        assertThatThrownBy(() -> proxy.putData("k", "value"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("original cause");
     }
@@ -187,14 +173,14 @@ class StorageEngineProxyFactoryBeanTest {
         factoryBean.setDelegate(first);
         StorageEngine proxy = factoryBean.getObject();
 
-        proxy.existsObject("a");
-        assertThat(first.existsCount).isEqualTo(1);
-        assertThat(second.existsCount).isEqualTo(0);
+        proxy.putData("a", "value");
+        assertThat(first.putDataCount).isEqualTo(1);
+        assertThat(second.putDataCount).isEqualTo(0);
 
         factoryBean.setDelegate(second);
-        proxy.existsObject("b");
-        assertThat(first.existsCount).isEqualTo(1);
-        assertThat(second.existsCount).isEqualTo(1);
+        proxy.putData("b", "value");
+        assertThat(first.putDataCount).isEqualTo(1);
+        assertThat(second.putDataCount).isEqualTo(1);
     }
 
     @Test
@@ -208,9 +194,9 @@ class StorageEngineProxyFactoryBeanTest {
     /**
      * 用于验证委托调用是否被正确转发到 delegate。
      */
-    static class RecordingEngine implements StorageEngine {
-        String lastExistsKey;
-        int existsCount;
+    static class RecordingEngine implements StorageEngine, DirectStorageEngine {
+        String lastPutDataKey;
+        int putDataCount;
 
         @Override
         public UploadResponse putData(@NonNull String key, @NonNull Map<?, ?> collection) {
@@ -224,6 +210,8 @@ class StorageEngineProxyFactoryBeanTest {
 
         @Override
         public UploadResponse putData(@NonNull String key, @NonNull Object object) {
+            this.lastPutDataKey = key;
+            this.putDataCount++;
             return null;
         }
 
@@ -264,16 +252,15 @@ class StorageEngineProxyFactoryBeanTest {
 
         @Override
         public boolean existsObject(@NonNull String key) {
-            this.lastExistsKey = key;
-            this.existsCount++;
             return true;
         }
+
     }
 
     /**
      * 用于验证 InvocationTargetException 解包行为。
      */
-    static class ThrowingEngine implements StorageEngine {
+    static class ThrowingEngine implements StorageEngine, DirectStorageEngine {
         private final RuntimeException toThrow;
 
         ThrowingEngine(RuntimeException toThrow) {

@@ -51,7 +51,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>cn/richie696/component/storage/converter/*</include>
+                        <include>cn/richie696/component/storage/core/impl/SmbStorageEngine*</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -59,7 +59,7 @@
                         <id>jacoco-check</id>
                         <configuration>
                             <includes>
-                                <include>cn/richie696/component/storage/converter/*</include>
+                                <include>cn/richie696/component/storage/core/impl/SmbStorageEngine*</include>
                             </includes>
                             <rules>
                                 <rule>

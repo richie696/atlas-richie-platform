@@ -21,6 +21,7 @@ import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
+import cn.richie696.component.storage.core.DirectStorageEngine;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.component.storage.pool.FtpClientPool;
@@ -49,7 +50,7 @@ import java.io.File;
 @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
         havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
-public class FtpStorageEngine extends AbstractDestroyEngine<FTPClient> implements StorageEngine {
+public class FtpStorageEngine extends AbstractDestroyEngine<FTPClient> implements StorageEngine, DirectStorageEngine {
 
     private final StorageProperties properties;
     private final FtpClientPool ftpClientPool;

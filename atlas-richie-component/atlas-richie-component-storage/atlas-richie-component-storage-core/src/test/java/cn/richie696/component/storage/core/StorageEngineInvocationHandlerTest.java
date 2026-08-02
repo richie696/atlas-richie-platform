@@ -34,11 +34,21 @@ import static org.mockito.Mockito.*;
 @DisplayName("StorageEngineInvocationHandler 测试")
 class StorageEngineInvocationHandlerTest {
 
-    private StorageEngine newProxy(java.lang.reflect.InvocationHandler handler) {
-        return (StorageEngine) Proxy.newProxyInstance(
+    /**
+     * 创建同时实现 {@link StorageEngine} 与 {@link DirectStorageEngine} 的共享代理：
+     * handler 的 delegate supplier 类型是 {@code Supplier<StorageEngine>}，而业务方法
+     * （如 existsObject）已拆分到 DirectStorageEngine，所以代理必须覆盖两个接口。
+     */
+    private DirectStorageEngine newProxy(java.lang.reflect.InvocationHandler handler) {
+        return (DirectStorageEngine) Proxy.newProxyInstance(
                 StorageEngine.class.getClassLoader(),
-                new Class<?>[]{StorageEngine.class},
+                new Class<?>[]{StorageEngine.class, DirectStorageEngine.class},
                 handler);
+    }
+
+    /** 同时实现两个接口的 delegate mock，保证 existsObject 等 Direct 方法可被 stub。 */
+    private StorageEngine newDelegateMock() {
+        return mock(StorageEngine.class, withSettings().extraInterfaces(DirectStorageEngine.class));
     }
 
     @Nested
@@ -75,8 +85,8 @@ class StorageEngineInvocationHandlerTest {
         @Test
         @DisplayName("toString: 已绑定 delegate 时包含类型与 delegate 类名")
         void toString_withDelegate() {
-            StorageEngine mockDelegate = mock(StorageEngine.class);
-            StorageEngine proxy = newProxy(
+            StorageEngine mockDelegate = newDelegateMock();
+            DirectStorageEngine proxy = newProxy(
                     StorageEngineInvocationHandler.forType(StorageEngineEnum.MINIO, () -> mockDelegate));
 
             String str = proxy.toString();
@@ -87,7 +97,7 @@ class StorageEngineInvocationHandlerTest {
         @Test
         @DisplayName("toString: 未绑定 delegate 时显示 null")
         void toString_withoutDelegate() {
-            StorageEngine proxy = newProxy(
+            DirectStorageEngine proxy = newProxy(
                     StorageEngineInvocationHandler.forType(StorageEngineEnum.FTP, () -> null));
 
             assertThat(proxy.toString()).contains("FTP").contains("delegate=null");
@@ -96,7 +106,7 @@ class StorageEngineInvocationHandlerTest {
         @Test
         @DisplayName("toString: unnamed handler 不带类型前缀")
         void toString_unnamed() {
-            StorageEngine proxy = newProxy(
+            DirectStorageEngine proxy = newProxy(
                     StorageEngineInvocationHandler.unnamed(() -> null));
 
             assertThat(proxy.toString()).isEqualTo("StorageEngineProxy[delegate=null]");
@@ -105,7 +115,7 @@ class StorageEngineInvocationHandlerTest {
         @Test
         @DisplayName("hashCode: 返回 proxy 的 identityHashCode")
         void hashCode_identity() {
-            StorageEngine proxy = newProxy(
+            DirectStorageEngine proxy = newProxy(
                     StorageEngineInvocationHandler.unnamed(() -> null));
 
             assertThat(proxy.hashCode()).isEqualTo(System.identityHashCode(proxy));
@@ -114,7 +124,7 @@ class StorageEngineInvocationHandlerTest {
         @Test
         @DisplayName("equals: 与自身 identity 相等")
         void equals_identity() {
-            StorageEngine proxy = newProxy(
+            DirectStorageEngine proxy = newProxy(
                     StorageEngineInvocationHandler.unnamed(() -> null));
 
             assertThat(proxy.equals(proxy)).isTrue();
@@ -130,7 +140,7 @@ class StorageEngineInvocationHandlerTest {
         @Test
         @DisplayName("未初始化时调用业务方法抛 IllegalStateException，含类型标签")
         void invoke_uninitialized_throwsWithType() {
-            StorageEngine proxy = newProxy(
+            DirectStorageEngine proxy = newProxy(
                     StorageEngineInvocationHandler.forType(StorageEngineEnum.MINIO, () -> null));
 
             assertThatThrownBy(() -> proxy.existsObject("any"))
@@ -142,7 +152,7 @@ class StorageEngineInvocationHandlerTest {
         @Test
         @DisplayName("未初始化时调用业务方法抛 IllegalStateException（unnamed）")
         void invoke_uninitialized_unnamed_throwsGenericMessage() {
-            StorageEngine proxy = newProxy(
+            DirectStorageEngine proxy = newProxy(
                     StorageEngineInvocationHandler.unnamed(() -> null));
 
             assertThatThrownBy(() -> proxy.existsObject("any"))
@@ -153,9 +163,9 @@ class StorageEngineInvocationHandlerTest {
         @Test
         @DisplayName("委托调用返回 delegate 的真实结果")
         void invoke_delegate() {
-            StorageEngine delegate = mock(StorageEngine.class);
-            when(delegate.existsObject("key1")).thenReturn(true);
-            StorageEngine proxy = newProxy(
+            StorageEngine delegate = newDelegateMock();
+            when(((DirectStorageEngine) delegate).existsObject("key1")).thenReturn(true);
+            DirectStorageEngine proxy = newProxy(
                     StorageEngineInvocationHandler.unnamed(() -> delegate));
 
             assertThat(proxy.existsObject("key1")).isTrue();
@@ -164,10 +174,10 @@ class StorageEngineInvocationHandlerTest {
         @Test
         @DisplayName("每次 invoke 重新读取 supplier，支持热切换")
         void invoke_hotSwitch() {
-            StorageEngine stub1 = mock(StorageEngine.class);
-            when(stub1.existsObject("a")).thenReturn(true);
+            StorageEngine stub1 = newDelegateMock();
+            when(((DirectStorageEngine) stub1).existsObject("a")).thenReturn(true);
             AtomicReference<StorageEngine> ref = new AtomicReference<>(stub1);
-            StorageEngine proxy = newProxy(
+            DirectStorageEngine proxy = newProxy(
                     StorageEngineInvocationHandler.forType(StorageEngineEnum.MINIO, ref::get));
 
             assertThat(proxy.existsObject("a")).isTrue();
@@ -179,11 +189,11 @@ class StorageEngineInvocationHandlerTest {
         @Test
         @DisplayName("InvocationTargetException 解包为业务异常")
         void invoke_unwrapInvocationTargetException() {
-            StorageEngine throwing = mock(StorageEngine.class);
+            StorageEngine throwing = newDelegateMock();
             doThrow(new IllegalStateException("inner cause"))
-                    .when(throwing).existsObject("x");
+                    .when(((DirectStorageEngine) throwing)).existsObject("x");
 
-            StorageEngine proxy = newProxy(
+            DirectStorageEngine proxy = newProxy(
                     StorageEngineInvocationHandler.unnamed(() -> throwing));
 
             assertThatThrownBy(() -> proxy.existsObject("x"))

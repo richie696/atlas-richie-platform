@@ -105,7 +105,17 @@ public final class StorageLocalIntegrationTestSupport {
     }
 
     void appendPropertyPairs(List<String> pairs) {
+        int beforeRedis = pairs.size();
         REDIS.appendConnectionPropertyPairs(pairs);
+        // AtlasRedisProperties 绑定前缀为 platform.component.cache.redis，
+        // 而 REDIS 只输出 spring.data.redis.*，需同时映射到组件前缀。
+        for (int i = beforeRedis; i < pairs.size(); i++) {
+            String pair = pairs.get(i);
+            if (pair.startsWith("spring.data.redis.")) {
+                String suffix = pair.substring("spring.data.redis.".length());
+                pairs.add("platform.component.cache.redis." + suffix);
+            }
+        }
         MYSQL.appendConnectionPropertyPairs(pairs);
         appendComponentPropertyPairs(pairs);
     }

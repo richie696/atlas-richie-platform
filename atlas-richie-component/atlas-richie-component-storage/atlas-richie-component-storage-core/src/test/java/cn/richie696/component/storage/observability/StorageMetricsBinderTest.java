@@ -16,6 +16,7 @@
 package cn.richie696.component.storage.observability;
 
 import cn.richie696.component.storage.config.StorageEngineRegistry;
+import cn.richie696.component.storage.core.DirectStorageEngine;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
 import cn.richie696.context.common.api.SpringContextHolder;
@@ -31,7 +32,6 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import java.util.Map;
 
 class StorageMetricsBinderTest {
 
@@ -109,7 +109,7 @@ class StorageMetricsBinderTest {
         assertThat(gauge.value()).isEqualTo(2.0);
     }
 
-    static class NoopEngine implements StorageEngine {
+    static class NoopEngine implements StorageEngine, DirectStorageEngine {
         @Override
         public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String k, java.util.@NonNull Map<?, ?> c) {
             return null;

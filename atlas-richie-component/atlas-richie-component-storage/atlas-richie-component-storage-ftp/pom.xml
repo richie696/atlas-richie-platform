@@ -50,6 +50,7 @@
                 <configuration>
                     <includes>
                         <include>cn/richie696/component/storage/pool/FtpClientPool*</include>
+                        <include>cn/richie696/component/storage/core/impl/FtpStorageEngine*</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -58,6 +59,7 @@
                         <configuration>
                             <includes>
                                 <include>cn/richie696/component/storage/pool/FtpClientPool*</include>
+                        <include>cn/richie696/component/storage/core/impl/FtpStorageEngine*</include>
                             </includes>
                             <rules>
                                 <rule>

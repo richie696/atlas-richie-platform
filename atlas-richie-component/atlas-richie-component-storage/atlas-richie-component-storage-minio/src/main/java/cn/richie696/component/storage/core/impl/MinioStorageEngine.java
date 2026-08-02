@@ -22,6 +22,7 @@ import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
+import cn.richie696.component.storage.core.DirectStorageEngine;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.component.storage.exception.StorageException;
@@ -50,7 +51,7 @@ import java.io.File;
 @ConditionalOnProperty(prefix = "platform.component.storage.object", name = "engine", havingValue = "minio")
 @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
         havingValue = "true", matchIfMissing = true)
-public final class MinioStorageEngine extends AbstractObjectStorageEngine<MinioAsyncClient> implements StorageEngine {
+public final class MinioStorageEngine extends AbstractObjectStorageEngine<MinioAsyncClient> implements StorageEngine, DirectStorageEngine {
 
     /**
      * MinIO 异步客户端实例，由 Spring 容器注入（{@code prototype} 作用域）。

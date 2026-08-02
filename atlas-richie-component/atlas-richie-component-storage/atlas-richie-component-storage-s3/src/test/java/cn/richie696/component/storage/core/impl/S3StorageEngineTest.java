@@ -579,4 +579,82 @@ class S3StorageEngineTest {
         assertThat(policy.getKey()).isEqualTo("base/test.txt");
         assertThat(policy.getExpireAt()).isNotNull();
     }
+
+    @Test
+    @DisplayName("statObject - 返回对象元数据（size + etag + versionId）")
+    void statObject_returnsMetadata() {
+        software.amazon.awssdk.services.s3.model.HeadObjectResponse head =
+                software.amazon.awssdk.services.s3.model.HeadObjectResponse.builder()
+                        .contentLength(1024L)
+                        .eTag("etag-stat")
+                        .versionId("v-stat")
+                        .contentType("application/octet-stream")
+                        .build();
+        when(s3Client.headObject(any(software.amazon.awssdk.services.s3.model.HeadObjectRequest.class)))
+                .thenReturn(head);
+
+        var meta = engine.statObject(KEY);
+
+        assertThat(meta.getContentLength()).isEqualTo(1024L);
+        assertThat(meta.getEtag()).isEqualTo("etag-stat");
+        assertThat(meta.getVersionId()).isEqualTo("v-stat");
+        assertThat(meta.getContentType()).isEqualTo("application/octet-stream");
+        assertThat(meta.getKey()).isEqualTo(KEY);
+    }
+
+    @Test
+    @DisplayName("statObject - 抛 SdkClientException 时返回 null 元数据")
+    void statObject_returnsNullOnException() {
+        when(s3Client.headObject(any(software.amazon.awssdk.services.s3.model.HeadObjectRequest.class)))
+                .thenThrow(software.amazon.awssdk.core.exception.SdkClientException.builder().message("boom").build());
+
+        var meta = engine.statObject(KEY);
+
+        assertThat(meta.isSuccess()).isFalse();
+        assertThat(meta.isExists()).isFalse();
+    }
+
+    @Test
+    @DisplayName("issueDirectDownloadPolicy - 预签名 GET 成功时返回下载 URL")
+    void issueDirectDownloadPolicy_success() {
+        software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest signed =
+                mock(software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest.class);
+        URL url = mock(URL.class);
+        lenient().when(url.toString()).thenReturn("https://example.com/dl?sig=xyz");
+        lenient().when(signed.url()).thenReturn(url);
+        when(s3Presigner.presignGetObject(any(software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest.class)))
+                .thenReturn(signed);
+
+        var policy = engine.issueDirectDownloadPolicy(KEY, 600);
+
+        assertThat(policy.isSuccess()).isTrue();
+        assertThat(policy.getDownloadUrl()).startsWith("https://example.com/dl");
+        assertThat(policy.getBucketName()).isEqualTo(BUCKET_NAME);
+        assertThat(policy.getKey()).isEqualTo("base/test.txt");
+        assertThat(policy.getExpireAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("readObject - 通过 S3 getObject 流式消费对象内容")
+    void readObject_streamsContent() throws Exception {
+        software.amazon.awssdk.services.s3.model.GetObjectResponse getResp =
+                mock(software.amazon.awssdk.services.s3.model.GetObjectResponse.class);
+        lenient().when(getResp.eTag()).thenReturn("etag-read");
+        lenient().when(getResp.versionId()).thenReturn("v-read");
+        when(s3Client.getObject(any(software.amazon.awssdk.services.s3.model.GetObjectRequest.class)))
+                .thenReturn(new software.amazon.awssdk.core.ResponseInputStream<>(
+                        getResp,
+                        new java.io.ByteArrayInputStream("streamed-content".getBytes(StandardCharsets.UTF_8))));
+
+        java.util.concurrent.atomic.AtomicReference<String> captured = new java.util.concurrent.atomic.AtomicReference<>();
+        engine.readObject(KEY, inputStream -> {
+            try {
+                captured.set(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        assertThat(captured.get()).isEqualTo("streamed-content");
+    }
 }

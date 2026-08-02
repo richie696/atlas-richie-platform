@@ -34,7 +34,6 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import java.util.Collection;
 
 /**
  * StorageEngineRegistry 单元测试
@@ -277,7 +276,7 @@ class StorageEngineRegistryTest {
     @Test
     void getObjectProxy_uninitializedCall_shouldThrowIllegalStateException() {
         StorageEngine proxy = registry.getObjectProxy();
-        assertThatThrownBy(() -> proxy.existsObject("key"))
+        assertThatThrownBy(() -> proxy.putData("key", "value"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("未初始化");
     }
@@ -427,8 +426,8 @@ class StorageEngineRegistryTest {
         StubEngine engine = new StubEngine("engine");
         registry.registerInitialEngine(StorageEngineEnum.MINIO, "m-1", engine);
         StorageEngine proxy = registry.getProxy(StorageEngineEnum.MINIO);
-        assertThat(proxy.existsObject("k")).isTrue();
-        assertThat(engine.lastExistsKey).isEqualTo("k");
+        proxy.putData("k", "value");
+        assertThat(engine.lastPutDataKey).isEqualTo("k");
     }
 
     @Test
@@ -448,11 +447,9 @@ class StorageEngineRegistryTest {
     }
 
     @Test
-    void getProxy_defaultMethod_shouldUseInvokeDefault() {
+    void getProxy_shouldExposeServerCapabilitiesOnly() {
         StorageEngine proxy = registry.getProxy(StorageEngineEnum.MINIO);
-        var policy = proxy.issueDirectUploadPolicy("k", 10);
-        assertThat(policy).isNotNull();
-        assertThat(policy.isSuccess()).isFalse();
+        assertThat(proxy).isNotInstanceOf(DirectStorageEngine.class);
     }
 
     @Test
@@ -472,13 +469,13 @@ class StorageEngineRegistryTest {
     void getProxy_invocationTargetException_shouldUnwrapCause() {
         StubEngine throwing = new StubEngine("t") {
             @Override
-            public boolean existsObject(@NonNull String key) {
+            public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String key, @NonNull Object object) {
                 throw new IllegalStateException("inner cause");
             }
         };
         registry.registerInitialEngine(StorageEngineEnum.MINIO, "m-1", throwing);
         StorageEngine proxy = registry.getProxy(StorageEngineEnum.MINIO);
-        assertThatThrownBy(() -> proxy.existsObject("k"))
+        assertThatThrownBy(() -> proxy.putData("k", "value"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("inner cause");
     }
@@ -502,9 +499,9 @@ class StorageEngineRegistryTest {
     /**
      * 简单的 StorageEngine stub
      */
-    static class StubEngine implements StorageEngine {
+    static class StubEngine implements StorageEngine, DirectStorageEngine {
         final String name;
-        String lastExistsKey;
+        String lastPutDataKey;
 
         StubEngine(String name) {
             this.name = name;
@@ -522,6 +519,7 @@ class StorageEngineRegistryTest {
 
         @Override
         public cn.richie696.component.storage.bean.UploadResponse putData(@NonNull String key, @NonNull Object object) {
+            this.lastPutDataKey = key;
             return null;
         }
 
@@ -567,9 +565,9 @@ class StorageEngineRegistryTest {
 
         @Override
         public boolean existsObject(@NonNull String key) {
-            this.lastExistsKey = key;
             return true;
         }
+
     }
 
     /**

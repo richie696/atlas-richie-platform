@@ -21,6 +21,7 @@ import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
+import cn.richie696.component.storage.core.DirectStorageEngine;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.core.ObjectStreamConsumer;
 import cn.richie696.context.utils.data.JsonUtils;
@@ -51,7 +52,7 @@ import java.io.File;
 @ConditionalOnProperty(prefix = "platform.component.storage", name = "auto-init",
         havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
-public final class SmbStorageEngine implements StorageEngine {
+public final class SmbStorageEngine implements StorageEngine, DirectStorageEngine {
 
     private final StorageProperties properties;
     private final CIFSContext cifsContext;

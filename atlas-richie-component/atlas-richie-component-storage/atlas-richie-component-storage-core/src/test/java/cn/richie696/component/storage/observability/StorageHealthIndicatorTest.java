@@ -16,6 +16,7 @@
 package cn.richie696.component.storage.observability;
 
 import cn.richie696.component.storage.config.StorageEngineRegistry;
+import cn.richie696.component.storage.core.DirectStorageEngine;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
 import cn.richie696.context.common.api.SpringContextHolder;
@@ -31,7 +32,6 @@ import java.lang.reflect.Field;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import java.util.Collection;
 
 class StorageHealthIndicatorTest {
 
@@ -91,7 +91,7 @@ class StorageHealthIndicatorTest {
         assertThat(engines.get("MINIO")).isEqualTo("StubEngine");
     }
 
-    static class StubEngine implements StorageEngine {
+    static class StubEngine implements StorageEngine, DirectStorageEngine {
         final String name;
 
         StubEngine(String name) {

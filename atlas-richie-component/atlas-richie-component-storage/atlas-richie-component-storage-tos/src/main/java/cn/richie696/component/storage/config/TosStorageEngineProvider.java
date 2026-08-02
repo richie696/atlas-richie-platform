@@ -16,6 +16,7 @@
 package cn.richie696.component.storage.config;
 
 import cn.richie696.component.storage.bean.ObjectConfig;
+import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.component.storage.core.impl.TosStorageEngine;
 import cn.richie696.component.storage.enums.StorageEngineEnum;

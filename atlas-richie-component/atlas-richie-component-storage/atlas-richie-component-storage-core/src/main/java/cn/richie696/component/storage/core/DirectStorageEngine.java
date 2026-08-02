@@ -120,7 +120,7 @@ public interface DirectStorageEngine {
         try {
             temporaryFile = Files.createTempFile("storage-object-", ".tmp");
             // 旧实现应覆盖本方法；兼容路径通过已废弃聚合接口下载到受控临时文件。
-            DownloadResponse<byte[]> response = ((ServerStorageEngine) this).getObject(key, temporaryFile.toFile(), false);
+            DownloadResponse<byte[]> response = ((StorageEngine) this).getObject(key, temporaryFile.toFile(), false);
             if (response == null || !response.isSuccess()) {
                 throw new IllegalStateException("读取对象失败: " + (response == null ? "存储引擎未返回下载结果。" : response.getErrorMessage()));
             }
