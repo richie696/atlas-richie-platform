@@ -51,7 +51,8 @@ import org.springframework.context.annotation.Bean;
 public class WebKeyResolverAutoConfiguration {
 
     /**
-     * 注册 {@link HeaderBasedKeyResolver}，header 名取自 {@link WebFilterProperties#getKeyHeader()}
+     * 注册 {@link HeaderBasedKeyResolver}，header 名取自
+     * {@link cn.richie696.component.web.core.config.ratelimit.WebFilterProperties} 的 {@code keyHeader}
      * （默认 {@code X-Client-Id}）。
      */
     @Bean

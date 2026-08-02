@@ -51,7 +51,7 @@ public interface KeyResolver {
 
     /**
      * 默认实现：{@code HeaderBasedKeyResolver}，从 {@code X-Client-Id} header 取。
-     * <p>由 {@link cn.richie696.component.web.core.config.WebKeyResolverAutoConfiguration}
+     * <p>由 {@link cn.richie696.component.web.core.config.ratelimit.WebKeyResolverAutoConfiguration}
      * 在用户未自定义时自动装配。
      */
     static KeyResolver defaultResolver(WebFilterProperties props) {

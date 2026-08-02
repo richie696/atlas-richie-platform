@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * <h2>线程模型</h2>
  * <ul>
  *   <li>默认共享 {@link ScheduledExecutorService} 单例（{@link #getDefault()}）——3 线程守护线程池</li>
- *   <li>shutdown 由 Spring 生命周期管理（{@link HangAutoConfiguration#watchdogScheduler()}
+ *   <li>shutdown 由 Spring 生命周期管理（{@link cn.richie696.component.web.core.config.hang.HangAutoConfiguration#watchdogScheduler()}
  *       声明 {@code destroyMethod = "shutdown"}）——应用关闭时自动触发</li>
  * </ul>
  *

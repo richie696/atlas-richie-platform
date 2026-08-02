@@ -40,7 +40,7 @@ import java.util.Optional;
  * <strong>职责边界</strong>：
  * <ul>
  *   <li>本拦截器<strong>不捕获异常</strong>——让异常继续传播到
- *       {@link cn.richie696.component.web.core.exception.GlobalExceptionControllerAdvice}
+ *       {@code GlobalExceptionControllerAdvice}
  *       或 servlet 容器的错误链。本拦截器在调用链<strong>之后</strong>用 attribute 读取已记录的异常状态。</li>
  *   <li>如需在拦截器<strong>内部</strong>捕获并降级，业务方可注册自定义 {@link WebInterceptor} 排在
  *       本拦截器之前，且自行 try/catch + 写入降级结果 attribute</li>
@@ -53,7 +53,7 @@ import java.util.Optional;
  *   <li>读 attribute {@code degrade.manual}：若为 true，{@link Trigger#CUSTOM}</li>
  *   <li>读 attribute {@code degrade.latencyMs}：若超阈值，{@link Trigger#HIGH_LATENCY}</li>
  *   <li>查 {@link DegradeStrategyRegistry#select(Trigger)}；命中即写短路响应</li>
- *   <li>未命中 → 按 path 匹配 {@link DegradeProperties#getRoutes()}（精确 → Ant 通配）；
+ *   <li>未命中 → 按 path 匹配 {@link DegradeProperties} 的 {@code routes}（精确 → Ant 通配）；
  *       命中即用该 {@link DegradeProperties.RouteFallback} 生成响应</li>
  *   <li>仍未命中 → 兜底响应（全局 fallback）</li>
  * </ol>
@@ -235,7 +235,7 @@ public class DegradeInterceptor implements WebInterceptor, Ordered {
 
     /**
      * 按 path 匹配 routes，未命中走全局 fallback。
-     * <p>命中顺序：精确 → Ant 通配；同一优先级按 {@link #properties#getRoutes()} 迭代顺序。
+     * <p>命中顺序：精确 → Ant 通配；同一优先级按 {@code properties.getRoutes()} 迭代顺序。
      */
     private DegradeResult routeOrFallbackResult(WebRequestContext ctx, Trigger trigger) {
         DegradeProperties.RouteFallback route = matchRoute(ctx.path());
@@ -367,7 +367,7 @@ public class DegradeInterceptor implements WebInterceptor, Ordered {
     /**
      * Bean 方法返回值转 {@link DegradeResult}：
      * <ul>
-     *   <li>{@link ApiResult}：序列化为 body，状态码取 {@link DegradeProperties.RouteFallback#getStatus()}</li>
+     *   <li>{@link ApiResult}：序列化为 body，状态码取 {@link DegradeProperties.RouteFallback} 的 {@code status}</li>
      *   <li>{@link String}：作为 body，状态码取 yml 配置</li>
      *   <li>其它：返回 null（调用方决定回退策略）</li>
      * </ul>

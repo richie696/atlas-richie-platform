@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.web.core.config.mvc;
 
+import cn.richie696.component.web.core.config.WebProperties;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

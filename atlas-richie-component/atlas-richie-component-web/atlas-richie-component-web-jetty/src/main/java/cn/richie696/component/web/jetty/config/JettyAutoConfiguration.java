@@ -48,17 +48,6 @@ import org.springframework.context.annotation.Lazy;
  * Embedded Jetty 12 专属自动配置（完整 Phase 1-5 集成）。
  *
  * <p>仅在 classpath 存在 {@link Server} 且为 SERVLET Web 应用时激活。
- * 覆盖 Phase 1-5 全部能力：</p>
- * <ol>
- *   <li>Phase 1: QueuedThreadPool + Connector 调优（{@link JettyProductionCustomizer}）</li>
- *   <li>Phase 2: HTTP/2 一键启用（Jetty 12 原生）</li>
- *   <li>Phase 3: Handler 链（access log、trace ID 注入）</li>
- *   <li>Phase 4: 指标采集（由 Spring Boot Actuator + Micrometer 桥接）</li>
- *   <li>Phase 5: 优雅停服（由 Spring Boot 默认处理）</li>
- * </ol>
- *
- * <p>Phase 2-4 各项通过 {@code @ConditionalOnProperty} 细粒度启用，业务方可按需关闭。
- * Phase 3 的 Handler 通过 {@code @ConditionalOnProperty} 控制是否插入 Handler 链。</p>
  *
  * @author richie696
  * @since 1.0.0

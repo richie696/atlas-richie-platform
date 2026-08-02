@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * 默认 {@link KeyResolver}：从指定 header 取 clientKey（README.md §4.1）。
  * <p>
- * 配置项见 {@link cn.richie696.component.web.core.config.WebFilterProperties#getKeyHeader()}，
+ * 配置项见 {@link cn.richie696.component.web.core.config.ratelimit.WebFilterProperties} 的 {@code keyHeader}，
  * 默认 {@code X-Client-Id}。
  *
  * <h2>行为</h2>

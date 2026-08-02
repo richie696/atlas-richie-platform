@@ -31,7 +31,6 @@ import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.ser.std.StdSerializer;
 import tools.jackson.databind.ser.std.ToStringSerializer;
 import tools.jackson.databind.util.StdDateFormat;
-import tools.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.math.BigInteger;
 import java.text.ParseException;
@@ -82,7 +81,6 @@ public class WebUtils {
      * @return 配置好的 JSON 消息转换器
      */
     private static JacksonJsonHttpMessageConverter createPlatformJacksonJsonConverter() {
-        JavaTimeModule timeModule = new JavaTimeModule();
         SimpleModule customModule = new SimpleModule();
         JacksonModule xmlModuleTemp = null;
         try {
@@ -119,7 +117,6 @@ public class WebUtils {
 
         var baseMapperBuilder = JsonUtils.getInstance().cloneMapper()
                 .defaultTimeZone(LocaleContextHolder.getTimeZone())
-                .addModule(timeModule)
                 .addModule(customModule);
         if (xmlModule != null) {
             baseMapperBuilder.addModule(xmlModule);

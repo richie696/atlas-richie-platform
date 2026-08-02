@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 /**
  * {@link KeyDimension} 内置实现：从指定 header 取客户端 ID（README.md §4.1）。
  * <p>
- * 默认从 {@link WebFilterProperties#getKeyHeader()}（{@code X-Client-Id}）读取，
+ * 默认从 {@link WebFilterProperties} 的 {@code keyHeader}（{@code X-Client-Id}）读取，
  * 与 {@code HeaderBasedKeyResolver} 默认行为一致，确保组合与单维模式在同一配置下行为对齐。
  *
  * <h2>行为</h2>

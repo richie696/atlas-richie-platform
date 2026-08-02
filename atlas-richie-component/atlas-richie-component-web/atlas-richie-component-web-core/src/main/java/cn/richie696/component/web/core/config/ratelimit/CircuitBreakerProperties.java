@@ -36,7 +36,7 @@ import java.util.Map;
  * <h2>routes 配置结构（List 形式）</h2>
  * <p>历史上曾用 {@code Map<String, RouteConfig>} 形式，但 Spring Boot 的 {@code @ConfigurationProperties}
  * Map 绑定走 "relaxed binding" 会<strong>剥离</strong> key 中的 {@code /} 与 {@code *}（{@code "/payments/**"} → {@code "payments"}），
- * 导致 AntPathMatcher 永远匹配不到。改用 {@link List} + 显式 {@link RouteConfig#getPattern() pattern} 字段解决此问题：
+ * 导致 AntPathMatcher 永远匹配不到。改用 {@link List} + 显式 {@link RouteConfig} 的 {@code pattern} 字段解决此问题：
  * <pre>{@code
  * routes:
  *   - pattern: "/payments/**"
@@ -118,7 +118,7 @@ public class CircuitBreakerProperties {
 
     /**
      * 按被保护资源粒度覆盖熔断配置（<strong>List 形式</strong>）。每条 {@link RouteConfig} 自带
-     * {@link RouteConfig#getPattern() pattern} 字段，避免 Spring Boot relaxed binding 剥离 path 字符。
+     * {@link RouteConfig} 的 {@code pattern} 字段，避免 Spring Boot relaxed binding 剥离 path 字符。
      * 命中顺序：精确匹配优先，再 Ant 通配，<strong>同优先级按 List 顺序，先到先得</strong>。
      */
     private List<RouteConfig> routes = new ArrayList<>();
@@ -138,11 +138,11 @@ public class CircuitBreakerProperties {
          */
         private int failureRateThreshold = 50;
         /**
-         * 该被保护资源滑动窗口大小；未设置时沿用全局 {@link CircuitBreakerProperties#getSlidingWindowDuration()}。
+         * 该被保护资源滑动窗口大小；未设置时沿用全局 {@link CircuitBreakerProperties} 的 {@code slidingWindowDuration}。
          */
         private Duration slidingWindowDuration;
         /**
-         * 该被保护资源 OPEN → HALF_OPEN 等待时长；未设置时沿用全局 {@link CircuitBreakerProperties#getWaitDurationInOpenState()}。
+         * 该被保护资源 OPEN → HALF_OPEN 等待时长；未设置时沿用全局 {@link CircuitBreakerProperties} 的 {@code waitDurationInOpenState}。
          */
         private Duration waitDurationInOpenState;
         /**

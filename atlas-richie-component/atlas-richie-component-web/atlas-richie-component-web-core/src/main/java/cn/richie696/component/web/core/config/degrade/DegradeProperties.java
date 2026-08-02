@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.web.core.config.degrade;
 
+import cn.richie696.component.web.core.degrade.DegradeInterceptor;
 import cn.richie696.contract.model.ApiResult;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -45,9 +46,9 @@ import java.util.Map;
  * </ul>
  *
  * <h2>响应结构</h2>
- * <p>兜底响应复用统一 {@code ApiResult} 结构：HTTP 状态码由 {@link Fallback#getStatus()} 控制；
- * 业务层 {@code code} / {@code msg} 由 {@link Fallback#getCode()} / {@link Fallback#getMsg()} 控制；
- * {@link Fallback#getHeaders()} 仅用于系统级响应头，不在 body 中。
+ * <p>兜底响应复用统一 {@code ApiResult} 结构：HTTP 状态码由 {@link DegradeProperties.Fallback} 的 {@code status} 控制；
+ * 业务层 {@code code} / {@code msg} 由 {@link DegradeProperties.Fallback} 的 {@code code} / {@code msg} 控制；
+ * {@link DegradeProperties.Fallback} 的 {@code headers} 仅用于系统级响应头，不在 body 中。
  *
  * <h2>按接口粒度配置</h2>
  * <p>{@link #routes} 提供 path 维度的覆盖层：请求 path 命中某 Ant 模式（如 {@code /api/v1/orders} 或
@@ -116,7 +117,7 @@ public class DegradeProperties {
     /**
      * 按接口粒度的降级响应配置。
      * <p>
-     * 命中 {@link DegradeProperties#getRoutes()} 中对应 path pattern 的请求，使用本配置生成降级响应。
+     * 命中 {@code routes} 中对应 path pattern 的请求，使用本配置生成降级响应。
      * <ul>
      *   <li>静态路径：直接用 {@link #status}/{@link #code}/{@link #msg} + {@link #headers}，与全局 fallback 同语义</li>
      *   <li>动态路径：指定 {@link #fallbackBean} + {@link #fallbackMethod}，反射调用 Bean 方法生成响应体；

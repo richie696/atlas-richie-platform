@@ -35,7 +35,7 @@ import java.util.Map;
  * <h2>routes 配置结构（List 形式）</h2>
  * <p>历史上曾用 {@code Map<String, RouteConfig>} 形式，但 Spring Boot 的 {@code @ConfigurationProperties}
  * Map 绑定走 "relaxed binding" 会<strong>剥离</strong> key 中的 {@code /} 与 {@code *}（{@code "/payments/**"} → {@code "payments"}），
- * 导致 AntPathMatcher 永远匹配不到。改用 {@link List} + 显式 {@link RouteConfig#getPattern() pattern} 字段解决此问题：
+ * 导致 AntPathMatcher 永远匹配不到。改用 {@link List} + 显式 {@link RateLimitProperties.RouteConfig} 的 {@code pattern} 字段解决此问题：
  * <pre>{@code
  * routes:
  *   - pattern: "/orders/**"
@@ -107,7 +107,7 @@ public class RateLimitProperties {
 
     /**
      * 按接口粒度覆盖限流配置（<strong>List 形式</strong>）。每条 {@link RouteConfig} 自带
-     * {@link RouteConfig#getPattern() pattern} 字段，避免 Spring Boot relaxed binding 剥离 path 字符。
+     * {@link RouteConfig} 的 {@code pattern} 字段，避免 Spring Boot relaxed binding 剥离 path 字符。
      * 命中顺序：精确匹配优先，再 Ant 通配，<strong>同优先级按 List 顺序，先到先得</strong>。
      */
     private List<RouteConfig> routes = new ArrayList<>();
@@ -127,19 +127,19 @@ public class RateLimitProperties {
          */
         private int permitsPerSecond = 50;
         /**
-         * 该路由限流兜底 HTTP 状态码；未设置时沿用全局 {@link RateLimitProperties#getDenyStatus()}。
+         * 该路由限流兜底 HTTP 状态码；未设置时沿用全局 {@link RateLimitProperties} 的 {@code denyStatus}。
          */
         private Integer denyStatus;
         /**
-         * 该路由限流兜底业务 code；未设置时沿用全局 {@link RateLimitProperties#getDenyCode()}。
+         * 该路由限流兜底业务 code；未设置时沿用全局 {@link RateLimitProperties} 的 {@code denyCode}。
          */
         private String denyCode;
         /**
-         * 该路由限流兜底业务 msg；未设置时沿用全局 {@link RateLimitProperties#getDenyMsg()}。
+         * 该路由限流兜底业务 msg；未设置时沿用全局 {@link RateLimitProperties} 的 {@code denyMsg}。
          */
         private String denyMsg;
         /**
-         * 该路由限流兜底响应附加 header；未设置时沿用全局 {@link RateLimitProperties#getDenyHeaders()}。
+         * 该路由限流兜底响应附加 header；未设置时沿用全局 {@link RateLimitProperties} 的 {@code denyHeaders}。
          */
         private Map<String, String> denyHeaders;
     }

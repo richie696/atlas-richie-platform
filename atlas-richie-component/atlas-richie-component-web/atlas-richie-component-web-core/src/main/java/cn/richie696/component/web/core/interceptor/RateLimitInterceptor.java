@@ -35,7 +35,7 @@ import java.util.Map;
  * 工作流：
  * <ol>
  *   <li>{@link KeyResolver} 解析 clientKey（null → 401 短路）</li>
- *   <li>按 path 匹配 {@link RateLimitProperties#getRoutes()}：
+ *   <li>按 path 匹配 {@link cn.richie696.component.web.core.config.ratelimit.RateLimitProperties} 的 {@code routes}：
  *       <ul>
  *         <li>命中：使用路由专属 {@code permitsPerSecond} / deny 配置，registry key = {@code clientKey + "::" + pattern}</li>
  *         <li>未命中：使用全局配置，registry key = {@code clientKey + "::__global__"}</li>
