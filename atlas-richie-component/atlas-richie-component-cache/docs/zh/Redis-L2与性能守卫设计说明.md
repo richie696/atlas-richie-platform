@@ -138,7 +138,7 @@ spring.data.redis.perf:
 各 `redis.manage.*Manager` 通过 `redisPerfGuard.execute(...)` 包装；`RedisStringManager` 写入前
 `checkStringWritePayload`。
 
-`GlobalCache` 静态方法 `@apiNote` 标注复杂度与 ToC 建议； **L2 命中不改变 Redis 复杂度，仅降低耗时**。
+`GlobalCache` 静态方法 `` 标注复杂度与 ToC 建议； **L2 命中不改变 Redis 复杂度，仅降低耗时**。
 
 ---
 
@@ -156,7 +156,7 @@ spring.data.redis.perf:
 
 | 类                                      | 职责                               |
 |-----------------------------------------|------------------------------------|
-| `GlobalCache`                           | L2、`getWithLocalCache*`、@apiNote |
+| `GlobalCache`                           | L2、`getWithLocalCache*`、|
 | `CacheSyncListener`                     | 键空间 → L2                        |
 | `RedisLockManager` / `CacheLockManager` | 分布式锁 + 本地锁池                |
 | `RedisPerfGuard`                        | 守卫                               |

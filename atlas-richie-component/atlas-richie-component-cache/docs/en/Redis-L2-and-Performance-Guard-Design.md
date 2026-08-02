@@ -141,7 +141,7 @@ spring.data.redis.perf:
 Each `redis.manage.*Manager` wraps its calls with `redisPerfGuard.execute(...)`; `RedisStringManager` calls
 `checkStringWritePayload` before writing.
 
-`GlobalCache` static methods are annotated with `@apiNote` to indicate complexity and ToC recommendations; **an L2 hit
+`GlobalCache` static methods are annotated with `` to indicate complexity and ToC recommendations; **an L2 hit
 does not change the Redis complexity, it only reduces latency**.
 
 ---
@@ -160,7 +160,7 @@ does not change the Redis complexity, it only reduces latency**.
 
 | Class                                   | Responsibility                     |
 |-----------------------------------------|------------------------------------|
-| `GlobalCache`                           | L2, `getWithLocalCache*`, @apiNote |
+| `GlobalCache`                           | L2, `getWithLocalCache*`, |
 | `CacheSyncListener`                     | Keyspace → L2                      |
 | `RedisLockManager` / `CacheLockManager` | Distributed lock + local lock pool |
 | `RedisPerfGuard`                        | Guard                              |
