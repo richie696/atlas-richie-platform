@@ -1,6 +1,8 @@
 package cn.richie696.component.chunking.parser;
 
+import cn.richie696.component.chunking.ChunkingService;
 import cn.richie696.component.chunking.model.ChunkingResult;
+import cn.richie696.component.chunking.model.ChunkingRule;
 import cn.richie696.component.parser.model.ParsedSection;
 
 import java.util.List;

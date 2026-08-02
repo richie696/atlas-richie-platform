@@ -34,13 +34,15 @@ class ParserRouterTest {
 
     private TikaDocumentParser tika;
     private FesodDocumentParser fesod;
+    private TextFastPathParser textFastPath;
     private ParserRouter router;
 
     @BeforeEach
     void setUp() {
         tika = mock(TikaDocumentParser.class);
         fesod = mock(FesodDocumentParser.class);
-        router = new ParserRouter(tika, fesod);
+        textFastPath = mock(TextFastPathParser.class);
+        router = new ParserRouter(tika, fesod, textFastPath);
     }
 
     @Test
@@ -79,10 +81,10 @@ class ParserRouterTest {
     }
 
     @Test
-    @DisplayName("Plain text formats should route to TikaDocumentParser")
-    void plainTextRoutesToTika() {
-        assertSame(tika, router.route(Format.TXT));
-        assertSame(tika, router.route(Format.MD));
+    @DisplayName("Plain text formats should route to TextFastPathParser")
+    void plainTextRoutesToTextFastPath() {
+        assertSame(textFastPath, router.route(Format.TXT));
+        assertSame(textFastPath, router.route(Format.MD));
     }
 
     @Test

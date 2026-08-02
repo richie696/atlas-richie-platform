@@ -20,9 +20,12 @@ import cn.richie696.component.chunking.ChunkingService;
 import cn.richie696.component.chunking.model.Chunk;
 import cn.richie696.component.chunking.model.ChunkingResult;
 import cn.richie696.component.chunking.model.ChunkingRule;
+import cn.richie696.component.chunking.strategy.StreamingChunkingStrategy;
+import cn.richie696.component.chunking.strategy.StreamingStrategyResolver;
 import cn.richie696.component.parser.model.ParsedSection;
 import cn.richie696.component.parser.model.ReadEvent;
 import cn.richie696.component.parser.model.ReadResult;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,6 +42,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -62,8 +67,17 @@ class ParserChunkingAdapterConstructorTest {
      */
     private static final int EXPECTED_DEFAULT_MAX_PENDING_CHARACTERS = 8_192;
 
-    @Mock
+    @Mock(extraInterfaces = StreamingStrategyResolver.class)
     private ChunkingService chunkingService;
+
+    @BeforeEach
+    void stubStreamingStrategy() {
+        // StreamingChunker 构造器要求 service 实现 StreamingStrategyResolver 并取回策略；
+        // 只有 adaptEvents 路径会构造 StreamingChunker，所以这里用 lenient 避免其余测试
+        // 因未使用该 stub 而失败（UnnecessaryStubbing）。
+        lenient().when(((StreamingStrategyResolver) chunkingService).streamingStrategy(any(ChunkingRule.class)))
+                .thenReturn(mock(StreamingChunkingStrategy.class));
+    }
 
     private static ParsedSection section(String text) {
         return new ParsedSection(text, "/doc", Map.of("format", "text/plain"));

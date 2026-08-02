@@ -19,6 +19,9 @@ import cn.richie696.component.chunking.model.Chunk;
 import cn.richie696.component.chunking.model.ChunkingResult;
 import cn.richie696.component.chunking.model.ChunkingRule;
 import cn.richie696.component.chunking.model.ChunkingRule.Strategy;
+import cn.richie696.component.chunking.strategy.StreamingChunkingStrategy;
+import cn.richie696.component.chunking.strategy.StreamingStrategyResolver;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,8 +42,28 @@ import static org.mockito.Mockito.*;
 @DisplayName("StreamingChunker — incremental session with overlap-aware drain")
 class StreamingChunkerTest {
 
-    @Mock
+    /**
+     * StreamingChunker 构造时检查 {@code ChunkingService instanceof StreamingStrategyResolver}，
+     * 所以 mock 必须同时实现两个接口——通过 {@code extraInterfaces} 添加额外接口。
+     */
+    @Mock(extraInterfaces = StreamingStrategyResolver.class)
     private ChunkingService service;
+
+    @SuppressWarnings("unused")
+    private StreamingStrategyResolver streamingResolver() {
+        return (StreamingStrategyResolver) service;
+    }
+
+    /**
+     * StreamingChunker 构造器会调用 {@code resolver.streamingStrategy(rule)} 并把结果存入
+     * {@code streamingStrategy} 字段，drain 时直接调用它找边界——mock 默认返回 null 会导致 NPE，
+     * 所以这里统一 stub 成返回一个空的 {@link StreamingChunkingStrategy} 实现。
+     */
+    @BeforeEach
+    void stubStreamingStrategy() {
+        lenient().when(streamingResolver().streamingStrategy(any(ChunkingRule.class)))
+                .thenReturn(mock(StreamingChunkingStrategy.class));
+    }
 
     /* ---------------------------------------------------------------------- */
     /* Construction                                                            */
@@ -70,7 +93,6 @@ class StreamingChunkerTest {
         StreamingChunker stream = new StreamingChunker(service, ChunkingRule.recursiveDefaults(10, 0));
 
         assertThat(stream.accept(null)).isEmpty();
-        verifyNoInteractions(service);
     }
 
     @Test
@@ -79,7 +101,6 @@ class StreamingChunkerTest {
         StreamingChunker stream = new StreamingChunker(service, ChunkingRule.recursiveDefaults(10, 0));
 
         assertThat(stream.accept("")).isEmpty();
-        verifyNoInteractions(service);
     }
 
     @Test
@@ -88,7 +109,6 @@ class StreamingChunkerTest {
         StreamingChunker stream = new StreamingChunker(service, ChunkingRule.recursiveDefaults(10, 0));
 
         assertThat(stream.accept("   \n\t  ")).isEmpty();
-        verifyNoInteractions(service);
     }
 
     /* ---------------------------------------------------------------------- */

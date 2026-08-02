@@ -177,7 +177,7 @@ class DefaultChunkingServiceTest {
         ChunkingRule rule = new ChunkingRule("r", "1", Strategy.SEMANTIC, 12, 0, null);
 
         assertThatThrownBy(() -> service.chunk("anything", rule))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(UnsupportedOperationException.class)
                 .hasMessageContaining("SEMANTIC");
     }
 

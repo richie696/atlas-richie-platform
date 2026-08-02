@@ -19,6 +19,8 @@ import cn.richie696.component.chunking.ChunkingService;
 import cn.richie696.component.chunking.model.Chunk;
 import cn.richie696.component.chunking.model.ChunkingResult;
 import cn.richie696.component.chunking.model.ChunkingRule;
+import cn.richie696.component.chunking.strategy.StreamingChunkingStrategy;
+import cn.richie696.component.chunking.strategy.StreamingStrategyResolver;
 import cn.richie696.component.parser.exception.DocumentParseException;
 import cn.richie696.component.parser.model.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,7 +63,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("ParserChunkingAdapter 门面契约")
 class ParserChunkingAdapterTest {
 
-    @Mock
+    @Mock(extraInterfaces = StreamingStrategyResolver.class)
     private ChunkingService chunkingService;
 
     private ParserChunkingAdapter adapter;
@@ -71,6 +73,11 @@ class ParserChunkingAdapterTest {
     void setUp() {
         adapter = new ParserChunkingAdapter(chunkingService);
         rule = ChunkingRule.recursiveDefaults(100, 10);
+        // StreamingChunker 构造器要求 service 实现 StreamingStrategyResolver，
+        // 并会把 streamingStrategy(rule) 的结果存入字段用于 drain 边界选择；
+        // 这里用 lenient stub 返回空策略，避免 mock 默认 null 在 drain 时 NPE。
+        lenient().when(((StreamingStrategyResolver) chunkingService).streamingStrategy(any(ChunkingRule.class)))
+                .thenReturn(mock(StreamingChunkingStrategy.class));
     }
 
     private void stubFixedResult() {

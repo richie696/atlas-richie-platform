@@ -223,4 +223,194 @@ class DocumentReaderTest {
         }
         assertNotNull(ex.getMessage());
     }
+
+    // ==================== read(String) 自动识别分支 ====================
+
+    @Test
+    @DisplayName("read(String) blank 抛 IllegalArgumentException")
+    void readStringBlankRejected() {
+        assertThrows(IllegalArgumentException.class, () -> reader.read((String) null));
+        assertThrows(IllegalArgumentException.class, () -> reader.read("   "));
+    }
+
+    @Test
+    @DisplayName("read(String) http URL 前缀走 URL 路径")
+    void readStringHttpUrl(@TempDir Path tempDir) throws IOException {
+        Path file = tempDir.resolve("str.txt");
+        Files.writeString(file, "String http content.");
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/", exchange -> {
+            byte[] body = Files.readAllBytes(file);
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+        try {
+            int port = server.getAddress().getPort();
+            ReadResult result = reader.read("http://127.0.0.1:" + port + "/str.txt");
+            assertFalse(result.sections().isEmpty());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    @DisplayName("read(String) file:// URI 与普通路径分支")
+    void readStringFileUriAndPath(@TempDir Path tempDir) throws IOException {
+        Path file = tempDir.resolve("uri.txt");
+        Files.writeString(file, "File URI content.");
+        ReadResult byUri = reader.read(file.toUri().toString());
+        assertFalse(byUri.sections().isEmpty());
+        ReadResult byPath = reader.read(file.toString());
+        assertFalse(byPath.sections().isEmpty());
+    }
+
+    @Test
+    @DisplayName("read(String) 非法 URL 抛 IllegalArgumentException")
+    void readStringInvalidUrl() {
+        assertThrows(IllegalArgumentException.class, () -> reader.read("http://exa mple.com/a.pdf"));
+        assertThrows(IllegalArgumentException.class, () -> reader.read("file://[bad"));
+    }
+
+    // ==================== readStreaming(InputStream) 变体 ====================
+
+    @Test
+    @DisplayName("readStreaming(InputStream, nameHint, listener) 发出 Section/Finished")
+    void readStreamingInputStream() throws IOException {
+        List<ReadEvent> events = new CopyOnWriteArrayList<>();
+        try (var in = new ByteArrayInputStream("Stream input content.\n\nPara two.".getBytes())) {
+            reader.readStreaming(in, "doc.txt", events::add);
+        }
+        assertTrue(events.stream().anyMatch(ReadEvent.Section.class::isInstance));
+        assertTrue(events.stream().anyMatch(ReadEvent.Finished.class::isInstance));
+    }
+
+    @Test
+    @DisplayName("readStreaming(InputStream, nameHint, listener, ctx) 带上下文")
+    void readStreamingInputStreamWithContext() throws IOException {
+        List<ReadEvent> events = new CopyOnWriteArrayList<>();
+        ParserContext ctx = ParserContext.defaults();
+        try (var in = new ByteArrayInputStream("Context stream content.".getBytes())) {
+            reader.readStreaming(in, "doc.txt", events::add, ctx);
+        }
+        assertTrue(events.stream().anyMatch(ReadEvent.Section.class::isInstance));
+    }
+
+    @Test
+    @DisplayName("readStreaming(InputStream) 缺失文件名 hint 也能解析")
+    void readStreamingInputStreamBlankName() throws IOException {
+        List<ReadEvent> events = new CopyOnWriteArrayList<>();
+        try (var in = new ByteArrayInputStream("Blank name stream.".getBytes())) {
+            reader.readStreaming(in, " ", events::add);
+        }
+        assertTrue(events.stream().anyMatch(ReadEvent.Finished.class::isInstance));
+    }
+
+    // ==================== readStreamingAll ====================
+
+    @Test
+    @DisplayName("readStreamingAll 顺序解析多个文件, 失败文件发 Failed 且不中断")
+    void readStreamingAllContinuesAfterFailure(@TempDir Path tempDir) throws IOException {
+        Path good = tempDir.resolve("good.txt");
+        Files.writeString(good, "Batch good content.");
+        File missing = tempDir.resolve("absent.txt").toFile();
+        List<ReadEvent> events = new CopyOnWriteArrayList<>();
+        reader.readStreamingAll(List.of(good.toFile(), missing), events::add);
+        assertTrue(events.stream().anyMatch(ReadEvent.Section.class::isInstance),
+                "good file should emit Section");
+        assertTrue(events.stream().anyMatch(ReadEvent.Failed.class::isInstance),
+                "missing file should emit Failed without aborting the batch");
+    }
+
+    @Test
+    @DisplayName("readStreamingAll 空集合直接返回")
+    void readStreamingAllEmptyIsNoop() {
+        List<ReadEvent> events = new CopyOnWriteArrayList<>();
+        reader.readStreamingAll(List.of(), events::add);
+        assertTrue(events.isEmpty());
+    }
+
+    // ==================== readPublisher(InputStream) ====================
+
+    @Test
+    @DisplayName("readPublisher(InputStream, nameHint) 按 demand 交付事件")
+    void readPublisherInputStreamDeliversEvents() throws Exception {
+        List<ReadEvent> events = new CopyOnWriteArrayList<>();
+        CountDownLatch completed = new CountDownLatch(1);
+        try (var in = new ByteArrayInputStream("Publisher stream content.".getBytes())) {
+            reader.readPublisher(in, "doc.txt").subscribe(new Flow.Subscriber<>() {
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscription.request(Long.MAX_VALUE);
+                }
+
+                @Override
+                public void onNext(ReadEvent item) {
+                    events.add(item);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    fail(throwable);
+                    completed.countDown();
+                }
+
+                @Override
+                public void onComplete() {
+                    completed.countDown();
+                }
+            });
+            assertTrue(completed.await(5, TimeUnit.SECONDS), "publisher should complete");
+        }
+        assertTrue(events.stream().anyMatch(ReadEvent.Section.class::isInstance));
+    }
+
+    @Test
+    @DisplayName("readPublisher 二次订阅被拒绝并收到 onError")
+    void readPublisherRejectsSecondSubscriber(@TempDir Path tempDir) throws Exception {
+        Path file = tempDir.resolve("second.txt");
+        Files.writeString(file, "Second subscriber content.");
+        Flow.Publisher<ReadEvent> publisher = reader.readPublisher(file.toFile());
+        CountDownLatch secondError = new CountDownLatch(1);
+        publisher.subscribe(new Flow.Subscriber<>() {
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                subscription.request(Long.MAX_VALUE);
+            }
+
+            @Override
+            public void onNext(ReadEvent item) {
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                fail(throwable);
+            }
+
+            @Override
+            public void onComplete() {
+            }
+        });
+        publisher.subscribe(new Flow.Subscriber<>() {
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+            }
+
+            @Override
+            public void onNext(ReadEvent item) {
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                secondError.countDown();
+            }
+
+            @Override
+            public void onComplete() {
+            }
+        });
+        assertTrue(secondError.await(5, TimeUnit.SECONDS),
+                "second subscriber should receive onError");
+    }
 }

@@ -29,10 +29,15 @@ import cn.richie696.component.parser.model.ParsedSection;
  *                     {@code >= 0} 且 {@code < charEnd}。
  * @param charEnd      Chunk 在 {@code section.text()} 中的结束下标（不含），必须
  *                     {@code <= section.text().length()}。
- * @throws IllegalArgumentException 当任一字段不满足上述不变量时抛出，消息固定为
- *                                  {@code "非法来源区间"}。
  */
 public record SourceSpan(int sectionIndex, ParsedSection section, int charStart, int charEnd) {
+
+    /**
+     * 校验区间不变量。
+     *
+     * @throws IllegalArgumentException 当任一字段不满足上述不变量时抛出，消息固定为
+     *                                  {@code "非法来源区间"}。
+     */
     public SourceSpan {
         // 顺序检查由 short-circuit 保证：先排除空指针，再校验坐标单调性，最后兜底越界；
         // 这四项不变量任意一条失败都视作 "非法来源区间"，提示调用方修正 section 区间换算逻辑。

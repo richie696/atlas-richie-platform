@@ -16,17 +16,23 @@
 package cn.richie696.component.chunking;
 
 import cn.richie696.component.chunking.model.ChunkingRule;
+import cn.richie696.component.chunking.strategy.StreamingStrategyResolver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.withSettings;
 
 @DisplayName("StreamingChunkerFactory — per-document session creation")
 class StreamingChunkerFactoryTest {
 
-    private final ChunkingService service = mock(ChunkingService.class);
+    /**
+     * StreamingChunker 构造时检查 {@code ChunkingService instanceof StreamingStrategyResolver}，
+     * 所以 mock 必须同时实现两个接口——通过 {@code extraInterfaces} 添加额外接口。
+     */
+    private final ChunkingService service = mock(ChunkingService.class, withSettings().extraInterfaces(StreamingStrategyResolver.class));
 
     @Test
     @DisplayName("create(null) rejects a null rule")

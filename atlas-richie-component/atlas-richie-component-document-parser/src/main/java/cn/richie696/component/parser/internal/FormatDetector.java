@@ -48,7 +48,7 @@ public final class FormatDetector {
      * <p>
      * 调用方必须传入支持 mark/reset 的同一个流；嗅探完成后会调用 {@link InputStream#reset()}
      * 还原读取位置。无法在此方法内安全地为非 mark 流临时包装：包装对象无法返还给调用方，
-     * 会导致后续解析从错误位置读取。{@link DocumentReader} 已统一负责该包装。
+     * 会导致后续解析从错误位置读取。{@link cn.richie696.component.parser.DocumentReader} 已统一负责该包装。
      *
      * @param stream   待嗅探的输入流
      * @param nameHint 文件名提示(辅助嗅探,例如 "report.docx")
