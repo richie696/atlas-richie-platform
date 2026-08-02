@@ -21,19 +21,19 @@
         <docker.image.version>${revision}</docker.image.version>
         <jib.from.image>localhost:55000/atlas-richie-antivirus-runtime:clamav-debian13-slim-jre25</jib.from.image>
         <jib.to.image>localhost:55000/${project.artifactId}:local</jib.to.image>
-        <jib.allow.insecure.registries>false</jib.allow.insecure.registries>
+        <jib.allow.insecure.registries>true</jib.allow.insecure.registries>
     </properties>
 
     <profiles>
         <!-- jib-maven-plugin 3.5.1 的 <platforms> 配置节点没有公开 setter（IDEA 会标红），
-             需要通过 jib.container.platforms 系统属性按宿主架构自动选择 base image 平台。 -->
+             需要通过 jib.from.platforms 系统属性按宿主架构自动选择 base image 平台。 -->
         <profile>
             <id>jib-platform-arm64</id>
             <activation>
                 <os><arch>aarch64</arch></os>
             </activation>
             <properties>
-                <jib.container.platforms>linux/arm64</jib.container.platforms>
+                <jib.from.platforms>linux/arm64</jib.from.platforms>
             </properties>
         </profile>
         <profile>
@@ -42,7 +42,7 @@
                 <os><arch>amd64</arch></os>
             </activation>
             <properties>
-                <jib.container.platforms>linux/amd64</jib.container.platforms>
+                <jib.from.platforms>linux/amd64</jib.from.platforms>
             </properties>
         </profile>
         <!-- Windows x64：jib 端可在 Windows 上构建 OCI tarball，由 CI 在 Linux 上 docker load。
@@ -53,7 +53,7 @@
                 <os><family>windows</family></os>
             </activation>
             <properties>
-                <jib.container.platforms>linux/amd64</jib.container.platforms>
+                <jib.from.platforms>linux/amd64</jib.from.platforms>
             </properties>
         </profile>
     </profiles>
