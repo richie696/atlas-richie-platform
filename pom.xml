@@ -46,6 +46,7 @@
         <!-- spring properties -->
         <spring-boot.version>${spring-boot-dependencies.version}</spring-boot.version>
         <spring-boot-dependencies.version>4.1.0</spring-boot-dependencies.version>
+        <spring-grpc-dependencies.version>1.1.0</spring-grpc-dependencies.version>
         <spring-cloud-alibaba-dependencies.version>2025.1.0.0</spring-cloud-alibaba-dependencies.version>
         <spring-cloud-dependencies.version>2025.1.2</spring-cloud-dependencies.version>
         <spring-cloud-azure-dependencies.version>7.3.0</spring-cloud-azure-dependencies.version>

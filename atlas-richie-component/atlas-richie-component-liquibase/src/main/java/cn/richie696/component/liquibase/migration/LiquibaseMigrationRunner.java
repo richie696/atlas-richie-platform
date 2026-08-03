@@ -24,7 +24,7 @@ import liquibase.database.DatabaseFactory;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.beans.factory.InitializingBean;
 
 import javax.sql.DataSource;
 import java.io.StringWriter;
@@ -35,7 +35,7 @@ import java.util.Set;
 /**
  * 通用 Liquibase 迁移运行器。
  * <p>
- * 通过配置开关执行表结构迁移，避免在业务代码中硬编码 DDL。在 Spring 单例初始化完成后根据
+ * 通过配置开关执行表结构迁移，避免在业务代码中硬编码 DDL。在依赖 Bean 初始化完成后根据
  * {@link LiquibaseProperties} 与 {@link ChangeLogRegistry} 解析出的 changelog 执行迁移。
  *
  * @author richie696
@@ -43,7 +43,7 @@ import java.util.Set;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class LiquibaseMigrationRunner implements SmartInitializingSingleton {
+public class LiquibaseMigrationRunner implements InitializingBean {
 
     /**
      * 数据源
@@ -63,6 +63,13 @@ public class LiquibaseMigrationRunner implements SmartInitializingSingleton {
     private final ChangeLogResolver changeLogResolver;
 
     @Override
+    public void afterPropertiesSet() {
+        runMigration();
+    }
+
+    /**
+     * 兼容旧版手工触发迁移的调用方；Spring 生命周期改为更早的 afterPropertiesSet。
+     */
     public void afterSingletonsInstantiated() {
         runMigration();
     }
