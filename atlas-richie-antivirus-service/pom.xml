@@ -66,34 +66,18 @@
         <dependency>
             <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-cache</artifactId>
-            <version>${middle.platform.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-redis-streammq</artifactId>
-            <version>${middle.platform.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-component-grpc</artifactId>
-            <version>${middle.platform.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-netty-shaded</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-protobuf</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-stub</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.devh</groupId>
-            <artifactId>grpc-server-spring-boot-starter</artifactId>
-            <version>3.1.0.RELEASE</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-grpc-server</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>

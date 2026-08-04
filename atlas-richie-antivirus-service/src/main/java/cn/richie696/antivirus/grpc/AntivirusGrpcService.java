@@ -12,19 +12,21 @@ import cn.richie696.context.common.api.HeaderContextHolder;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.devh.boot.grpc.server.service.GrpcService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 
 /**
  * gRPC AntivirusService 实现，方法签名与 REST 控制器一一对应。
  *
- * <p>Spring Boot gRPC starter 会扫描 {@code @GrpcService} 注解并注册到 gRPC Server，
+ * <p>Spring gRPC 会将 {@link io.grpc.BindableService} 类型的 Spring Bean 注册到 gRPC Server，
  * 拦截器（鉴权/日志/指标/异常映射）由 {@code atlas-richie-component-grpc} 提供。
  */
 @Slf4j
-@GrpcService
+@Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "platform.antivirus.grpc", name = "enabled", havingValue = "true")
 public class AntivirusGrpcService extends AntivirusServiceGrpc.AntivirusServiceImplBase {
 
     private final ScanTaskService taskService;
