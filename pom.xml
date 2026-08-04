@@ -86,7 +86,7 @@
         <!-- 代码检查插件 -->
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
         <!-- Checkstyle 核心库版本 - 使用 11.x 以支持 JDK 21 -->
-        <checkstyle.version>13.4.2</checkstyle.version>
+        <checkstyle.version>13.7.0</checkstyle.version>
         <!-- 集成测试插件 -->
         <maven-failsafe-plugin.version>3.5.6</maven-failsafe-plugin.version>
         <!-- 代码覆盖率插件 -->
@@ -104,13 +104,13 @@
         <!-- JAR 打包插件 -->
         <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
         <!-- Fat JAR 打包插件 -->
-        <maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
+        <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
         <!-- PMD 代码质量检查插件 -->
         <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
         <!-- Maven 发布插件 -->
         <maven-release-plugin.version>3.2.0</maven-release-plugin.version>
         <!-- Maven 帮助插件 - 用于查看项目信息、有效 POM、依赖树等 -->
-        <maven-help-plugin.version>3.5.1</maven-help-plugin.version>
+        <maven-help-plugin.version>3.5.2</maven-help-plugin.version>
         <!-- Maven 站点插件 - 用于生成项目站点文档 -->
         <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
         <maven-fluido-skin.version>2.1.0</maven-fluido-skin.version>
