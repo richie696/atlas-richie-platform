@@ -42,7 +42,7 @@
         <huaweicloud.esdk-obs-java.version>3.25.10</huaweicloud.esdk-obs-java.version>
         <minio.version>9.0.1</minio.version>
         <s3.version>2.46.21</s3.version>
-        <ve-tos-java-sdk.version>2.9.15</ve-tos-java-sdk.version>
+        <ve-tos-java-sdk.version>2.9.16</ve-tos-java-sdk.version>
         <ks3-kss-java-sdk.version>1.5.0</ks3-kss-java-sdk.version>
         <jcifs.version>3.0.2</jcifs.version>
         <sshd.version>3.0.0-M3</sshd.version>
