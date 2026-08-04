@@ -80,7 +80,7 @@ public class ToolRegistry {
     /**
      * 当前已注册的工具名集合（只读）
      */
-    public java.util.Set<String> registeredNames() {
+    public Set<String> registeredNames() {
         return Collections.unmodifiableSet(byName.keySet());
     }
 }

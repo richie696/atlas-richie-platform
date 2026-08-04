@@ -39,6 +39,7 @@ import java.sql.DatabaseMetaData;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -452,7 +453,7 @@ public class AsyncThreadStorageManager {
                 .prevState(history.getFromState())
                 .currState(history.getToState())
                 .eventName(history.getEvent())
-                .seq(java.util.Objects.requireNonNullElse(history.getSeq(), 0L))
+                .seq(Objects.requireNonNullElse(history.getSeq(), 0L))
                 .occurredAt(history.getCreateTime())
                 .build();
     }
@@ -636,7 +637,7 @@ public class AsyncThreadStorageManager {
             return 0L;
         }
         return histories.stream()
-                .mapToLong(history -> java.util.Objects.requireNonNullElse(history.getSeq(), 0L))
+                .mapToLong(history -> Objects.requireNonNullElse(history.getSeq(), 0L))
                 .max()
                 .orElse(0L);
     }

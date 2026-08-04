@@ -31,9 +31,12 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -166,7 +169,7 @@ public class DoubaoVikingRerankModel implements RerankModel {
      */
     public DoubaoVikingRerankModel(RerankModelConfig cfg) {
         this(cfg, HttpClient.newBuilder()
-                .connectTimeout(java.time.Duration.ofSeconds(10))
+                .connectTimeout(Duration.ofSeconds(10))
                 .build());
     }
 
@@ -221,10 +224,10 @@ public class DoubaoVikingRerankModel implements RerankModel {
         // 1. 构建请求体
         Map<String, Object> bodyMap = buildRequestBody(request);
         String bodyJson = JsonUtils.getInstance().serialize(bodyMap);
-        byte[] bodyBytes = bodyJson.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] bodyBytes = bodyJson.getBytes(StandardCharsets.UTF_8);
 
         // 2. 计算签名所需字段
-        String xDate = ZonedDateTime.now(java.time.ZoneOffset.UTC).format(X_DATE_FMT);
+        String xDate = ZonedDateTime.now(ZoneOffset.UTC).format(X_DATE_FMT);
         String xContentSha256 = sha256Hex(bodyBytes);
 
         String shortDate = xDate.substring(0, 8);

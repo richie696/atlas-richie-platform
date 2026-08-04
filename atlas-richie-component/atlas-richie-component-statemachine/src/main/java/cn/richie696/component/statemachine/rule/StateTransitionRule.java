@@ -27,8 +27,9 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.SimpleEvaluationContext;
 
-import java.util.Set;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 状态转换规则
@@ -142,7 +143,7 @@ public record StateTransitionRule(Transition transition, Object context) {
         }
         long start = System.nanoTime();
         try {
-            java.util.Map<String, Object> vars = buildVariables(context);
+            Map<String, Object> vars = buildVariables(context);
             // SimpleEvaluationContext 是 Spring 官方沙箱模式,禁用方法调用/构造调用/类型引用/Bean 引用
             SimpleEvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding().build();
             evalContext.setVariable("context", vars.get("context"));
@@ -152,9 +153,9 @@ public record StateTransitionRule(Transition transition, Object context) {
             evalContext.setVariable("transition", vars.get("transition"));
             evalContext.setVariable("context_attributes", vars.get("attributes"));
             // 将 attributes 展开为独立变量，使 #amount 直接可用
-            if (vars.get("attributes") instanceof java.util.Map) {
+            if (vars.get("attributes") instanceof Map) {
                 @SuppressWarnings("unchecked")
-                java.util.Map<String, Object> attrs = (java.util.Map<String, Object>) vars.get("attributes");
+                Map<String, Object> attrs = (Map<String, Object>) vars.get("attributes");
                 if (attrs != null) {
                     attrs.forEach(evalContext::setVariable);
                 }
@@ -196,7 +197,7 @@ public record StateTransitionRule(Transition transition, Object context) {
         }
         long start = System.nanoTime();
         try {
-            java.util.Map<String, Object> vars = buildVariables(context);
+            Map<String, Object> vars = buildVariables(context);
             // SimpleEvaluationContext 是 Spring 官方沙箱模式,禁用方法调用/构造调用/类型引用/Bean 引用
             SimpleEvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding().build();
             evalContext.setVariable("context", vars.get("context"));
@@ -205,9 +206,9 @@ public record StateTransitionRule(Transition transition, Object context) {
             evalContext.setVariable("event", vars.get("event"));
             evalContext.setVariable("transition", vars.get("transition"));
             evalContext.setVariable("context_attributes", vars.get("attributes"));
-            if (vars.get("attributes") instanceof java.util.Map) {
+            if (vars.get("attributes") instanceof Map) {
                 @SuppressWarnings("unchecked")
-                java.util.Map<String, Object> attrs = (java.util.Map<String, Object>) vars.get("attributes");
+                Map<String, Object> attrs = (Map<String, Object>) vars.get("attributes");
                 if (attrs != null) {
                     attrs.forEach(evalContext::setVariable);
                 }
@@ -236,8 +237,8 @@ public record StateTransitionRule(Transition transition, Object context) {
      * @param ctx 状态上下文对象
      * @return 变量映射表，包含 context、currentState、previousState、event、attributes、transition 等
      */
-    private java.util.Map<String, Object> buildVariables (Object ctx){
-        java.util.Map<String, Object> vars = new java.util.HashMap<>();
+    private Map<String, Object> buildVariables (Object ctx){
+        Map<String, Object> vars = new HashMap<>();
         if (ctx instanceof StateContext sc) {
             vars.put("context", sc);
             vars.put("currentState", sc.getCurrentState());

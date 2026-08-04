@@ -19,9 +19,12 @@ import cn.richie696.component.parser.DocumentSegment;
 import cn.richie696.component.parser.ParsedDocument;
 import cn.richie696.component.parser.ParserContext;
 import cn.richie696.component.parser.ParserSource;
+import cn.richie696.component.parser.UrlFetchPolicy;
 import cn.richie696.component.parser.exception.DocumentParseException;
 import cn.richie696.component.parser.testutil.ParseSyncHelper;
+import org.apache.fesod.sheet.ExcelWriter;
 import org.apache.fesod.sheet.FesodSheet;
+import org.apache.fesod.sheet.write.metadata.WriteSheet;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -116,7 +119,7 @@ class FesodDocumentParserTest {
     void urlSourceThrows() throws MalformedURLException {
         ParserSource.UrlSource urlSource = new ParserSource.UrlSource(
                 new URL("https://example.com/test.xlsx"),
-                cn.richie696.component.parser.UrlFetchPolicy.defaults());
+                UrlFetchPolicy.defaults());
         DocumentParseException ex = assertThrows(
                 DocumentParseException.class,
                 () -> ParseSyncHelper.collect(parser, urlSource, ParserContext.defaults()));
@@ -168,14 +171,14 @@ class FesodDocumentParserTest {
 
     private static Path createMultiSheetXlsx(Path tempDir) {
         Path file = tempDir.resolve("multi-sheet.xlsx");
-        try (org.apache.fesod.sheet.ExcelWriter writer =
+        try (ExcelWriter writer =
                      FesodSheet.write(file.toFile()).build()) {
-            org.apache.fesod.sheet.write.metadata.WriteSheet sheet1 =
+            WriteSheet sheet1 =
                     FesodSheet.writerSheet("Sheet1").build();
             writer.write(
                     List.of(List.of("Col1", "Col2"), List.of("a1", "a2")),
                     sheet1);
-            org.apache.fesod.sheet.write.metadata.WriteSheet sheet2 =
+            WriteSheet sheet2 =
                     FesodSheet.writerSheet("Sheet2").build();
             writer.write(
                     List.of(List.of("Col1", "Col2"), List.of("b1", "b2")),

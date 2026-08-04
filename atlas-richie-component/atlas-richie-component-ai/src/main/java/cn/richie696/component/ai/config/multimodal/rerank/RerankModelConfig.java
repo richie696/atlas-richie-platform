@@ -17,6 +17,7 @@ package cn.richie696.component.ai.config.multimodal.rerank;
 
 import lombok.Data;
 import java.net.URL;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -55,7 +56,7 @@ public class RerankModelConfig {
     /**
      * API Key 池 — Token Plan 多 key 轮询 / 限流后冷却。YAML: {@code api-keys: [sk-1, sk-2]}。
      */
-    private java.util.Set<String> apiKeys = new java.util.LinkedHashSet<>();
+    private Set<String> apiKeys = new LinkedHashSet<>();
 
     /**
      * AppCode 型鉴权使用的应用 Code。

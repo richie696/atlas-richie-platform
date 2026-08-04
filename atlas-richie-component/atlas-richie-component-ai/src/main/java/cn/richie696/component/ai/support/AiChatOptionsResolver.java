@@ -23,6 +23,7 @@ import org.springframework.ai.anthropic.AnthropicChatOptions;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.deepseek.DeepSeekChatOptions;
 import org.springframework.ai.deepseek.api.DeepSeekApi;
+import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.ollama.api.OllamaModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
@@ -249,7 +250,7 @@ public class AiChatOptionsResolver {
         return builder.build();
     }
 
-    private void applyModelName(org.springframework.ai.model.tool.DefaultToolCallingChatOptions.Builder<?> builder,
+    private void applyModelName(DefaultToolCallingChatOptions.Builder<?> builder,
                                 String modelName) {
         if (modelName != null) {
             builder.model(modelName);

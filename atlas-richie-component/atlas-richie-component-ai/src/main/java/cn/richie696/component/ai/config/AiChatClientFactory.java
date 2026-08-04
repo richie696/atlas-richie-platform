@@ -50,6 +50,7 @@ import org.springframework.core.retry.RetryTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,7 +127,7 @@ public class AiChatClientFactory {
     }
 
     public ChatClient createChatClient(String modelName, AiChatModel aiModel) {
-        java.util.Set<String> keys = ApiKeyUtils.resolveKeys(aiModel);
+        Set<String> keys = ApiKeyUtils.resolveKeys(aiModel);
         if (keys.isEmpty()) {
             throw new IllegalStateException(
                     "AiChatModel[" + modelName + "] 缺少 API Key — 请配置 api-keys 或 api-key");
@@ -140,7 +141,7 @@ public class AiChatClientFactory {
 
         // 多 key 场景:为每个 key 预建一个 ChatModel,用 PooledChatModel 装饰
         ApiKeyPool pool = apiKeyPoolManager.getPool(modelName, keys);
-        java.util.List<ChatModel> perKeyModels = new java.util.ArrayList<>(keys.size());
+        List<ChatModel> perKeyModels = new ArrayList<>(keys.size());
         for (String keyValue : keys) {
             perKeyModels.add(buildChatModelForKey(aiModel, keyValue));
         }

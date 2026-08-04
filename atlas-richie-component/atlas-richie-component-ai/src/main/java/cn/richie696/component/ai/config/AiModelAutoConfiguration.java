@@ -248,7 +248,7 @@ public class AiModelAutoConfiguration {
 
     @Bean("aiVoiceStsService")
     @ConditionalOnMissingBean
-    public VoiceStsService aiVoiceStsService(java.util.List<StsSigner> signers) {
+    public VoiceStsService aiVoiceStsService(List<StsSigner> signers) {
         return new VoiceStsServiceImpl(signers);
     }
 
@@ -256,7 +256,7 @@ public class AiModelAutoConfiguration {
 
     @Bean("aiVoiceChatService")
     @ConditionalOnMissingBean
-    public VoiceChatService aiVoiceChatService(java.util.List<VoiceChatModel> models) {
+    public VoiceChatService aiVoiceChatService(List<VoiceChatModel> models) {
         return new VoiceChatServiceImpl(models);
     }
 

@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -109,8 +110,8 @@ class HunyuanSpeechModelTest {
     void sttResponseDto_shouldDeserializeResultIntoText() throws Exception {
         String text = "你好，世界。";
         // 用 Jackson 转义确保中文 / 标点不破坏 JSON 结构
-        String json = MAPPER.writeValueAsString(java.util.Map.of(
-                "Response", java.util.Map.of(
+        String json = MAPPER.writeValueAsString(Map.of(
+                "Response", Map.of(
                         "Result", text,
                         "RequestId", "req-stt-1")));
 

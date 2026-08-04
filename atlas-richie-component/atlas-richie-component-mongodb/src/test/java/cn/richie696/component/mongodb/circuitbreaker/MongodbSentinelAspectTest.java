@@ -30,6 +30,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -109,8 +110,8 @@ class MongodbSentinelAspectTest {
 
     @Test
     void insertAll_returnsList() {
-        when(mongoTemplate.insert(anyList(), eq(String.class))).thenReturn(java.util.List.of("a", "b"));
-        var result = mongodb.insertAll(java.util.List.of("a", "b"));
+        when(mongoTemplate.insert(anyList(), eq(String.class))).thenReturn(List.of("a", "b"));
+        var result = mongodb.insertAll(List.of("a", "b"));
         assertThat(result).hasSize(2);
     }
 }

@@ -19,8 +19,11 @@ import cn.richie696.component.cache.redis.config.base.AtlasRedisProperties;
 
 import java.net.URI;
 import java.net.URL;
+import java.time.ZoneId;
 import java.time.temporal.Temporal;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -141,8 +144,8 @@ public final class RedisStringPayloadInspector {
                 || o instanceof URI
                 || o instanceof URL
                 || o instanceof Temporal
-                || o instanceof java.util.Date
-                || o instanceof java.util.Calendar
-                || o instanceof java.time.ZoneId;
+                || o instanceof Date
+                || o instanceof Calendar
+                || o instanceof ZoneId;
     }
 }

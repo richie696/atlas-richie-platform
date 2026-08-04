@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -217,11 +218,11 @@ public class ApiKeyPoolImpl implements ApiKeyPool {
      * <p>每次 {@code create()} 返回池中"下一个未创建"的 key,保证所有 key 都是不同的 ApiKey 实例。
      */
     private static class ApiKeyPooledFactory extends BasePooledObjectFactory<ApiKey> {
-        private final java.util.List<ApiKey> allKeys;
+        private final List<ApiKey> allKeys;
         private final java.util.concurrent.atomic.AtomicInteger createIndex = new java.util.concurrent.atomic.AtomicInteger(0);
 
         ApiKeyPooledFactory(Set<String> apiKeys) {
-            this.allKeys = new java.util.ArrayList<>(apiKeys.size());
+            this.allKeys = new ArrayList<>(apiKeys.size());
             int idx = 0;
             for (String k : apiKeys) {
                 this.allKeys.add(new ApiKey(k, idx++));

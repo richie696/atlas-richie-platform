@@ -37,8 +37,10 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 状态同步 Redis Stream 消费者
@@ -249,7 +251,7 @@ public class StateSyncStreamConsumer extends AbstractStreamConsumer<StateSyncMes
                                     .prevState(history.getFromState())
                                     .currState(history.getToState())
                                     .eventName(history.getEvent())
-                                    .seq(java.util.Objects.requireNonNullElse(history.getSeq(), 0L))
+                                    .seq(Objects.requireNonNullElse(history.getSeq(), 0L))
                                     .occurredAt(history.getCreateTime())
                                     .build());
                             if (businessTime == null || history.getCreateTime().isAfter(businessTime)) {
@@ -262,7 +264,7 @@ public class StateSyncStreamConsumer extends AbstractStreamConsumer<StateSyncMes
                 // 从 Redis（通过 StateStorage）读取最新状态，并写入当前状态
                 String currentState = stateStorage.getCurrentState(stateMachineName, businessId);
                 if (currentState != null) {
-                    java.time.LocalDateTime updatedAt = businessTime != null ? businessTime : java.time.LocalDateTime.now();
+                    LocalDateTime updatedAt = businessTime != null ? businessTime : LocalDateTime.now();
                     currentStateBatch.add(StateMachineStateCurrent.builder()
                             .stateMachine(stateMachineName)
                             .businessId(businessId)
@@ -293,9 +295,9 @@ public class StateSyncStreamConsumer extends AbstractStreamConsumer<StateSyncMes
                 );
 
                 // 构建已存在记录的键集合（stateMachine:businessId）
-                java.util.Set<String> existingKeys = existingList.stream()
+                Set<String> existingKeys = existingList.stream()
                         .map(e -> e.getStateMachine() + ":" + e.getBusinessId())
-                        .collect(java.util.stream.Collectors.toSet());
+                        .collect(Collectors.toSet());
 
                 // 分离需要插入和更新的记录
                 List<StateMachineStateCurrent> toInsert = new ArrayList<>();
@@ -348,9 +350,9 @@ public class StateSyncStreamConsumer extends AbstractStreamConsumer<StateSyncMes
                 );
 
                 // 构建已存在记录的键集合（stateMachine:businessId:occurredAt）
-                java.util.Set<String> existingKeys = existingList.stream()
+                Set<String> existingKeys = existingList.stream()
                         .map(e -> e.getStateMachine() + ":" + e.getBusinessId() + ":" + e.getSeq())
-                        .collect(java.util.stream.Collectors.toSet());
+                        .collect(Collectors.toSet());
 
                 // 过滤出不存在的记录，批量插入
                 List<StateMachineStateHistory> toInsert = historyBatch.stream()
@@ -393,7 +395,7 @@ public class StateSyncStreamConsumer extends AbstractStreamConsumer<StateSyncMes
             return 0L;
         }
         return histories.stream()
-                .mapToLong(history -> java.util.Objects.requireNonNullElse(history.getSeq(), 0L))
+                                    .mapToLong(history -> Objects.requireNonNullElse(history.getSeq(), 0L))
                 .max()
                 .orElse(0L);
     }

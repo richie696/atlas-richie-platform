@@ -18,6 +18,7 @@ package cn.richie696.component.ai.support.keypool;
 import cn.richie696.component.ai.config.keypool.KeyPoolProperties;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -70,7 +71,7 @@ class ApiKeyPoolImplTest {
 
         // 再次借 1 个 — 拿到的 key 应当 != firstValue(被冷却跳过)
         // 但 k1/k2 哪个被借出顺序不固定 — 连续借多次直到拿到非冷却的 key
-        Set<String> borrowed = new java.util.HashSet<>();
+        Set<String> borrowed = new HashSet<>();
         for (int i = 0; i < 3; i++) {
             // 此时两个 key 中 firstValue 在冷却,另一个可借
             // 但我们这里只有一个 key 在冷却 — 另一个是非 firstValue

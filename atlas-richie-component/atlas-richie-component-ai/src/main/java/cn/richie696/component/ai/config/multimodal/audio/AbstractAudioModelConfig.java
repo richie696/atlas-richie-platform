@@ -16,6 +16,7 @@
 package cn.richie696.component.ai.config.multimodal.audio;
 
 import lombok.Data;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -50,7 +51,7 @@ public abstract class AbstractAudioModelConfig {
     /**
      * API Key 池 — Token Plan 多 key 轮询 / 限流后冷却。YAML: {@code api-keys: [sk-1, sk-2]}。
      */
-    private java.util.Set<String> apiKeys = new java.util.LinkedHashSet<>();
+    private Set<String> apiKeys = new LinkedHashSet<>();
 
     /**
      * TC3(腾讯云)鉴权使用的 SecretId。

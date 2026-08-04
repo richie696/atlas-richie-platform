@@ -19,6 +19,7 @@ import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.core.HttpRequest;
 import cn.richie696.context.utils.data.JsonUtils;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.ai.embedding.EmbeddingResponse;
 
@@ -161,7 +162,7 @@ class BailianImageEmbeddingAdapterTest {
         HttpRequest request = mock(HttpRequest.class);
         when(httpClient.post(anyString(), any())).thenReturn(request);
         when(request.header(anyString(), anyString())).thenReturn(request);
-        when(request.execute(org.mockito.ArgumentMatchers.<Class<Object>>any())).thenAnswer(invocation -> {
+        when(request.execute(ArgumentMatchers.<Class<Object>>any())).thenAnswer(invocation -> {
             Class<Object> responseType = invocation.getArgument(0);
             return JsonUtils.getInstance().deserialize(json, responseType);
         });

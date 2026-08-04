@@ -17,17 +17,30 @@ package cn.richie696.component.ai.provider.doubao;
 
 import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
 import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
+import cn.richie696.component.http.core.AsyncCallback;
+import cn.richie696.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpRequest;
+import cn.richie696.component.http.core.HttpResponse;
+import cn.richie696.component.http.core.SseConnection;
+import cn.richie696.component.http.core.SseListener;
 import cn.richie696.context.utils.data.JsonUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
 import org.springframework.ai.audio.tts.TextToSpeechPrompt;
 import org.springframework.core.io.ByteArrayResource;
+import tools.jackson.core.type.TypeReference;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import java.util.Map;
 
 /**
@@ -235,20 +248,20 @@ class DoubaoSpeechModelTest {
     @Test
     void tts_callAsync_setsAuthHeadersAndBuildsNdjsonBody() throws Exception {
         AbstractAudioModelConfig cfg = fullVoiceConfig();
-        cn.richie696.component.http.core.HttpClient mock = org.mockito.Mockito.mock(
-                cn.richie696.component.http.core.HttpClient.class);
-        cn.richie696.component.http.core.HttpRequest req = org.mockito.Mockito.mock(
-                cn.richie696.component.http.core.HttpRequest.class);
+        HttpClient mock = mock(
+                HttpClient.class);
+        HttpRequest req = mock(
+                HttpRequest.class);
 
-        org.mockito.Mockito.when(mock.post(org.mockito.ArgumentMatchers.anyString(),
-                        org.mockito.ArgumentMatchers.any(Object.class)))
+        when(mock.post(anyString(),
+                        any(Object.class)))
                 .thenReturn(req);
-        org.mockito.Mockito.when(req.header(org.mockito.ArgumentMatchers.anyString(),
-                        org.mockito.ArgumentMatchers.anyString()))
+        when(req.header(anyString(),
+                        anyString()))
                 .thenReturn(req);
-        org.mockito.Mockito.when(req.execute()).thenReturn(
-                cn.richie696.component.http.core.HttpResponse.of(200,
-                        java.util.Map.of(),
+        when(req.execute()).thenReturn(
+                HttpResponse.of(200,
+                        Map.of(),
                         "{\"code\":3000,\"data\":\"YQ==\",\"message\":\"ok\"}".getBytes(StandardCharsets.UTF_8)));
 
         DoubaoTextToSpeechModel model = new DoubaoTextToSpeechModel(cfg, mock);
@@ -256,9 +269,9 @@ class DoubaoSpeechModelTest {
         var resp = future.get(5, java.util.concurrent.TimeUnit.SECONDS);
 
         // 验证 header 三件套
-        org.mockito.Mockito.verify(req).header("X-Api-Key", "test-api-key");
-        org.mockito.Mockito.verify(req).header("X-Api-Resource-Id", "volc.tts.api.voiceclone");
-        org.mockito.Mockito.verify(req).header("X-Api-App-Id", "test-app-id");
+        verify(req).header("X-Api-Key", "test-api-key");
+        verify(req).header("X-Api-Resource-Id", "volc.tts.api.voiceclone");
+        verify(req).header("X-Api-App-Id", "test-app-id");
         // 验证音频内容
         assertThat(resp.getResult().getOutput()).containsExactly((byte) 'a');
     }
@@ -270,20 +283,20 @@ class DoubaoSpeechModelTest {
     @Test
     void stt_callAsync_setsHeadersAndBuildsNdjsonBody() throws Exception {
         AbstractAudioModelConfig cfg = fullVoiceConfig();
-        cn.richie696.component.http.core.HttpClient mock = org.mockito.Mockito.mock(
-                cn.richie696.component.http.core.HttpClient.class);
-        cn.richie696.component.http.core.HttpRequest req = org.mockito.Mockito.mock(
-                cn.richie696.component.http.core.HttpRequest.class);
+        HttpClient mock = mock(
+                HttpClient.class);
+        HttpRequest req = mock(
+                HttpRequest.class);
 
-        org.mockito.Mockito.when(mock.post(org.mockito.ArgumentMatchers.anyString(),
-                        org.mockito.ArgumentMatchers.any(Object.class)))
+        when(mock.post(anyString(),
+                        any(Object.class)))
                 .thenReturn(req);
-        org.mockito.Mockito.when(req.header(org.mockito.ArgumentMatchers.anyString(),
-                        org.mockito.ArgumentMatchers.anyString()))
+        when(req.header(anyString(),
+                        anyString()))
                 .thenReturn(req);
-        org.mockito.Mockito.when(req.execute()).thenReturn(
-                cn.richie696.component.http.core.HttpResponse.of(200,
-                        java.util.Map.of(),
+        when(req.execute()).thenReturn(
+                HttpResponse.of(200,
+                        Map.of(),
                         "{\"code\":1000,\"result\":\"识别结果\",\"message\":\"ok\"}"
                                 .getBytes(StandardCharsets.UTF_8)));
 
@@ -291,10 +304,10 @@ class DoubaoSpeechModelTest {
         var future = model.callAsync(new AudioTranscriptionPrompt(new ByteArrayResource(new byte[]{1, 2, 3})));
         var resp = future.get(5, java.util.concurrent.TimeUnit.SECONDS);
 
-        org.mockito.Mockito.verify(req).header("X-Api-Key", "test-api-key");
-        org.mockito.Mockito.verify(req).header("X-Api-Resource-Id",
+        verify(req).header("X-Api-Key", "test-api-key");
+        verify(req).header("X-Api-Resource-Id",
                 DoubaoTranscriptionModel.STT_RESOURCE_ID);
-        org.mockito.Mockito.verify(req).header("X-Api-App-Id", "test-app-id");
+        verify(req).header("X-Api-App-Id", "test-app-id");
         assertThat(resp.getResult().getOutput()).isEqualTo("识别结果");
     }
 
@@ -317,91 +330,91 @@ class DoubaoSpeechModelTest {
      * 仅用于构造函数校验测试的 {@code HttpClient} 桩 —— 任何调用都会抛 NPE，
      * 但构造函数在该路径上不应真正触发请求。
      */
-    private static cn.richie696.component.http.core.HttpClient noopHttpClient() {
-        return new cn.richie696.component.http.core.HttpClient() {
+    private static HttpClient noopHttpClient() {
+        return new HttpClient() {
             @Override
-            public cn.richie696.component.http.core.HttpRequest get(String url) {
+            public HttpRequest get(String url) {
                 throw uoe();
             }
 
             @Override
-            public cn.richie696.component.http.core.HttpRequest post(String url, Object body) {
+            public HttpRequest post(String url, Object body) {
                 throw uoe();
             }
 
             @Override
-            public cn.richie696.component.http.core.HttpRequest post(String url) {
+            public HttpRequest post(String url) {
                 throw uoe();
             }
 
             @Override
-            public cn.richie696.component.http.core.HttpRequest put(String url, Object body) {
+            public HttpRequest put(String url, Object body) {
                 throw uoe();
             }
 
             @Override
-            public cn.richie696.component.http.core.HttpRequest delete(String url, Object body) {
+            public HttpRequest delete(String url, Object body) {
                 throw uoe();
             }
 
             @Override
-            public cn.richie696.component.http.core.HttpRequest delete(String url) {
+            public HttpRequest delete(String url) {
                 throw uoe();
             }
 
             @Override
-            public cn.richie696.component.http.core.SseConnection sse(String url,
-                                                                      cn.richie696.component.http.core.SseListener listener) {
+            public SseConnection sse(String url,
+                                                                      SseListener listener) {
                 throw uoe();
             }
 
             @Override
-            public cn.richie696.component.http.core.SseConnection sse(String url,
-                                                                      java.util.Map<String, String> headers,
-                                                                      cn.richie696.component.http.core.SseListener listener) {
+            public SseConnection sse(String url,
+                                                                      Map<String, String> headers,
+                                                                      SseListener listener) {
                 throw uoe();
             }
 
             @Override
-            public cn.richie696.component.http.core.HttpResponse execute(
-                    cn.richie696.component.http.core.HttpRequest request) {
+            public HttpResponse execute(
+                    HttpRequest request) {
                 throw uoe();
             }
 
             @Override
-            public <T> T execute(cn.richie696.component.http.core.HttpRequest request, Class<T> type) {
+            public <T> T execute(HttpRequest request, Class<T> type) {
                 throw uoe();
             }
 
             @Override
-            public <T> T execute(cn.richie696.component.http.core.HttpRequest request,
-                                 tools.jackson.core.type.TypeReference<T> typeRef) {
+            public <T> T execute(HttpRequest request,
+                                 TypeReference<T> typeRef) {
                 throw uoe();
             }
 
             @Override
-            public <T> void async(cn.richie696.component.http.core.HttpRequest request,
-                                  cn.richie696.component.http.core.AsyncCallback<T> callback, Class<T> type) {
+            public <T> void async(HttpRequest request,
+                                  AsyncCallback<T> callback, Class<T> type) {
                 throw uoe();
             }
 
             @Override
-            public <T> void async(cn.richie696.component.http.core.HttpRequest request,
-                                  cn.richie696.component.http.core.AsyncCallback<T> callback,
-                                  tools.jackson.core.type.TypeReference<T> typeRef) {
+            public <T> void async(HttpRequest request,
+                                  AsyncCallback<T> callback,
+                                  TypeReference<T> typeRef) {
                 throw uoe();
             }
 
             @Override
-            public <T> java.util.concurrent.CompletableFuture<T> future(
-                    cn.richie696.component.http.core.HttpRequest request, Class<T> type) {
+            public <T> CompletableFuture<T> future(
+                    HttpRequest request, Class<T> type) {
                 throw uoe();
             }
 
             @Override
-            public <T> java.util.concurrent.CompletableFuture<T> future(
-                    cn.richie696.component.http.core.HttpRequest request,
-                    tools.jackson.core.type.TypeReference<T> typeRef) {
+            public <T> CompletableFuture<T> future(
+                    HttpRequest request,
+                    TypeReference<T> typeRef) {
                 throw uoe();
             }
         };

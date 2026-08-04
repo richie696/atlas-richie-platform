@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -382,7 +383,7 @@ public final class UrlFetcher {
         try {
             InetAddress current = InetAddress.getByName(host);
             checkIpMatches(host, current, expectedIp);
-        } catch (java.net.UnknownHostException e) {
+        } catch (UnknownHostException e) {
             throw new DocumentParseException(
                     "Re-resolution failed for host: " + host, e);
         }

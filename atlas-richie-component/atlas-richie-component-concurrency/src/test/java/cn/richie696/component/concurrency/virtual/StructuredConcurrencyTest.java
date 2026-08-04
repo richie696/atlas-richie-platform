@@ -19,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
@@ -666,13 +667,13 @@ class StructuredConcurrencyTest {
     void gatherAllBestEffort_checkedExceptionIsCaptured() {
         StructuredConcurrency.BestEffortResult<String> result = StructuredConcurrency.gatherAllBestEffort(List.of(
                 (Callable<String>) () -> {
-                    throw new java.io.IOException("network-down");
+                    throw new IOException("network-down");
                 }));
 
         assertThat(result.successes()).isEmpty();
         assertThat(result.failures()).hasSize(1);
         assertThat(result.failures().get(0))
-                .isInstanceOf(java.io.IOException.class)
+                .isInstanceOf(IOException.class)
                 .hasMessage("network-down");
     }
 

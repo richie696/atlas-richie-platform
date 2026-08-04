@@ -19,6 +19,7 @@ import cn.richie696.component.parser.DocumentSegment;
 import cn.richie696.component.parser.ParsedDocument;
 import cn.richie696.component.parser.ParserContext;
 import cn.richie696.component.parser.ParserSource;
+import cn.richie696.component.parser.UrlFetchPolicy;
 import cn.richie696.component.parser.exception.DocumentParseException;
 import cn.richie696.component.parser.testutil.ParseSyncHelper;
 import org.junit.jupiter.api.DisplayName;
@@ -127,7 +128,7 @@ class TextFastPathParserTest {
     void urlSourceThrows() throws MalformedURLException {
         ParserSource.UrlSource urlSource = new ParserSource.UrlSource(
                 new URL("https://example.com/test.txt"),
-                cn.richie696.component.parser.UrlFetchPolicy.defaults());
+                UrlFetchPolicy.defaults());
         DocumentParseException ex = assertThrows(
                 DocumentParseException.class,
                 () -> ParseSyncHelper.collect(parser, urlSource, ParserContext.defaults()));

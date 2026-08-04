@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -76,13 +77,13 @@ class RedisStringPayloadInspectorTest {
 
     @Test
     void inspect_optionalEmptyIsOk() {
-        assertThat(RedisStringPayloadInspector.inspect(java.util.Optional.empty(), perf).severity())
+        assertThat(RedisStringPayloadInspector.inspect(Optional.empty(), perf).severity())
                 .isEqualTo(RedisStringPayloadInspector.Severity.OK);
     }
 
     @Test
     void inspect_optionalPresentUnwraps() {
-        var r = RedisStringPayloadInspector.inspect(java.util.Optional.of(List.of("a")), perf);
+        var r = RedisStringPayloadInspector.inspect(Optional.of(List.of("a")), perf);
         assertThat(r.severity()).isEqualTo(RedisStringPayloadInspector.Severity.ERROR);
     }
 

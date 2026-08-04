@@ -29,6 +29,7 @@ import cn.richie696.component.ai.support.ToolRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
@@ -415,7 +416,7 @@ public class AiChatServiceImpl implements AiChatService {
                 case "system" -> messages.add(new SystemMessage(msg.getContent()));
                 case "user" -> messages.add(new UserMessage(msg.getContent()));
                 case "assistant" ->
-                        messages.add(new org.springframework.ai.chat.messages.AssistantMessage(msg.getContent()));
+                        messages.add(new AssistantMessage(msg.getContent()));
                 default -> log.warn("未知的消息角色: {}", msg.getRole());
             }
         }

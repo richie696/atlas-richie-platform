@@ -216,23 +216,23 @@ class UrlFetcherTest {
     @DisplayName("isPrivateIp should classify common private IP ranges")
     void isPrivateIpClassifiesRanges() throws Exception {
         // Loopback
-        assertTrue(UrlFetcher.isPrivateIp(java.net.InetAddress.getByName("127.0.0.1")));
-        assertTrue(UrlFetcher.isPrivateIp(java.net.InetAddress.getByName("127.255.255.254")));
+        assertTrue(UrlFetcher.isPrivateIp(InetAddress.getByName("127.0.0.1")));
+        assertTrue(UrlFetcher.isPrivateIp(InetAddress.getByName("127.255.255.254")));
         // Private class A
-        assertTrue(UrlFetcher.isPrivateIp(java.net.InetAddress.getByName("10.0.0.1")));
+        assertTrue(UrlFetcher.isPrivateIp(InetAddress.getByName("10.0.0.1")));
         // Private class B
-        assertTrue(UrlFetcher.isPrivateIp(java.net.InetAddress.getByName("172.16.0.1")));
-        assertTrue(UrlFetcher.isPrivateIp(java.net.InetAddress.getByName("172.31.255.254")));
+        assertTrue(UrlFetcher.isPrivateIp(InetAddress.getByName("172.16.0.1")));
+        assertTrue(UrlFetcher.isPrivateIp(InetAddress.getByName("172.31.255.254")));
         // Private class C
-        assertTrue(UrlFetcher.isPrivateIp(java.net.InetAddress.getByName("192.168.1.1")));
+        assertTrue(UrlFetcher.isPrivateIp(InetAddress.getByName("192.168.1.1")));
         // Link-local
-        assertTrue(UrlFetcher.isPrivateIp(java.net.InetAddress.getByName("169.254.1.1")));
+        assertTrue(UrlFetcher.isPrivateIp(InetAddress.getByName("169.254.1.1")));
         // IPv6 loopback
-        assertTrue(UrlFetcher.isPrivateIp(java.net.InetAddress.getByName("::1")));
+        assertTrue(UrlFetcher.isPrivateIp(InetAddress.getByName("::1")));
         // IPv6 unique-local fc00::/7
-        assertTrue(UrlFetcher.isPrivateIp(java.net.InetAddress.getByName("fc00::1")));
+        assertTrue(UrlFetcher.isPrivateIp(InetAddress.getByName("fc00::1")));
         // IPv6 link-local fe80::/10
-        assertTrue(UrlFetcher.isPrivateIp(java.net.InetAddress.getByName("fe80::1")));
+        assertTrue(UrlFetcher.isPrivateIp(InetAddress.getByName("fe80::1")));
     }
 
     // ============ Internal ============

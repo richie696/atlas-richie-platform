@@ -15,6 +15,8 @@
  */
 package cn.richie696.component.mongodb.exception;
 
+import com.mongodb.ServerAddress;
+import org.bson.BsonDocument;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -106,7 +108,7 @@ class ExceptionTest {
     @Test
     void duplicateKeyException_wrap_shouldCreateWithCorrectMessage() {
         com.mongodb.DuplicateKeyException mongoEx = new com.mongodb.DuplicateKeyException(
-                new org.bson.BsonDocument(), new com.mongodb.ServerAddress("localhost"), null);
+                new BsonDocument(), new ServerAddress("localhost"), null);
         DuplicateKeyException ex = DuplicateKeyException.wrap(mongoEx);
         assertThat(ex.getMessage()).startsWith("Duplicate key:");
         assertThat(ex.getCause()).isEqualTo(mongoEx);

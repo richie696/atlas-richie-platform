@@ -15,6 +15,8 @@
  */
 package cn.richie696.component.concurrency.virtual;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.time.Duration;
 
@@ -73,7 +75,7 @@ List<R> results){
  */
 public BatchMappingResult {
     errors = List.copyOf(errors);
-    results = java.util.Collections.unmodifiableList(new java.util.ArrayList<>(results));
+    results = Collections.unmodifiableList(new ArrayList<>(results));
 }
 
 /**

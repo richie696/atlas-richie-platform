@@ -108,7 +108,7 @@ public class StateMachineRegistry {
      *
      * @return 状态机名称集合（不可修改的视图）
      */
-    public java.util.Set<String> getStateMachineNames() {
+    public Set<String> getStateMachineNames() {
         return stateMachines.keySet();
     }
 

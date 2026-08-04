@@ -19,6 +19,7 @@ import cn.richie696.testing.redis.RedisContainerSupport;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.testcontainers.utility.DockerImageName;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -68,7 +69,7 @@ public final class RedisIntegrationTestSupport {
     }
 
     public void registerRedisProperties(DynamicPropertyRegistry registry) {
-        List<String> pairs = new java.util.ArrayList<>();
+        List<String> pairs = new ArrayList<>();
         appendPropertyPairs(pairs);
         pairs.forEach(pair -> {
             int eq = pair.indexOf('=');

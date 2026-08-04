@@ -38,7 +38,7 @@ public class AiChatModelOptions {
     private Integer topK;
     private Double frequencyPenalty;
     private Double presencePenalty;
-    private java.util.List<String> stop;
+    private List<String> stop;
     private Boolean logprobs;
     private Integer topLogprobs;
     private Boolean enableThinking;

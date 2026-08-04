@@ -18,6 +18,7 @@ package cn.richie696.component.parser.internal;
 import cn.richie696.component.parser.*;
 import cn.richie696.component.parser.config.ParserProperties;
 import cn.richie696.component.parser.exception.DocumentParseException;
+import cn.richie696.component.parser.exception.ImageOnlyPdfException;
 import cn.richie696.component.parser.testutil.ParseSyncHelper;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -41,6 +42,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -89,7 +91,7 @@ class TikaDocumentParserTest {
         TikaDocumentParser strictParser = new TikaDocumentParser(strictProps);
 
         Path pdfFile = createImageOnlyPdf(tempDir);
-        List<ParseEvent> events = new java.util.concurrent.CopyOnWriteArrayList<>();
+        List<ParseEvent> events = new CopyOnWriteArrayList<>();
         strictParser.parseStream(
                 new ParserSource.FileSource(pdfFile.toFile()),
                 ParserContext.defaults(),
@@ -101,7 +103,7 @@ class TikaDocumentParserTest {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError(
                         "expected Failed event in strict mode, got " + events));
-        assertTrue(failed.error() instanceof cn.richie696.component.parser.exception.ImageOnlyPdfException,
+        assertTrue(failed.error() instanceof ImageOnlyPdfException,
                 "expected ImageOnlyPdfException, got " + failed.error().getClass());
     }
 
@@ -113,7 +115,7 @@ class TikaDocumentParserTest {
         // ImageStreaming events (when Tika wraps images in <img>) or a synthetic
         // placeholder (when Tika emits raw XObjects). The test accepts any non-empty
         // event stream — the exact count varies by Tika's rendering of synthetic PDFs.
-        List<ParseEvent> events = new java.util.concurrent.CopyOnWriteArrayList<>();
+        List<ParseEvent> events = new CopyOnWriteArrayList<>();
         parser.parseStream(
                 new ParserSource.FileSource(pdfFile.toFile()),
                 ParserContext.defaults(),
@@ -136,8 +138,8 @@ class TikaDocumentParserTest {
     void urlSourceThrows() throws MalformedURLException {
         ParserSource.UrlSource urlSource = new ParserSource.UrlSource(
                 new URL("https://example.com/test.pdf"),
-                cn.richie696.component.parser.UrlFetchPolicy.defaults());
-        List<ParseEvent> events = new java.util.concurrent.CopyOnWriteArrayList<>();
+                UrlFetchPolicy.defaults());
+        List<ParseEvent> events = new CopyOnWriteArrayList<>();
         parser.parseStream(urlSource, ParserContext.defaults(), events::add);
         ParseEvent.Failed failed = events.stream()
                 .filter(e -> e instanceof ParseEvent.Failed)
@@ -154,7 +156,7 @@ class TikaDocumentParserTest {
     @DisplayName("FileSource with missing file should emit Failed event")
     void fileSourceNotFoundThrows(@TempDir Path tempDir) {
         File missing = tempDir.resolve("does-not-exist.pdf").toFile();
-        List<ParseEvent> events = new java.util.concurrent.CopyOnWriteArrayList<>();
+        List<ParseEvent> events = new CopyOnWriteArrayList<>();
         parser.parseStream(
                 new ParserSource.FileSource(missing),
                 ParserContext.defaults(),

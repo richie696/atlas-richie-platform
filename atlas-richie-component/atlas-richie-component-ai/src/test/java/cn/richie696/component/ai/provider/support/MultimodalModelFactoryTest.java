@@ -32,6 +32,7 @@ import cn.richie696.component.ai.support.keypool.ApiKeyPoolManager;
 import cn.richie696.component.http.core.HttpClient;
 import cn.richie696.component.http.core.HttpRequest;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.ai.embedding.EmbeddingRequest;
 
 import java.util.LinkedHashSet;
@@ -235,7 +236,7 @@ class MultimodalModelFactoryTest {
         HttpRequest request = mock(HttpRequest.class);
         when(httpClient.post(anyString(), any())).thenReturn(request);
         when(request.header(anyString(), anyString())).thenReturn(request);
-        when(request.execute(org.mockito.ArgumentMatchers.<Class<Object>>any())).thenReturn(null);
+        when(request.execute(ArgumentMatchers.<Class<Object>>any())).thenReturn(null);
 
         ImageEmbeddingModel model = MultimodalModelFactory.createImageEmbeddingModelPooled(
                 "ollama-search", cfg, httpClient, mock(ApiKeyPoolManager.class));

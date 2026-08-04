@@ -18,6 +18,8 @@ package cn.richie696.component.parser.internal;
 import cn.richie696.component.parser.DocumentParser;
 import cn.richie696.component.parser.exception.FormatNotSupportedException;
 
+import java.util.Objects;
+
 /**
  * 解析路由器 — 根据 {@link Format} 分发到对应的 {@link DocumentParser} 实现。
  * <p>
@@ -40,9 +42,9 @@ public final class ParserRouter {
 
     public ParserRouter(TikaDocumentParser tikaParser, FesodDocumentParser fesodParser,
                         TextFastPathParser textFastPathParser) {
-        this.tikaParser = java.util.Objects.requireNonNull(tikaParser, "tikaParser must not be null");
-        this.fesodParser = java.util.Objects.requireNonNull(fesodParser, "fesodParser must not be null");
-        this.textFastPathParser = java.util.Objects.requireNonNull(textFastPathParser,
+        this.tikaParser = Objects.requireNonNull(tikaParser, "tikaParser must not be null");
+        this.fesodParser = Objects.requireNonNull(fesodParser, "fesodParser must not be null");
+        this.textFastPathParser = Objects.requireNonNull(textFastPathParser,
                 "textFastPathParser must not be null");
     }
 

@@ -18,6 +18,7 @@ package cn.richie696.component.ai.provider.tei;
 import cn.richie696.component.ai.api.image.ImageEmbeddingModel;
 import cn.richie696.component.ai.provider.bailian.BailianImageEmbeddingAdapter;
 import cn.richie696.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpRequest;
 import cn.richie696.context.utils.data.JsonUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
@@ -168,7 +169,7 @@ public class TeiImageEmbeddingAdapter implements ImageEmbeddingModel {
             body.put("model", defaultModel);
         }
 
-        cn.richie696.component.http.core.HttpRequest httpReq = httpClient.post(url, body)
+        HttpRequest httpReq = httpClient.post(url, body)
                 .header("Content-Type", "application/json");
         if (apiKey != null) {
             // 仅在 apiKey 非空时携带 Authorization 头 — TEI 本身不要求鉴权,

@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -99,8 +101,8 @@ public class ApiKeyPoolManager {
     /**
      * 健康检查:列出所有池状态。
      */
-    public java.util.Map<String, PoolStats> stats() {
-        java.util.Map<String, PoolStats> result = new java.util.LinkedHashMap<>();
+    public Map<String, PoolStats> stats() {
+        Map<String, PoolStats> result = new LinkedHashMap<>();
         pools.forEach((name, p) -> result.put(name, new PoolStats(p.getTotalKeys(), p.getNumActive(), p.getNumCooldown())));
         return result;
     }
@@ -121,11 +123,11 @@ public class ApiKeyPoolManager {
      */
     private static final class NoOpApiKeyPool implements ApiKeyPool {
         private final String name;
-        private final java.util.List<ApiKey> keys;
+        private final List<ApiKey> keys;
 
         NoOpApiKeyPool(String name, Set<String> apiKeys) {
             this.name = name;
-            this.keys = new java.util.ArrayList<>();
+            this.keys = new ArrayList<>();
             for (String k : apiKeys) {
                 this.keys.add(new ApiKey(k));
             }

@@ -26,9 +26,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -147,7 +149,7 @@ public class HunyuanStreamingAsrVoiceChatModel implements VoiceChatModel {
             String authHeader = tc3Headers.get("Authorization");
             String wsUrl = endpoint.toString()
                     + (endpoint.toString().contains("?") ? "&" : "?")
-                    + "signature=" + java.net.URLEncoder.encode(authHeader != null ? authHeader : "", java.nio.charset.StandardCharsets.UTF_8)
+                    + "signature=" + URLEncoder.encode(authHeader != null ? authHeader : "", StandardCharsets.UTF_8)
                     + "&session_id=" + sessionId;
 
             CompletableFuture<WebSocket> f = httpClient.newWebSocketBuilder()

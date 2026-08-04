@@ -25,6 +25,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 
+import java.util.Collections;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -158,7 +161,7 @@ class DeleteBuilderTest {
                 .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-                .in(TestDoc::getStatus, java.util.List.of("A", "B"))
+                .in(TestDoc::getStatus, List.of("A", "B"))
                 .execute();
 
         assertThat(count).isEqualTo(2L);
@@ -171,7 +174,7 @@ class DeleteBuilderTest {
                 .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-                .in(TestDoc::getStatus, java.util.Collections.emptyList())
+                .in(TestDoc::getStatus, Collections.emptyList())
                 .execute();
 
         assertThat(count).isEqualTo(0L);
@@ -197,7 +200,7 @@ class DeleteBuilderTest {
                 .thenReturn(deleteResult);
 
         long count = new DeleteBuilder<>(TestDoc.class, mongoTemplate, introspector)
-                .nin(TestDoc::getStatus, java.util.List.of("X", "Y"))
+                .nin(TestDoc::getStatus, List.of("X", "Y"))
                 .execute();
 
         assertThat(count).isEqualTo(1L);

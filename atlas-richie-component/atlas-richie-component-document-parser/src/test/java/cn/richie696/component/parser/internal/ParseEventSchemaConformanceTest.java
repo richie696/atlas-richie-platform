@@ -18,16 +18,21 @@ package cn.richie696.component.parser.internal;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import cn.richie696.component.parser.*;
+import cn.richie696.component.parser.config.ParserProperties;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,7 +59,7 @@ class ParseEventSchemaConformanceTest {
     void tikaSchema() throws Exception {
         byte[] pdf = generateMinimalPdf("Hello");
         List<ParseEvent> events = collectEvents(
-                new TikaDocumentParser(new cn.richie696.component.parser.config.ParserProperties()),
+                new TikaDocumentParser(new ParserProperties()),
                 new ParserSource.StreamSource(new ByteArrayInputStream(pdf), "schema.pdf"));
 
         long streams = events.stream().filter(e -> e instanceof ParseEvent.Streaming).count();
@@ -129,7 +134,7 @@ class ParseEventSchemaConformanceTest {
     @DisplayName("TextFastPath impl: 不存在文件必须 emit Failed event (SPI 契约)")
     void textFastPathEmitsFailedNotThrow() {
         ParserSource bad = new ParserSource.FileSource(
-                new java.io.File("/tmp/__nonexistent_for_conformance_test__.txt"));
+                new File("/tmp/__nonexistent_for_conformance_test__.txt"));
         List<ParseEvent> events = collectEvents(new TextFastPathParser(), bad);
         long failed = events.stream().filter(e -> e instanceof ParseEvent.Failed).count();
         assertTrue(failed >= 1, "不存在文件必须 emit Failed event");
@@ -149,7 +154,7 @@ class ParseEventSchemaConformanceTest {
     }
 
     private List<ParseEvent> collectEvents(
-            cn.richie696.component.parser.DocumentParser parser,
+            DocumentParser parser,
             ParserSource source) {
         List<ParseEvent> sink = new ArrayList<>();
         try {
@@ -162,7 +167,7 @@ class ParseEventSchemaConformanceTest {
 
     private byte[] generateMinimalPdf(String text) throws Exception {
         try (PDDocument doc = new PDDocument();
-             java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream()) {
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             PDPage page = new PDPage(PDRectangle.A4);
             doc.addPage(page);
             try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
@@ -178,9 +183,9 @@ class ParseEventSchemaConformanceTest {
     }
 
     private byte[] generateMinimalXlsx() throws Exception {
-        try (org.apache.poi.xssf.usermodel.XSSFWorkbook wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
-             java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream()) {
-            org.apache.poi.xssf.usermodel.XSSFSheet sheet = wb.createSheet("Sheet1");
+        try (XSSFWorkbook wb = new XSSFWorkbook();
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            XSSFSheet sheet = wb.createSheet("Sheet1");
             sheet.createRow(0).createCell(0).setCellValue("header");
             sheet.createRow(1).createCell(0).setCellValue("row1");
             wb.write(baos);

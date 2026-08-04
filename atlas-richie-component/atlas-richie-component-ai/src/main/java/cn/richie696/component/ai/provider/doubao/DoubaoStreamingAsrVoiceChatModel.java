@@ -200,7 +200,7 @@ public class DoubaoStreamingAsrVoiceChatModel implements VoiceChatModel {
                 Map<String, Object> result = (Map<String, Object>) msg.get("result");
                 if (result == null) return null;
                 @SuppressWarnings("unchecked")
-                java.util.List<Object> texts = (java.util.List<Object>) result.get("text");
+                List<Object> texts = (List<Object>) result.get("text");
                 if (texts == null || texts.isEmpty()) return null;
                 String text = texts.get(0).toString();
                 Boolean isFinal = (Boolean) result.get("is_final");

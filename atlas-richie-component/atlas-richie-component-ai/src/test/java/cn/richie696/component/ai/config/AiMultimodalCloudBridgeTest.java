@@ -149,7 +149,7 @@ class AiMultimodalCloudBridgeTest {
 
     @Test
     void onApplicationEvent_refreshThrows_isIsolatedAndDoesNotPropagate() {
-        org.mockito.Mockito.doThrow(new RuntimeException("simulated failure"))
+        doThrow(new RuntimeException("simulated failure"))
                 .when(multimodalService).refresh();
 
         Set<String> keys = new HashSet<>();

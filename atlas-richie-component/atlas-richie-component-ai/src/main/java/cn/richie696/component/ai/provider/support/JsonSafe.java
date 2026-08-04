@@ -4,6 +4,7 @@
 package cn.richie696.component.ai.provider.support;
 
 import cn.richie696.context.utils.data.JsonUtils;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -19,12 +20,12 @@ public final class JsonSafe {
     }
 
     @SuppressWarnings("unchecked")
-    public static java.util.Map<String, Object> parseMap(String text) {
+    public static Map<String, Object> parseMap(String text) {
         if (text == null || text.isBlank()) {
-            return java.util.Collections.emptyMap();
+            return Collections.emptyMap();
         }
-        java.util.Map<String, Object> result = JsonUtils.getInstance().deserialize(text, java.util.Map.class);
-        return result != null ? result : java.util.Collections.emptyMap();
+        Map<String, Object> result = JsonUtils.getInstance().deserialize(text, Map.class);
+        return result != null ? result : Collections.emptyMap();
     }
 
     public static <T> T parseObject(String text, Class<T> clazz) {

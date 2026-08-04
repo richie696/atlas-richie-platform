@@ -18,6 +18,7 @@ package cn.richie696.component.concurrency.virtual;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -280,7 +281,7 @@ public final class BatchProcessor {
             for (int i = 0; i < length; i++) {
                 copy.add(array.get(i));
             }
-            return java.util.Collections.unmodifiableList(copy);
+            return Collections.unmodifiableList(copy);
         }
 
         /**

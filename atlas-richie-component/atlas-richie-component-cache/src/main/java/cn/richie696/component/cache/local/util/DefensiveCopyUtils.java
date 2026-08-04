@@ -20,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -132,7 +134,7 @@ public class DefensiveCopyUtils {
     private static final Set<Class<?>> IMMUTABLE_TYPES = Set.of(
             String.class, Integer.class, Long.class, Double.class, Float.class,
             Boolean.class, Byte.class, Short.class, Character.class,
-            java.math.BigDecimal.class, java.math.BigInteger.class
+            BigDecimal.class, BigInteger.class
     );
 
     /**

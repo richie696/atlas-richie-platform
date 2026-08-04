@@ -28,6 +28,7 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -125,7 +126,7 @@ class ApiKeyPoolIntegrationTest {
 
     @Test
     void apiKeyPool_inCooldownKey_doesNotBlockForever() throws InterruptedException {
-        java.util.Set<String> keys = new java.util.LinkedHashSet<>();
+        Set<String> keys = new LinkedHashSet<>();
         keys.add("k0");
         keys.add("k1");
         // 用极短的 maxWait + blockWhenExhausted=false — 借出冷却中的 key 应当被快速跳过
@@ -281,7 +282,7 @@ class ApiKeyPoolIntegrationTest {
         props.setCooldownSeconds(cooldownSec);
         props.setMaxWaitMillis(maxWait);
         props.setBlockWhenExhausted(true);
-        java.util.Set<String> linkedKeys = new java.util.LinkedHashSet<>(keys);
+        Set<String> linkedKeys = new LinkedHashSet<>(keys);
         return new ApiKeyPoolImpl(name, linkedKeys, props);
     }
 

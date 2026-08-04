@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 /**
  * 状态机 Redis Key 构建器
@@ -87,7 +88,7 @@ public class StateMachineKeyBuilder {
      */
     public String buildHistoryKey(String stateMachineName, Long businessId, LocalDateTime createTime) {
         String timestamp = createTime != null
-                ? String.valueOf(createTime.toEpochSecond(java.time.ZoneOffset.UTC))
+                ? String.valueOf(createTime.toEpochSecond(ZoneOffset.UTC))
                 : String.valueOf(System.currentTimeMillis());
         return "%s:history:%s:%s:%s".formatted(getKeyPrefix(), stateMachineName, String.valueOf(businessId), timestamp);
     }

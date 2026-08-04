@@ -25,6 +25,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.HexFormat;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * 腾讯云 TC3-HMAC-SHA256 签名工具（纯 JDK 实现，无第三方依赖）。
@@ -90,7 +91,7 @@ public class Tc3Signer {
             String payloadHash = sha256Hex(bodyJson == null ? "" : bodyJson);
 
             // 2. CanonicalRequest (x-tc-action header value 必须小写).
-            String actionLower = action == null ? "" : action.toLowerCase(java.util.Locale.ROOT);
+            String actionLower = action == null ? "" : action.toLowerCase(Locale.ROOT);
             String host = extractHost(endpoint);
             String canonicalHeaders = "content-type:application/json; charset=utf-8\n"
                     + "host:" + host + "\n"

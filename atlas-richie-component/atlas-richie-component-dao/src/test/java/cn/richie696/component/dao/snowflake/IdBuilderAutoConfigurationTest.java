@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.util.HashSet;
 import java.util.Set;
 
 class IdBuilderAutoConfigurationTest {
@@ -60,7 +61,7 @@ class IdBuilderAutoConfigurationTest {
         IdBuilderAutoConfiguration autoConfig = new IdBuilderAutoConfiguration(redisTemplate);
         IdBuilder idBuilder = autoConfig.idBuilder();
 
-        java.util.Set<Long> ids = new java.util.HashSet<>();
+        Set<Long> ids = new HashSet<>();
         for (int i = 0; i < 100; i++) {
             ids.add(idBuilder.nextId());
         }

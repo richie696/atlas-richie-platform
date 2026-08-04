@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.Embedding;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.ai.embedding.EmbeddingResponse;
 
@@ -62,7 +63,7 @@ import java.util.Map;
  * @since 2026-07-22
  */
 @Slf4j
-public class OllamaImageEmbeddingAdapter implements org.springframework.ai.embedding.EmbeddingModel {
+public class OllamaImageEmbeddingAdapter implements EmbeddingModel {
 
     /**
      * Ollama 默认本地服务地址。

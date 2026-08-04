@@ -42,6 +42,7 @@ import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.Executors;
 
@@ -111,7 +112,7 @@ public class FeignClientAutoConfiguration {
             log.warn("Insecure SSL trust all is enabled - only use in development/test environments");
             try {
                 final var sslContext = SSLContext.getInstance("SSL");
-                sslContext.init(null, trustManagers, new java.security.SecureRandom());
+                sslContext.init(null, trustManagers, new SecureRandom());
                 final var sslSocketFactory = sslContext.getSocketFactory();
                 builder.sslSocketFactory(sslSocketFactory, (X509TrustManager) trustManagers[0]);
             } catch (NoSuchAlgorithmException | KeyManagementException e) {

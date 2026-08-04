@@ -23,6 +23,7 @@ import cn.richie696.component.statemachine.config.properties.ThreadPoolConfig;
 import cn.richie696.component.statemachine.model.StateMachineModel;
 import cn.richie696.component.statemachine.registry.StateMachineRegistry;
 import jakarta.annotation.PostConstruct;
+import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationRunner;
@@ -113,7 +114,7 @@ public class StateMachineAutoConfiguration {
             String yamlPattern2 = basePath.endsWith("/") ? basePath + "**/*.yaml" : basePath + "/**/*.yaml";
             String jsonPattern = basePath.endsWith("/") ? basePath + "**/*.json" : basePath + "/**/*.json";
 
-            var definitions = new java.util.ArrayList<StateMachineDefinition>();
+            var definitions = new ArrayList<StateMachineDefinition>();
             definitions.addAll(configLoader.loadFromYaml(yamlPattern1));
             definitions.addAll(configLoader.loadFromYaml(yamlPattern2));
             definitions.addAll(configLoader.loadFromJson(jsonPattern));

@@ -75,13 +75,13 @@ class ZhipuRealtimeVoiceChatIT {
         }
 
         @Override
-        public StsTicket sign(String vendor, String capability, String model, int ttlSeconds, java.util.Map<String, Object> attributes) {
+        public StsTicket sign(String vendor, String capability, String model, int ttlSeconds, Map<String, Object> attributes) {
             throw new IllegalStateException("simulated STS failure");
         }
 
         @Override
-        public java.util.List<String> listRegisteredVendors() {
-            return java.util.List.of();
+        public List<String> listRegisteredVendors() {
+            return List.of();
         }
 
         @Override
@@ -103,7 +103,7 @@ class ZhipuRealtimeVoiceChatIT {
             public StsTicket sign(
                     VendorStsContext ctx) {
                 long now = System.currentTimeMillis();
-                java.util.Map<String, String> bearer = java.util.Map.of(
+                Map<String, String> bearer = Map.of(
                         "Authorization", "Bearer " + apiKey);
                 return StsTicket.builder()
                         .vendor("zhipu")

@@ -22,7 +22,9 @@ import org.apache.fesod.sheet.FesodSheet;
 import org.apache.fesod.sheet.context.AnalysisContext;
 import org.apache.fesod.sheet.read.listener.ReadListener;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 import java.util.Map;
@@ -92,7 +94,7 @@ public final class FesodDocumentParser implements DocumentParser {
             }
         } catch (DocumentParseException e) {
             listener.onEvent(new ParseEvent.Failed(e));
-        } catch (java.io.IOException e) {
+        } catch (IOException e) {
             listener.onEvent(new ParseEvent.Failed(
                     new DocumentParseException("Fesod input close failed: " + source.nameHint(), e)));
         } catch (RuntimeException e) {
@@ -105,10 +107,10 @@ public final class FesodDocumentParser implements DocumentParser {
         return switch (source) {
             case ParserSource.FileSource f -> {
                 try {
-                    yield java.nio.file.Files.newInputStream(f.file().toPath());
+                    yield Files.newInputStream(f.file().toPath());
                 } catch (NoSuchFileException e) {
                     throw new DocumentParseException("File not found: " + f.file(), e);
-                } catch (java.io.IOException e) {
+                } catch (IOException e) {
                     throw new DocumentParseException("Failed to open " + f.file(), e);
                 }
             }

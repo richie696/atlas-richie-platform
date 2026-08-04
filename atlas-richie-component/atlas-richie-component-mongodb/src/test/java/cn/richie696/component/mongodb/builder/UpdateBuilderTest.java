@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import java.util.Collections;
 import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
@@ -169,7 +170,7 @@ class UpdateBuilderTest {
                 .thenReturn(updateResult);
 
         long count = new UpdateBuilder<>(TestDoc.class, mongoTemplate, introspector)
-                .in(TestDoc::getStatus, java.util.List.of("A", "B"))
+                .in(TestDoc::getStatus, List.of("A", "B"))
                 .set(TestDoc::getName, "updated")
                 .execute();
 
@@ -183,7 +184,7 @@ class UpdateBuilderTest {
                 .thenReturn(updateResult);
 
         long count = new UpdateBuilder<>(TestDoc.class, mongoTemplate, introspector)
-                .in(TestDoc::getStatus, java.util.Collections.emptyList())
+                .in(TestDoc::getStatus, Collections.emptyList())
                 .set(TestDoc::getName, "test")
                 .execute();
 
@@ -211,7 +212,7 @@ class UpdateBuilderTest {
                 .thenReturn(updateResult);
 
         long count = new UpdateBuilder<>(TestDoc.class, mongoTemplate, introspector)
-                .nin(TestDoc::getStatus, java.util.List.of("X", "Y"))
+                .nin(TestDoc::getStatus, List.of("X", "Y"))
                 .set(TestDoc::getName, "updated")
                 .execute();
 
@@ -414,7 +415,7 @@ class UpdateBuilderTest {
                 .thenReturn(updateResult);
 
         long count = new UpdateBuilder<>(TestDoc.class, mongoTemplate, introspector)
-                .nin(TestDoc::getStatus, java.util.Collections.emptyList())
+                .nin(TestDoc::getStatus, Collections.emptyList())
                 .set(TestDoc::getName, "test")
                 .execute();
 

@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -59,7 +60,7 @@ public class MigrationWindowValidator {
      *
      * @param clock 时间源
      */
-    void runValidation(java.util.function.Supplier<LocalDate> clock) {
+    void runValidation(Supplier<LocalDate> clock) {
         if (properties == null || properties.getPerf() == null) {
             return;
         }

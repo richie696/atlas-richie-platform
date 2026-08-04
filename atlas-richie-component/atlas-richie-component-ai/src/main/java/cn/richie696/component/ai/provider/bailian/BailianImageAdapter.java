@@ -113,7 +113,7 @@ public class BailianImageAdapter implements ImageModel {
 
         Map<String, Object> parameters = new HashMap<>();
         String model = defaultModel;
-        org.springframework.ai.image.ImageOptions options = request.getOptions();
+        ImageOptions options = request.getOptions();
         if (options != null) {
             if (options.getModel() != null && !options.getModel().isBlank()) {
                 model = options.getModel();

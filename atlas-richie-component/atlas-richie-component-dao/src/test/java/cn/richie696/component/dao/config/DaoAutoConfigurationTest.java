@@ -17,6 +17,7 @@ package cn.richie696.component.dao.config;
 
 import cn.richie696.component.dao.snowflake.IdBuilder;
 import com.baomidou.mybatisplus.annotation.DbType;
+import com.baomidou.mybatisplus.autoconfigure.MybatisPlusProperties;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import org.junit.jupiter.api.Test;
 
@@ -63,7 +64,7 @@ class DaoAutoConfigurationTest {
 
         var customizer = config.plusPropertiesCustomizer();
 
-        com.baomidou.mybatisplus.autoconfigure.MybatisPlusProperties plusProperties = new com.baomidou.mybatisplus.autoconfigure.MybatisPlusProperties();
+        MybatisPlusProperties plusProperties = new MybatisPlusProperties();
         customizer.customize(plusProperties);
 
         var identifierGenerator = plusProperties.getGlobalConfig().getIdentifierGenerator();

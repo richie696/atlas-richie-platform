@@ -58,7 +58,7 @@ class AuditFieldHandlerTest {
         Object setObject = update.getUpdateObject().get("$set");
         assertThat(setObject).isNotNull();
         @SuppressWarnings("unchecked")
-        java.util.Map<String, Object> setMap = (java.util.Map<String, Object>) setObject;
+        Map<String, Object> setMap = (Map<String, Object>) setObject;
         assertThat(setMap).containsKey("updatedAt");
         assertThat(setMap).containsKey("updatedBy");
     }

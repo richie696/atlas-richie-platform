@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -303,7 +304,7 @@ public final class StsTicket {
                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
             String payloadHash = sha256Hex(bodyJson == null ? "" : bodyJson);
             String host = extractHost(m.endpoint());
-            String actionLower = action == null ? "" : action.toLowerCase(java.util.Locale.ROOT);
+            String actionLower = action == null ? "" : action.toLowerCase(Locale.ROOT);
             String canonicalHeaders = "content-type:application/json; charset=utf-8\n"
                     + "host:" + host + "\n"
                     + "x-tc-action:" + actionLower + "\n";

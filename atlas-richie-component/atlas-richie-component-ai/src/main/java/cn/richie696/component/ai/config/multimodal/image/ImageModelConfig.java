@@ -17,6 +17,7 @@ package cn.richie696.component.ai.config.multimodal.image;
 
 import lombok.Data;
 import java.net.URL;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -47,7 +48,7 @@ public class ImageModelConfig {
     /**
      * API Key 池 — Token Plan 多 key 轮询 / 限流后冷却。YAML: {@code api-keys: [sk-1, sk-2]}。
      */
-    private java.util.Set<String> apiKeys = new java.util.LinkedHashSet<>();
+    private Set<String> apiKeys = new LinkedHashSet<>();
 
     /**
      * 厂商端点 URL(为空时适配器回落到默认 URL)。

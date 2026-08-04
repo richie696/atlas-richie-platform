@@ -28,6 +28,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.support.TestPropertySourceUtils;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -332,7 +333,7 @@ class AlgorithmAutoConfigurationTest {
             assertThat(props.getCircuitBreaker().getFailureRateThreshold()).isEqualTo(0.6);
             assertThat(props.getCircuitBreaker().getSlidingWindowSize()).isEqualTo(100);
             assertThat(props.getCircuitBreaker().getWaitDuration())
-                    .isEqualTo(java.time.Duration.ofSeconds(15));
+                    .isEqualTo(Duration.ofSeconds(15));
             assertThat(props.getThreadPools()).isEmpty();
         }
 

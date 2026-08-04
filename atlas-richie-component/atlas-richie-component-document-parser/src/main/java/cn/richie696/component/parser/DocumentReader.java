@@ -409,7 +409,7 @@ public class DocumentReader {
      */
     private static final class SyncAccumulator implements ReadListener {
         private final List<ParsedSection> sections = new ArrayList<>();
-        private final List<cn.richie696.component.parser.model.ParsedImage> images = new ArrayList<>();
+        private final List<ParsedImage> images = new ArrayList<>();
         private final Map<String, Object> metadata = new HashMap<>();
         private String title;
         private String author;
