@@ -81,6 +81,10 @@ class JacksonNatsMessageSerializerTest {
         assertThat(deserialized.getCount()).isEqualTo(42);
     }
 
+    /**
+     * 序列化往返测试使用的简单 POJO：含 String + int 字段，
+     * 用于验证 Jackson 序列化器在非集合、非 Map 复杂对象上的序列化/反序列化对称性。
+     */
     public static class TestPayload {
         private String name;
         private int count;

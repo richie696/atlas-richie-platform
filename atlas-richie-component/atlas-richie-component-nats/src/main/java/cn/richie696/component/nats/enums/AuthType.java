@@ -23,10 +23,33 @@ package cn.richie696.component.nats.enums;
  */
 public enum AuthType {
 
+    /**
+     * 无认证：开放连接或仅受信网络内部使用。
+     */
     NONE,
+
+    /**
+     * 静态 Token 认证：使用 {@code NATS_AUTH_TOKEN}。
+     */
     TOKEN,
+
+    /**
+     * 用户名/密码认证：使用 {@code NATS_USER} / {@code NATS_PASSWORD}。
+     */
     USERPASS,
+
+    /**
+     * NKey 认证：基于 Ed25519 公私钥对。
+     */
     NKEY,
+
+    /**
+     * 凭据文件认证：NATS 标准的 {@code .creds} 文件（含种子 + JWT）。
+     */
     CREDENTIALS,
+
+    /**
+     * JWT 认证：单独传入 JWT 字符串（不含私钥），需要配合 NKey/TLS 使用。
+     */
     JWT
 }

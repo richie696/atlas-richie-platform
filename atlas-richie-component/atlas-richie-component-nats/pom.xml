@@ -42,12 +42,10 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-context</artifactId>
-            <optional>true</optional>
         </dependency>
 
         <!-- Redis 幂等去重（可选，依赖 cache 组件的 GlobalCache） -->

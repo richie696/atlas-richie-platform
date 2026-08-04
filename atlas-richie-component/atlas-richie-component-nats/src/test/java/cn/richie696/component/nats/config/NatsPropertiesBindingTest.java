@@ -33,6 +33,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class NatsPropertiesBindingTest {
 
+    /**
+     * 自定义属性绑定测试套件:通过 {@code @TestPropertySource} 注入完整自定义值,
+     * 验证 Spring Boot ConfigurationProperties 绑定路径覆盖全字段,包括 JetStream
+     * stream/consumer/backoff/nak-delay 等复合配置。
+     */
     @SpringBootTest(classes = NatsPropertiesBindingTest.BindingConfig.class)
     @TestPropertySource(properties = {
             "platform.component.nats.server=nats://cluster-a:4222,nats://cluster-b:4222",
@@ -48,7 +53,14 @@ class NatsPropertiesBindingTest {
             "platform.component.nats.idempotent.enabled=true",
             "platform.component.nats.idempotent.datasource=redis",
             "platform.component.nats.idempotent.ttl=60000",
-            "platform.component.nats.jetstream.enabled=true"
+            "platform.component.nats.jetstream.enabled=true",
+            "platform.component.nats.jetstream.dlq.enabled=true",
+            "platform.component.nats.jetstream.dlq.advisory-stream-name=CUSTOM_ADVISORY",
+            "platform.component.nats.jetstream.streams[0].name=AGENT_TASKS",
+            "platform.component.nats.jetstream.streams[0].consumers[0].name=agent-worker",
+            "platform.component.nats.jetstream.streams[0].consumers[0].nak-delay=30s",
+            "platform.component.nats.jetstream.streams[0].consumers[0].backoff[0]=1m",
+            "platform.component.nats.jetstream.streams[0].consumers[0].backoff[1]=5m"
     })
     static class Binding {
 
@@ -74,9 +86,20 @@ class NatsPropertiesBindingTest {
             assertThat(properties.getIdempotent().getDatasource()).isEqualTo("redis");
             assertThat(properties.getIdempotent().getTtl()).isEqualTo(60_000L);
             assertThat(properties.getJetstream().isEnabled()).isTrue();
+            assertThat(properties.getJetstream().getDlq().isEnabled()).isTrue();
+            assertThat(properties.getJetstream().getDlq().getAdvisoryStreamName()).isEqualTo("CUSTOM_ADVISORY");
+            var agentConsumer = properties.getJetstream().getStreams().getFirst().getConsumers().getFirst();
+            assertThat(agentConsumer.getNakDelay()).isEqualTo(java.time.Duration.ofSeconds(30));
+            assertThat(agentConsumer.getBackoff())
+                    .containsExactly(java.time.Duration.ofMinutes(1), java.time.Duration.ofMinutes(5));
         }
     }
 
+    /**
+     * 默认值绑定测试套件:不注入任何自定义属性,
+     * 验证 Spring 环境下 {@link NatsProperties} 默认值与代码构造默认值一致,
+     * 即 {@code @ConfigurationProperties} 注册不会覆盖代码内 {@code this.xxx = ...} 默认值。
+     */
     @SpringBootTest(classes = NatsPropertiesBindingTest.BindingConfig.class)
     static class DefaultsBinding {
 
@@ -93,6 +116,11 @@ class NatsPropertiesBindingTest {
         }
     }
 
+    /**
+     * 极简 Spring 配置:仅启用 {@link NatsProperties} 的 {@code @ConfigurationProperties} 绑定,
+     * 故意不导入 {@code NatsAutoConfiguration},以验证属性绑定本身正确,
+     * 又避免触发完整 NATS Bean 装配对测试环境的副作用。
+     */
     @Configuration
     @EnableConfigurationProperties(NatsProperties.class)
     static class BindingConfig {

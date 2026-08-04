@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 默认 NATS 错误处理策略实现
  *
- * <p>记录错误日志并按条件决策重试。默认仅对非业务异常（如网络超时）进行重试。</p>
+ * <p>记录发布和消费错误。JetStream 重试由服务器的 consumer 配置管理。</p>
  *
  * @author richie696
  * @since 1.0.0
@@ -29,29 +29,29 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DefaultNatsErrorStrategy implements NatsErrorStrategy {
 
+    /**
+     * 记录发布失败的 subject 与载荷长度（不输出实际内容，避免日志敏感信息泄漏）。
+     *
+     * @param subject NATS subject
+     * @param data    待发送的载荷字节数组（可空）
+     * @param e       导致发布失败的异常
+     */
     @Override
     public void onPublishError(String subject, byte[] data, Exception e) {
         log.error("NATS publish error on subject [{}], data length={}", subject,
                 data != null ? data.length : 0, e);
     }
 
+    /**
+     * 记录消费失败的 subject 与异常堆栈。JetStream 重试由 broker 的 consumer 配置承担，这里只观测，不发起本地重试。
+     *
+     * @param subject NATS subject
+     * @param msg     触发失败的原始 NATS 消息
+     * @param e       业务处理抛出的异常
+     */
     @Override
     public void onConsumeError(String subject, Message msg, Exception e) {
         log.error("NATS consume error on subject [{}]", subject, e);
     }
 
-    @Override
-    public boolean shouldRetry(Exception e, int attempt, int maxAttempts) {
-        if (attempt >= maxAttempts) {
-            log.warn("NATS error: max retries ({}) reached, giving up", maxAttempts);
-            return false;
-        }
-        // 默认对所有异常进行重试（排除中断异常）
-        if (e instanceof InterruptedException) {
-            Thread.currentThread().interrupt();
-            return false;
-        }
-        log.warn("NATS error: attempt {}/{}, will retry", attempt, maxAttempts);
-        return true;
-    }
 }

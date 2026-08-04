@@ -16,6 +16,7 @@
 package cn.richie696.component.nats.dlq;
 
 import cn.richie696.component.nats.config.NatsProperties;
+import cn.richie696.component.nats.enums.AdvisoryType;
 import cn.richie696.context.utils.data.JsonUtils;
 import io.nats.client.*;
 import io.nats.client.api.MessageInfo;
@@ -121,6 +122,15 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
     private Dispatcher fallbackDispatcher;
     private final List<Subscription> fallbackSubscriptions = new CopyOnWriteArrayList<>();
 
+    /**
+     * 创建 DLQ advisory 监听器。
+     *
+     * @param connection NATS 连接
+     * @param jetStream JetStream 客户端
+     * @param jetStreamManagement JetStream 管理客户端
+     * @param publisher DLQ 消息发布器
+     * @param properties NATS 组件配置
+     */
     public NatsDeadLetterAdvisoryConsumer(Connection connection,
                                           JetStream jetStream,
                                           JetStreamManagement jetStreamManagement,
@@ -135,6 +145,11 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
 
     // ===== SmartLifecycle =====
 
+    /**
+     * 返回监听器启动阶段。
+     *
+     * @return 晚于 NATS 连接初始化、早于业务消费者启动的阶段值
+     */
     @Override
     public int getPhase() {
         // Integer.MAX_VALUE - 50:晚于 NatsComponent(-100,负责连接 + stream provision),
@@ -143,24 +158,37 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
         return Integer.MAX_VALUE - 50;
     }
 
+    /**
+     * 判断是否满足自动启动条件。
+     *
+     * @return NATS、JetStream 与 DLQ 均启用时返回 {@code true}
+     */
     @Override
     public boolean isAutoStartup() {
         return properties.isEnabled()
                 && properties.getJetstream().isEnabled()
-                && properties.getDlq().isEnabled();
+                && properties.getJetstream().getDlq().isEnabled();
     }
 
+    /**
+     * 判断监听器是否正在运行。
+     *
+     * @return 正在运行时返回 {@code true}
+     */
     @Override
     public boolean isRunning() {
         return running;
     }
 
+    /**
+     * 启动业务 stream 的 DLQ advisory 订阅。
+     */
     @Override
     public synchronized void start() {
         if (running) {
             return;
         }
-        if (!properties.getDlq().isEnabled()) {
+        if (!properties.getJetstream().getDlq().isEnabled()) {
             log.info("DLQ disabled (platform.component.nats.jetstream.dlq.enabled=false), advisory consumer not started");
             return;
         }
@@ -172,7 +200,7 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
         // 1. 过滤掉 DLQ stream 自身(R3 自反防护:DLQ stream 触发的 advisory 不应再次入 DLQ)
         List<NatsProperties.StreamDefinition> businessStreams = properties.getJetstream().getStreams().stream()
                 .filter(s -> s.getName() != null
-                        && !s.getName().endsWith(properties.getDlq().getStreamNameSuffix()))
+                        && !s.getName().endsWith(properties.getJetstream().getDlq().getStreamNameSuffix()))
                 .toList();
 
         if (businessStreams.isEmpty()) {
@@ -195,6 +223,9 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
                 businessStreams.size());
     }
 
+    /**
+     * 停止监听器并释放 advisory 订阅资源。
+     */
     @Override
     public synchronized void stop() {
         if (!running) {
@@ -234,9 +265,13 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
     // ===== 内部:订阅 =====
 
     /**
-     * 订阅单个业务 stream 的 advisory 事件。优先 {@link JetStream#subscribe} (NATS 自动管理内部
-     * advisory stream + 支持 msg.ack/nak),失败降级 {@link Connection#subscribe} (Core NATS,
-     * fire-and-forget)。
+     * 订阅单个业务 stream 的 advisory 事件。
+     * <p>
+     * 优先 {@link JetStream#subscribe}（NATS 自动管理内部 advisory stream + 支持 {@code msg.ack/nak}），
+     * 失败时降级为 {@link Connection#subscribe} Core NATS（fire-and-forget）。
+     *
+     * @param streamName 业务 stream 名称
+     * @param subject advisory 订阅主题
      */
     private void subscribeAdvisoryForStream(String streamName, String subject) {
         try {
@@ -245,10 +280,10 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
             // jnats 2.25.3 不支持 5 参数 (subject, queue, dispatcher, handler, autoAck) 重载;
             // 必须用 6 参数 (含 PushSubscribeOptions),用 builder 设 deliverGroup
             PushSubscribeOptions pso = PushSubscribeOptions.builder()
-                    .deliverGroup(properties.getDlq().getQueueGroup())
+                    .deliverGroup(properties.getJetstream().getDlq().getQueueGroup())
                     .build();
             jetStream.subscribe(subject,
-                    properties.getDlq().getQueueGroup(),
+                    properties.getJetstream().getDlq().getQueueGroup(),
                     dispatcher,
                     this::handleAdvisory,
                     false,
@@ -260,7 +295,7 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
                 log.debug("DLQ advisory flush failed (non-fatal): subject={}", subject, flushEx);
             }
             log.info("DLQ advisory subscription (JetStream) registered: stream={} subject={} queueGroup={}",
-                    streamName, subject, properties.getDlq().getQueueGroup());
+                    streamName, subject, properties.getJetstream().getDlq().getQueueGroup());
         } catch (Exception e) {
             log.warn("DLQ advisory JetStream subscribe failed, fallback to Core NATS: stream={} subject={}",
                     streamName, subject, e);
@@ -299,6 +334,7 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
      *       ack advisory(不阻塞后续;原消息最多保留到 retention 触发删除,DLQ 已有完整副本)</li>
      *   <li>ack advisory</li>
      * </ol>
+     * @param msg JetStream advisory 消息
      */
     private void handleAdvisory(Message msg) {
         // 1. 解析 advisory JSON payload
@@ -359,7 +395,7 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
         }
 
         // 3. 计算 DLQ subject + 构造 DLQ message meta
-        String dlqSubject = info.getSubject() + properties.getDlq().getSubjectSuffix();
+        String dlqSubject = info.getSubject() + properties.getJetstream().getDlq().getSubjectSuffix();
         Headers originalHeaders = info.getHeaders();
         NatsDeadLetterMessage dlqMeta = new NatsDeadLetterMessage(
                 deliveries,
@@ -405,6 +441,7 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
      * Core NATS fallback handler — advisory 收到但无法 ack/nak(Core NATS 协议无 ack),
      * fire-and-forget 仅记录日志。R8 由启动顺序保证:during normal operation, advisory 走
      * JetStream 路径,只有 JetStream subscribe 失败时才会落到此 handler。
+     * @param msg Core NATS advisory 消息
      */
     private void handleCoreAdvisory(Message msg) {
         int dataLen = msg.getData() == null ? 0 : msg.getData().length;
@@ -415,9 +452,13 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
     // ===== 内部:helpers =====
 
     /**
-     * 大小写无关查找 traceparent header(与 {@link NatsDeadLetterMessage} 内同类实现同源)。
-     * NATS server 2.11+ 不再改写 header 大小写,但 OTel SDK 不同版本注入的 header name
-     * 大小写不一致,必须兜底。
+     * 大小写无关查找 traceparent header。
+     * <p>
+     * 与 {@link NatsDeadLetterMessage} 内部同名工具实现同源；NATS server 2.11+ 不再改写
+     * header 大小写，但 OTel SDK 不同版本注入的 header name 大小写不一致，必须兜底。
+     *
+     * @param headers 原消息 headers，可为 {@code null}
+     * @return 第一个匹配的 traceparent 值，无匹配时返回 {@code null}
      */
     private static String extractTraceparentIgnoreCase(Headers headers) {
         if (headers == null) {
@@ -434,6 +475,13 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
         return null;
     }
 
+    /**
+     * 尝试确认 advisory。
+     * <p>
+     * ack 失败仅影响 broker 后续重投，不能反向破坏已经完成的 DLQ 转存流程。
+     *
+     * @param msg 待确认的 advisory 消息
+     */
     private void safeAck(Message msg) {
         try {
             msg.ack();
@@ -442,6 +490,13 @@ public class NatsDeadLetterAdvisoryConsumer implements SmartLifecycle {
         }
     }
 
+    /**
+     * 尝试拒绝 advisory 以请求 broker 重投。
+     * <p>
+     * nak 失败无法在本地补偿，安全记录后返回可避免处理线程再次抛异常。
+     *
+     * @param msg 待拒绝的 advisory 消息
+     */
     private void safeNak(Message msg) {
         try {
             msg.nak();

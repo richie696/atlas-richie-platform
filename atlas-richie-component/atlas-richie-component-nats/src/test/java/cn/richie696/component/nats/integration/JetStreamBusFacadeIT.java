@@ -24,6 +24,7 @@ import cn.richie696.component.nats.support.TestEvent;
 import io.nats.client.Connection;
 import io.nats.client.JetStreamManagement;
 import io.nats.client.Message;
+import io.nats.client.Nats;
 import io.nats.client.api.*;
 import io.nats.client.impl.Headers;
 import org.junit.jupiter.api.AfterEach;
@@ -88,7 +89,7 @@ class JetStreamBusFacadeIT {
 
     @BeforeEach
     void setUp() throws Exception {
-        adminConn = io.nats.client.Nats.connect(
+        adminConn = Nats.connect(
                 NatsIntegrationTestSupport.getInstance().connectionUrl());
         jsm = adminConn.jetStreamManagement();
 

@@ -148,7 +148,6 @@ public interface NatsIdempotentChecker {
 public interface NatsErrorStrategy {
     void onPublishError(String subject, byte[] data, Exception e);
     void onConsumeError(String subject, Message msg, Exception e);
-    boolean shouldRetry(Exception e, int attempt, int maxAttempts);
 }
 ```
 
@@ -493,7 +492,6 @@ cn.richie696.component.nats.config
 | `reconnect.jitter`                  | `reconnectJitter()`                      | `100ms`                 | `100ms`      | 重连抖动（非TLS）             |
 | `reconnect.jitter-tls`              | `reconnectJitterTls()`                   | `1s`                    | `1s`         | 重连抖动（TLS）               |
 | `reconnect.buffer-size`             | `reconnectBufferSize()`                  | `8388608` (8MB)         | `8MB`        | 重连缓冲区大小                |
-| `reconnect.retry-on-failed-connect` | `retryOnFailedConnect()`                 | `false`                 | `false`      | 首次连接失败直接进入重连      |
 | `ping.interval`                     | `pingInterval()`                         | `20s`                   | `2min`       | Ping 间隔                     |
 | `ping.max-outstanding`              | `maxPingsOut()`                          | `2`                     | `2`          | 最大未响应 Ping 数            |
 | `tls.enabled`                       | `sslContext()` / `secure()`              | `false`                 | `false`      | TLS 总开关                    |
@@ -621,7 +619,6 @@ platform:
       jitter: 100ms                         # → reconnectJitter()
       jitter-tls: 1s                        # → reconnectJitterTls()
       buffer-size: 8388608                  # → reconnectBufferSize()，8MB
-      retry-on-failed-connect: false        # → retryOnFailedConnect()
 
     # ===== Ping 配置（映射 jnats Options.Builder）=====
     ping:

@@ -35,16 +35,23 @@ import java.util.UUID;
 @Slf4j
 public class IdempotentMessageDecorator {
 
+    /** 用于登记/查询/清除消息去重记录的策略实现。 */
     private final NatsIdempotentChecker idempotentChecker;
+    /** 去重记录的 TTL（毫秒），由上游配置传入。 */
     private final long ttlMillis;
 
+    /**
+     * @param idempotentChecker 幂等去重检查器
+     * @param ttlMillis        去重 TTL（毫秒）
+     */
     public IdempotentMessageDecorator(NatsIdempotentChecker idempotentChecker, long ttlMillis) {
         this.idempotentChecker = idempotentChecker;
         this.ttlMillis = ttlMillis;
     }
 
     /**
-     * 创建装饰器函数
+     * 创建装饰器函数：按消息 ID 进行去重判断；命中重复则在 JetStream 场景下 ack 后直接返回
+     * （否则会被 broker 反复投递），未命中则放行给内层 Handler；Handler 抛异常时清除记录以便重试。
      *
      * @param inner 内层 Handler
      * @return 包装后的 Handler
@@ -52,8 +59,7 @@ public class IdempotentMessageDecorator {
     public NatsMessageHandler decorate(NatsMessageHandler inner) {
         return message -> {
             String messageId = extractMessageId(message);
-            if (messageId != null && !idempotentChecker.isFirstTime(
-                    NatsConstants.IDEMPOTENT_KEY_PREFIX + messageId, ttlMillis)) {
+            if (messageId != null && !idempotentChecker.isFirstTime(messageId, ttlMillis)) {
                 log.debug("NATS idempotent: duplicate message [{}], skipping", messageId);
                 // JetStream 场景：重复消息也需要 ack，避免反复投递
                 message.ack();
@@ -63,9 +69,9 @@ public class IdempotentMessageDecorator {
             try {
                 inner.handle(message);
             } catch (Exception e) {
-                // 处理失败，清除去重记录，允许重试
+                // 处理失败，清除去重记录，允许重试（否则下一次 Redeliver 会被误判为重复）
                 if (messageId != null) {
-                    idempotentChecker.clear(NatsConstants.IDEMPOTENT_KEY_PREFIX + messageId);
+                    idempotentChecker.clear(messageId);
                 }
                 throw e;
             }
@@ -73,7 +79,10 @@ public class IdempotentMessageDecorator {
     }
 
     private String extractMessageId(Message message) {
-        // 优先使用 NATS 内置的 Message-Id Header
+        // 三级 fallback：显式 ID > JetStream 元信息 > subject+载荷 哈希，覆盖所有可用的可识别信息：
+        // 1) 生产者主动写入的 Message-Id Header（NATS 标准）
+        // 2) JetStream 提供的 stream+seq（broker 保证单调递增，跨实例安全）
+        // 3) subject + 载荷内容哈希（兜底：保证极端情况下也有可重复的 key）
         Headers headers = message.getHeaders();
         if (headers != null) {
             var msgIdValues = headers.get(NatsConstants.HEADER_MESSAGE_ID);
@@ -82,17 +91,17 @@ public class IdempotentMessageDecorator {
             }
         }
 
-        // 其次使用 JetStream metadata 中的 stream sequence
         if (message.isJetStream()) {
             try {
                 var meta = message.metaData();
+                // stream + sequence 组合在单 stream 内天然单调，足以唯一标识消息。
                 return meta.getStream() + "-" + meta.streamSequence();
             } catch (Exception ignored) {
-                // 非 JetStream 消息或 metadata 获取失败
+                // 非 JetStream 消息或 metadata 获取失败（部分发布场景可能不携带），继续往下走兜底分支。
             }
         }
 
-        // 最终兜底：使用 subject + 数据哈希作为去重 key
+        // 兜底：UUID.nameUUIDFromBytes 使用 UUID v3（MD5），对同一份载荷始终产出相同 key。
         return message.getSubject() + "-" + UUID.nameUUIDFromBytes(message.getData());
     }
 }

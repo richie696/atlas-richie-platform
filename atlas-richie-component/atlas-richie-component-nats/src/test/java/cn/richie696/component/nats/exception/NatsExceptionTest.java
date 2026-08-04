@@ -15,7 +15,11 @@
  */
 package cn.richie696.component.nats.exception;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,7 +49,7 @@ class NatsExceptionTest {
 
     @Test
     void natsConnectionException_shouldExtendNatsException() {
-        Throwable cause = new java.io.IOException("connect failed");
+        Throwable cause = new IOException("connect failed");
         NatsConnectionException ex = new NatsConnectionException("connect error", cause);
 
         assertThat(ex).isInstanceOf(NatsException.class);
@@ -63,7 +67,7 @@ class NatsExceptionTest {
 
     @Test
     void natsSerializationException_shouldExtendNatsException() {
-        Throwable cause = new com.fasterxml.jackson.core.JsonParseException(null, "bad json");
+        Throwable cause = new JsonParseException(null, "bad json");
         NatsSerializationException ex = new NatsSerializationException("serialize failed", cause);
 
         assertThat(ex).isInstanceOf(NatsException.class);
@@ -74,7 +78,7 @@ class NatsExceptionTest {
 
     @Test
     void natsRpcException_timeoutFactory_shouldMarkAsTimeout() {
-        Throwable cause = new java.util.concurrent.TimeoutException("5s elapsed");
+        Throwable cause = new TimeoutException("5s elapsed");
         NatsRpcException ex = NatsRpcException.timeout("rpc.subject", cause);
 
         assertThat(ex).isInstanceOf(NatsException.class);

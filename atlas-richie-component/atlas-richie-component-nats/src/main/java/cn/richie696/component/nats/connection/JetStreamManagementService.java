@@ -17,8 +17,12 @@ package cn.richie696.component.nats.connection;
 
 import cn.richie696.component.nats.config.NatsProperties;
 import cn.richie696.component.nats.exception.NatsException;
+import io.nats.client.JetStreamApiException;
+import io.nats.client.JetStreamManagement;
 import io.nats.client.api.*;
 import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.time.Duration;
 import java.util.stream.Stream;
 
 /**
@@ -40,9 +44,13 @@ public class JetStreamManagementService {
     }
 
     /**
-     * 幂等确保 Stream 存在（不存在则创建，已存在则跳过）
+     * 幂等确保 Stream 存在（不存在则创建，已存在则跳过）。
+     *
+     * <p>判断依据为 jnats {@code 404 Not Found}：{@code getStreamInfo} 抛 404 才走 addStream 分支；
+     * 其它异常向上抛出，由调用方决定是否重试。</p>
      *
      * @param def Stream 定义
+     * @throws NatsException 当连接失败或 jnats 在 addStream 过程中抛非 404 异常时
      */
     public void ensureStreamExists(NatsProperties.StreamDefinition def) {
         try {
@@ -50,7 +58,7 @@ public class JetStreamManagementService {
             try {
                 mgmt.getStreamInfo(def.getName());
                 log.info("JetStream stream [{}] already exists, skipping creation", def.getName());
-            } catch (io.nats.client.JetStreamApiException e) {
+            } catch (JetStreamApiException e) {
                 if (e.getErrorCode() == 404) {
                     var config = buildStreamConfiguration(def);
                     mgmt.addStream(config);
@@ -65,10 +73,14 @@ public class JetStreamManagementService {
     }
 
     /**
-     * 幂等确保 Consumer 存在（不存在则创建，已存在则更新）
+     * 幂等确保 Consumer 存在（不存在则创建，已存在则更新）。
+     *
+     * <p>直接调用 jnats {@code addOrUpdateConsumer}：服务端会按 Consumer name 做 upsert，
+     * 已存在则覆盖配置；本方法不区分 create/update 调用方语义。</p>
      *
      * @param streamName Stream 名称
      * @param def        Consumer 定义
+     * @throws NatsException 当 jnats 抛任意异常（含 stream 不存在、配置非法等）时
      */
     public void ensureConsumerExists(String streamName, NatsProperties.ConsumerDefinition def) {
         try {
@@ -83,9 +95,13 @@ public class JetStreamManagementService {
     }
 
     /**
-     * 声明所有配置的 Stream 和 Consumer
+     * 声明所有配置的 Stream 和 Consumer。
+     *
+     * <p>仅在 {@code enabled} 且 {@code auto-provision} 同时为 true 时执行；
+     * 任一 stream 或 consumer 失败都会立即中止并抛异常，调用方需自行决定是否重试。</p>
      *
      * @param jetStreamConfig JetStream 配置
+     * @throws NatsException 任意 {@link #ensureStreamExists} / {@link #ensureConsumerExists} 抛出时透传
      */
     public void provisionAll(NatsProperties.JetStream jetStreamConfig) {
         if (!jetStreamConfig.isEnabled() || !jetStreamConfig.isAutoProvision()) {
@@ -100,13 +116,14 @@ public class JetStreamManagementService {
     }
 
     /**
-     * 声明所有配置的 Stream、Consumer 以及 DLQ Stream
+     * 声明所有配置的 Stream、Consumer 以及 DLQ Stream。
      *
      * <p>在业务 stream/consumer 声明完成后,若 DLQ 功能启用,遍历业务 stream 列表,
      * 为每个业务 stream 自动 derive DLQ stream 并幂等声明。原有
      * {@link #provisionAll(NatsProperties.JetStream)} 行为不变,仅供无 DLQ 场景使用。</p>
      *
      * @param properties NATS 全量配置
+     * @throws NatsException 业务 stream/consumer 声明或 DLQ stream 声明任一失败时抛出
      */
     public void provisionAll(NatsProperties properties) {
         provisionAll(properties.getJetstream());
@@ -131,7 +148,7 @@ public class JetStreamManagementService {
      * @param properties NATS 全量配置
      */
     private void provisionDlqStreams(NatsProperties properties) {
-        var dlq = properties.getDlq();
+        var dlq = properties.getJetstream().getDlq();
         if (!dlq.isEnabled()) {
             return;
         }
@@ -142,7 +159,7 @@ public class JetStreamManagementService {
             // 预创建承载 advisory 事件的内部 stream,避免首次 js.subscribe 触发 No matching
             // streams for subject 错误导致 NatsDeadLetterAdvisoryConsumer 降级到 Core NATS
             // fallback → DLQ 永远不工作
-            ensureAdvisoryStream(mgmt);
+            ensureAdvisoryStream(mgmt, dlq.getAdvisoryStreamName());
             for (var businessStream : properties.getJetstream().getStreams()) {
                 if (businessStream.getName().endsWith(streamNameSuffix)) {
                     continue;
@@ -161,14 +178,14 @@ public class JetStreamManagementService {
                 try {
                     mgmt.addStream(config);
                     log.info("DLQ stream [{}] provisioned", dlqStreamName);
-                } catch (io.nats.client.JetStreamApiException e) {
+                } catch (JetStreamApiException e) {
                     if (e.getApiErrorCode() == 10058) {
                         log.info("DLQ stream [{}] already exists, skipping", dlqStreamName);
                     } else {
                         throw new NatsException(
                                 "Failed to provision DLQ stream: " + dlqStreamName, e);
                     }
-                } catch (java.io.IOException e) {
+                } catch (IOException e) {
                     throw new NatsException(
                             "Failed to provision DLQ stream: " + dlqStreamName, e);
                 }
@@ -187,13 +204,12 @@ public class JetStreamManagementService {
      * <p>错误码 {@code 404}(Not Found)与 {@code 10059}(Stream Not Found)均表示 stream
      * 未创建,均需走 addStream 分支;其他错误码抛出。</p>
      */
-    private void ensureAdvisoryStream(io.nats.client.JetStreamManagement mgmt)
-            throws java.io.IOException, io.nats.client.JetStreamApiException {
-        final String advisoryStream = "JSAPI_ADVISORY";
+    private void ensureAdvisoryStream(JetStreamManagement mgmt, String advisoryStream)
+            throws IOException, JetStreamApiException {
         try {
             mgmt.getStreamInfo(advisoryStream);
             log.info("Advisory stream [{}] already exists, skipping", advisoryStream);
-        } catch (io.nats.client.JetStreamApiException e) {
+        } catch (JetStreamApiException e) {
             int code = e.getErrorCode();
             if (code == 10059 || code == 404) {
                 mgmt.addStream(StreamConfiguration.builder()
@@ -212,6 +228,13 @@ public class JetStreamManagementService {
 
     // ===== 内部构建方法 =====
 
+    /**
+     * 将 {@link NatsProperties.StreamDefinition} 翻译为 jnats {@link StreamConfiguration}。
+     *
+     * <p>关键设计：所有 {@code > 0} / {@code != null} 的字段才设置，否则保持 jnats 默认；
+     * 这是因为 jnats 的 builder 在未设置时使用服务端默认值，{@code 0} 显式赋值反而会被当作
+     * "禁用容量限制" 的语义，与 YAML 默认未配置意图不符。</p>
+     */
     private StreamConfiguration buildStreamConfiguration(NatsProperties.StreamDefinition def) {
         var builder = StreamConfiguration.builder()
                 .name(def.getName())
@@ -239,6 +262,13 @@ public class JetStreamManagementService {
         return builder.build();
     }
 
+    /**
+     * 将 {@link NatsProperties.ConsumerDefinition} 翻译为 jnats {@link ConsumerConfiguration}。
+     *
+     * <p>与 {@link #buildStreamConfiguration(NatsProperties.StreamDefinition)} 一致：
+     * 仅在 YAML 显式配置时才把字段透传给 jnats，避免用零值覆盖服务端默认行为。
+     * {@code sampleFrequency} 字段 jnats 接收字符串类型，需显式 {@code String.valueOf}。</p>
+     */
     private ConsumerConfiguration buildConsumerConfiguration(NatsProperties.ConsumerDefinition def) {
         var builder = ConsumerConfiguration.builder()
                 .name(def.getName())
@@ -270,10 +300,18 @@ public class JetStreamManagementService {
         if (def.getSampleFrequency() > 0) {
             builder.sampleFrequency(String.valueOf(def.getSampleFrequency()));
         }
+        if (def.getBackoff() != null && !def.getBackoff().isEmpty()) {
+            builder.backoff(def.getBackoff().toArray(Duration[]::new));
+        }
 
         return builder.build();
     }
 
+    /**
+     * 将 YAML 中的小写 storage 类型字符串映射为 jnats {@link StorageType}。
+     *
+     * <p>未识别值兜底为 {@link StorageType#File}（服务端默认），避免因 YAML 误填导致建流失败。</p>
+     */
     private StorageType parseStorageType(String type) {
         return switch (type.toLowerCase()) {
             case "memory" -> StorageType.Memory;
@@ -281,6 +319,10 @@ public class JetStreamManagementService {
         };
     }
 
+    /**
+     * 映射 retention 策略：{@code interest} / {@code work-queue}（允许连字符与紧凑两种写法），
+     * 其它一律按 {@link RetentionPolicy#Limits} 处理。
+     */
     private RetentionPolicy parseRetentionPolicy(String policy) {
         return switch (policy.toLowerCase()) {
             case "interest" -> RetentionPolicy.Interest;
@@ -289,6 +331,10 @@ public class JetStreamManagementService {
         };
     }
 
+    /**
+     * 映射 discard 策略：仅显式 {@code new} 才使用 {@link DiscardPolicy#New}，
+     * 默认 {@link DiscardPolicy#Old} 与 NATS 服务端默认一致。
+     */
     private DiscardPolicy parseDiscardPolicy(String policy) {
         return switch (policy.toLowerCase()) {
             case "new" -> DiscardPolicy.New;
@@ -296,6 +342,10 @@ public class JetStreamManagementService {
         };
     }
 
+    /**
+     * 映射 ack 策略：{@code none}/{@code all} 显式映射，其余（含 {@code explicit}）
+     * 一律按 jnats 最常用的 {@link AckPolicy#Explicit} 处理。
+     */
     private AckPolicy parseAckPolicy(String policy) {
         return switch (policy.toLowerCase()) {
             case "none" -> AckPolicy.None;
@@ -304,6 +354,10 @@ public class JetStreamManagementService {
         };
     }
 
+    /**
+     * 映射 deliver 策略：覆盖 NATS 支持的 5 种命名空间，全部映射为 jnats 枚举；
+     * 未识别值兜底为 {@link DeliverPolicy#All}。
+     */
     private DeliverPolicy parseDeliverPolicy(String policy) {
         return switch (policy.toLowerCase()) {
             case "last" -> DeliverPolicy.Last;
@@ -315,6 +369,9 @@ public class JetStreamManagementService {
         };
     }
 
+    /**
+     * 映射 replay 策略：仅 {@code original} 显式映射，其余一律走 {@link ReplayPolicy#Instant}（服务端默认）。
+     */
     private ReplayPolicy parseReplayPolicy(String policy) {
         return switch (policy.toLowerCase()) {
             case "original" -> ReplayPolicy.Original;

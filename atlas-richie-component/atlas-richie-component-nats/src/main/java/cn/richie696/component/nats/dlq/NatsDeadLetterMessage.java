@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.nats.dlq;
 
+import cn.richie696.component.nats.enums.AdvisoryType;
 import io.nats.client.api.MessageInfo;
 import io.nats.client.impl.Headers;
 
@@ -39,6 +40,11 @@ import java.util.Objects;
  *   <li>{@code advisoryType} — 当前仅 {@link AdvisoryType#MAX_DELIVERIES} 实际触发,
  *       {@link AdvisoryType#MSG_TERMINATED} 留作未来扩展</li>
  * </ul>
+ *
+ * @param retryCount        消息投递次数
+ * @param traceparent       原消息的 W3C 追踪上下文，可为 {@code null}
+ * @param originalStreamSeq 原消息在业务 stream 中的序列号
+ * @param advisoryType      触发死信转存的 advisory 类型
  */
 public record NatsDeadLetterMessage(
         long retryCount,
@@ -50,11 +56,12 @@ public record NatsDeadLetterMessage(
     /**
      * 从 {@link MessageInfo} + 原 headers 构建 DLQ 消息元数据。
      *
-     * @param info 业务原始消息元数据(由 {@code JetStreamManagement.getMessage} 返回)
+     * @param info            业务原始消息元数据(由 {@code JetStreamManagement.getMessage} 返回)
      * @param originalHeaders 业务原始消息 headers(可为 {@code null})
-     * @param type advisory 类型
+     * @param type            advisory 类型
+     * @return 根据原消息元数据构建的 DLQ 消息元数据
      */
-    public static NatsDeadLetterMessage from (MessageInfo info, Headers originalHeaders, AdvisoryType type){
+    public static NatsDeadLetterMessage from(MessageInfo info, Headers originalHeaders, AdvisoryType type) {
         Objects.requireNonNull(info, "info");
         long retryCount = 0L;
         String traceparent = extractTraceparentIgnoreCase(originalHeaders);
@@ -69,7 +76,7 @@ public record NatsDeadLetterMessage(
      * @param headers 原消息 headers(可为 {@code null})
      * @return 第一个匹配的 traceparent 值;无匹配返回 {@code null}
      */
-    private static String extractTraceparentIgnoreCase (Headers headers){
+    private static String extractTraceparentIgnoreCase(Headers headers) {
         if (headers == null) {
             return null;
         }
@@ -83,21 +90,4 @@ public record NatsDeadLetterMessage(
         }
         return null;
     }
-}
-
-/**
- * NATS JetStream advisory 类型枚举。
- *
- * <p>当前实现仅处理 {@link #MAX_DELIVERIES};{@link #MSG_TERMINATED} 由业务侧主动
- * 调用 {@code msg.term()} 触发,本期不接管,留作未来扩展。
- *
- * <p>对应 NATS 官方 advisory subject:
- * <ul>
- *   <li>{@code $JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.<stream>.<consumer>}</li>
- *   <li>{@code $JS.EVENT.ADVISORY.CONSUMER.MSG_TERMINATED.<stream>.<consumer>}</li>
- * </ul>
- */
-enum AdvisoryType {
-    MAX_DELIVERIES,
-    MSG_TERMINATED
 }

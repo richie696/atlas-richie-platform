@@ -23,10 +23,21 @@ package cn.richie696.component.nats.exception;
  */
 public class NatsConnectionException extends NatsException {
 
+    /**
+     * 仅携带消息文本构造连接异常。
+     *
+     * @param message 异常描述
+     */
     public NatsConnectionException(String message) {
         super(message);
     }
 
+    /**
+     * 携带消息文本与根因构造连接异常。
+     *
+     * @param message 异常描述
+     * @param cause 触发本异常的根因
+     */
     public NatsConnectionException(String message, Throwable cause) {
         super(message, cause);
     }

@@ -45,6 +45,12 @@ public class NatsDeadLetterPublisher {
     private final JetStream jetStream;
     private final NatsProperties properties;
 
+    /**
+     * 创建 DLQ 消息发布器。
+     *
+     * @param jetStream JetStream 发布客户端
+     * @param properties NATS 组件配置
+     */
     public NatsDeadLetterPublisher(JetStream jetStream, NatsProperties properties) {
         this.jetStream = jetStream;
         this.properties = properties;
@@ -84,7 +90,7 @@ public class NatsDeadLetterPublisher {
                                     String sourceStream,
                                     NatsDeadLetterMessage dlqMeta) {
         Headers dlqHeaders = new Headers();
-        // 1. 透传原 headers (traceparent 在其中已存在,不加 copy)
+        // 逐值复制可保留同名多值 header，避免覆盖原消息的追踪或业务上下文。
         if (originalHeaders != null) {
             for (String key : originalHeaders.keySet()) {
                 for (String value : originalHeaders.get(key)) {
@@ -92,7 +98,7 @@ public class NatsDeadLetterPublisher {
                 }
             }
         }
-        // 2. 注入 NATS-DLQ-* 元数据
+        // DLQ 元数据后写入，以确保消费者能读取本次转存对应的权威值。
         dlqHeaders.add(HEADER_SOURCE_STREAM, sourceStream);
         dlqHeaders.add(HEADER_RETRY_COUNT, Long.toString(dlqMeta.retryCount()));
         dlqHeaders.add(HEADER_ORIGINAL_SEQ, Long.toString(dlqMeta.originalStreamSeq()));

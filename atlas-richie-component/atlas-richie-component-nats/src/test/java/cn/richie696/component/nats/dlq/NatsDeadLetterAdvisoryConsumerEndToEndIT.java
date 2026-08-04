@@ -21,6 +21,7 @@ import cn.richie696.component.nats.support.NatsIntegrationTestSupport;
 import io.nats.client.*;
 import io.nats.client.api.*;
 import io.nats.client.impl.Headers;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,7 +102,7 @@ class NatsDeadLetterAdvisoryConsumerEndToEndIT {
     private Connection adminConn;
     private JetStreamManagement jsm;
     private JetStream js;
-    private io.nats.client.MessageConsumer nakConsumer;
+    private MessageConsumer nakConsumer;
 
     @DynamicPropertySource
     static void natsProperties(DynamicPropertyRegistry registry) {
@@ -111,14 +112,8 @@ class NatsDeadLetterAdvisoryConsumerEndToEndIT {
         registry.add("platform.component.nats.jetstream.enabled", () -> "true");
         registry.add("platform.component.nats.jetstream.auto-provision", () -> "true");
 
-        // DLQ 开关必须设两路:
-        //   - platform.component.nats.jetstream.dlq.enabled 用于 @ConditionalOnProperty 装配 DLQ bean
-        //   - platform.component.nats.dlq.enabled 用于 @ConfigurationProperties 绑定到 NatsProperties.dlq.enabled
-        //     (NatsProperties.dlq 是顶层 @NestedConfigurationProperty 字段,实际 binding 路径
-        //      是 platform.component.nats.dlq.enabled,该值决定 provisionDlqStreams 是否实际跑)
-        // 缺一会导致 Bean 不创建 OR Bean 装配了但 DLQ stream 没 provision
+        // DLQ 是 JetStream 的嵌套能力，条件装配与属性绑定使用同一配置路径。
         registry.add("platform.component.nats.jetstream.dlq.enabled", () -> "true");
-        registry.add("platform.component.nats.dlq.enabled", () -> "true");
 
         // 业务 stream + consumer 配置 — 被 NatsComponent.start() → provisionAll(properties) 消费
         // (注意:NatsComponent phase = MAX_VALUE - 100 < AdvisoryConsumer phase = MAX_VALUE - 50,

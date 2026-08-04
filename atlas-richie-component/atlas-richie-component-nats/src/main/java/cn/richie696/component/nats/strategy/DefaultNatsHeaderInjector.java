@@ -33,14 +33,27 @@ import java.util.Set;
 @Slf4j
 public class DefaultNatsHeaderInjector implements NatsHeaderInjector {
 
+    /**
+     * 允许跨链路传播的 Header 名称白名单。
+     * 通过 {@code Set.copyOf} 拷贝为不可变集合，避免运行期被调用方修改影响后续注入行为。
+     */
     private final Set<String> propagatedHeaders;
 
+    /**
+     * @param headers 需要跨链路传播的 Header 名称白名单；构造期完成不可变拷贝
+     */
     public DefaultNatsHeaderInjector(Set<String> headers) {
         this.propagatedHeaders = Set.copyOf(headers);
     }
 
+    /**
+     * 将当前线程 {@link HeaderContextHolder} 中匹配白名单的头信息写入 NATS 消息 Headers。
+     *
+     * @param headers 待写入的目标 NATS Headers 对象，由调用方提供
+     */
     @Override
     public void inject(Headers headers) {
+        // 仅同步白名单字段，避免把租户密钥等敏感上下文一并推到 broker。
         for (String key : propagatedHeaders) {
             var value = HeaderContextHolder.getHeader(key);
             if (StringUtils.isNotBlank(value)) {

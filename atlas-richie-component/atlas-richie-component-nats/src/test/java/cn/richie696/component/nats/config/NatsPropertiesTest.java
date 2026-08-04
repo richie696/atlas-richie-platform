@@ -51,7 +51,6 @@ class NatsPropertiesTest {
         assertThat(props.getReconnect().getJitter()).isEqualTo(java.time.Duration.ofMillis(100));
         assertThat(props.getReconnect().getJitterTls()).isEqualTo(java.time.Duration.ofSeconds(1));
         assertThat(props.getReconnect().getBufferSize()).isEqualTo(8_388_608L);
-        assertThat(props.getReconnect().isRetryOnFailedConnect()).isFalse();
 
         // ===== Ping =====
         assertThat(props.getPing().getInterval()).isEqualTo(java.time.Duration.ofSeconds(20));
@@ -101,14 +100,11 @@ class NatsPropertiesTest {
         assertThat(props.getIdempotent().getDatasource()).isEqualTo("memory");
         assertThat(props.getIdempotent().getTtl()).isEqualTo(120_000L);
 
-        // ===== Error =====
-        assertThat(props.getError().getMaxRetries()).isEqualTo(3);
-        assertThat(props.getError().getRetryDelay()).isEqualTo(java.time.Duration.ofSeconds(1));
-
         // ===== JetStream =====
         assertThat(props.getJetstream().isEnabled()).isFalse();
         assertThat(props.getJetstream().isAutoProvision()).isTrue();
         assertThat(props.getJetstream().getStreams()).isEmpty();
+        assertThat(props.getJetstream().getDlq().isEnabled()).isFalse();
     }
 
     @Test
@@ -153,6 +149,8 @@ class NatsPropertiesTest {
         consumer.setFilterSubject("orders.created");
         consumer.setAckPolicy("explicit");
         consumer.setMaxDeliver(5);
+        consumer.setBackoff(java.util.List.of(java.time.Duration.ofSeconds(1), java.time.Duration.ofSeconds(5)));
+        consumer.setNakDelay(java.time.Duration.ofSeconds(10));
 
         stream.setConsumers(java.util.List.of(consumer));
 
@@ -162,5 +160,8 @@ class NatsPropertiesTest {
         assertThat(stream.getConsumers().get(0).getName()).isEqualTo("order-processor");
         assertThat(stream.getConsumers().get(0).getFilterSubject()).isEqualTo("orders.created");
         assertThat(stream.getConsumers().get(0).getMaxDeliver()).isEqualTo(5);
+        assertThat(stream.getConsumers().get(0).getBackoff())
+                .containsExactly(java.time.Duration.ofSeconds(1), java.time.Duration.ofSeconds(5));
+        assertThat(stream.getConsumers().get(0).getNakDelay()).isEqualTo(java.time.Duration.ofSeconds(10));
     }
 }

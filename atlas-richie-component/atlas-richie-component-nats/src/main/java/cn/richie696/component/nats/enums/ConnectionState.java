@@ -23,13 +23,30 @@ package cn.richie696.component.nats.enums;
  */
 public enum ConnectionState {
 
+    /**
+     * 已连接：连接可用、可正常发布与订阅。
+     */
     CONNECTED,
+
+    /**
+     * 正在重连：底层连接断开但 NATS 客户端在自动尝试重连。
+     */
     RECONNECTING,
+
+    /**
+     * 已断开：当前没有可用连接，发布/订阅请求会失败。
+     */
     DISCONNECTED,
+
+    /**
+     * 已关闭：连接已显式关闭，不再自动重连。
+     */
     CLOSED;
 
     /**
-     * 判断当前状态是否为已连接
+     * 判断当前状态是否为已连接。
+     *
+     * @return 当前状态为 {@link #CONNECTED} 时返回 {@code true}
      */
     public boolean isConnected() {
         return this == CONNECTED;

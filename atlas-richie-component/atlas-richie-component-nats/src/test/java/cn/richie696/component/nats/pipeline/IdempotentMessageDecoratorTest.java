@@ -85,7 +85,7 @@ class IdempotentMessageDecoratorTest {
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("processing error");
 
-        verify(checker).clear(contains(NatsConstants.IDEMPOTENT_KEY_PREFIX));
+        verify(checker).clear("msg-001");
     }
 
     @Test
@@ -110,7 +110,7 @@ class IdempotentMessageDecoratorTest {
 
         assertThat(called.get()).isTrue();
         // Verify checker was called with a fallback key (subject + data hash)
-        verify(checker).isFirstTime(contains(NatsConstants.IDEMPOTENT_KEY_PREFIX), eq(60_000L));
+        verify(checker).isFirstTime(startsWith("test.subject-"), eq(60_000L));
     }
 
     private Message mockMessage(String messageId) {

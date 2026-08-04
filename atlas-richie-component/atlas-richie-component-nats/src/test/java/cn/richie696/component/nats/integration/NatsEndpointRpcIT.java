@@ -200,15 +200,27 @@ class NatsEndpointRpcIT {
 
     // ===== 测试用 POJO =====
 
+    /**
+     * 订单 RPC 请求载荷,用于验证类型化 POJO 入参 + 响应序列化路径。
+     */
     public record OrderRequest(String id, double amount) {
     }
 
+    /**
+     * 订单 RPC 响应载荷,验证 handler 返回 POJO 后反序列化为类型对象。
+     */
     public record OrderResponse(String orderId, double total) {
     }
 
+    /**
+     * 乘法 RPC 请求载荷,用于验证异步 {@code requestAsync} 链路的 POJO 编解码。
+     */
     public record MultiplyRequest(int a, int b) {
     }
 
+    /**
+     * 乘法 RPC 响应载荷,验证异步 RPC {@link java.util.concurrent.CompletableFuture#get()} 取回类型化结果。
+     */
     public record MultiplyResponse(int result) {
     }
 }

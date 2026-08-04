@@ -28,28 +28,67 @@ public class NatsRpcException extends NatsException {
     private final boolean timeout;
     private final boolean noResponders;
 
+    /**
+     * 完整字段构造 RPC 异常。
+     *
+     * @param message 异常描述
+     * @param cause 触发本异常的根因
+     * @param timeout 是否为超时场景
+     * @param noResponders 是否为无响应者场景
+     */
     public NatsRpcException(String message, Throwable cause, boolean timeout, boolean noResponders) {
         super(message, cause);
         this.timeout = timeout;
         this.noResponders = noResponders;
     }
 
+    /**
+     * 构建超时场景的 RPC 异常。
+     *
+     * @param subject 请求对应的 subject
+     * @param cause 触发超时的根因
+     * @return {@link #isTimeout()} 为 {@code true} 的 RPC 异常
+     */
     public static NatsRpcException timeout(String subject, Throwable cause) {
         return new NatsRpcException("RPC request timed out for subject: " + subject, cause, true, false);
     }
 
+    /**
+     * 构建无响应者场景的 RPC 异常。
+     *
+     * @param subject 请求对应的 subject
+     * @param cause 触发无响应者的根因
+     * @return {@link #isNoResponders()} 为 {@code true} 的 RPC 异常
+     */
     public static NatsRpcException noResponders(String subject, Throwable cause) {
         return new NatsRpcException("No responders available for subject: " + subject, cause, false, true);
     }
 
+    /**
+     * 构建其他失败场景的 RPC 异常。
+     *
+     * @param subject 请求对应的 subject
+     * @param cause 触发异常的根因
+     * @return 通用 RPC 失败异常
+     */
     public static NatsRpcException other(String subject, Throwable cause) {
         return new NatsRpcException("RPC request failed for subject: " + subject, cause, false, false);
     }
 
+    /**
+     * 判断本异常是否为请求超时。
+     *
+     * @return 超时时返回 {@code true}
+     */
     public boolean isTimeout() {
         return timeout;
     }
 
+    /**
+     * 判断本异常是否为无响应者。
+     *
+     * @return 无响应者时返回 {@code true}
+     */
     public boolean isNoResponders() {
         return noResponders;
     }

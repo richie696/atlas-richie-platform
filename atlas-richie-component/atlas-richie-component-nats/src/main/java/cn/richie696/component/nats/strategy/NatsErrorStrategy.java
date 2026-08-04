@@ -20,8 +20,8 @@ import io.nats.client.Message;
 /**
  * NATS 错误处理策略接口
  *
- * <p>定义发布/消费过程中的错误处理和重试决策。
- * 默认实现记录日志并按条件重试，用户可通过 Bean 替换自定义实现。</p>
+ * <p>定义发布/消费过程中的错误观测与告警处理。
+ * JetStream 的重试由 broker 的 consumer 配置控制，策略不执行本地重试。</p>
  *
  * @author richie696
  * @since 1.0.0
@@ -46,13 +46,4 @@ public interface NatsErrorStrategy {
      */
     void onConsumeError(String subject, Message msg, Exception e);
 
-    /**
-     * 判断是否应该重试
-     *
-     * @param e           异常
-     * @param attempt     当前重试次数（从 1 开始）
-     * @param maxAttempts 最大重试次数
-     * @return true=应重试，false=不再重试
-     */
-    boolean shouldRetry(Exception e, int attempt, int maxAttempts);
 }
