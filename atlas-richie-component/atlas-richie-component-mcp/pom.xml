@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>cn.richie696.component</groupId>
+        <artifactId>atlas-richie-component-dependencies</artifactId>
+        <version>${revision}</version>
+        <relativePath>../atlas-richie-component-dependencies/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>atlas-richie-component-mcp</artifactId>
+    <name>atlas-richie-component-mcp</name>
+    <description>Model Context Protocol Server/Client 双端适配组件</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>atlas-richie-component-mcp-api</module>
+        <module>atlas-richie-component-mcp-protocol</module>
+        <module>atlas-richie-component-mcp-schema</module>
+        <module>atlas-richie-component-mcp-server-core</module>
+        <module>atlas-richie-component-mcp-transport-http</module>
+        <module>atlas-richie-component-mcp-testkit</module>
+    </modules>
+</project>
