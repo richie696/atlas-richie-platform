@@ -28,6 +28,7 @@ import org.springframework.util.AntPathMatcher;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Optional;
@@ -157,15 +158,25 @@ public class DegradeInterceptor implements WebInterceptor, Ordered {
     @Override
     public void intercept(WebRequestContext ctx, WebInterceptorChain chain) throws Exception {
         Long startNanos = System.nanoTime();
+        boolean exceptionEvaluated = false;
         try {
             chain.proceed(ctx);
+        } catch (Exception ex) {
+            ctx.setAttribute(ATTR_EXCEPTION, ex);
+            evaluate(ctx);
+            exceptionEvaluated = true;
+            if (!ctx.isShortCircuited()) {
+                throw ex;
+            }
         } finally {
             long latencyMs = (System.nanoTime() - startNanos) / 1_000_000L;
             // 如果下游未写入 latency 属性（业务未自测），回填以支持 HIGH_LATENCY 判定
             if (ctx.attribute(ATTR_LATENCY_MS) == null) {
                 ctx.setAttribute(ATTR_LATENCY_MS, latencyMs);
             }
-            evaluate(ctx);
+            if (!exceptionEvaluated) {
+                evaluate(ctx);
+            }
         }
     }
 
@@ -174,6 +185,11 @@ public class DegradeInterceptor implements WebInterceptor, Ordered {
      */
     void evaluate(WebRequestContext ctx) {
         if (Boolean.TRUE.equals(ctx.attribute(ATTR_SKIP))) {
+            return;
+        }
+
+        // 降级是受保护接口的业务策略；未命中任何路由时保留原异常/正常响应。
+        if (matchRoute(ctx.path()) == null) {
             return;
         }
 
@@ -270,6 +286,21 @@ public class DegradeInterceptor implements WebInterceptor, Ordered {
     DegradeProperties.RouteFallback matchRoute(String path) {
         if (path == null || path.isBlank()) {
             return null;
+        }
+        List<DegradeProperties.RouteFallback> routeRules = properties.getRouteRules();
+        if (routeRules != null && !routeRules.isEmpty()) {
+            for (DegradeProperties.RouteFallback rule : routeRules) {
+                if (path.equals(rule.getPattern())) {
+                    return rule;
+                }
+            }
+            for (DegradeProperties.RouteFallback rule : routeRules) {
+                String pattern = rule.getPattern();
+                if (pattern != null && (pattern.contains("*") || pattern.contains("?") || pattern.contains("{"))
+                        && ANT_MATCHER.match(pattern, path)) {
+                    return rule;
+                }
+            }
         }
         Map<String, DegradeProperties.RouteFallback> routes = properties.getRoutes();
         if (routes == null || routes.isEmpty()) {

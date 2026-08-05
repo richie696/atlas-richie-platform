@@ -30,16 +30,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 限流拦截器（README.md §4.1）。
+ * 限流拦截器
  * <p>
  * 工作流：
  * <ol>
- *   <li>{@link KeyResolver} 解析 clientKey（null → 401 短路）</li>
- *   <li>按 path 匹配 {@link cn.richie696.component.web.core.config.ratelimit.RateLimitProperties} 的 {@code routes}：
- *       <ul>
- *         <li>命中：使用路由专属 {@code permitsPerSecond} / deny 配置，registry key = {@code clientKey + "::" + pattern}</li>
- *         <li>未命中：使用全局配置，registry key = {@code clientKey + "::__global__"}</li>
- *       </ul></li>
+ *   <li>按 path 匹配 {@link cn.richie696.component.web.core.config.ratelimit.RateLimitProperties} 的 {@code routes}</li>
+ *   <li>未命中则直接放行；命中后由 {@link KeyResolver} 解析 clientKey（null → 401 短路），分两种情形：
+ *     <ul>
+ *       <li>命中：使用路由专属 {@code permitsPerSecond} / deny 配置，registry key = {@code clientKey + "::" + pattern}</li>
+ *       <li>未命中：直接放行</li>
+ *     </ul>
+ *   </li>
  *   <li>{@link RateLimiterRegistry} 按 registry key 获取/创建独立 {@link RateLimiter}</li>
  *   <li>{@link RateLimiter#tryAcquire()} 非阻塞取令牌；false → 短路响应</li>
  *   <li>放行 → ctx.attribute("rate_limit.key", key) 供下游使用；WebFilterDecision attribute 供 A-4 HookBus</li>
@@ -104,6 +105,13 @@ public class RateLimitInterceptor implements WebInterceptor, Ordered {
 
     @Override
     public void intercept(WebRequestContext ctx, WebInterceptorChain chain) throws Exception {
+        MatchedRoute matched = matchRoute(ctx.path());
+        // routes 是受保护资源的白名单；未命中时不能让全局默认值把普通接口也纳入限流。
+        if (matched.routeConfig == null) {
+            chain.proceed(ctx);
+            return;
+        }
+
         String clientKey = keyResolver.resolve(ctx);
         if (clientKey == null) {
             ctx.markShortCircuit(401, "{\"error\":\"client_unidentified\"}");
@@ -114,15 +122,9 @@ public class RateLimitInterceptor implements WebInterceptor, Ordered {
             return;
         }
 
-        MatchedRoute matched = matchRoute(ctx.path());
-        // 未命中 routes 时用纯 clientKey（向后兼容：现有测试/部署预热的 RateLimiter 仍能命中）；
-        // 命中 routes 时用 clientKey + pattern 复合 key（按 path 隔离桶）。
-        String registryKey = (matched.routeConfig == null)
-                ? clientKey
-                : clientKey + "::" + matched.pattern;
-        int permits = matched.routeConfig != null
-                ? matched.routeConfig.getPermitsPerSecond()
-                : properties.getPermitsPerSecond();
+        // 同一调用方在不同受保护接口使用独立令牌桶。
+        String registryKey = clientKey + "::" + matched.pattern;
+        int permits = matched.routeConfig.getPermitsPerSecond();
 
         RateLimiter limiter = registry.getOrCreate(registryKey,
                 k -> RateLimiter.ofTokensPerSecond(permits));

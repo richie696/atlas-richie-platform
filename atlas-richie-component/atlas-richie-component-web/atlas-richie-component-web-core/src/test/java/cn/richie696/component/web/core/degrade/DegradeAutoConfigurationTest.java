@@ -33,13 +33,19 @@ class DegradeAutoConfigurationTest {
             .withConfiguration(AutoConfigurations.of(DegradeAutoConfiguration.class));
 
     @Test
-    void defaultLoads_registryAndInterceptor() {
+    void defaultLoadsRegistryWithoutInterceptor() {
         runner.run(ctx -> {
             assertThat(ctx).hasSingleBean(DegradeStrategyRegistry.class);
             assertThat(ctx).hasSingleBean(DefaultDegradeStrategyRegistry.class);
-            assertThat(ctx).hasSingleBean(DegradeInterceptor.class);
+            assertThat(ctx).doesNotHaveBean(DegradeInterceptor.class);
             assertThat(ctx).hasSingleBean(DegradeProperties.class);
         });
+    }
+
+    @Test
+    void enabledProperty_registersInterceptor() {
+        runner.withPropertyValues("platform.component.web.degrade.enabled=true")
+                .run(ctx -> assertThat(ctx).hasSingleBean(DegradeInterceptor.class));
     }
 
     @Test

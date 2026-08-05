@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 跨容器适配层入口：{@code jakarta.servlet.Filter} → {@link WebRequestContext} → 拦截器链驱动。
@@ -110,7 +111,14 @@ public class InterceptingFilter implements Filter {
         }
 
         WebRequestContext ctx = buildContext(httpReq);
-        WebInterceptorChain intChain = new DefaultWebInterceptorChain(interceptors);
+        // Dispatcher 作为链尾，外层拦截器才能观察 Controller 的成功、异常和耗时。
+        List<WebInterceptor> chainWithDispatcher = new ArrayList<>(interceptors);
+        AtomicBoolean dispatcherInvoked = new AtomicBoolean();
+        chainWithDispatcher.add((ignored, terminal) -> {
+            dispatcherInvoked.set(true);
+            chain.doFilter(httpReq, httpResp);
+        });
+        WebInterceptorChain intChain = new DefaultWebInterceptorChain(chainWithDispatcher);
 
         try {
             intChain.proceed(ctx);
@@ -120,8 +128,11 @@ public class InterceptingFilter implements Filter {
                 return;
             }
 
-            // 未短路 → 进入 Spring Dispatcher
-            chain.doFilter(request, response);
+            // 兼容旧 SPI：普通拦截器未调用 proceed 时，仍由 Filter 转发到 Dispatcher。
+            if (!dispatcherInvoked.get()) {
+                chain.doFilter(request, response);
+            }
+
         } catch (Exception e) {
             ctx.setError(e);
             log.warn("InterceptingFilter intercepted exception: method={} path={} msg={}",

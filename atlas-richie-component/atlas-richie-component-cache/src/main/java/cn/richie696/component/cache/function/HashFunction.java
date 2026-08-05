@@ -89,6 +89,16 @@ public interface HashFunction extends CacheFunction {
     boolean existsInHash(String key, String hashKey);
 
     /**
+     * 原子地为 Hash field 增加整数值。
+     */
+    Long incrementHash(String key, String hashKey, long delta);
+
+    /**
+     * 原子地为 Hash field 增加浮点值。
+     */
+    Double incrementHash(String key, String hashKey, double delta);
+
+    /**
      * 根据HASH资源键获取资源HASH_KEY集合的方法
      *
      * @param key 资源键
@@ -148,6 +158,24 @@ public interface HashFunction extends CacheFunction {
      * @return 返回资源值
      */
     <T> List<T> getFromHash(String key, Collection<String> hashKeys, TypeReference<T> reference);
+
+    /**
+     * 根据指定字段批量读取 Hash 值，并保留 field 到 value 的映射。
+     */
+    <T> Map<String, T> getFromHash(String key, Collection<String> hashKeys, Class<T> clazz);
+
+    /**
+     * 批量字段读取的防缓存击穿版本。
+     *
+     * <p>缓存未命中时以 Hash 为粒度加锁并回源，避免业务层逐字段调用产生 N 次锁竞争。</p>
+     */
+    <T> Map<String, T> getFromHashWithLock(
+            String key,
+            Collection<String> hashKeys,
+            Class<T> clazz,
+            Supplier<Map<String, T>> dbLoader,
+            long timeout
+    );
 
     /**
      * 获取Hash表所有数据（Map形式）

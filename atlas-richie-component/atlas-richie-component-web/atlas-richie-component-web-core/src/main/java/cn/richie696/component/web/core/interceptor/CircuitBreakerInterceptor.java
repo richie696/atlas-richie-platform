@@ -16,10 +16,15 @@
 package cn.richie696.component.web.core.interceptor;
 
 import cn.richie696.component.concurrency.algorithm.CircuitBreaker;
+import cn.richie696.component.concurrency.algorithm.CircuitBreakerOpenException;
 import cn.richie696.component.concurrency.registry.CircuitBreakerRegistry;
 import cn.richie696.component.web.core.config.ratelimit.CircuitBreakerProperties;
 import cn.richie696.component.web.core.metrics.WebMetrics;
-import cn.richie696.component.web.core.spi.*;
+import cn.richie696.component.web.core.spi.WebFilterDecision;
+import cn.richie696.component.web.core.spi.WebInterceptor;
+import cn.richie696.component.web.core.spi.WebInterceptorChain;
+import cn.richie696.component.web.core.spi.WebRequestContext;
+import cn.richie696.component.web.core.spi.KeyResolver;
 import cn.richie696.contract.model.ApiResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
@@ -46,7 +51,7 @@ import java.util.Map;
  * </ul>
  *
  * <h2>按接口粒度配置</h2>
- * <p>熔断按"被保护资源"分：CB key = {@code matchedPattern}（未命中 routes 时为 {@link #GLOBAL_PATTERN}），
+ * <p>熔断按"被保护资源"分：CB key = {@code matchedPattern}；未命中 routes 的请求直接放行，
  * 与 {@link RateLimitInterceptor} 的 {@code clientKey + "::" + pattern} 复合 key 解耦。同一 path 的
  * 所有 clientKey 共享同一 CB 状态机——这符合经典 CB 语义（保护被调用资源，而非限制调用方）。命中 path
  * 路由后，使用该路由专属的阈值创建独立 CB。
@@ -87,53 +92,66 @@ public class CircuitBreakerInterceptor implements WebInterceptor, Ordered {
 
     private final CircuitBreakerRegistry registry;
     private final CircuitBreakerProperties properties;
-    private final KeyResolver keyResolver;
     private final WebMetrics metrics;
 
+    public CircuitBreakerInterceptor(CircuitBreakerRegistry registry, CircuitBreakerProperties properties) {
+        this(registry, properties, WebMetrics.noop());
+    }
+
+    /**
+     * @deprecated 熔断器按受保护资源而非调用方工作；该参数不再参与 key 解析。
+     */
+    @Deprecated
     public CircuitBreakerInterceptor(CircuitBreakerRegistry registry,
                                      CircuitBreakerProperties properties,
-                                     KeyResolver keyResolver) {
-        this(registry, properties, keyResolver, WebMetrics.noop());
+                                     KeyResolver ignoredKeyResolver) {
+        this(registry, properties, WebMetrics.noop());
     }
 
     public CircuitBreakerInterceptor(CircuitBreakerRegistry registry,
                                      CircuitBreakerProperties properties,
-                                     KeyResolver keyResolver,
                                      WebMetrics metrics) {
         this.registry = registry;
         this.properties = properties;
-        this.keyResolver = keyResolver;
         this.metrics = metrics;
+    }
+
+    /**
+     * @deprecated 熔断器按受保护资源而非调用方工作；该参数不再参与 key 解析。
+     */
+    @Deprecated
+    public CircuitBreakerInterceptor(CircuitBreakerRegistry registry,
+                                     CircuitBreakerProperties properties,
+                                     KeyResolver ignoredKeyResolver,
+                                     WebMetrics metrics) {
+        this(registry, properties, metrics);
     }
 
     @Override
     public void intercept(WebRequestContext ctx, WebInterceptorChain chain) throws Exception {
-        String clientKey = keyResolver.resolve(ctx);
-        if (clientKey == null) {
-            ctx.markShortCircuit(401, "{\"error\":\"client_unidentified\"}");
-            ctx.setAttribute(ATTR_DECISION, new WebFilterDecision(
-                    getClass().getSimpleName(), "unidentified", 401, "client_unidentified"));
+        MatchedRoute matched = matchRoute(ctx.path());
+        // 熔断保护的是被调用资源，不是调用方；只有显式配置的 route 才受保护。
+        if (matched.routeConfig == null) {
+            chain.proceed(ctx);
             return;
         }
-
-        MatchedRoute matched = matchRoute(ctx.path());
-        String cbKey = (matched.routeConfig == null) ? clientKey : matched.pattern;
+        String cbKey = matched.pattern;
         CircuitBreaker cb = registry.getOrCreate(cbKey, k -> buildBreaker(matched.routeConfig));
         metrics.registerGauge(WebMetrics.CB_STATE, cb,
                 c -> (double) ((CircuitBreaker) c).state().ordinal(),
                 "key", cbKey);
-        CircuitBreaker.State state = cb.state();
-
-        if (state == CircuitBreaker.State.OPEN) {
+        ctx.setAttribute(ATTR_KEY, cbKey);
+        try {
+            cb.execute(() -> {
+                chain.proceed(ctx);
+                return null;
+            });
+        } catch (CircuitBreakerOpenException ex) {
             metrics.cbNotPermitted(matched.pattern);
-            applyDeny(ctx, clientKey, matched.routeConfig);
+            applyDeny(ctx, cbKey, matched.routeConfig);
             log.debug("CircuitBreakerInterceptor deny (open): key={} pattern={} path={}",
-                    clientKey, matched.pattern, ctx.path());
-            return;
+                    cbKey, matched.pattern, ctx.path());
         }
-
-        ctx.setAttribute(ATTR_KEY, clientKey);
-        chain.proceed(ctx);
     }
 
     /**

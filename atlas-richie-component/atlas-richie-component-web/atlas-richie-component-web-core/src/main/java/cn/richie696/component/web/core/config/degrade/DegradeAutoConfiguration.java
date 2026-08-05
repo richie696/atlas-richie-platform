@@ -39,7 +39,7 @@ import org.springframework.context.annotation.Bean;
  *
  * <h2>启用条件</h2>
  * <ul>
- *   <li>{@code platform.component.web.degrade.enabled=true}（默认）</li>
+ *   <li>{@code platform.component.web.degrade.enabled=true}（默认关闭）</li>
  *   <li>{@link DegradeStrategy} 类在 classpath（永远成立：定义在本模块）</li>
  * </ul>
  *
@@ -66,7 +66,7 @@ public class DegradeAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "platform.component.web.degrade", name = "enabled",
-            havingValue = "true", matchIfMissing = true)
+            havingValue = "true")
     public DegradeInterceptor degradeInterceptor(DegradeStrategyRegistry registry,
                                                  DegradeProperties properties,
                                                  BeanFactory beanFactory) {

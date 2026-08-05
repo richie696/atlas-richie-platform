@@ -82,6 +82,33 @@ class FieldOpsImplTest {
     }
 
     @Test
+    void increment_integer_delegatesAndInvalidatesFieldAndHashCaches() {
+        when(fn.incrementHash("stats:today", "requests", 3L)).thenReturn(8L);
+
+        assertThat(ops.increment("stats:today", "requests", 3L)).isEqualTo(8L);
+
+        verify(l2).remove("stats:today:requests");
+        verify(l2).remove("stats:today");
+    }
+
+    @Test
+    void increment_double_delegatesAndInvalidatesFieldAndHashCaches() {
+        when(fn.incrementHash("stats:today", "tokens", 1.5D)).thenReturn(2.5D);
+
+        assertThat(ops.increment("stats:today", "tokens", 1.5D)).isEqualTo(2.5D);
+
+        verify(l2).remove("stats:today:tokens");
+        verify(l2).remove("stats:today");
+    }
+
+    @Test
+    void decrement_delegatesAsNegativeIncrement() {
+        when(fn.incrementHash("stats:today", "requests", -2L)).thenReturn(6L);
+
+        assertThat(ops.decrement("stats:today", "requests", 2L)).isEqualTo(6L);
+    }
+
+    @Test
     void setAll_registersTypeAndWritesL2() {
         Map<String, String> map = Map.of("name", "Tom");
 

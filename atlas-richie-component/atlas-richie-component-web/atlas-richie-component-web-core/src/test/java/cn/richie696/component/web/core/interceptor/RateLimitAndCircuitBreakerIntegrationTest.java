@@ -65,11 +65,18 @@ class RateLimitAndCircuitBreakerIntegrationTest {
 
         rateLimitProperties = new RateLimitProperties();
         rateLimitProperties.setPermitsPerSecond(2);  // 小窗口便于触发 deny
+        RateLimitProperties.RouteConfig usersRateRoute = new RateLimitProperties.RouteConfig();
+        usersRateRoute.setPattern("/api/v1/users");
+        usersRateRoute.setPermitsPerSecond(2);
+        rateLimitProperties.getRoutes().add(usersRateRoute);
 
         circuitBreakerProperties = new CircuitBreakerProperties();
         circuitBreakerProperties.setFailureRateThreshold(50);
         circuitBreakerProperties.setSlidingWindowDuration(Duration.ofSeconds(60));
         circuitBreakerProperties.setWaitDurationInOpenState(Duration.ofSeconds(30));
+        CircuitBreakerProperties.RouteConfig usersCircuitRoute = new CircuitBreakerProperties.RouteConfig();
+        usersCircuitRoute.setPattern("/api/v1/users");
+        circuitBreakerProperties.getRoutes().add(usersCircuitRoute);
     }
 
     // ───────────────────────── RateLimit 场景 ─────────────────────────
@@ -103,7 +110,7 @@ class RateLimitAndCircuitBreakerIntegrationTest {
 
         // 预热：连续 3 次拿令牌（permitsPerSecond=2，仅 2 次成功）
         for (int i = 0; i < 3; i++) {
-            RateLimiter rl = rateLimiterRegistry.getOrCreate("client-burst",
+            RateLimiter rl = rateLimiterRegistry.getOrCreate("client-burst::/api/v1/users",
                     k -> RateLimiter.ofTokensPerSecond(rateLimitProperties.getPermitsPerSecond()));
             rl.tryAcquire();
         }
@@ -226,27 +233,19 @@ class RateLimitAndCircuitBreakerIntegrationTest {
     }
 
     @Test
-    void rateLimit_07_routeFallbackToGlobalWhenNoMatch() throws Exception {
+    void rateLimit_07_unmatchedRoute_proceedsWithoutResolvingClient() throws Exception {
         RateLimitProperties.RouteConfig ordersRoute = new RateLimitProperties.RouteConfig();
         ordersRoute.setPattern("/api/v1/orders/**");
         ordersRoute.setPermitsPerSecond(1);
         rateLimitProperties.getRoutes().add(ordersRoute);
 
-        KeyResolver keyResolver = ctx -> "fallback-user";
+        KeyResolver keyResolver = ctx -> null;
         RateLimitInterceptor interceptor = new RateLimitInterceptor(
                 rateLimiterRegistry, rateLimitProperties, keyResolver);
 
-        // /api/v1/users 不命中 /api/v1/orders/** → 走全局（per-clientKey）
-        // 预热全局桶到耗尽
-        for (int i = 0; i < 3; i++) {
-            rateLimiterRegistry.getOrCreate("fallback-user",
-                    k -> RateLimiter.ofTokensPerSecond(rateLimitProperties.getPermitsPerSecond())).tryAcquire();
-        }
-
-        WebRequestContext ctx = ctx("GET", "/api/v1/users");
+        WebRequestContext ctx = ctx("GET", "/api/v1/catalog");
         interceptor.intercept(ctx, new DefaultWebInterceptorChain(List.of()));
-        assertThat(ctx.isShortCircuited()).isTrue();
-        assertThat(ctx.shortCircuitBody()).contains("RATE_LIMITED");  // 全局 denyCode
+        assertThat(ctx.isShortCircuited()).isFalse();
     }
 
     // ───────────────────────── CircuitBreaker 场景 ─────────────────────────
@@ -268,8 +267,8 @@ class RateLimitAndCircuitBreakerIntegrationTest {
         assertThat(downstreamInvoked).isTrue();
         assertThat(ctx.isShortCircuited()).isFalse();
         Object cbKey = ctx.attribute(CircuitBreakerInterceptor.ATTR_KEY);
-        assertThat(cbKey).isEqualTo("client-cb");
-        assertThat(circuitBreakerRegistry.find("client-cb")).isPresent();
+        assertThat(cbKey).isEqualTo("/api/v1/users");
+        assertThat(circuitBreakerRegistry.find("/api/v1/users")).isPresent();
     }
 
     @Test
@@ -280,7 +279,7 @@ class RateLimitAndCircuitBreakerIntegrationTest {
                 circuitBreakerRegistry, circuitBreakerProperties, keyResolver);
 
         // 预创建并强制 open
-        CircuitBreaker cb = circuitBreakerRegistry.getOrCreate("client-cb-open",
+        CircuitBreaker cb = circuitBreakerRegistry.getOrCreate("/api/v1/users",
                 k -> CircuitBreaker.ofDefaults());
         cb.forceOpen();
         assertThat(cb.state()).isEqualTo(CircuitBreaker.State.OPEN);
@@ -294,7 +293,7 @@ class RateLimitAndCircuitBreakerIntegrationTest {
 
         assertThat(ctx.isShortCircuited()).isTrue();
         assertThat(ctx.responseStatus()).isEqualTo(503);
-        assertThat(ctx.shortCircuitBody()).contains("client-cb-open");
+        assertThat(ctx.shortCircuitBody()).contains("/api/v1/users");
         assertThat(downstreamInvoked).isFalse();
         Object decisionObj = ctx.attribute(CircuitBreakerInterceptor.ATTR_DECISION);
         assertThat(decisionObj).isNotNull();
@@ -322,7 +321,7 @@ class RateLimitAndCircuitBreakerIntegrationTest {
     }
 
     @Test
-    void circuitBreaker_08_unidentifiedClient_shortCircuits401() throws Exception {
+    void circuitBreaker_08_unidentifiedClient_doesNotAffectProtectedResource() throws Exception {
         AtomicBoolean downstreamInvoked = new AtomicBoolean(false);
         KeyResolver keyResolver = ctx -> null;
         CircuitBreakerInterceptor interceptor = new CircuitBreakerInterceptor(
@@ -335,9 +334,8 @@ class RateLimitAndCircuitBreakerIntegrationTest {
 
         interceptor.intercept(ctx, chain);
 
-        assertThat(ctx.isShortCircuited()).isTrue();
-        assertThat(ctx.responseStatus()).isEqualTo(401);
-        assertThat(downstreamInvoked).isFalse();
+        assertThat(ctx.isShortCircuited()).isFalse();
+        assertThat(downstreamInvoked).isTrue();
     }
 
     @Test
@@ -389,7 +387,7 @@ class RateLimitAndCircuitBreakerIntegrationTest {
         assertThat(ctx.isShortCircuited()).isTrue();
         assertThat(ctx.responseStatus()).isEqualTo(503);
         assertThat(ctx.shortCircuitBody()).contains("ORDER_CIRCUIT_OPEN");
-        assertThat(ctx.shortCircuitBody()).contains("client-cb-deny");
+        assertThat(ctx.shortCircuitBody()).contains("/api/v1/orders/**");
     }
 
     @Test
@@ -409,8 +407,7 @@ class RateLimitAndCircuitBreakerIntegrationTest {
 
         WebRequestContext userCtx = ctx("GET", "/api/v1/users");
         interceptor.intercept(userCtx, new DefaultWebInterceptorChain(List.of()));
-        // 未命中 routes → cb key = clientKey（向后兼容）
-        assertThat(circuitBreakerRegistry.find("shared-client")).isPresent();
+        assertThat(circuitBreakerRegistry.find("/api/v1/users")).isPresent();
     }
 
     // ───────────────────────── helper ─────────────────────────

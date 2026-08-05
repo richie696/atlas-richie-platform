@@ -145,6 +145,37 @@
                 <artifactId>atlas-richie-component-oauth-dcr</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
+            <!-- Model Context Protocol 组件 -->
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-component-mcp-api</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-component-mcp-protocol</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-component-mcp-schema</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-component-mcp-server-core</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-component-mcp-transport-http</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-component-mcp-testkit</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
             <!-- MQTT 物联网消息队列组件（支持自建MQTT和阿里云 MQTT PAAS） -->
             <dependency>
                 <groupId>cn.richie696.component</groupId>

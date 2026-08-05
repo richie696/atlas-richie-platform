@@ -419,6 +419,20 @@ public class RedisHashManager implements HashFunction {
         return redisTemplate.opsForHash().hasKey(key, hashKey);
     }
 
+    @Override
+    public Long incrementHash(String key, String hashKey, long delta) {
+        Long result = redisTemplate.opsForHash().increment(key, hashKey, delta);
+        registerHashFieldForBloom(key, hashKey);
+        return result;
+    }
+
+    @Override
+    public Double incrementHash(String key, String hashKey, double delta) {
+        Double result = redisTemplate.opsForHash().increment(key, hashKey, delta);
+        registerHashFieldForBloom(key, hashKey);
+        return result;
+    }
+
     /**
      * 根据HASH资源键获取资源HASH_KEY集合的方法
      *
@@ -570,6 +584,92 @@ public class RedisHashManager implements HashFunction {
     }
 
     /**
+     * 根据指定字段批量读取 Hash 值，并保留 field 到 value 的映射。
+     * 使用 HMGET，避免把整个 Hash 序列化/反序列化为一个大对象。
+     */
+    @Override
+    public <T> Map<String, T> getFromHash(String key, Collection<String> hashKeys, Class<T> clazz) {
+        if (hashKeys == null || hashKeys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        if (hashKeys.size() > BATCH_SIZE) {
+            throw new IllegalArgumentException("一次性获取的数据量过大，不允许超过20条。");
+        }
+        try {
+            List<String> fields = List.copyOf(hashKeys);
+            List<Object> redisFields = new ArrayList<>(fields);
+            List<Object> values = redisTemplate.opsForHash().multiGet(key, redisFields);
+            Map<String, T> result = new LinkedHashMap<>(fields.size());
+            for (int i = 0; i < fields.size(); i++) {
+                Object value = values.get(i);
+                if (value == null) {
+                    continue;
+                }
+                result.put(fields.get(i), JsonUtils.getInstance().convertObject(value, clazz));
+            }
+            return result;
+        } catch (Exception e) {
+            log.warn(e.getMessage(), e);
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * 批量字段读取的防缓存击穿版本；以 Hash 为粒度加锁。
+     */
+    @Override
+    public <T> Map<String, T> getFromHashWithLock(
+            String key,
+            Collection<String> hashKeys,
+            Class<T> clazz,
+            Supplier<Map<String, T>> dbLoader,
+            long timeout
+    ) {
+        List<String> fields = List.copyOf(hashKeys == null ? Collections.emptyList() : hashKeys);
+        if (fields.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        if (fields.size() > BATCH_SIZE) {
+            throw new IllegalArgumentException("一次性获取的数据量过大，不允许超过20条。");
+        }
+
+        Map<String, T> value = getFromHash(key, fields, clazz);
+        if (value.size() == fields.size()) {
+            return value;
+        }
+
+        var config = cacheProperties.getBloomFilter();
+        String lockKey = "lock:%s:fields".formatted(key);
+        try (CacheLock lock = lockManager.optimisticLock(lockKey, DB_LOADER_TIME_OUT)) {
+            if (!lock.isSuccess()) {
+                Thread.sleep(50);
+                Map<String, T> retried = getFromHash(key, fields, clazz);
+                return retried.isEmpty() ? value : retried;
+            }
+
+            Map<String, T> retried = getFromHash(key, fields, clazz);
+            if (retried.size() == fields.size()) {
+                return retried;
+            }
+
+            Map<String, T> loaded = dbLoader.get();
+            if (loaded != null && !loaded.isEmpty()) {
+                addHash(key, loaded);
+                long realTimeout = timeout + CacheFunction.getRandomExtraMillis();
+                redisTemplate.expire(key, realTimeout, TimeUnit.MILLISECONDS);
+                if (config.isEnable()) {
+                    bloomFilter.put(key);
+                }
+                return loaded;
+            }
+            return loaded == null ? Collections.emptyMap() : loaded;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return value;
+        }
+    }
+
+    /**
      * 获取Hash表所有数据（Map形式）
      *
      * @param key   资源键
@@ -716,12 +816,7 @@ public class RedisHashManager implements HashFunction {
     @Override
     public void addHash(String key, String hashKey, Object hashValue) {
         redisTemplate.opsForHash().put(key, hashKey, hashValue);
-        // 布隆过滤器同步（Hash 子项使用特殊的 bloom key 格式）
-        var config = cacheProperties.getBloomFilter();
-        if (config.isEnable()) {
-            String bloomHashKey = "bloom:%s:%s".formatted(key, hashKey);
-            bloomFilter.put(bloomHashKey);
-        }
+        registerHashFieldForBloom(key, hashKey);
     }
 
     /**
@@ -744,6 +839,12 @@ public class RedisHashManager implements HashFunction {
     @Override
     public Long getHashSize(String key) {
         return redisTemplate.opsForHash().size(key);
+    }
+
+    private void registerHashFieldForBloom(String key, String hashKey) {
+        if (cacheProperties.getBloomFilter().isEnable()) {
+            bloomFilter.put("bloom:%s:%s".formatted(key, hashKey));
+        }
     }
 
     @SuppressWarnings("unchecked")

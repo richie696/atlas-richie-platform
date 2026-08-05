@@ -20,7 +20,9 @@ import cn.richie696.contract.model.ApiResult;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -75,9 +77,9 @@ import java.util.Map;
 public class DegradeProperties {
 
     /**
-     * 是否启用降级拦截器；默认 true。
+     * 是否启用降级拦截器；默认 false。建议启用时同时用 {@link #routeRules} 声明受保护接口。
      */
-    private boolean enabled = true;
+    private boolean enabled = false;
 
     /**
      * 无策略命中时的兜底响应（防止"业务异常但无降级策略"导致裸 500）。
@@ -89,6 +91,11 @@ public class DegradeProperties {
      * Value 为该 path 专属的降级响应。命中顺序：精确匹配优先，再 Ant 通配。
      */
     private Map<String, RouteFallback> routes = new HashMap<>();
+
+    /**
+     * 推荐的路由规则写法。List 保留 {@code /}、{@code *} 等 Ant 表达式字符，避免 Map key 在部分配置源中被 relaxed binding 改写。
+     */
+    private List<RouteFallback> routeRules = new ArrayList<>();
 
     /**
      * 兜底响应（默认 503）。
@@ -127,6 +134,8 @@ public class DegradeProperties {
      */
     @Data
     public static class RouteFallback {
+        /** Ant 风格受保护路径，例如 {@code /api/v1/seckill/**}。 */
+        private String pattern;
         /**
          * 降级 HTTP 状态码；默认 503。
          */

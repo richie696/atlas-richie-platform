@@ -52,6 +52,8 @@
         <module>atlas-richie-component-mfa</module>
         <!-- 通用OAuth2.1鉴权组件 -->
         <module>atlas-richie-component-oauth</module>
+        <!-- Model Context Protocol 双端适配组件 -->
+        <module>atlas-richie-component-mcp</module>
         <!-- 微服务通用组件 -->
         <module>atlas-richie-component-microservice</module>
         <!-- 通用切面日志服务组件 -->

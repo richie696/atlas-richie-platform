@@ -77,9 +77,9 @@ import java.util.Map;
 public class CircuitBreakerProperties {
 
     /**
-     * 是否启用熔断拦截器；默认 true。
+     * 是否启用熔断拦截器；默认 false。
      */
-    private boolean enabled = true;
+    private boolean enabled = false;
 
     /**
      * 全局失败率阈值（百分比，0-100）。默认 50。

@@ -76,12 +76,12 @@ import java.util.Map;
 public class RateLimitProperties {
 
     /**
-     * 是否启用限流拦截器；默认 true。
+     * 是否启用限流拦截器；默认 false。启用后也仅对 {@link #routes} 命中的接口生效。
      */
-    private boolean enabled = true;
+    private boolean enabled = false;
 
     /**
-     * 全局每秒令牌数（未命中 routes 时生效）。默认 50。
+     * 路由未单独配置时的默认每秒令牌数。未命中 routes 的请求会直接放行。
      */
     private int permitsPerSecond = 50;
 

@@ -44,7 +44,7 @@ import org.springframework.context.annotation.Bean;
  * <h2>启用条件</h2>
  * <ul>
  *   <li>依赖可选：concurrency 在 classpath 时此装配生效；缺失时 Spring 跳过（README.md §6 R7 选 B）</li>
- *   <li>{@code platform.component.web.rate-limit.enabled=true}（默认）/ circuit-breaker.enabled=true</li>
+ *   <li>{@code platform.component.web.rate-limit.enabled=true} / circuit-breaker.enabled=true（均默认关闭）</li>
  * </ul>
  *
  * <h2>拦截器链</h2>
@@ -81,7 +81,7 @@ public class WebRateLimitAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "platform.component.web.rate-limit", name = "enabled",
-            havingValue = "true", matchIfMissing = true)
+            havingValue = "true")
     public RateLimitInterceptor rateLimitInterceptor(RateLimiterRegistry registry,
                                                      RateLimitProperties properties,
                                                      ObjectProvider<KeyResolver> keyResolverProvider,
@@ -99,16 +99,10 @@ public class WebRateLimitAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "platform.component.web.circuit-breaker", name = "enabled",
-            havingValue = "true", matchIfMissing = true)
+            havingValue = "true")
     public CircuitBreakerInterceptor circuitBreakerInterceptor(CircuitBreakerRegistry registry,
                                                                CircuitBreakerProperties properties,
-                                                               ObjectProvider<KeyResolver> keyResolverProvider,
                                                                WebMetrics webMetrics) {
-        KeyResolver keyResolver = keyResolverProvider.getIfAvailable();
-        if (keyResolver == null) {
-            log.warn("WebRateLimitAutoConfiguration: no KeyResolver bean available — CircuitBreakerInterceptor will deny all. Define @Bean KeyResolver or set platform.component.web.circuit-breaker.enabled=false.");
-            return new CircuitBreakerInterceptor(registry, properties, ctx -> null, webMetrics);
-        }
-        return new CircuitBreakerInterceptor(registry, properties, keyResolver, webMetrics);
+        return new CircuitBreakerInterceptor(registry, properties, webMetrics);
     }
 }

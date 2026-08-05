@@ -50,6 +50,9 @@ class DegradeInterceptorTest {
     void setUp() {
         registry = new DefaultDegradeStrategyRegistry();
         properties = new DegradeProperties();
+        DegradeProperties.RouteFallback protectedRoute = new DegradeProperties.RouteFallback();
+        protectedRoute.setPattern("/api/test");
+        properties.getRouteRules().add(protectedRoute);
         interceptor = new DegradeInterceptor(registry, properties, 100L);
     }
 
@@ -112,6 +115,16 @@ class DegradeInterceptorTest {
     }
 
     @Test
+    void unmatchedRoute_doesNotDegrade() throws Exception {
+        WebRequestContext ctx = new MutableWebRequestContext("GET", "/api/other", Map.of(), Map.of());
+        ctx.setAttribute(DegradeInterceptor.ATTR_EXCEPTION, new RuntimeException("boom"));
+
+        interceptor.intercept(ctx, noopChain());
+
+        assertThat(ctx.isShortCircuited()).isFalse();
+    }
+
+    @Test
     void skipFlag_bypassesDegrade() throws Exception {
         registry.register("err-stub", strategy("err-stub", 0, Trigger.EXCEPTION,
                 DegradeResult.of(503, "x", "err-stub")));
@@ -139,7 +152,7 @@ class DegradeInterceptorTest {
         assertThat(ctx.isShortCircuited()).isTrue();
         assertThat(Integer.valueOf(ctx.responseStatus())).isEqualTo(properties.getFallback().getStatus());
         assertThat(ctx.shortCircuitBody()).contains("exception"); // reason=exception
-        assertThat((Object) ctx.attribute(DegradeInterceptor.ATTR_HIT_STRATEGY)).isEqualTo("<fallback>");
+        assertThat((Object) ctx.attribute(DegradeInterceptor.ATTR_HIT_STRATEGY)).isEqualTo("<route>");
     }
 
     @Test
@@ -297,7 +310,21 @@ class DegradeInterceptorTest {
     }
 
     @Test
-    void routeAntPattern_doesNotMatchOtherPaths() throws Exception {
+    void routeRulesAntPattern_preservesExpressionAndMatchesAnySubpath() throws Exception {
+        DegradeProperties.RouteFallback route = route("SECKILL_DEGRADED", "秒杀服务降级");
+        route.setPattern("/api/v1/seckill/**");
+        properties.getRouteRules().add(route);
+
+        WebRequestContext ctx = newCtx("/api/v1/seckill/items/1");
+        ctx.setAttribute(DegradeInterceptor.ATTR_EXCEPTION, new RuntimeException("boom"));
+
+        interceptor.intercept(ctx, noopChain());
+
+        assertThat(ctx.shortCircuitBody()).contains("SECKILL_DEGRADED");
+    }
+
+    @Test
+    void routeAntPattern_doesNotDegradeOtherPaths() throws Exception {
         properties.getRoutes().put("/api/v1/orders/**", route("ORDER_DEGRADED", "订单服务暂不可用"));
 
         WebRequestContext ctx = newCtx("/api/v1/users");
@@ -305,9 +332,7 @@ class DegradeInterceptorTest {
 
         interceptor.intercept(ctx, noopChain());
 
-        assertThat(ctx.shortCircuitBody()).contains(properties.getFallback().getCode());
-        assertThat((Object) ctx.attribute(DegradeInterceptor.ATTR_HIT_STRATEGY))
-                .isEqualTo(DegradeInterceptor.STRATEGY_NAME_FALLBACK);
+        assertThat(ctx.isShortCircuited()).isFalse();
     }
 
     @Test

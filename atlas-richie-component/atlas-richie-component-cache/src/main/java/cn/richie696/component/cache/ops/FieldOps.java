@@ -43,6 +43,33 @@ public interface FieldOps {
 
     boolean exists(String key, String field);
 
+    // ─────────── 原子计数器 ───────────
+
+    /**
+     * 原子地将 Hash field 加一。
+     */
+    long increment(String key, String field);
+
+    /**
+     * 原子地为 Hash field 增加整数值。
+     */
+    long increment(String key, String field, long delta);
+
+    /**
+     * 原子地为 Hash field 增加浮点值。
+     */
+    double increment(String key, String field, double delta);
+
+    /**
+     * 原子地将 Hash field 减一。
+     */
+    long decrement(String key, String field);
+
+    /**
+     * 原子地为 Hash field 减少整数值。
+     */
+    long decrement(String key, String field, long delta);
+
     // ─────────── 多 field ───────────
 
     void setAll(String key, Map<String, ?> map, long timeoutMillis);
@@ -50,6 +77,11 @@ public interface FieldOps {
     <T> Map<String, T> getAll(String key, Class<T> clazz);
 
     <T> List<T> get(String key, Collection<String> fields, TypeReference<T> reference);
+
+    /**
+     * 批量读取多个字段，并保留 field 到 value 的映射。
+     */
+    <T> Map<String, T> get(String key, Collection<String> fields, Class<T> clazz);
 
     // ─────────── 元信息 ───────────
 
@@ -68,4 +100,15 @@ public interface FieldOps {
     <T> T getWithLock(String key, String field, Class<T> clazz, long timeoutMillis, Supplier<T> dbLoader);
 
     <T> T getWithLock(String key, String field, TypeReference<T> reference, long timeoutMillis, Supplier<T> dbLoader);
+
+    /**
+     * 批量字段读取的防缓存击穿版本；一次 Redis 读取、一次 Hash 粒度锁。
+     */
+    <T> Map<String, T> getWithLock(
+            String key,
+            Collection<String> fields,
+            Class<T> clazz,
+            long timeoutMillis,
+            Supplier<Map<String, T>> dbLoader
+    );
 }
