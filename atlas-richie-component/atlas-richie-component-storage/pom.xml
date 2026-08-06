@@ -16,19 +16,19 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>atlas-richie-component-storage-core</module>
-        <module>atlas-richie-component-storage-local</module>
-        <module>atlas-richie-component-storage-s3</module>
-        <module>atlas-richie-component-storage-oss</module>
-        <module>atlas-richie-component-storage-cos</module>
-        <module>atlas-richie-component-storage-obs</module>
-        <module>atlas-richie-component-storage-minio</module>
-        <module>atlas-richie-component-storage-ks3</module>
-        <module>atlas-richie-component-storage-tos</module>
-        <module>atlas-richie-component-storage-azure</module>
-        <module>atlas-richie-component-storage-sftp</module>
-        <module>atlas-richie-component-storage-ftp</module>
-        <module>atlas-richie-component-storage-smb</module>
+        <module>storage-core</module>
+        <module>storage-local</module>
+        <module>storage-s3</module>
+        <module>storage-oss</module>
+        <module>storage-cos</module>
+        <module>storage-obs</module>
+        <module>storage-minio</module>
+        <module>storage-ks3</module>
+        <module>storage-tos</module>
+        <module>storage-azure</module>
+        <module>storage-sftp</module>
+        <module>storage-ftp</module>
+        <module>storage-smb</module>
     </modules>
 
 </project>

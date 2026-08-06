@@ -28,7 +28,7 @@ import java.util.HexFormat;
 /**
  * AWS4-HMAC-SHA256 签名工具（纯 JDK 实现，无第三方依赖）。
  * <p>
- * 移植自 {@code atlas-richie-component-ocr-volcano/.../VolcanoOcrProvider.buildAuthorization(...)}。
+ * 移植自 {@code ocr-volcano/.../VolcanoOcrProvider.buildAuthorization(...)}。
  * <p>
  * 主要复用场景：火山引擎视觉 / VikingDB 等 AWS4 鉴权风格的 vendor；语音合成（豆包 openspeech）走
  * X-Api-Key 鉴权，本工具仅为后续可能的鉴权兼容型 vendor 预留。

@@ -278,7 +278,7 @@ public class PaymentService {
 
 **适合**：不需要全量 trace（不接 OTel Collector），只需要通过响应头和 MDC 传递 `traceId`，让运维和日志系统能追踪请求链路。
 
-请使用 [`atlas-richie-component-web-core`](../atlas-richie-component-web/README.zh.md) 的 **§3 Trace ID 透传**：
+请使用 [`web-core`](../atlas-richie-component-web/README.zh.md) 的 **§3 Trace ID 透传**：
 
 ```yaml
 platform.component.web.tracing.enabled=true

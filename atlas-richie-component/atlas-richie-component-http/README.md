@@ -114,11 +114,11 @@
 
 ```
 atlas-richie-component-http                      ← parent POM (no code)
-├── atlas-richie-component-http-core             ← facade API: HttpClient / HttpRequest / HttpResponse / SSE
-├── atlas-richie-component-http-okhttp           ← provider: OkHttp
-├── atlas-richie-component-http-httpclient5      ← provider: Apache HttpClient 5
-├── atlas-richie-component-http-jdk              ← provider: JDK 11+ java.net.http.HttpClient
-└── atlas-richie-component-http-restclient       ← provider: Spring 6+ RestClient
+├── http-core             ← facade API: HttpClient / HttpRequest / HttpResponse / SSE
+├── http-okhttp           ← provider: OkHttp
+├── http-httpclient5      ← provider: Apache HttpClient 5
+├── http-jdk              ← provider: JDK 11+ java.net.http.HttpClient
+└── http-restclient       ← provider: Spring 6+ RestClient
 ```
 
 ### `Runtime` wiring
@@ -189,18 +189,18 @@ graph TB
 <!-- Required: facade API -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-http-core</artifactId>
+    <artifactId>http-core</artifactId>
 </dependency>
 
 <!-- Pick exactly one provider -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-http-okhttp</artifactId>
+    <artifactId>http-okhttp</artifactId>
 </dependency>
 <!-- Alternatives:
-<dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-component-http-httpclient5</artifactId></dependency>
-<dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-component-http-jdk</artifactId></dependency>
-<dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-component-http-restclient</artifactId></dependency>
+<dependency><groupId>cn.richie696.component</groupId><artifactId>http-httpclient5</artifactId></dependency>
+<dependency><groupId>cn.richie696.component</groupId><artifactId>http-jdk</artifactId></dependency>
+<dependency><groupId>cn.richie696.component</groupId><artifactId>http-restclient</artifactId></dependency>
 -->
 ```
 
@@ -484,7 +484,7 @@ if (resp.isSuccessful()) {
 
 If you log outbound request / response bodies for debugging, route them through `DesensitizeUtils.toSafeJson(...)`
 from [
-`atlas-richie-component-desensitize-logging`](../atlas-richie-component-desensitize/atlas-richie-component-desensitize-logging/README.md) —
+`desensitize-logging`](../atlas-richie-component-desensitize/desensitize-logging/README.md) —
 otherwise tokens / IDs / signatures leak into your log files.
 
 ---
@@ -512,7 +512,7 @@ You imported `http-core` but no provider. Add **exactly one** provider:
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-http-okhttp</artifactId>
+    <artifactId>http-okhttp</artifactId>
 </dependency>
 ```
 
@@ -594,18 +594,18 @@ startup. **Never** use this in production.
 ## 📚 Further Reading
 
 - **Sub-module docs (each follows the same 10-section skeleton)**:
-    - [`atlas-richie-component-http-core`](./atlas-richie-component-http-core/README.md) — facade API: `HttpClient`,
+    - [`http-core`](./http-core/README.md) — facade API: `HttpClient`,
       `HttpRequest`, `HttpResponse`, SSE.
-    - [`atlas-richie-component-http-okhttp`](./atlas-richie-component-http-okhttp/README.md) — OkHttp provider.
-    - [`atlas-richie-component-http-httpclient5`](./atlas-richie-component-http-httpclient5/README.md) — Apache
+    - [`http-okhttp`](./http-okhttp/README.md) — OkHttp provider.
+    - [`http-httpclient5`](./http-httpclient5/README.md) — Apache
       HttpClient 5 provider.
-    - [`atlas-richie-component-http-jdk`](./atlas-richie-component-http-jdk/README.md) — JDK 11+
+    - [`http-jdk`](./http-jdk/README.md) — JDK 11+
       `java.net.http.HttpClient` provider.
-    - [`atlas-richie-component-http-restclient`](./atlas-richie-component-http-restclient/README.md) — Spring
+    - [`http-restclient`](./http-restclient/README.md) — Spring
       `RestClient` provider.
 - **Related platform components**:
     - [
-      `atlas-richie-component-desensitize-logging`](../atlas-richie-component-desensitize/atlas-richie-component-desensitize-logging/README.md) —
+      `desensitize-logging`](../atlas-richie-component-desensitize/desensitize-logging/README.md) —
       mask sensitive fields in HTTP debug logs.
     - [`atlas-richie-component-microservice`](../atlas-richie-component-microservice/README.md) — Sentinel / OpenFeign
       for retry / circuit-breaker on top of `HttpClient`.

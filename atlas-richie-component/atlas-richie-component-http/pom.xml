@@ -16,11 +16,11 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>atlas-richie-component-http-core</module>
-        <module>atlas-richie-component-http-jdk</module>
-        <module>atlas-richie-component-http-okhttp</module>
-        <module>atlas-richie-component-http-httpclient5</module>
-        <module>atlas-richie-component-http-restclient</module>
+        <module>http-core</module>
+        <module>http-jdk</module>
+        <module>http-okhttp</module>
+        <module>http-httpclient5</module>
+        <module>http-restclient</module>
     </modules>
 
     <build>

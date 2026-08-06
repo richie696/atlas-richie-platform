@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>cn.richie696.component</groupId>
+        <artifactId>atlas-richie-component-mfa</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>mfa-validation</artifactId>
+    <packaging>jar</packaging>
+    <name>mfa-validation</name>
+    <description>MFA验证模块 - 部署在网关服务，只读GlobalCache，零数据库依赖</description>
+
+    <dependencies>
+        <!-- 缓存组件（只读） -->
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-component-cache</artifactId>
+        </dependency>
+
+        <!-- MFA核心模块（公共实体、枚举、工具类） -->
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>mfa-core</artifactId>
+        </dependency>
+
+        <!--
+            mfa-core 声明 tenant-common 为 provided 作用域（由应用运行时提供），
+            但本模块单元测试需要 mock MfaTenantSupport（继承 MultiTenancyProperties），
+            故在 test scope 显式引入以满足 Mockito inline mock 的类加载需求。
+        -->
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>tenant-common</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- 加密库 -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+        </dependency>
+
+        <!-- Apache Commons Codec（用于 Base32 解码） -->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>cn/richie696/component/mfa/validation/engine/**</include>
+                        <include>cn/richie696/component/mfa/validation/replay/**</include>
+                        <include>cn/richie696/component/mfa/validation/service/**</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <configuration combine.self="override">
+                            <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
+                            <includes>
+                                <include>cn/richie696/component/mfa/validation/engine/**</include>
+                                <include>cn/richie696/component/mfa/validation/replay/**</include>
+                                <include>cn/richie696/component/mfa/validation/service/**</include>
+                            </includes>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.coverage.minimum}</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>cn.richie696.component</groupId>
+        <artifactId>atlas-richie-component-document-chunking</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>document-chunking-parser-adapter</artifactId>
+    <description>Richie 文档切片 Parser 可选适配器</description>
+    <dependencies>
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>document-chunking-core</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-component-document-parser</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <!-- 测试支撑：公共集成测试基类、Spring Test 工具、AssertJ 等 -->
+        <dependency>
+            <groupId>cn.richie696.base</groupId>
+            <artifactId>atlas-richie-testing-support</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Spring Boot Test 套件：JUnit5 + AssertJ + Mockito + Spring Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Mockito 与 JUnit5 桥接（@Mock 等注解启用） -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
+            <!--
+              与平台统一基座对齐（参考 atlas-richie-component-dao 写法）：
+              - includes 限定到本组件包，避免把 Spring Boot 自动配置类拉入统计
+              - excludes 按平台惯例排除 *AutoConfiguration 与 config 包
+              - rules 由父 POM（atlas-richie-component-dependencies / 根聚合 POM）统一按 PACKAGE 下发，
+                阈值 = ${jacoco.coverage.minimum}（平台默认 0.8）
+            -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>cn/richie696/component/chunking/parser/**</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*AutoConfiguration.class</exclude>
+                        <exclude>**/config/*.class</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <configuration>
+                            <includes>
+                                <include>cn/richie696/component/chunking/parser/**</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/*AutoConfiguration.class</exclude>
+                                <exclude>**/config/*.class</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

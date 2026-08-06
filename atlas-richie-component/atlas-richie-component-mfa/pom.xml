@@ -18,26 +18,26 @@
     <description>多因子认证组件 - 支持TOTP/HOTP/SMS等多种认证方式</description>
 
     <modules>
-        <module>atlas-richie-component-mfa-core</module>
-        <module>atlas-richie-component-mfa-validation</module>
-        <module>atlas-richie-component-mfa-management</module>
+        <module>mfa-core</module>
+        <module>mfa-validation</module>
+        <module>mfa-management</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-mfa-core</artifactId>
+                <artifactId>mfa-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-mfa-management</artifactId>
+                <artifactId>mfa-management</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-mfa-validation</artifactId>
+                <artifactId>mfa-validation</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

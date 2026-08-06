@@ -135,7 +135,7 @@ Shared cross-service fields:
 - **`token`:** Token filter allow/deny lists, login paths, etc.
 - **`deploy`:** Canary (gray) flags for gateway load balancing and async propagation
 
-Tenant configuration is maintained by `atlas-richie-component-tenant-common/core/gateway` under the `platform.tenant` prefix.
+Tenant configuration is maintained by `tenant-common/core/gateway` under the `platform.tenant` prefix.
 
 Gateway-only settings (ECC encryption, SSO, circuit breaking, etc.) stay inside `atlas-richie-gateway-service` and are **not** part of this contract.
 
@@ -148,8 +148,8 @@ Gateway-only settings (ECC encryption, SSO, circuit breaking, etc.) stay inside 
 
 Use when you need aligned contracts but **not** Servlet/JWT/full utilities, for example:
 
-- `atlas-richie-component-messaging-core`
-- `atlas-richie-component-mfa-core`
+- `messaging-core`
+- `mfa-core`
 - `atlas-richie-component-mqtt`
 
 ```xml

@@ -70,13 +70,13 @@
 <!-- 基础消息组件 -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-messaging-core</artifactId>
+    <artifactId>messaging-core</artifactId>
 </dependency>
 
 <!-- 选择具体的 MQ 实现（以 Kafka 为例） -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-messaging-kafka</artifactId>
+    <artifactId>messaging-kafka</artifactId>
 </dependency>
 
 <!-- 如果需要使用 Redis 进行幂等去重 -->

@@ -16,13 +16,13 @@
 package cn.richie696.gateway.error;
 
 import cn.richie696.contract.model.ApiResult;
+import cn.richie696.gateway.filter.common.infrastructure.RequestIdGlobalFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -37,35 +37,11 @@ import java.util.Map;
 @Component
 public class ErrorStrategyContext {
 
-    private final Map<HttpStatus, ErrorStrategy> strategies = new HashMap<>();
+    private final ErrorStrategy strategy = new ErrorStrategy.DefaultErrorStrategy();
     private final Environment environment;
 
     public ErrorStrategyContext(Environment environment) {
         this.environment = environment;
-        strategies.put(HttpStatus.BAD_REQUEST, new ErrorStrategy.BadRequestErrorStrategy());
-        strategies.put(HttpStatus.UNAUTHORIZED, new ErrorStrategy.UnauthorizedErrorStrategy());
-        strategies.put(HttpStatus.FORBIDDEN, new ErrorStrategy.ForbiddenErrorStrategy());
-        strategies.put(HttpStatus.NOT_FOUND, new ErrorStrategy.NotFoundErrorStrategy());
-        strategies.put(HttpStatus.METHOD_NOT_ALLOWED, new ErrorStrategy.MethodNotAllowedErrorStrategy());
-        strategies.put(HttpStatus.NOT_ACCEPTABLE, new ErrorStrategy.NotAcceptableErrorStrategy());
-        strategies.put(HttpStatus.PROXY_AUTHENTICATION_REQUIRED, new ErrorStrategy.ProxyAuthenticationRequiredErrorStrategy());
-        strategies.put(HttpStatus.REQUEST_TIMEOUT, new ErrorStrategy.RequestTimeoutErrorStrategy());
-        strategies.put(HttpStatus.UNSUPPORTED_MEDIA_TYPE, new ErrorStrategy.UnsupportedMediaTypeErrorStrategy());
-        strategies.put(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, new ErrorStrategy.RequestedRangeNotSatisfiableErrorStrategy());
-        strategies.put(HttpStatus.EXPECTATION_FAILED, new ErrorStrategy.ExpectationFailedErrorStrategy());
-        strategies.put(HttpStatus.I_AM_A_TEAPOT, new ErrorStrategy.ImATeapotErrorStrategy());
-        strategies.put(HttpStatus.UNPROCESSABLE_ENTITY, new ErrorStrategy.UnprocessableEntityErrorStrategy());
-        strategies.put(HttpStatus.TOO_EARLY, new ErrorStrategy.TooEarlyErrorStrategy());
-        strategies.put(HttpStatus.UPGRADE_REQUIRED, new ErrorStrategy.UpgradeRequiredErrorStrategy());
-        strategies.put(HttpStatus.PRECONDITION_REQUIRED, new ErrorStrategy.PreconditionRequiredErrorStrategy());
-        strategies.put(HttpStatus.TOO_MANY_REQUESTS, new ErrorStrategy.TooManyRequestsErrorStrategy());
-        strategies.put(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE, new ErrorStrategy.RequestHeaderFieldsTooLargeErrorStrategy());
-        strategies.put(HttpStatus.UNAVAILABLE_FOR_LEGAL_REASONS, new ErrorStrategy.UnavailableForLegalReasonsErrorStrategy());
-        strategies.put(HttpStatus.INTERNAL_SERVER_ERROR, new ErrorStrategy.InternalServerErrorErrorStrategy());
-        strategies.put(HttpStatus.NOT_IMPLEMENTED, new ErrorStrategy.NotImplementedErrorStrategy());
-        strategies.put(HttpStatus.BAD_GATEWAY, new ErrorStrategy.BadGatewayErrorStrategy());
-        strategies.put(HttpStatus.SERVICE_UNAVAILABLE, new ErrorStrategy.ServiceUnavailableErrorStrategy());
-        strategies.put(HttpStatus.GATEWAY_TIMEOUT, new ErrorStrategy.GatewayTimeoutErrorStrategy());
     }
 
     /**
@@ -77,12 +53,14 @@ public class ErrorStrategyContext {
     public ApiResult<Void> handleError(Map<String, Object> errorAttributes) {
         Integer status = (Integer) errorAttributes.get("status");
         HttpStatus httpStatus = (status != null) ? HttpStatus.valueOf(status) : HttpStatus.INTERNAL_SERVER_ERROR;
-        ErrorStrategy strategy = strategies.getOrDefault(httpStatus, new ErrorStrategy.DefaultErrorStrategy());
-        
-        // 判断是否为开发或测试环境
-        boolean isDevOrTest = isDevOrTestEnvironment();
-        
-        return strategy.handle(httpStatus, errorAttributes, isDevOrTest);
+        return strategy.handle(httpStatus, errorAttributes, isDevOrTestEnvironment(), null);
+    }
+
+    public ApiResult<Void> handleError(Map<String, Object> errorAttributes, org.springframework.web.server.ServerWebExchange exchange) {
+        Integer status = (Integer) errorAttributes.get("status");
+        HttpStatus httpStatus = status != null ? HttpStatus.valueOf(status) : HttpStatus.INTERNAL_SERVER_ERROR;
+        String requestId = exchange == null ? null : exchange.getAttribute(RequestIdGlobalFilter.ATTRIBUTE_KEY);
+        return strategy.handle(httpStatus, errorAttributes, isDevOrTestEnvironment(), requestId);
     }
 
     /**

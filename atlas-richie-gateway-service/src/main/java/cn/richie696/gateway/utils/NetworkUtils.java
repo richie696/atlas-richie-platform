@@ -16,6 +16,9 @@
 package cn.richie696.gateway.utils;
 
 import cn.richie696.contract.model.ApiResult;
+import cn.richie696.gateway.error.GatewayErrorCode;
+import cn.richie696.gateway.error.GatewayErrorRegistry;
+import cn.richie696.gateway.filter.common.infrastructure.RequestIdGlobalFilter;
 import cn.richie696.context.utils.data.JsonUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -85,8 +88,15 @@ public final class NetworkUtils {
     public static Mono<Void> returnError(ServerHttpResponse response, HttpStatus httpStatus, String message) {
         response.setStatusCode(HttpStatus.OK);
         response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
-        ApiResult<Void> result = ApiResult.error(message);
-        result.setCode(String.valueOf(httpStatus.value()));
+        GatewayErrorCode errorCode = GatewayErrorRegistry.byHttpStatus(httpStatus.value());
+        String requestId = response.getHeaders().getFirst(RequestIdGlobalFilter.HEADER_NAME);
+        if (requestId == null || requestId.isBlank()) {
+            requestId = UUID.randomUUID().toString().replace("-", "");
+            response.getHeaders().set(RequestIdGlobalFilter.HEADER_NAME, requestId);
+        }
+        ApiResult<Void> result = ApiResult.<Void>error(errorCode.getCode(), message)
+                .setRequestId(requestId)
+                .setHelpUrl(GatewayErrorRegistry.helpUrl(errorCode));
         DataBuffer wrap = response.bufferFactory()
                 .wrap(Objects.requireNonNull(JsonUtils.getInstance().serializeBytes(result)));
         return response.writeWith(Mono.just(wrap));

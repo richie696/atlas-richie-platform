@@ -626,7 +626,7 @@ recommended pattern.
 ### 5) `Pair` with the platform's desensitization component
 
 If your gRPC handlers read sensitive fields from `Metadata` or `HeaderContextHolder`, combine this component with [
-`atlas-richie-component-desensitize-logging`](../atlas-richie-component-desensitize/atlas-richie-component-desensitize-logging/README.md) —
+`desensitize-logging`](../atlas-richie-component-desensitize/desensitize-logging/README.md) —
 wrap your log calls in `DesensitizeUtils.mask(...)` so tokens / IDs don't leak into log files.
 
 ### 6) `Disable` what you don't use

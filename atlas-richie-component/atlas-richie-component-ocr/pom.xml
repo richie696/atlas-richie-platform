@@ -16,16 +16,16 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>atlas-richie-component-ocr-core</module>
-        <module>atlas-richie-component-ocr-parser-adapter</module>
-        <module>atlas-richie-component-ocr-aliyun</module>
-        <module>atlas-richie-component-ocr-baidu</module>
-        <module>atlas-richie-component-ocr-paddle</module>
-        <module>atlas-richie-component-ocr-tesseract</module>
-        <module>atlas-richie-component-ocr-paddle-vl</module>
-        <module>atlas-richie-component-ocr-mineru</module>
-        <module>atlas-richie-component-ocr-tencent</module>
-        <module>atlas-richie-component-ocr-volcano</module>
+        <module>ocr-core</module>
+        <module>ocr-parser-adapter</module>
+        <module>ocr-aliyun</module>
+        <module>ocr-baidu</module>
+        <module>ocr-paddle</module>
+        <module>ocr-tesseract</module>
+        <module>ocr-paddle-vl</module>
+        <module>ocr-mineru</module>
+        <module>ocr-tencent</module>
+        <module>ocr-volcano</module>
     </modules>
 
     <build>

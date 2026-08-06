@@ -54,9 +54,9 @@
 
 | 模块                  | English                                                                     | 中文                                                                           | 主要用途 |
 |-----------------------|-----------------------------------------------------------------------------|--------------------------------------------------------------------------------|----------|
-| `desensitize-core`    | [`README.zh.md`](./atlas-richie-component-desensitize-core/README.zh.md)    | 纯 Java 规则、策略、`MaskingService`、`DesensitizeUtils`、Spring Boot 自动装配 |
-| `desensitize-jackson` | [`README.zh.md`](./atlas-richie-component-desensitize-jackson/README.zh.md) | `@Sensitive` 注解 + Map 序列化，REST 接口响应脱敏                              |
-| `desensitize-logging` | [`README.zh.md`](./atlas-richie-component-desensitize-logging/README.zh.md) | Logback `ConversionRule` / TurboFilter，日志输出脱敏                           |
+| `desensitize-core`    | [`README.zh.md`](./desensitize-core/README.zh.md)    | 纯 Java 规则、策略、`MaskingService`、`DesensitizeUtils`、Spring Boot 自动装配 |
+| `desensitize-jackson` | [`README.zh.md`](./desensitize-jackson/README.zh.md) | `@Sensitive` 注解 + Map 序列化，REST 接口响应脱敏                              |
+| `desensitize-logging` | [`README.zh.md`](./desensitize-logging/README.zh.md) | Logback `ConversionRule` / TurboFilter，日志输出脱敏                           |
 
 ---
 
@@ -114,9 +114,9 @@ flowchart TB
 
 | 模块                  | 依赖方引入场景               | 文档                                                              |
 |-----------------------|------------------------------|-------------------------------------------------------------------|
-| `desensitize-core`    | 仅需编程式脱敏、或自定义集成 | [中文](./atlas-richie-component-desensitize-core/README.zh.md)    |
-| `desensitize-jackson` | REST API 返回 JSON 脱敏      | [中文](./atlas-richie-component-desensitize-jackson/README.zh.md) |
-| `desensitize-logging` | 日志输出脱敏                 | [中文](./atlas-richie-component-desensitize-logging/README.zh.md) |
+| `desensitize-core`    | 仅需编程式脱敏、或自定义集成 | [中文](./desensitize-core/README.zh.md)    |
+| `desensitize-jackson` | REST API 返回 JSON 脱敏      | [中文](./desensitize-jackson/README.zh.md) |
+| `desensitize-logging` | 日志输出脱敏                 | [中文](./desensitize-logging/README.zh.md) |
 
 ### 2.2 运行时组件关系
 
@@ -471,7 +471,7 @@ sequenceDiagram
 
 > **详细用法、配置项、Logback 接入方式（`%desensitizeMsg` / `%desensitizeJsonMsg` / TurboFilter）见子模块文档：**
 > [
-`atlas-richie-component-desensitize-logging/README.zh.md`](./atlas-richie-component-desensitize-logging/README.zh.md) · [English](./README.zh.md)
+`desensitize-logging/README.zh.md`](./desensitize-logging/README.zh.md) · [English](./README.zh.md)
 
 ---
 
@@ -670,13 +670,13 @@ log.info("row={}", DesensitizeUtils.toSafeString(dataMap));
 <!-- API 返回值脱敏 -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-desensitize-jackson</artifactId>
+    <artifactId>desensitize-jackson</artifactId>
 </dependency>
 
 <!-- 日志脱敏 -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-desensitize-logging</artifactId>
+    <artifactId>desensitize-logging</artifactId>
 </dependency>
 ```
 
@@ -786,9 +786,9 @@ flowchart TB
 
 | 阶段   | 内容                                                                                                                                                                                     | 产出                                      | 文档                                                                                                       |
 |--------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| **P0** | Core：`MaskingService` / `DesensitizeUtils` / `ObjectMaskingService` / `SensitiveKeyRegistry` / `sensitive-keys` / 内置策略                                                              | 可单测；日志主路径可用                    | [core / 核心](./atlas-richie-component-desensitize-core/README.zh.md) · [English](./README.zh.md)          |
-| **P1** | Jackson：`@Sensitive` + `SensitiveMapSerializer` + Module                                                                                                                                | API：Bean + Map 返回值脱敏                | [jackson / Jackson](./atlas-richie-component-desensitize-jackson/README.zh.md) · [English](./README.zh.md) |
-| **P2** | 日志基础：`DesensitizeConverter` + `SensitiveLogArgTurboFilter` + `DesensitizeJsonMessageConverter` + `SensitiveMdcTurboFilter` + `LoggingMaskingService`；可选增强：JSON Layout Encoder | 日志参数、JSON 文本、MDC 字段脱敏直接可用 | [logging / 日志](./atlas-richie-component-desensitize-logging/README.zh.md) · [English](./README.zh.md)    |
+| **P0** | Core：`MaskingService` / `DesensitizeUtils` / `ObjectMaskingService` / `SensitiveKeyRegistry` / `sensitive-keys` / 内置策略                                                              | 可单测；日志主路径可用                    | [core / 核心](./desensitize-core/README.zh.md) · [English](./README.zh.md)          |
+| **P1** | Jackson：`@Sensitive` + `SensitiveMapSerializer` + Module                                                                                                                                | API：Bean + Map 返回值脱敏                | [jackson / Jackson](./desensitize-jackson/README.zh.md) · [English](./README.zh.md) |
+| **P2** | 日志基础：`DesensitizeConverter` + `SensitiveLogArgTurboFilter` + `DesensitizeJsonMessageConverter` + `SensitiveMdcTurboFilter` + `LoggingMaskingService`；可选增强：JSON Layout Encoder | 日志参数、JSON 文本、MDC 字段脱敏直接可用 | [logging / 日志](./desensitize-logging/README.zh.md) · [English](./README.zh.md)    |
 | **P3** | 权限评估 + 集成测试 + `sample-desensitize`（可选）                                                                                                                                       | 可演示、可回归                            | –                                                                                                          |
 
 ### `Definition` of `Done`（编码阶段）
@@ -834,9 +834,9 @@ flowchart TB
 
 | # | 子模块                    | English                  | 中文                                                                      | 阅读时机                                                                                         |
 |---|---------------------------|--------------------------|---------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| 1 | **`desensitize-core`**    | [README](./README.zh.md) | [README.zh.md](./atlas-richie-component-desensitize-core/README.zh.md)    | 必读——纯 Java 规则引擎、`MaskingService`、`DesensitizeUtils`、`@Sensitive`、内置策略与权限豁免   |
-| 2 | **`desensitize-jackson`** | [README](./README.zh.md) | [README.zh.md](./atlas-richie-component-desensitize-jackson/README.zh.md) | 当对外 REST 接口返回 VO 或 `Map` 时——基于 `@Sensitive` / `sensitive-keys` 的 JSON 脱敏           |
-| 3 | **`desensitize-logging`** | [README](./README.zh.md) | [README.zh.md](./atlas-richie-component-desensitize-logging/README.zh.md) | 当日志可能包含敏感值时——`%desensitizeMsg` / `%desensitizeJsonMsg` / `SensitiveLogArg` / MDC 过滤 |
+| 1 | **`desensitize-core`**    | [README](./README.zh.md) | [README.zh.md](./desensitize-core/README.zh.md)    | 必读——纯 Java 规则引擎、`MaskingService`、`DesensitizeUtils`、`@Sensitive`、内置策略与权限豁免   |
+| 2 | **`desensitize-jackson`** | [README](./README.zh.md) | [README.zh.md](./desensitize-jackson/README.zh.md) | 当对外 REST 接口返回 VO 或 `Map` 时——基于 `@Sensitive` / `sensitive-keys` 的 JSON 脱敏           |
+| 3 | **`desensitize-logging`** | [README](./README.zh.md) | [README.zh.md](./desensitize-logging/README.zh.md) | 当日志可能包含敏感值时——`%desensitizeMsg` / `%desensitizeJsonMsg` / `SensitiveLogArg` / MDC 过滤 |
 
 > 每个子模块 README 均反向链接回本文档，构成双向引用。
 

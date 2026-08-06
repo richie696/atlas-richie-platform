@@ -602,7 +602,7 @@ HTTP/REST 服务由 `atlas-richie-context` 的过滤器写入 `HeaderContextHold
 ### 5) 与平台脱敏组件配合
 
 如果 gRPC Handler 从 `Metadata` / `HeaderContextHolder` 读取敏感字段，结合 [
-`atlas-richie-component-desensitize-logging`](../atlas-richie-component-desensitize/atlas-richie-component-desensitize-logging/README.zh.md)
+`desensitize-logging`](../atlas-richie-component-desensitize/desensitize-logging/README.zh.md)
 ：日志调用统一走 `DesensitizeUtils.mask(...)`，防止 token / ID 写入日志。
 
 ### 6) 按需关闭不需要的能力

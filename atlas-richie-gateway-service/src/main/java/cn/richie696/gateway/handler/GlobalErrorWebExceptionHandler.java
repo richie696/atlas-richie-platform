@@ -19,6 +19,7 @@ import cn.richie696.component.i18n.resolver.I18nResolver;
 import cn.richie696.contract.exception.I18nMessageKeyException;
 import cn.richie696.contract.model.ApiResult;
 import cn.richie696.gateway.error.ErrorStrategyContext;
+import cn.richie696.gateway.filter.common.infrastructure.RequestIdGlobalFilter;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.web.WebProperties;
@@ -84,7 +85,7 @@ public class GlobalErrorWebExceptionHandler extends AbstractErrorWebExceptionHan
     private Mono<ServerResponse> renderErrorResponse(ServerRequest request) {
         I18nMessageKeyException messageKeyException = findMessageKeyException(request);
         if (messageKeyException != null) {
-            return renderMessageKeyError(messageKeyException);
+            return renderMessageKeyError(request, messageKeyException);
         }
 
         // 定义需要的错误属性（包含堆栈跟踪信息，用于开发/测试环境）
@@ -99,20 +100,20 @@ public class GlobalErrorWebExceptionHandler extends AbstractErrorWebExceptionHan
         // 获取异常属性内容
         var errorPropertiesMap = getErrorAttributes(request, options);
         // 调用错误策略上下文处理异常
-        var result = errorStrategyContext.handleError(errorPropertiesMap);
+        var result = errorStrategyContext.handleError(errorPropertiesMap, request.exchange());
         // 从错误属性中提取 HTTP 状态码，如果没有则使用 500
         Integer status = (Integer) errorPropertiesMap.get("status");
         HttpStatus httpStatus = status != null ? HttpStatus.valueOf(status) : HttpStatus.INTERNAL_SERVER_ERROR;
         // 返回结果给客户端
-        return ServerResponse.status(httpStatus)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(result);
+        var response = ServerResponse.status(httpStatus).contentType(MediaType.APPLICATION_JSON);
+        if (result.getRequestId() != null) response.header(RequestIdGlobalFilter.HEADER_NAME, result.getRequestId());
+        return response.bodyValue(result);
     }
 
     /**
      * 统一解析携带 messageKey 的异常，避免异常生产方依赖 I18n 模块。
      */
-    private Mono<ServerResponse> renderMessageKeyError(I18nMessageKeyException exception) {
+    private Mono<ServerResponse> renderMessageKeyError(ServerRequest request, I18nMessageKeyException exception) {
         String message;
         try {
             message = i18n.get(exception.getMessageKey(), exception.getArguments());
@@ -124,15 +125,16 @@ public class GlobalErrorWebExceptionHandler extends AbstractErrorWebExceptionHan
         ApiResult<Void> result = new ApiResult<>();
         result.setSuccess(false)
                 .setCode(exception.getErrorCode())
-                .setMsg(message);
+                .setMsg(message)
+                .setRequestId(request.exchange().getAttribute(RequestIdGlobalFilter.ATTRIBUTE_KEY));
 
         HttpStatus status = HttpStatus.resolve(exception.getStatusCode());
         if (status == null) {
             status = HttpStatus.INTERNAL_SERVER_ERROR;
         }
-        return ServerResponse.status(status)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(result);
+        var response = ServerResponse.status(status).contentType(MediaType.APPLICATION_JSON);
+        if (result.getRequestId() != null) response.header(RequestIdGlobalFilter.HEADER_NAME, result.getRequestId());
+        return response.bodyValue(result);
     }
 
     private I18nMessageKeyException findMessageKeyException(ServerRequest request) {

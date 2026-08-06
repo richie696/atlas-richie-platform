@@ -310,7 +310,7 @@ example, with Milvus:
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-vector-milvus</artifactId>
+    <artifactId>vector-milvus</artifactId>
 </dependency>
 ```
 
@@ -319,7 +319,7 @@ To map chunking results directly to vector records, also add:
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-vector-chunk-adapter</artifactId>
+    <artifactId>vector-chunk-adapter</artifactId>
 </dependency>
 ```
 
@@ -328,7 +328,7 @@ For business documents that are frequently updated or deleted, also add the vers
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-vector-projection-dao</artifactId>
+    <artifactId>vector-projection-dao</artifactId>
 </dependency>
 ```
 

@@ -47,6 +47,12 @@ public interface ErrorStrategy {
      */
     ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest);
 
+    /** Adds protocol metadata without forcing individual strategy implementations to know the exchange. */
+    default ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes,
+                                  boolean isDevOrTest, String requestId) {
+        return handle(statusCode, errorAttributes, isDevOrTest).setRequestId(requestId);
+    }
+
     /**
      * 从错误属性中提取错误消息
      * 开发/测试环境：返回详细异常信息和堆栈
@@ -177,8 +183,13 @@ public interface ErrorStrategy {
     class DefaultErrorStrategy implements ErrorStrategy {
         @Override
         public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
+            if (isDevOrTest) {
+                return ApiResult.error(String.valueOf(statusCode.value()),
+                        extractErrorMessage(statusCode, errorAttributes, true));
+            }
+            GatewayErrorCode code = GatewayErrorRegistry.byHttpStatus(statusCode.value());
+            return ApiResult.<Void>error(code.getCode(), I18n.get(code.getI18nKey() + ".meaning"))
+                    .setHelpUrl(GatewayErrorRegistry.helpUrl(code));
         }
     }
 

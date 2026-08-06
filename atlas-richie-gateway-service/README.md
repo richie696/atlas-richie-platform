@@ -32,7 +32,7 @@
 
 > **Mutual exclusion:** `platform.gateway.token.enable` and `platform.gateway.interface-auth.enable` **cannot both be `true`**. `GatewayAuthConfigValidator` fails fast at startup if they conflict.
 
-Shared cross-service settings (`token`, `deploy`, `audit-enabled`) live in **`atlas-richie-contract`** as `GatewayContract` under prefix `platform.gateway.contract`. Tenant settings are provided by `atlas-richie-component-tenant-gateway` under `platform.tenant`. Gateway-only settings (CSP, ECC, SSO, anomaly detection, duplicate submit, hardware fingerprint, fallback) are in **`GatewayConfig`**.
+Shared cross-service settings (`token`, `deploy`, `audit-enabled`) live in **`atlas-richie-contract`** as `GatewayContract` under prefix `platform.gateway.contract`. Tenant settings are provided by `tenant-gateway` under `platform.tenant`. Gateway-only settings (CSP, ECC, SSO, anomaly detection, duplicate submit, hardware fingerprint, fallback) are in **`GatewayConfig`**.
 
 The gateway is **configuration-driven**: one artifact switches microservice / OpenAPI / internal personalities via Nacos without code changes.
 
@@ -434,7 +434,7 @@ add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsaf
 
 ### 6. Multi-tenant
 
-`TenantFilter` from `atlas-richie-component-tenant-gateway` + `platform.tenant.gateway`.
+`TenantFilter` from `tenant-gateway` + `platform.tenant.gateway`.
 
 ### 7. i18n (35 locales)
 

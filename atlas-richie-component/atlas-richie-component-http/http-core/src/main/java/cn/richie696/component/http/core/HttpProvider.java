@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2026 Richie (https://www.github.com/richie696)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package cn.richie696.component.http.core;
+
+/**
+ * HTTP 客户端实现提供方枚举。
+ * <p>
+ * 对应 {@code platform.component.http.provider} 的可选值。
+ *
+ * @author richie696
+ * @version 1.0
+ * @since 1.0.0
+ */
+public enum HttpProvider {
+
+    /**
+     * OkHttp 客户端（需要导入 atlas-richie-component-okhttp 实现包）
+     */
+    OKHTTP,
+
+    /**
+     * Apache HttpClient 5 客户端（需要导入 atlas-richie-component-httpclient5 实现包）
+     */
+    HTTP_CLIENT_5,
+
+    /**
+     * Spring Web RestClient 客户端
+     */
+    REST_CLIENT,
+
+    /**
+     * JDK HttpClient 客户端（需要导入 http-jdk 实现包）
+     */
+    JDK
+}

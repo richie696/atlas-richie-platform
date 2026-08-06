@@ -120,7 +120,7 @@ mfaBindService.bindDevice(request.getTenantId(), request.getUserId(), request.ge
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-mfa-validation</artifactId>
+    <artifactId>mfa-validation</artifactId>
 </dependency>
 ```
 
@@ -129,7 +129,7 @@ mfaBindService.bindDevice(request.getTenantId(), request.getUserId(), request.ge
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-mfa-management</artifactId>
+    <artifactId>mfa-management</artifactId>
 </dependency>
 ```
 

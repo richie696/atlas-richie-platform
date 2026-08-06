@@ -294,7 +294,7 @@ stateDiagram-v2
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-vector-milvus</artifactId>
+    <artifactId>vector-milvus</artifactId>
 </dependency>
 ```
 
@@ -303,7 +303,7 @@ stateDiagram-v2
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-vector-chunk-adapter</artifactId>
+    <artifactId>vector-chunk-adapter</artifactId>
 </dependency>
 ```
 
@@ -312,7 +312,7 @@ stateDiagram-v2
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-vector-projection-dao</artifactId>
+    <artifactId>vector-projection-dao</artifactId>
 </dependency>
 ```
 

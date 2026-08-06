@@ -130,7 +130,7 @@ public void upload(File file) {
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-storage-core</artifactId>
+    <artifactId>storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
 ```

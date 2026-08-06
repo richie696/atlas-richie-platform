@@ -1,9 +1,9 @@
 # Atlas Richie MCP Server/Client Adapter 组件详细设计
 
-> 状态：P0 已完成，P1 实现中（Schema / Tool 内核 / HTTP 请求验证已落地）
+> 状态：P0-P3 可运行基础能力已落地；P4 为部署侧 conformance、业务迁移与生产观测验收
 > 基线协议：MCP `2026-07-28`
 > 兼容协议：MCP `2025-11-25`（legacy）
-> 更新时间：2026-08-04
+> 更新时间：2026-08-06
 > 组件目录：`atlas-richie-component/atlas-richie-component-mcp`
 
 ---
@@ -98,16 +98,16 @@
 
 ```text
 atlas-richie-component-mcp/
-├── atlas-richie-component-mcp-api                 # P0 已实现
-├── atlas-richie-component-mcp-protocol            # P0 已实现
-├── atlas-richie-component-mcp-schema              # P1 已实现首版
-├── atlas-richie-component-mcp-server-core         # P1 Registry/Dispatcher 已实现
-├── atlas-richie-component-mcp-transport-http      # P1 request validator 已实现
-├── atlas-richie-component-mcp-transport-stdio
-├── atlas-richie-component-mcp-security-oauth
-├── atlas-richie-component-mcp-server-spring-boot-starter
-├── atlas-richie-component-mcp-client-spring-boot-starter
-├── atlas-richie-component-mcp-testkit             # P0 已建立
+├── mcp-api                 # P0 已实现
+├── mcp-protocol            # P0 已实现
+├── mcp-schema              # P1 已实现首版
+├── mcp-server-core         # P1 Registry/Dispatcher 已实现
+├── mcp-transport-http      # P1 request validator 已实现
+├── mcp-transport-stdio         # P3 首版已实现
+├── mcp-security-oauth          # P2 Adapter 首版已实现
+├── mcp-server-spring-boot-starter # P1 MVC/WebFlux 首版已实现
+├── mcp-client-spring-boot-starter # P2 协商/缓存首版已实现
+├── mcp-testkit             # P0 已建立
 └── docs/
 ```
 
@@ -120,10 +120,10 @@ atlas-richie-component-mcp/
 | `mcp-schema` | 否 | 稳定 JSON Schema Adapter、Draft 2020-12 编译与验证、安全限制 |
 | `mcp-server-core` | 否 | 无 Spring 的 Registry、Dispatcher、授权可见性与调用内核 |
 | `mcp-transport-http` | 否 | Streamable HTTP、request-scoped SSE、标准 Header |
-| `mcp-transport-stdio` | 否 | 子进程、newline framing、取消、生命周期 |
-| `mcp-security-oauth` | 否 | MCP OAuth Adapter，复用中台 OAuth/HTTP/Cache |
-| `mcp-server-spring-boot-starter` | 是 | Server 自动配置、注册表、Endpoint、过滤器 |
-| `mcp-client-spring-boot-starter` | 是 | Client 自动配置、协商、调用、缓存、凭据 |
+| `mcp-transport-stdio` | 否 | 子进程、newline framing、EOF 与生命周期首版 |
+| `mcp-security-oauth` | 否 | MCP OAuth metadata/token SPI、Bearer challenge 与 URI 安全策略首版 |
+| `mcp-server-spring-boot-starter` | 是 | Server 自动配置、注册表、Spring MVC/WebFlux JSON/SSE Endpoint |
+| `mcp-client-spring-boot-starter` | 是 | Client 自动配置、HTTP 调用、版本 discovery 协商与 list TTL 缓存 |
 | `mcp-testkit` | 测试作用域 | 契约测试、fixture、双时代测试、conformance launcher |
 
 ### 3.3 依赖方向
@@ -621,7 +621,7 @@ Server 校验 body/header 不一致：
 
 Header 名大小写不敏感，Header 值大小写敏感。
 
-当前 `mcp-transport-http` 已落地无 Servlet/WebFlux 依赖的请求验证内核：
+当前 `mcp-transport-http` 已落地无 Servlet/WebFlux 依赖的请求验证内核；Server Starter 另外提供 MVC 与 WebFlux 框架绑定：
 
 - 只接受 POST；GET/DELETE 由框架层映射为 405；
 - `Content-Type` 必须为 `application/json`，`Accept` 必须同时包含
@@ -634,8 +634,12 @@ Header 名大小写不敏感，Header 值大小写敏感。
 - 镜像 Header 失败返回 HTTP 400 + `HeaderMismatch(-32020)`；
 - 非法 JSON-RPC 请求返回 HTTP 400，并保留对应 JSON-RPC error。
 
-`Mcp-Param-*` 与 `x-mcp-header` 的 Schema 静态可达性检查、参数值提取和数值比较仍在
-下一小步实现；当前模块不会把“标准 Header 已验证”误标为“自定义参数 Header 已验证”。
+WebFlux/MVC 绑定按 `Accept` 进行 JSON/SSE 内容协商；普通请求为 request-scoped 响应，
+`subscriptions/listen` 使用 response stream 保持长连接，并不恢复旧的 Last-Event-ID 语义。
+
+`Mcp-Param-*` 与 `x-mcp-header` 的参数值提取、大小写不敏感匹配、Base64 sentinel、
+重复/未知参数、primitive 类型和 body/header 交叉验证已由
+`McpStreamableHttpRequestValidator` 实现；对象或数组参数不会镜像到 Header。
 
 ### 8.4 `x-mcp-header`
 
@@ -1124,7 +1128,7 @@ Roots、Sampling、Logging 在 `2026-07-28` 已 deprecated：
 
 ### 13.5 当前 Adapter 实现（P1 首版）
 
-`atlas-richie-component-mcp-schema` 已提供稳定中台边界：
+`mcp-schema` 已提供稳定中台边界：
 
 - `McpJsonSchemaValidators.secureDefaults()`：创建安全默认验证器；
 - `McpJsonSchemaValidator.compile(...)`：启动/注册阶段编译 Schema；
@@ -1870,14 +1874,15 @@ P0 当前实现验证：API 2 个、Protocol 31 个，共 33 个单元测试通�
 - [x] JSON Schema 2020-12 Validator Adapter（稳定中台 API、meta-schema、离线引用与复杂度限制）；
 - [x] Tool Registry 首轮实现（名称/schema root/重复校验、Schema 预编译、确定性排序、请求级授权过滤）；
 - [x] Tool Dispatcher 首轮实现（输入/输出校验、取消、Tool Error/协议错误分流、异常脱敏）；
-- [ ] Streamable HTTP（请求验证内核已完成，Endpoint/JSON/SSE 框架绑定待实现）；
-- [ ] Header validation（版本/Method/Name 已完成，`Mcp-Param-*` 待实现）；
-- [ ] Resources/Prompts；
-- [ ] cache/pagination；
-- [ ] Origin/security。
+- [x] Spring MVC JSON Endpoint Starter 首版；
+- [x] Streamable HTTP SSE/Reactive 框架绑定（MVC/WebFlux request-scoped 首版）；
+- [x] Header validation（版本/Method/Name 与 `Mcp-Param-*`）；
+- [x] Resources/Prompts/Completion Server registry 与 Endpoint；
+- [x] HMAC opaque cursor、客户端分页上限与 cache hints；
+- [x] Origin/security baseline（Allow-list、Bearer/PRM adapter）；
 
-P1 当前实现验证：Schema 5 个、Server Core 11 个，共 16 个单元测试通过；
-HTTP Transport 9 个单元测试通过；叠加 P0 后当前 MCP 组件共 58 个单元测试。
+当前实现已通过 MCP 聚合 Maven reactor 的全量单元测试；测试覆盖 Schema、Dialect、
+Tool/Resource/Prompt、HTTP Header/分页、OAuth、STDIO、Starter 自动配置与客户端缓存。
 Dispatcher 的错误语义遵循 Tools 规范：
 
 - 输入不符合 `inputSchema` 时，不进入业务 Handler，返回 `isError=true` 的可修复 Tool Error；
@@ -1889,19 +1894,21 @@ Dispatcher 的错误语义遵循 Tools 规范：
 
 ### P2：Client + OAuth
 
-- era negotiation；
-- `McpOperations`；
-- OAuth discovery/registration/PKCE/resource/scope；
-- private cache；
+- [x] `McpOperations` HTTP Starter 首版（Tool/Resource/Prompt 操作）；
+- [x] `server/discover` 首次协议协商与本地 TTL 缓存（仅覆盖当前支持的 wire versions）；
+- [x] OAuth protected-resource/authorization-server discovery、Bearer challenge、token provider SPI 与 URI policy；
+- [x] list/discovery 进程内 TTL cache；
+- [x] OAuth registration/PKCE/token refresh/introspection、client credentials 与 token manager；
+- [x] 进程内 private cache、按服务器失效与 OAuth principal 安全降级；分布式 Cache/TokenStore 由中台注入；
 - Gateway migration。
 
 ### P3：高级模式
 
-- subscriptions；
-- progress/cancellation；
-- MRTR；
-- STDIO；
-- legacy adapters。
+- [x] subscriptions（modern response stream，MVC/WebFlux）；
+- [x] progress/cancellation；
+- [x] MRTR；
+- [x] STDIO newline framing 与子进程生命周期首版；
+- [x] legacy dialect 与可选 STDIO Content-Length framing；legacy HTTP session 仍隔离为部署侧 adapter。
 
 ### P4：生产验收
 

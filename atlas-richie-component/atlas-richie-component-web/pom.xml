@@ -16,8 +16,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>atlas-richie-component-web-core</module>
-        <module>atlas-richie-component-web-tomcat</module>
-        <module>atlas-richie-component-web-jetty</module>
+        <module>web-core</module>
+        <module>web-tomcat</module>
+        <module>web-jetty</module>
     </modules>
 </project>

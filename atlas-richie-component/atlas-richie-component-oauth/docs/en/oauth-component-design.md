@@ -20,7 +20,7 @@ flowchart TB
     subgraph OAuth["atlas-richie-component-oauth"]
         direction TB
 
-        subgraph Core["atlas-richie-component-oauth-core"]
+        subgraph Core["oauth-core"]
             direction TB
             TE["🟢 TokenEndpoint"]
             CR["🟢 ClientRegistry"]
@@ -35,7 +35,7 @@ flowchart TB
             MD["📋 Models ..."]
         end
 
-        subgraph Authz["atlas-richie-component-oauth-authz"]
+        subgraph Authz["oauth-authz"]
             direction TB
             AE["🟠 AuthorizationEndpoint"]
             PKCE["🟠 PKCESupport"]
@@ -44,7 +44,7 @@ flowchart TB
             ASM["🟠 AS Metadata"]
         end
 
-        subgraph DCR["atlas-richie-component-oauth-dcr"]
+        subgraph DCR["oauth-dcr"]
             direction TB
             DCE["🔶 DynamicClientRegEndpoint"]
             CMR["🟣 ClientIdMetadataResolver"]
@@ -528,7 +528,7 @@ specification.
 ### 3.2 Module Structure
 
 ```
-atlas-richie-component-oauth-authz
+oauth-authz
 ├── pom.xml
 └── src/main/java/cn/richie696/component/oauth/authz/
     ├── AuthorizationEndpoint.java        # Authorization endpoint
@@ -1088,7 +1088,7 @@ Implement RFC 7591 Dynamic Client Registration Protocol and Client ID Metadata D
 ### 4.2 Module Structure
 
 ```
-atlas-richie-component-oauth-dcr
+oauth-dcr
 ├── pom.xml
 └── src/main/java/cn/richie696/component/oauth/dcr/
     ├── DynamicClientRegistrationEndpoint.java  # DCR endpoint

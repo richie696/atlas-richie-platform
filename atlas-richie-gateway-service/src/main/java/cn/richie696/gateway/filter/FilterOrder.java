@@ -159,7 +159,7 @@ public enum FilterOrder {
      * 网关身份透传过滤器 - 路由转发层，低优先级
      * <p>
      * 给每个转发请求加 {@code X-Forwarded-From-Gateway: <env>:<cluster>:<instance>} header，
-     * 让 web 端（{@code atlas-richie-component-web-core}）识别"已通过 gateway"以跳过 §4.8 B 组防护。
+     * 让 web 端（{@code web-core}）识别"已通过 gateway"以跳过 §4.8 B 组防护。
      * <p>
      * 必须在 CanaryIdExtractorFilter 之后执行（order=451），避免被后续 filter 覆盖。
      * gateway-id 在 filter 实例化时计算一次（性能 + id 不变）。

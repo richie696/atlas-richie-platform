@@ -304,18 +304,18 @@ flowchart LR
 <!-- 必选：SPI + 功能层 -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-web-core</artifactId>
+    <artifactId>web-core</artifactId>
 </dependency>
 
 <!-- 选一个容器镜像（默认 Tomcat；二选一） -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-web-tomcat</artifactId>
+    <artifactId>web-tomcat</artifactId>
 </dependency>
 <!--
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-web-jetty</artifactId>
+    <artifactId>web-jetty</artifactId>
 </dependency>
 -->
 
@@ -1282,10 +1282,10 @@ starter；本组件定位明确为 MVC 容器层能力总线。
 
 - **设计文档（详细论证）**：
     - **子模块文档**：
-    - [`atlas-richie-component-web-core`](./atlas-richie-component-web-core/README.zh.md) — SPI 层 + 14 拦截器 +
+    - [`web-core`](./web-core/README.zh.md) — SPI 层 + 14 拦截器 +
       HookBus。
-    - [`atlas-richie-component-web-tomcat`](./atlas-richie-component-web-tomcat/README.zh.md) — Tomcat 11.x 适配镜像。
-    - [`atlas-richie-component-web-jetty`](./atlas-richie-component-web-jetty/README.zh.md) — Jetty 12.x 适配镜像。
+    - [`web-tomcat`](./web-tomcat/README.zh.md) — Tomcat 11.x 适配镜像。
+    - [`web-jetty`](./web-jetty/README.zh.md) — Jetty 12.x 适配镜像。
 - **依赖与协同平台组件**：
     - [`atlas-richie-component-concurrency`](../atlas-richie-component-concurrency/README.zh.md) — `RateLimiter` /
       `CircuitBreaker` / Registry 的来源。

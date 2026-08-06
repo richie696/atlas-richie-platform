@@ -178,7 +178,7 @@ public void upload(File file) {
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-storage-core</artifactId>
+    <artifactId>storage-core</artifactId>
     <version>${atlas.richie.version}</version>
 </dependency>
 ```
@@ -1065,15 +1065,15 @@ implemented based on the specific implementation.
 
 ## Related Documentation
 
-- [Local Storage Implementation](./atlas-richie-component-storage-local/README.md)
-- [AWS S3 Implementation](./atlas-richie-component-storage-s3/README.md)
-- [Aliyun OSS Implementation](./atlas-richie-component-storage-oss/README.md)
-- [Tencent COS Implementation](./atlas-richie-component-storage-cos/README.md)
-- [Huawei OBS Implementation](./atlas-richie-component-storage-obs/README.md)
-- [MinIO Implementation](./atlas-richie-component-storage-minio/README.md)
-- [Kingsoft KS3 Implementation](./atlas-richie-component-storage-ks3/README.md)
-- [Volcano TOS Implementation](./atlas-richie-component-storage-tos/README.md)
-- [Azure Blob Implementation](./atlas-richie-component-storage-azure/README.md)
-- [SFTP Implementation](./atlas-richie-component-storage-sftp/README.md)
-- [SMB Implementation](./atlas-richie-component-storage-smb/README.md)
+- [Local Storage Implementation](./storage-local/README.md)
+- [AWS S3 Implementation](./storage-s3/README.md)
+- [Aliyun OSS Implementation](./storage-oss/README.md)
+- [Tencent COS Implementation](./storage-cos/README.md)
+- [Huawei OBS Implementation](./storage-obs/README.md)
+- [MinIO Implementation](./storage-minio/README.md)
+- [Kingsoft KS3 Implementation](./storage-ks3/README.md)
+- [Volcano TOS Implementation](./storage-tos/README.md)
+- [Azure Blob Implementation](./storage-azure/README.md)
+- [SFTP Implementation](./storage-sftp/README.md)
+- [SMB Implementation](./storage-smb/README.md)
 

@@ -57,9 +57,9 @@ notes:
 
 | Module                | English                                                          | 中文                                                                                       | Primary Use |
 |-----------------------|------------------------------------------------------------------|--------------------------------------------------------------------------------------------|-------------|
-| `desensitize-core`    | [README](./atlas-richie-component-desensitize-core/README.md)    | Pure-Java rules, strategies, `MaskingService`, `DesensitizeUtils`, Spring Boot auto-config |
-| `desensitize-jackson` | [README](./atlas-richie-component-desensitize-jackson/README.md) | `@Sensitive` annotation + Map serialization for REST API responses                         |
-| `desensitize-logging` | [README](./atlas-richie-component-desensitize-logging/README.md) | Logback `ConversionRule` / TurboFilter for log output masking                              |
+| `desensitize-core`    | [README](./desensitize-core/README.md)    | Pure-Java rules, strategies, `MaskingService`, `DesensitizeUtils`, Spring Boot auto-config |
+| `desensitize-jackson` | [README](./desensitize-jackson/README.md) | `@Sensitive` annotation + Map serialization for REST API responses                         |
+| `desensitize-logging` | [README](./desensitize-logging/README.md) | Logback `ConversionRule` / TurboFilter for log output masking                              |
 
 ---
 
@@ -117,9 +117,9 @@ flowchart TB
 
 | Module                | Dependency-Side Use Case                                 | Documentation                                                     |
 |-----------------------|----------------------------------------------------------|-------------------------------------------------------------------|
-| `desensitize-core`    | Programmatic desensitization only, or custom integration | [English](./atlas-richie-component-desensitize-core/README.md)    |
-| `desensitize-jackson` | REST API response JSON desensitization                   | [English](./atlas-richie-component-desensitize-jackson/README.md) |
-| `desensitize-logging` | Log output desensitization                               | [English](./atlas-richie-component-desensitize-logging/README.md) |
+| `desensitize-core`    | Programmatic desensitization only, or custom integration | [English](./desensitize-core/README.md)    |
+| `desensitize-jackson` | REST API response JSON desensitization                   | [English](./desensitize-jackson/README.md) |
+| `desensitize-logging` | Log output desensitization                               | [English](./desensitize-logging/README.md) |
 
 ### 2.2 `Runtime` `Component` `Relationships`
 
@@ -486,7 +486,7 @@ sequenceDiagram
 
 > **Detailed usage, configuration, and Logback wiring (`%desensitizeMsg` / `%desensitizeJsonMsg` / TurboFilters) live in
 the sub-module documentation:**
-> [`atlas-richie-component-desensitize-logging/README.md`](./atlas-richie-component-desensitize-logging/README.md) ·
+> [`desensitize-logging/README.md`](./desensitize-logging/README.md) ·
 
 ---
 
@@ -687,13 +687,13 @@ log.info("row={}", DesensitizeUtils.toSafeString(dataMap));
 <!-- API response desensitization -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-desensitize-jackson</artifactId>
+    <artifactId>desensitize-jackson</artifactId>
 </dependency>
 
 <!-- Log desensitization -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-desensitize-logging</artifactId>
+    <artifactId>desensitize-logging</artifactId>
 </dependency>
 ```
 
@@ -808,9 +808,9 @@ flowchart TB
 
 | Phase  | Content                                                                                                                                                                                                   | Output                                                                   | Documentation                                                                 |
 |--------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| **P0** | Core: `MaskingService`, `DesensitizeUtils`, `ObjectMaskingService`, `SensitiveKeyRegistry`, `sensitive-keys`, built-in Strategy                                                                           | Unit-testable; log main path usable                                      | [core / 核心](./atlas-richie-component-desensitize-core/README.md) ·          |
-| **P1** | Jackson: `@Sensitive` + `SensitiveMapSerializer` + Module                                                                                                                                                 | API: Bean + Map response desensitization                                 | [jackson / Jackson](./atlas-richie-component-desensitize-jackson/README.md) · |
-| **P2** | Logging Basic: `DesensitizeConverter` + `SensitiveLogArgTurboFilter` + `DesensitizeJsonMessageConverter` + `SensitiveMdcTurboFilter` + `LoggingMaskingService`; optional enhancement: JSON Layout Encoder | Log parameters, JSON text, MDC field desensitization directly applicable | [logging / 日志](./atlas-richie-component-desensitize-logging/README.md) ·    |
+| **P0** | Core: `MaskingService`, `DesensitizeUtils`, `ObjectMaskingService`, `SensitiveKeyRegistry`, `sensitive-keys`, built-in Strategy                                                                           | Unit-testable; log main path usable                                      | [core / 核心](./desensitize-core/README.md) ·          |
+| **P1** | Jackson: `@Sensitive` + `SensitiveMapSerializer` + Module                                                                                                                                                 | API: Bean + Map response desensitization                                 | [jackson / Jackson](./desensitize-jackson/README.md) · |
+| **P2** | Logging Basic: `DesensitizeConverter` + `SensitiveLogArgTurboFilter` + `DesensitizeJsonMessageConverter` + `SensitiveMdcTurboFilter` + `LoggingMaskingService`; optional enhancement: JSON Layout Encoder | Log parameters, JSON text, MDC field desensitization directly applicable | [logging / 日志](./desensitize-logging/README.md) ·    |
 | **P3** | Permission Evaluation + Integration Tests + `sample-desensitize` (Optional)                                                                                                                               | Demonstrable, regression-testable                                        | –                                                                             |
 
 ### `Definition` of `Done` (`Coding` `Phase`)
@@ -859,9 +859,9 @@ first-time onboarding:
 
 | # | Sub-module                | English                                                          | 中文                                                                   | When to read                                                                                                                         |
 |---|---------------------------|------------------------------------------------------------------|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
-| 1 | **`desensitize-core`**    | [README](./atlas-richie-component-desensitize-core/README.md)    | [README.zh.md](./atlas-richie-component-desensitize-core/README.md)    | Always — the pure-Java rule engine, `MaskingService`, `DesensitizeUtils`, `@Sensitive`, built-in strategies, and permission bypass   |
-| 2 | **`desensitize-jackson`** | [README](./atlas-richie-component-desensitize-jackson/README.md) | [README.zh.md](./atlas-richie-component-desensitize-jackson/README.md) | When exposing REST APIs that return VOs or `Map` payloads and need `@Sensitive` / `sensitive-keys` driven JSON masking               |
-| 3 | **`desensitize-logging`** | [README](./atlas-richie-component-desensitize-logging/README.md) | [README.zh.md](./atlas-richie-component-desensitize-logging/README.md) | When emitting logs that may contain sensitive values — `%desensitizeMsg` / `%desensitizeJsonMsg` / `SensitiveLogArg` / MDC filtering |
+| 1 | **`desensitize-core`**    | [README](./desensitize-core/README.md)    | [README.zh.md](./desensitize-core/README.md)    | Always — the pure-Java rule engine, `MaskingService`, `DesensitizeUtils`, `@Sensitive`, built-in strategies, and permission bypass   |
+| 2 | **`desensitize-jackson`** | [README](./desensitize-jackson/README.md) | [README.zh.md](./desensitize-jackson/README.md) | When exposing REST APIs that return VOs or `Map` payloads and need `@Sensitive` / `sensitive-keys` driven JSON masking               |
+| 3 | **`desensitize-logging`** | [README](./desensitize-logging/README.md) | [README.zh.md](./desensitize-logging/README.md) | When emitting logs that may contain sensitive values — `%desensitizeMsg` / `%desensitizeJsonMsg` / `SensitiveLogArg` / MDC filtering |
 
 > Each sub-module README cross-links back to this parent document, so navigation is bi-directional.
 

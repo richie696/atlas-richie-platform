@@ -62,7 +62,7 @@ graph TB
     
     subgraph Gateway["网关层 (richie-gateway-service)"]
         B1[负载均衡器]
-        B2[MFA验证过滤器<br/>atlas-richie-component-mfa-validation]
+        B2[MFA验证过滤器<br/>mfa-validation]
         B3[请求路由]
         B4[熔断器]
         B5[TOTP验证引擎]
@@ -72,7 +72,7 @@ graph TB
     end
     
     subgraph General["通用服务层 (richie-general-service)"]
-        C1[MFA管理服务<br/>atlas-richie-component-mfa-management]
+        C1[MFA管理服务<br/>mfa-management]
         C2[绑定管理服务]
         C3[状态管理服务]
         C4[设备管理服务]

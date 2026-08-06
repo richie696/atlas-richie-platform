@@ -65,37 +65,37 @@
 
 #### 仅使用纯文本核心
 
-`atlas-richie-component-document-chunking-core` 只处理 `String`，不依赖 `document-parser`、AI 或
+`document-chunking-core` 只处理 `String`，不依赖 `document-parser`、AI 或
 vector。它适合网页清洗结果、数据库字段、消息正文和已经由业务解析好的文本。
 
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-document-chunking-core</artifactId>
+    <artifactId>document-chunking-core</artifactId>
 </dependency>
 ```
 
 #### 连接 `document-parser` 的可选适配器
 
-`atlas-richie-component-document-chunking-parser-adapter` 依赖 core 与 `atlas-richie-component-document-parser`。它把
+`document-chunking-parser-adapter` 依赖 core 与 `atlas-richie-component-document-parser`。它把
 `ReadResult` 或 `Flow.Publisher<ReadEvent>` 转换为切片结果和 `ChunkingEvent`。
 
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-document-chunking-parser-adapter</artifactId>
+    <artifactId>document-chunking-parser-adapter</artifactId>
 </dependency>
 ```
 
 #### 连接 Spring AI 的可选语义桥接
 
-`atlas-richie-component-document-chunking-semantic-spring-ai` 依赖 core 与 `spring-ai-model`。它在构造时接收调用方提供的
+`document-chunking-semantic-spring-ai` 依赖 core 与 `spring-ai-model`。它在构造时接收调用方提供的
 `ChatModel`，不替业务管理模型名称、端点或 `apiKey`。
 
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-document-chunking-semantic-spring-ai</artifactId>
+    <artifactId>document-chunking-semantic-spring-ai</artifactId>
 </dependency>
 ```
 

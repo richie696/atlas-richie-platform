@@ -76,18 +76,18 @@
 
 ```
 atlas-richie-component-messaging                    ← parent POM
-├── atlas-richie-component-messaging-core           ← MessageService / MessageEvent / BaseConsumer
-├── atlas-richie-component-messaging-kafka
-├── atlas-richie-component-messaging-rabbitmq
-├── atlas-richie-component-messaging-rocketmq
-├── atlas-richie-component-messaging-kinesis
-├── atlas-richie-component-messaging-gcp-pubsub
-├── atlas-richie-component-messaging-eventhubs
-├── atlas-richie-component-messaging-servicebus
-├── atlas-richie-component-messaging-sqs
-├── atlas-richie-component-messaging-sns
-├── atlas-richie-component-messaging-pulsar
-└── atlas-richie-component-messaging-solace
+├── messaging-core           ← MessageService / MessageEvent / BaseConsumer
+├── messaging-kafka
+├── messaging-rabbitmq
+├── messaging-rocketmq
+├── messaging-kinesis
+├── messaging-gcp-pubsub
+├── messaging-eventhubs
+├── messaging-servicebus
+├── messaging-sqs
+├── messaging-sns
+├── messaging-pulsar
+└── messaging-solace
 ```
 
 ## 🚀 Quick Start
@@ -97,12 +97,12 @@ atlas-richie-component-messaging                    ← parent POM
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-messaging-core</artifactId>
+    <artifactId>messaging-core</artifactId>
 </dependency>
 <!-- Pick exactly one provider -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-messaging-kafka</artifactId>
+    <artifactId>messaging-kafka</artifactId>
 </dependency>
 ```
 

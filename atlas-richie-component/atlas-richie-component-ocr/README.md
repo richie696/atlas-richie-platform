@@ -110,15 +110,15 @@ methods (`toProviderRequest` / `callProvider` / `fromProviderResponse`). The cor
 
 ```
 atlas-richie-component-ocr/                              (aggregator POM)
-├── atlas-richie-component-ocr-core/                     (SPI + abstract types + defaults)
-├── atlas-richie-component-ocr-aliyun/                   (Cloud: HTTP + APPCODE)
-├── atlas-richie-component-ocr-baidu/                    (Cloud: HTTP + OAuth2)
-├── atlas-richie-component-ocr-tencent/                  (Cloud: TC3-HMAC-SHA256)
-├── atlas-richie-component-ocr-volcano/                  (Cloud: AWS4-HMAC-SHA256)
-├── atlas-richie-component-ocr-paddle/                   (Local CPU: Python subprocess)
-├── atlas-richie-component-ocr-tesseract/                (Local CPU: CLI subprocess)
-├── atlas-richie-component-ocr-paddle-vl/                (Local GPU: VLM, internal sync polling)
-├── atlas-richie-component-ocr-mineru/                   (Local GPU: PDF, internal sync polling)
+├── ocr-core/                     (SPI + abstract types + defaults)
+├── ocr-aliyun/                   (Cloud: HTTP + APPCODE)
+├── ocr-baidu/                    (Cloud: HTTP + OAuth2)
+├── ocr-tencent/                  (Cloud: TC3-HMAC-SHA256)
+├── ocr-volcano/                  (Cloud: AWS4-HMAC-SHA256)
+├── ocr-paddle/                   (Local CPU: Python subprocess)
+├── ocr-tesseract/                (Local CPU: CLI subprocess)
+├── ocr-paddle-vl/                (Local GPU: VLM, internal sync polling)
+├── ocr-mineru/                   (Local GPU: PDF, internal sync polling)
 └── atlas-richie-component-ocr-extension/                (optional extensions aggregator)
     ├── atlas-richie-component-ocr-extension-micrometer/ (Health Metrics)
     └── atlas-richie-component-ocr-extension-otel/       (OpenTelemetry Tracing)
@@ -160,11 +160,11 @@ Each vendor module (`ocr-aliyun`, `ocr-baidu`, …) ships one concrete
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-ocr-core</artifactId>
+    <artifactId>ocr-core</artifactId>
 </dependency>
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-ocr-aliyun</artifactId>  <!-- or any vendor -->
+    <artifactId>ocr-aliyun</artifactId>  <!-- or any vendor -->
 </dependency>
 ```
 
@@ -228,7 +228,7 @@ public class OcrBizService {
 <!-- pom.xml: remove ocr-aliyun, add ocr-tencent -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-ocr-tencent</artifactId>
+    <artifactId>ocr-tencent</artifactId>
 </dependency>
 ```
 
@@ -272,42 +272,42 @@ Copy-paste-runnable.
     <!-- ===== Core (always required) ===== -->
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-core</artifactId>
+        <artifactId>ocr-core</artifactId>
     </dependency>
 
     <!-- ===== Pick ONE vendor ===== -->
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-aliyun</artifactId>
+        <artifactId>ocr-aliyun</artifactId>
     </dependency>
     <!-- Alternatives (uncomment to switch):
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-baidu</artifactId>
+        <artifactId>ocr-baidu</artifactId>
     </dependency>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-tencent</artifactId>
+        <artifactId>ocr-tencent</artifactId>
     </dependency>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-volcano</artifactId>
+        <artifactId>ocr-volcano</artifactId>
     </dependency>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-paddle</artifactId>
+        <artifactId>ocr-paddle</artifactId>
     </dependency>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-tesseract</artifactId>
+        <artifactId>ocr-tesseract</artifactId>
     </dependency>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-paddle-vl</artifactId>
+        <artifactId>ocr-paddle-vl</artifactId>
     </dependency>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-mineru</artifactId>
+        <artifactId>ocr-mineru</artifactId>
     </dependency>
     -->
 

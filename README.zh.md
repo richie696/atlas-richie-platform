@@ -200,12 +200,12 @@ mvn clean install -DskipTests
 
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-storage-core</artifactId>
+    <artifactId>storage-core</artifactId>
 </dependency>
 
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-storage-oss</artifactId>
+    <artifactId>storage-oss</artifactId>
 </dependency>
 </dependencies>
 ```

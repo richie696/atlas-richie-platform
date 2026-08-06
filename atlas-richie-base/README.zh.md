@@ -135,7 +135,7 @@ atlas-richie-base/
 - **`token`**：Token 过滤器黑白名单、登录路径等
 - **`deploy`**：灰度（金丝雀）标识，供网关负载均衡及异步链路透传
 
-多租户配置由 `atlas-richie-component-tenant-common/core/gateway` 统一维护，使用 `platform.tenant` 前缀。
+多租户配置由 `tenant-common/core/gateway` 统一维护，使用 `platform.tenant` 前缀。
 
 网关专属配置（ECC 加密、SSO、熔断等）保留在 `atlas-richie-gateway-service` 内部，**不在**本契约中。
 
@@ -148,8 +148,8 @@ atlas-richie-base/
 
 适合 **不需要** Servlet/JWT/完整工具链、只需对齐契约的模块，例如：
 
-- `atlas-richie-component-messaging-core`
-- `atlas-richie-component-mfa-core`
+- `messaging-core`
+- `mfa-core`
 - `atlas-richie-component-mqtt`
 
 ```xml

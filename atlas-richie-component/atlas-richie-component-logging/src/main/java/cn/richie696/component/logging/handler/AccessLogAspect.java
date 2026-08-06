@@ -98,7 +98,7 @@ public class AccessLogAspect {
 
     /**
      * 脱敏服务（可选）：classpath 存在时自动对请求/响应体进行敏感字段脱敏。
-     * 通过 ObjectProvider 注入，避免强制依赖 atlas-richie-component-desensitize-core。
+     * 通过 ObjectProvider 注入，避免强制依赖 desensitize-core。
      */
     private final ObjectProvider<ObjectMaskingService> objectMaskingServiceProvider;
 

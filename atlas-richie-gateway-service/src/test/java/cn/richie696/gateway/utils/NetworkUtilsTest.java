@@ -214,6 +214,9 @@ class NetworkUtilsTest {
         HttpHeaders headers = response.getHeaders();
         assertThat(headers.getFirst("Content-Type")).isEqualTo("application/json;charset=UTF-8");
         String body = response.getBodyAsString().block();
-        assertThat(body).contains("\"code\":\"401\"").contains("token expired");
+        assertThat(body).contains("\"code\":\"GW-AUTH-0001\"")
+                .contains("\"helpUrl\":\"/gateway/errors/GW-AUTH-0001\"")
+                .contains("token expired");
+        assertThat(headers.getFirst("X-Request-Id")).hasSize(32);
     }
 }

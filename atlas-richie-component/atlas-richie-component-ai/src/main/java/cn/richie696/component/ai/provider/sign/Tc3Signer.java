@@ -30,7 +30,7 @@ import java.util.Locale;
 /**
  * 腾讯云 TC3-HMAC-SHA256 签名工具（纯 JDK 实现，无第三方依赖）。
  * <p>
- * 把 {@code atlas-richie-component-ocr-tencent/.../TencentOcrProvider.buildAuthorization(...)}
+ * 把 {@code ocr-tencent/.../TencentOcrProvider.buildAuthorization(...)}
  * 的算法移植成可复用 Bean，供 TTS / STT 厂商适配器（混元）以构造参数形式注入调用。
  * <p>
  * 官方文档：<a href="https://cloud.tencent.com/document/api/1729/101843">语音合成 TC3 签名</a>。

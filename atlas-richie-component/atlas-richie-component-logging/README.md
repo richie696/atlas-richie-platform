@@ -28,7 +28,7 @@
 - [⚠️ Known Limitations](#⚠️-known-limitations)
 - [❓ FAQ](#❓-faq)
     - [Q1: Does this conflict with
-      `atlas-richie-component-desensitize-logging`?](#q1-does-this-conflict-with-atlas-richie-component-desensitize-logging?)
+      `desensitize-logging`?](#q1-does-this-conflict-with-desensitize-logging?)
     - [Q2: How does `@OperateLog` differ from a regular
       `log.info`?](#q2-how-does-@operatelog-differ-from-a-regular-loginfo?)
     - [Q3: Can I customize the JSON layout's field names?](#q3-can-i-customize-the-json-layouts-field-names?)
@@ -218,7 +218,7 @@ log.info("...");  // MDC auto-includes "tenant_id": "t1"
 
 ## ❓ FAQ
 
-### Q1 — Does this conflict with `atlas-richie-component-desensitize-logging`?
+### Q1 — Does this conflict with `desensitize-logging`?
 
 No — desensitize-logging masks sensitive values in your *code* before they reach the log call. This component masks in
 the *appender layer*. They're complementary.
@@ -240,7 +240,7 @@ Use Logback's `KafkaAppender`. Configure under `platform.component.logging.kafka
 
 - **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
 - **Desensitize (mask at code layer)** — [
-  `../atlas-richie-component-desensitize/atlas-richie-component-desensitize-logging/README.md`](../atlas-richie-component-desensitize/atlas-richie-component-desensitize-logging/README.md)
+  `../atlas-richie-component-desensitize/desensitize-logging/README.md`](../atlas-richie-component-desensitize/desensitize-logging/README.md)
 - **Tracing** — [`../atlas-richie-component-tracing/README.md`](../atlas-richie-component-tracing/README.md)
 - External: [Logback manual](https://logback.qos.ch/manual/) · [ELK stack](https://www.elastic.co/elastic-stack)
 

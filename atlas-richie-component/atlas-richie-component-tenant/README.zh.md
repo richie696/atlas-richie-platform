@@ -111,11 +111,11 @@
 
 | 模块 | 职责 | 使用场景 |
 |------|------|----------|
-| `atlas-richie-component-tenant-common` | 共享配置模型和公共类型，不注册运行时自动配置 | 由 core / gateway 复用 |
-| `atlas-richie-component-tenant-core` | 服务侧租户上下文、Web 过滤器、MyBatis 隔离、数据源和健康检查 | 业务服务引入 |
-| `atlas-richie-component-tenant-gateway` | Gateway 租户拦截器、自动配置和可插拔 SPI | Gateway 服务引入 |
+| `tenant-common` | 共享配置模型和公共类型，不注册运行时自动配置 | 由 core / gateway 复用 |
+| `tenant-core` | 服务侧租户上下文、Web 过滤器、MyBatis 隔离、数据源和健康检查 | 业务服务引入 |
+| `tenant-gateway` | Gateway 租户拦截器、自动配置和可插拔 SPI | Gateway 服务引入 |
 
-业务服务请依赖 `atlas-richie-component-tenant-core`；需要复用公共配置模型时才单独依赖 `common`。所有租户配置统一挂在 `platform.tenant` 下，`enable` 是唯一总控开关：默认 `false`，未显式开启时不会注册租户基础设施，系统按无租户状态运行。
+业务服务请依赖 `tenant-core`；需要复用公共配置模型时才单独依赖 `common`。所有租户配置统一挂在 `platform.tenant` 下，`enable` 是唯一总控开关：默认 `false`，未显式开启时不会注册租户基础设施，系统按无租户状态运行。
 
 ```yaml
 platform:
@@ -195,7 +195,7 @@ platform:
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-tenant-core</artifactId>
+    <artifactId>tenant-core</artifactId>
 </dependency>
 ```
 
@@ -206,7 +206,7 @@ Gateway 工程额外引入拦截器模块：
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-tenant-gateway</artifactId>
+    <artifactId>tenant-gateway</artifactId>
 </dependency>
 ```
 
@@ -1812,7 +1812,7 @@ SELECT * FROM orders o JOIN users_1002 u ON o.user_id = u.id;
 <dependencies>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-tenant-core</artifactId>
+        <artifactId>tenant-core</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </dependency>
     <dependency>

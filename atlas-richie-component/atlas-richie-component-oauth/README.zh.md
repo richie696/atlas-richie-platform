@@ -46,9 +46,9 @@ OAuth 2.1 鉴权组件，提供 Token 端点、客户端管理、Scope 解析等
 
 ```
 atlas-richie-component-oauth/
-├── atlas-richie-component-oauth-core    # OAuth2.1 核心（已实现）
-├── atlas-richie-component-oauth-authz   # 授权码+PKCE 模块（规划中）
-└── atlas-richie-component-oauth-dcr     # 动态客户端注册模块（规划中）
+├── oauth-core    # OAuth2.1 核心（已实现）
+├── oauth-authz   # 授权码+PKCE 模块（规划中）
+└── oauth-dcr     # 动态客户端注册模块（规划中）
 ```
 
 | 模块          | 状态       | 说明                                                      |
@@ -83,7 +83,7 @@ atlas-richie-component-oauth/
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-oauth-core</artifactId>
+    <artifactId>oauth-core</artifactId>
 </dependency>
 ```
 

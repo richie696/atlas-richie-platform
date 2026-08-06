@@ -16,17 +16,17 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>atlas-richie-component-vector-core</module>
-        <module>atlas-richie-component-vector-chunk-adapter</module>
-        <module>atlas-richie-component-vector-projection-dao</module>
-        <module>atlas-richie-component-vector-mongodb-atlas</module>
-        <module>atlas-richie-component-vector-neo4j</module>
-        <module>atlas-richie-component-vector-postgresql</module>
-        <module>atlas-richie-component-vector-qdrant</module>
-        <module>atlas-richie-component-vector-redis</module>
-        <module>atlas-richie-component-vector-weaviate</module>
-        <module>atlas-richie-component-vector-milvus</module>
-        <module>atlas-richie-component-vector-vikingdb</module>
+        <module>vector-core</module>
+        <module>vector-chunk-adapter</module>
+        <module>vector-projection-dao</module>
+        <module>vector-mongodb-atlas</module>
+        <module>vector-neo4j</module>
+        <module>vector-postgresql</module>
+        <module>vector-qdrant</module>
+        <module>vector-redis</module>
+        <module>vector-weaviate</module>
+        <module>vector-milvus</module>
+        <module>vector-vikingdb</module>
     </modules>
 
 </project>

@@ -89,15 +89,15 @@
 
 ```
 atlas-richie-component-ocr/                              (聚合 POM)
-├── atlas-richie-component-ocr-core/                     (SPI + 默认实现)
-├── atlas-richie-component-ocr-aliyun/                   (云: HTTP + APPCODE)
-├── atlas-richie-component-ocr-baidu/                    (云: HTTP + OAuth2)
-├── atlas-richie-component-ocr-tencent/                  (云: TC3-HMAC-SHA256 签名)
-├── atlas-richie-component-ocr-volcano/                  (云: AWS4-HMAC-SHA256 签名)
-├── atlas-richie-component-ocr-paddle/                   (本地 CPU: Python subprocess)
-├── atlas-richie-component-ocr-tesseract/                (本地 CPU: CLI subprocess)
-├── atlas-richie-component-ocr-paddle-vl/                (本地 GPU: VLM 内部轮询)
-├── atlas-richie-component-ocr-mineru/                   (本地 GPU: PDF 内部轮询)
+├── ocr-core/                     (SPI + 默认实现)
+├── ocr-aliyun/                   (云: HTTP + APPCODE)
+├── ocr-baidu/                    (云: HTTP + OAuth2)
+├── ocr-tencent/                  (云: TC3-HMAC-SHA256 签名)
+├── ocr-volcano/                  (云: AWS4-HMAC-SHA256 签名)
+├── ocr-paddle/                   (本地 CPU: Python subprocess)
+├── ocr-tesseract/                (本地 CPU: CLI subprocess)
+├── ocr-paddle-vl/                (本地 GPU: VLM 内部轮询)
+├── ocr-mineru/                   (本地 GPU: PDF 内部轮询)
 └── atlas-richie-component-ocr-extension/                (可选扩展聚合)
     ├── atlas-richie-component-ocr-extension-micrometer/ (健康指标)
     └── atlas-richie-component-ocr-extension-otel/       (OpenTelemetry Tracing)
@@ -133,11 +133,11 @@ cn.richie696.component.ocr/
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-ocr-core</artifactId>
+    <artifactId>ocr-core</artifactId>
 </dependency>
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-ocr-aliyun</artifactId>  <!-- 或任意 vendor -->
+    <artifactId>ocr-aliyun</artifactId>  <!-- 或任意 vendor -->
 </dependency>
 ```
 
@@ -228,42 +228,42 @@ private final TencentOcrProvider ocrProvider;
     <!-- ===== Core (始终需要) ===== -->
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-core</artifactId>
+        <artifactId>ocr-core</artifactId>
     </dependency>
 
     <!-- ===== 选一个 vendor ===== -->
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-aliyun</artifactId>
+        <artifactId>ocr-aliyun</artifactId>
     </dependency>
     <!-- 备选 (取消注释即切换):
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-baidu</artifactId>
+        <artifactId>ocr-baidu</artifactId>
     </dependency>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-tencent</artifactId>
+        <artifactId>ocr-tencent</artifactId>
     </dependency>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-volcano</artifactId>
+        <artifactId>ocr-volcano</artifactId>
     </dependency>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-paddle</artifactId>
+        <artifactId>ocr-paddle</artifactId>
     </dependency>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-tesseract</artifactId>
+        <artifactId>ocr-tesseract</artifactId>
     </dependency>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-paddle-vl</artifactId>
+        <artifactId>ocr-paddle-vl</artifactId>
     </dependency>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-ocr-mineru</artifactId>
+        <artifactId>ocr-mineru</artifactId>
     </dependency>
     -->
 

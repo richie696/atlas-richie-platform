@@ -18,7 +18,7 @@ flowchart TB
     subgraph OAuth["atlas-richie-component-oauth"]
         direction TB
 
-        subgraph Core["atlas-richie-component-oauth-core"]
+        subgraph Core["oauth-core"]
             direction TB
             TE["🟢 TokenEndpoint"]
             CR["🟢 ClientRegistry"]
@@ -33,7 +33,7 @@ flowchart TB
             MD["📋 Models ..."]
         end
 
-        subgraph Authz["atlas-richie-component-oauth-authz"]
+        subgraph Authz["oauth-authz"]
             direction TB
             AE["🟠 AuthorizationEndpoint"]
             PKCE["🟠 PKCESupport"]
@@ -42,7 +42,7 @@ flowchart TB
             ASM["🟠 AS Metadata"]
         end
 
-        subgraph DCR["atlas-richie-component-oauth-dcr"]
+        subgraph DCR["oauth-dcr"]
             direction TB
             DCE["🔶 DynamicClientRegEndpoint"]
             CMR["🟣 ClientIdMetadataResolver"]
@@ -523,7 +523,7 @@ sequenceDiagram
 ### 3.2 模块结构
 
 ```
-atlas-richie-component-oauth-authz
+oauth-authz
 ├── pom.xml
 └── src/main/java/cn/richie696/component/oauth/authz/
     ├── AuthorizationEndpoint.java        # 授权端点
@@ -1079,7 +1079,7 @@ sequenceDiagram
 ### 4.2 模块结构
 
 ```
-atlas-richie-component-oauth-dcr
+oauth-dcr
 ├── pom.xml
 └── src/main/java/cn/richie696/component/oauth/dcr/
     ├── DynamicClientRegistrationEndpoint.java  # DCR 端点

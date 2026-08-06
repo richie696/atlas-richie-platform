@@ -18,26 +18,26 @@
     <description>OAuth2.1 鉴权组件 - 提供Token端点、客户端管理、Scope管理、动态客户端注册等能力</description>
 
     <modules>
-        <module>atlas-richie-component-oauth-core</module>
-        <module>atlas-richie-component-oauth-authz</module>
-        <module>atlas-richie-component-oauth-dcr</module>
+        <module>oauth-core</module>
+        <module>oauth-authz</module>
+        <module>oauth-dcr</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-oauth-core</artifactId>
+                <artifactId>oauth-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-oauth-authz</artifactId>
+                <artifactId>oauth-authz</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-oauth-dcr</artifactId>
+                <artifactId>oauth-dcr</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

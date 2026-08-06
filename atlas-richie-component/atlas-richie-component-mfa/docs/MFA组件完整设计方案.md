@@ -116,7 +116,7 @@ graph TB
     end
     
     subgraph Gateway["richie-gateway-service<br/>网关服务"]
-        B1[MFA验证过滤器<br/>atlas-richie-component-mfa-validation]
+        B1[MFA验证过滤器<br/>mfa-validation]
         B2[快速验证 <10ms]
         B3[防重放检查]
         B4[MFA状态检查<br/>仅读缓存返回元数据]
@@ -135,7 +135,7 @@ graph TB
     end
     
     subgraph General["richie-general-service<br/>通用服务"]
-        D1[MFA管理服务<br/>atlas-richie-component-mfa-management]
+        D1[MFA管理服务<br/>mfa-management]
         D2[绑定管理<br/>CRUD操作]
         D3[解绑管理]
         D4[状态管理]
@@ -4091,7 +4091,7 @@ MFA组件拆分为两个独立的Maven模块：
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-mfa-validation</artifactId>
+    <artifactId>mfa-validation</artifactId>
     <version>${revision}</version>
 </dependency>
 ```
@@ -4128,7 +4128,7 @@ MFA组件拆分为两个独立的Maven模块：
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-mfa-management</artifactId>
+    <artifactId>mfa-management</artifactId>
     <version>${revision}</version>
 </dependency>
 ```
@@ -4340,7 +4340,7 @@ platform:
     <!-- MFA验证模块 -->
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-mfa-validation</artifactId>
+        <artifactId>mfa-validation</artifactId>
         <version>${revision}</version>
     </dependency>
 </dependencies>
@@ -4362,7 +4362,7 @@ mfa:
     <!-- MFA管理模块 -->
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-mfa-management</artifactId>
+        <artifactId>mfa-management</artifactId>
         <version>${revision}</version>
     </dependency>
     

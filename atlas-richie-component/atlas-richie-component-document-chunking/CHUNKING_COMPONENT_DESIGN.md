@@ -97,8 +97,8 @@ public record ChunkingResult(
 
 | 模块                                                      | 依赖          | 职责                                                                                                                |
 |-----------------------------------------------------------|---------------|---------------------------------------------------------------------------------------------------------------------|
-| `atlas-richie-component-document-chunking-core`           | 无组件依赖    | `String -> ChunkingResult`，所有九种确定性文本切片规则与测试。                                                      |
-| `atlas-richie-component-document-chunking-parser-adapter` | parser + core | 消费 `ReadResult`、`ReadEvent.Section` 等**解析组件公开模型**，提取 `section.text()` 并保留调用方可用的来源上下文。 |
+| `document-chunking-core`           | 无组件依赖    | `String -> ChunkingResult`，所有九种确定性文本切片规则与测试。                                                      |
+| `document-chunking-parser-adapter` | parser + core | 消费 `ReadResult`、`ReadEvent.Section` 等**解析组件公开模型**，提取 `section.text()` 并保留调用方可用的来源上下文。 |
 | （无）                                                    | —             | 切片组件不提供 vector adapter；它不应依赖或组装向量组件的输入模型。                                                 |
 
 根 artifact 可作为聚合 BOM/便利依赖，或只发布 core；具体发布策略应与平台现有组件发布规范保持一致。无论采用哪种方式，`core`
@@ -138,7 +138,7 @@ core 中。
 VectorRecord toVectorRecord(Chunk chunk, VectorRecordContext context);
 ```
 
-该 adapter 应归属 `atlas-richie-component-vector`，建议命名为 `atlas-richie-component-vector-chunk-adapter`，依赖
+该 adapter 应归属 `atlas-richie-component-vector`，建议命名为 `vector-chunk-adapter`，依赖
 `vector-core` 与 `document-chunking-core`。这符合“谁消费谁适配”：vector 是 `Chunk` 的接收方，负责将它转换为自身的
 `VectorRecord` 输入；chunking 不应反向认识 vector。
 
@@ -362,7 +362,7 @@ Spring AI 使用者，可提供可选 `document-chunking-semantic-spring-ai` 子
 4. parser-adapter 消费 parser 公开的 `ReadResult`、`ReadEvent` 与 `Flow.Publisher<ReadEvent>`，以每文档独立
    `StreamingChunker` 转换为同步结果或背压流；适配器按下游 demand 每次只向上游请求一个事件，跨 `Section` 保留尾部与
    overlap，并在 `Finished` 或上游 `onComplete` 时 flush。
-5. vector 侧另建可选 `atlas-richie-component-vector-chunk-adapter`，负责 `Chunk -> VectorRecord` 组装，保持“谁消费谁适配”。
+5. vector 侧另建可选 `vector-chunk-adapter`，负责 `Chunk -> VectorRecord` 组装，保持“谁消费谁适配”。
 6. 对确定性、字符区间、规则版本、流式 flush/abort、背压与资源上限建立测试；编译和验证结论持续记录在本文件中。
 
 该顺序让商用 RAG 先获得可预测、可审计且无外部依赖的基础切片能力；Tokenizer、LLM、文件解析与向量写入始终由各自的原子组件或知识库编排层承担，避免职责倒置。

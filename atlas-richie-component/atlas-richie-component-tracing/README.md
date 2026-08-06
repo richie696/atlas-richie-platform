@@ -299,7 +299,7 @@ public class PaymentService {
 **Suitable for**: Cases where you don't need full traces (no OTel Collector), only need `traceId` in response headers
 and MDC for log correlation.
 
-Use [`atlas-richie-component-web-core`](../atlas-richie-component-web/README.md) **§3 Trace ID Propagation**:
+Use [`web-core`](../atlas-richie-component-web/README.md) **§3 Trace ID Propagation**:
 
 ```yaml
 platform.component.web.tracing.enabled=true

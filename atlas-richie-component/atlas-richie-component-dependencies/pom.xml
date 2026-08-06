@@ -39,18 +39,18 @@
             <!-- 多租户公共模型（可选） -->
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-tenant-common</artifactId>
+                <artifactId>tenant-common</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-tenant-core</artifactId>
+                <artifactId>tenant-core</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- 多租户 Gateway 拦截器（可选） -->
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-tenant-gateway</artifactId>
+                <artifactId>tenant-gateway</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- 消息队列文档组件（支持Kafka、RabbitMQ、RocketMQ） -->
@@ -61,119 +61,139 @@
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-messaging-core</artifactId>
+                <artifactId>messaging-core</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-messaging-rabbitmq</artifactId>
+                <artifactId>messaging-rabbitmq</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-messaging-rocketmq</artifactId>
+                <artifactId>messaging-rocketmq</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-messaging-kafka</artifactId>
+                <artifactId>messaging-kafka</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-messaging-sns</artifactId>
+                <artifactId>messaging-sns</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-messaging-sqs</artifactId>
+                <artifactId>messaging-sqs</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-messaging-kinesis</artifactId>
+                <artifactId>messaging-kinesis</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-messaging-eventhubs</artifactId>
+                <artifactId>messaging-eventhubs</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-messaging-pulsar</artifactId>
+                <artifactId>messaging-pulsar</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-messaging-servicebus</artifactId>
+                <artifactId>messaging-servicebus</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-messaging-solace</artifactId>
+                <artifactId>messaging-solace</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-messaging-gcp-pubsub</artifactId>
+                <artifactId>messaging-gcp-pubsub</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-mfa-validation</artifactId>
+                <artifactId>mfa-validation</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-mfa-management</artifactId>
+                <artifactId>mfa-management</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- OAuth2.1鉴权组件 -->
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-oauth-core</artifactId>
+                <artifactId>oauth-core</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-oauth-authz</artifactId>
+                <artifactId>oauth-authz</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-oauth-dcr</artifactId>
+                <artifactId>oauth-dcr</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- Model Context Protocol 组件 -->
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-mcp-api</artifactId>
+                <artifactId>mcp-api</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-mcp-protocol</artifactId>
+                <artifactId>mcp-protocol</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-mcp-schema</artifactId>
+                <artifactId>mcp-schema</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-mcp-server-core</artifactId>
+                <artifactId>mcp-server-core</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-mcp-transport-http</artifactId>
+                <artifactId>mcp-transport-http</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-mcp-testkit</artifactId>
+                <artifactId>mcp-transport-stdio</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>mcp-security-oauth</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>mcp-server-spring-boot-starter</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>mcp-client-spring-boot-starter</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>mcp-testkit</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- MQTT 物联网消息队列组件（支持自建MQTT和阿里云 MQTT PAAS） -->
@@ -200,17 +220,17 @@
             <!-- Web 父 POM（包含 web-core + web-tomcat 子模块） -->
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-web-core</artifactId>
+                <artifactId>web-core</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-web-tomcat</artifactId>
+                <artifactId>web-tomcat</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-web-jetty</artifactId>
+                <artifactId>web-jetty</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- 操作日志组件 -->
@@ -245,27 +265,27 @@
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-http-core</artifactId>
+                <artifactId>http-core</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-http-jdk</artifactId>
+                <artifactId>http-jdk</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-http-okhttp</artifactId>
+                <artifactId>http-okhttp</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-http-httpclient5</artifactId>
+                <artifactId>http-httpclient5</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-http-restclient</artifactId>
+                <artifactId>http-restclient</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- 数据脱敏组件 -->
@@ -276,17 +296,17 @@
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-desensitize-core</artifactId>
+                <artifactId>desensitize-core</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-desensitize-jackson</artifactId>
+                <artifactId>desensitize-jackson</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-desensitize-logging</artifactId>
+                <artifactId>desensitize-logging</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- 对象存储组件 -->
@@ -297,112 +317,112 @@
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-storage-core</artifactId>
+                <artifactId>storage-core</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-storage-local</artifactId>
+                <artifactId>storage-local</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-storage-azure</artifactId>
+                <artifactId>storage-azure</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-storage-cos</artifactId>
+                <artifactId>storage-cos</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-storage-ks3</artifactId>
+                <artifactId>storage-ks3</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-storage-minio</artifactId>
+                <artifactId>storage-minio</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-storage-obs</artifactId>
+                <artifactId>storage-obs</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-storage-oss</artifactId>
+                <artifactId>storage-oss</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-storage-s3</artifactId>
+                <artifactId>storage-s3</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-storage-smb</artifactId>
+                <artifactId>storage-smb</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-storage-sftp</artifactId>
+                <artifactId>storage-sftp</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-storage-ftp</artifactId>
+                <artifactId>storage-ftp</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-storage-tos</artifactId>
+                <artifactId>storage-tos</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-vector-core</artifactId>
+                <artifactId>vector-core</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-vector-mongodb-atlas</artifactId>
+                <artifactId>vector-mongodb-atlas</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-vector-neo4j</artifactId>
+                <artifactId>vector-neo4j</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-vector-postgresql</artifactId>
+                <artifactId>vector-postgresql</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-vector-qdrant</artifactId>
+                <artifactId>vector-qdrant</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-vector-redis</artifactId>
+                <artifactId>vector-redis</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-vector-weaviate</artifactId>
+                <artifactId>vector-weaviate</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-vector-milvus</artifactId>
+                <artifactId>vector-milvus</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-vector-projection-dao</artifactId>
+                <artifactId>vector-projection-dao</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- 通用文档解析组件 (PDF / Word / Excel / PPT / ODF / TXT / Markdown) -->
@@ -414,17 +434,17 @@
             <!-- 通用文档切片组件：core 为默认依赖，两个 adapter 按需引入 -->
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-document-chunking-core</artifactId>
+                <artifactId>document-chunking-core</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-document-chunking-parser-adapter</artifactId>
+                <artifactId>document-chunking-parser-adapter</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-document-chunking-semantic-spring-ai</artifactId>
+                <artifactId>document-chunking-semantic-spring-ai</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- OCR 组件 -->
@@ -435,43 +455,43 @@
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-ocr-core</artifactId>
+                <artifactId>ocr-core</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- document-parser 图片事件的可选 OCR 流式增强适配器 -->
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-ocr-parser-adapter</artifactId>
+                <artifactId>ocr-parser-adapter</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-ocr-aliyun</artifactId>
+                <artifactId>ocr-aliyun</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-ocr-baidu</artifactId>
+                <artifactId>ocr-baidu</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-ocr-paddle</artifactId>
+                <artifactId>ocr-paddle</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-ocr-tesseract</artifactId>
+                <artifactId>ocr-tesseract</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-ocr-paddle-vl</artifactId>
+                <artifactId>ocr-paddle-vl</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-component-ocr-mineru</artifactId>
+                <artifactId>ocr-mineru</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <dependency>

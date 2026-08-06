@@ -33,7 +33,7 @@ import java.net.UnknownHostException;
  * 网关身份透传过滤器
  * <p>
  * 强制给每个出站请求加 {@code X-Forwarded-From-Gateway: <env>:<cluster>:<instance>} header，
- * 让 web 端（{@code atlas-richie-component-web-core}）识别"已通过 gateway"，
+ * 让 web 端（{@code web-core}）识别"已通过 gateway"，
  * 跳过 §4.8 B 组防护（AnomalyDetection / BruteForce / ApiSignature）。
  * <p>
  * gateway-id 三段以 {@code :} 分隔（避免 env 含 {@code .} 时的冲突，如 {@code dev.us-east-1}）：

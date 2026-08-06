@@ -69,6 +69,12 @@ public class ApiResult<T> implements Serializable {
      */
     private String msg;
 
+    /** Correlation ID assigned by the gateway. */
+    private String requestId;
+
+    /** Relative URL of the gateway error-code documentation, when applicable. */
+    private String helpUrl;
+
     /**
      * 主档数据国际化字典表（不是页面展示，是数据库中的主档数据国际化专用字段）
      */
@@ -232,7 +238,7 @@ public class ApiResult<T> implements Serializable {
      * 序列化规则：
      * <ul>
      *     <li>{@code success} 为 boolean 基本类型，永远非 null，永远输出</li>
-     *     <li>其他引用类型字段（{@code data} / {@code code} / {@code msg} / {@code i18nDict}）为 null 时跳过该字段，不输出键也不输出值</li>
+     *     <li>其他引用类型字段为 null 时跳过该字段，不输出键也不输出值</li>
      *     <li>空 Map / 空集合 仍会输出（如 {@code "i18nDict":{}}），仅 null 才省略</li>
      * </ul>
      *
@@ -248,6 +254,8 @@ public class ApiResult<T> implements Serializable {
         appendOptionalField(json, "data", this.data);
         appendOptionalField(json, "code", this.code);
         appendOptionalField(json, "msg", this.msg);
+        appendOptionalField(json, "requestId", this.requestId);
+        appendOptionalField(json, "helpUrl", this.helpUrl);
         appendOptionalField(json, "i18nDict", this.i18nDict);
 
         json.append("}");

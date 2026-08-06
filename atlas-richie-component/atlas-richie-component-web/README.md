@@ -336,18 +336,18 @@ These 4 items come from engineering practice — details that "if not written do
 <!-- Required: SPI + functional layer -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-web-core</artifactId>
+    <artifactId>web-core</artifactId>
 </dependency>
 
 <!-- Choose one container image (Tomcat by default; pick one of the two) -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-web-tomcat</artifactId>
+    <artifactId>web-tomcat</artifactId>
 </dependency>
 <!--
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-web-jetty</artifactId>
+    <artifactId>web-jetty</artifactId>
 </dependency>
 -->
 
@@ -1419,11 +1419,11 @@ bus.
 
 - **Design document (detailed reasoning)**:
     - **Submodule documents**:
-    - [`atlas-richie-component-web-core`](./atlas-richie-component-web-core/README.zh.md) — SPI layer + 14
+    - [`web-core`](./web-core/README.zh.md) — SPI layer + 14
       interceptors + HookBus.
-    - [`atlas-richie-component-web-tomcat`](./atlas-richie-component-web-tomcat/README.zh.md) — Tomcat 11.x adaptation
+    - [`web-tomcat`](./web-tomcat/README.zh.md) — Tomcat 11.x adaptation
       image.
-    - [`atlas-richie-component-web-jetty`](./atlas-richie-component-web-jetty/README.zh.md) — Jetty 12.x adaptation
+    - [`web-jetty`](./web-jetty/README.zh.md) — Jetty 12.x adaptation
       image.
 - **Dependencies & collaborating platform components**:
     - [`atlas-richie-component-concurrency`](../atlas-richie-component-concurrency/README.zh.md) — source of

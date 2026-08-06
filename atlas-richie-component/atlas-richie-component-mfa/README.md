@@ -78,10 +78,10 @@
 
 ```
 atlas-richie-component-mfa        (parent POM)
-├── atlas-richie-component-mfa-validation    (gateway-side, no DB)
+├── mfa-validation    (gateway-side, no DB)
 │   ├── MfaValidateService     — verify code, generate, recovery
 │   └── MfaValidatorStrategy   — SPI for new channels
-└── atlas-richie-component-mfa-management    (general-service side)
+└── mfa-management    (general-service side)
     ├── MfaBindService         — bind / unbind device
     ├── MfaRecoveryCodeService — recovery code generation & validation
     └── config/Liquibase       — DDL management
@@ -95,13 +95,13 @@ atlas-richie-component-mfa        (parent POM)
 <!-- In the gateway service (validation) -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-mfa-validation</artifactId>
+    <artifactId>mfa-validation</artifactId>
 </dependency>
 
 <!-- In the general service (management) -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-mfa-management</artifactId>
+    <artifactId>mfa-management</artifactId>
 </dependency>
 ```
 

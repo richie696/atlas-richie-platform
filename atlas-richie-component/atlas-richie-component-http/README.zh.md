@@ -110,11 +110,11 @@
 
 ```
 atlas-richie-component-http                      ← 父 POM（不含代码）
-├── atlas-richie-component-http-core             ← 门面 API：HttpClient / HttpRequest / HttpResponse / SSE
-├── atlas-richie-component-http-okhttp           ← Provider：OkHttp
-├── atlas-richie-component-http-httpclient5      ← Provider：Apache HttpClient 5
-├── atlas-richie-component-http-jdk              ← Provider：JDK 11+ java.net.http.HttpClient
-└── atlas-richie-component-http-restclient       ← Provider：Spring 6+ RestClient
+├── http-core             ← 门面 API：HttpClient / HttpRequest / HttpResponse / SSE
+├── http-okhttp           ← Provider：OkHttp
+├── http-httpclient5      ← Provider：Apache HttpClient 5
+├── http-jdk              ← Provider：JDK 11+ java.net.http.HttpClient
+└── http-restclient       ← Provider：Spring 6+ RestClient
 ```
 
 ### 运行时装配
@@ -185,18 +185,18 @@ graph TB
 <!-- 必选：门面 API -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-http-core</artifactId>
+    <artifactId>http-core</artifactId>
 </dependency>
 
 <!-- 选一个 Provider（四选一） -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-http-okhttp</artifactId>
+    <artifactId>http-okhttp</artifactId>
 </dependency>
 <!-- 其他可选 Provider（二选一或都不加）：
-<dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-component-http-httpclient5</artifactId></dependency>
-<dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-component-http-jdk</artifactId></dependency>
-<dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-component-http-restclient</artifactId></dependency>
+<dependency><groupId>cn.richie696.component</groupId><artifactId>http-httpclient5</artifactId></dependency>
+<dependency><groupId>cn.richie696.component</groupId><artifactId>http-jdk</artifactId></dependency>
+<dependency><groupId>cn.richie696.component</groupId><artifactId>http-restclient</artifactId></dependency>
 -->
 ```
 
@@ -475,7 +475,7 @@ if (resp.isSuccessful()) {
 ### 6) 与平台脱敏组件配合做日志
 
 如果为调试打印出/入站 body，统一走 `DesensitizeUtils.toSafeJson(...)`（来自 [
-`atlas-richie-component-desensitize-logging`](../atlas-richie-component-desensitize/atlas-richie-component-desensitize-logging/README.zh.md)
+`desensitize-logging`](../atlas-richie-component-desensitize/desensitize-logging/README.zh.md)
 ），避免 token / ID / 签名进入日志文件。
 
 ---
@@ -503,7 +503,7 @@ if (resp.isSuccessful()) {
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-http-okhttp</artifactId>
+    <artifactId>http-okhttp</artifactId>
 </dependency>
 ```
 
@@ -581,18 +581,18 @@ if (!resp.isSuccessful()) {
 ## 📚 相关文档
 
 - **子模块文档（同样遵循 10 段骨架）**：
-    - [`atlas-richie-component-http-core`](./atlas-richie-component-http-core/README.zh.md) — 门面 API：`HttpClient`、
+    - [`http-core`](./http-core/README.zh.md) — 门面 API：`HttpClient`、
       `HttpRequest`、`HttpResponse`、SSE。
-    - [`atlas-richie-component-http-okhttp`](./atlas-richie-component-http-okhttp/README.zh.md) — OkHttp Provider。
-    - [`atlas-richie-component-http-httpclient5`](./atlas-richie-component-http-httpclient5/README.zh.md) — Apache
+    - [`http-okhttp`](./http-okhttp/README.zh.md) — OkHttp Provider。
+    - [`http-httpclient5`](./http-httpclient5/README.zh.md) — Apache
       HttpClient 5 Provider。
-    - [`atlas-richie-component-http-jdk`](./atlas-richie-component-http-jdk/README.zh.md) — JDK 11+
+    - [`http-jdk`](./http-jdk/README.zh.md) — JDK 11+
       `java.net.http.HttpClient` Provider。
-    - [`atlas-richie-component-http-restclient`](./atlas-richie-component-http-restclient/README.zh.md) — Spring
+    - [`http-restclient`](./http-restclient/README.zh.md) — Spring
       `RestClient` Provider。
 - **相关平台组件**：
     - [
-      `atlas-richie-component-desensitize-logging`](../atlas-richie-component-desensitize/atlas-richie-component-desensitize-logging/README.zh.md) —
+      `desensitize-logging`](../atlas-richie-component-desensitize/desensitize-logging/README.zh.md) —
       HTTP 调试日志中的敏感字段脱敏。
     - `atlas-richie-component-microservice` (microservice has no ZH README) — Sentinel / OpenFeign，在 `HttpClient`
       之上叠加重试 / 熔断。

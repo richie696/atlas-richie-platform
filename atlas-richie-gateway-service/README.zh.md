@@ -32,7 +32,7 @@
 
 > **互斥约束：** `platform.gateway.token.enable` 与 `platform.gateway.interface-auth.enable` **不能同时为 `true`**。启动时 `GatewayAuthConfigValidator` 会校验并失败，避免认证链冲突。
 
-跨服务共享配置（`token`、`deploy`、`audit-enabled`）在 **`atlas-richie-contract`** 的 `GatewayContract` 中，前缀为 `platform.gateway.contract`。租户配置由 `atlas-richie-component-tenant-gateway` 统一提供，使用 `platform.tenant`。网关专属配置（CSP、ECC、SSO、异常检测、防重复提交、硬件指纹、降级文案等）由 **`GatewayConfig`** 承载。
+跨服务共享配置（`token`、`deploy`、`audit-enabled`）在 **`atlas-richie-contract`** 的 `GatewayContract` 中，前缀为 `platform.gateway.contract`。租户配置由 `tenant-gateway` 统一提供，使用 `platform.tenant`。网关专属配置（CSP、ECC、SSO、异常检测、防重复提交、硬件指纹、降级文案等）由 **`GatewayConfig`** 承载。
 
 网关采用**配置化设计**：同一制品通过 Nacos 配置切换微服务 / OpenAPI / 内网形态，无需改代码。
 
@@ -354,7 +354,7 @@ platform:
 
 - **JWT 认证**（`AuthenticationFilter`）：请求头 `x-rd-request-apitoken`；`JwtUtils` 校验签名与过期；黑名单 Redis 前缀 `blacklist-path`
 - **自动续期**：到期前 `expiration-renewal-time`（分钟）内访问可续签
-- **登录签发**（`IssueTokensFilter`）：匹配 `login-uri-list` 时拦截登录 JSON 响应，写入 JWT；支持 **MFA**（`mfa-enabled-login-uri-list` + `atlas-richie-component-mfa-validation`）
+- **登录签发**（`IssueTokensFilter`）：匹配 `login-uri-list` 时拦截登录 JSON 响应，写入 JWT；支持 **MFA**（`mfa-enabled-login-uri-list` + `mfa-validation`）
 - **SSO**（`SsoFilter`）：在线 Token、门户校验、重复登录检测（`sso.online-token-path`）
 - **硬件指纹**（`HardwareFingerprintUtils`）：签发/校验时绑定设备，降低 Token 盗用风险
 - **令牌管理 API**：`/api/auth/invalid/{token}`、`/api/auth/logout`（含 MFA 临时令牌头 `x-rd-request-mfa-token`）
@@ -453,7 +453,7 @@ add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsaf
 
 ### 6. 多租户
 
-- **TenantFilter**：由 `atlas-richie-component-tenant-gateway` 提供，从 Token 解析租户并校验状态与过期；配置使用 `platform.tenant.gateway`
+- **TenantFilter**：由 `tenant-gateway` 提供，从 Token 解析租户并校验状态与过期；配置使用 `platform.tenant.gateway`
 - 与业务库 `tenantId` 字段配合（参见 Base 包 `TenantAuditDomain`）
 
 ### 7. 国际化

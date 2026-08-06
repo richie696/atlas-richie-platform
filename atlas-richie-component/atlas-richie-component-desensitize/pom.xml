@@ -16,9 +16,9 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>atlas-richie-component-desensitize-core</module>
-        <module>atlas-richie-component-desensitize-jackson</module>
-        <module>atlas-richie-component-desensitize-logging</module>
+        <module>desensitize-core</module>
+        <module>desensitize-jackson</module>
+        <module>desensitize-logging</module>
     </modules>
 
     <build>

@@ -43,7 +43,7 @@ import java.util.concurrent.CompletableFuture;
  * {@code POST https://open.bigmodel.cn/api/paas/v4/audio/transcriptions}，Bearer 鉴权，
  * 官方协议为 {@code multipart/form-data}（字段 {@code file} 音频 + {@code model} 模型）。
  * <p>
- * <strong>实现选择（JSON base64 fallback）</strong>：当前平台 {@code atlas-richie-component-http-core}
+ * <strong>实现选择（JSON base64 fallback）</strong>：当前平台 {@code http-core}
  * 的 {@link cn.richie696.component.http.core.HttpRequest#multipart(String, String, InputStream)}
  * 仅支持<b>单文件字段</b>，无法同时投递 {@code file} 音频 + {@code model} 字符串字段；
  * 因此本实现采用 <b>JSON base64 fallback</b> —— 把音频 base64 编码后随 {@code model} 一同放入

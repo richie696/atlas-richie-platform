@@ -17,8 +17,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>atlas-richie-component-document-chunking-core</module>
-        <module>atlas-richie-component-document-chunking-parser-adapter</module>
-        <module>atlas-richie-component-document-chunking-semantic-spring-ai</module>
+        <module>document-chunking-core</module>
+        <module>document-chunking-parser-adapter</module>
+        <module>document-chunking-semantic-spring-ai</module>
     </modules>
 </project>
