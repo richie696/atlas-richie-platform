@@ -150,7 +150,7 @@ Use when you need aligned contracts but **not** Servlet/JWT/full utilities, for 
 
 - `messaging-core`
 - `mfa-core`
-- `atlas-richie-component-mqtt`
+- `atlas-richie-mqtt`
 
 ```xml
 <dependency>

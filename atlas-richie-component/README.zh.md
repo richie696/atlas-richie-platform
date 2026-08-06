@@ -156,32 +156,32 @@ graph TB
 
 | 层          | 组件                | 一句话定位                                                                                                     | 文档                                                        |
 |-------------|---------------------|----------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
-| 🛠️ 基础设施 | **cache**           | Redis 缓存 + 数据结构 + 分布式锁 + L2 + 性能守卫                                                               | [📖](./atlas-richie-component-cache/README.zh.md)           |
-|             | **web**             | Servlet 容器层 9 大横切价值点（限流/熔断/Hang检测/防护等）                                                     | [📖](./atlas-richie-component-web/README.zh.md)             |
-|             | **logging**         | AOP 访问日志 + 方法追踪，多存储后端                                                                            | [📖](./atlas-richie-component-logging/README.zh.md)         |
-|             | **http**            | 统一 HTTP 客户端门面（OkHttp/Apache5/JDK/RestClient）                                                          | [📖](./atlas-richie-component-http/README.zh.md)            |
-|             | **concurrency**     | JDK 25 结构化并发 + 虚拟线程高频模式封装                                                                       | [📖](./atlas-richie-component-concurrency/README.zh.md)     |
-|             | **tracing**         | OpenTelemetry 依赖托管 + 四场景接入指南                                                                        | [📖](./atlas-richie-component-tracing/README.zh.md)         |
-|             | **i18n**            | 资源文件国际化 + 字典管理 + 自动注入                                                                           | [📖](./atlas-richie-component-i18n/README.zh.md)            |
-|             | **desensitize**     | API/日志/审计/异常出口统一脱敏                                                                                 | [📖](./atlas-richie-component-desensitize/README.zh.md)     |
-|             | **liquibase**       | 数据库迁移管理，多数据库 + 运行时校验                                                                          | [📖](./atlas-richie-component-liquibase/README.zh.md)       |
-|             | **dao**             | MyBatis Plus 增强（分页/多租户/分布式ID/SQL监控）                                                              | [📖](./atlas-richie-component-dao/README.zh.md)             |
-| 💾 数据存储 | **storage**         | 统一对象存储接口（S3/OSS/COS/MinIO 等可插拔）                                                                  | [📖](./atlas-richie-component-storage/README.zh.md)         |
-|             | **vector**          | 统一向量存储与检索（Redis/Milvus/Qdrant 等可插拔）                                                             | [📖](./atlas-richie-component-vector/README.zh.md)          |
-|             | **mongodb**         | MongoDB Fluent API + 横切注解 + 可观测性 + 熔断降级                                                            | [📖](./atlas-richie-component-mongodb/README.zh.md)         |
-| 📡 服务通信 | **messaging**       | Spring Cloud Stream 统一消息（Kafka/RabbitMQ/RocketMQ 等）                                                     | [📖](./atlas-richie-component-messaging/README.zh.md)       |
-|             | **redis-streammq**  | Redis Stream 可靠 MQ（消费组/重试/死信/幂等）                                                                  | [📖](./atlas-richie-component-redis-streammq/README.zh.md)  |
-|             | **mqtt**            | MQTT 客户端（事件驱动架构 + 分布式追踪）                                                                       | [📖](./atlas-richie-component-mqtt/README.zh.md)            |
-|             | **nats**            | NATS 消息总线 + JetStream + KV/Object Store + RPC                                                              | [📖](./atlas-richie-component-nats/README.zh.md)            |
-|             | **grpc**            | 生产级 gRPC 拦截器栈（鉴权/限流/追踪/指标）                                                                    | [📖](./atlas-richie-component-grpc/README.zh.md)            |
-|             | **microservice**    | OpenFeign/RestClient 微服务调用统一配置                                                                        | [📖](./atlas-richie-component-microservice/README.zh.md)    |
-|             | **oauth**           | OAuth 2.1 鉴权（core + authz + DCR 三模块）                                                                    | [📖](./atlas-richie-component-oauth/README.zh.md)           |
-| 🎯 业务能力 | **statemachine**    | 轻量状态机（Easy Rules + Redis 持久化 + Stream 异步同步）                                                      | [📖](./atlas-richie-component-statemachine/README.zh.md)    |
-|             | **ai**              | AI 模型统一调用（多 Provider 可插拔）                                                                          | [📖](./atlas-richie-component-ai/README.zh.md)              |
-|             | **mfa**             | 多因素认证（TOTP/短信/邮件等）                                                                                 | [📖](./atlas-richie-component-mfa/README.zh.md)             |
-|             | **tenant**          | 多租户 5 种隔离模式（SCHEMA/DATABASE/REDIS/...）                                                               | [📖](./atlas-richie-component-tenant/README.zh.md)          |
-|             | **document-parser** | 统一文档解析（PDF / Word / Excel / PPT / ODF / TXT / Markdown），SSRF 防线 + 流式 ParseEvent                   | [📖](./atlas-richie-component-document-parser/README.zh.md) |
-|             | **ocr**             | 统一 OCR 门面（6 vendor 可插拔：阿里云/百度/Paddle/Tesseract/PaddleOCR-VL/MinerU），多语言 v0.6 + 业务事件回调 | [📖](./atlas-richie-component-ocr/README.zh.md)             |
+| 🛠️ 基础设施 | **cache**           | Redis 缓存 + 数据结构 + 分布式锁 + L2 + 性能守卫                                                               | [📖](./atlas-richie-cache/README.zh.md)           |
+|             | **web**             | Servlet 容器层 9 大横切价值点（限流/熔断/Hang检测/防护等）                                                     | [📖](./atlas-richie-web-parent/README.zh.md)             |
+|             | **logging**         | AOP 访问日志 + 方法追踪，多存储后端                                                                            | [📖](./atlas-richie-logging/README.zh.md)         |
+|             | **http**            | 统一 HTTP 客户端门面（OkHttp/Apache5/JDK/RestClient）                                                          | [📖](./atlas-richie-http-parent/README.zh.md)            |
+|             | **concurrency**     | JDK 25 结构化并发 + 虚拟线程高频模式封装                                                                       | [📖](./atlas-richie-concurrency/README.zh.md)     |
+|             | **tracing**         | OpenTelemetry 依赖托管 + 四场景接入指南                                                                        | [📖](./atlas-richie-tracing/README.zh.md)         |
+|             | **i18n**            | 资源文件国际化 + 字典管理 + 自动注入                                                                           | [📖](./atlas-richie-i18n/README.zh.md)            |
+|             | **desensitize**     | API/日志/审计/异常出口统一脱敏                                                                                 | [📖](./atlas-richie-desensitize-parent/README.zh.md)     |
+|             | **liquibase**       | 数据库迁移管理，多数据库 + 运行时校验                                                                          | [📖](./atlas-richie-liquibase/README.zh.md)       |
+|             | **dao**             | MyBatis Plus 增强（分页/多租户/分布式ID/SQL监控）                                                              | [📖](./atlas-richie-dao/README.zh.md)             |
+| 💾 数据存储 | **storage**         | 统一对象存储接口（S3/OSS/COS/MinIO 等可插拔）                                                                  | [📖](./atlas-richie-storage-parent/README.zh.md)         |
+|             | **vector**          | 统一向量存储与检索（Redis/Milvus/Qdrant 等可插拔）                                                             | [📖](./atlas-richie-vector-parent/README.zh.md)          |
+|             | **mongodb**         | MongoDB Fluent API + 横切注解 + 可观测性 + 熔断降级                                                            | [📖](./atlas-richie-mongodb/README.zh.md)         |
+| 📡 服务通信 | **messaging**       | Spring Cloud Stream 统一消息（Kafka/RabbitMQ/RocketMQ 等）                                                     | [📖](./atlas-richie-messaging-parent/README.zh.md)       |
+|             | **redis-streammq**  | Redis Stream 可靠 MQ（消费组/重试/死信/幂等）                                                                  | [📖](./atlas-richie-redis-streammq/README.zh.md)  |
+|             | **mqtt**            | MQTT 客户端（事件驱动架构 + 分布式追踪）                                                                       | [📖](./atlas-richie-mqtt/README.zh.md)            |
+|             | **nats**            | NATS 消息总线 + JetStream + KV/Object Store + RPC                                                              | [📖](./atlas-richie-nats/README.zh.md)            |
+|             | **grpc**            | 生产级 gRPC 拦截器栈（鉴权/限流/追踪/指标）                                                                    | [📖](./atlas-richie-grpc/README.zh.md)            |
+|             | **microservice**    | OpenFeign/RestClient 微服务调用统一配置                                                                        | [📖](./atlas-richie-microservice/README.zh.md)    |
+|             | **oauth**           | OAuth 2.1 鉴权（core + authz + DCR 三模块）                                                                    | [📖](./atlas-richie-oauth-parent/README.zh.md)           |
+| 🎯 业务能力 | **statemachine**    | 轻量状态机（Easy Rules + Redis 持久化 + Stream 异步同步）                                                      | [📖](./atlas-richie-statemachine/README.zh.md)    |
+|             | **ai**              | AI 模型统一调用（多 Provider 可插拔）                                                                          | [📖](./atlas-richie-ai/README.zh.md)              |
+|             | **mfa**             | 多因素认证（TOTP/短信/邮件等）                                                                                 | [📖](./atlas-richie-mfa-parent/README.zh.md)             |
+|             | **tenant**          | 多租户 5 种隔离模式（SCHEMA/DATABASE/REDIS/...）                                                               | [📖](./atlas-richie-tenant-parent/README.zh.md)          |
+|             | **document-parser** | 统一文档解析（PDF / Word / Excel / PPT / ODF / TXT / Markdown），SSRF 防线 + 流式 ParseEvent                   | [📖](./atlas-richie-document-parser/README.zh.md) |
+|             | **ocr**             | 统一 OCR 门面（6 vendor 可插拔：阿里云/百度/Paddle/Tesseract/PaddleOCR-VL/MinerU），多语言 v0.6 + 业务事件回调 | [📖](./atlas-richie-ocr-parent/README.zh.md)             |
 
 ---
 
@@ -309,35 +309,35 @@ messaging（发送"文档已索引"事件给下游）
 <!-- 基础设施：缓存 + 容器防护 + 日志 -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-cache</artifactId>
+    <artifactId>atlas-richie-cache</artifactId>
 </dependency>
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-web</artifactId>
+    <artifactId>atlas-richie-web-parent</artifactId>
 </dependency>
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-logging</artifactId>
+    <artifactId>atlas-richie-logging</artifactId>
 </dependency>
 
 <!-- 数据存储：对象存储 + 向量检索 -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-storage</artifactId>
+    <artifactId>atlas-richie-storage-parent</artifactId>
 </dependency>
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-vector</artifactId>
+    <artifactId>atlas-richie-vector-parent</artifactId>
 </dependency>
 
 <!-- 服务通信：消息队列 + OAuth -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-messaging</artifactId>
+    <artifactId>atlas-richie-messaging-parent</artifactId>
 </dependency>
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-oauth</artifactId>
+    <artifactId>atlas-richie-oauth-parent</artifactId>
 </dependency>
 ```
 

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>cn.richie696.component</groupId>
+        <artifactId>atlas-richie-component-dependencies</artifactId>
+        <version>${revision}</version>
+        <relativePath>../atlas-richie-component-dependencies/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>atlas-richie-web-parent</artifactId>
+    <name>atlas-richie-web-parent</name>
+    <description>Web 父 POM：聚合 web-core（容器无关）和 web-tomcat（生产调优）；未来扩展 web-jetty / web-undertow
+    </description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>atlas-richie-web-core</module>
+        <module>atlas-richie-web-tomcat</module>
+        <module>atlas-richie-web-jetty</module>
+    </modules>
+</project>

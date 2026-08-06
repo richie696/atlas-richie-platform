@@ -150,7 +150,7 @@ atlas-richie-base/
 
 - `messaging-core`
 - `mfa-core`
-- `atlas-richie-component-mqtt`
+- `atlas-richie-mqtt`
 
 ```xml
 <dependency>

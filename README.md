@@ -74,13 +74,13 @@ atlas-richie-platform/
 │   ├── atlas-richie-context/             # Context & utilities
 │   └── atlas-richie-contract/            # Cross-service shared contract package
 ├── atlas-richie-component/               # Component library
-│   ├── atlas-richie-component-ai/
-│   ├── atlas-richie-component-cache/
-│   ├── atlas-richie-component-dao/
-│   ├── atlas-richie-component-http/
-│   ├── atlas-richie-component-storage/
-│   ├── atlas-richie-component-vector/
-│   ├── atlas-richie-component-messaging/
+│   ├── atlas-richie-ai/
+│   ├── atlas-richie-cache/
+│   ├── atlas-richie-dao/
+│   ├── atlas-richie-http-parent/
+│   ├── atlas-richie-storage-parent/
+│   ├── atlas-richie-vector-parent/
+│   ├── atlas-richie-messaging-parent/
 │   └── ...
 ├── atlas-richie-component-template/      # Sample projects
 │   ├── sample-cache/
@@ -202,7 +202,7 @@ mvn clean install -DskipTests
 <dependencies>
     <dependency>
         <groupId>cn.richie696.component</groupId>
-        <artifactId>atlas-richie-component-cache</artifactId>
+        <artifactId>atlas-richie-cache</artifactId>
     </dependency>
     <dependency>
         <groupId>cn.richie696.component</groupId>
@@ -264,7 +264,7 @@ mvn spring-boot:run
 
 ## 📚 Documentation Index
 
-> Some module READMEs are still Chinese-only; prefer `atlas-richie-component/atlas-richie-component-document-parser/src/main/java/cn/richie696/component/parser/internal/README.md` (English) and `README.zh.md` (简体中文) where both exist.
+> Some module READMEs are still Chinese-only; prefer `atlas-richie-component/atlas-richie-document-parser/src/main/java/cn/richie696/component/parser/internal/README.md` (English) and `README.zh.md` (简体中文) where both exist.
 
 ### Base
 
@@ -273,14 +273,14 @@ mvn spring-boot:run
 ### Components
 
 - [atlas-richie-component/README.md](atlas-richie-component/README.md)
-    - [Cache](atlas-richie-component/atlas-richie-component-cache/README.md)
-    - [DAO](atlas-richie-component/atlas-richie-component-dao/README.md)
-    - [HTTP](atlas-richie-component/atlas-richie-component-http/README.md)
-    - [Storage](atlas-richie-component/atlas-richie-component-storage/README.md)
-    - [Vector](atlas-richie-component/atlas-richie-component-vector/README.md)
-    - [Messaging](atlas-richie-component/atlas-richie-component-messaging/README.md)
-    - [State machine](atlas-richie-component/atlas-richie-component-statemachine/README.md)
-    - [AI](atlas-richie-component/atlas-richie-component-ai/README.md)
+    - [Cache](atlas-richie-component/atlas-richie-cache/README.md)
+    - [DAO](atlas-richie-component/atlas-richie-dao/README.md)
+    - [HTTP](atlas-richie-component/atlas-richie-http-parent/README.md)
+    - [Storage](atlas-richie-component/atlas-richie-storage-parent/README.md)
+    - [Vector](atlas-richie-component/atlas-richie-vector-parent/README.md)
+    - [Messaging](atlas-richie-component/atlas-richie-messaging-parent/README.md)
+    - [State machine](atlas-richie-component/atlas-richie-statemachine/README.md)
+    - [AI](atlas-richie-component/atlas-richie-ai/README.md)
     - [More…](atlas-richie-component/README.md)
 
 ### Samples

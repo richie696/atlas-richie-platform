@@ -163,32 +163,32 @@ graph TB
 
 | Layer                    | Component           | One-line Positioning                                                                                                                               | Documentation                                              |
 |--------------------------|---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
-| 🛠️ Infrastructure        | **cache**           | Redis cache + data structures + distributed locks + L2 + performance guard                                                                         | [📖](./atlas-richie-component-cache/README.zh.md)          |
-|                          | **web**             | 9 cross-cutting value points in Servlet container layer (rate limit/circuit break/Hang detection/protection, etc.)                                 | [📖](./atlas-richie-component-web/README.zh.md)            |
-|                          | **logging**         | AOP access logging + method tracing, multi-storage backends                                                                                        | [📖](./atlas-richie-component-logging/README.zh.md)        |
-|                          | **http**            | Unified HTTP client facade (OkHttp/Apache5/JDK/RestClient)                                                                                         | [📖](./atlas-richie-component-http/README.zh.md)           |
-|                          | **concurrency**     | JDK 25 structured concurrency + virtual thread high-frequency patterns                                                                             | [📖](./atlas-richie-component-concurrency/README.zh.md)    |
-|                          | **tracing**         | OpenTelemetry dependency management + 4-scenario onboarding guide                                                                                  | [📖](./atlas-richie-component-tracing/README.zh.md)        |
-|                          | **i18n**            | Resource file i18n + dictionary management + auto-injection                                                                                        | [📖](./atlas-richie-component-i18n/README.zh.md)           |
-|                          | **desensitize**     | Unified desensitization for API/log/audit/exception exits                                                                                          | [📖](./atlas-richie-component-desensitize/README.zh.md)    |
-|                          | **liquibase**       | Database migration management, multi-database + runtime validation                                                                                 | [📖](./atlas-richie-component-liquibase/README.zh.md)      |
-|                          | **dao**             | MyBatis Plus enhancements (pagination/multi-tenant/distributed ID/SQL monitoring)                                                                  | [📖](./atlas-richie-component-dao/README.zh.md)            |
-| 💾 Data Storage          | **storage**         | Unified object storage interface (S3/OSS/COS/MinIO etc. pluggable)                                                                                 | [📖](./atlas-richie-component-storage/README.zh.md)        |
-|                          | **vector**          | Unified vector storage and search (Redis/Milvus/Qdrant etc. pluggable)                                                                             | [📖](./atlas-richie-component-vector/README.zh.md)         |
-|                          | **mongodb**         | MongoDB Fluent API + cross-cutting annotations + observability + circuit-breaking fallback                                                         | [📖](./atlas-richie-component-mongodb/README.zh.md)        |
-| 📡 Service Communication | **messaging**       | Spring Cloud Stream unified messaging (Kafka/RabbitMQ/RocketMQ etc.)                                                                               | [📖](./atlas-richie-component-messaging/README.zh.md)      |
-|                          | **redis-streammq**  | Redis Stream reliable MQ (consumer group/retry/dead-letter/idempotency)                                                                            | [📖](./atlas-richie-component-redis-streammq/README.zh.md) |
-|                          | **mqtt**            | MQTT client (event-driven architecture + distributed tracing)                                                                                      | [📖](./atlas-richie-component-mqtt/README.zh.md)           |
-|                          | **nats**            | NATS message bus + JetStream + KV/Object Store + RPC                                                                                               | [📖](./atlas-richie-component-nats/README.zh.md)           |
-|                          | **grpc**            | Production-grade gRPC interceptor stack (auth/rate limit/tracing/metrics)                                                                          | [📖](./atlas-richie-component-grpc/README.zh.md)           |
-|                          | **microservice**    | OpenFeign/RestClient microservice call unified configuration                                                                                       | [📖](./atlas-richie-component-microservice/README.zh.md)   |
-|                          | **oauth**           | OAuth 2.1 authentication (core + authz + DCR three modules)                                                                                        | [📖](./atlas-richie-component-oauth/README.zh.md)          |
-| 🎯 Business Capability   | **statemachine**    | Lightweight state machine (Easy Rules + Redis persistence + Stream async sync)                                                                     | [📖](./atlas-richie-component-statemachine/README.zh.md)   |
-|                          | **ai**              | Unified AI model invocation (multi-provider pluggable)                                                                                             | [📖](./atlas-richie-component-ai/README.zh.md)             |
-|                          | **mfa**             | Multi-factor authentication (TOTP/SMS/email etc.)                                                                                                  | [📖](./atlas-richie-component-mfa/README.zh.md)            |
-|                          | **tenant**          | 5 multi-tenant isolation modes (SCHEMA/DATABASE/REDIS/...)                                                                                         | [📖](./atlas-richie-component-tenant/README.zh.md)         |
-|                          | **document-parser** | Unified document parsing (PDF / Word / Excel / PPT / ODF / TXT / Markdown), SSRF defense + streaming ParseEvent                                    | [📖](./atlas-richie-component-document-parser/README.md)   |
-|                          | **ocr**             | Unified OCR facade (6 vendors pluggable: Aliyun / Baidu / Paddle / Tesseract / PaddleOCR-VL / MinerU), multi-language    + business event listener | [📖](./atlas-richie-component-ocr/README.md)               |
+| 🛠️ Infrastructure        | **cache**           | Redis cache + data structures + distributed locks + L2 + performance guard                                                                         | [📖](./atlas-richie-cache/README.zh.md)          |
+|                          | **web**             | 9 cross-cutting value points in Servlet container layer (rate limit/circuit break/Hang detection/protection, etc.)                                 | [📖](./atlas-richie-web-parent/README.zh.md)            |
+|                          | **logging**         | AOP access logging + method tracing, multi-storage backends                                                                                        | [📖](./atlas-richie-logging/README.zh.md)        |
+|                          | **http**            | Unified HTTP client facade (OkHttp/Apache5/JDK/RestClient)                                                                                         | [📖](./atlas-richie-http-parent/README.zh.md)           |
+|                          | **concurrency**     | JDK 25 structured concurrency + virtual thread high-frequency patterns                                                                             | [📖](./atlas-richie-concurrency/README.zh.md)    |
+|                          | **tracing**         | OpenTelemetry dependency management + 4-scenario onboarding guide                                                                                  | [📖](./atlas-richie-tracing/README.zh.md)        |
+|                          | **i18n**            | Resource file i18n + dictionary management + auto-injection                                                                                        | [📖](./atlas-richie-i18n/README.zh.md)           |
+|                          | **desensitize**     | Unified desensitization for API/log/audit/exception exits                                                                                          | [📖](./atlas-richie-desensitize-parent/README.zh.md)    |
+|                          | **liquibase**       | Database migration management, multi-database + runtime validation                                                                                 | [📖](./atlas-richie-liquibase/README.zh.md)      |
+|                          | **dao**             | MyBatis Plus enhancements (pagination/multi-tenant/distributed ID/SQL monitoring)                                                                  | [📖](./atlas-richie-dao/README.zh.md)            |
+| 💾 Data Storage          | **storage**         | Unified object storage interface (S3/OSS/COS/MinIO etc. pluggable)                                                                                 | [📖](./atlas-richie-storage-parent/README.zh.md)        |
+|                          | **vector**          | Unified vector storage and search (Redis/Milvus/Qdrant etc. pluggable)                                                                             | [📖](./atlas-richie-vector-parent/README.zh.md)         |
+|                          | **mongodb**         | MongoDB Fluent API + cross-cutting annotations + observability + circuit-breaking fallback                                                         | [📖](./atlas-richie-mongodb/README.zh.md)        |
+| 📡 Service Communication | **messaging**       | Spring Cloud Stream unified messaging (Kafka/RabbitMQ/RocketMQ etc.)                                                                               | [📖](./atlas-richie-messaging-parent/README.zh.md)      |
+|                          | **redis-streammq**  | Redis Stream reliable MQ (consumer group/retry/dead-letter/idempotency)                                                                            | [📖](./atlas-richie-redis-streammq/README.zh.md) |
+|                          | **mqtt**            | MQTT client (event-driven architecture + distributed tracing)                                                                                      | [📖](./atlas-richie-mqtt/README.zh.md)           |
+|                          | **nats**            | NATS message bus + JetStream + KV/Object Store + RPC                                                                                               | [📖](./atlas-richie-nats/README.zh.md)           |
+|                          | **grpc**            | Production-grade gRPC interceptor stack (auth/rate limit/tracing/metrics)                                                                          | [📖](./atlas-richie-grpc/README.zh.md)           |
+|                          | **microservice**    | OpenFeign/RestClient microservice call unified configuration                                                                                       | [📖](./atlas-richie-microservice/README.zh.md)   |
+|                          | **oauth**           | OAuth 2.1 authentication (core + authz + DCR three modules)                                                                                        | [📖](./atlas-richie-oauth-parent/README.zh.md)          |
+| 🎯 Business Capability   | **statemachine**    | Lightweight state machine (Easy Rules + Redis persistence + Stream async sync)                                                                     | [📖](./atlas-richie-statemachine/README.zh.md)   |
+|                          | **ai**              | Unified AI model invocation (multi-provider pluggable)                                                                                             | [📖](./atlas-richie-ai/README.zh.md)             |
+|                          | **mfa**             | Multi-factor authentication (TOTP/SMS/email etc.)                                                                                                  | [📖](./atlas-richie-mfa-parent/README.zh.md)            |
+|                          | **tenant**          | 5 multi-tenant isolation modes (SCHEMA/DATABASE/REDIS/...)                                                                                         | [📖](./atlas-richie-tenant-parent/README.zh.md)         |
+|                          | **document-parser** | Unified document parsing (PDF / Word / Excel / PPT / ODF / TXT / Markdown), SSRF defense + streaming ParseEvent                                    | [📖](./atlas-richie-document-parser/README.md)   |
+|                          | **ocr**             | Unified OCR facade (6 vendors pluggable: Aliyun / Baidu / Paddle / Tesseract / PaddleOCR-VL / MinerU), multi-language    + business event listener | [📖](./atlas-richie-ocr-parent/README.md)               |
 
 ---
 
@@ -316,35 +316,35 @@ Each component is an independent artifact, import on demand per business scenari
 <!-- Infrastructure: cache + container protection + logging -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-cache</artifactId>
+    <artifactId>atlas-richie-cache</artifactId>
 </dependency>
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-web</artifactId>
+    <artifactId>atlas-richie-web-parent</artifactId>
 </dependency>
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-logging</artifactId>
+    <artifactId>atlas-richie-logging</artifactId>
 </dependency>
 
 <!-- Data storage: object storage + vector search -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-storage</artifactId>
+    <artifactId>atlas-richie-storage-parent</artifactId>
 </dependency>
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-vector</artifactId>
+    <artifactId>atlas-richie-vector-parent</artifactId>
 </dependency>
 
 <!-- Service communication: message queue + OAuth -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-messaging</artifactId>
+    <artifactId>atlas-richie-messaging-parent</artifactId>
 </dependency>
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-oauth</artifactId>
+    <artifactId>atlas-richie-oauth-parent</artifactId>
 </dependency>
 ```
 

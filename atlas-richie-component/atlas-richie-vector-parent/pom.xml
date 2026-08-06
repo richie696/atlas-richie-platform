@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>cn.richie696.component</groupId>
+        <artifactId>atlas-richie-component-dependencies</artifactId>
+        <version>${revision}</version>
+        <relativePath>../atlas-richie-component-dependencies/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>atlas-richie-vector-parent</artifactId>
+    <name>atlas-richie-vector-parent</name>
+    <description>Richie向量数据库父模块（聚合core及各provider实现）</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>atlas-richie-vector-core</module>
+        <module>atlas-richie-vector-chunk-adapter</module>
+        <module>atlas-richie-vector-projection-dao</module>
+        <module>atlas-richie-vector-mongodb-atlas</module>
+        <module>atlas-richie-vector-neo4j</module>
+        <module>atlas-richie-vector-postgresql</module>
+        <module>atlas-richie-vector-qdrant</module>
+        <module>atlas-richie-vector-redis</module>
+        <module>atlas-richie-vector-weaviate</module>
+        <module>atlas-richie-vector-milvus</module>
+        <module>atlas-richie-vector-vikingdb</module>
+    </modules>
+
+</project>

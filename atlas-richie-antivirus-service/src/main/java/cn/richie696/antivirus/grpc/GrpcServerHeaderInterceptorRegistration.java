@@ -9,7 +9,7 @@ import org.springframework.grpc.server.GlobalServerInterceptor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 /**
- * 把 atlas-richie-component-grpc 的 {@link GrpcServerHeaderInterceptor} 暴露成 gRPC server
+ * 把 atlas-richie-grpc 的 {@link GrpcServerHeaderInterceptor} 暴露成 gRPC server
  * 可识别的全局拦截器。
  *
  * <p>Spring gRPC 会自动注册标了 {@code GlobalServerInterceptor} 的

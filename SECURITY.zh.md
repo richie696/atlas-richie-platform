@@ -28,7 +28,7 @@
 
 请尽量提供：
 
-- 受影响模块/组件（如 `atlas-richie-component-cache`）
+- 受影响模块/组件（如 `atlas-richie-cache`）
 - 版本信息（Git tag、`revision` 或制品版本）
 - 复现步骤与影响范围
 - 可能的缓解措施（如有）

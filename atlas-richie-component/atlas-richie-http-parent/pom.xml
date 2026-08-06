@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>cn.richie696.component</groupId>
+        <artifactId>atlas-richie-component-dependencies</artifactId>
+        <version>${revision}</version>
+        <relativePath>../atlas-richie-component-dependencies/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>atlas-richie-http-parent</artifactId>
+    <name>atlas-richie-http-parent</name>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>atlas-richie-http-core</module>
+        <module>atlas-richie-http-jdk</module>
+        <module>atlas-richie-http-okhttp</module>
+        <module>atlas-richie-http-httpclient5</module>
+        <module>atlas-richie-http-restclient</module>
+    </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -73,12 +73,12 @@ atlas-richie-platform/
 │   ├── atlas-richie-context/             # 上下文和工具类模块
 │   └── atlas-richie-contract/             # 跨服务共享契约包
 ├── atlas-richie-component/               # 组件库
-│   ├── atlas-richie-component-cache/    # 缓存组件
-│   ├── atlas-richie-component-dao/      # 数据访问组件
-│   ├── atlas-richie-component-http/     # HTTP 客户端组件
-│   ├── atlas-richie-component-storage/  # 存储组件
-│   ├── atlas-richie-component-vector/   # 向量数据库组件
-│   ├── atlas-richie-component-messaging/# 消息队列组件
+│   ├── atlas-richie-cache/    # 缓存组件
+│   ├── atlas-richie-dao/      # 数据访问组件
+│   ├── atlas-richie-http-parent/     # HTTP 客户端组件
+│   ├── atlas-richie-storage-parent/  # 存储组件
+│   ├── atlas-richie-vector-parent/   # 向量数据库组件
+│   ├── atlas-richie-messaging-parent/# 消息队列组件
 │   └── ...                        # 更多组件
 ├── atlas-richie-component-template/     # 组件示例工程
 │   ├── sample-cache/              # 缓存示例
@@ -195,7 +195,7 @@ mvn clean install -DskipTests
 <!-- 添加需要的组件 -->
 <dependency>
     <groupId>cn.richie696.component</groupId>
-    <artifactId>atlas-richie-component-cache</artifactId>
+    <artifactId>atlas-richie-cache</artifactId>
 </dependency>
 
 <dependency>
@@ -277,14 +277,14 @@ mvn spring-boot:run
 ### 组件文档
 
 - [atlas-richie-component/README.zh.md](atlas-richie-component/README.zh.md) - 组件库总览
-    - [缓存组件](atlas-richie-component/atlas-richie-component-cache/README.md)
-    - [数据访问组件](atlas-richie-component/atlas-richie-component-dao/README.md)
-    - [HTTP 客户端组件](atlas-richie-component/atlas-richie-component-http/README.md)
-    - [存储组件](atlas-richie-component/atlas-richie-component-storage/README.md)
-    - [向量数据库组件](atlas-richie-component/atlas-richie-component-vector/README.md)
-    - [消息队列组件](atlas-richie-component/atlas-richie-component-messaging/README.md)
-    - [状态机组件](atlas-richie-component/atlas-richie-component-statemachine/README.md)
-    - [AI 组件](atlas-richie-component/atlas-richie-component-ai/README.md)
+    - [缓存组件](atlas-richie-component/atlas-richie-cache/README.md)
+    - [数据访问组件](atlas-richie-component/atlas-richie-dao/README.md)
+    - [HTTP 客户端组件](atlas-richie-component/atlas-richie-http-parent/README.md)
+    - [存储组件](atlas-richie-component/atlas-richie-storage-parent/README.md)
+    - [向量数据库组件](atlas-richie-component/atlas-richie-vector-parent/README.md)
+    - [消息队列组件](atlas-richie-component/atlas-richie-messaging-parent/README.md)
+    - [状态机组件](atlas-richie-component/atlas-richie-statemachine/README.md)
+    - [AI 组件](atlas-richie-component/atlas-richie-ai/README.md)
     - [更多组件...](atlas-richie-component/README.md#组件分类)
 
 ### 示例文档

@@ -447,7 +447,7 @@ cargo build
 查看 `examples/actix-web/` 目录获取Actix-web框架集成示例：
 
 - `main.rs` - Actix-web应用集成示例
-- `../../../../../../atlas-richie-component/atlas-richie-component-document-parser/src/main/java/cn/richie696/component/parser/internal/README.md` - Actix-web集成说明
+- `../../../../../../atlas-richie-component/atlas-richie-document-parser/src/main/java/cn/richie696/component/parser/internal/README.md` - Actix-web集成说明
 
 **包含内容**：
 - ✅ 服务结构体封装

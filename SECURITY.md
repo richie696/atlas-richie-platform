@@ -28,7 +28,7 @@ Report privately via either:
 
 Please include when possible:
 
-- Affected module/component (e.g. `atlas-richie-component-cache`)
+- Affected module/component (e.g. `atlas-richie-cache`)
 - Version (Git tag, `revision`, or artifact version)
 - Steps to reproduce and impact scope
 - Possible mitigations (if any)

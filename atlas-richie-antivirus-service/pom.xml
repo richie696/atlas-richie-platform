@@ -77,15 +77,15 @@
         </dependency>
         <dependency>
             <groupId>cn.richie696.component</groupId>
-            <artifactId>atlas-richie-component-cache</artifactId>
+            <artifactId>atlas-richie-cache</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.richie696.component</groupId>
-            <artifactId>atlas-richie-component-redis-streammq</artifactId>
+            <artifactId>atlas-richie-redis-streammq</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.richie696.component</groupId>
-            <artifactId>atlas-richie-component-grpc</artifactId>
+            <artifactId>atlas-richie-grpc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

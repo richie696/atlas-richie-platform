@@ -21,7 +21,7 @@ import java.time.OffsetDateTime;
  * gRPC AntivirusService 实现，方法签名与 REST 控制器一一对应。
  *
  * <p>Spring gRPC 会将 {@link io.grpc.BindableService} 类型的 Spring Bean 注册到 gRPC Server，
- * 拦截器（鉴权/日志/指标/异常映射）由 {@code atlas-richie-component-grpc} 提供。
+ * 拦截器（鉴权/日志/指标/异常映射）由 {@code atlas-richie-grpc} 提供。
  */
 @Slf4j
 @Service

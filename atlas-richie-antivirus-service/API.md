@@ -22,7 +22,7 @@
 | REST | `X-Tenant-Id: <tenant>` |
 | gRPC | `x-tenant-id: <tenant>`（大小写不敏感） |
 
-> Header 透传由 `atlas-richie-component-grpc` 的 `GrpcServerHeaderInterceptor` + `HeaderContextHolder` 完成；
+> Header 透传由 `atlas-richie-grpc` 的 `GrpcServerHeaderInterceptor` + `HeaderContextHolder` 完成；
 > 业务代码只需调用 `HeaderContextHolder.getHeader("X-Tenant-Id")` 即可拿到。
 
 ---

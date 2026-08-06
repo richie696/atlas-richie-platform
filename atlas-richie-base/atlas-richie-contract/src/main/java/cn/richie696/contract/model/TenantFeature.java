@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * 租户功能全局开关
  *
- * <p>该标志位由 {@code atlas-richie-component-tenant} 在配置
+ * <p>该标志位由 {@code atlas-richie-tenant-parent} 在配置
  * {@code platform.tenant.enable=true} 后设置为 {@code true}。
  * 仅组件位于 classpath 时保持 {@code false}，使业务系统按无租户模式运行。</p>
  *

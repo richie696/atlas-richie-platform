@@ -2,13 +2,13 @@
 
 平台级**集成测试公共支撑库**：统一 Testcontainers（Docker）探测、中间件容器拉起、Spring 集测属性注入，以及跨组件一致的环境变量约定。
 
-业务组件（如 `atlas-richie-component-cache`）只需：
+业务组件（如 `atlas-richie-cache`）只需：
 
 1. 依赖本模块（`test` scope）
 2. 在 `pom.xml` 声明 surefire / failsafe / jacoco 插件（模板在 `atlas-richie-component-dependencies`）
 3. 编写组件专属的 `*Test` / `*IT` 与 `support` 薄封装
 
-**参考蓝本**：`atlas-richie-component/atlas-richie-component-cache`（含 `TESTING.md` 模块级补充说明）。
+**参考蓝本**：`atlas-richie-component/atlas-richie-cache`（含 `TESTING.md` 模块级补充说明）。
 
 ---
 
@@ -128,16 +128,16 @@ cn/richie696/component/{模块}/
 
 ```bash
 # 仅单元测试（无需 Docker）
-mvn -pl atlas-richie-component/atlas-richie-component-cache test
+mvn -pl atlas-richie-component/atlas-richie-cache test
 
 # 单元 + 集成 + 覆盖率门禁（需 Docker 已启动）
-mvn -pl atlas-richie-component/atlas-richie-component-cache verify
+mvn -pl atlas-richie-component/atlas-richie-cache verify
 
 # CI：无 Docker 时直接失败，禁止静默跳过 IT
-IT_REQUIRE_DOCKER=true mvn -pl atlas-richie-component/atlas-richie-component-cache verify
+IT_REQUIRE_DOCKER=true mvn -pl atlas-richie-component/atlas-richie-cache verify
 
 # 查看覆盖率 HTML（仓库根目录）
-open coverage-reports/atlas-richie-component-cache/index.html
+open coverage-reports/atlas-richie-cache/index.html
 ```
 
 ---
@@ -358,7 +358,7 @@ export REDIS_IT_PORT=6379
 export REDIS_IT_PASSWORD='secret'
 export REDIS_IT_DATABASE=15
 
-mvn -pl atlas-richie-component/atlas-richie-component-cache verify
+mvn -pl atlas-richie-component/atlas-richie-cache verify
 ```
 
 未设置 `IT_USE_EXTERNAL` 时，即使 shell 残留 `*_IT_REDIS_*` 也**优先走 Docker**，避免换机器连错环境。
@@ -407,13 +407,13 @@ export DOCKER_HOST=unix:///var/run/docker.sock
 
 ```
 coverage-reports/
-└── {artifactId}/          # 如 atlas-richie-component-cache
+└── {artifactId}/          # 如 atlas-richie-cache
     ├── index.html
     ├── jacoco.xml
     └── jacoco.csv
 ```
 
-- 仅单测模块（如 `atlas-richie-component-dao`）：无 `jacoco-it.exec` 时 merge 仍可用，**只跑 `mvn verify` 即可出报告**
+- 仅单测模块（如 `atlas-richie-dao`）：无 `jacoco-it.exec` 时 merge 仍可用，**只跑 `mvn verify` 即可出报告**
 - `mvn test` 只执行用例，**不生成** HTML 报告（报告绑定在 `verify` 阶段）
 - 门禁在组件 `pom.xml` 的 `jacoco:check` 规则中配置（父默认行覆盖率 **≥ 85%**）
 - `/coverage-reports/` 已加入 `.gitignore`
@@ -441,7 +441,7 @@ coverage-reports/
 
 ## 组件复刻流程（逐步）
 
-以下流程已在 **`atlas-richie-component-cache`** 验证，并可复用到任意 `atlas-richie-component-*` jar 子模块。
+以下流程已在 **`atlas-richie-cache`** 验证，并可复用到任意 `atlas-richie-component-*` jar 子模块。
 
 ### 阶段 0：父 POM 已具备的能力（一般无需重复配置）
 
@@ -497,17 +497,17 @@ coverage-reports/
 ```
 
 ```bash
-mvn -pl atlas-richie-component/atlas-richie-component-dao verify
-open coverage-reports/atlas-richie-component-dao/index.html
+mvn -pl atlas-richie-component/atlas-richie-dao verify
+open coverage-reports/atlas-richie-dao/index.html
 ```
 
-参考：`atlas-richie-component-dao/TESTING.md`。
+参考：`atlas-richie-dao/TESTING.md`。
 
 ### 阶段 2：选择集测类型
 
 | 组件特征                                      | 集测类型             | 公共类                                                                     |
 |-------------------------------------------|------------------|-------------------------------------------------------------------------|
-| 依赖 Redis / `atlas-richie-component-cache` | **Redis 集测**     | `GenericRedisIntegrationTestSupport`、`AbstractRedisIntegrationTestBase` |
+| 依赖 Redis / `atlas-richie-cache` | **Redis 集测**     | `GenericRedisIntegrationTestSupport`、`AbstractRedisIntegrationTestBase` |
 | 仅 Spring 自动配置、无外部中间件                      | **Spring 上下文集测** | `SpringPropertyInitializer` + 本模块 `@SpringBootTest`                     |
 | 纯工具库、无 Spring                             | **仅单测**          | 无需 `*IT`                                                                |
 
@@ -580,8 +580,8 @@ python3 atlas-richie-component/scripts/scaffold-component-tests.py
 
 行为说明：
 
-- **跳过** `atlas-richie-component-cache`（蓝本手工维护）
-- **跳过** `atlas-richie-component-tenant`（仅占位壳，无实现代码，待设计落地后再接入）
+- **跳过** `atlas-richie-cache`（蓝本手工维护）
+- **跳过** `atlas-richie-tenant-parent`（仅占位壳，无实现代码，待设计落地后再接入）
 - **不覆盖** 已存在的 `support/`、`*IT.java`
 - 自动识别 `pom.xml` 是否依赖 Redis，生成对应 Redis / Spring 集测骨架
 - 对尚无单测的模块生成 `{Type}ModuleSmokeTest`
@@ -621,12 +621,12 @@ jobs:
       - name: Verify with integration tests
         env:
           IT_REQUIRE_DOCKER: 'true'
-        run: mvn -pl atlas-richie-component/atlas-richie-component-cache -am verify
+        run: mvn -pl atlas-richie-component/atlas-richie-cache -am verify
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-cache
-          path: coverage-reports/atlas-richie-component-cache/
+          path: coverage-reports/atlas-richie-cache/
 ```
 
 ### GitLab CI（dind）
@@ -640,13 +640,13 @@ verify:cache:
     DOCKER_HOST: tcp://docker:2375
     IT_REQUIRE_DOCKER: "true"
   script:
-    - mvn -pl atlas-richie-component/atlas-richie-component-cache -am verify
+    - mvn -pl atlas-richie-component/atlas-richie-cache -am verify
 ```
 
 ---
 
 ## 相关文档
 
-- 模块蓝本：`atlas-richie-component/atlas-richie-component-cache/TESTING.md`
+- 模块蓝本：`atlas-richie-component/atlas-richie-cache/TESTING.md`
 - Maven 插件模板：`atlas-richie-component/atlas-richie-component-dependencies/pom.xml`（`pluginManagement`）
 - 依赖版本：`atlas-richie-base/atlas-richie-dependencies/pom.xml`（`testcontainers.version`）

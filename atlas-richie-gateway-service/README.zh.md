@@ -460,7 +460,7 @@ add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsaf
 
 - **35 种语言**错误与网关提示（`src/main/resources/i18n/messages_*.properties`）
 - 识别：`Accept-Language` 或 `X-RD-Request-Language`；默认 `platform.component.i18n.default-locale`
-- 与业务系统字典可同步（`atlas-richie-component-i18n`）
+- 与业务系统字典可同步（`atlas-richie-i18n`）
 
 **亚洲（12）**：zh_CN、zh_TW、ja_JP、ko_KR、th_TH、vi_VN、id_ID、ms_MY、hi_IN、ar_SA、ur_PK、bn_BD  
 

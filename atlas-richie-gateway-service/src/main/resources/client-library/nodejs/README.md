@@ -373,7 +373,7 @@ Node.js版本使用：
 查看 `examples/express/` 目录获取Express.js框架集成示例：
 
 - `app.ts` - Express应用集成示例
-- `../../../../../../atlas-richie-component/atlas-richie-component-document-parser/src/main/java/cn/richie696/component/parser/internal/README.md` - Express集成说明
+- `../../../../../../atlas-richie-component/atlas-richie-document-parser/src/main/java/cn/richie696/component/parser/internal/README.md` - Express集成说明
 
 **包含内容**：
 - ✅ Express中间件集成

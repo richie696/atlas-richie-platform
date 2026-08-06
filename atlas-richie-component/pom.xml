@@ -25,63 +25,63 @@
 
     <modules>
         <!-- RichieAI服务组件 -->
-        <module>atlas-richie-component-ai</module>
+        <module>atlas-richie-ai</module>
         <!-- 通用缓存服务组件 -->
-        <module>atlas-richie-component-cache</module>
+        <module>atlas-richie-cache</module>
         <!-- 通用数据库访问层服务组件 -->
-        <module>atlas-richie-component-dao</module>
+        <module>atlas-richie-dao</module>
         <!-- 多租户数据访问增强组件（可选） -->
-        <module>atlas-richie-component-tenant</module>
+        <module>atlas-richie-tenant-parent</module>
         <!-- 组件依赖关系管理 -->
         <module>atlas-richie-component-dependencies</module>
         <!-- HTTP/HTTPS 客户端组件 -->
-        <module>atlas-richie-component-http</module>
+        <module>atlas-richie-http-parent</module>
         <!-- 数据脱敏组件 -->
-        <module>atlas-richie-component-desensitize</module>
+        <module>atlas-richie-desensitize-parent</module>
         <!-- 国际化组件 -->
-        <module>atlas-richie-component-i18n</module>
+        <module>atlas-richie-i18n</module>
         <!-- 通用 Liquibase 组件 -->
-        <module>atlas-richie-component-liquibase</module>
+        <module>atlas-richie-liquibase</module>
         <!-- 通用消息队列服务组件 -->
-        <module>atlas-richie-component-messaging</module>
+        <module>atlas-richie-messaging-parent</module>
         <!-- 通用MongoDB客户端服务组件 -->
-        <module>atlas-richie-component-mongodb</module>
+        <module>atlas-richie-mongodb</module>
         <!-- 通用MQTT客户端服务组件 -->
-        <module>atlas-richie-component-mqtt</module>
+        <module>atlas-richie-mqtt</module>
         <!-- 通用MFA服务组件 -->
-        <module>atlas-richie-component-mfa</module>
+        <module>atlas-richie-mfa-parent</module>
         <!-- 通用OAuth2.1鉴权组件 -->
-        <module>atlas-richie-component-oauth</module>
+        <module>atlas-richie-oauth-parent</module>
         <!-- Model Context Protocol 双端适配组件 -->
-        <module>atlas-richie-component-mcp</module>
+        <module>atlas-richie-mcp-parent</module>
         <!-- 微服务通用组件 -->
-        <module>atlas-richie-component-microservice</module>
+        <module>atlas-richie-microservice</module>
         <!-- 通用切面日志服务组件 -->
-        <module>atlas-richie-component-logging</module>
+        <module>atlas-richie-logging</module>
         <!-- 通用追踪组件 -->
-        <module>atlas-richie-component-tracing</module>
+        <module>atlas-richie-tracing</module>
         <!-- 并发编程组件 -->
-        <module>atlas-richie-component-concurrency</module>
+        <module>atlas-richie-concurrency</module>
         <!-- 通用 Spring MVC 服务组件 -->
-        <module>atlas-richie-component-web</module>
+        <module>atlas-richie-web-parent</module>
         <!-- 通用存储服务组件 -->
-        <module>atlas-richie-component-storage</module>
+        <module>atlas-richie-storage-parent</module>
         <!-- 向量数据库组件 -->
-        <module>atlas-richie-component-vector</module>
+        <module>atlas-richie-vector-parent</module>
         <!-- 状态机组件 -->
-        <module>atlas-richie-component-statemachine</module>
+        <module>atlas-richie-statemachine</module>
         <!-- Redis Stream 消息队列组件 -->
-        <module>atlas-richie-component-redis-streammq</module>
+        <module>atlas-richie-redis-streammq</module>
         <!-- gRPC 组件 -->
-        <module>atlas-richie-component-grpc</module>
+        <module>atlas-richie-grpc</module>
         <!-- NATS 组件 -->
-        <module>atlas-richie-component-nats</module>
+        <module>atlas-richie-nats</module>
         <!-- 通用文档解析组件 (PDF / Word / Excel / PPT / ODF / TXT / Markdown) -->
-        <module>atlas-richie-component-document-parser</module>
+        <module>atlas-richie-document-parser</module>
         <!-- 通用文档切片组件 -->
-        <module>atlas-richie-component-document-chunking</module>
+        <module>atlas-richie-document-chunking-parent</module>
         <!-- OCR 图像文字识别组件 -->
-        <module>atlas-richie-component-ocr</module>
+        <module>atlas-richie-ocr-parent</module>
     </modules>
 
 </project>
