@@ -16,11 +16,15 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>atlas-richie-component-mcp-api</module>
-        <module>atlas-richie-component-mcp-protocol</module>
-        <module>atlas-richie-component-mcp-schema</module>
-        <module>atlas-richie-component-mcp-server-core</module>
-        <module>atlas-richie-component-mcp-transport-http</module>
-        <module>atlas-richie-component-mcp-testkit</module>
+        <module>mcp-api</module>
+        <module>mcp-protocol</module>
+        <module>mcp-schema</module>
+        <module>mcp-server-core</module>
+        <module>mcp-transport-http</module>
+        <module>mcp-transport-stdio</module>
+        <module>mcp-security-oauth</module>
+        <module>mcp-server-spring-boot-starter</module>
+        <module>mcp-client-spring-boot-starter</module>
+        <module>mcp-testkit</module>
     </modules>
 </project>

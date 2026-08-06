@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>cn.richie696.component</groupId>
+        <artifactId>atlas-richie-component-mcp</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>mcp-client-spring-boot-starter</artifactId>
+    <name>mcp-client-spring-boot-starter</name>
+    <description>MCP Client Spring Boot 自动配置与远程操作</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>mcp-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>mcp-transport-http</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>mcp-protocol</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>mcp-security-oauth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
