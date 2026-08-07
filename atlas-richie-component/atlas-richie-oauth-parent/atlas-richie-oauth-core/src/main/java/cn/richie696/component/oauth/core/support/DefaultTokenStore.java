@@ -4,7 +4,7 @@ import cn.richie696.component.oauth.cache.LegacyGlobalCacheOAuthCache;
 import cn.richie696.component.oauth.cache.OAuthCache;
 
 /**
- * 旧版 {@link TokenStore} 入口,仅保留无参与单参构造 API。
+ * 旧版 {@link cn.richie696.component.oauth.core.spi.TokenStore} 入口,仅保留无参与单参构造 API。
  * <p>
  * 直接继承 {@link CacheBackedTokenStore},行为完全等同;新增代码应直接使用 CacheBackedTokenStore,
  * 本类只用于老版本 YAML/Bean 装配路径的兼容。

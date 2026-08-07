@@ -21,11 +21,11 @@ import cn.richie696.component.oauth.dcr.model.ClientIdMetadataDocument;
  * 客户端元数据文档解析器接口。
  * <p>
  * 把"按 clientId(以及可选的外部 metadataUri)解析出已注册元数据"从 DCR 协议层中拆出:默认走 Redis
- * (见 {@link DefaultClientIdMetadataDocumentResolver}),OAuth Service 可替换为从企业 IdP / CMDB
- * 拉取的实现;外部 metadataUri 在解析前必经 {@link SSRFProtection} 校验。
+ * (见 {@link cn.richie696.component.oauth.dcr.support.DefaultClientIdMetadataDocumentResolver}),OAuth Service 可替换为从企业 IdP / CMDB
+ * 拉取的实现;外部 metadataUri 在解析前必经 {@link cn.richie696.component.oauth.dcr.support.SSRFProtection} 校验。
  * </p>
  * <p>
- * 处于 oauth-dcr 的元数据接入位置:由 {@link DynamicClientRegistrationEndpoint} 在更新与读取
+ * 处于 oauth-dcr 的元数据接入位置:由 {@link cn.richie696.component.oauth.dcr.DynamicClientRegistrationEndpoint} 在更新与读取
  * 客户端时调用;SPI 暴露让业务方可以接入内部审批/标签/部门归属等扩展属性,而无需改协议层。
  * </p>
  * <p>

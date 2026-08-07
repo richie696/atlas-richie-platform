@@ -29,10 +29,10 @@ import java.util.List;
  * redirect_uris / grant_types / tokenEndpointAuthMethod / resource)、安全策略(ip_whitelist /
  * rate_limit)与生命周期(tokenValidDuration / refreshTokenValidDuration);同时定义
  * {@link Field} 枚举把字段名映射到 Redis Hash 的实际 Key,供
- * {@link ClientRegistry} 做字段级只读访问。
+ * {@link cn.richie696.component.oauth.core.ClientRegistry} 做字段级只读访问。
  * </p>
  * <p>
- * 处于 oauth-core 的客户端数据契约位置:由 {@link ClientRepository} 读写,贯穿 Token 端点、
+ * 处于 oauth-core 的客户端数据契约位置:由 {@link cn.richie696.component.oauth.core.spi.ClientRepository} 读写,贯穿 Token 端点、
  * 授权端点、动态注册端点等所有需要客户端信息的协议路径;OAuth Service 可整体替换为带租户/标签
  * 等扩展字段的派生模型。
  * </p>

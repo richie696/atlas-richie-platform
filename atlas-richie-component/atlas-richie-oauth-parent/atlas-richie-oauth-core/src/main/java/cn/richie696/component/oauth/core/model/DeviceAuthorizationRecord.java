@@ -10,8 +10,8 @@ import java.util.List;
  * 在审计中脱敏。
  * </p>
  * <p>
- * 处于 oauth-core 的设备码状态位置:由 {@link DeviceAuthorizationService} 在 issue/approve/deny/
- * poll 路径写入与读取,由 {@link DeviceAuthorizationStore} 持久化;反向被
+ * 处于 oauth-core 的设备码状态位置:由 {@link cn.richie696.component.oauth.core.DeviceAuthorizationService} 在 issue/approve/deny/
+ * poll 路径写入与读取,由 {@link cn.richie696.component.oauth.core.spi.DeviceAuthorizationStore} 持久化;反向被
  * {@link cn.richie696.component.oauth.core.TokenEndpoint#exchangeDeviceCode} 消费。
  * </p>
  * <p>

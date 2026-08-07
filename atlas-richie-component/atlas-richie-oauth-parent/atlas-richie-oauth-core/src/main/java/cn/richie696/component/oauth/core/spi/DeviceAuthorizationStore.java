@@ -10,7 +10,7 @@ import cn.richie696.component.oauth.core.model.DeviceAuthorizationRecord;
  * OAuth Service 可注入自定义实现,例如把状态推到外部会话中心。
  * </p>
  * <p>
- * 处于 oauth-core 的短期状态接入位置:由 {@link DeviceAuthorizationService} 直接调用;其
+ * 处于 oauth-core 的短期状态接入位置:由 {@link cn.richie696.component.oauth.core.DeviceAuthorizationService} 直接调用;其
  * 原子消费语义是设备码安全的关键,生产实现必须在分布式锁内完成"读 + 删",杜绝并发轮询导致
  * {@code slow_down} 被绕过。
  * </p>

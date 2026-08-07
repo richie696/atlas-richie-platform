@@ -16,7 +16,7 @@ import java.util.Map;
  * </p>
  * <p>
  * 处于 oauth-core 的签名能力位置:由 {@link cn.richie696.component.oauth.core.TokenEndpoint} 与
- * {@link cn.richie696.component.oauth.authz.AuthorizationCodeGrant} 调用;Resource Server 通过
+ * AuthorizationCodeGrant 调用;Resource Server 通过
  * JWKS 端点完成验签,不直接持有该端口。
  * </p>
  * <p>

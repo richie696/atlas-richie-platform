@@ -14,7 +14,7 @@ import cn.richie696.component.oauth.core.model.DeviceAuthorizationRecord;
  * </p>
  * <p>
  * 处于 oauth-core 的默认短期存储实现位置:由 {@link cn.richie696.component.oauth.core.config.OAuth2AutoConfiguration}
- * 在缺省 Bean 时注册,被 {@link DeviceAuthorizationService} 持有。
+ * 在缺省 Bean 时注册,被 {@link cn.richie696.component.oauth.core.DeviceAuthorizationService} 持有。
  * </p>
  * <p>
  * 解决的问题:用 Redis 自身能力提供"短期状态 + 原子消费 + 限速"三合一语义,既让 DeviceAuthorizationService

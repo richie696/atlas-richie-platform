@@ -16,7 +16,7 @@ import java.util.Map;
  * 操作的测试/适配环境的容错。
  * </p>
  * <p>
- * 处于 oauth-core 的兼容适配位置:仅由 {@link ClientRegistry} 的无参兼容构造方法使用,新的服务
+ * 处于 oauth-core 的兼容适配位置:仅由 {@link cn.richie696.component.oauth.core.ClientRegistry} 的无参兼容构造方法使用,新的服务
  * 应注入 ClientRepository 或 OAuthCache,而非直接依赖本类。
  * </p>
  * <p>

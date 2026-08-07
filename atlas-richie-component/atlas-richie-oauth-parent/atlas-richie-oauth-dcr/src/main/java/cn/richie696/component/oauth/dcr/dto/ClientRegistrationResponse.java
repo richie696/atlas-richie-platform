@@ -28,7 +28,7 @@ import java.util.List;
  * 描述注册端点返回的全部字段:自动生成的 {@code client_id}、仅在非 {@code none} 认证方式下返回的
  * {@code clientSecret} 与 {@code clientSecretExpiresAt}、用于后续更新/删除的
  * {@code registrationAccessToken} 与 {@code registrationClientUri},以及原样回传的客户端元数据;
- *由 {@link DynamicClientRegistrationEndpoint} 构造,经 OAuth Service 序列化为 JSON 返回。
+ *由 {@link cn.richie696.component.oauth.dcr.DynamicClientRegistrationEndpoint} 构造,经 OAuth Service 序列化为 JSON 返回。
  * </p>
  * <p>
  * 处于 oauth-dcr 的协议输出位置:是 DynamicClientRegistrationEndpoint 对外暴露的唯一协议契约,

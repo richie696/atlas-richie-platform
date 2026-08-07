@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * 处于 oauth-authz 的默认存储实现位置:由
  * {@link cn.richie696.component.oauth.authz.config.OAuth2AuthzAutoConfiguration} 在缺省 Bean 时
- * 注册,被 {@link AuthorizationEndpoint} 写入、被 {@link AuthorizationCodeGrant} 消费。
+ * 注册,被 {@link cn.richie696.component.oauth.authz.AuthorizationEndpoint} 写入、被 {@link cn.richie696.component.oauth.authz.AuthorizationCodeGrant} 消费。
  * </p>
  * <p>
  * 解决的问题:让授权码的"短期状态 + 一次性消费"两个安全敏感点有一个开箱即用的 Redis 实现,业务方

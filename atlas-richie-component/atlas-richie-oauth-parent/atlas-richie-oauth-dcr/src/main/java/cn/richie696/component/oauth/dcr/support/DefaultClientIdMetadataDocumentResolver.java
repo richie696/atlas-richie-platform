@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
  * <p>
  * 处于 oauth-dcr 的默认解析器位置:由
  * {@link cn.richie696.component.oauth.dcr.config.OAuth2DCRAutoConfiguration} 在缺省 Bean 时
- * 注册,被 {@link DynamicClientRegistrationEndpoint} 在更新与读取客户端元数据时调用;同时兼容
+ * 注册,被 {@link cn.richie696.component.oauth.dcr.DynamicClientRegistrationEndpoint} 在更新与读取客户端元数据时调用;同时兼容
  * 旧版 {@code LegacyGlobalCacheOAuthCache} 与新版 {@link OAuthCache}。
  * </p>
  * <p>

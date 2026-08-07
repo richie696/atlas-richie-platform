@@ -28,11 +28,11 @@ import java.util.List;
  * 描述客户端注册请求的标准字段:基础信息(client_name / client_uri / logo_uri)、授权能力
  * (redirect_uris / token_endpoint_auth_method / grant_types / scopes / resource / jwks /
  * software_id / software_version);由 OAuth Service 在 HTTP 适配层把 JSON 反序列化为本对象,
- * 再交给 {@link DynamicClientRegistrationEndpoint} 处理。
+ * 再交给 {@link cn.richie696.component.oauth.dcr.DynamicClientRegistrationEndpoint} 处理。
  * </p>
  * <p>
  * 处于 oauth-dcr 的协议输入位置:由 HTTP 适配层构造,被 DynamicClientRegistrationEndpoint 消费;
- * redirect_uri 与 jwks_uri 在协议层内部由 {@link SSRFProtection} 校验,不依赖 HTTP 适配层。
+ * redirect_uri 与 jwks_uri 在协议层内部由 {@link cn.richie696.component.oauth.dcr.support.SSRFProtection} 校验,不依赖 HTTP 适配层。
  * </p>
  * <p>
  * 解决的问题:把 RFC 7591 注册请求固化为统一 DTO,避免在适配层手写 JSON 解析;同时把可选字段

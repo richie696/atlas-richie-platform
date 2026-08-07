@@ -14,7 +14,7 @@ import java.util.Map;
  * </p>
  * <p>
  * 处于 oauth-core 的扩展点位置:由 {@link cn.richie696.component.oauth.core.TokenEndpoint} 与
- * {@link cn.richie696.component.oauth.authz.AuthorizationCodeGrant} 在签名阶段调用,业务方按需
+ * AuthorizationCodeGrant 在签名阶段调用,业务方按需
  * 注入自定义实现即可,无需改动协议层。
  * </p>
  * <p>

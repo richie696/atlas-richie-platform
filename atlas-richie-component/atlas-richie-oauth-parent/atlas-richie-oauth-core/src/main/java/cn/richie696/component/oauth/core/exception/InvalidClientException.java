@@ -21,7 +21,7 @@ import cn.richie696.contract.exception.BusinessException;
  * 客户端认证失败时的协议异常。
  * <p>
  * 统一映射为 RFC 6749 的 {@code invalid_client} 错误码,在 HTTP 适配层被序列化为
- * {@link OAuth2ErrorResponse};由 {@link ClientAuthenticationService} 与 TokenEndpoint 抛出,
+ * {@link cn.richie696.component.oauth.core.model.OAuth2ErrorResponse};由 {@link cn.richie696.component.oauth.core.ClientAuthenticationService} 与 TokenEndpoint 抛出,
  * 表示客户端不存在、被禁用、Secret 不匹配或认证方式不匹配。
  * </p>
  * <p>

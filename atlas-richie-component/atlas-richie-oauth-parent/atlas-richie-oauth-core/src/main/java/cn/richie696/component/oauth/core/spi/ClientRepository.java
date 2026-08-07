@@ -5,12 +5,12 @@ import cn.richie696.component.oauth.core.model.ClientConfig;
 /**
  * OAuth 客户端权威数据的仓储端口。
  * <p>
- * 把"如何存/取 ClientConfig"从 {@link ClientRegistry} 中拆出:默认走 Redis(见
+ * 把"如何存/取 ClientConfig"从 {@link cn.richie696.component.oauth.core.ClientRegistry} 中拆出:默认走 Redis(见
  * {@link cn.richie696.component.oauth.core.support.CacheBackedClientRepository}),
  * OAuth Service 可替换为 JDBC / LDAP / 多租户分区等实现,而不必修改任何协议层代码。
  * </p>
  * <p>
- * 处于 oauth-core 的客户端数据接入位置:由 {@link ClientRegistry} 调用,对上层隐藏存储细节;
+ * 处于 oauth-core 的客户端数据接入位置:由 {@link cn.richie696.component.oauth.core.ClientRegistry} 调用,对上层隐藏存储细节;
  * 注册(动态注册/静态配置)与读取(client_credentials、授权码、PKCE)共用同一接口。
  * </p>
  * <p>

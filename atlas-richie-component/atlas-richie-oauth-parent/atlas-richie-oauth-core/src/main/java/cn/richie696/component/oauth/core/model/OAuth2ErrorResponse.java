@@ -30,7 +30,7 @@ import lombok.NoArgsConstructor;
  * <p>
  * 处于 oauth-core 的协议输出契约位置:由 TokenEndpoint、AuthorizationEndpoint、AuthorizationCodeGrant
  * 等所有协议服务在抛出 {@code BusinessException} 后由 HTTP 适配层统一映射为该对象;错误文档基地址
- * 由 {@link cn.richie696.component.oauth.core.config.OAuth2Properties#getErrorDocsBaseUri()} 控制。
+ * 由 {@link cn.richie696.component.oauth.core.config.OAuth2Properties errorDocsBaseUri} 控制。
  * </p>
  * <p>
  * 解决的问题:把协议错误响应固化为统一模型,避免每个端点自行拼装 JSON;同时把 error_uri 这一可选

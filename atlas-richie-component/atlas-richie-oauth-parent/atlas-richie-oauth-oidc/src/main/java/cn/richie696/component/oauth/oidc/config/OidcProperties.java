@@ -13,8 +13,8 @@ import java.util.Map;
  *
  * <p>处于 Spring Boot 配置加载层与所有 OIDC 协议服务（ID Token 签发、UserInfo 过滤、
  * Discovery 输出、Logout 编排）之间：上游由 {@code application.yml} / {@code .properties}
- * 装配，下游被 {@link OidcProviderMetadataService}、{@link OidcIdTokenService}、
- * {@link OidcUserInfoService} 等服务按需读取。它只声明"OP 说自己支持什么"，与运行时
+ * 装配，下游被 {@link cn.richie696.component.oauth.oidc.OidcProviderMetadataService}、{@link cn.richie696.component.oauth.oidc.OidcIdTokenService}、
+ * {@link cn.richie696.component.oauth.oidc.OidcUserInfoService} 等服务按需读取。它只声明"OP 说自己支持什么"，与运行时
  * 用户、MFA、Claims 等业务数据完全解耦。
  *
  * <p>解决"OIDC 各端点行为散落在多个 Controller 的注解里、协议能力难以统一审计"

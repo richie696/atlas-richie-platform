@@ -13,7 +13,7 @@ import java.util.Set;
  * <p>
  * 从 Gateway 既有 Redis 策略数据结构读取:api 索引走 {@code gateway:api:index},接口配置走
  * {@code gateway:api:{code}} Hash,接口所需 scope 走 {@code gateway:api:scopes:{code}} Set。
- * 适配层让 {@link ScopeResolver} 不必关心数据如何落 Redis。
+ * 适配层让 {@link cn.richie696.component.oauth.core.ScopeResolver} 不必关心数据如何落 Redis。
  * </p>
  * <p>
  * 处于 oauth-core 的策略适配位置:由 {@link cn.richie696.component.oauth.core.config.OAuth2AutoConfiguration}

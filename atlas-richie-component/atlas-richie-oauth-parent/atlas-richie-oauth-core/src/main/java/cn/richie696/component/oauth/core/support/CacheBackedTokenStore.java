@@ -21,7 +21,7 @@ import java.util.Map;
  * 处于 oauth-core 的默认 Token 持久化实现位置:由
  * {@link cn.richie696.component.oauth.core.config.OAuth2AutoConfiguration} 在缺省 Bean 时注册;
  * 被 {@link cn.richie696.component.oauth.core.TokenEndpoint} 与
- * {@link cn.richie696.component.oauth.authz.AuthorizationCodeGrant} 共同持有。
+ * AuthorizationCodeGrant 共同持有。
  * </p>
  * <p>
  * 解决的问题:让 Token 端点与授权码兑换所需的全部状态(黑名单、IP 绑定、限流、一次性消费)有

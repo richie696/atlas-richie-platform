@@ -28,7 +28,7 @@ import java.util.Map;
  * </p>
  * <p>
  * 处于 oauth-core 的状态持久化位置:由 {@link cn.richie696.component.oauth.core.TokenEndpoint} 与
- * {@link cn.richie696.component.oauth.authz.AuthorizationCodeGrant} 高频调用;其中
+ * AuthorizationCodeGrant 高频调用;其中
  * {@link RefreshTokenConsumeResult} 是协议安全的关键 —— 原子消费语义必须在同一原子操作/分布式
  * 锁内完成,返回 {@code null} 被视为非法 SPI 实现,调用方会拒绝签发新 token(fail-closed)。
  * </p>

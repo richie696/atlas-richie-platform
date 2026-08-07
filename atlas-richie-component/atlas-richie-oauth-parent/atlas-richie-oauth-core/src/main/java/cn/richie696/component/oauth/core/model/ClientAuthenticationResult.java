@@ -7,7 +7,7 @@ package cn.richie696.component.oauth.core.model;
  * {@code authenticated} 直接分流,失败时通过 {@code errorCode} 映射为 RFC 6749 标准错误响应。
  * </p>
  * <p>
- * 处于 oauth-core 的协议输出位置:由 {@link ClientAuthenticationService} 产出,被 TokenEndpoint、
+ * 处于 oauth-core 的协议输出位置:由 {@link cn.richie696.component.oauth.core.ClientAuthenticationService} 产出,被 TokenEndpoint、
  * AuthorizationCodeGrant 等协议服务消费;同时为审计、限流等横切关注点提供失败原因。
  * </p>
  * <p>

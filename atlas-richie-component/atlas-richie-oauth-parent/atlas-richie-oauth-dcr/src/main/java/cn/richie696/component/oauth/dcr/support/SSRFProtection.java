@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
  * 与延迟。
  * </p>
  * <p>
- * 处于 oauth-dcr 模块的安全边界位置:由 {@link DynamicClientRegistrationEndpoint} 在校验
+ * 处于 oauth-dcr 模块的安全边界位置:由 {@link cn.richie696.component.oauth.dcr.DynamicClientRegistrationEndpoint} 在校验
  * redirect_uri 与 jwks_uri 时调用,亦被 {@link DefaultClientIdMetadataDocumentResolver} 用于
  * 解析外部 metadata 文档前的合法性检查。
  * </p>

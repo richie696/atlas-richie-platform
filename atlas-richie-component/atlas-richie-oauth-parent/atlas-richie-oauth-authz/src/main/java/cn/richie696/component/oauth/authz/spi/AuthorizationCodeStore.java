@@ -26,8 +26,8 @@ import java.util.Map;
  * {@link AuthorizationCodeConsumeResult} 表达 CONSUMED / NOT_FOUND 两个状态。
  * </p>
  * <p>
- * 处于 oauth-authz 的协议状态接入位置:由 {@link AuthorizationEndpoint} 写入,被
- * {@link AuthorizationCodeGrant} 消费;其原子消费语义与 TokenStore 的 refresh_token 消费
+ * 处于 oauth-authz 的协议状态接入位置:由 {@link cn.richie696.component.oauth.authz.AuthorizationEndpoint} 写入,被
+ * {@link cn.richie696.component.oauth.authz.AuthorizationCodeGrant} 消费;其原子消费语义与 TokenStore 的 refresh_token 消费
  * 同等关键,生产实现必须在分布式锁内完成"读 + 删"。
  * </p>
  * <p>

@@ -23,7 +23,7 @@ import java.util.UUID;
 /**
  * 兼容当前组件配置的 HMAC Access Token 签名器。
  * <p>
- * 使用对称密钥(HMAC256)签发与验证 JWT,密钥来自 {@link cn.richie696.component.oauth.core.config.OAuth2Properties#getTokenSecret()};
+ * 使用对称密钥(HMAC256)签发与验证 JWT,密钥来自 {@link cn.richie696.component.oauth.core.config.OAuth2Properties getTokenSecret()};
  * 同时保留对组件升级前由平台 JwtUtils 签发的存量 token 的兼容路径(由 TokenEndpoint 的回退逻辑触发)。
  * </p>
  * <p>

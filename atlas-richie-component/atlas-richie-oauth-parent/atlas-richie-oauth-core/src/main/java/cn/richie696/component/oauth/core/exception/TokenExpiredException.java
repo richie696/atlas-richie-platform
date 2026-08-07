@@ -26,7 +26,7 @@ import cn.richie696.contract.exception.BusinessException;
  * <p>
  * 处于 oauth-core 的协议错误位置:由 TokenEndpoint、AuthorizationCodeGrant 在 verifyAccessToken
  * 检测到过期时抛出,亦可由 Resource Server 在 introspect / 验签失败时主动抛出;HTTP 适配层统一
- * 映射为 {@link OAuth2ErrorResponse}。
+ * 映射为 {@link cn.richie696.component.oauth.core.model.OAuth2ErrorResponse}。
  * </p>
  * <p>
  * 解决的问题:把"过期"这一高频失败模式抽为统一异常,让 Resource Server 可以在拦截器中识别并触发

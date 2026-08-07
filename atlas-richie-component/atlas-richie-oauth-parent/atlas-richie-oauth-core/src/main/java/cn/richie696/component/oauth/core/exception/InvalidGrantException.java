@@ -26,7 +26,7 @@ import cn.richie696.contract.exception.BusinessException;
  * </p>
  * <p>
  * 处于 oauth-core 的协议错误位置:与 {@link InvalidClientException} 并列,共同表达 Token 端点的
- * 协议错误;HTTP 适配层统一转换为 {@link OAuth2ErrorResponse}。
+ * 协议错误;HTTP 适配层统一转换为 {@link cn.richie696.component.oauth.core.model.OAuth2ErrorResponse}。
  * </p>
  * <p>
  * 解决的问题:把"grant 不合规"这一类协议错误集中到同一异常类型,让"refresh_token 重放检测"、
