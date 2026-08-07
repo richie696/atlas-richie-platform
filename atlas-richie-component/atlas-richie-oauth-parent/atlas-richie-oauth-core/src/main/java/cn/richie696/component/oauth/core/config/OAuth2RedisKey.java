@@ -27,6 +27,7 @@ public enum OAuth2RedisKey {
 
     OAUTH2_CLIENT_CONFIG("third-party-client:", "third-party-client:%s"),
     OAUTH2_REFRESH_TOKEN("refresh-token:", "refresh-token:%s"),
+    OAUTH2_REFRESH_TOKEN_USED("refresh-token-used:", "refresh-token-used:%s"),
     OAUTH2_CLIENT_REFRESH_TOKEN_INDEX("client-refresh-token:", "client-refresh-token:%s"),
     OAUTH2_DAILY_TOKEN_ISSUE_COUNT("oauth2:daily:issue-count:", "oauth2:daily:issue-count:%s"),
     OAUTH2_REFRESH_TOKEN_LOCK("refresh-token-lock:", "refresh-token-lock:%s"),

@@ -15,13 +15,16 @@
  */
 package cn.richie696.component.oauth.dcr.config;
 
-import cn.richie696.component.cache.GlobalCache;
+import cn.richie696.component.oauth.cache.OAuthCache;
+import cn.richie696.component.oauth.cache.InMemoryOAuthCache;
 import cn.richie696.component.oauth.core.ClientRegistry;
 import cn.richie696.component.oauth.core.config.OAuth2AutoConfiguration;
 import cn.richie696.component.oauth.core.config.OAuth2Properties;
 import cn.richie696.component.oauth.dcr.DynamicClientRegistrationEndpoint;
 import cn.richie696.component.oauth.dcr.spi.ClientIdMetadataDocumentResolver;
+import cn.richie696.component.oauth.dcr.spi.ClientRegistrationStore;
 import cn.richie696.component.oauth.dcr.support.DefaultClientIdMetadataDocumentResolver;
+import cn.richie696.component.oauth.dcr.support.RedisClientRegistrationStore;
 import cn.richie696.component.oauth.dcr.support.SSRFProtection;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -29,6 +32,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.util.List;
 
@@ -49,11 +53,11 @@ public class OAuth2DCRAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(SSRFProtection.class)
     public SSRFProtection ssrfProtection(
-            GlobalCache globalCache,
+            ObjectProvider<OAuthCache> cacheProvider,
             @Value("${platform.component.oauth.dcr.allowed-domains:}") List<String> allowedDomains,
             @Value("${platform.component.oauth.dcr.ssrf-cache-ttl:3600}") long cacheTtlSeconds
     ) {
-        return new SSRFProtection(globalCache, allowedDomains, cacheTtlSeconds);
+        return new SSRFProtection(cacheProvider.getIfAvailable(InMemoryOAuthCache::new), allowedDomains, cacheTtlSeconds);
     }
 
     /**
@@ -65,8 +69,14 @@ public class OAuth2DCRAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(ClientIdMetadataDocumentResolver.class)
     public ClientIdMetadataDocumentResolver clientIdMetadataDocumentResolver(
-            GlobalCache globalCache, SSRFProtection ssrfProtection) {
-        return new DefaultClientIdMetadataDocumentResolver(globalCache, ssrfProtection);
+            OAuthCache cache, SSRFProtection ssrfProtection) {
+        return new DefaultClientIdMetadataDocumentResolver(cache, ssrfProtection);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ClientRegistrationStore.class)
+    public ClientRegistrationStore clientRegistrationStore(OAuthCache cache) {
+        return new RedisClientRegistrationStore(cache);
     }
 
     @Bean
@@ -75,8 +85,10 @@ public class OAuth2DCRAutoConfiguration {
             ClientRegistry clientRegistry,
             ClientIdMetadataDocumentResolver metadataResolver,
             SSRFProtection ssrfProtection,
-            OAuth2Properties properties
+            OAuth2Properties properties,
+            ObjectProvider<ClientRegistrationStore> registrationStore
     ) {
-        return new DynamicClientRegistrationEndpoint(clientRegistry, metadataResolver, ssrfProtection, properties);
+        return new DynamicClientRegistrationEndpoint(clientRegistry, metadataResolver, ssrfProtection,
+                properties, registrationStore.getIfAvailable());
     }
 }

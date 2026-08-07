@@ -15,18 +15,18 @@
  */
 package cn.richie696.component.oauth.dcr;
 
-import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.oauth.core.ClientRegistry;
 import cn.richie696.component.oauth.core.config.OAuth2Properties;
-import cn.richie696.component.oauth.core.config.OAuth2RedisKey;
 import cn.richie696.component.oauth.core.model.ClientConfig;
 import cn.richie696.component.oauth.dcr.dto.ClientRegistrationRequest;
 import cn.richie696.component.oauth.dcr.dto.ClientRegistrationResponse;
 import cn.richie696.component.oauth.dcr.model.ClientIdMetadataDocument;
 import cn.richie696.component.oauth.dcr.spi.ClientIdMetadataDocumentResolver;
+import cn.richie696.component.oauth.dcr.spi.ClientRegistrationStore;
 import cn.richie696.component.oauth.dcr.support.SSRFProtection;
+import cn.richie696.component.oauth.dcr.support.RedisClientRegistrationStore;
 import cn.richie696.contract.exception.BusinessException;
-import cn.richie696.contract.gateway.model.OAuth2Constants;
+import cn.richie696.component.oauth.contract.OAuth2Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -58,6 +58,7 @@ public class DynamicClientRegistrationEndpoint {
     private final ClientIdMetadataDocumentResolver metadataResolver;
     private final SSRFProtection ssrfProtection;
     private final OAuth2Properties properties;
+    private final ClientRegistrationStore registrationStore;
 
     public DynamicClientRegistrationEndpoint(
             ClientRegistry clientRegistry,
@@ -65,10 +66,23 @@ public class DynamicClientRegistrationEndpoint {
             SSRFProtection ssrfProtection,
             OAuth2Properties properties
     ) {
+        this(clientRegistry, metadataResolver, ssrfProtection, properties, null);
+    }
+
+    public DynamicClientRegistrationEndpoint(
+            ClientRegistry clientRegistry,
+            ClientIdMetadataDocumentResolver metadataResolver,
+            SSRFProtection ssrfProtection,
+            OAuth2Properties properties,
+            ClientRegistrationStore registrationStore
+    ) {
         this.clientRegistry = clientRegistry;
         this.metadataResolver = metadataResolver;
         this.ssrfProtection = ssrfProtection;
         this.properties = properties;
+        this.registrationStore = registrationStore == null
+                ? new RedisClientRegistrationStore(new cn.richie696.component.oauth.cache.GlobalCacheOAuthCache())
+                : registrationStore;
     }
 
     /**
@@ -117,23 +131,22 @@ public class DynamicClientRegistrationEndpoint {
                 .resource(request.getResource())
                 .build();
 
-        String redisKey = OAuth2RedisKey.OAUTH2_CLIENT_META.getKey(clientId);
-        GlobalCache.struct().set(redisKey, metadataDoc, TimeUnit.DAYS.toMillis(365));
-
         ClientConfig config = ClientConfig.builder()
                 .clientId(clientId)
                 .clientSecret(clientSecret)
                 .clientName(request.getClientName())
                 .enabled(true)
                 .scopes(request.getScopes() != null ? request.getScopes() : Collections.emptyList())
+                .redirectUris(redirectUris)
+                .grantTypes(request.getGrantTypes())
+                .tokenEndpointAuthMethod(request.getTokenEndpointAuthMethod())
+                .resource(request.getResource() == null || request.getResource().isEmpty()
+                        ? null : request.getResource().getFirst())
                 .build();
 
-        String configRedisKey = OAuth2RedisKey.OAUTH2_CLIENT_CONFIG.getKey(clientId);
-        GlobalCache.struct().set(configRedisKey, config, TimeUnit.DAYS.toMillis(365));
-
         String registrationAccessToken = generateRegistrationAccessToken();
-        String regTokenRedisKey = OAuth2RedisKey.OAUTH2_REGISTRATION_TOKEN.getKey(clientId);
-        GlobalCache.value().set(regTokenRedisKey, registrationAccessToken, TimeUnit.DAYS.toMillis(365));
+        long ttlMillis = TimeUnit.DAYS.toMillis(365);
+        registrationStore.save(metadataDoc, config, registrationAccessToken, ttlMillis);
 
         log.info("动态客户端注册成功: clientId={}, clientName={}", clientId, request.getClientName());
 
@@ -196,8 +209,7 @@ public class DynamicClientRegistrationEndpoint {
                 .resource(request.getResource() != null ? request.getResource() : existingDoc.getResource())
                 .build();
 
-        String redisKey = OAuth2RedisKey.OAUTH2_CLIENT_META.getKey(clientId);
-        GlobalCache.struct().set(redisKey, updatedDoc, TimeUnit.DAYS.toMillis(365));
+        registrationStore.update(updatedDoc, TimeUnit.DAYS.toMillis(365));
 
         log.info("动态客户端更新成功: clientId={}", clientId);
 
@@ -239,8 +251,8 @@ public class DynamicClientRegistrationEndpoint {
         for (int i = 0; i < 5; i++) {
             String seq = String.format("%03d", RANDOM.nextInt(1000));
             String candidate = "dcr-%s-%s".formatted(datePrefix, seq);
-            String key = OAuth2RedisKey.OAUTH2_CLIENT_META.getKey(candidate);
-            if (!GlobalCache.key().hasKey(key)) {
+            boolean exists = registrationStore.exists(candidate);
+            if (!exists) {
                 return candidate;
             }
         }

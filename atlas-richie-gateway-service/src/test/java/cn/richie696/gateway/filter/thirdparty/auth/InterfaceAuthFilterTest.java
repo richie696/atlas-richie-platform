@@ -16,9 +16,9 @@
 package cn.richie696.gateway.filter.thirdparty.auth;
 
 import cn.richie696.component.oauth.core.ScopeResolver;
-import cn.richie696.component.oauth.core.TokenEndpoint;
-import cn.richie696.component.oauth.core.config.OAuth2Properties;
+import cn.richie696.component.oauth.gateway.OAuthGatewayAdapter;
 import cn.richie696.gateway.config.GatewayConfig;
+import cn.richie696.gateway.config.GatewayOAuthProperties;
 import cn.richie696.component.i18n.resolver.I18nResolver;
 import cn.richie696.gateway.service.AuditService;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,10 +52,10 @@ class InterfaceAuthFilterTest {
     private GatewayFilterChain filterChain;
 
     @Mock
-    private TokenEndpoint tokenEndpoint;
+    private OAuthGatewayAdapter oauthGatewayAdapter;
 
     @Mock
-    private OAuth2Properties oAuth2Properties;
+    private GatewayOAuthProperties oauth2Properties;
 
     @Mock
     private AuditService auditService;
@@ -64,13 +64,12 @@ class InterfaceAuthFilterTest {
     private ScopeResolver scopeResolver;
 
     @Mock
-    private OAuth2Properties oauth2Properties;
 
     private InterfaceAuthFilter interfaceAuthFilter;
 
     @BeforeEach
     void setUp() {
-        interfaceAuthFilter = new InterfaceAuthFilter(gatewayConfig, i18nResolver, tokenEndpoint, auditService, scopeResolver, oAuth2Properties);
+        interfaceAuthFilter = new InterfaceAuthFilter(gatewayConfig, i18nResolver, oauthGatewayAdapter, auditService, scopeResolver);
         lenient().when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
     }
 

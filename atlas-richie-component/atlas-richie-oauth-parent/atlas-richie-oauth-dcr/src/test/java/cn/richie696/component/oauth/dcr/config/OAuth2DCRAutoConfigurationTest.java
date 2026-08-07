@@ -100,13 +100,13 @@ class OAuth2DCRAutoConfigurationTest {
     // ============================================================================================
 
     @Test
-    @DisplayName("显式定义 3 个 @Bean 方法 — 无隐式扫描发现")
+    @DisplayName("显式定义 4 个 @Bean 方法 — 无隐式扫描发现")
     void definesExplicitBeanMethods() {
         long beanMethodCount = Arrays.stream(configClass.getDeclaredMethods())
                 .filter(m -> m.isAnnotationPresent(Bean.class))
                 .count();
 
-        assertThat(beanMethodCount).isEqualTo(3L);
+        assertThat(beanMethodCount).isEqualTo(4L);
     }
 
     @Test

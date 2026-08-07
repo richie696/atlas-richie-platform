@@ -15,8 +15,7 @@
  */
 package cn.richie696.gateway.filter.thirdparty.auth;
 
-import cn.richie696.component.oauth.core.ClientRegistry;
-import cn.richie696.component.oauth.core.config.OAuth2Properties;
+import cn.richie696.component.oauth.gateway.OAuthGatewayAdapter;
 import cn.richie696.gateway.config.GatewayConfig;
 import cn.richie696.gateway.config.OAuth2AnomalyDetectionConfig;
 import cn.richie696.component.i18n.resolver.I18nResolver;
@@ -47,16 +46,13 @@ class OAuth2AnomalyDetectionFilterTest {
     private GatewayConfig gatewayConfig;
 
     @Mock
-    private OAuth2Properties oAuth2Properties;
-
-    @Mock
     private I18nResolver i18nResolver;
 
     @Mock
     private GatewayFilterChain filterChain;
 
     @Mock
-    private ClientRegistry clientRegistry;
+    private OAuthGatewayAdapter oauthGatewayAdapter;
 
     @Mock
     private AuditService auditService;
@@ -72,8 +68,8 @@ class OAuth2AnomalyDetectionFilterTest {
     @BeforeEach
     void setUp() {
         oauth2AnomalyDetectionFilter = new OAuth2AnomalyDetectionFilter(
-                gatewayConfig, i18nResolver, clientRegistry, auditService, detectionConfig,
-                commonAnomalyDetectionFilter, oAuth2Properties);
+                gatewayConfig, i18nResolver, auditService, detectionConfig,
+                commonAnomalyDetectionFilter);
         lenient().when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
     }
 

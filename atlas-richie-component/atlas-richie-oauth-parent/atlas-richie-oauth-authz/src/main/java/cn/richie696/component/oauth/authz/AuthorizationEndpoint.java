@@ -19,7 +19,7 @@ import cn.richie696.component.oauth.authz.spi.AuthorizationCodeStore;
 import cn.richie696.component.oauth.core.ClientRegistry;
 import cn.richie696.component.oauth.core.config.OAuth2Properties;
 import cn.richie696.contract.exception.BusinessException;
-import cn.richie696.contract.gateway.model.OAuth2Constants;
+import cn.richie696.component.oauth.contract.OAuth2Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +47,7 @@ public class AuthorizationEndpoint {
     private final AuthorizationCodeStore authzCodeStore;
     private final PKCESupport pkceSupport;
     private final OAuth2Properties properties;
+    private final AuthorizationResponseBuilder responseBuilder = new AuthorizationResponseBuilder();
 
     public AuthorizationEndpoint(
             ClientRegistry clientRegistry,
@@ -78,6 +79,7 @@ public class AuthorizationEndpoint {
         String state = request.getParameter("state");
         String scopes = request.getParameter("scope");
         String resource = request.getParameter("resource");
+        String nonce = request.getParameter("nonce");
 
         if (StringUtils.isBlank(clientId)) {
             throw new BusinessException(OAuth2Constants.ERROR_INVALID_REQUEST, "client_id 参数必填");
@@ -105,6 +107,7 @@ public class AuthorizationEndpoint {
         request.getSession().setAttribute("oauth_state", state);
         request.getSession().setAttribute("oauth_scope", scopes);
         request.getSession().setAttribute("oauth_resource", resource);
+        request.getSession().setAttribute("oauth_nonce", nonce);
 
         response.sendRedirect("/login/oauth");
     }
@@ -126,6 +129,7 @@ public class AuthorizationEndpoint {
         String state = (String) request.getSession().getAttribute("oauth_state");
         String scopes = (String) request.getSession().getAttribute("oauth_scope");
         String resource = (String) request.getSession().getAttribute("oauth_resource");
+        String nonce = (String) request.getSession().getAttribute("oauth_nonce");
 
         if (StringUtils.isBlank(clientId)) {
             throw new BusinessException(OAuth2Constants.ERROR_INVALID_REQUEST, "授权会话已过期，请重新发起授权请求");
@@ -137,14 +141,9 @@ public class AuthorizationEndpoint {
         }
 
         String code = generateAuthorizationCode(clientId, redirectUri, codeChallenge, codeChallengeMethod,
-                scopes, userId);
+                scopes, userId, resource, nonce);
 
-        StringBuilder redirectUrl = new StringBuilder(redirectUri);
-        redirectUrl.append(code.contains("?") ? "&" : "?");
-        redirectUrl.append("code=").append(code);
-        if (StringUtils.isNotBlank(state)) {
-            redirectUrl.append("&state=").append(state);
-        }
+        String redirectUrl = responseBuilder.success(redirectUri, code, state).toString();
 
         request.getSession().removeAttribute("oauth_client_id");
         request.getSession().removeAttribute("oauth_redirect_uri");
@@ -153,9 +152,10 @@ public class AuthorizationEndpoint {
         request.getSession().removeAttribute("oauth_state");
         request.getSession().removeAttribute("oauth_scope");
         request.getSession().removeAttribute("oauth_resource");
+        request.getSession().removeAttribute("oauth_nonce");
 
         log.info("用户授权成功: userId={}, clientId={}", userId, clientId);
-        response.sendRedirect(redirectUrl.toString());
+        response.sendRedirect(redirectUrl);
     }
 
     private String generateAuthorizationCode(
@@ -164,7 +164,9 @@ public class AuthorizationEndpoint {
             String codeChallenge,
             String codeChallengeMethod,
             String scopes,
-            String userId
+            String userId,
+            String resource,
+            String nonce
     ) {
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);
@@ -174,16 +176,17 @@ public class AuthorizationEndpoint {
                 ? java.util.Arrays.asList(scopes.split("\\s+"))
                 : java.util.Collections.emptyList();
 
-        authzCodeStore.storeAuthorizationCode(
-                code,
-                clientId,
-                redirectUri,
-                codeChallenge,
-                codeChallengeMethod,
-                scopeList,
-                userId,
-                600
-        );
+        if (StringUtils.isBlank(resource) && StringUtils.isBlank(nonce)) {
+            // 保持旧版 AuthorizationCodeStore 和已有 Servlet 测试的调用契约。
+            authzCodeStore.storeAuthorizationCode(code, clientId, redirectUri,
+                    codeChallenge, codeChallengeMethod, scopeList, userId, 600);
+        } else if (StringUtils.isBlank(resource)) {
+            authzCodeStore.storeAuthorizationCode(code, clientId, redirectUri,
+                    codeChallenge, codeChallengeMethod, scopeList, userId, nonce, 600);
+        } else {
+            authzCodeStore.storeAuthorizationCode(code, clientId, redirectUri,
+                    codeChallenge, codeChallengeMethod, scopeList, userId, resource, nonce, 600);
+        }
 
         log.debug("生成授权码: code={}, clientId={}", code, clientId);
         return code;

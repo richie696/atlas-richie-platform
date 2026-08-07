@@ -13,6 +13,15 @@ This component is designed to achieve the following core goals:
 3. **Component-Based Reuse**: Split OAuth functionality into independently deployable, flexibly composable components
    through a Maven multi-module design
 
+### 1.1.1 Current Implementation Boundary
+
+- The current release implements `authorization_code`, `client_credentials`, and `refresh_token`; `device_code` is not exposed.
+- RFC 8707 `resource` is persisted with authorization codes, validated during code exchange, and bound to the access-token `aud` claim.
+- Refresh tokens rotate by default. A short-lived consumed marker identifies reuse, increments an anomaly counter, and emits a redacted audit event.
+- Tenant claims are supplied through `AccessTokenClaimsCustomizer`; tenant values must come from trusted server context, never from token request parameters.
+- OIDC Front-Channel and Backchannel Logout are exposed as framework-neutral contracts; HTTP delivery, session lookup and UI rendering belong to OAuth Service.
+- DPoP is opt-in at Resource Server level and validates ES256 proof binding, `ath`, `cnf.jkt`, nonce and distributed `jti` replay state.
+
 ### 1.2 Module Relationship Diagram
 
 ```mermaid
@@ -93,7 +102,7 @@ flowchart LR
 
     class Cache,Contract ext
     class Core core
-    class Authz,DCR planned
+    class Authz,DCR core
 ```
 
 ### 1.4 Technology Stack
@@ -263,7 +272,9 @@ classDiagram
     class TokenStore {
         <<interface>>
         +storeRefreshToken(refreshToken, clientId, ip, config)
+        +storeRefreshToken(refreshToken, clientId, ip, config, resource)
         +loadRefreshToken(refreshToken) Map
+        +consumeRefreshToken(refreshToken) RefreshTokenConsumeResult
         +removeRefreshToken(refreshToken)
         +addToBlacklist(accessToken, ttlMillis)
         +isBlacklisted(accessToken) boolean
@@ -321,6 +332,7 @@ classDiagram
 |-------------------------------------|------------------------------------|--------------------------------------|----------------------------------|
 | `OAUTH2_CLIENT_CONFIG`              | `third-party-client:`              | `third-party-client:%s`              | Client configuration (Hash)      |
 | `OAUTH2_REFRESH_TOKEN`              | `refresh-token:`                   | `refresh-token:%s`                   | Refresh Token storage (Hash)     |
+| `OAUTH2_REFRESH_TOKEN_USED`         | `refresh-token-used:`              | `refresh-token-used:%s`              | Consumed marker for replay detection |
 | `OAUTH2_CLIENT_REFRESH_TOKEN_INDEX` | `client-refresh-token:`            | `client-refresh-token:%s`            | Client Refresh Token index       |
 | `OAUTH2_DAILY_TOKEN_ISSUE_COUNT`    | `oauth2:daily:issue-count:`        | `oauth2:daily:issue-count:%s`        | Daily issuance count             |
 | `OAUTH2_REFRESH_TOKEN_LOCK`         | `refresh-token-lock:`              | `refresh-token-lock:%s`              | Refresh Token distributed lock   |
@@ -416,7 +428,12 @@ sequenceDiagram
         TE-->>Client: 403 ip_not_allowed
     end
 
-    TE->>TS: removeRefreshToken(refreshToken)
+    TE->>TS: consumeRefreshToken(refreshToken)
+
+    alt consumed marker already exists
+        TE->>TS: incrementAnomalyRefreshCount(clientId)
+        TE-->>Client: 401 invalid_grant
+    end
 
     TE->>CR: getClientConfig(clientId, ...)
     CR-->>TE: ClientConfig
@@ -1752,10 +1769,22 @@ public interface TokenStore {
     void storeRefreshToken(String refreshToken, String clientId, String ip, ClientConfig config);
 
     /**
+     * Store a refresh token bound to an RFC 8707 resource.
+     * Legacy implementations may ignore the optional resource.
+     */
+    default void storeRefreshToken(String refreshToken, String clientId, String ip,
+                                   ClientConfig config, String resource) {
+        storeRefreshToken(refreshToken, clientId, ip, config);
+    }
+
+    /**
      * Load Refresh Token
      * @return Map containing client_id, ip, grant_type, created_at, etc.
      */
     Map<String, String> loadRefreshToken(String refreshToken);
+
+    /** Atomically consume a refresh token and report a replay when its marker exists. */
+    RefreshTokenConsumeResult consumeRefreshToken(String refreshToken);
 
     /**
      * Delete Refresh Token

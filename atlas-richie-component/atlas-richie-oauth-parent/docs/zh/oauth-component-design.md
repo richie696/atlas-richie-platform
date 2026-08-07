@@ -11,6 +11,15 @@
    能够无缝集成到现有认证体系
 3. **组件化复用**：通过 Maven 多模块设计，将 OAuth 功能拆分为可独立部署、可灵活组合的组件
 
+### 1.1.1 当前实现边界
+
+- 已实现 `authorization_code`、`client_credentials`、`refresh_token` 和 RFC 8628 `device_code`；设备登录、MFA 和用户确认由 OAuth Service 提供。
+- RFC 8707 `resource` 会在授权码中持久化并在兑换时校验，最终绑定到 access token 的 `aud`。
+- refresh token 默认轮换；旧 token 会保留短期 consumed-marker，用于识别重放、增加异常计数并输出审计事件。
+- 租户声明通过 `AccessTokenClaimsCustomizer` 注入，租户值必须来自服务端可信上下文，不能来自 token 请求参数。
+- OIDC Front-Channel 和 Backchannel Logout 以框架无关契约提供；HTTP 投递、会话查询和页面渲染由 OAuth Service 负责。
+- Resource Server 可选启用 DPoP，校验 ES256 proof、`ath`、`cnf.jkt`、nonce 以及分布式 `jti` 防重放状态。
+
 ### 1.2 模块关系图
 
 ```mermaid
@@ -77,8 +86,8 @@ flowchart LR
         DTS["DefaultTokenStore"]
     end
 
-    Authz["oauth-authz<br/>（待实现）"]
-    DCR["oauth-dcr<br/>（待实现）"]
+            Authz["oauth-authz<br/>（已实现）"]
+            DCR["oauth-dcr<br/>（已实现）"]
 
     Cache -.-> |provided| Core
     Contract -.-> |provided| Core
@@ -91,7 +100,7 @@ flowchart LR
 
     class Cache,Contract ext
     class Core core
-    class Authz,DCR planned
+    class Authz,DCR core
 ```
 
 ### 1.4 技术栈
@@ -258,7 +267,9 @@ classDiagram
     class TokenStore {
         <<interface>>
         +storeRefreshToken(refreshToken, clientId, ip, config)
+        +storeRefreshToken(refreshToken, clientId, ip, config, resource)
         +loadRefreshToken(refreshToken) Map
+        +consumeRefreshToken(refreshToken) RefreshTokenConsumeResult
         +removeRefreshToken(refreshToken)
         +addToBlacklist(accessToken, ttlMillis)
         +isBlacklisted(accessToken) boolean
@@ -316,6 +327,7 @@ classDiagram
 |-------------------------------------|------------------------------------|--------------------------------------|----------------------------|
 | `OAUTH2_CLIENT_CONFIG`              | `third-party-client:`              | `third-party-client:%s`              | 客户端配置（Hash）         |
 | `OAUTH2_REFRESH_TOKEN`              | `refresh-token:`                   | `refresh-token:%s`                   | Refresh Token 存储（Hash） |
+| `OAUTH2_REFRESH_TOKEN_USED`         | `refresh-token-used:`              | `refresh-token-used:%s`              | 已消费标记，用于检测重放 |
 | `OAUTH2_CLIENT_REFRESH_TOKEN_INDEX` | `client-refresh-token:`            | `client-refresh-token:%s`            | 客户端 Refresh Token 索引  |
 | `OAUTH2_DAILY_TOKEN_ISSUE_COUNT`    | `oauth2:daily:issue-count:`        | `oauth2:daily:issue-count:%s`        | 每日签发计数               |
 | `OAUTH2_REFRESH_TOKEN_LOCK`         | `refresh-token-lock:`              | `refresh-token-lock:%s`              | Refresh Token 分布式锁     |
@@ -411,7 +423,12 @@ sequenceDiagram
         TE-->>Client: 403 ip_not_allowed
     end
 
-    TE->>TS: removeRefreshToken(refreshToken)
+    TE->>TS: consumeRefreshToken(refreshToken)
+
+    alt consumed-marker 已存在
+        TE->>TS: incrementAnomalyRefreshCount(clientId)
+        TE-->>Client: 401 invalid_grant
+    end
 
     TE->>CR: getClientConfig(clientId, ...)
     CR-->>TE: ClientConfig
@@ -1742,10 +1759,22 @@ public interface TokenStore {
     void storeRefreshToken(String refreshToken, String clientId, String ip, ClientConfig config);
 
     /**
+     * 存储绑定 RFC 8707 resource 的 refresh token。
+     * 旧实现可以忽略可选的 resource。
+     */
+    default void storeRefreshToken(String refreshToken, String clientId, String ip,
+                                   ClientConfig config, String resource) {
+        storeRefreshToken(refreshToken, clientId, ip, config);
+    }
+
+    /**
      * 加载 Refresh Token
      * @return Map 包含 client_id, ip, grant_type, created_at 等
      */
     Map<String, String> loadRefreshToken(String refreshToken);
+
+    /** 消费 refresh token；若已存在 consumed marker，则返回重放状态。 */
+    RefreshTokenConsumeResult consumeRefreshToken(String refreshToken);
 
     /**
      * 删除 Refresh Token
@@ -1815,7 +1844,7 @@ public interface TokenStore {
 }
 ```
 
-### 6.2 AuthorizationCodeStore (待实现)
+### 6.2 AuthorizationCodeStore（已实现）
 
 ```java
 package cn.richie696.component.oauth.authz.spi;
@@ -1868,7 +1897,7 @@ public interface AuthorizationCodeStore {
 }
 ```
 
-### 6.3 ClientIdMetadataDocumentResolver (待实现)
+### 6.3 ClientIdMetadataDocumentResolver（已实现）
 
 ```java
 package cn.richie696.component.oauth.dcr.spi;

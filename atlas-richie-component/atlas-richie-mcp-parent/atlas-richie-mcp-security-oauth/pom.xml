@@ -20,6 +20,11 @@
             <artifactId>atlas-richie-mcp-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-oauth-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>

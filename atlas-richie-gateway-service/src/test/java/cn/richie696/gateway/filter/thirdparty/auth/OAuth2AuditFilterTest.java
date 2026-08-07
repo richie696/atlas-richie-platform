@@ -15,7 +15,7 @@
  */
 package cn.richie696.gateway.filter.thirdparty.auth;
 
-import cn.richie696.component.oauth.core.ClientRegistry;
+import cn.richie696.component.oauth.gateway.OAuthGatewayAdapter;
 import cn.richie696.gateway.config.GatewayConfig;
 import cn.richie696.component.i18n.resolver.I18nResolver;
 import cn.richie696.gateway.service.AuditService;
@@ -53,13 +53,13 @@ class OAuth2AuditFilterTest {
     private AuditService auditService;
 
     @Mock
-    private ClientRegistry clientRegistry;
+    private OAuthGatewayAdapter oauthGatewayAdapter;
 
     private OAuth2AuditFilter oauth2AuditFilter;
 
     @BeforeEach
     void setUp() {
-        oauth2AuditFilter = new OAuth2AuditFilter(gatewayConfig, i18nResolver, auditService, clientRegistry);
+        oauth2AuditFilter = new OAuth2AuditFilter(gatewayConfig, i18nResolver, auditService);
         lenient().when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
     }
 

@@ -1,5 +1,7 @@
 # Third-Party System OAuth2.0 Client Credentials Authentication Architecture Design Document
 
+> **Document status: legacy implementation reference.** The current migration separates Gateway from the Authorization Server: Gateway no longer issues, refreshes, revokes tokens, or owns the authoritative client registry. It validates tokens through `atlas-richie-oauth-spring-boot-starter` and may indirectly access shared cache data through OAuth component abstractions for route-scope rules. `/api/oauth2/**` is only a migration proxy when an Authorization Server base URI is configured. See the [OAuth platform responsibility design (Chinese)](../../../atlas-richie-component/atlas-richie-oauth-parent/docs/zh/oauth-platform-architecture.md) for the current boundary.
+
 ## 1. Overview
 
 ### 1.1 Background

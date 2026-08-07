@@ -4,8 +4,9 @@ OAuth 2.1 鉴权组件，提供 Token 端点、客户端管理、Scope 解析等
 鉴权需求。
 
 > **目标读者**：业务服务开发者、网关服务维护者。如果你想知道"这个组件能帮我解决什么问题、怎么用"，这是你要的文档。
-> **深度设计**：OAuth
-> 组件的完整设计思路见 [docs/zh/oauth-component-design.md](docs/zh/oauth-component-design.md)（[English](docs/en/oauth-component-design.md)）。
+> **组件定位**：本工程提供可复用的 OAuth 协议内核和适配能力，不是带登录页、管理后台和业务数据库的独立 Authorization Server。三方职责边界见 [OAuth 平台架构与职责边界设计](docs/zh/oauth-platform-architecture.md)。
+>
+> **组件内部设计**：见 [docs/zh/oauth-component-design.md](docs/zh/oauth-component-design.md)（[English](docs/en/oauth-component-design.md)）。
 
 ---
 
@@ -46,33 +47,53 @@ OAuth 2.1 鉴权组件，提供 Token 端点、客户端管理、Scope 解析等
 
 ```
 atlas-richie-oauth-parent/
-├── oauth-core    # OAuth2.1 核心（已实现）
-├── oauth-authz   # 授权码+PKCE 模块（规划中）
-└── oauth-dcr     # 动态客户端注册模块（规划中）
+├── atlas-richie-oauth-contract           # 协议 DTO、错误码、跨模块契约
+├── atlas-richie-oauth-cache              # OAuth 缓存、锁、重放状态抽象
+├── atlas-richie-oauth-core               # Token、Client、Scope 核心
+├── atlas-richie-oauth-authz              # 授权码+PKCE
+├── atlas-richie-oauth-oidc               # OIDC Provider：ID Token、UserInfo、Discovery
+├── atlas-richie-oauth-dcr                # 动态客户端注册
+├── atlas-richie-oauth-client              # OAuth/OIDC Metadata、Token、introspection、UserInfo 客户端
+├── atlas-richie-oauth-resource-server    # JWT/JWKS、introspection 资源校验
+├── atlas-richie-oauth-spring-boot-starter# Spring Boot 自动装配
+├── atlas-richie-oauth-gateway-adapter    # WebFlux/Gateway 适配器
+└── atlas-richie-oauth-test               # OAuth 测试工具与测试夹具
 ```
 
 | 模块          | 状态       | 说明                                                      |
 |---------------|------------|-----------------------------------------------------------|
-| `oauth-core`  | **已实现** | Token 端点、客户端注册表、Scope 解析、Token 存储（Redis） |
-| `oauth-authz` | 规划中     | Authorization Code、PKCE、AS Metadata                     |
-| `oauth-dcr`   | 规划中     | Dynamic Client Registration (RFC 7591)                    |
+| `oauth-core`  | **已实现** | Token 生命周期、客户端认证/仓储、Scope/Resource、刷新令牌轮换与重放检测、设备授权领域服务 |
+| `oauth-authz` | **当前实现** | Authorization Code、PKCE、AS Metadata；当前实现仍带 Servlet/Session 适配边界 |
+| `oauth-oidc` | **已实现协议能力** | ID Token、openid/nonce、UserInfo Claims 过滤、Discovery、query/form_post/hybrid 响应契约、Logout 校验；用户/MFA/HTTP Controller 由 AS 服务负责 |
+| `oauth-dcr`   | **当前实现** | Dynamic Client Registration（RFC 7591）领域服务；HTTP 入口和持久化由 AS 服务负责 |
+| `oauth-contract` | **已实现** | 标准请求/响应、错误码、主体和跨模块协议契约 |
+| `oauth-cache` | **已实现** | 单进程缓存、组件 Cache 适配、锁和缓存 Key 边界 |
+| `oauth-client` | **已实现** | OAuth Metadata、Token、introspection 和 OIDC Discovery/UserInfo 标准客户端 |
+| `oauth-resource-server` | **已实现** | JWT/JWKS 校验、introspection fallback 和短缓存 |
+| `oauth-spring-boot-starter` | **已实现** | Resource Server、Cache、Gateway Adapter 条件装配 |
+| `oauth-gateway-adapter` | **已实现** | Bearer 提取、主体透传和 WebFlux Filter 外观 |
+| `oauth-test` | **已实现** | OAuth Server/Gateway 可复用的测试夹具、黑盒 HTTP、RSA/JWKS、断言和 Redis 集成测试基类 |
 
 ### 它能做什么和不能做什么
 
 | ✅ 能做什么                                             | ❌ 不能做什么                               |
 |---------------------------------------------------------|---------------------------------------------|
-| 完整的 OAuth 2.1 授权服务器（签发 Token + 内省 + 撤销） | OIDC userinfo（部分支持，详见 FAQ）         |
-| Token 端点、内省端点、撤销端点                          | SAML 2.0 / WS-Federation（暂不计划）        |
-| 动态客户端注册（DCR）                                   | LDAP / Active Directory 集成                |
-| PKCE（公钥客户端，手机/SPA）                            | 带外设备配对                                |
-| 多租户（与 `atlas-richie-tenant-parent` 兼容）       | 内置身份提供商（IdP）——由业务方提供用户存储 |
+| 提供 Token、授权码、PKCE、DCR、Device Authorization 等可复用协议能力 | 独立部署的登录页、管理后台和完整 AS 运行时 |
+| Token 校验、内省、撤销和存储 SPI                        | SAML 2.0 / WS-Federation                  |
+| Redis/Cache 适配和可替换的 Client/Token 存储边界        | LDAP / Active Directory 的具体接入实现        |
+| 为自建 AS、PaaS AS、Gateway、MCP 提供统一适配基础       | 用户数据库、授权同意页面和业务资源路由        |
 
 ### 设计选择
 
-- ✅ **基于 Spring Authorization Server** — 利用 `spring-security-oauth2-authorization-server` starter
-- ✅ **DB 无关** — 可插拔的 `OAuth2AuthorizationService`（JDBC 默认，Redis 可用）
-- ✅ **无状态 access token** — JWT 模式，每次请求无需查询 DB
-- ✅ **无状态 refresh token** — 不透明令牌 + JWK 轮换
+- ✅ **协议能力可复用** — 通过领域服务、SPI 和 Adapter 供独立 AS 与资源服务器使用
+- ✅ **存储可替换** — 可接入 `atlas-richie-component-cache`，但不替代 AS 的权威数据库
+- ✅ **支持 JWT/JWKS 资源校验方向** — 具体密钥托管和轮换由 OAuth Service 负责
+- ✅ **兼容自建和 PaaS AS** — 通过标准 Metadata、Token、Introspection、Revoke、JWKS 端点适配
+- ✅ **OIDC 可选扩展** — `oauth-oidc` 提供 Provider 协议和 SPI，不强制 M2M OAuth 客户端引入用户身份能力
+- ✅ **OIDC Logout 通道** — 提供 Front-Channel iframe、Backchannel Logout Token 和投递 SPI，HTTP 投递由 OAuth Service 注入
+- ✅ **RFC 8628 Device Authorization Grant** — 设备码签发、用户码审批、轮询间隔/`slow_down`、一次性兑换
+- ✅ **可轮换签名与 JWKS** — HMAC/RSA signer、typed custom claims、`kid` 和 JWK 发布 SPI
+- ✅ **DPoP 资源绑定** — 可选启用 RFC 9449 proof 校验、`ath`、`cnf.jkt`、nonce 和分布式 `jti` 防重放
 
 ---
 
@@ -179,8 +200,11 @@ TokenResponse response = tokenEndpoint.refreshToken(refreshToken, clientIp);
 2. 验证 refresh_token 存在且未过期
 3. 验证 IP 绑定（如果配置了 IP 白名单）
 4. 物理删除旧 refresh_token
+   同时保留短期 consumed-marker，用于识别旧 refresh_token 重放并触发异常计数/审计
 5. 生成新 access_token + refresh_token
 6. 重新存储新 refresh_token
+
+签发和刷新流程支持 RFC 8707 `resource` 参数，并将资源绑定到 access token 的 `aud`；授权码会保存授权阶段的 resource，兑换时禁止切换到其他资源。
 
 #### 1.3 验证 `Token`
 
@@ -305,6 +329,20 @@ public TokenStore tokenStore() {
 
 ---
 
+### 5) Device Authorization Grant（RFC 8628）
+
+组件负责设备码生命周期和轮询状态，不负责设备登录页面。OAuth Service 在用户完成登录/MFA/同意后调用 `approve(userCode, subject)`；客户端通过 `TokenEndpoint.exchangeDeviceCode(...)` 兑换令牌。轮询过快会返回 `slow_down`，授权成功后的设备码只能消费一次。
+
+### 6) 签名器、JWKS 与 Claims
+
+生产 AS 应注入 `AccessTokenSigner`（推荐 RSA）和 `JwkSetProvider`，将 `keys()` 输出暴露为标准 JWKS，并使用稳定的 `kid` 做密钥轮换。租户、角色等扩展声明通过 `AccessTokenClaimsCustomizer` 注入；组件会拒绝覆盖 `iss/sub/aud/exp/iat/nbf/jti/scope/client_id` 等保留声明。
+
+### 7) 分布式缓存边界
+
+`oauth-cache` 的 `OAuthCache` 是 OAuth 核心唯一缓存端口；`GlobalCacheOAuthCache` 负责接入 `atlas-richie-component-cache`，`InMemoryOAuthCache` 只适合单实例/测试。客户端配置、授权码、刷新令牌和重放标记由 OAuth Service 选择权威持久化策略，Gateway 只通过 Resource Server 组件使用其运行时缓存能力。
+
+Resource Server Starter 支持三种模式：只配置 `jwk-set-uri` 为 JWT-only；只配置 `introspection-uri` 且保持 `introspection-fallback=true`（默认）为 introspection-only；同时配置两者为 JWT + introspection fallback 的 hybrid 模式。两者都未配置时会 fail-closed。
+
 ## ⚙️ 完整配置参考
 
 配置前缀：`platform.component.oauth`
@@ -344,8 +382,8 @@ OAuth
 | MCP 角色             | OAuth 2.1 角色                  | 使用模块                 |
 |----------------------|---------------------------------|--------------------------|
 | MCP Server           | Protected Resource Server       | oauth-core + 网关 Filter |
-| MCP Client           | OAuth Client                    | oauth-authz（规划中）    |
-| Authorization Server | Token Endpoint + Authz Endpoint | oauth-core + oauth-authz |
+| MCP Client           | OAuth Client                    | oauth-client（目标模块） |
+| Authorization Server | Token Endpoint + Authz Endpoint | 独立 oauth-service + 组件 |
 
 **当前已支持**：MCP Server 端作为 Resource Server，验证来自 MCP Client 的 Bearer Token。
 
@@ -433,11 +471,11 @@ equals(errorCode)){
 
 | 限制                               | 影响                      | 解决方式                                       |
 |------------------------------------|---------------------------|------------------------------------------------|
-| **OIDC userinfo 部分支持**         | 仅提供 ID-token claims    | 实现自定义 `OIDCUserInfoMapper`                |
+| **OIDC 用户数据不内置**            | 组件不拥有用户数据库      | OAuth Service 注入 `OidcUserInfoProvider`      |
 | **无内置 IdP**                     | 需要自行接入用户存储      | 实现 `UserDetailsService`                      |
 | **不支持 SAML 2.0**                | 不支持 SAML 联合认证      | 使用独立 SAML IdP                              |
 | **Refresh token 旋转不可关闭**     | 遵循 RFC 6749 §10.4       | 实现自定义 `OAuth2TokenGenerator`              |
-| **oauth-authz / oauth-dcr 规划中** | 授权码模式和 DCR 尚未发布 | 关注版本更新，当前使用 client_credentials 模式 |
+| **授权码和 DCR 需要 AS 服务承载** | 组件提供领域能力，但不提供完整登录/管理/持久化运行时 | 使用独立 `atlas-richie-oauth-service`，或通过标准协议接入 PaaS AS |
 
 ## ❓ 常见问题
 
@@ -471,12 +509,12 @@ ClientConfig testClient = clientRegistry.registerTestClient("my-app");
 
 ### 5) oauth-authz 和 oauth-dcr 什么时候可用？
 
-目前处于规划阶段，预计支持：
+当前组件已经包含对应的领域实现，但生产使用仍需要独立 AS 服务提供 HTTP 端点、用户登录、授权同意和持久化：
 
-- **oauth-authz**：Authorization Code + PKCE（OAuth 2.1 强制）、AS Metadata
+- **oauth-authz**：Authorization Code + PKCE、AS Metadata
 - **oauth-dcr**：Dynamic Client Registration (RFC 7591)、Client Metadata
 
-具体实现时间取决于业务需求优先级。
+具体拆分、迁移和验收标准见 [OAuth 平台架构与职责边界设计](docs/zh/oauth-platform-architecture.md)。
 
 ---
 
@@ -486,5 +524,6 @@ ClientConfig testClient = clientRegistry.registerTestClient("my-app");
 |---------------------------------------------------------|--------------------------------------------------------|
 | [系统设计文档 (zh)](docs/zh/oauth-component-design.md)  | 完整架构设计、模块划分、时序图（中文）                 |
 | [System Design (en)](docs/en/oauth-component-design.md) | Full architecture, module breakdown, sequence diagrams |
+| [OAuth 平台架构与职责边界](docs/zh/oauth-platform-architecture.md) | 组件、独立 AS、Gateway 的职责边界和迁移基线 |
 | atlas-richie-gateway-service                            | 网关服务（组件消费者）                                 |
 | atlas-richie-component                                  | 组件库总览                                             |

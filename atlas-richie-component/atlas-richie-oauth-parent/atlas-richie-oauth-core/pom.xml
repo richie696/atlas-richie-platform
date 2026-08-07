@@ -18,6 +18,14 @@
     <description>OAuth2.1核心模块 - Token端点、客户端管理、Scope管理、公共模型与配置</description>
 
     <dependencies>
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-oauth-contract</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-oauth-cache</artifactId>
+        </dependency>
         <!-- 缓存组件（Redis操作） -->
         <dependency>
             <groupId>cn.richie696.component</groupId>

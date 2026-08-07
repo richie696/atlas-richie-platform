@@ -15,20 +15,27 @@
  */
 package cn.richie696.component.oauth.core;
 
-import cn.richie696.component.cache.GlobalCache;
-import cn.richie696.component.cache.redis.manage.CacheLock;
 import cn.richie696.component.oauth.core.config.OAuth2Properties;
 import cn.richie696.component.oauth.core.config.OAuth2RedisKey;
 import cn.richie696.component.oauth.core.model.ClientConfig;
 import cn.richie696.component.oauth.core.model.TokenIntrospection;
 import cn.richie696.component.oauth.core.model.TokenResponse;
 import cn.richie696.component.oauth.core.spi.TokenStore;
-import cn.richie696.context.utils.spring.JwtUtils;
+import cn.richie696.component.oauth.core.spi.TokenStore.RefreshTokenConsumeResult;
+import cn.richie696.component.oauth.core.spi.AccessTokenClaimsCustomizer;
+import cn.richie696.component.oauth.core.spi.OAuthAuditSink;
+import cn.richie696.component.oauth.core.spi.AccessTokenSigner;
+import cn.richie696.component.oauth.core.model.ClientAuthenticationRequest;
+import cn.richie696.component.oauth.core.model.DeviceAuthorizationRecord;
+import cn.richie696.component.oauth.cache.GlobalCacheOAuthCache;
+import cn.richie696.component.oauth.core.support.HmacAccessTokenSigner;
+import cn.richie696.component.oauth.cache.OAuthCache;
+import cn.richie696.component.oauth.cache.OAuthLock;
+import cn.richie696.component.oauth.contract.OAuthErrorCodes;
 import cn.richie696.contract.exception.BusinessException;
-import cn.richie696.contract.gateway.model.OAuth2Constants;
+import cn.richie696.component.oauth.contract.OAuth2Constants;
+import cn.richie696.context.utils.spring.JwtUtils;
 import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTCreator;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.Claim;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -39,10 +46,8 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * OAuth 2.1 Token 端点
@@ -60,15 +65,80 @@ public class TokenEndpoint {
     private final TokenStore tokenStore;
     private final ClientRegistry clientRegistry;
     private final OAuth2Properties properties;
+    private final AccessTokenSigner accessTokenSigner;
+    private final OAuthCache oauthCache;
+    private final AccessTokenClaimsCustomizer claimsCustomizer;
+    private final OAuthAuditSink auditSink;
+    private final ClientAuthenticationService clientAuthenticationService;
+    private final DeviceAuthorizationService deviceAuthorizationService;
 
     public TokenEndpoint(TokenStore tokenStore, ClientRegistry clientRegistry, OAuth2Properties properties) {
+        this(tokenStore, clientRegistry, properties, null, null);
+    }
+
+    public TokenEndpoint(TokenStore tokenStore, ClientRegistry clientRegistry,
+                         OAuth2Properties properties, AccessTokenSigner accessTokenSigner) {
+        this(tokenStore, clientRegistry, properties, accessTokenSigner, null);
+    }
+
+    public TokenEndpoint(TokenStore tokenStore, ClientRegistry clientRegistry,
+                         OAuth2Properties properties, AccessTokenSigner accessTokenSigner,
+                         OAuthCache oauthCache) {
+        this(tokenStore, clientRegistry, properties, accessTokenSigner, oauthCache,
+                AccessTokenClaimsCustomizer.empty());
+    }
+
+    public TokenEndpoint(TokenStore tokenStore, ClientRegistry clientRegistry,
+                         OAuth2Properties properties, AccessTokenSigner accessTokenSigner,
+                         OAuthCache oauthCache, AccessTokenClaimsCustomizer claimsCustomizer) {
+        this(tokenStore, clientRegistry, properties, accessTokenSigner, oauthCache,
+                claimsCustomizer, OAuthAuditSink.noOp());
+    }
+
+    public TokenEndpoint(TokenStore tokenStore, ClientRegistry clientRegistry,
+                         OAuth2Properties properties, AccessTokenSigner accessTokenSigner,
+                         OAuthCache oauthCache, AccessTokenClaimsCustomizer claimsCustomizer,
+                         OAuthAuditSink auditSink) {
+        this(tokenStore, clientRegistry, properties, accessTokenSigner, oauthCache,
+                claimsCustomizer, auditSink, null, null);
+    }
+
+    public TokenEndpoint(TokenStore tokenStore, ClientRegistry clientRegistry,
+                         OAuth2Properties properties, AccessTokenSigner accessTokenSigner,
+                         OAuthCache oauthCache, AccessTokenClaimsCustomizer claimsCustomizer,
+                         OAuthAuditSink auditSink,
+                         ClientAuthenticationService clientAuthenticationService) {
+        this(tokenStore, clientRegistry, properties, accessTokenSigner, oauthCache,
+                claimsCustomizer, auditSink, clientAuthenticationService, null);
+    }
+
+    public TokenEndpoint(TokenStore tokenStore, ClientRegistry clientRegistry,
+                         OAuth2Properties properties, AccessTokenSigner accessTokenSigner,
+                         OAuthCache oauthCache, AccessTokenClaimsCustomizer claimsCustomizer,
+                         OAuthAuditSink auditSink,
+                         ClientAuthenticationService clientAuthenticationService,
+                         DeviceAuthorizationService deviceAuthorizationService) {
         this.tokenStore = tokenStore;
         this.clientRegistry = clientRegistry;
         this.properties = properties;
+        this.accessTokenSigner = accessTokenSigner;
+        this.oauthCache = oauthCache == null ? new GlobalCacheOAuthCache() : oauthCache;
+        this.claimsCustomizer = claimsCustomizer == null
+                ? AccessTokenClaimsCustomizer.empty() : claimsCustomizer;
+        this.auditSink = auditSink == null ? OAuthAuditSink.noOp() : auditSink;
+        this.clientAuthenticationService = clientAuthenticationService;
+        this.deviceAuthorizationService = deviceAuthorizationService;
     }
 
     public TokenResponse generateToken(String clientId, String clientSecret, String ip) {
-        if (!clientRegistry.verifyClientSecret(clientId, clientSecret)) {
+        return generateToken(clientId, clientSecret, ip, null);
+    }
+
+    /**
+     * client_credentials 签发入口，支持 RFC 8707 resource 参数。
+     */
+    public TokenResponse generateToken(String clientId, String clientSecret, String ip, String resource) {
+        if (!authenticateClient(clientId, clientSecret)) {
             throw new BusinessException(OAuth2Constants.ERROR_INVALID_CLIENT, "客户端认证失败");
         }
 
@@ -90,10 +160,15 @@ public class TokenEndpoint {
             log.warn("客户端未配置任何权限范围: clientId={}", clientId);
         }
 
-        String accessToken = generateAccessToken(clientId, config, finalScopes);
+        String effectiveResource = resolveResource(resource, config);
+        String accessToken = generateAccessToken(clientId, config, finalScopes, effectiveResource);
         String refreshToken = generateRefreshToken();
 
-        tokenStore.storeRefreshToken(refreshToken, clientId, ip, config);
+        if (StringUtils.isNotBlank(effectiveResource)) {
+            tokenStore.storeRefreshToken(refreshToken, clientId, ip, config, effectiveResource);
+        } else {
+            tokenStore.storeRefreshToken(refreshToken, clientId, ip, config);
+        }
 
         long expiresIn = config.getTokenValidDuration() != null
                 ? config.getTokenValidDuration() * 3600L
@@ -102,12 +177,16 @@ public class TokenEndpoint {
 
         tokenStore.bindAccessTokenIp(accessToken, clientId, ip, accessTokenTtlMillis);
 
-        return TokenResponse.builder()
+        TokenResponse response = TokenResponse.builder()
                 .accessToken(accessToken)
                 .tokenType(OAuth2Constants.TOKEN_TYPE_BEARER)
                 .expiresIn(expiresIn)
                 .refreshToken(refreshToken)
                 .build();
+        auditSink.record(new OAuthAuditSink.OAuthAuditEvent(
+                "TOKEN_ISSUED", clientId, null, null, effectiveResource, ip,
+                true, null, null, Map.of("grant_type", "client_credentials")));
+        return response;
     }
 
     public TokenResponse refreshToken(String refreshToken, String ip) {
@@ -116,37 +195,104 @@ public class TokenEndpoint {
         }
 
         String lockKey = OAuth2RedisKey.OAUTH2_REFRESH_TOKEN_LOCK.getKey(refreshToken);
-
-        try (CacheLock lock = GlobalCache.lock().optimisticWithRenewal(lockKey, 5L)) {
-            if (!lock.isSuccess()) {
+        try (OAuthLock lock = oauthCache.tryLock(lockKey, 5L)) {
+            if (!lock.acquired()) {
                 throw new BusinessException(OAuth2Constants.ERROR_RATE_LIMIT_EXCEEDED,
                         "刷新令牌正在处理中，请稍后重试");
             }
+            return refreshTokenInternal(refreshToken, ip);
+        }
+    }
 
+    /** RFC 8628 设备码兑换入口。登录、MFA 和用户确认由 DeviceAuthorizationService 的调用方负责。 */
+    public TokenResponse exchangeDeviceCode(String clientId, String clientSecret,
+                                            String deviceCode, String ip, String resource) {
+        if (deviceAuthorizationService == null) {
+            throw new BusinessException(OAuth2Constants.ERROR_UNSUPPORTED_GRANT_TYPE,
+                    "Device Authorization Grant 未配置");
+        }
+        if (!authenticateClient(clientId, clientSecret)) {
+            throw new BusinessException(OAuth2Constants.ERROR_INVALID_CLIENT, "客户端认证失败");
+        }
+        DeviceAuthorizationService.PollResult poll = deviceAuthorizationService.poll(deviceCode, clientId);
+        if (!poll.authorized()) {
+            throw new BusinessException(poll.errorCode() == null
+                    ? OAuth2Constants.ERROR_INVALID_GRANT : poll.errorCode(), "设备授权尚未完成或已失效");
+        }
+        DeviceAuthorizationRecord record = deviceAuthorizationService.consumeAuthorized(deviceCode, clientId);
+        if (record == null) {
+            throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT, "设备授权码无效或已使用");
+        }
+        ClientConfig config = loadClientConfig(clientId);
+        if (config == null || !Boolean.TRUE.equals(config.getEnabled())) {
+            throw new BusinessException(OAuth2Constants.ERROR_INVALID_CLIENT, "客户端不存在或已被禁用");
+        }
+        String effectiveResource = resolveResource(StringUtils.defaultIfBlank(resource, record.resource()), config);
+        List<String> scopes = record.scopes() == null ? List.of() : record.scopes();
+        String accessToken = generateAccessToken(clientId, config, scopes, effectiveResource, record.subject());
+        String refreshToken = generateRefreshToken();
+        if (StringUtils.isNotBlank(effectiveResource)) {
+            tokenStore.storeRefreshToken(refreshToken, clientId, ip, config, effectiveResource);
+        } else {
+            tokenStore.storeRefreshToken(refreshToken, clientId, ip, config);
+        }
+        long expiresIn = config.getTokenValidDuration() != null
+                ? config.getTokenValidDuration() * 3600L : OAuth2Constants.DEFAULT_ACCESS_TOKEN_EXPIRES_IN;
+        tokenStore.bindAccessTokenIp(accessToken, clientId, ip, expiresIn * 1000L);
+        return TokenResponse.builder().accessToken(accessToken).tokenType(OAuth2Constants.TOKEN_TYPE_BEARER)
+                .expiresIn(expiresIn).refreshToken(refreshToken).scope(String.join(" ", scopes)).build();
+    }
+
+    private TokenResponse refreshTokenInternal(String refreshToken, String ip) {
             Map<String, String> tokenData = tokenStore.loadRefreshToken(refreshToken);
+            if (tokenData != null && !tokenData.isEmpty()) {
+                validateRefreshTokenIp(tokenData, ip);
+            }
+
+            RefreshTokenConsumeResult consumed = tokenStore.consumeRefreshToken(refreshToken);
+            if (consumed == null) {
+                // TokenStore 契约要求返回非 null 结果；未知消费状态必须拒绝签发。
+                log.error("TokenStore.consumeRefreshToken 返回 null，拒绝刷新令牌: tokenHash={}",
+                        Integer.toHexString(refreshToken.hashCode()));
+                throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT,
+                        "刷新令牌消费状态不可确认");
+            } else if (consumed.status() == RefreshTokenConsumeResult.Status.REPLAYED) {
+                String replayClientId = consumed.data().get("client_id");
+                long count = StringUtils.isBlank(replayClientId)
+                        ? 0 : tokenStore.incrementAnomalyRefreshCount(replayClientId);
+                log.warn("检测到 refresh_token 重放: clientId={}, anomalyCount={}", replayClientId, count);
+                auditSink.record(new OAuthAuditSink.OAuthAuditEvent(
+                        "REFRESH_TOKEN_REPLAYED", replayClientId, null, null, null, ip,
+                        false, OAuth2Constants.ERROR_INVALID_GRANT, null, Map.of()));
+                throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT, "刷新令牌已被使用");
+            } else if (consumed.status() != RefreshTokenConsumeResult.Status.CONSUMED) {
+                throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT, "刷新令牌无效或已使用");
+            } else {
+                tokenData = consumed.data();
+            }
+
             if (tokenData == null || tokenData.isEmpty()) {
                 throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT, "刷新令牌无效或已使用");
             }
 
-            String boundIp = tokenData.get("ip");
-            if (StringUtils.isNotBlank(boundIp) && !boundIp.equals(ip)) {
-                log.warn("刷新令牌绑定 IP 不匹配: boundIp={}, currentIp={}", boundIp, ip);
-                throw new BusinessException(OAuth2Constants.ERROR_IP_NOT_ALLOWED, "刷新令牌绑定 IP 不匹配");
-            }
-
-            tokenStore.removeRefreshToken(refreshToken);
-
-            String clientId = tokenData.get(OAuth2Constants.JWT_CLAIM_CLIENT_ID);
+            String clientId = StringUtils.defaultIfBlank(
+                    tokenData.get(OAuth2Constants.JWT_CLAIM_CLIENT_ID),
+                    tokenData.get("client_id"));
             ClientConfig config = loadClientConfig(clientId);
             if (config == null || !Boolean.TRUE.equals(config.getEnabled())) {
                 throw new BusinessException(OAuth2Constants.ERROR_INVALID_CLIENT, "客户端不存在或已被禁用");
             }
 
             List<String> refreshScopes = config.getScopes() != null ? config.getScopes() : Collections.emptyList();
-            String newAccessToken = generateAccessToken(clientId, config, refreshScopes);
+            String resource = StringUtils.defaultIfBlank(tokenData.get("resource"), config.getResource());
+            String newAccessToken = generateAccessToken(clientId, config, refreshScopes, resource);
             String newRefreshToken = generateRefreshToken();
 
-            tokenStore.storeRefreshToken(newRefreshToken, clientId, ip, config);
+            if (StringUtils.isNotBlank(resource)) {
+                tokenStore.storeRefreshToken(newRefreshToken, clientId, ip, config, resource);
+            } else {
+                tokenStore.storeRefreshToken(newRefreshToken, clientId, ip, config);
+            }
 
             long expiresIn = config.getTokenValidDuration() != null
                     ? config.getTokenValidDuration() * 3600L
@@ -155,13 +301,16 @@ public class TokenEndpoint {
 
             tokenStore.bindAccessTokenIp(newAccessToken, clientId, ip, accessTokenTtlMillis);
 
-            return TokenResponse.builder()
+            TokenResponse response = TokenResponse.builder()
                     .accessToken(newAccessToken)
                     .tokenType(OAuth2Constants.TOKEN_TYPE_BEARER)
                     .expiresIn(expiresIn)
                     .refreshToken(newRefreshToken)
                     .build();
-        }
+            auditSink.record(new OAuthAuditSink.OAuthAuditEvent(
+                    "TOKEN_REFRESHED", clientId, null, null, resource, ip,
+                    true, null, null, Map.of("grant_type", "refresh_token")));
+            return response;
     }
 
     /**
@@ -255,25 +404,20 @@ public class TokenEndpoint {
             tokenStore.removeRefreshToken(token);
             log.info("撤销 refresh_token: {}", token);
         } else {
-            String tokenSecret = properties.getTokenSecret();
-            if (StringUtils.isBlank(tokenSecret)) {
-                log.warn("撤销 access_token 失败，Token 密钥未配置");
-                return;
+            AccessTokenSigner signer = accessTokenSigner == null
+                    ? new HmacAccessTokenSigner(properties) : accessTokenSigner;
+            AccessTokenSigner.AccessTokenClaims claims;
+            try {
+                claims = signer.verify(token);
+            } catch (RuntimeException ex) {
+                claims = verifyLegacyJwt(token, false);
+                if (claims == null) {
+                    log.info("撤销 access_token: token 无效或签名错误，直接忽略");
+                    return;
+                }
             }
 
-            if (!JwtUtils.verify(token, tokenSecret)) {
-                log.info("撤销 access_token: token 无效或签名错误，直接忽略");
-                return;
-            }
-
-            Date expiredTime = JwtUtils.getExpiredTime(token);
-            if (expiredTime == null) {
-                log.info("撤销 access_token: 无过期时间，直接忽略");
-                return;
-            }
-
-            long now = System.currentTimeMillis();
-            long ttlMillis = expiredTime.getTime() - now;
+            long ttlMillis = claims.expiresAt() - System.currentTimeMillis();
             if (ttlMillis <= 0) {
                 log.info("撤销 access_token: 已过期，无需加入黑名单");
                 return;
@@ -315,33 +459,49 @@ public class TokenEndpoint {
             return null;
         }
 
-        String tokenSecret = properties.getTokenSecret();
-        if (StringUtils.isBlank(tokenSecret)) {
-            log.warn("第三方系统 Token 密钥未配置");
+        try {
+            AccessTokenSigner signer = accessTokenSigner == null
+                    ? new HmacAccessTokenSigner(properties) : accessTokenSigner;
+            AccessTokenSigner.AccessTokenClaims claims;
+            try {
+                claims = signer.verify(accessToken);
+            } catch (RuntimeException ex) {
+                claims = verifyLegacyJwt(accessToken, true);
+                if (claims == null) {
+                    throw ex;
+                }
+            }
+            if (StringUtils.isBlank(claims.clientId()) || tokenStore.isBlacklisted(accessToken)) {
+                return null;
+            }
+            if (claims.expiresAt() <= System.currentTimeMillis()) {
+                log.debug("Access token 已过期");
+                return null;
+            }
+            return claims.clientId();
+        } catch (RuntimeException e) {
+            log.debug("Access token 签名验证失败", e);
             return null;
         }
-        if (!JwtUtils.verify(accessToken, tokenSecret)) {
-            log.debug("Access token 签名验证失败");
-            return null;
-        }
+    }
 
-        if (tokenStore.isBlacklisted(accessToken)) {
-            log.debug("Access token 已被拉入黑名单，拒绝访问");
+    /**
+     * 兼容组件升级前由平台 JwtUtils 签发的存量令牌。
+     * <p>新签发和新接入的生产代码应注入 {@link AccessTokenSigner}；该回退只服务于平滑升级。</p>
+     */
+    private AccessTokenSigner.AccessTokenClaims verifyLegacyJwt(String token, boolean requireClientId) {
+        String secret = properties.getTokenSecret();
+        if (StringUtils.isBlank(secret) || !JwtUtils.verify(token, secret)) {
             return null;
         }
-
-        Date expiredTime = JwtUtils.getExpiredTime(accessToken);
-        if (expiredTime == null || expiredTime.getTime() < System.currentTimeMillis()) {
-            log.debug("Access token 已过期");
+        Date expiresAt = JwtUtils.getExpiredTime(token);
+        String clientId = JwtUtils.getArgument(token, "clientId");
+        if (expiresAt == null || (requireClientId && StringUtils.isBlank(clientId))) {
             return null;
         }
-
-        String clientId = JwtUtils.getArgument(accessToken, OAuth2Constants.JWT_CLAIM_CLIENT_ID);
-        if (StringUtils.isBlank(clientId)) {
-            log.debug("Access token 中未找到 clientId");
-            return null;
-        }
-        return clientId;
+        return new AccessTokenSigner.AccessTokenClaims(
+                clientId, JwtUtils.getUsername(token), null, null, null,
+                expiresAt.getTime(), List.of());
     }
 
     /**
@@ -369,42 +529,38 @@ public class TokenEndpoint {
     }
 
     private String generateAccessToken(String clientId, ClientConfig config, List<String> finalScopes) {
-        String tokenSecret = properties.getTokenSecret();
-        if (StringUtils.isBlank(tokenSecret)) {
-            throw new BusinessException(OAuth2Constants.ERROR_INVALID_CONFIG, "Token 密钥未配置");
-        }
-
-        long expiresIn = config.getTokenValidDuration() != null
-                ? config.getTokenValidDuration() * 3600L * 1000L
-                : OAuth2Constants.DEFAULT_ACCESS_TOKEN_EXPIRES_IN * 1000L;
-        long expiredTime = System.currentTimeMillis() + expiresIn;
-
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.JWT_CLAIM_CLIENT_ID, clientId);
-        params.put(OAuth2Constants.JWT_CLAIM_TYPE, OAuth2Constants.JWT_CLAIM_TYPE_THIRD_PARTY);
-        if (finalScopes != null && !finalScopes.isEmpty()) {
-            params.put(OAuth2Constants.JWT_CLAIM_SCOPE, String.join(" ", finalScopes));
-        }
-
-        return generateJwtToken(clientId, params, tokenSecret, expiredTime);
+        return generateAccessToken(clientId, config, finalScopes, null);
     }
 
-    private String generateJwtToken(String username, Map<String, String> params, String secret, long expiredTime) {
-        Algorithm algorithm = Algorithm.HMAC256(secret);
-        JWTCreator.Builder builder = JWT.create()
-                .withClaim(OAuth2Constants.JWT_CLAIM_USERNAME, username)
-                .withIssuedAt(new Date())
-                .withExpiresAt(new Date(expiredTime))
-                .withJWTId(UUID.randomUUID().toString())
-                .withIssuer("Richie Inc.")
-                .withSubject(OAuth2Constants.JWT_SUBJECT_THIRD_PARTY_ACCESS_TOKEN)
-                .withAudience(username);
+    private String generateAccessToken(String clientId, ClientConfig config,
+                                       List<String> finalScopes, String resource) {
+        return generateAccessToken(clientId, config, finalScopes, resource, null);
+    }
 
-        if (params != null) {
-            params.forEach(builder::withClaim);
+    private String generateAccessToken(String clientId, ClientConfig config,
+                                       List<String> finalScopes, String resource, String subject) {
+        AccessTokenSigner signer = accessTokenSigner == null
+                ? new HmacAccessTokenSigner(properties) : accessTokenSigner;
+        return signer.sign(clientId, config, finalScopes, resource, subject,
+                claimsCustomizer.customize(clientId, config, finalScopes, resource));
+    }
+
+    private String resolveResource(String requestedResource, ClientConfig config) {
+        String registeredResource = config == null ? null : config.getResource();
+        if (StringUtils.isNotBlank(requestedResource)
+                && StringUtils.isNotBlank(registeredResource)
+                && !registeredResource.equals(requestedResource)) {
+            throw new BusinessException(OAuthErrorCodes.INVALID_TARGET, "resource 未注册或不属于当前客户端");
         }
+        return StringUtils.defaultIfBlank(requestedResource, registeredResource);
+    }
 
-        return builder.sign(algorithm);
+    private void validateRefreshTokenIp(Map<String, String> tokenData, String ip) {
+        String boundIp = tokenData.get("ip");
+        if (StringUtils.isNotBlank(boundIp) && !boundIp.equals(ip)) {
+            log.warn("刷新令牌绑定 IP 不匹配: boundIp={}, currentIp={}", boundIp, ip);
+            throw new BusinessException(OAuth2Constants.ERROR_IP_NOT_ALLOWED, "刷新令牌绑定 IP 不匹配");
+        }
     }
 
     private String generateRefreshToken() {
@@ -453,6 +609,11 @@ public class TokenEndpoint {
             return null;
         }
 
+        ClientConfig repositoryConfig = clientRegistry.getClient(clientId);
+        if (repositoryConfig != null) {
+            return repositoryConfig;
+        }
+
         Boolean enabled = clientRegistry.getClientConfig(clientId, ClientConfig.Field.ENABLED);
         if (enabled == null) {
             return null;
@@ -468,5 +629,15 @@ public class TokenEndpoint {
                 .refreshTokenValidDuration(clientRegistry.getClientConfig(clientId, ClientConfig.Field.REFRESH_TOKEN_VALID_DURATION))
                 .rateLimit(clientRegistry.getClientConfig(clientId, ClientConfig.Field.RATE_LIMIT))
                 .build();
+    }
+
+    private boolean authenticateClient(String clientId, String clientSecret) {
+        if (clientAuthenticationService == null) {
+            return clientRegistry.verifyClientSecret(clientId, clientSecret);
+        }
+        return clientAuthenticationService.authenticate(
+                new ClientAuthenticationRequest(clientId, clientSecret,
+                        clientSecret == null ? "none" : "client_secret_post"))
+                .authenticated();
     }
 }

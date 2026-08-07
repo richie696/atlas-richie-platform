@@ -340,6 +340,9 @@ class TokenEndpointTest {
                     "ip", clientIp,
                     "clientId", clientId
             ));
+            when(tokenStore.consumeRefreshToken(refreshToken)).thenReturn(
+                    TokenStore.RefreshTokenConsumeResult.consumed(Map.of(
+                            "ip", clientIp, "client_id", clientId)));
             when(clientRegistry.getClientConfig(eq(clientId), eq(ClientConfig.Field.ENABLED))).thenReturn(true);
             when(clientRegistry.getClientConfig(eq(clientId), eq(ClientConfig.Field.CLIENT_ID))).thenReturn(clientId);
             when(clientRegistry.getClientConfig(eq(clientId), eq(ClientConfig.Field.CLIENT_SECRET))).thenReturn("secret");
@@ -355,8 +358,26 @@ class TokenEndpointTest {
             assertThat(response).isNotNull();
             assertThat(response.getAccessToken()).isNotBlank();
             assertThat(response.getRefreshToken()).isNotBlank();
-            verify(tokenStore).removeRefreshToken(refreshToken);
             verify(tokenStore).storeRefreshToken(anyString(), eq(clientId), eq(clientIp), any(ClientConfig.class));
+        }
+    }
+
+    @Test
+    void refreshToken_whenStoreCannotConfirmConsumption_failsClosed() {
+        String refreshToken = "uncertain-refresh-token";
+        try (MockedStatic<GlobalCache> globalCacheMock = mockStatic(GlobalCache.class)) {
+            LockOps lockOps = mock(LockOps.class);
+            CacheLock cacheLock = mock(CacheLock.class);
+            globalCacheMock.when(GlobalCache::lock).thenReturn(lockOps);
+            when(lockOps.optimisticWithRenewal(anyString(), anyLong())).thenReturn(cacheLock);
+            when(cacheLock.isSuccess()).thenReturn(true);
+            when(tokenStore.loadRefreshToken(refreshToken)).thenReturn(Map.of("ip", "127.0.0.1"));
+            when(tokenStore.consumeRefreshToken(refreshToken)).thenReturn(null);
+
+            assertThatThrownBy(() -> tokenEndpoint.refreshToken(refreshToken, "127.0.0.1"))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("消费状态不可确认");
+            verify(tokenStore, never()).storeRefreshToken(anyString(), anyString(), anyString(), any());
         }
     }
 
@@ -399,6 +420,8 @@ class TokenEndpointTest {
             when(lockOps.optimisticWithRenewal(anyString(), anyLong())).thenReturn(cacheLock);
             when(cacheLock.isSuccess()).thenReturn(true);
             when(tokenStore.loadRefreshToken(refreshToken)).thenReturn(null);
+            when(tokenStore.consumeRefreshToken(refreshToken)).thenReturn(
+                    TokenStore.RefreshTokenConsumeResult.notFound());
 
             assertThatThrownBy(() -> tokenEndpoint.refreshToken(refreshToken, "127.0.0.1"))
                     .isInstanceOf(BusinessException.class)
@@ -417,6 +440,8 @@ class TokenEndpointTest {
             when(lockOps.optimisticWithRenewal(anyString(), anyLong())).thenReturn(cacheLock);
             when(cacheLock.isSuccess()).thenReturn(true);
             when(tokenStore.loadRefreshToken(refreshToken)).thenReturn(Map.of());
+            when(tokenStore.consumeRefreshToken(refreshToken)).thenReturn(
+                    TokenStore.RefreshTokenConsumeResult.notFound());
 
             assertThatThrownBy(() -> tokenEndpoint.refreshToken(refreshToken, "127.0.0.1"))
                     .isInstanceOf(BusinessException.class)
@@ -463,6 +488,9 @@ class TokenEndpointTest {
                     "ip", "",
                     "clientId", clientId
             ));
+            when(tokenStore.consumeRefreshToken(refreshToken)).thenReturn(
+                    TokenStore.RefreshTokenConsumeResult.consumed(Map.of(
+                            "ip", "", "client_id", clientId)));
             when(clientRegistry.getClientConfig(eq(clientId), eq(ClientConfig.Field.ENABLED))).thenReturn(true);
             when(clientRegistry.getClientConfig(eq(clientId), eq(ClientConfig.Field.CLIENT_ID))).thenReturn(clientId);
             when(clientRegistry.getClientConfig(eq(clientId), eq(ClientConfig.Field.CLIENT_SECRET))).thenReturn("secret");
@@ -496,6 +524,9 @@ class TokenEndpointTest {
                     "ip", clientIp,
                     "clientId", clientId
             ));
+            when(tokenStore.consumeRefreshToken(refreshToken)).thenReturn(
+                    TokenStore.RefreshTokenConsumeResult.consumed(Map.of(
+                            "ip", clientIp, "client_id", clientId)));
             when(clientRegistry.getClientConfig(eq(clientId), eq(ClientConfig.Field.ENABLED))).thenReturn(false);
 
             assertThatThrownBy(() -> tokenEndpoint.refreshToken(refreshToken, clientIp))

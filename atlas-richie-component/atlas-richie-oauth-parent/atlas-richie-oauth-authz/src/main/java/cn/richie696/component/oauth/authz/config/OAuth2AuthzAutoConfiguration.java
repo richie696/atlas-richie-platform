@@ -24,11 +24,17 @@ import cn.richie696.component.oauth.core.ClientRegistry;
 import cn.richie696.component.oauth.core.config.OAuth2AutoConfiguration;
 import cn.richie696.component.oauth.core.config.OAuth2Properties;
 import cn.richie696.component.oauth.core.spi.TokenStore;
+import cn.richie696.component.oauth.core.spi.AccessTokenSigner;
+import cn.richie696.component.oauth.core.spi.AccessTokenClaimsCustomizer;
+import cn.richie696.component.oauth.core.ClientAuthenticationService;
+import cn.richie696.component.oauth.cache.OAuthCache;
+import cn.richie696.component.oauth.cache.InMemoryOAuthCache;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.beans.factory.ObjectProvider;
 
 /**
  * OAuth 2.1 授权码模块自动装配
@@ -46,8 +52,8 @@ public class OAuth2AuthzAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(AuthorizationCodeStore.class)
-    public AuthorizationCodeStore authorizationCodeStore() {
-        return new DefaultAuthorizationCodeStore();
+    public AuthorizationCodeStore authorizationCodeStore(ObjectProvider<OAuthCache> cacheProvider) {
+        return new DefaultAuthorizationCodeStore(cacheProvider.getIfAvailable(InMemoryOAuthCache::new));
     }
 
     @Bean
@@ -74,8 +80,12 @@ public class OAuth2AuthzAutoConfiguration {
             ClientRegistry clientRegistry,
             AuthorizationCodeStore authorizationCodeStore,
             PKCESupport pkceSupport,
-            OAuth2Properties properties
+            OAuth2Properties properties,
+            AccessTokenSigner accessTokenSigner,
+            AccessTokenClaimsCustomizer claimsCustomizer,
+            ClientAuthenticationService clientAuthenticationService
     ) {
-        return new AuthorizationCodeGrant(tokenStore, clientRegistry, authorizationCodeStore, pkceSupport, properties);
+        return new AuthorizationCodeGrant(tokenStore, clientRegistry, authorizationCodeStore, pkceSupport,
+                properties, accessTokenSigner, claimsCustomizer, clientAuthenticationService);
     }
 }

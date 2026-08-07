@@ -41,6 +41,10 @@ public class ClientConfig {
     private String clientName;
     private Boolean enabled;
     private List<String> scopes;
+    private List<String> redirectUris;
+    private List<String> grantTypes;
+    private String tokenEndpointAuthMethod;
+    private String resource;
     private List<String> ipWhitelist;
     private Integer tokenValidDuration;
     private Integer refreshTokenValidDuration;
@@ -55,6 +59,10 @@ public class ClientConfig {
         CLIENT_NAME("clientName"),
         ENABLED("enabled"),
         SCOPES("scopes"),
+        REDIRECT_URIS("redirectUris"),
+        GRANT_TYPES("grantTypes"),
+        TOKEN_ENDPOINT_AUTH_METHOD("tokenEndpointAuthMethod"),
+        RESOURCE("resource"),
         IP_WHITELIST("ipWhitelist"),
         TOKEN_VALID_DURATION("tokenValidDuration"),
         REFRESH_TOKEN_VALID_DURATION("refreshTokenValidDuration"),

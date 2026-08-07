@@ -47,7 +47,12 @@
             <groupId>cn.richie696.base</groupId>
             <artifactId>atlas-richie-contract</artifactId>
         </dependency>
-        <!-- OAuth2.1 鉴权组件 -->
+        <!-- OAuth Resource Server / Gateway Adapter；Gateway 不再本地签发令牌 -->
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-oauth-spring-boot-starter</artifactId>
+        </dependency>
+        <!-- Scope 路由规则仍通过 OAuth 组件抽象访问共享缓存 -->
         <dependency>
             <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-oauth-core</artifactId>

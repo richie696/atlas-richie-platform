@@ -44,8 +44,9 @@ public record McpOAuthAuthorizationRequest(
                 .map(entry -> encode(entry.getKey()) + "=" + encode(entry.getValue()))
                 .collect(Collectors.joining("&"));
         try {
-            return new URI(authorizationEndpoint.getScheme(), authorizationEndpoint.getRawAuthority(),
-                    authorizationEndpoint.getPath(), query, authorizationEndpoint.getFragment());
+            URI base = new URI(authorizationEndpoint.getScheme(), authorizationEndpoint.getRawAuthority(),
+                    authorizationEndpoint.getPath(), null, authorizationEndpoint.getFragment());
+            return URI.create(base + (base.getRawQuery() == null ? "?" : "&") + query);
         } catch (java.net.URISyntaxException exception) {
             throw new IllegalArgumentException("Invalid authorization endpoint", exception);
         }

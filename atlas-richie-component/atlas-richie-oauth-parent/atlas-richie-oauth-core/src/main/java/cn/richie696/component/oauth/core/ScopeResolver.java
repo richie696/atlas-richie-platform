@@ -15,10 +15,10 @@
  */
 package cn.richie696.component.oauth.core;
 
-import cn.richie696.component.cache.GlobalCache;
-import cn.richie696.component.oauth.core.config.OAuth2RedisKey;
+import cn.richie696.component.oauth.core.spi.ScopePolicyRepository;
+import cn.richie696.component.oauth.core.support.GlobalCacheScopePolicyRepository;
 import cn.richie696.context.utils.spring.JwtUtils;
-import cn.richie696.contract.gateway.model.OAuth2Constants;
+import cn.richie696.component.oauth.contract.OAuth2Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.AntPathMatcher;
@@ -42,6 +42,15 @@ import java.util.Set;
 public class ScopeResolver {
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
+    private final ScopePolicyRepository policyRepository;
+
+    public ScopeResolver() {
+        this(new GlobalCacheScopePolicyRepository());
+    }
+
+    public ScopeResolver(ScopePolicyRepository policyRepository) {
+        this.policyRepository = policyRepository;
+    }
 
     public List<String> getRequiredScopes(String path, String method) {
         if (StringUtils.isBlank(path)) {
@@ -50,7 +59,7 @@ public class ScopeResolver {
 
         String httpMethod = StringUtils.upperCase(method);
 
-        Set<String> apiCodes = GlobalCache.collection().get(OAuth2RedisKey.GATEWAY_API_INDEX.getKey(), String.class);
+        Set<String> apiCodes = policyRepository.apiCodes();
         if (apiCodes == null || apiCodes.isEmpty()) {
             if (log.isDebugEnabled()) {
                 log.debug("未在 Redis 中找到任何网关接口配置，跳过 scope 校验: path={}, method={}", path, httpMethod);
@@ -63,8 +72,7 @@ public class ScopeResolver {
         int bestPatternScore = -1;
 
         for (String apiCode : apiCodes) {
-            String apiConfigKey = OAuth2RedisKey.GATEWAY_API_CONFIG.getKey(apiCode);
-            Map<String, String> apiConfig = GlobalCache.field().getAll(apiConfigKey, String.class);
+            Map<String, String> apiConfig = policyRepository.apiConfig(apiCode);
             if (apiConfig == null || apiConfig.isEmpty()) {
                 continue;
             }
@@ -108,8 +116,7 @@ public class ScopeResolver {
                     bestApiCode, bestPathPattern, path, httpMethod);
         }
 
-        String apiConfigKey = OAuth2RedisKey.GATEWAY_API_CONFIG.getKey(bestApiCode);
-        Map<String, String> bestApiConfig = GlobalCache.field().getAll(apiConfigKey, String.class);
+        Map<String, String> bestApiConfig = policyRepository.apiConfig(bestApiCode);
         if (bestApiConfig == null || bestApiConfig.isEmpty()) {
             return Collections.emptyList();
         }
@@ -121,8 +128,7 @@ public class ScopeResolver {
             return Collections.emptyList();
         }
 
-        String scopesKey = OAuth2RedisKey.GATEWAY_API_SCOPES.getKey(bestApiCode);
-        Set<String> scopeSet = GlobalCache.collection().get(scopesKey, String.class);
+        Set<String> scopeSet = policyRepository.requiredScopes(bestApiCode);
         if (scopeSet == null || scopeSet.isEmpty()) {
             if (log.isDebugEnabled()) {
                 log.debug("接口未配置任何 scope，视为不需要 scope 校验: apiCode={}, pathPattern={}", bestApiCode, bestPathPattern);

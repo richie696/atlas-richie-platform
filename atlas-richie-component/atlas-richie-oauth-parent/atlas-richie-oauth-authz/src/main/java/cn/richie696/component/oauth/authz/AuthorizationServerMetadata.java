@@ -51,6 +51,9 @@ public class AuthorizationServerMetadata {
      */
     private String tokenEndpoint;
 
+    /** RFC 8628 Device Authorization Endpoint URL。 */
+    private String deviceAuthorizationEndpoint;
+
     /**
      * RFC 7662 Token 内省端点 URL
      */
@@ -75,4 +78,19 @@ public class AuthorizationServerMetadata {
      * 支持的 scopes
      */
     private List<String> scopesSupported;
+
+    /** 保留旧版 8 参数构造方式，避免服务侧编译断裂。 */
+    public AuthorizationServerMetadata(String issuer, String authorizationEndpoint, String tokenEndpoint,
+                                        String introspectionEndpoint, List<String> responseTypesSupported,
+                                        List<String> codeChallengeMethodsSupported,
+                                        List<String> grantTypesSupported, List<String> scopesSupported) {
+        this.issuer = issuer;
+        this.authorizationEndpoint = authorizationEndpoint;
+        this.tokenEndpoint = tokenEndpoint;
+        this.introspectionEndpoint = introspectionEndpoint;
+        this.responseTypesSupported = responseTypesSupported;
+        this.codeChallengeMethodsSupported = codeChallengeMethodsSupported;
+        this.grantTypesSupported = grantTypesSupported;
+        this.scopesSupported = scopesSupported;
+    }
 }

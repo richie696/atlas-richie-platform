@@ -15,7 +15,6 @@
  */
 package cn.richie696.gateway.config;
 
-import cn.richie696.component.oauth.core.config.OAuth2Properties;
 import cn.richie696.contract.gateway.config.DeployConfig;
 import cn.richie696.contract.gateway.config.GatewayContract;
 import cn.richie696.contract.gateway.config.TokenFilterConfig;
@@ -76,7 +75,20 @@ public class GatewayConfig implements Serializable {
     /**
      * OAuth2.0 配置（适用于第三方接口、feign接口的鉴权通信）
      */
-    private OAuth2Properties oauth2 = new OAuth2Properties();
+    private GatewayOAuthProperties interfaceAuth = new GatewayOAuthProperties();
+
+    /**
+     * 兼容历史代码和旧配置的访问方法；该配置只描述 Gateway 边缘行为，
+     * 不包含客户端、TokenStore 或令牌签发配置。
+     */
+    public GatewayOAuthProperties getOauth2() {
+        return interfaceAuth;
+    }
+
+    /** 兼容旧的 platform.gateway.oauth2.* 配置树。 */
+    public void setOauth2(GatewayOAuthProperties oauth2) {
+        this.interfaceAuth = oauth2;
+    }
 
     /**
      * SSO配置

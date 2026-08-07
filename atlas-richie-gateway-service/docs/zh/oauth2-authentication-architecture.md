@@ -1,5 +1,7 @@
 # 第三方系统 OAuth2.0 Client Credentials 认证架构设计文档
 
+> **文档状态：历史实现说明。** 当前实现已进入 Gateway/Authorization Server 拆分迁移：Gateway 不再本地签发、刷新、撤销令牌，也不维护客户端权威配置；它通过 `atlas-richie-oauth-spring-boot-starter` 校验 Token，并可通过抽象后的 OAuth 组件间接访问共享缓存中的 scope 路由规则。`/api/oauth2/**` 仅在配置 Authorization Server 地址后作为迁移期代理。最新职责边界请以 [OAuth 平台职责边界设计](../../../atlas-richie-component/atlas-richie-oauth-parent/docs/zh/oauth-platform-architecture.md) 为准。
+
 ## 1. 概述
 
 ### 1.1 背景

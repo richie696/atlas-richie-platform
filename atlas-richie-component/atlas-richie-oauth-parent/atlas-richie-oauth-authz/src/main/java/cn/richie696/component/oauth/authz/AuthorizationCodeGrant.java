@@ -16,13 +16,19 @@
 package cn.richie696.component.oauth.authz;
 
 import cn.richie696.component.oauth.authz.spi.AuthorizationCodeStore;
+import cn.richie696.component.oauth.authz.spi.AuthorizationCodeStore.AuthorizationCodeConsumeResult;
+import cn.richie696.component.oauth.contract.OAuthErrorCodes;
 import cn.richie696.component.oauth.core.ClientRegistry;
+import cn.richie696.component.oauth.core.ClientAuthenticationService;
+import cn.richie696.component.oauth.core.model.ClientAuthenticationRequest;
 import cn.richie696.component.oauth.core.config.OAuth2Properties;
 import cn.richie696.component.oauth.core.model.ClientConfig;
 import cn.richie696.component.oauth.core.model.TokenResponse;
 import cn.richie696.component.oauth.core.spi.TokenStore;
+import cn.richie696.component.oauth.core.spi.AccessTokenSigner;
+import cn.richie696.component.oauth.core.spi.AccessTokenClaimsCustomizer;
 import cn.richie696.contract.exception.BusinessException;
-import cn.richie696.contract.gateway.model.OAuth2Constants;
+import cn.richie696.component.oauth.contract.OAuth2Constants;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -54,6 +60,9 @@ public class AuthorizationCodeGrant {
     private final AuthorizationCodeStore authzCodeStore;
     private final PKCESupport pkceSupport;
     private final OAuth2Properties properties;
+    private final AccessTokenSigner accessTokenSigner;
+    private final AccessTokenClaimsCustomizer claimsCustomizer;
+    private final ClientAuthenticationService clientAuthenticationService;
 
     public AuthorizationCodeGrant(
             TokenStore tokenStore,
@@ -62,11 +71,42 @@ public class AuthorizationCodeGrant {
             PKCESupport pkceSupport,
             OAuth2Properties properties
     ) {
+        this(tokenStore, clientRegistry, authzCodeStore, pkceSupport, properties,
+                null, AccessTokenClaimsCustomizer.empty(), null);
+    }
+
+    public AuthorizationCodeGrant(
+            TokenStore tokenStore,
+            ClientRegistry clientRegistry,
+            AuthorizationCodeStore authzCodeStore,
+            PKCESupport pkceSupport,
+            OAuth2Properties properties,
+            AccessTokenSigner accessTokenSigner,
+            AccessTokenClaimsCustomizer claimsCustomizer
+    ) {
+        this(tokenStore, clientRegistry, authzCodeStore, pkceSupport, properties,
+                accessTokenSigner, claimsCustomizer, null);
+    }
+
+    public AuthorizationCodeGrant(
+            TokenStore tokenStore,
+            ClientRegistry clientRegistry,
+            AuthorizationCodeStore authzCodeStore,
+            PKCESupport pkceSupport,
+            OAuth2Properties properties,
+            AccessTokenSigner accessTokenSigner,
+            AccessTokenClaimsCustomizer claimsCustomizer,
+            ClientAuthenticationService clientAuthenticationService
+    ) {
         this.tokenStore = tokenStore;
         this.clientRegistry = clientRegistry;
         this.authzCodeStore = authzCodeStore;
         this.pkceSupport = pkceSupport;
         this.properties = properties;
+        this.accessTokenSigner = accessTokenSigner;
+        this.claimsCustomizer = claimsCustomizer == null
+                ? AccessTokenClaimsCustomizer.empty() : claimsCustomizer;
+        this.clientAuthenticationService = clientAuthenticationService;
     }
 
     /**
@@ -90,7 +130,13 @@ public class AuthorizationCodeGrant {
             String resource,
             String ip
     ) {
-        if (!clientRegistry.verifyClientSecret(clientId, clientSecret)) {
+        boolean authenticated = clientAuthenticationService == null
+                ? clientRegistry.verifyClientSecret(clientId, clientSecret)
+                : clientAuthenticationService.authenticate(
+                        new ClientAuthenticationRequest(clientId, clientSecret,
+                                clientSecret == null ? "none" : "client_secret_post"))
+                .authenticated();
+        if (!authenticated) {
             throw new BusinessException(OAuth2Constants.ERROR_INVALID_CLIENT, "客户端认证失败");
         }
 
@@ -108,6 +154,14 @@ public class AuthorizationCodeGrant {
             throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT, "重定向 URI 不匹配");
         }
 
+        String storedResource = codeData.get("resource");
+        if (StringUtils.isNotBlank(storedResource)
+                && StringUtils.isNotBlank(resource)
+                && !storedResource.equals(resource)) {
+            throw new BusinessException(OAuthErrorCodes.INVALID_TARGET, "resource 与授权请求不匹配");
+        }
+        String effectiveResource = StringUtils.defaultIfBlank(resource, storedResource);
+
         String codeChallenge = codeData.get("codeChallenge");
         String codeChallengeMethod = codeData.get("codeChallengeMethod");
         if (StringUtils.isNotBlank(codeChallenge) && !"plain".equalsIgnoreCase(codeChallengeMethod)) {
@@ -116,7 +170,15 @@ public class AuthorizationCodeGrant {
             }
         }
 
-        authzCodeStore.consumeAuthorizationCode(code);
+        AuthorizationCodeConsumeResult consumed = authzCodeStore.consume(code);
+        if (consumed == null) {
+            // 兼容旧版 Mockito/第三方实现：真实生产存储必须实现原子 consume。
+            authzCodeStore.consumeAuthorizationCode(code);
+        } else if (consumed.status() != AuthorizationCodeConsumeResult.Status.CONSUMED) {
+            throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT, "授权码无效或已使用");
+        } else {
+            codeData = consumed.data();
+        }
 
         ClientConfig config = loadClientConfig(clientId);
         if (config == null || !Boolean.TRUE.equals(config.getEnabled())) {
@@ -128,10 +190,14 @@ public class AuthorizationCodeGrant {
                 ? Arrays.asList(scopesStr.split("\\s+"))
                 : (config.getScopes() != null ? config.getScopes() : Collections.emptyList());
 
-        String accessToken = generateAccessToken(clientId, config, scopes, resource);
+        String accessToken = generateAccessToken(clientId, config, scopes, effectiveResource, codeData.get("userId"));
         String refreshToken = generateRefreshToken();
 
-        tokenStore.storeRefreshToken(refreshToken, clientId, ip, config);
+        if (StringUtils.isNotBlank(effectiveResource)) {
+            tokenStore.storeRefreshToken(refreshToken, clientId, ip, config, effectiveResource);
+        } else {
+            tokenStore.storeRefreshToken(refreshToken, clientId, ip, config);
+        }
 
         long expiresIn = config.getTokenValidDuration() != null
                 ? config.getTokenValidDuration() * 3600L
@@ -150,47 +216,13 @@ public class AuthorizationCodeGrant {
                 .build();
     }
 
-    private String generateAccessToken(String clientId, ClientConfig config, List<String> scopes, String resource) {
-        String tokenSecret = properties.getTokenSecret();
-        if (StringUtils.isBlank(tokenSecret)) {
-            throw new BusinessException(OAuth2Constants.ERROR_INVALID_CONFIG, "Token 密钥未配置");
-        }
-
-        long expiresIn = config.getTokenValidDuration() != null
-                ? config.getTokenValidDuration() * 3600L * 1000L
-                : OAuth2Constants.DEFAULT_ACCESS_TOKEN_EXPIRES_IN * 1000L;
-        long expiredTime = System.currentTimeMillis() + expiresIn;
-
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.JWT_CLAIM_CLIENT_ID, clientId);
-        params.put(OAuth2Constants.JWT_CLAIM_TYPE, OAuth2Constants.JWT_CLAIM_TYPE_THIRD_PARTY);
-        if (scopes != null && !scopes.isEmpty()) {
-            params.put(OAuth2Constants.JWT_CLAIM_SCOPE, String.join(" ", scopes));
-        }
-
-        if (StringUtils.isNotBlank(resource)) {
-            params.put("aud", resource);
-        }
-
-        return generateJwtToken(clientId, params, tokenSecret, expiredTime);
-    }
-
-    private String generateJwtToken(String username, Map<String, String> params, String secret, long expiredTime) {
-        Algorithm algorithm = Algorithm.HMAC256(secret);
-        JWTCreator.Builder builder = JWT.create()
-                .withClaim(OAuth2Constants.JWT_CLAIM_USERNAME, username)
-                .withIssuedAt(new Date())
-                .withExpiresAt(new Date(expiredTime))
-                .withJWTId(UUID.randomUUID().toString())
-                .withIssuer("Richie Inc.")
-                .withSubject(OAuth2Constants.JWT_SUBJECT_THIRD_PARTY_ACCESS_TOKEN)
-                .withAudience(username);
-
-        if (params != null) {
-            params.forEach(builder::withClaim);
-        }
-
-        return builder.sign(algorithm);
+    private String generateAccessToken(String clientId, ClientConfig config, List<String> scopes,
+                                       String resource, String subject) {
+        AccessTokenSigner signer = accessTokenSigner == null
+                ? new cn.richie696.component.oauth.core.support.HmacAccessTokenSigner(properties)
+                : accessTokenSigner;
+        return signer.sign(clientId, config, scopes, resource, subject,
+                claimsCustomizer.customize(clientId, config, scopes, resource));
     }
 
     private String generateRefreshToken() {
@@ -202,6 +234,11 @@ public class AuthorizationCodeGrant {
     private ClientConfig loadClientConfig(String clientId) {
         if (StringUtils.isBlank(clientId)) {
             return null;
+        }
+
+        ClientConfig repositoryConfig = clientRegistry.getClient(clientId);
+        if (repositoryConfig != null) {
+            return repositoryConfig;
         }
 
         Boolean enabled = clientRegistry.getClientConfig(clientId, ClientConfig.Field.ENABLED);

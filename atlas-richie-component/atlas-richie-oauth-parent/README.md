@@ -1,8 +1,8 @@
 # Atlas Richie OAuth 2.1 Component (atlas-richie-oauth-parent)
 
-> **OAuth 2.1 authorization server** component. Provides token endpoint, client management, scope management, dynamic
-> client registration (DCR), PKCE, and standard grant types (`authorization_code`, `client_credentials`, `refresh_token`,
-> `device_code`). Compliant
+> **OAuth 2.1 authorization protocol** component. Provides token endpoint, client management, scope management, dynamic
+> client registration (DCR), PKCE, Device Authorization Grant, OIDC contracts, and the implemented grant types (`authorization_code`, `client_credentials`,
+> `refresh_token`).
 > with [RFC 6749](https://datatracker.ietf.org/doc/html/rfc6749) / [RFC 8252](https://datatracker.ietf.org/doc/html/rfc8252) / [RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414).
 >
 > **Deep dive**: Full design
@@ -48,38 +48,42 @@
 | Item                  | Value                                                                                                                          |
 |-----------------------|--------------------------------------------------------------------------------------------------------------------------------|
 | **Artifact**          | `cn.richie696.component:atlas-richie-oauth-parent`                                                                          |
-| **Category**          | Identity & access — OAuth 2.1 authorization server                                                                             |
+| **Category**          | Identity & access — reusable OAuth 2.1 authorization protocol core                                                            |
 | **Hard dependencies** | `atlas-richie-context`, DB (clients / tokens / grants), Redis (rate-limit, cache)                                              |
-| **Standards**         | RFC 6749, RFC 7636 (PKCE), RFC 8252 (device), RFC 8414, RFC 8628 (device), RFC 9068 (JWT access tokens), RFC 7009 (revocation) |
+| **Standards**         | RFC 6749, RFC 7636 (PKCE), RFC 8414, RFC 8707 (resource indicator), RFC 9068 (JWT access tokens), RFC 7009 (revocation) |
 
 ### `What` this component is — and what it isn't
 
 | ✅ It gives you                                                   | ❌ It does not give you                                       |
 |-------------------------------------------------------------------|---------------------------------------------------------------|
-| Full OAuth 2.1 authorization server (issuer + token + revocation) | OIDC userinfo (partial — see Q&A)                             |
+| Reusable OAuth 2.1 authorization-server protocol core           | User database, login UI and MFA                             |
 | Token endpoint, introspection endpoint, revocation endpoint       | SAML 2.0 / WS-Federation (not planned)                        |
 | Dynamic Client Registration (DCR)                                 | LDAP / Active Directory integration                           |
-| PKCE for public clients (mobile / SPA)                            | Out-of-band device pairing                                    |
+| Optional OIDC Provider extension (`oauth-oidc`)                  | SAML 2.0 / WS-Federation (not planned)                       |
+| PKCE for public clients (mobile / SPA), Device Authorization     | User login, MFA and consent UI                              |
 | Multi-tenant (compatible with `atlas-richie-tenant-parent`)    | Built-in identity provider (IdP) — you provide the user store |
 
 ## ✨ Features
 
 ### `Core` capabilities
 
-- ✅ **All four standard grant types** — `authorization_code`, `client_credentials`, `refresh_token`, `device_code` (and
-  `password` for legacy / migration).
+- ✅ **Implemented grant types** — `authorization_code`, `client_credentials`, and `refresh_token`.
+- ✅ **Device Authorization Grant** (`device_code`, RFC 8628) — device/user code issuance, approval, polling interval and `slow_down`, one-time exchange.
 - ✅ **PKCE** (RFC 7636) — for public clients (mobile / SPA).
 - ✅ **DCR** (RFC 7591) — programmatic client registration.
 - ✅ **JWT access tokens** (RFC 9068) — with `iss`, `aud`, `exp`, `nbf`, `iat`, `jti`, `sub`, `scope`, `client_id`.
 - ✅ **Token introspection** (RFC 7662) and **revocation** (RFC 7009).
 - ✅ **Scope-based authorization** — arbitrary scopes with optional policies.
-- ✅ **Multi-tenant** — works with `atlas-richie-tenant-parent`.
+- ✅ **Multi-tenant claim extension point** — inject trusted tenant claims through `AccessTokenClaimsCustomizer`.
+- ✅ **OIDC response contracts** — Discovery, `query`/`form_post`, configurable Hybrid response types, ID Token/UserInfo and logout contracts; HTTP delivery is injected by the service.
+- ✅ **Client authentication** — `client_secret_basic`, `client_secret_post` and public-client `none` are validated by one core service.
+- ✅ **Key publication** — RSA signer publishes `kid`-based JWKS through `JwkSetProvider`; signing key rotation remains service-owned.
+- ✅ **DPoP resource binding** — opt-in RFC 9449 proof validation with `ath`, `cnf.jkt`, nonce and distributed `jti` replay storage.
 
 ### `Design` choices
 
-- ✅ **Spring Authorization Server under the hood** — leverages the `spring-security-oauth2-authorization-server`
-  starter.
-- ✅ **DB-agnostic** — pluggable `OAuth2AuthorizationService` (`JDBC` default, `Redis` available).
+- ✅ **Framework-neutral core** — the service layer can expose these capabilities through Spring MVC/WebFlux or another HTTP stack.
+- ✅ **Storage-agnostic** — pluggable `TokenStore`, `ClientRepository`, `AuthorizationCodeStore` and `OAuthCache` ports.
 - ✅ **Stateless access tokens** — JWT means no DB lookup per request.
 - ✅ **Stateless refresh tokens** — opaque + JWK rotation.
 
@@ -96,7 +100,7 @@ atlas-richie-oauth-parent
 │   ├── OAuth2TokenEndpoint
 │   ├── OAuth2RevocationEndpoint
 │   ├── OAuth2IntrospectionEndpoint
-│   └── OIDCUserInfoEndpoint
+│   └── OIDC endpoints are exposed by oauth-service using oauth-oidc
 ├── client/
 │   ├── ClientRegistrationService     ← DCR
 │   └── ClientRepository
@@ -219,6 +223,26 @@ curl -X POST https://auth.example.com/connect/register   -H "Content-Type: appli
 public Invoice get(@PathVariable String id) { ... }
 ```
 
+### 6) Device Authorization Grant (RFC 8628)
+
+The component owns device-code lifecycle, approval state, polling interval and one-time exchange. The standalone
+OAuth Service owns login/MFA/consent and calls `DeviceAuthorizationService.approve(userCode, subject)` after the user
+confirms the device. Clients exchange through `TokenEndpoint.exchangeDeviceCode(...)`; excessive polling returns
+`slow_down`.
+
+### 7) Signing, JWKS and claims
+
+Inject an `AccessTokenSigner` (RSA is recommended in production) and expose `JwkSetProvider.keys()` as the standard
+JWKS endpoint. Use a stable `kid` during key rotation. Tenant and role claims belong in
+`AccessTokenClaimsCustomizer`; reserved protocol claims cannot be overwritten.
+
+### 8) Resource Server modes
+
+The Spring Boot starter supports three explicit modes: configure only `jwk-set-uri` for JWT-only validation; configure
+only `introspection-uri` for introspection-only validation (with `introspection-fallback=true`, the default); configure
+both for hybrid validation, where local JWT verification is attempted before introspection fallback. If neither is
+configured, the authenticator remains fail-closed and production configuration should reject the setup.
+
 ## ⚙️ Configuration Reference
 
 | Property                          | Type         | Default             | Description                                    |
@@ -244,7 +268,7 @@ public Invoice get(@PathVariable String id) { ... }
 
 | Limitation                             | Impact                              | Workaround                              |
 |----------------------------------------|-------------------------------------|-----------------------------------------|
-| **OIDC userinfo partial**              | Only ID-token claims                | Implement custom `OIDCUserInfoMapper`   |
+| **OIDC user data is not built in**     | Component does not own user database | Inject `OidcUserInfoProvider` from AS    |
 | **No built-in IdP**                    | You wire your own user store        | Implement `UserDetailsService`          |
 | **No SAML 2.0**                        | SAML-only federations not supported | Use a separate SAML IdP                 |
 | **Refresh token rotation not opt-out** | Per RFC 6749 §10.4                  | Implement custom `OAuth2TokenGenerator` |
@@ -253,12 +277,13 @@ public Invoice get(@PathVariable String id) { ... }
 
 ### Q1 — How is this different from `spring-security-oauth2-authorization-server`?
 
-This component wraps it and adds: multi-tenant integration, DCR, scope policies, JWT customizer, platform-aligned
-configuration.
+This component is framework-neutral and provides the reusable protocol core, storage ports, DCR, scope policies,
+JWT customizer and platform-aligned configuration. A standalone OAuth Service owns the HTTP runtime and user flows.
 
 ### `Q2` — `Can` `I` plug in my own token store?
 
-Yes — implement `OAuth2AuthorizationService` and register as `@Primary`.
+Yes — implement the component's `TokenStore`, `ClientRepository`, `AuthorizationCodeStore` or `OAuthCache` SPI,
+depending on which state you want to externalize.
 
 ### `Q3` — `Is` `PKCE` mandatory?
 
@@ -268,14 +293,16 @@ For public clients, yes (`dcr.require-pkce=true`). For confidential clients, opt
 
 ```java
 @Bean
-public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
-    return ctx -> ctx.getClaims().claim("tenant_id", tenantId);
+public AccessTokenClaimsCustomizer accessTokenClaimsCustomizer() {
+    return (clientId, client, scopes, resource) -> Map.of("tenant_id", trustedTenantContext.currentTenant());
 }
 ```
 
 ### `Q5` — `Does` this support `OIDC`?
 
-Partial — ID token is issued per OIDC spec. Userinfo endpoint requires a custom `OIDCUserInfoMapper`.
+Yes, through the optional `atlas-richie-oauth-oidc` module. It provides ID Token, `openid`/`nonce`
+validation, scope-filtered UserInfo, Discovery Metadata, RP-Initiated Logout validation and Front/Backchannel Logout contracts. The standalone OAuth Service
+must provide the user store, login/MFA flow, consent UI and HTTP endpoints.
 
 ## 📚 Further Reading
 

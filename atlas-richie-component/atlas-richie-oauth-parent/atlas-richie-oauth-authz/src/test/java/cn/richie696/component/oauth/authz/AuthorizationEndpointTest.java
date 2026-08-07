@@ -165,6 +165,8 @@ class AuthorizationEndpointTest {
                 eq(codeChallengeMethod),
                 argThat(list -> list.containsAll(Arrays.asList("read", "write"))),
                 eq("user-456"),
+                eq(resource),
+                isNull(),
                 eq(600L)
         );
         verify(response).sendRedirect(startsWith(redirectUri + "?code="));

@@ -16,6 +16,8 @@
 package cn.richie696.component.oauth.dcr.support;
 
 import cn.richie696.component.cache.GlobalCache;
+import cn.richie696.component.oauth.cache.LegacyGlobalCacheOAuthCache;
+import cn.richie696.component.oauth.cache.OAuthCache;
 import cn.richie696.component.oauth.core.config.OAuth2RedisKey;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -42,7 +44,7 @@ public class SSRFProtection {
     private static final Pattern IPV4_PATTERN = Pattern.compile("^\\d{1,3}(\\.\\d{1,3}){3}$");
     private static final Pattern IPV6_FULL_PATTERN = Pattern.compile("^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$");
 
-    private final GlobalCache globalCache;
+    private final OAuthCache cache;
     private final List<String> allowedDomains;
     private final Duration cacheTtl;
 
@@ -51,7 +53,11 @@ public class SSRFProtection {
             List<String> allowedDomains,
             long cacheTtlSeconds
     ) {
-        this.globalCache = globalCache;
+        this(new LegacyGlobalCacheOAuthCache(), allowedDomains, cacheTtlSeconds);
+    }
+
+    public SSRFProtection(OAuthCache cache, List<String> allowedDomains, long cacheTtlSeconds) {
+        this.cache = cache;
         this.allowedDomains = allowedDomains != null ? allowedDomains : List.of();
         this.cacheTtl = Duration.ofSeconds(cacheTtlSeconds);
     }
@@ -111,7 +117,7 @@ public class SSRFProtection {
 
     private String resolveAndCacheDns(String host) {
         String cacheKey = OAuth2RedisKey.OAUTH2_SSRF_DNS_CACHE.getKey(host);
-        String cachedIp = globalCache.value().get(cacheKey, String.class);
+        String cachedIp = cache.get(cacheKey, String.class);
 
         if (cachedIp != null) {
             return cachedIp;
@@ -120,7 +126,7 @@ public class SSRFProtection {
         try {
             InetAddress address = InetAddress.getByName(host);
             String ip = address.getHostAddress();
-            globalCache.value().set(cacheKey, ip, cacheTtl.toMillis());
+            cache.put(cacheKey, ip, cacheTtl.toMillis());
             return ip;
         } catch (UnknownHostException e) {
             log.warn("SSRF 防护：DNS 解析失败: {}", host);

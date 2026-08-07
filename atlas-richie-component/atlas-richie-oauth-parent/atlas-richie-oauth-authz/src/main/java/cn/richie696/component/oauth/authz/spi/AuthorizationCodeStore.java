@@ -29,6 +29,16 @@ import java.util.Map;
  */
 public interface AuthorizationCodeStore {
 
+    /** 原子消费结果。自定义旧实现未覆盖时由默认方法兼容，但生产实现应覆盖。 */
+    default AuthorizationCodeConsumeResult consume(String code) {
+        Map<String, String> data = loadAuthorizationCode(code);
+        if (data == null || data.isEmpty()) {
+            return AuthorizationCodeConsumeResult.notFound();
+        }
+        consumeAuthorizationCode(code);
+        return AuthorizationCodeConsumeResult.consumed(data);
+    }
+
     /**
      * 存储授权码
      *
@@ -53,6 +63,47 @@ public interface AuthorizationCodeStore {
     );
 
     /**
+     * 存储带 OIDC nonce 的授权码。
+     *
+     * <p>默认回退到旧契约，保证已有自定义 AuthorizationCodeStore 实现无需立即修改。
+     * 支持 OIDC 的实现应覆盖此方法并持久化 nonce。</p>
+     */
+    default void storeAuthorizationCode(
+            String code,
+            String clientId,
+            String redirectUri,
+            String codeChallenge,
+            String codeChallengeMethod,
+            List<String> scopes,
+            String userId,
+            String nonce,
+            long ttlSeconds
+    ) {
+        storeAuthorizationCode(code, clientId, redirectUri, codeChallenge,
+                codeChallengeMethod, scopes, userId, ttlSeconds);
+    }
+
+    /**
+     * 存储绑定 RFC 8707 resource 和 OIDC nonce 的授权码。
+     * <p>默认实现回退到 nonce 版本，兼容已有的自定义存储实现。</p>
+     */
+    default void storeAuthorizationCode(
+            String code,
+            String clientId,
+            String redirectUri,
+            String codeChallenge,
+            String codeChallengeMethod,
+            List<String> scopes,
+            String userId,
+            String resource,
+            String nonce,
+            long ttlSeconds
+    ) {
+        storeAuthorizationCode(code, clientId, redirectUri, codeChallenge,
+                codeChallengeMethod, scopes, userId, nonce, ttlSeconds);
+    }
+
+    /**
      * 加载授权码
      *
      * @param code 授权码
@@ -66,4 +117,17 @@ public interface AuthorizationCodeStore {
      * @param code 授权码
      */
     void consumeAuthorizationCode(String code);
+
+    record AuthorizationCodeConsumeResult(Status status, Map<String, String> data) {
+        public enum Status { CONSUMED, NOT_FOUND }
+
+        public static AuthorizationCodeConsumeResult consumed(Map<String, String> data) {
+            return new AuthorizationCodeConsumeResult(Status.CONSUMED,
+                    data == null ? Map.of() : Map.copyOf(data));
+        }
+
+        public static AuthorizationCodeConsumeResult notFound() {
+            return new AuthorizationCodeConsumeResult(Status.NOT_FOUND, Map.of());
+        }
+    }
 }

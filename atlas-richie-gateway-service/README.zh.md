@@ -27,7 +27,7 @@
 | 部署模式 | 典型场景 | 主认证方式 |
 |----------|----------|------------|
 | **微服务网关** | 内部应用、BFF、员工端 | JWT（`platform.gateway.token.enable=true`） |
-| **OpenAPI 网关** | 合作伙伴、第三方对接 | OAuth 2.0 客户端凭证（`platform.gateway.interface-auth.enable=true`） |
+| **OpenAPI 网关** | 合作伙伴、第三方对接 | OAuth Resource Server（`platform.gateway.interface-auth.enable=true`） |
 | **内网网关** | VPC 东西向、服务间入口 | 常关闭双认证，依赖网络隔离 + 可选 Sentinel |
 
 > **互斥约束：** `platform.gateway.token.enable` 与 `platform.gateway.interface-auth.enable` **不能同时为 `true`**。启动时 `GatewayAuthConfigValidator` 会校验并失败，避免认证链冲突。
@@ -48,7 +48,8 @@
 | [K8s 灰度部署方案](docs/zh/k8s-canary-deployment.md) | Gateway Pod 灰度 |
 | [降级响应配置说明](docs/zh/degraded-response-configuration.md) | `GlobalFallbackController` 按路径文案 |
 | [CSP 安全响应头配置说明](docs/zh/csp-security-header.md) | CSP 策略配置、全链路防护方案（网关 + Nginx/ALB）、指令参考 |
-| [第三方 OAuth2.0 认证架构](docs/zh/oauth2-authentication-architecture.md) | Client Credentials、Scope、审计 |
+| [第三方 OAuth2.0 认证架构](docs/zh/oauth2-authentication-architecture.md) | 历史兼容说明；当前边界以 OAuth 平台设计为准 |
+| [OAuth 平台职责边界设计](../atlas-richie-component/atlas-richie-oauth-parent/docs/zh/oauth-platform-architecture.md) | OAuth 组件、独立 AS 与 Gateway Resource Server 的拆分和迁移基线 |
 | [k8s-deployment-example.yaml](docs/zh/k8s-deployment-example.yaml) | K8s 部署样例 |
 
 ## 部署架构
@@ -213,7 +214,7 @@ atlas-richie-gateway-service/
 │   │   │   └── routing/          # 灰度 ID 提取
 │   │   └── thirdparty/      # OpenAPI 网关
 │   │       └── auth/             # OAuth2 鉴权、专属异常检测、审计
-│   ├── controller/          # OAuth2TokenController
+│   ├── controller/          # OAuth Authorization Server 迁移代理
 │   ├── client/              # AuthController（登出、作废令牌）
 │   ├── service/             # OAuth2、审计、ECC、防重、签名
 │   ├── handler/             # 全局异常
@@ -325,18 +326,25 @@ platform:
       enable: false
     interface-auth:
       enable: true
-      token-secret: <签名密钥>
-    audit-enabled: true
+      error-docs-base-uri: https://oauth.example.com/errors#
+      # authorization-server-base-uri: http://atlas-richie-oauth-service:9600
+    audit-enabled: true  # 资源访问审计发布
+
+  oauth:
+    resource-server:
+      enabled: true
+      issuer: https://oauth.example.com
+      jwk-set-uri: https://oauth.example.com/.well-known/jwks.json
+      required-audience: atlas-api
+      introspection-fallback: true
 ```
 
 **能力：**
 
-- **OAuth 2.0**（`/api/oauth2/token`）：`client_credentials`、`refresh_token`（RFC 6749）
-- **撤销**（`/api/oauth2/revoke`）
-- **自省**（`/api/oauth2/introspect`，仅非 `prod` 环境）
-- `InterfaceAuthFilter`：Bearer 校验、按客户端 **IP 白名单**、**Scope** 校验、向下游传递 `clientId`
-- `OAuth2AnomalyDetectionFilter`：Token 重放、异常刷新、客户端限流
-- `OAuth2AuditFilter`：审计事件（`OAuth2AuditEvent`，可对接消息组件）
+- `InterfaceAuthFilter`：通过 `atlas-richie-oauth-spring-boot-starter` 校验 issuer/JWKS 或 introspection，执行 Scope 校验并向下游传播可信主体
+- `OAuth2AnomalyDetectionFilter`：仅保留资源访问阶段的 Token 重放观测；签发、刷新、客户端限流由 Authorization Server 负责
+- `OAuth2AuditFilter`：仅记录资源访问结果；Token 生命周期审计由 Authorization Server 负责
+- `/api/oauth2/token`、`/revoke`、`/introspect`：仅在配置 AS 地址后作为标准表单反向代理，Gateway 不再本地签发或存储 OAuth 令牌
 
 **Nacos：** 在 `bootstrap.yml` 中启用 `platform-gateway-openapi.yaml` 导入。
 
@@ -364,8 +372,8 @@ platform:
 - **Token 端点** `POST /api/oauth2/token`：`client_credentials`、`refresh_token`（RFC 6749）
 - **撤销** `POST /api/oauth2/revoke`；**自省** `POST /api/oauth2/introspect`（仅非 `prod`）
 - **InterfaceAuthFilter**：`Authorization: Bearer`、按 `clientId` 的 **IP 白名单**、**Scope** 校验、向下游传递客户端标识
-- **OAuth2AnomalyDetectionFilter**：Token 重放、异常刷新、客户端级限流
-- **OAuth2AuditFilter**：响应体审计 → `OAuth2AuditEvent`（需 `audit-enabled` 与消息消费端一致）
+- **OAuth2AnomalyDetectionFilter**：仅资源访问侧 Token 重放观测；签发、刷新、客户端限流由 Authorization Server 负责
+- **OAuth2AuditFilter**：仅资源访问结果审计；Token 生命周期审计由 Authorization Server 负责
 
 详见 [第三方 OAuth2.0 认证架构](docs/zh/oauth2-authentication-architecture.md)。
 
@@ -615,9 +623,9 @@ flowchart TD
 
 | 路径 | 类 | 说明 |
 |------|-----|------|
-| `POST /api/oauth2/token` | `OAuth2TokenController` | 获取 / 刷新令牌 |
-| `POST /api/oauth2/revoke` | `OAuth2TokenController` | 撤销令牌 |
-| `POST /api/oauth2/introspect` | `OAuth2TokenController` | 令牌自省（`@Profile("!prod")`） |
+| `POST /api/oauth2/token` | `OAuthAuthorizationServerProxyController` | 迁移期转发到 Authorization Server |
+| `POST /api/oauth2/revoke` | `OAuthAuthorizationServerProxyController` | 迁移期转发到 Authorization Server |
+| `POST /api/oauth2/introspect` | `OAuthAuthorizationServerProxyController` | 迁移期转发到 Authorization Server |
 | `GET /api/auth/invalid/{token}` | `AuthController` | 拉黑令牌 |
 | `GET /api/auth/logout` | `AuthController` | 登出（访问令牌 + MFA 令牌） |
 | `GET /fallback/default` | `GlobalFallbackController` | Sentinel / 熔断降级体 |
@@ -652,7 +660,7 @@ spring:
 | 配置项 | 用途 |
 |--------|------|
 | `security` | IP 限流与封禁策略 |
-| `interface-auth` | 第三方 OAuth2 过滤器 |
+| `interface-auth` | Gateway Resource Server 边缘策略，以及可选 AS 迁移代理 |
 | `sso` | 单点登录 |
 | `ecc-crypto` | ECC/AES-GCM |
 | `duplicate-submit` | 防重复提交 |

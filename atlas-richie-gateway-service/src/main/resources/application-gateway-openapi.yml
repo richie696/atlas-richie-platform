@@ -161,7 +161,9 @@ platform:
     # OPENAPI认证配置
     interface-auth:
       enable: true
-      token-secret: 'inYZeYSKJS34WEt6k6EBQm0XCyN6K0FP'
+      error-docs-base-uri: 'https://oauth.example.com/errors#'
+      # 迁移期可配置 AS 地址；未配置时 Gateway 不暴露本地 OAuth endpoint
+      # authorization-server-base-uri: 'http://atlas-richie-oauth-service:9600'
     # 跨服务共享契约（atlas-richie-contract 的 GatewayContract）
     contract:
       token:
@@ -170,6 +172,18 @@ platform:
   component:
     i18n:
       default-locale: zh_CN
+
+    # OAuth Resource Server 配置：Gateway 只校验和传播主体，不负责签发令牌
+    oauth:
+      resource-server:
+        enabled: true
+        issuer: 'https://oauth.example.com'
+        jwk-set-uri: 'https://oauth.example.com/.well-known/jwks.json'
+        required-audience: 'atlas-api'
+        introspection-fallback: true
+        # introspection-uri: 'https://oauth.example.com/oauth2/introspect'
+        # introspection-client-id: 'gateway-resource-server'
+        # introspection-client-secret: '${OAUTH_INTROSPECTION_CLIENT_SECRET}'
 
 # 日志配置
 logging:

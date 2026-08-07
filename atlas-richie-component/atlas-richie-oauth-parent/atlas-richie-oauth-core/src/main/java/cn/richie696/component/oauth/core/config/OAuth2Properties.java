@@ -42,6 +42,12 @@ public class OAuth2Properties {
      */
     private String tokenSecret;
 
+    /** access token 的 issuer，生产环境必须配置为稳定的 AS 标识。 */
+    private String issuer = "Richie Inc.";
+
+    /** access token 默认 audience/resource。 */
+    private String audience;
+
     /**
      * access_token 默认有效期（小时，默认：2）
      */
@@ -84,4 +90,9 @@ public class OAuth2Properties {
      * }</pre>
      */
     private String errorDocsBaseUri;
+
+    /** RFC 8628 Device Authorization 配置。 */
+    private String deviceVerificationUri;
+    private long deviceExpiresInSeconds = 600;
+    private long devicePollingIntervalSeconds = 5;
 }

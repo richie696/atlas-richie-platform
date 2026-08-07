@@ -20,11 +20,27 @@ import cn.richie696.component.oauth.core.ScopeResolver;
 import cn.richie696.component.oauth.core.TokenEndpoint;
 import cn.richie696.component.oauth.core.spi.TokenStore;
 import cn.richie696.component.oauth.core.support.DefaultTokenStore;
+import cn.richie696.component.oauth.core.support.CacheBackedTokenStore;
+import cn.richie696.component.oauth.core.ClientAuthenticationService;
+import cn.richie696.component.oauth.core.DeviceAuthorizationService;
+import cn.richie696.component.oauth.core.spi.DeviceAuthorizationStore;
+import cn.richie696.component.oauth.core.support.CacheBackedDeviceAuthorizationStore;
+import cn.richie696.component.oauth.core.spi.ScopePolicyRepository;
+import cn.richie696.component.oauth.core.support.GlobalCacheScopePolicyRepository;
+import cn.richie696.component.oauth.cache.InMemoryOAuthCache;
+import cn.richie696.component.oauth.core.support.HmacAccessTokenSigner;
+import cn.richie696.component.oauth.core.spi.AccessTokenSigner;
+import cn.richie696.component.oauth.core.spi.AccessTokenClaimsCustomizer;
+import cn.richie696.component.oauth.core.spi.OAuthAuditSink;
+import cn.richie696.component.oauth.core.support.LoggingOAuthAuditSink;
+import cn.richie696.component.oauth.core.spi.ClientRepository;
+import cn.richie696.component.oauth.cache.OAuthCache;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.ObjectProvider;
 
 /**
  * OAuth 2.1 自动装配
@@ -44,25 +60,83 @@ public class OAuth2AutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(TokenStore.class)
-    public TokenStore tokenStore() {
-        return new DefaultTokenStore();
+    public TokenStore tokenStore(ObjectProvider<OAuthCache> cacheProvider) {
+        OAuthCache cache = cacheProvider.getIfAvailable(InMemoryOAuthCache::new);
+        return new CacheBackedTokenStore(cache);
     }
 
     @Bean
     @ConditionalOnMissingBean(ClientRegistry.class)
-    public ClientRegistry clientRegistry() {
-        return new ClientRegistry();
+    public ClientRegistry clientRegistry(ObjectProvider<ClientRepository> repositoryProvider,
+                                         ObjectProvider<OAuthCache> cacheProvider) {
+        ClientRepository repository = repositoryProvider.getIfAvailable();
+        return repository == null
+                ? new ClientRegistry(cacheProvider.getIfAvailable(InMemoryOAuthCache::new))
+                : new ClientRegistry(repository);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ClientAuthenticationService.class)
+    public ClientAuthenticationService clientAuthenticationService(ClientRegistry clientRegistry) {
+        return new ClientAuthenticationService(clientRegistry);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(DeviceAuthorizationStore.class)
+    public DeviceAuthorizationStore deviceAuthorizationStore(ObjectProvider<OAuthCache> cacheProvider) {
+        return new CacheBackedDeviceAuthorizationStore(cacheProvider.getIfAvailable(InMemoryOAuthCache::new));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(DeviceAuthorizationService.class)
+    public DeviceAuthorizationService deviceAuthorizationService(
+            ClientRegistry clientRegistry, DeviceAuthorizationStore store, OAuth2Properties properties) {
+        return new DeviceAuthorizationService(clientRegistry, store,
+                properties.getDeviceVerificationUri(), properties.getDeviceExpiresInSeconds(),
+                properties.getDevicePollingIntervalSeconds());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ScopePolicyRepository.class)
+    public ScopePolicyRepository scopePolicyRepository() {
+        return new GlobalCacheScopePolicyRepository();
     }
 
     @Bean
     @ConditionalOnMissingBean(ScopeResolver.class)
-    public ScopeResolver scopeResolver() {
-        return new ScopeResolver();
+    public ScopeResolver scopeResolver(ScopePolicyRepository scopePolicyRepository) {
+        return new ScopeResolver(scopePolicyRepository);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AccessTokenSigner.class)
+    public AccessTokenSigner accessTokenSigner(OAuth2Properties properties) {
+        return new HmacAccessTokenSigner(properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AccessTokenClaimsCustomizer.class)
+    public AccessTokenClaimsCustomizer accessTokenClaimsCustomizer() {
+        return AccessTokenClaimsCustomizer.empty();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(OAuthAuditSink.class)
+    public OAuthAuditSink oauthAuditSink() {
+        return new LoggingOAuthAuditSink();
     }
 
     @Bean
     @ConditionalOnMissingBean(TokenEndpoint.class)
-    public TokenEndpoint tokenEndpoint(TokenStore tokenStore, ClientRegistry clientRegistry, OAuth2Properties properties) {
-        return new TokenEndpoint(tokenStore, clientRegistry, properties);
+    public TokenEndpoint tokenEndpoint(TokenStore tokenStore, ClientRegistry clientRegistry,
+                                       OAuth2Properties properties, AccessTokenSigner accessTokenSigner,
+                                       ObjectProvider<OAuthCache> cacheProvider,
+                                       AccessTokenClaimsCustomizer claimsCustomizer,
+                                       OAuthAuditSink auditSink,
+                                       ClientAuthenticationService clientAuthenticationService,
+                                       DeviceAuthorizationService deviceAuthorizationService) {
+        return new TokenEndpoint(tokenStore, clientRegistry, properties, accessTokenSigner,
+                cacheProvider.getIfAvailable(), claimsCustomizer, auditSink,
+                clientAuthenticationService, deviceAuthorizationService);
     }
 }

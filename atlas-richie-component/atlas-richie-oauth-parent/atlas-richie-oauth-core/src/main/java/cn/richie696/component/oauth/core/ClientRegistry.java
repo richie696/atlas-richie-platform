@@ -2,157 +2,155 @@
  * Copyright (c) 2026 Richie (https://www.github.com/richie696)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 package cn.richie696.component.oauth.core;
 
-import cn.richie696.component.cache.GlobalCache;
-import cn.richie696.component.oauth.core.config.OAuth2RedisKey;
+import cn.richie696.component.oauth.cache.GlobalCacheOAuthCache;
+import cn.richie696.component.oauth.cache.OAuthCache;
 import cn.richie696.component.oauth.core.model.ClientConfig;
+import cn.richie696.component.oauth.core.spi.ClientRepository;
+import cn.richie696.component.oauth.core.support.CacheBackedClientRepository;
+import cn.richie696.component.oauth.core.support.LegacyGlobalCacheClientRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 
+import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
-/**
- * 客户端注册中心
- * <p>
- * 负责 OAuth 2.1 客户端配置的读写，数据存储在 Redis Hash。
- *
- * @author richie696
- * @since 2026-06-12
- */
+/** Client 权威数据的领域 Facade，存储通过 ClientRepository 注入。 */
 @Slf4j
 public class ClientRegistry {
 
     private static final SecureRandom RANDOM = new SecureRandom();
+    private final ClientRepository repository;
 
-    @SuppressWarnings("unchecked")
+    /** 兼容旧的直接使用方式，默认走平台 Cache 适配器。 */
+    public ClientRegistry() {
+        this(new LegacyGlobalCacheClientRepository());
+    }
+
+    public ClientRegistry(OAuthCache cache) {
+        this(new CacheBackedClientRepository(Objects.requireNonNull(cache, "cache 不能为空")));
+    }
+
+    public ClientRegistry(ClientRepository repository) {
+        this.repository = Objects.requireNonNull(repository, "repository 不能为空");
+    }
+
     public <T> T getClientConfig(String clientId, ClientConfig.Field field) {
         if (StringUtils.isBlank(clientId) || field == null) {
             return null;
         }
-
-        String redisKey = OAuth2RedisKey.OAUTH2_CLIENT_CONFIG.getKey(clientId);
-        Object rawValue = GlobalCache.field().get(redisKey, field.getName(), Object.class);
-        if (rawValue == null) {
-            log.debug("客户端配置不存在: clientId={}, field={}", clientId, field.getName());
-            return null;
-        }
-
-        return field.parseRawValue(rawValue);
+        return fieldValue(repository.find(clientId), field);
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<ClientConfig.Field, Object> getClientConfig(String clientId, ClientConfig.Field field1, ClientConfig.Field field2) {
+    public Map<ClientConfig.Field, Object> getClientConfig(String clientId,
+                                                            ClientConfig.Field field1,
+                                                            ClientConfig.Field field2) {
         if (StringUtils.isBlank(clientId)) {
             return null;
         }
-
-        String redisKey = OAuth2RedisKey.OAUTH2_CLIENT_CONFIG.getKey(clientId);
-
-        Object rawValue1 = GlobalCache.field().get(redisKey, field1.getName(), Object.class);
-        Object rawValue2 = GlobalCache.field().get(redisKey, field2.getName(), Object.class);
-
-        if (rawValue1 == null && rawValue2 == null) {
+        ClientConfig config = repository.find(clientId);
+        if (config == null) {
             return Collections.emptyMap();
         }
-
-        Map<ClientConfig.Field, Object> result = new java.util.EnumMap<>(ClientConfig.Field.class);
-        if (rawValue1 != null) {
-            result.put(field1, field1.parseRawValue(rawValue1));
+        Map<ClientConfig.Field, Object> result = new EnumMap<>(ClientConfig.Field.class);
+        Object value1 = fieldValue(config, field1);
+        Object value2 = fieldValue(config, field2);
+        if (value1 != null) {
+            result.put(field1, value1);
         }
-        if (rawValue2 != null) {
-            result.put(field2, field2.parseRawValue(rawValue2));
+        if (value2 != null) {
+            result.put(field2, value2);
         }
-
         return result;
     }
 
     public boolean isClientValid(String clientId) {
-        Boolean enabled = getClientConfig(clientId, ClientConfig.Field.ENABLED);
-        return Boolean.TRUE.equals(enabled);
+        ClientConfig config = getClient(clientId);
+        return config != null && Boolean.TRUE.equals(config.getEnabled());
+    }
+
+    public ClientConfig getClient(String clientId) {
+        return StringUtils.isBlank(clientId) ? null : repository.find(clientId);
     }
 
     public boolean verifyClientSecret(String clientId, String clientSecret) {
         if (StringUtils.isBlank(clientId) || StringUtils.isBlank(clientSecret)) {
             return false;
         }
-
-        String storedSecret = getClientConfig(clientId, ClientConfig.Field.CLIENT_SECRET);
-        if (StringUtils.isBlank(storedSecret)) {
-            log.warn("客户端不存在: clientId={}", clientId);
+        ClientConfig config = getClient(clientId);
+        if (config == null || !Boolean.TRUE.equals(config.getEnabled())
+                || StringUtils.isBlank(config.getClientSecret())) {
             return false;
         }
-
-        Boolean enabled = getClientConfig(clientId, ClientConfig.Field.ENABLED);
-        if (!Boolean.TRUE.equals(enabled)) {
-            log.warn("客户端已禁用: clientId={}", clientId);
-            return false;
-        }
-
-        return Strings.CS.equals(storedSecret, clientSecret);
+        return MessageDigest.isEqual(config.getClientSecret().getBytes(StandardCharsets.UTF_8),
+                clientSecret.getBytes(StandardCharsets.UTF_8));
     }
 
+    /** 仅供测试和演示使用；生产客户端应由服务层审批后注册。 */
     public ClientConfig registerTestClient(String clientName) {
         if (StringUtils.isBlank(clientName)) {
             throw new IllegalArgumentException("clientName 不能为空");
         }
-
         String clientId = generateClientId();
         String clientSecret = generateClientSecret();
-
         ClientConfig config = ClientConfig.builder()
                 .clientId(clientId)
                 .clientSecret(clientSecret)
                 .clientName(clientName)
                 .enabled(true)
-                .build();
-
-        ClientConfig storageConfig = ClientConfig.builder()
-                .clientId(clientId)
-                .clientSecret(clientSecret)
-                .clientName(clientName)
-                .enabled(true)
+                .tokenEndpointAuthMethod("client_secret_post")
                 .ipWhitelist(List.of("localhost", "127.0.0.1"))
                 .build();
-
-        String redisKey = OAuth2RedisKey.OAUTH2_CLIENT_CONFIG.getKey(clientId);
-        long ttl = TimeUnit.DAYS.toMillis(365);
-        GlobalCache.struct().set(redisKey, storageConfig, ttl);
-
-        log.info("[TEST] 注册第三方客户端成功: clientId={}, clientName={}", clientId, clientName);
+        repository.save(config);
+        log.info("[TEST] 注册 OAuth 客户端成功: clientId={}, clientName={}", clientId, clientName);
         return config;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T fieldValue(ClientConfig config, ClientConfig.Field field) {
+        if (config == null || field == null) {
+            return null;
+        }
+        Object value = switch (field) {
+            case CLIENT_ID -> config.getClientId();
+            case CLIENT_SECRET -> config.getClientSecret();
+            case CLIENT_NAME -> config.getClientName();
+            case ENABLED -> config.getEnabled();
+            case SCOPES -> config.getScopes();
+            case REDIRECT_URIS -> config.getRedirectUris();
+            case GRANT_TYPES -> config.getGrantTypes();
+            case TOKEN_ENDPOINT_AUTH_METHOD -> config.getTokenEndpointAuthMethod();
+            case RESOURCE -> config.getResource();
+            case IP_WHITELIST -> config.getIpWhitelist();
+            case TOKEN_VALID_DURATION -> config.getTokenValidDuration();
+            case REFRESH_TOKEN_VALID_DURATION -> config.getRefreshTokenValidDuration();
+            case RATE_LIMIT -> config.getRateLimit();
+        };
+        return (T) value;
     }
 
     private String generateClientId() {
         String datePrefix = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
         for (int i = 0; i < 5; i++) {
-            String seq = String.format("%03d", RANDOM.nextInt(1000));
-            String candidate = "client-%s-%s".formatted(datePrefix, seq);
-            String key = OAuth2RedisKey.OAUTH2_CLIENT_CONFIG.getKey(candidate);
-            if (!GlobalCache.key().hasKey(key)) {
+            String candidate = "client-%s-%03d".formatted(datePrefix, RANDOM.nextInt(1000));
+            if (repository.find(candidate) == null) {
                 return candidate;
             }
         }
-        return "client-%s-%s".formatted(datePrefix, UUID.randomUUID().toString().replace("-", "").substring(0, 8));
+        return "client-%s-%s".formatted(datePrefix,
+                UUID.randomUUID().toString().replace("-", "").substring(0, 8));
     }
 
     private String generateClientSecret() {

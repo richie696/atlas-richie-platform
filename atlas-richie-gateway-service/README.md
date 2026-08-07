@@ -27,7 +27,7 @@
 | Deployment mode | Typical audience | Primary authentication |
 |-----------------|------------------|------------------------|
 | **Microservice gateway** | Internal apps, BFF, employee portals | JWT (`platform.gateway.token.enable=true`) |
-| **OpenAPI gateway** | Partners, third-party integrations | OAuth 2.0 Client Credentials (`platform.gateway.interface-auth.enable=true`) |
+| **OpenAPI gateway** | Partners, third-party integrations | OAuth Resource Server (`platform.gateway.interface-auth.enable=true`) |
 | **Internal gateway** | Intranet, service-to-service edge | Often minimal auth (both auth switches off + network isolation) |
 
 > **Mutual exclusion:** `platform.gateway.token.enable` and `platform.gateway.interface-auth.enable` **cannot both be `true`**. `GatewayAuthConfigValidator` fails fast at startup if they conflict.
@@ -213,7 +213,7 @@ atlas-richie-gateway-service/
 │   │   │   └── routing/          # CanaryIdExtractor
 │   │   └── thirdparty/      # OpenAPI gateway
 │   │       └── auth/             # InterfaceAuth, OAuth2Anomaly, OAuth2Audit
-│   ├── controller/          # OAuth2TokenController
+│   ├── controller/          # OAuth Authorization Server migration proxy
 │   ├── client/              # AuthController (logout, invalidate)
 │   ├── service/             # OAuth2, audit, ECC, duplicate submit, signature
 │   ├── handler/             # GlobalErrorWebExceptionHandler
@@ -329,18 +329,25 @@ platform:
       enable: false
     interface-auth:
       enable: true
-      token-secret: <signing-secret>
-    audit-enabled: true   # OAuth2 audit publish
+      error-docs-base-uri: https://oauth.example.com/errors#
+      # authorization-server-base-uri: http://atlas-richie-oauth-service:9600
+    audit-enabled: true   # resource access audit publish
+
+  oauth:
+    resource-server:
+      enabled: true
+      issuer: https://oauth.example.com
+      jwk-set-uri: https://oauth.example.com/.well-known/jwks.json
+      required-audience: atlas-api
+      introspection-fallback: true
 ```
 
 **Capabilities:**
 
-- **OAuth 2.0** (`/api/oauth2/token`): `client_credentials`, `refresh_token` (RFC 6749)
-- **Token revoke** (`/api/oauth2/revoke`)
-- **Token introspect** (`/api/oauth2/introspect`, non-`prod` profile only)
-- `InterfaceAuthFilter`: Bearer token validation, per-client **IP whitelist**, **scope** checks, `clientId` forwarded to downstream
-- `OAuth2AnomalyDetectionFilter`: token replay, abnormal refresh, client rate limits
-- `OAuth2AuditFilter`: response capture and audit events (`OAuth2AuditEvent` → messaging when enabled)
+- `InterfaceAuthFilter`: issuer/JWKS or introspection validation through `atlas-richie-oauth-spring-boot-starter`, scope checks, and trusted principal propagation
+- `OAuth2AnomalyDetectionFilter`: resource-side token replay observation only; issuance, refresh, and client rate limits belong to the Authorization Server
+- `OAuth2AuditFilter`: resource access result auditing only; token lifecycle auditing belongs to the Authorization Server
+- `/api/oauth2/token`, `/revoke`, `/introspect`: standard-form proxy during migration when an Authorization Server base URI is configured; Gateway does not issue or store OAuth tokens
 
 **Nacos:** `optional:nacos:platform-gateway-openapi.yaml` (uncomment in `bootstrap.yml` for OpenAPI deployments).
 
@@ -525,9 +532,9 @@ flowchart TD
 
 | Path | Controller | Description |
 |------|------------|-------------|
-| `POST /api/oauth2/token` | `OAuth2TokenController` | Issue / refresh tokens |
-| `POST /api/oauth2/revoke` | `OAuth2TokenController` | Revoke token |
-| `POST /api/oauth2/introspect` | `OAuth2TokenController` | Introspection (`@Profile("!prod")`) |
+| `POST /api/oauth2/token` | `OAuthAuthorizationServerProxyController` | Proxy to Authorization Server during migration |
+| `POST /api/oauth2/revoke` | `OAuthAuthorizationServerProxyController` | Proxy to Authorization Server during migration |
+| `POST /api/oauth2/introspect` | `OAuthAuthorizationServerProxyController` | Proxy to Authorization Server during migration |
 | `GET /api/auth/invalid/{token}` | `AuthController` | Blacklist token |
 | `GET /api/auth/logout` | `AuthController` | Logout (access + MFA tokens) |
 | `GET /fallback/default` | `GlobalFallbackController` | Sentinel / circuit fallback body |

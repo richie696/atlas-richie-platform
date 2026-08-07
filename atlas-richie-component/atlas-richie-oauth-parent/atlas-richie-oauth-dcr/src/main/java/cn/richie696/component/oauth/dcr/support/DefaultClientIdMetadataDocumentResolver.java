@@ -16,6 +16,8 @@
 package cn.richie696.component.oauth.dcr.support;
 
 import cn.richie696.component.cache.GlobalCache;
+import cn.richie696.component.oauth.cache.LegacyGlobalCacheOAuthCache;
+import cn.richie696.component.oauth.cache.OAuthCache;
 import cn.richie696.component.oauth.core.config.OAuth2RedisKey;
 import cn.richie696.component.oauth.dcr.model.ClientIdMetadataDocument;
 import cn.richie696.component.oauth.dcr.spi.ClientIdMetadataDocumentResolver;
@@ -32,11 +34,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DefaultClientIdMetadataDocumentResolver implements ClientIdMetadataDocumentResolver {
 
-    private final GlobalCache globalCache;
+    private final OAuthCache cache;
     private final SSRFProtection ssrfProtection;
 
     public DefaultClientIdMetadataDocumentResolver(GlobalCache globalCache, SSRFProtection ssrfProtection) {
-        this.globalCache = globalCache;
+        this(new LegacyGlobalCacheOAuthCache(), ssrfProtection);
+    }
+
+    public DefaultClientIdMetadataDocumentResolver(OAuthCache cache, SSRFProtection ssrfProtection) {
+        this.cache = cache;
         this.ssrfProtection = ssrfProtection;
     }
 
@@ -48,7 +54,7 @@ public class DefaultClientIdMetadataDocumentResolver implements ClientIdMetadata
         }
 
         String redisKey = OAuth2RedisKey.OAUTH2_CLIENT_META.getKey(clientId);
-        ClientIdMetadataDocument document = globalCache.struct().get(redisKey, ClientIdMetadataDocument.class);
+        ClientIdMetadataDocument document = cache.get(redisKey, ClientIdMetadataDocument.class);
 
         if (document != null && metadataUri != null && ssrfProtection != null) {
             if (!ssrfProtection.isUrlSafe(metadataUri)) {
@@ -66,7 +72,9 @@ public class DefaultClientIdMetadataDocumentResolver implements ClientIdMetadata
         }
 
         String redisKey = OAuth2RedisKey.OAUTH2_CLIENT_META.getKey(clientId);
-        String metadataUri = globalCache.field().get(redisKey, "metadataUri", String.class);
-        return metadataUri;
+        if (cache instanceof LegacyGlobalCacheOAuthCache legacy) {
+            return legacy.getField(redisKey, "metadataUri", String.class);
+        }
+        return cache.get(redisKey + ":metadataUri", String.class);
     }
 }

@@ -32,7 +32,32 @@ public interface TokenStore {
 
     void storeRefreshToken(String refreshToken, String clientId, String ip, ClientConfig config);
 
+    /** 存储带资源绑定的 refresh token；旧实现默认忽略 resource。 */
+    default void storeRefreshToken(String refreshToken, String clientId, String ip,
+                                   ClientConfig config, String resource) {
+        storeRefreshToken(refreshToken, clientId, ip, config);
+    }
+
     Map<String, String> loadRefreshToken(String refreshToken);
+
+    /**
+     * 原子消费 refresh token，并返回消费结果。
+     * <p>
+     * 生产实现必须返回非 {@code null} 结果，并在同一个原子操作/分布式锁语义内完成：
+     * 首次消费返回 {@link RefreshTokenConsumeResult.Status#CONSUMED}，已消费过返回
+     * {@link RefreshTokenConsumeResult.Status#REPLAYED}，不存在或过期返回
+     * {@link RefreshTokenConsumeResult.Status#NOT_FOUND}。返回 {@code null} 属于非法 SPI 实现，
+     * 调用方会 fail-closed，不会继续签发新令牌。
+     * </p>
+     */
+    default RefreshTokenConsumeResult consumeRefreshToken(String refreshToken) {
+        Map<String, String> data = loadRefreshToken(refreshToken);
+        if (data == null || data.isEmpty()) {
+            return RefreshTokenConsumeResult.notFound();
+        }
+        removeRefreshToken(refreshToken);
+        return RefreshTokenConsumeResult.consumed(data);
+    }
 
     void removeRefreshToken(String refreshToken);
 
@@ -55,4 +80,26 @@ public interface TokenStore {
     long incrementAnomalyRefreshCount(String clientId);
 
     long incrementAnomalyRateLimit(String clientId);
+
+    record RefreshTokenConsumeResult(Status status, Map<String, String> data) {
+        public enum Status { CONSUMED, NOT_FOUND, REPLAYED }
+
+        public static RefreshTokenConsumeResult consumed(Map<String, String> data) {
+            return new RefreshTokenConsumeResult(Status.CONSUMED,
+                    data == null ? Map.of() : Map.copyOf(data));
+        }
+
+        public static RefreshTokenConsumeResult notFound() {
+            return new RefreshTokenConsumeResult(Status.NOT_FOUND, Map.of());
+        }
+
+        public static RefreshTokenConsumeResult replayed() {
+            return new RefreshTokenConsumeResult(Status.REPLAYED, Map.of());
+        }
+
+        public static RefreshTokenConsumeResult replayed(Map<String, String> data) {
+            return new RefreshTokenConsumeResult(Status.REPLAYED,
+                    data == null ? Map.of() : Map.copyOf(data));
+        }
+    }
 }

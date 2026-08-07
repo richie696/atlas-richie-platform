@@ -1,0 +1,2 @@
+cn.richie696.component.oauth.starter.config.OAuthResourceServerAutoConfiguration
+cn.richie696.component.oauth.starter.config.OidcAutoConfiguration
