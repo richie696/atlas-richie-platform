@@ -52,7 +52,7 @@
         <dynamic-datasource.version>4.5.0</dynamic-datasource.version>
         <mybatis-plus-join.version>1.5.7</mybatis-plus-join.version>
         <mysql-connector-j.version>9.6.0</mysql-connector-j.version>
-        <postgresql.version>42.7.11</postgresql.version>
+        <postgresql.version>42.7.13</postgresql.version>
         <elasticsearch-client.version>9.4.1</elasticsearch-client.version>
         <hibernate-validator.version>9.1.0.Final</hibernate-validator.version>
         <powerjob.version>5.1.2</powerjob.version>
