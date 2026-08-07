@@ -37,10 +37,22 @@ import org.springframework.context.annotation.Import;
 import org.springframework.beans.factory.ObjectProvider;
 
 /**
- * OAuth 2.1 授权码模块自动装配
+ * oauth-authz 模块的 Spring Boot 自动装配入口。
  * <p>
- * 通过条件装配启用授权码模块，依赖 oauth-core 配置。
- * 仅在 {@code platform.component.oauth.enabled=true} 时生效。
+ * 通过 {@link Bean} + {@link ConditionalOnMissingBean} 显式注册 {@link AuthorizationCodeStore}/
+ * {@link PKCESupport}/{@link AuthorizationEndpoint}/{@link AuthorizationCodeGrant};在
+ * {@code platform.component.oauth.enabled=true} 时随 {@link Import} 引入的 oauth-core
+ * {@link OAuth2AutoConfiguration} 一同生效。
+ * </p>
+ * <p>
+ * 处于 oauth 组件的模块装配层位置:不持有业务逻辑,只把 oauth-authz 包内的协议服务接入 Spring 容器,
+ * 下游是 OAuth Service 在 HTTP 适配层注入这些 Bean。
+ * </p>
+ * <p>
+ * 解决的问题:让用户在配置 platform.component.oauth.enabled=true 后自动获得授权码流程所需的全部
+ * Bean;同时通过 {@code ConditionalOnMissingBean} 把每个 Bean 都暴露为可替换的 SPI,业务方可以
+ * 注入自己的 AuthorizationCodeStore 或 PKCESupport 而无需禁用整个模块。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

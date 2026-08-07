@@ -12,7 +12,23 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 
-/** OAuth 标准 HTTP 参数构造和重定向回调解析工具，不绑定 MockMvc/WebTestClient。 */
+/**
+ * OAuth 测试支撑工具（不属于生产运行时）：OAuth 标准 HTTP 参数与重定向回调解析工具。
+ *
+ * <p>职责链位置：处于 {@link OAuthTestFixtures} 协议夹具与 {@link OAuthTestHttpClient}
+ * 等具体 HTTP 客户端之间。它把 {@code OAuthTokenRequest} 转成 application/x-www-form-urlencoded
+ * 表单、把 {@code OAuthAuthorizationRequest} 拼成授权端点的 query 串，
+ * 并把授权码回调的 URI 反解为参数 Map；只依赖 JDK URL 编解码，
+ * 不绑定 MockMvc、WebTestClient 或任何 HTTP 测试栈。</p>
+ *
+ * <p>解决以下问题：不同测试客户端（MockMvc / WebTestClient / JDK HttpClient）
+ * 在 OAuth 协议上的参数拼装与回调解析若各自实现会重复且容易出现协议偏差；
+ * 把"协议字段 → 协议 wire 格式"的转换集中在一个工具里，使各客户端只需要关心"如何发送/接收"，
+ * 而不重复实现 RFC 6749 / RFC 7636 的字段拼装规则。</p>
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public final class OAuthTestHttp {
 
     private OAuthTestHttp() {

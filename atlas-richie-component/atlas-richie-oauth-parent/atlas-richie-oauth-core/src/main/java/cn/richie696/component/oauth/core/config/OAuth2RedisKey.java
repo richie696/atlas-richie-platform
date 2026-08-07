@@ -16,9 +16,21 @@
 package cn.richie696.component.oauth.core.config;
 
 /**
- * OAuth 2.1 组件 Redis Key 枚举
+ * OAuth 2.1 组件全部 Redis Key 的统一枚举。
  * <p>
- * 统一管理 OAuth 组件中使用的所有 Redis Key
+ * 把 oauth-core、oauth-authz、oauth-dcr 三个模块使用的所有 Key 前缀/模板收敛到同一份枚举,
+ * 提供 {@link #getPrefix()} / {@link #getKey()} / {@link #getKey(String)} / {@link #getKey(Object...)}
+ * 四种访问方式,杜绝散落字符串拼接。
+ * </p>
+ * <p>
+ * 处于整个 oauth 组件的存储键名中心位置:被 CacheBackedTokenStore、CacheBackedClientRepository、
+ * DefaultAuthorizationCodeStore、RedisClientRegistrationStore、SSRFProtection 等所有需要写 Redis
+ * 的实现共同持有,保证跨模块 Key 命名一致。
+ * </p>
+ * <p>
+ * 解决的问题:让 Key 命名可被一站式检索与审计,避免各模块各写一份 magic string 导致后续 Key
+ * 迁移/重命名困难;同时为运维提供"全组件用到哪些 Redis Key"的清晰视图。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

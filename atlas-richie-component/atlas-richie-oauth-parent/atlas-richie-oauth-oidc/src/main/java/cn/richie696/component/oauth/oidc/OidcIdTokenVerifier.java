@@ -11,7 +11,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** 依赖 issuer、audience 和 nonce 的 OIDC ID Token 验证器。 */
+/**
+ * OIDC ID Token 的本地校验器，强制对齐 issuer / audience / nonce 三大协议约定。
+ *
+ * <p>处于 OAuth Service 与 {@link OidcIdTokenClaims} 之间：上游接 ID Token JWT 字符串、
+ * 期望的 clientId 与 nonce，下游产出经过完整协议校验的 Claims 视图。它直接基于 java-jwt
+ * 库做签名与 Claims 比对，不关心密钥来源——密钥可在测试中注入 {@code RSAPublicKey}，
+ * 在生产中交给 {@link cn.richie696.component.oauth.core.spi.JwkSetProvider} 派生。
+ *
+ * <p>解决"RP 侧自己写一签发校验却漏掉 nonce/aud 一致性检查"导致的会话绑定绕过或重放
+ * 风险，把 OIDC Core 1.0 §3.1.3.7 规定的强制校验项收敛到一个组件，降低 RP 接入 OIDC
+ * 的协议门槛。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public final class OidcIdTokenVerifier {
 
     private final RSAPublicKey publicKey;

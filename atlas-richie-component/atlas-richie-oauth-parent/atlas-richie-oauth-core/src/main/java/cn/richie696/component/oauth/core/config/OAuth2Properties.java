@@ -19,9 +19,21 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * OAuth 2.1 组件配置属性
+ * OAuth 2.1 组件的统一配置属性。
  * <p>
- * 配置前缀：{@code platform.component.oauth}
+ * 配置前缀 {@code platform.component.oauth};承载组件级开关(enabled)、签名密钥(tokenSecret)、
+ * Token TTL、issuer/audience、每日签发限额、撤销前序 token 开关、错误文档基地址以及 RFC 8628
+ * Device Authorization 相关参数。
+ * </p>
+ * <p>
+ * 处于整个 oauth 组件的配置入口位置:由 {@link OAuth2AutoConfiguration} 通过
+ * {@code @EnableConfigurationProperties} 绑定;TokenEndpoint、HmacAccessTokenSigner、
+ * DeviceAuthorizationService 等运行时直接读取所需字段,OAuth Service 可在子类化时补充业务字段。
+ * </p>
+ * <p>
+ * 解决的问题:把组件的所有可调参数收敛到一份 ConfigurationProperties,既支持 IDE 自动补全与 YAML
+ * 校验,也让"是否启用 OAuth"这种开关无需业务方写自定义 @ConditionalOnExpression。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

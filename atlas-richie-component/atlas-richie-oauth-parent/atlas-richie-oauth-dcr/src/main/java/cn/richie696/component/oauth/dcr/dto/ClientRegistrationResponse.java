@@ -23,9 +23,21 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * OAuth 2.0 Dynamic Client Registration Response
+ * RFC 7591 动态客户端注册响应 DTO。
  * <p>
- * RFC 7591 客户端注册响应 DTO。
+ * 描述注册端点返回的全部字段:自动生成的 {@code client_id}、仅在非 {@code none} 认证方式下返回的
+ * {@code clientSecret} 与 {@code clientSecretExpiresAt}、用于后续更新/删除的
+ * {@code registrationAccessToken} 与 {@code registrationClientUri},以及原样回传的客户端元数据;
+ *由 {@link DynamicClientRegistrationEndpoint} 构造,经 OAuth Service 序列化为 JSON 返回。
+ * </p>
+ * <p>
+ * 处于 oauth-dcr 的协议输出位置:是 DynamicClientRegistrationEndpoint 对外暴露的唯一协议契约,
+ * 客户端拿到响应后必须保存 registrationAccessToken 才能后续管理自己的客户端元数据。
+ * </p>
+ * <p>
+ * 解决的问题:把 RFC 7591 注册响应固化为统一 DTO,避免在协议层各处重复写 JSON 拼装;同时通过把
+ * clientSecret 仅在非 none 方式下回传,确保公开客户端不会泄露 secret,降低泄露面。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

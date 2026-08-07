@@ -14,10 +14,21 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 面向 OAuth Server 的最小黑盒 HTTP 客户端。
+ * OAuth 测试支撑工具（不属于生产运行时）：面向 OAuth Server 的最小黑盒 HTTP 客户端。
  *
- * <p>不跟随重定向，便于测试授权码回调中的 code/state，也不负责 JSON 反序列化，
- * 这样服务可以自由使用 Jackson、WebTestClient 或自己的响应模型。</p>
+ * <p>职责链位置：在 OAuth 黑盒集成测试中位于"协议流量发生器"环节，
+ * 上游是 {@link OAuthTestEndpoints} 与 {@link OAuthTestHttp} 提供的路径与表单构造，
+ * 下游是断言工具集 {@link OAuthTestAssertions}。该客户端默认关闭自动重定向，
+ * 便于测试授权码回调中的 {@code code} / {@code state}，并刻意不内置 JSON 反序列化，
+ * 让服务工程可以自由选择 Jackson、WebTestClient 或自己的响应模型。</p>
+ *
+ * <p>解决以下问题：黑盒测试需要把 OAuth 协议动作（authorize、token、introspect、revoke）
+ * 真实地"打到"运行中的 OAuth Service，但又不希望被 Spring Web 栈或具体 SDK 绑架；
+ * 该客户端基于 JDK 自带 {@link java.net.http.HttpClient}，以最少的依赖覆盖 OAuth 协议的
+ * 四种核心表单动作，使测试用例可以在任何能跑 JUnit 的环境执行。</p>
+ *
+ * @author richie696
+ * @since 2026-08-07
  */
 public final class OAuthTestHttpClient {
 

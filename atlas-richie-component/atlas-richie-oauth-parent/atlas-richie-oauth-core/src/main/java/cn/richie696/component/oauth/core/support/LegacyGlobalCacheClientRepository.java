@@ -9,8 +9,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 旧版 Redis Hash 兼容适配器。
- * <p>仅由无参兼容构造方法使用；新的服务应注入 ClientRepository 或 OAuthCache。</p>
+ * 旧版 Redis Hash 客户端存储的兼容适配器。
+ * <p>
+ * 通过平台 {@code GlobalCache} 的 field/struct/key 三类操作读取字段式客户端配置,与新版的
+ * {@link CacheBackedClientRepository} 不同,本类按字段逐个读取后组装;同时保留对只提供 key/struct
+ * 操作的测试/适配环境的容错。
+ * </p>
+ * <p>
+ * 处于 oauth-core 的兼容适配位置:仅由 {@link ClientRegistry} 的无参兼容构造方法使用,新的服务
+ * 应注入 ClientRepository 或 OAuthCache,而非直接依赖本类。
+ * </p>
+ * <p>
+ * 解决的问题:让既有的"按字段分散存储"的客户端元数据无需一次性迁移,即可被新版 ClientRegistry 消费;
+ * 同时把兼容边界封装在一个独立类里,避免污染正式实现。
+ * </p>
+ *
+ * @author richie696
+ * @since 2026-08-07
  */
 public final class LegacyGlobalCacheClientRepository implements ClientRepository {
 

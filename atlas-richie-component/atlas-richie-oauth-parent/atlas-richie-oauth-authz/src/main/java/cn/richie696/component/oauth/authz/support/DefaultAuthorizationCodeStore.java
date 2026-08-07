@@ -28,9 +28,22 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Redis 实现的 AuthorizationCodeStore
+ * 基于 Redis 的 {@link AuthorizationCodeStore} 默认实现。
  * <p>
- * 使用 GlobalCache（Redis）存储授权码数据。
+ * 通过 {@link OAuthCache} 间接访问 atlas-richie-component-cache,把授权码及绑定信息
+ * (clientId/redirectUri/PKCE challenge/scopes/userId/resource/nonce)写到 Redis,所有 Key 前缀走
+ * {@link cn.richie696.component.oauth.core.config.OAuth2RedisKey#OAUTH2_AUTHZ_CODE};消费动作在
+ * {@link OAuthLock} 分布式锁内完成"读 + 删",保证一次性语义,杜绝并发兑换。
+ * </p>
+ * <p>
+ * 处于 oauth-authz 的默认存储实现位置:由
+ * {@link cn.richie696.component.oauth.authz.config.OAuth2AuthzAutoConfiguration} 在缺省 Bean 时
+ * 注册,被 {@link AuthorizationEndpoint} 写入、被 {@link AuthorizationCodeGrant} 消费。
+ * </p>
+ * <p>
+ * 解决的问题:让授权码的"短期状态 + 一次性消费"两个安全敏感点有一个开箱即用的 Redis 实现,业务方
+ * 替换存储后端时无需重写并发控制;同时把 Key 命名收敛到 OAuth2RedisKey 防止散落。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

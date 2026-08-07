@@ -1,6 +1,14 @@
 package cn.richie696.component.oauth.contract;
 
-/** OAuth 协议核心常量，避免协议内核依赖 Gateway 工程的合约包。 */
+/**
+ * OAuth 协议核心字面常量 (grant_type / token_type / 错误码 / JWT claim 名 / 默认 TTL) 的统一收口。
+ * <p>
+ * 处于 OAuth 契约层的最底层一环, 与 {@link OAuthErrorCodes}、{@link OAuthGrantTypes} 共同构成组件的"公共词汇表", 被同包 wire 模型以及上游 core / authz / dcr 模块直接引用。
+ * 解决"协议字符串散落在各处、口径不一致、跨模块同步成本高"的问题, 让协议内核不必依赖 Gateway 工程包也能拿到稳定的 wire 词表。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public interface OAuth2Constants {
 
     String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";

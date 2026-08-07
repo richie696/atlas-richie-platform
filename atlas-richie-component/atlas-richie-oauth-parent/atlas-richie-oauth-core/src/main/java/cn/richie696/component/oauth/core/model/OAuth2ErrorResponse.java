@@ -21,7 +21,21 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * OAuth 2.1 标准错误响应
+ * OAuth 2.1 标准错误响应模型。
+ * <p>
+ * 对应 RFC 6749 §5.2 的错误响应字段:{@code error} 协议错误码、{@code error_description} 人类可读
+ * 描述、可选 {@code error_uri} 指向错误文档;由 OAuth Service 在 HTTP 适配层序列化为 JSON 后
+ * 返回给客户端。
+ * </p>
+ * <p>
+ * 处于 oauth-core 的协议输出契约位置:由 TokenEndpoint、AuthorizationEndpoint、AuthorizationCodeGrant
+ * 等所有协议服务在抛出 {@code BusinessException} 后由 HTTP 适配层统一映射为该对象;错误文档基地址
+ * 由 {@link cn.richie696.component.oauth.core.config.OAuth2Properties#getErrorDocsBaseUri()} 控制。
+ * </p>
+ * <p>
+ * 解决的问题:把协议错误响应固化为统一模型,避免每个端点自行拼装 JSON;同时把 error_uri 这一可选
+ * 字段留空控制,让运维可以通过配置批量启用错误文档链接而无需改协议层代码。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

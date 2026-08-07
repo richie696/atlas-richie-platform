@@ -24,10 +24,22 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * PKCE S256 挑战生成与验证
+ * PKCE S256 挑战生成与验证(拒绝 plain 方法)。
  * <p>
- * 支持 OAuth 2.1 规范的 PKCE (Proof Key for Code Exchange) 流程，
- * 仅支持 S256 方法，拒绝 plain 方法。
+ * 支持 OAuth 2.1 规范的 PKCE(Proof Key for Code Exchange)流程:生成 43-128 位
+ * {@code code_verifier}、SHA-256 + Base64URL 派生出 {@code code_challenge}、验签时使用
+ * {@link MessageDigest#isEqual} 做时序安全比较,默认拒绝 {@code plain} 方法。
+ * </p>
+ * <p>
+ * 处于 oauth-authz 的协议安全位置:由 {@link AuthorizationEndpoint} 在生成授权码时记录挑战,
+ * 由 {@link AuthorizationCodeGrant} 在兑换授权码时校验;同时为 OAuth Service 提供
+ * {@link #generateCodeVerifier()} 直接生成 verifier 的入口。
+ * </p>
+ * <p>
+ * 解决的问题:把 PKCE 这一"防截获"的强制校验内建到组件,默认拒绝不安全的 plain 方法;同时用
+ * {@code MessageDigest.isEqual} 避免时序攻击,让公开客户端(SPA / 移动端)即使在不可信信道也能
+ * 安全完成 authorization_code 流程。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

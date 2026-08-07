@@ -6,11 +6,11 @@
 
 1. `atlas-richie-oauth-parent`：可复用的 OAuth 协议能力组件；
 2. `atlas-richie-gateway-service`：统一入口和 Resource Server 适配层；
-3. `atlas-richie-oauth-service`：独立部署的 OAuth Authorization Server（AS）服务。
+3. `atlas-richie-oauth-server`：独立部署的 OAuth Authorization Server（AS）服务。
 
 本文先定义职责、模块、接口和数据边界，再指导后续代码迁移。除非另有说明，本文中的“当前实现”指仓库现状，“目标实现”指完成拆分后的生产形态。
 
-> 关键结论：`atlas-richie-oauth-parent` 不是可直接部署的完整 AS。它提供协议内核、SPI、缓存适配和 Spring Boot 集成能力；真正负责登录、同意页、客户端管理、持久化和对外 HTTP 端点的，是独立的 `atlas-richie-oauth-service`。
+> 关键结论：`atlas-richie-oauth-parent` 不是可直接部署的完整 AS。它提供协议内核、SPI、缓存适配和 Spring Boot 集成能力；真正负责登录、同意页、客户端管理、持久化和对外 HTTP 端点的，是独立的 `atlas-richie-oauth-server`。
 
 ### 1.1 术语约定
 
@@ -30,7 +30,7 @@
 ```mermaid
 flowchart LR
     Client[OAuth Client<br/>MCP Client / 第三方系统 / Web App]
-    AS[atlas-richie-oauth-service<br/>独立 Authorization Server]
+    AS[atlas-richie-oauth-server<br/>独立 Authorization Server]
     PaaS[PaaS Authorization Server<br/>兼容接入]
     Gateway[atlas-richie-gateway-service<br/>Gateway + Resource Server Adapter]
     Resource[MCP Server / 业务 API<br/>Protected Resource]
@@ -53,7 +53,7 @@ flowchart LR
 | 层次 | 工程 | 核心定位 | 必须拥有 | 明确不拥有 |
 |---|---|---|---|---|
 | 能力组件层 | `atlas-richie-oauth-parent` | 协议、领域模型、SPI 和适配器 | Token/授权码/PKCE/DCR 等可复用能力，标准错误模型，Token 校验端口 | 登录页面、管理员 UI、业务用户数据库、服务部署入口 |
-| 认证中心层 | `atlas-richie-oauth-service` | 独立 AS 产品和运行时 | 标准 OAuth HTTP 端点、用户登录、授权同意、客户端/Scope/Resource 管理、密钥、审计、持久化 | Gateway 路由、下游业务鉴权、业务接口权限判断 |
+| 认证中心层 | `atlas-richie-oauth-server` | 独立 AS 产品和运行时 | 标准 OAuth HTTP 端点、用户登录、授权同意、客户端/Scope/Resource 管理、密钥、审计、持久化 | Gateway 路由、下游业务鉴权、业务接口权限判断 |
 | 流量入口层 | `atlas-richie-gateway-service` | Gateway + Resource Server | Token 接收和校验、issuer/audience/scope/resource 校验、下游身份透传、入口审计和风控 | Token 签发、刷新、撤销、客户端注册、授权同意、用户认证 |
 
 ### 2.2 信任关系
@@ -128,7 +128,7 @@ flowchart TB
     Test --> Starter
 ```
 
-组件模块不得依赖 `atlas-richie-gateway-service` 或未来的 `atlas-richie-oauth-service`，避免形成反向依赖和服务代码泄漏到公共组件。
+组件模块不得依赖 `atlas-richie-gateway-service` 或未来的 `atlas-richie-oauth-server`，避免形成反向依赖和服务代码泄漏到公共组件。
 
 ### 3.2 组件功能明细
 
@@ -214,18 +214,18 @@ DCR 不应默认开放公网匿名注册。OAuth Service 应通过注册码、�
 | JWK Set | JWK 解析、缓存和轮换适配 | OAuth Service 的 Key Store/JWKS endpoint |
 | 用户、登录会话、同意记录 | 仅定义输入端口 | OAuth Service 的身份源和数据库 |
 
-## 4. `atlas-richie-oauth-service` 设计
+## 4. `atlas-richie-oauth-server` 设计
 
 ### 4.1 服务定位
 
-`atlas-richie-oauth-service` 是可以在公网、专有云、内网和完全离线环境独立运行的 Authorization Server 产品。它可以使用本地组件，也可以通过标准协议对接外部 PaaS AS；对下游客户端和 Gateway 暴露统一的 OAuth 接口。
+`atlas-richie-oauth-server` 是可以在公网、专有云、内网和完全离线环境独立运行的 Authorization Server 产品。它可以使用本地组件，也可以通过标准协议对接外部 PaaS AS；对下游客户端和 Gateway 暴露统一的 OAuth 接口。
 
 服务不依赖某一家 PaaS。涉密或断网环境下，数据库、Redis、用户目录、证书、签名密钥和前端静态资源均可本地部署。
 
 ### 4.2 建议工程模块
 
 ```text
-atlas-richie-oauth-service/
+atlas-richie-oauth-server/
 ├── oauth-service-boot          # Spring Boot 启动、配置、健康检查、运行时组装
 ├── oauth-service-web           # OAuth 标准端点、错误响应、协议过滤器
 ├── oauth-service-admin         # 客户端、Scope、Resource、密钥、租户和审计管理 API

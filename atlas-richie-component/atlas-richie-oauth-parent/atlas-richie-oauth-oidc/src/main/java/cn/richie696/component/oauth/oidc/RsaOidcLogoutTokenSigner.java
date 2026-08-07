@@ -10,7 +10,21 @@ import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
-/** 使用 RS256 签发符合 OIDC Backchannel Logout 规范的 Logout Token。 */
+/**
+ * 使用 RS256 签发符合 OIDC Backchannel Logout 规范的 Logout Token 的默认实现。
+ *
+ * <p>处于 {@link OidcBackchannelLogoutService} 与 OAuth Service 的密钥托管层之间：
+ * 上游接 {@link OidcLogoutTokenRequest}，下游按 Backchannel Logout 规范把
+ * {@code iss / aud / iat / jti / events / sub / sid} 写入 JWT 并使用配置的 RSA 私钥
+ * 签名。事件类型固定为 {@link OidcBackchannelLogoutService#BACKCHANNEL_LOGOUT_EVENT}。
+ *
+ * <p>解决"OP 需要为 Backchannel Logout 单独再实现一遍带 events claim 的 JWT 签发"的
+ * 重复劳动，把这一协议面打成可注入的默认 Bean，业务侧只需提供 RSA 私钥与
+ * {@code kid} 即可；同时保证密钥轮换时通过 {@code kid} 维持与 RP 间的 JWKS 兼容。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public final class RsaOidcLogoutTokenSigner implements OidcLogoutTokenSigner {
 
     private final String keyId;

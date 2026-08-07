@@ -24,9 +24,21 @@ import cn.richie696.component.oauth.dcr.spi.ClientIdMetadataDocumentResolver;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Client ID Metadata Document 解析器默认实现
+ * {@link ClientIdMetadataDocumentResolver} 的 Redis 默认实现。
  * <p>
- * 从 Redis 读取客户端元数据。
+ * 从 {@code OAUTH2_CLIENT_META} Key 直接读取已注册的元数据文档;若调用方同时传入外部 metadataUri,
+ * 在返回文档前由 {@link SSRFProtection} 校验该 URI 是否安全(只校验、不发起实际请求)。
+ * </p>
+ * <p>
+ * 处于 oauth-dcr 的默认解析器位置:由
+ * {@link cn.richie696.component.oauth.dcr.config.OAuth2DCRAutoConfiguration} 在缺省 Bean 时
+ * 注册,被 {@link DynamicClientRegistrationEndpoint} 在更新与读取客户端元数据时调用;同时兼容
+ * 旧版 {@code LegacyGlobalCacheOAuthCache} 与新版 {@link OAuthCache}。
+ * </p>
+ * <p>
+ * 解决的问题:把"如何按 clientId 拿到元数据文档"封装为 SPI 默认实现,同时在解析路径上把 SSRF 校验
+ * 串起来,避免业务方自己写解析器时漏掉安全检查。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

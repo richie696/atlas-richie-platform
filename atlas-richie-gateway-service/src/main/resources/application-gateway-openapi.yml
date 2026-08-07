@@ -163,7 +163,7 @@ platform:
       enable: true
       error-docs-base-uri: 'https://oauth.example.com/errors#'
       # 迁移期可配置 AS 地址；未配置时 Gateway 不暴露本地 OAuth endpoint
-      # authorization-server-base-uri: 'http://atlas-richie-oauth-service:9600'
+      # authorization-server-base-uri: 'http://atlas-richie-oauth-server:9600'
     # 跨服务共享契约（atlas-richie-contract 的 GatewayContract）
     contract:
       token:

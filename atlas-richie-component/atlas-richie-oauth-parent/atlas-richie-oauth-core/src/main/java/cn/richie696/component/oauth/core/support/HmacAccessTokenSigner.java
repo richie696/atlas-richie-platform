@@ -20,7 +20,26 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/** 兼容当前组件配置的 HMAC 签名器；生产 AS 应替换为非对称签名实现。 */
+/**
+ * 兼容当前组件配置的 HMAC Access Token 签名器。
+ * <p>
+ * 使用对称密钥(HMAC256)签发与验证 JWT,密钥来自 {@link cn.richie696.component.oauth.core.config.OAuth2Properties#getTokenSecret()};
+ * 同时保留对组件升级前由平台 JwtUtils 签发的存量 token 的兼容路径(由 TokenEndpoint 的回退逻辑触发)。
+ * </p>
+ * <p>
+ * 处于 oauth-core 的默认签名器位置:由 {@link cn.richie696.component.oauth.core.config.OAuth2AutoConfiguration}
+ * 作为 {@link AccessTokenSigner} 的默认 Bean 注册;生产 Authorization Server 应注入
+ * {@link RsaAccessTokenSigner} 等非对称实现,本类仅用于开发/兼容场景。
+ * </p>
+ * <p>
+ * 解决的问题:在缺少密钥管理服务的轻量场景下,用对称密钥也能跑通 OAuth Token 端点;同时通过把
+ * 保留 claim(iss/sub/aud/exp/iat/nbf/jti/scope/client_id)显式列出,保证扩展声明不会覆盖协议
+ * 关键字段。
+ * </p>
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public class HmacAccessTokenSigner implements AccessTokenSigner {
 
     private final OAuth2Properties properties;

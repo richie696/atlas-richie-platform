@@ -11,7 +11,24 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-/** OIDC Discovery 客户端，用于 OAuth Service 对接 Microsoft/PaaS/上游 OIDC Provider。 */
+/**
+ * OIDC Discovery 客户端，按 {@code /.well-known/openid-configuration} 解析上游 OIDC
+ * Provider 的端点与能力声明。
+ *
+ * <p>处于 OAuth Service 与上游 OIDC Provider（Microsoft Entra ID / Okta / Auth0 / Keycloak
+ * 等 PaaS IdP）之间：上游给定 discovery URI，下游发起一次 GET 请求并把响应解析为
+ * {@link OidcProviderMetadata}，后续 ID Token 验证、UserInfo 调用、RP-Initiated Logout
+ * 都以此为入口。本类不持有任何状态、不缓存解析结果，使用 JDK 内置
+ * {@code java.net.http.HttpClient} 完成调用，对 Spring / Servlet 零依赖。
+ *
+ * <p>解决"OAuth Service 要从本地 IdP 模式切换到对接外部 OIDC Provider 时，需要重新
+ * 解析一套 Discovery 字段并改写下游调用"的集成痛点，把所有 OIDC Discovery 字段（含
+ * front/backchannel logout 能力）一次性反序列化为不可变 record，让下游只需决定
+ * "用哪个端点"，不必再处理 HTTP 与 JSON。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public final class OidcProviderMetadataResolver {
 
     private final HttpClient httpClient;

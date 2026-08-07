@@ -330,7 +330,7 @@ platform:
     interface-auth:
       enable: true
       error-docs-base-uri: https://oauth.example.com/errors#
-      # authorization-server-base-uri: http://atlas-richie-oauth-service:9600
+      # authorization-server-base-uri: http://atlas-richie-oauth-server:9600
     audit-enabled: true   # resource access audit publish
 
   oauth:

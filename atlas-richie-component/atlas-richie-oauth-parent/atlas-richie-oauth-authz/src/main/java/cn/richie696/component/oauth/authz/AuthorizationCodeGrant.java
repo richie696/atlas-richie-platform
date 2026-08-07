@@ -43,9 +43,22 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * OAuth 2.1 授权码模式处理
+ * {@code authorization_code} grant 的 code → token 兑换服务。
  * <p>
- * 处理授权码模式下的 code→token 交换流程。
+ * 一次调用内完成:客户端认证、授权码原子消费(clientId/redirectUri/PKCE 绑定校验)、按 scopes 与
+ * resource 签发 access/refresh token 并写入 {@link TokenStore};其中 PKCE 校验走
+ * {@link PKCESupport},签名走 {@link AccessTokenSigner},扩展声明走 {@link AccessTokenClaimsCustomizer}。
+ * </p>
+ * <p>
+ * 处于 oauth-authz 模块的协议服务位置:被 OAuth Service 在 HTTP 适配层包装后挂到 {@code /oauth2/token}
+ * 的 {@code grant_type=authorization_code} 分支;依赖 oauth-core 的 {@link TokenStore}/
+ * {@link ClientRegistry}/{@link ClientAuthenticationService} 完成签名、Secret 校验与客户端元数据查询。
+ * </p>
+ * <p>
+ * 解决的问题:把 RFC 6749 §4.1.3 的 code 兑换细节(认证、绑定校验、一次性消费、签名、IP 绑定)封装到
+ * 独立服务,让 OAuth Service 不必关心重放保护和原子语义;同时把 PKCE 这种"防截获"的强制校验内建
+ * 到 grant 流程,默认拒绝 plain 方法。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

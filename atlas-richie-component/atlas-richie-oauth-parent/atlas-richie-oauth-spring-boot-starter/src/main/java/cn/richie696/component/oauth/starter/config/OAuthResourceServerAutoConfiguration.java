@@ -30,7 +30,11 @@ import java.net.URI;
 import java.time.Duration;
 
 /**
- * Resource Server/Gateway Adapter 自动装配。
+ * Resource Server 与 Gateway Adapter 的 Spring Boot 自动装配入口。
+ *
+ * <p>职责链位置：处于 oauth-core / oauth-resource-server / oauth-oidc 等纯领域模块与业务应用之间，
+ * 把协议级 bean 通过条件装配暴露为 Spring 容器 bean。它本身不实现任何协议算法，
+ * 也不强制依赖 Spring Security；业务应用可自由选择以 Filter、Servlet、Reactor 或其他方式暴露。</p>
  *
  * <p>支持三种明确模式：</p>
  * <ul>
@@ -40,6 +44,9 @@ import java.time.Duration;
  *     <li>Hybrid：同时配置两者；优先本地 JWT 校验，失败后回源 introspection。</li>
  * </ul>
  * <p>两者都未配置时组件仍可启动，但认证会 fail-closed；生产环境应在配置校验阶段拒绝这种配置。</p>
+ *
+ * @author richie696
+ * @since 2026-08-07
  */
 @AutoConfiguration
 @ConditionalOnProperty(prefix = "platform.oauth.resource-server", name = "enabled", havingValue = "true")

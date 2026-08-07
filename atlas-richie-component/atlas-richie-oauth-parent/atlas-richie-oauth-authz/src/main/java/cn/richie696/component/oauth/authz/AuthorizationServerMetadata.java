@@ -23,9 +23,21 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * RFC 8414 Authorization Server Metadata
+ * RFC 8414 Authorization Server Metadata 模型。
  * <p>
- * 端点：/.well-known/oauth-authorization-server
+ * 端点 {@code /.well-known/oauth-authorization-server};描述授权服务器的能力:issuer、各端点 URL、
+ * 支持的 response_type、PKCE code_challenge_method、grant_types、scopes;由 OAuth Service 在
+ * HTTP 适配层序列化为 RFC 8414 规定的 JSON。
+ * </p>
+ * <p>
+ * 处于 oauth-authz 的协议输出契约位置:由 OAuth Service 在启动时基于 OAuth2Properties 与实际
+ * 注册的 Bean 构造,作为 Discovery 文档对外发布;客户端据此动态发现端点与能力,避免硬编码 URL。
+ * </p>
+ * <p>
+ * 解决的问题:用统一模型收敛 Discovery 文档的全部字段,避免在适配层各处手写 JSON;同时把可选
+ * 字段(Device Authorization Endpoint、Introspection Endpoint 等)以 @Builder 默认值形式表达,
+ * 让"启用哪些能力就声明哪些端点"成为自然语义。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

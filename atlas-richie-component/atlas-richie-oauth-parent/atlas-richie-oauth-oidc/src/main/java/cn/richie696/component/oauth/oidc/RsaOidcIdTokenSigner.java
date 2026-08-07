@@ -21,7 +21,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** 使用 RSA SHA-256 签发 OIDC ID Token 的默认实现。 */
+/**
+ * 使用 RSA SHA-256 签发 OIDC ID Token 的默认实现，同时承担 JWK 公钥发布者角色。
+ *
+ * <p>处于 {@link OidcIdTokenService} 与 OAuth Service 的 JWKS 端点之间：上游接
+ * {@link OidcIdTokenRequest} 装配 JWT Claims 并签名，下游通过 {@link JwkSetProvider#keys()}
+ * 输出当前签名公钥，供 OAuth Service 暴露为 {@code /.well-known/jwks.json}。
+ * 当前实现锁定 RS256 算法，不支持其它曲线或对称算法。
+ *
+ * <p>解决"OP 框架不内置任何签名实现时，落地项目都得自己写一遍 JWT + JWKS 双产出"
+ * 的重复劳动，把生产环境最常用的 RSA-SHA256 路径打成可立即装配的默认 Bean，
+ * 同时确保签名 Claims 不可被业务侧覆盖协议保留字段（iss/sub/aud/exp/iat）。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public final class RsaOidcIdTokenSigner implements OidcIdTokenSigner, JwkSetProvider {
 
     private final String keyId;

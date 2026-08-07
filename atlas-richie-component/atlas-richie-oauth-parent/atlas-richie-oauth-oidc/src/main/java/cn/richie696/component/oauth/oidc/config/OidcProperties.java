@@ -8,7 +8,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** OIDC Provider 的协议配置；用户、MFA 和 Claims 数据由服务工程注入。 */
+/**
+ * OIDC Provider 的协议配置，绑定到 {@code platform.oauth.oidc} 配置前缀。
+ *
+ * <p>处于 Spring Boot 配置加载层与所有 OIDC 协议服务（ID Token 签发、UserInfo 过滤、
+ * Discovery 输出、Logout 编排）之间：上游由 {@code application.yml} / {@code .properties}
+ * 装配，下游被 {@link OidcProviderMetadataService}、{@link OidcIdTokenService}、
+ * {@link OidcUserInfoService} 等服务按需读取。它只声明"OP 说自己支持什么"，与运行时
+ * 用户、MFA、Claims 等业务数据完全解耦。
+ *
+ * <p>解决"OIDC 各端点行为散落在多个 Controller 的注解里、协议能力难以统一审计"
+ * 的合规痛点，把 issuer、支持的 scope/grant/response_type、ID Token 签名算法、
+ * UserInfo scope→Claims 默认映射等集中到一处，启动期即可一次性校验"声明的能力是否
+ * 与 AS 实现一致"。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 @Data
 @ConfigurationProperties(prefix = "platform.oauth.oidc")
 public class OidcProperties {

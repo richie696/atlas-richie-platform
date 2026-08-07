@@ -2,7 +2,26 @@ package cn.richie696.component.oauth.core.spi;
 
 import cn.richie696.component.oauth.core.model.DeviceAuthorizationRecord;
 
-/** RFC 8628 设备授权状态存储端口。 */
+/**
+ * RFC 8628 Device Authorization 状态的存储端口。
+ * <p>
+ * 提供 device_code / user_code 短期生命周期、轮询间隔限速、授权态原子消费这些契约;默认走
+ * {@link cn.richie696.component.oauth.core.support.CacheBackedDeviceAuthorizationStore} 走 Redis,
+ * OAuth Service 可注入自定义实现,例如把状态推到外部会话中心。
+ * </p>
+ * <p>
+ * 处于 oauth-core 的短期状态接入位置:由 {@link DeviceAuthorizationService} 直接调用;其
+ * 原子消费语义是设备码安全的关键,生产实现必须在分布式锁内完成"读 + 删",杜绝并发轮询导致
+ * {@code slow_down} 被绕过。
+ * </p>
+ * <p>
+ * 解决的问题:把设备授权流的短期状态与"轮询限速 + 一次性消费"这种安全敏感的并发语义封装成 SPI,
+ * 让业务方替换存储后端时不会破坏防重放与速率限制的保证。
+ * </p>
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public interface DeviceAuthorizationStore {
 
     void save(DeviceAuthorizationRecord record, long ttlMillis);

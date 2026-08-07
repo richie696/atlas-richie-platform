@@ -37,10 +37,23 @@ import org.springframework.beans.factory.ObjectProvider;
 import java.util.List;
 
 /**
- * OAuth 2.0 DCR 自动装配
+ * oauth-dcr 模块的 Spring Boot 自动装配入口。
  * <p>
- * 通过条件装配启用动态客户端注册组件，配置前缀 {@code platform.component.oauth-dcr}
- * 仅在 {@code platform.component.oauth.enabled=true} 时生效。
+ * 通过 {@link Bean} + {@link ConditionalOnMissingBean} 显式注册 {@link SSRFProtection}/
+ * {@link ClientIdMetadataDocumentResolver}/{@link ClientRegistrationStore}/{@link DynamicClientRegistrationEndpoint};
+ * 在 {@code platform.component.oauth.enabled=true} 时随 {@link Import} 引入的 oauth-core
+ * {@link OAuth2AutoConfiguration} 一同生效。SSRF 防护的参数(白名单域名、DNS 缓存 TTL)走
+ * {@code platform.component.oauth.dcr.*} 配置。
+ * </p>
+ * <p>
+ * 处于 oauth 组件的模块装配层位置:不持有业务逻辑,只把 oauth-dcr 包内的协议服务与安全策略接入 Spring 容器;
+ * 下游是 OAuth Service 在 HTTP 适配层暴露 RFC 7591 的 /register 端点。
+ * </p>
+ * <p>
+ * 解决的问题:让 DCR 模块在 oauth-core 启用后自动生效,并把 SSRF 防护、客户端元数据解析器、注册存储
+ * 三个 SPI 全部暴露为可替换的 Bean,业务方可以注入数据库事务版 ClientRegistrationStore 或自定义
+ * 域名白名单,无需禁用整个模块。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

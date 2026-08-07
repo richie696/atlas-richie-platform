@@ -6,7 +6,21 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/** OIDC Backchannel Logout 编排服务，不直接绑定 HTTP 框架或用户会话存储。 */
+/**
+ * OIDC Backchannel Logout 的编排服务，把"用户登出"事件拆解为给每个 RP 投递一份 Logout Token。
+ *
+ * <p>处于 OAuth Service 与 {@link OidcBackchannelLogoutNotifier} 之间：上游接收来自 OAuth Service
+ * 的登出请求（携带 subject 或 sessionId），下游依赖 {@link OidcLogoutTokenSigner} 签名并通过
+ * 注入的 notifier 完成 HTTP 投递。组件不直接耦合 HTTP 框架、用户会话存储或客户端元数据源，
+ * 业务侧在装配阶段一并把这些依赖补齐。
+ *
+ * <p>解决"OP 想让多个 RP 同步登出却不得不自己遍历客户端 + 签名 + HTTP 投递"导致的协议逻辑散落
+ * 问题，把 OpenID Connect Backchannel Logout 的协议面收敛在一处，让 AS 只需关心"用户下线了"
+ * 这一个事件，剩下的会话清理与会话失效由各 RP 自己完成。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public final class OidcBackchannelLogoutService {
 
     public static final String BACKCHANNEL_LOGOUT_EVENT =

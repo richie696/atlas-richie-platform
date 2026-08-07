@@ -20,8 +20,23 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * OAuth Server 和 Resource Server 集成测试共用的 RSA/JWKS 测试密钥材料。
- * 每次调用 {@link #generate(String)} 都会生成新密钥，不依赖工作区文件或外部 KMS。
+ * OAuth 测试支撑工具（不属于生产运行时）：OAuth Server 与 Resource Server 集成测试共用的
+ * RSA / JWKS 测试密钥材料。
+ *
+ * <p>职责链位置：在 OAuth 与 Resource Server 的集成测试中位于"前置准备"环节，
+ * 为 {@code RsaAccessTokenSigner}、{@code JwkSource}（具体实现 {@link StaticJwkSource}）、
+ * 以及 MockWebServer / 内置 HTTP Server 的 JWKS 响应提供一次性密钥。每次调用
+ * {@link #generate(String)} 都会生成新的 RSA 密钥，不依赖工作区文件或外部 KMS，
+ * 保证测试用例之间互不污染。</p>
+ *
+ * <p>解决以下问题：Resource Server 的 JWT 校验、OAuth Server 的 JWT 签发、
+ * 以及 JWKS 端点的 mock 响应都需要一套配套的 RSA 密钥对 + {@code kid}，
+ * 而散落在每个测试用例中会导致密钥复用与 {@code kid} 漂移；
+ * 该工具把密钥生成、JWK JSON 序列化、PEM 编解码、可直接校验的 access token
+ * 构造统一封装，使集成测试只需一行即可获得配套密钥材料。</p>
+ *
+ * @author richie696
+ * @since 2026-08-07
  */
 public final class OAuthTestKeyMaterial {
 

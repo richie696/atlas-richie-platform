@@ -31,9 +31,21 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * SSRF 攻击防护
+ * 客户端元数据外链 URL 的 SSRF(Server-Side Request Forgery)防护器。
  * <p>
- * 防止 Server-Side Request Forgery 攻击，保护 JWK Set URI 等外部资源加载。
+ * 对任意待加载 URL 依次校验:协议必须 HTTPS、Host 不能是裸 IP、解析结果不能落在 IPv4/IPv6 内网与
+ * 保留地址段、可选白名单域名匹配;DNS 解析结果写入 {@link OAuthCache} 防止反复解析带来的放大探测
+ * 与延迟。
+ * </p>
+ * <p>
+ * 处于 oauth-dcr 模块的安全边界位置:由 {@link DynamicClientRegistrationEndpoint} 在校验
+ * redirect_uri 与 jwks_uri 时调用,亦被 {@link DefaultClientIdMetadataDocumentResolver} 用于
+ * 解析外部 metadata 文档前的合法性检查。
+ * </p>
+ * <p>
+ * 解决的问题:阻止恶意客户端在 DCR 阶段通过 redirect_uri / jwks_uri 把请求重定向到内网、链路本地
+ * 或云元数据端点,把 SSRF 风险拦截在客户端注册入口,不污染下游授权码、Token 与 JWKS 加载流程。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

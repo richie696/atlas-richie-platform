@@ -10,7 +10,27 @@ import cn.richie696.component.oauth.contract.OAuth2Constants;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-/** 与 Servlet、Session 和 UI 无关的授权请求及授权码服务。 */
+/**
+ * 与 Servlet、Session 和 UI 无关的授权请求及授权码服务。
+ * <p>
+ * 协议入口 {@link #validate(OAuthAuthorizationRequest)} 完成客户端/redirect_uri/PKCE S256/scope/
+ * grant_type 的全量校验并返回规范化请求;{@link #issueCode(OAuthAuthorizationRequest, String)} 仅
+ * 在调用方已经完成用户认证与授权同意后生成授权码;{@link #createCodeVerifier()} 为 OAuth Service
+ * 提供标准 verifier 生成入口。
+ * </p>
+ * <p>
+ * 处于 oauth-authz 的框架无关协议位置:与 {@link AuthorizationEndpoint}(Servlet 适配层)并行存在,
+ * 新业务或非 Servlet 场景(Reactive/Gateway)直接使用本类,无需依赖 Servlet API。
+ * </p>
+ * <p>
+ * 解决的问题:把"授权请求校验"与"HTTP 框架"解耦,让 OAuth Service 可以在不绑定 Servlet 容器的
+ * 场景(WebFlux/网关脚本)直接复用同一套协议语义;同时把"用户登录 + 同意"这一需要 UI 的步骤显式
+ * 留在调用方,组件不假设登录方式。
+ * </p>
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public class AuthorizationService {
 
     private static final SecureRandom RANDOM = new SecureRandom();

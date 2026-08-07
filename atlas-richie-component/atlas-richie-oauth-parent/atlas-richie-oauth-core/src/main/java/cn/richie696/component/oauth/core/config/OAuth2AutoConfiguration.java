@@ -43,12 +43,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.beans.factory.ObjectProvider;
 
 /**
- * OAuth 2.1 自动装配
+ * OAuth 2.1 协议内核的 Spring Boot 自动装配入口。
  * <p>
- * 通过条件装配启用组件，配置前缀 {@code platform.component.oauth}。
+ * 配置前缀 {@code platform.component.oauth};所有 OAuth Bean 均通过 {@link Bean} 方法显式注册,
+ * 不使用 {@code @ComponentScan},确保只有在 {@code platform.component.oauth.enabled=true} 时才会加载。
+ * </p>
  * <p>
- * 所有 OAuth Bean 均通过 {@link Bean} 方法显式注册，不使用 {@code @ComponentScan}，
- * 确保只有在 {@code platform.component.oauth.enabled=true} 时才会加载。
+ * 处于整个 oauth 组件的总装配层位置:被 oauth-authz/oauth-dcr 的 AutoConfiguration 通过
+ * {@code @Import} 引入,使两个子模块无需重复声明 oauth-core 依赖;{@link ObjectProvider} 让每个
+ * Bean 都可以被业务方提供的自定义实现覆盖。
+ * </p>
+ * <p>
+ * 解决的问题:让 oauth 组件"按需启用" —— 用户不配置 enabled=true 时整个 oauth 上下文不加载;
+ * 同时通过 {@link ConditionalOnMissingBean} 把 9 个核心 SPI/服务都暴露为可替换的 Bean,业务方可以
+ * 局部替换某个能力而不必禁用整个组件。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

@@ -31,9 +31,21 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Scope 路径解析器
+ * 网关接口到 Scope 需求的解析与校验器。
  * <p>
- * 根据请求路径和 HTTP 方法，使用 Ant 路径匹配查找接口所需的 Scope。
+ * 职责分为两段:(1) 通过 Ant 路径匹配 + HTTP 方法,结合 {@link ScopePolicyRepository} 解析出指定
+ * 接口需要的 Scope 集合;(2) 从 Access Token 的 {@code scope} claim 中提取 Scope 集合,与接口
+ * 要求做包含关系校验。
+ * </p>
+ * <p>
+ * 处于网关层与 Resource Server 共用的能力位置:位于网关拦截器/Resource Server 鉴权流程内部,
+ * 不直接依赖 Redis,通过 {@link ScopePolicyRepository} 抽象获取策略数据;下游是
+ * {@link ClientRegistry} 与 Token 端点,只关心接口与 Scope 的映射。
+ * </p>
+ * <p>
+ * 解决的问题:统一回答"业务接口需要哪些 Scope、当前 Token 是否拥有这些 Scope",避免每个接口硬编码
+ * Scope 字符串;同时把接口-策略配置从代码中剥离到 Redis 策略库,运维可热更新。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

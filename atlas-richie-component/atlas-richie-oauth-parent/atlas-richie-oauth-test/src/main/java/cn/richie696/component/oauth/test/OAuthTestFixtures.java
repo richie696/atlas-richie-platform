@@ -13,10 +13,20 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * OAuth Server 集成测试的最小、稳定测试数据工厂。
+ * OAuth 测试支撑工具（不属于生产运行时）：OAuth Server 集成测试的最小、稳定测试数据工厂。
  *
- * <p>这里的对象只描述协议和组件领域数据，不绑定具体的 Controller、数据库或 Web 测试框架，
- * 因此可以同时被 OAuth Service、Gateway 和组件模块复用。</p>
+ * <p>职责链位置：处于 OAuth 各模块测试的"前置准备"环节，下游是具体的 OAuth Service、
+ * Gateway 和组件模块的测试类。它构造的对象只描述协议和组件领域数据（{@code ClientConfig}、
+ * {@code OAuthAuthorizationRequest}、{@code OAuthTokenRequest}、PKCE 校验对等），
+ * 不绑定具体的 Controller、数据库或 Web 测试框架，因此可以被 OAuth Service、Gateway
+ * 与组件内部测试同时复用。</p>
+ *
+ * <p>解决以下问题：协议层与组件层测试需要稳定可读的客户端配置、PKCE 校验对与授权请求，
+ * 但又不能在测试中伪造签名或使用长期密钥；该夹具以静态方法提供默认值与覆盖入口，
+ * 让测试用例专注于"输入→期望行为"的契约验证，避免重复的样板代码。</p>
+ *
+ * @author richie696
+ * @since 2026-08-07
  */
 public final class OAuthTestFixtures {
 

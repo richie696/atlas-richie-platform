@@ -31,9 +31,21 @@ import java.util.Base64;
 import java.util.List;
 
 /**
- * OAuth 2.1 授权端点
+ * OAuth 授权码流程的 Servlet 协议包装。
  * <p>
- * 处理授权请求（GET /authorize）和用户授权确认（POST /authorize）。
+ * 提供 {@code GET /authorize}(校验请求并把上下文写入 Session 后跳登录页)和
+ * {@code POST /authorize}(用户确认后生成授权码并 302 到 redirect_uri)两个入口;使用
+ * {@link AuthorizationResponseBuilder} 构造回调 URL,保证 code/state/error 经 URL 编码不注入。
+ * </p>
+ * <p>
+ * 处于 oauth-authz 模块的 HTTP 适配层位置:向下依赖 {@link ClientRegistry}、{@link AuthorizationCodeStore}
+ * 与 {@link PKCESupport};和框架无关的 {@link AuthorizationService} 并行存在 —— 老系统可直接挂这个类,
+ * 新业务或非 Servlet 场景(Reactive/Gateway)则改用 {@link AuthorizationService}。
+ * </p>
+ * <p>
+ * 解决的问题:为已绑定 Servlet 容器的 OAuth Service 提供零改造的 /authorize 端点;同时让 Session
+ * 化的请求上下文隔离在这个适配层内部,核心授权码生成与 PKCE 校验不感知 Servlet API。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

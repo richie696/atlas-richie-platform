@@ -6,7 +6,22 @@ import cn.richie696.component.oauth.contract.model.OAuthPrincipal;
 import java.net.URI;
 import java.util.Arrays;
 
-/** 先本地 JWT 校验、失败后按策略 introspection 的 Resource Server Facade。 */
+/**
+ * 先本地 JWT 校验、失败后按策略 introspection 的 Resource Server Facade。
+ *
+ * <p>处于 HTTP 过滤器 / Spring Security Filter 与 {@link JwtTokenVerifier} +
+ * {@link IntrospectionClient} + {@link DpopProofValidator}（可选）三者之间：上游
+ * 传入 Bearer access token 与可选 DPoP proof / 请求 method / URI，下游按"JWT 优先
+ * → introspection fallback → DPoP 绑定"的工作流完成鉴权并产出 {@link OAuthPrincipal}。
+ * Facade 不感知 HTTP 框架与具体 JWT 库，仅编排三条可插拔路径并发出 Micrometer 指标。
+ *
+ * <p>解决"Resource Server 必须在每个项目里写一遍 JWT-vs-introspection 选择与 DPoP 绑定
+ * 校验"的重复劳动，把可配置的工作流（纯 JWT / 纯 introspection / JWT+fallback /
+ * 加 DPoP）收敛到一个 Facade，业务侧只需要装配所需 SPI，不必关心编排细节。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public class ResourceServerAuthenticator {
 
     private final JwtTokenVerifier jwtTokenVerifier;

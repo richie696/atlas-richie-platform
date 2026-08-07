@@ -5,7 +5,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.Semaphore;
 
-/** 单进程实现，适合测试和明确的单节点场景。 */
+/**
+ * {@link OAuthCache} 的单进程内存实现, 基于 ConcurrentHashMap 与 Semaphore 提供 TTL 与互斥锁语义。
+ * <p>
+ * 处于 OAuth 缓存适配层的 "测试 / 单节点" 一环, 与 {@link GlobalCacheOAuthCache} 通过自动装配条件互斥; 在没有平台缓存基础设施时, 由 {@link cn.richie696.component.oauth.cache.config.OAuthCacheAutoConfiguration} 装配为安全默认值。
+ * 解决"单元测试和本地启动时 Redis 不可用, 又要保留 OAuth 缓存契约语义"的问题, 用进程内实现让测试不依赖外部存储, 同时保持对外接口形状一致。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public class InMemoryOAuthCache implements OAuthCache {
 
     private final Map<String, Entry> values = new ConcurrentHashMap<>();

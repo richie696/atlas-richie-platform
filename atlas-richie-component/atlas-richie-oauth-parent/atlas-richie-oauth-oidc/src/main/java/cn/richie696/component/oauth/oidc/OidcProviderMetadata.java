@@ -4,7 +4,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** OpenID Provider Metadata（与 RFC 8414 OAuth Metadata 兼容的 OIDC 扩展）。 */
+/**
+ * OpenID Provider Metadata 数据模型，承载 Discovery 文档的全部字段（含 OIDC 对 RFC 8414 的扩展）。
+ *
+ * <p>处于 {@link OidcProviderMetadataService} 与 HTTP Discovery 端点之间：上游由
+ * Service 从 {@link cn.richie696.component.oauth.oidc.config.OidcProperties} 配置装配，
+ * 下游通过 {@link #asMap()} 直接序列化为 Discovery JSON。两种构造器覆盖了"是否支持
+ * front/backchannel logout 会话级"等新增字段，老构造器保持向后兼容。
+ *
+ * <p>解决"OIDC Discovery 字段不断演进、AS 维护者散落硬编码 JSON 字符串"的协议演进
+ * 痛点，把所有公开字段集中到一个不可变 record，并强制把可变 List 转成 {@code List.copyOf}，
+ * 防止下游序列化器意外引用到内部缓存。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public record OidcProviderMetadata(
         String issuer,
         String authorizationEndpoint,

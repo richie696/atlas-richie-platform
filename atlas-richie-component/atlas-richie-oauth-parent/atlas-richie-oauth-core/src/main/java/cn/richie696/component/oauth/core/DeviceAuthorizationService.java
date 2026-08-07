@@ -13,7 +13,27 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.List;
 
-/** RFC 8628 设备授权领域服务；登录、MFA、用户页面由 OAuth Service 负责。 */
+/**
+ * RFC 8628 Device Authorization Grant 的领域服务。
+ * <p>
+ * 负责设备码全生命周期:签发 {@code device_code}/{@code user_code}、记录授权状态(PENDING/AUTHORIZED/DENIED)、
+ * 按轮询间隔返回 {@code authorization_pending}/{@code slow_down}、原子消费已授权设备码。
+ * 登录、MFA、用户确认页面由 OAuth Service 注入到 {@code approve}/{@code deny} 入口。
+ * </p>
+ * <p>
+ * 处于 oauth-core 的协议服务位置:依赖 {@link ClientRegistry} 校验客户端与 scope,依赖
+ * {@link DeviceAuthorizationStore} 持久化短期状态;被 {@link TokenEndpoint#exchangeDeviceCode}
+ * 复用,完成 device_code → access_token 的最终兑换。
+ * </p>
+ * <p>
+ * 解决的问题:把"电视/IoT 等无浏览器设备"的 OAuth 流程封装为可单测的纯领域服务,避免登录 UI 与
+ * 设备码状态机耦合;同时把"用户确认后才生成 token"的安全边界显式化,留给 OAuth Service 强制
+ * 走一次人类授权。
+ * </p>
+ *
+ * @author richie696
+ * @since 2026-06-12
+ */
 public final class DeviceAuthorizationService {
 
     private static final SecureRandom RANDOM = new SecureRandom();

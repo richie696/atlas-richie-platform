@@ -23,7 +23,24 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.Base64;
 
-/** 生产 Authorization Server 使用的 RSA access token 签名器。 */
+/**
+ * 生产 Authorization Server 使用的 RSA Access Token 签名器,同时实现 {@link JwkSetProvider}。
+ * <p>
+ * 使用 RS256 把 JWT 签出并验签,通过 {@link #keys()} 把当前公钥暴露为 RFC 7517 JWKS 文档(只暴露
+ * 公钥,绝不暴露私钥);保留 claim 与扩展声明的写入策略与 HMAC 版本一致,保证协议一致性。
+ * </p>
+ * <p>
+ * 处于 oauth-core 的生产签名能力位置:由 OAuth Service 注入到 {@link cn.richie696.component.oauth.core.config.OAuth2AutoConfiguration}
+ * 替代默认 HMAC;Resource Server 通过 JWKS 端点拉取公钥完成分布式验签,无需持有本类。
+ * </p>
+ * <p>
+ * 解决的问题:把非对称签名与 JWKS 发布合并到同一实现,既满足分布式 RS256 校验,也让密钥轮换只需
+ * 更换 keyId 即可平滑过渡(旧公钥继续发布,直到存量 token 全部过期)。
+ * </p>
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public class RsaAccessTokenSigner implements AccessTokenSigner, JwkSetProvider {
 
     private final RSAPrivateKey privateKey;

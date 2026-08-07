@@ -24,7 +24,22 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 
-/** DPoP RFC 9449 proof 校验器，支持 ES256、htu/htm、ath、nonce 和 jti 防重放。 */
+/**
+ * DPoP RFC 9449 proof 校验器，覆盖 ES256 签名、htm/htu 请求绑定、ath 访问令牌哈希、
+ * nonce 抗重放与 jti 一次性消费。
+ *
+ * <p>处于 {@link ResourceServerAuthenticator}（可选 DPoP 模式）与 {@link DpopReplayStore}
+ * 之间：上游接 proof JWT、access token、当前请求 method/URI 与可选 nonce，下游委托
+ * replay store 完成 jti 去重，最终产出 {@link DpopProof} 视图。校验器不直接发起网络
+ * 请求、不接触缓存介质，只在内存里完成签名、摘要、字段比对。
+ *
+ * <p>解决"Resource Server 接到 DPoP proof 但只校验签名不校验请求绑定，攻击者可以
+ * 截获 token 后跨请求复用"的安全漏洞，把 RFC 9449 §4.3 规定的强制检查项一次性收敛到
+ * 一个组件，避免每个 API 接入方都重新实现一遍 htm/htu/ath/nonce/jti 五项约束。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public final class DpopProofValidator {
 
     private static final String TYPE = "dpop+jwt";

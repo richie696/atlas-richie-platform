@@ -15,7 +15,22 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** RFC 9449 DPoP 测试密钥和 proof 夹具，不依赖外部 KMS 或网络。 */
+/**
+ * OAuth 测试支撑工具（不属于生产运行时）：RFC 9449 DPoP 测试密钥与 proof JWT 夹具。
+ *
+ * <p>职责链位置：在集成测试链路中位于 Resource Server / OAuth Service 之前，
+ * 为 DPoP 校验单元或黑盒测试提供可重复使用的 EC P-256 密钥对、JWK、JWK thumbprint、
+ * 以及带 {@code htu / htm / iat / ath / nonce / jti} 声明的合法 DPoP proof；
+ * 不依赖外部 KMS、HSM 或任何网络资源，每个用例可独立重新生成密钥材料。</p>
+ *
+ * <p>解决以下问题：DPoP 资源绑定链路中的 proof、JWK thumbprint 与 access token
+ * 的 {@code cnf.jkt} 绑定都需要稳定的密钥材料作前置；该夹具把密钥生成、
+ * JWK 规范化、thumbprint 计算与 proof 构造统一在一个类里，避免每个测试用
+ * 例重复实现 RFC 9449 附录要求的 JWK 序列化与 SHA-256 摘要。</p>
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public final class OAuthTestDpopMaterial {
 
     private final KeyPair keyPair;

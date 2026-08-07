@@ -19,10 +19,22 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 授权码存储抽象
+ * 授权码(Authorization Code)的存储抽象。
  * <p>
- * 定义授权码（Authorization Code）的存储与验证契约。
- * 支持 PKCE binding，保证授权码一次性使用。
+ * 定义授权码的存储、加载、消费契约;支持 PKCE 绑定(code_challenge / code_challenge_method)、
+ * OIDC nonce、RFC 8707 resource 绑定,并保证授权码一次性使用 —— 通过原子消费结果
+ * {@link AuthorizationCodeConsumeResult} 表达 CONSUMED / NOT_FOUND 两个状态。
+ * </p>
+ * <p>
+ * 处于 oauth-authz 的协议状态接入位置:由 {@link AuthorizationEndpoint} 写入,被
+ * {@link AuthorizationCodeGrant} 消费;其原子消费语义与 TokenStore 的 refresh_token 消费
+ * 同等关键,生产实现必须在分布式锁内完成"读 + 删"。
+ * </p>
+ * <p>
+ * 解决的问题:把授权码的"短期状态 + 一次性消费 + PKCE 绑定"三件事抽象为一个 SPI,业务方替换存储
+ * 后端时无需重写并发控制;同时 storeAuthorizationCode 的重载默认实现兼容旧版契约,保证已有
+ * 自定义存储实现无需立刻适配 nonce/resource 字段。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

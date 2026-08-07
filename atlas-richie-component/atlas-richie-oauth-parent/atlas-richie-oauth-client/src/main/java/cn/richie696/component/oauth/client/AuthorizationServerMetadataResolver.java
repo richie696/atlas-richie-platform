@@ -5,7 +5,24 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-/** RFC 8414 Authorization Server Metadata 发现客户端。 */
+/**
+ * RFC 8414 Authorization Server Metadata 的 HTTP 发现客户端，按 OAuth 标准端点解析
+ * 颁发端各 endpoint 与能力声明。
+ *
+ * <p>处于 OAuth Service / 业务侧 Relying Party 与外部 Authorization Server 之间：
+ * 上游给定 {@code /.well-known/oauth-authorization-server} 之类的 metadata URI，下游
+ * 直接发起一次 GET 请求并把 JSON 反序列化为 {@link AuthorizationServerMetadata} record，
+ * 后续 token / introspection 调用都以此为入口。本类不持有任何状态、不缓存解析结果，
+ * 也不绑定 OkHttp / Spring RestClient，使用 JDK 内置的 {@code java.net.http.HttpClient}。
+ *
+ * <p>解决"业务系统要对接自建 AS、PaaS IdP 或第三方 OAuth 服务，每次都要重写一遍
+ * metadata 解析 + form 拼接"的接入门槛问题，把 RFC 8414 规定的字段统一抽象为 record，
+ * 并强制按 RFC 文档的 snake_case 名取 JSON 字段，避免不同 AS 实现拼写漂移造成的字段
+ * 读取失败。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public class AuthorizationServerMetadataResolver {
 
     private final java.net.http.HttpClient httpClient;

@@ -50,9 +50,22 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * OAuth 2.1 Token 端点
+ * OAuth 2.1 Token 端点领域服务。
  * <p>
- * 负责 token 全生命周期管理：签发、刷新、验证、撤销。
+ * 负责 Token 全生命周期管理:对外承接 {@code client_credentials}、{@code refresh_token} 和 RFC 8628
+ * {@code device_code} 三种 grant,完成签发、刷新、验证、撤销与内省;对内通过
+ * {@link ClientAuthenticationService} 处理客户端认证,通过 {@link AccessTokenSigner} 完成 JWT 签发,
+ * 并把状态写入 {@link TokenStore}、通过 {@link OAuthAuditSink} 输出审计事件。
+ * </p>
+ * <p>
+ * 处于组件协议内核的中枢位置:依赖 {@link ClientRegistry} 获取客户端配置,依赖 {@link DeviceAuthorizationService}
+ * 完成 device_code 兑换;由 OAuth Service 在 HTTP 适配层包装后对外暴露,Resource Server 则复用其
+ * {@code verifyAccessToken}/{@code introspectToken} 做 Token 校验。
+ * </p>
+ * <p>
+ * 解决的问题:把 RFC 6749/8628 Token 端点的协议逻辑(认证、签名、刷新重放保护、黑名单、限流、审计)
+ * 拆解到可注入的 SPI 层,让 OAuth Service 只需关心 HTTP 包装而无需关心协议细节。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

@@ -6,8 +6,13 @@ import cn.richie696.component.cache.redis.manage.CacheLock;
 import java.util.Map;
 
 /**
- * 兼容旧 Hash/Struct 混用 Key 的平台缓存适配器。
- * <p>新实现应使用 {@link GlobalCacheOAuthCache}；该类仅保留旧 API 的读取语义。</p>
+ * 兼容旧 Hash / Struct 混用 Key 的平台缓存适配器, 仅承担过渡期对旧 API 读取语义的对齐职责。
+ * <p>
+ * 处于 OAuth 缓存适配层的 "遗留兼容" 一环, 与 {@link GlobalCacheOAuthCache} 并存但优先级靠后; 主要承接那些已落地的 OAuth 子模块在切到新适配器前必须保留的旧 Key 形态 (包括按 hash field 取值的旧用法)。
+ * 解决"OAuth 抽象升级时, 旧 Key 形态的存量缓存与旧测试 mock 仍期望被读到"的问题, 通过并行实现避免一次性迁移风险, 待旧 Key 自然淘汰后即可移除。
+ *
+ * @author richie696
+ * @since 2026-08-07
  */
 public final class LegacyGlobalCacheOAuthCache implements OAuthCache {
 

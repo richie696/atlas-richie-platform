@@ -4,7 +4,26 @@ import cn.richie696.component.oauth.cache.OAuthCache;
 import cn.richie696.component.oauth.cache.OAuthLock;
 import cn.richie696.component.oauth.core.model.DeviceAuthorizationRecord;
 
-/** 使用 OAuthCache 的 RFC 8628 状态存储。 */
+/**
+ * 基于 {@link OAuthCache} 的 RFC 8628 Device Authorization 状态存储默认实现。
+ * <p>
+ * 同时维护 {@code device_code → 记录} 与 {@code user_code → device_code} 两份映射;消费与轮询
+ * 均通过 {@link OAuthLock} 在 Redis 分布式锁内完成"读 + 删 + slow_down 判定",杜绝并发绕过
+ * 轮询间隔。Key 命名走 {@code oauth:device:code:/oauth:device:user:},与
+ * {@link cn.richie696.component.oauth.core.config.OAuth2RedisKey} 风格一致但本类自行管理前缀。
+ * </p>
+ * <p>
+ * 处于 oauth-core 的默认短期存储实现位置:由 {@link cn.richie696.component.oauth.core.config.OAuth2AutoConfiguration}
+ * 在缺省 Bean 时注册,被 {@link DeviceAuthorizationService} 持有。
+ * </p>
+ * <p>
+ * 解决的问题:用 Redis 自身能力提供"短期状态 + 原子消费 + 限速"三合一语义,既让 DeviceAuthorizationService
+ * 保持无状态,又把"防 slow_down 绕过"这个安全敏感点封装到一个高复用度的类里。
+ * </p>
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public final class CacheBackedDeviceAuthorizationStore implements cn.richie696.component.oauth.core.spi.DeviceAuthorizationStore {
 
     private static final String PREFIX = "oauth:device:";

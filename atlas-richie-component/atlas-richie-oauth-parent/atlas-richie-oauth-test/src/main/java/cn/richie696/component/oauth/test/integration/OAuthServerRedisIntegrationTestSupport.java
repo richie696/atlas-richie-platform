@@ -7,8 +7,23 @@ import org.testcontainers.utility.DockerImageName;
 import java.util.List;
 
 /**
- * OAuth Server 集成测试的 Redis 连接策略。
- * 默认使用 Testcontainers；需要复用本机/CI Redis 时设置 {@code OAUTH_IT_USE_EXTERNAL=true}。
+ * OAuth 测试支撑工具（不属于生产运行时）：OAuth Server 集成测试的 Redis 连接策略与属性注入入口。
+ *
+ * <p>职责链位置：处于组件通用 Redis 集成测试支持
+ * （{@link GenericRedisIntegrationTestSupport}）与 OAuth Server 集成测试注解 / 初始化器之间。
+ * 它把 Testcontainers 默认镜像（{@code redis:7-alpine}）、OAuth 专用属性追加、
+ * 环境变量开关（{@code OAUTH_IT_USE_EXTERNAL=true}）封装在一个单例中，
+ * 由 {@link OAuthServerRedisTestInitializer} 与 {@link OAuthServerRedisIntegrationTest}
+ * 共同消费。</p>
+ *
+ * <p>解决以下问题：OAuth Server 集成测试除了需要一份 Redis 实例，
+ * 还需要把 {@code platform.component.oauth.*} 测试属性注入 Spring 上下文；
+ * 默认外部依赖是 Testcontainers，本地/CI 可通过环境变量切换到外部 Redis，
+ * 而无需修改测试代码。该单例集中持有这些策略，保证 OAuth 模块的
+ * 集成测试在 CI / 本地有一致表现。</p>
+ *
+ * @author richie696
+ * @since 2026-08-07
  */
 public final class OAuthServerRedisIntegrationTestSupport implements RedisIntegrationTestAccess {
 

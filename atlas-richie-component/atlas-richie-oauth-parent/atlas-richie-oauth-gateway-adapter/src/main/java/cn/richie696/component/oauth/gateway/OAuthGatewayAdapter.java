@@ -7,7 +7,23 @@ import reactor.core.publisher.Mono;
 
 import java.net.URI;
 
-/** Gateway 只依赖的 Resource Server Facade。 */
+/**
+ * 网关层与 Resource Server 之间的边界 Facade，也是 Gateway 工程唯一需要依赖的 OAuth 网关门面。
+ *
+ * <p>职责链位置：处于网关入口（{@link OAuthGatewayWebFilter} 或业务自定义 WebFilter）
+ * 与 {@link ResourceServerAuthenticator} 之间，把协议头部解析、token 提取、DPoP proof 透传、
+ * 认证结果到下游 {@code X-Authenticated-*} 头的写入这一连串动作聚合在一个类里。
+ * 它屏蔽了 Resource Server 的 JWT / introspection / DPoP 内部细节，
+ * 让网关层只看见 {@link OAuthPrincipal}。</p>
+ *
+ * <p>解决以下问题：网关既要支持 Bearer 与 RFC 9449 DPoP 两种凭证形态，
+ * 又要避免把认证内部实现细节泄漏到网关路由层；该 Facade 同时承担凭证解析、
+ * 主体验证与下游可信头的传播（subject / clientId / issuer / scopes / tokenId / tenantId），
+ * 让业务 Filter 可以零成本完成"取出凭证 → 验证 → 写入上下文"三步链路。</p>
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public class OAuthGatewayAdapter {
 
     public static final String SUBJECT_HEADER = "X-Authenticated-Subject";

@@ -9,7 +9,23 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
 
-/** 基于标准 Bearer Token HTTP 调用 OIDC UserInfo。 */
+/**
+ * 基于 RFC 6750 Bearer Token HTTP 调用 OIDC UserInfo endpoint 的默认实现。
+ *
+ * <p>处于业务侧 RP / OAuth Service 与外部 OIDC Provider 之间：上游传入 access token，
+ * 下游本实现按 OIDC Core 1.0 §5.3 把 token 作为 {@code Authorization: Bearer ...} 头
+ * 投递到 UserInfo endpoint，并把响应 JSON 原样以 Map 形式返回。它使用 JDK 内置
+ * {@code java.net.http.HttpClient}，不持有任何状态、不缓存响应，调用语义与
+ * {@link StandardOAuthTokenClient} 保持一致。
+ *
+ * <p>解决"业务系统要对接不同 OIDC Provider 的 UserInfo 时必须自己拼接 Authorization
+ * 头、处理 401/403、按 OIDC 协议 error 字段抛出异常"的标准协议面问题，把 Bearer Token
+ * + JSON 响应 + OAuth error 解析收敛到一处，让 RP 只关心 Claims 内容、不被 HTTP
+ * 细节绑架。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public final class StandardOidcUserInfoClient implements OidcUserInfoClient {
 
     private final URI userInfoEndpoint;

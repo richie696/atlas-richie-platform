@@ -3,7 +3,21 @@ package cn.richie696.component.oauth.oidc;
 import cn.richie696.component.oauth.oidc.config.OidcProperties;
 import cn.richie696.contract.exception.BusinessException;
 
-/** 构造 OIDC query/form_post/hybrid 响应，不负责 HTTP 重定向或 HTML 渲染。 */
+/**
+ * OIDC 授权响应的领域构造器，封装 query/form_post/hybrid 三种 response_type 的字段拼装规则。
+ *
+ * <p>处于 OAuth Service 与协议层之间：上游接收 OAuth 核心产出
+ * 的 {@code OAuthAuthorizationRequest} 与业务侧颁发的 code/token，下游产出
+ * {@link OidcAuthorizationResponse} 给 HTTP 适配层做序列化。它只负责"响应里应该出现哪些字段"，
+ * 不负责 302 重定向、form_post HTML 渲染或前端跳转这些交付层细节。
+ *
+ * <p>解决"AS 把 HTTP 重定向逻辑散落在多个 Controller 里"导致的 response_mode 行为不一致问题，
+ * 把所有 response_type 与 response_mode 的字段缺失校验收敛到一处，避免漏返 code/id_token 的
+ * 半成品响应走出 AS。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public final class OidcAuthorizationResponseService {
 
     private final OidcProperties properties;

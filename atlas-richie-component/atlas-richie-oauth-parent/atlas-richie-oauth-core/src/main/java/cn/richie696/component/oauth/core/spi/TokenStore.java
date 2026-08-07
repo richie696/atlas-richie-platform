@@ -20,10 +20,23 @@ import cn.richie696.component.oauth.core.model.ClientConfig;
 import java.util.Map;
 
 /**
- * Token 存储抽象
+ * Token 持久化的存储抽象。
  * <p>
- * 定义 refresh_token 存储、access_token 黑名单、IP 绑定等持久化契约。
- * 默认使用 Redis 实现，可通过 SPI 替换为 JDBC 等实现。
+ * 把 refresh_token 存储、access_token 黑名单、IP 绑定、每日签发计数、异常计数等持久化动作收敛
+ * 到一个 SPI;默认实现见 {@link cn.richie696.component.oauth.core.support.CacheBackedTokenStore},
+ * 通过 OAuthCache 走 atlas-richie-cache;OAuth Service 可替换为 JDBC 等持久化实现。
+ * </p>
+ * <p>
+ * 处于 oauth-core 的状态持久化位置:由 {@link cn.richie696.component.oauth.core.TokenEndpoint} 与
+ * {@link cn.richie696.component.oauth.authz.AuthorizationCodeGrant} 高频调用;其中
+ * {@link RefreshTokenConsumeResult} 是协议安全的关键 —— 原子消费语义必须在同一原子操作/分布式
+ * 锁内完成,返回 {@code null} 被视为非法 SPI 实现,调用方会拒绝签发新 token(fail-closed)。
+ * </p>
+ * <p>
+ * 解决的问题:把 Token 端点与授权码兑换的安全关键状态(黑名单、IP 绑定、refresh_token 一次性消费、
+ * 重放检测)统一抽象,业务方替换存储后端时无需触碰协议层逻辑,也避免了"用 Redis 实现但忘了加
+ * 分布式锁"这类常见的安全漏洞。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

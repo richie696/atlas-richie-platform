@@ -27,7 +27,26 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Client 权威数据的领域 Facade，存储通过 ClientRepository 注入。 */
+/**
+ * OAuth 客户端权威数据的领域 Facade。
+ * <p>
+ * 对外暴露客户端元数据查询、Secret 校验、字段级只读访问;对内将存储细节隐藏在
+ * {@link ClientRepository}/{@link OAuthCache} 之后,默认实现走 Redis,业务方可以替换为 JDBC/LDAP
+ * 等任意后端。
+ * </p>
+ * <p>
+ * 处于整个 oauth 组件的数据中枢位置:Token 端点用它校验 Secret,AuthorizationEndpoint 用它判断
+ * 客户端合法性,DynamicClientRegistrationEndpoint 通过它把 DCR 结果落到统一存储;反向依赖
+ * 来自授权码 grant、scope 解析、PKCE 校验等所有需要客户端信息的协议路径。
+ * </p>
+ * <p>
+ * 解决的问题:屏蔽 Redis/JDBC/LDAP 等存储实现差异,把"客户端是否存在、是否启用、Secret 是否匹配"
+ * 这些高频校验逻辑收敛到一处,避免在多个端点重复编写。
+ * </p>
+ *
+ * @author richie696
+ * @since 2026-06-12
+ */
 @Slf4j
 public class ClientRegistry {
 

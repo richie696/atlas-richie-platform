@@ -18,7 +18,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** 使用标准 OAuth HTTP 协议调用自建或 PaaS AS。 */
+/**
+ * 使用 JDK HttpClient + {@code application/x-www-form-urlencoded} 调自建或 PaaS AS 的
+ * OAuth 协议客户端默认实现。
+ *
+ * <p>处于业务系统 / OAuth Service 与任意 Authorization Server 之间：上游按 RFC 6749 /
+ * RFC 7662 填好 {@link OAuthTokenRequest} 或传入 token 字符串，下游本实现完成 client
+ * 认证（{@code client_secret_basic} 或 {@code client_secret_post}）、form 编码、
+ * HTTP 调用与 JSON 反序列化，并把结果封装成 {@link OAuthTokenResponse} /
+ * {@link OAuthIntrospectionResponse}。类本身不持有 token 缓存、不感知重试与熔断，
+ * 这些横切关注点交给外层装饰器。
+ *
+ * <p>解决"业务系统对接不同 OAuth AS 时必须重新拼装 form 参数、适配 client 认证方式、
+ * 处理 OAuth 协议 error 字段"的接入门槛，把 RFC 6749 / RFC 7662 规定的标准 form 编码
+ * 与错误响应处理收敛到一个组件，让业务侧只需按语义调用即可，不必关心 HTTP 协议细节。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public class StandardOAuthTokenClient implements OAuthTokenClient {
 
     private final URI tokenEndpoint;

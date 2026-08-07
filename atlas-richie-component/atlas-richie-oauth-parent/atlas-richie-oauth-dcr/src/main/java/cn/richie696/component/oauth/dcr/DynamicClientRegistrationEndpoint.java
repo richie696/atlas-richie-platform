@@ -42,9 +42,22 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Dynamic Client Registration Endpoint
+ * RFC 7591 Dynamic Client Registration 的领域服务。
  * <p>
- * 处理 OAuth 2.0 动态客户端注册请求（RFC 7591）。
+ * 处理两类协议入口:{@code POST /register}(签发 client_id/client_secret、生成 registration_access_token、
+ * 持久化客户端元数据)与 {@code PUT /register/{clientId}}(局部覆盖更新已注册客户端);所有 redirect_uri 与
+ * jwks_uri 在落库前必经 {@link SSRFProtection} 校验,杜绝内网探测。
+ * </p>
+ * <p>
+ * 处于 oauth-dcr 模块的协议服务位置:向下依赖 {@link ClientRegistry} 把客户端元数据写入统一存储,
+ * 依赖 {@link ClientIdMetadataDocumentResolver} 解析外部元数据文档,依赖 {@link ClientRegistrationStore}
+ * 保存注册凭证;由 OAuth Service 在 HTTP 适配层暴露给外部客户端程序化注册。
+ * </p>
+ * <p>
+ * 解决的问题:让移动端 / SPA / 第三方集成方按 RFC 7591 程序化注册 OAuth 客户端,无需运维手工配置;
+ * 同时通过 SSRF 防护与强制 redirect_uri 校验,把"恶意客户端把请求重定向到内网/钓鱼页"的风险
+ * 拦截在 DCR 入口,不污染下游授权码和 Token 端点。
+ * </p>
  *
  * @author richie696
  * @since 2026-06-12

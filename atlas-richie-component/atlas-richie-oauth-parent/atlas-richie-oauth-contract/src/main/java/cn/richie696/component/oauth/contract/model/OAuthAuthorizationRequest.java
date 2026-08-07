@@ -4,7 +4,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-/** 与 Web 框架无关的授权请求模型。 */
+/**
+ * authorization_code grant 的请求参数 record, 承载 clientId、redirectUri、responseType、scopes、state、resource、PKCE 三元组以及 OIDC 专属的 nonce 与 responseMode。
+ * <p>
+ * 处于契约层授权端点的入参一环, 是 HTTP 适配层把 query / form 反序列化后的最终业务对象, 上游 core / authz 中的授权服务直接消费这份 record 完成请求规范化。
+ * 解决"Web 框架绑定让授权请求难以在非 Web 场景或 OIDC 流程下复用"的问题, 让契约层在框架之外仍保持完整的字段表达, 同时通过旧构造器兼容历史签名。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public record OAuthAuthorizationRequest(
         String clientId,
         String redirectUri,

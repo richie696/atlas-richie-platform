@@ -14,7 +14,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
-/** 基于 issuer、audience/resource 和 JWKS 的 RSA JWT 校验器。 */
+/**
+ * 基于 issuer / audience / JWKS 的 RSA JWT 访问令牌本地校验器默认实现。
+ *
+ * <p>处于 {@link ResourceServerAuthenticator} 的 JWT 优先路径与 {@link JwkSource} 之间：
+ * 上游传 accessToken，下游通过 {@code JwkSource} 按 {@code kid} 拿到公钥，再强制
+ * 校验签名、issuer 与 audience，最终产出 {@link OAuthPrincipal}。它只做协议层校验，
+ * 不触碰 HTTP、缓存、metrics 与 DPoP。
+ *
+ * <p>解决"Resource Server 不得不在每个项目里自己实现一遍 JWT 验签 + 协议 Claims 比对"
+ * 的重复劳动，把 RFC 9068 要求的 iss/aud/exp/nbf/iat 等校验收敛在一处，并允许通过
+ * {@code JwkSource} 替换 JWKS 来源（HTTP 拉取 / 静态配置 / 外部缓存）。
+ *
+ * @author richie696
+ * @since 2026-08-07
+ */
 public class DefaultJwtTokenVerifier implements JwtTokenVerifier {
 
     private final String issuer;
