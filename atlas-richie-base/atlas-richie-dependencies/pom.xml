@@ -67,7 +67,7 @@
         <commons-net.version>3.13.0</commons-net.version>
         <commons-compress.version>1.28.0</commons-compress.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
-        <bouncycastle.jdk18on.version>1.84</bouncycastle.jdk18on.version>
+        <bouncycastle.jdk18on.version>1.85</bouncycastle.jdk18on.version>
 
         <dom4j.version>2.2.0</dom4j.version>
         <poi.version>5.5.1</poi.version>
