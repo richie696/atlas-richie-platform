@@ -244,73 +244,74 @@ public class TokenEndpoint {
     }
 
     private TokenResponse refreshTokenInternal(String refreshToken, String ip) {
-            Map<String, String> tokenData = tokenStore.loadRefreshToken(refreshToken);
-            if (tokenData != null && !tokenData.isEmpty()) {
-                validateRefreshTokenIp(tokenData, ip);
-            }
+        // 这里只做 IP 绑定的预检查；真正的有效性判断和一次性消费由下面的原子 SPI 调用决定。
+        Map<String, String> preConsumedTokenData = tokenStore.loadRefreshToken(refreshToken);
+        if (preConsumedTokenData != null && !preConsumedTokenData.isEmpty()) {
+            validateRefreshTokenIp(preConsumedTokenData, ip);
+        }
 
-            RefreshTokenConsumeResult consumed = tokenStore.consumeRefreshToken(refreshToken);
-            if (consumed == null) {
-                // TokenStore 契约要求返回非 null 结果；未知消费状态必须拒绝签发。
-                log.error("TokenStore.consumeRefreshToken 返回 null，拒绝刷新令牌: tokenHash={}",
-                        Integer.toHexString(refreshToken.hashCode()));
-                throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT,
-                        "刷新令牌消费状态不可确认");
-            } else if (consumed.status() == RefreshTokenConsumeResult.Status.REPLAYED) {
-                String replayClientId = consumed.data().get("client_id");
-                long count = StringUtils.isBlank(replayClientId)
-                        ? 0 : tokenStore.incrementAnomalyRefreshCount(replayClientId);
-                log.warn("检测到 refresh_token 重放: clientId={}, anomalyCount={}", replayClientId, count);
-                auditSink.record(new OAuthAuditSink.OAuthAuditEvent(
-                        "REFRESH_TOKEN_REPLAYED", replayClientId, null, null, null, ip,
-                        false, OAuth2Constants.ERROR_INVALID_GRANT, null, Map.of()));
-                throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT, "刷新令牌已被使用");
-            } else if (consumed.status() != RefreshTokenConsumeResult.Status.CONSUMED) {
-                throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT, "刷新令牌无效或已使用");
-            } else {
-                tokenData = consumed.data();
-            }
-
-            if (tokenData == null || tokenData.isEmpty()) {
-                throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT, "刷新令牌无效或已使用");
-            }
-
-            String clientId = StringUtils.defaultIfBlank(
-                    tokenData.get(OAuth2Constants.JWT_CLAIM_CLIENT_ID),
-                    tokenData.get("client_id"));
-            ClientConfig config = loadClientConfig(clientId);
-            if (config == null || !Boolean.TRUE.equals(config.getEnabled())) {
-                throw new BusinessException(OAuth2Constants.ERROR_INVALID_CLIENT, "客户端不存在或已被禁用");
-            }
-
-            List<String> refreshScopes = config.getScopes() != null ? config.getScopes() : Collections.emptyList();
-            String resource = StringUtils.defaultIfBlank(tokenData.get("resource"), config.getResource());
-            String newAccessToken = generateAccessToken(clientId, config, refreshScopes, resource);
-            String newRefreshToken = generateRefreshToken();
-
-            if (StringUtils.isNotBlank(resource)) {
-                tokenStore.storeRefreshToken(newRefreshToken, clientId, ip, config, resource);
-            } else {
-                tokenStore.storeRefreshToken(newRefreshToken, clientId, ip, config);
-            }
-
-            long expiresIn = config.getTokenValidDuration() != null
-                    ? config.getTokenValidDuration() * 3600L
-                    : OAuth2Constants.DEFAULT_ACCESS_TOKEN_EXPIRES_IN;
-            long accessTokenTtlMillis = expiresIn * 1000L;
-
-            tokenStore.bindAccessTokenIp(newAccessToken, clientId, ip, accessTokenTtlMillis);
-
-            TokenResponse response = TokenResponse.builder()
-                    .accessToken(newAccessToken)
-                    .tokenType(OAuth2Constants.TOKEN_TYPE_BEARER)
-                    .expiresIn(expiresIn)
-                    .refreshToken(newRefreshToken)
-                    .build();
+        RefreshTokenConsumeResult consumeResult = tokenStore.consumeRefreshToken(refreshToken);
+        if (consumeResult == null) {
+            // TokenStore 契约要求返回非 null 结果；未知消费状态必须拒绝签发。
+            log.error("TokenStore.consumeRefreshToken 返回 null，拒绝刷新令牌: tokenHash={}",
+                    Integer.toHexString(refreshToken.hashCode()));
+            throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT,
+                    "刷新令牌消费状态不可确认");
+        } else if (consumeResult.status() == RefreshTokenConsumeResult.Status.REPLAYED) {
+            String replayClientId = consumeResult.data().get("client_id");
+            long count = StringUtils.isBlank(replayClientId)
+                    ? 0 : tokenStore.incrementAnomalyRefreshCount(replayClientId);
+            log.warn("检测到 refresh_token 重放: clientId={}, anomalyCount={}", replayClientId, count);
             auditSink.record(new OAuthAuditSink.OAuthAuditEvent(
-                    "TOKEN_REFRESHED", clientId, null, null, resource, ip,
-                    true, null, null, Map.of("grant_type", "refresh_token")));
-            return response;
+                    "REFRESH_TOKEN_REPLAYED", replayClientId, null, null, null, ip,
+                    false, OAuth2Constants.ERROR_INVALID_GRANT, null, Map.of()));
+            throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT, "刷新令牌已被使用");
+        } else if (consumeResult.status() != RefreshTokenConsumeResult.Status.CONSUMED) {
+            throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT, "刷新令牌无效或已使用");
+        }
+
+        // 只有 CONSUMED 状态返回的数据才允许进入后续签发流程。
+        Map<String, String> consumedTokenData = consumeResult.data();
+        if (consumedTokenData == null || consumedTokenData.isEmpty()) {
+            throw new BusinessException(OAuth2Constants.ERROR_INVALID_GRANT, "刷新令牌无效或已使用");
+        }
+
+        String clientId = StringUtils.defaultIfBlank(
+                consumedTokenData.get(OAuth2Constants.JWT_CLAIM_CLIENT_ID),
+                consumedTokenData.get("client_id"));
+        ClientConfig config = loadClientConfig(clientId);
+        if (config == null || !Boolean.TRUE.equals(config.getEnabled())) {
+            throw new BusinessException(OAuth2Constants.ERROR_INVALID_CLIENT, "客户端不存在或已被禁用");
+        }
+
+        List<String> refreshScopes = config.getScopes() != null ? config.getScopes() : Collections.emptyList();
+        String resource = StringUtils.defaultIfBlank(consumedTokenData.get("resource"), config.getResource());
+        String newAccessToken = generateAccessToken(clientId, config, refreshScopes, resource);
+        String newRefreshToken = generateRefreshToken();
+
+        if (StringUtils.isNotBlank(resource)) {
+            tokenStore.storeRefreshToken(newRefreshToken, clientId, ip, config, resource);
+        } else {
+            tokenStore.storeRefreshToken(newRefreshToken, clientId, ip, config);
+        }
+
+        long expiresIn = config.getTokenValidDuration() != null
+                ? config.getTokenValidDuration() * 3600L
+                : OAuth2Constants.DEFAULT_ACCESS_TOKEN_EXPIRES_IN;
+        long accessTokenTtlMillis = expiresIn * 1000L;
+
+        tokenStore.bindAccessTokenIp(newAccessToken, clientId, ip, accessTokenTtlMillis);
+
+        TokenResponse response = TokenResponse.builder()
+                .accessToken(newAccessToken)
+                .tokenType(OAuth2Constants.TOKEN_TYPE_BEARER)
+                .expiresIn(expiresIn)
+                .refreshToken(newRefreshToken)
+                .build();
+        auditSink.record(new OAuthAuditSink.OAuthAuditEvent(
+                "TOKEN_REFRESHED", clientId, null, null, resource, ip,
+                true, null, null, Map.of("grant_type", "refresh_token")));
+        return response;
     }
 
     /**
