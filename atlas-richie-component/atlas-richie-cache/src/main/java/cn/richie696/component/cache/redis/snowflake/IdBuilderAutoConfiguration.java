@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cn.richie696.component.dao.snowflake;
+package cn.richie696.component.cache.redis.snowflake;
 
+import com.baomidou.mybatisplus.autoconfigure.MybatisPlusPropertiesCustomizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
@@ -85,6 +86,16 @@ public class IdBuilderAutoConfiguration {
         }
         log.info("workerId:{}", workerId);
         return new IdBuilder(workerId);
+    }
+
+    /**
+     * 设置雪花算法 ID 生成器为 MyBatis-Plus 全局主键生成器
+     *
+     * @return 配置定制器
+     */
+    @Bean
+    public MybatisPlusPropertiesCustomizer plusPropertiesCustomizer(IdBuilder idBuilder) {
+        return plusProperties -> plusProperties.getGlobalConfig().setIdentifierGenerator(_ -> idBuilder.nextId());
     }
 
 }

@@ -1,3 +1,2 @@
 cn.richie696.component.dao.config.DaoAutoConfiguration
-cn.richie696.component.dao.snowflake.IdBuilderAutoConfiguration
 

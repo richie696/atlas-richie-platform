@@ -1,4 +1,5 @@
 cn.richie696.component.cache.config.CacheAutoConfiguration
 cn.richie696.component.cache.redis.config.base.RedisBaseAutoConfiguration
 cn.richie696.component.cache.local.config.LocalCacheAutoConfiguration
+cn.richie696.component.cache.redis.snowflake.IdBuilderAutoConfiguration
 

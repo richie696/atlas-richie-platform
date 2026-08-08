@@ -175,9 +175,9 @@ public final class RedisContainerSupport {
             pairs.add("spring.data.redis.host=" + host);
             pairs.add("spring.data.redis.port=" + port);
             pairs.add("spring.data.redis.url=redis://" + host + ":" + port);
-            if (password != null && !password.isBlank()) {
-                pairs.add("spring.data.redis.password=" + password);
-            }
+            // Explicitly clear an application's local Redis password for passwordless Testcontainers.
+            // Omitting this property would inherit a production/local default and make the test client fail AUTH.
+            pairs.add("spring.data.redis.password=" + (password == null ? "" : password));
         }
         pairs.add("spring.data.redis.database=" + database);
         return pairs;

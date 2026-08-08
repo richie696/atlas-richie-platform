@@ -118,6 +118,11 @@
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot-autoconfigure</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>

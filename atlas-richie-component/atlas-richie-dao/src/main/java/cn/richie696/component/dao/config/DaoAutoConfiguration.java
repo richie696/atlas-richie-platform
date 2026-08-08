@@ -17,8 +17,6 @@ package cn.richie696.component.dao.config;
 
 import cn.richie696.component.dao.interceptor.BatchUpdateLimitInterceptor;
 import cn.richie696.component.dao.interceptor.PaginationInterceptor;
-import cn.richie696.component.dao.snowflake.IdBuilder;
-import com.baomidou.mybatisplus.autoconfigure.MybatisPlusPropertiesCustomizer;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.BlockAttackInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
@@ -50,11 +48,6 @@ public class DaoAutoConfiguration {
     private final DaoProperties properties;
 
     /**
-     * 雪花 ID 生成器
-     */
-    private final IdBuilder idBuilder;
-
-    /**
      * 注册 MyBatis-Plus 拦截器（乐观锁、批量更新限制、防全表更新、分页）
      *
      * @return MybatisPlusInterceptor 实例
@@ -75,16 +68,6 @@ public class DaoAutoConfiguration {
         // 插件：切面分页 (warning：如果配置多个插件，切记分页最后添加)
         interceptors.addInnerInterceptor(new PaginationInterceptor(dbType));
         return interceptors;
-    }
-
-    /**
-     * 设置雪花算法 ID 生成器为 MyBatis-Plus 全局主键生成器
-     *
-     * @return 配置定制器
-     */
-    @Bean
-    public MybatisPlusPropertiesCustomizer plusPropertiesCustomizer() {
-        return plusProperties -> plusProperties.getGlobalConfig().setIdentifierGenerator(_ -> idBuilder.nextId());
     }
 
 }

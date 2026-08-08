@@ -2,8 +2,15 @@ package cn.richie696.component.oauth.test.integration;
 
 import cn.richie696.testing.redis.AbstractRedisIntegrationTestBase;
 import cn.richie696.testing.redis.RedisIntegrationTestAccess;
+import cn.richie696.component.cache.GlobalCache;
+import cn.richie696.component.cache.GlobalCacheManager;
+import cn.richie696.component.cache.local.manage.LocalCache;
+import cn.richie696.component.cache.local.manage.LocalCacheManager;
+import java.lang.reflect.Field;
 
 import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicReference;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * OAuth 测试支撑工具（不属于生产运行时）：OAuth Server Redis 集成测试的抽象基类。
@@ -25,8 +32,32 @@ import java.util.function.Supplier;
 @OAuthServerRedisIntegrationTest
 public abstract class AbstractOAuthServerRedisIntegrationTest extends AbstractRedisIntegrationTestBase {
 
+    @Autowired
+    private GlobalCacheManager globalCacheManager;
+
+    @Autowired
+    private LocalCacheManager localCacheManager;
+
     @Override
     protected Supplier<RedisIntegrationTestAccess> redisIntegrationTestAccess() {
         return OAuthServerRedisIntegrationTestSupport::getInstance;
+    }
+
+    @Override
+    protected void onRedisIntegrationTestPrepared() {
+        forceStaticDelegate(GlobalCache.class, "DELEGATE", globalCacheManager);
+        forceStaticDelegate(LocalCache.class, "MANAGE", localCacheManager);
+    }
+
+    private static <T> void forceStaticDelegate(Class<?> holder, String fieldName, T value) {
+        try {
+            Field field = holder.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            AtomicReference<T> reference = (AtomicReference<T>) field.get(null);
+            reference.set(value);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Failed to wire " + holder.getSimpleName() + " for OAuth integration test", exception);
+        }
     }
 }

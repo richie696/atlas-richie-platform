@@ -1,6 +1,9 @@
 package cn.richie696.component.oauth.test.integration;
 
 import cn.richie696.testing.spring.SpringPropertyInitializer;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
+import javax.cache.spi.CachingProvider;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 
@@ -26,9 +29,24 @@ public final class OAuthServerRedisTestInitializer
 
     @Override
     public void initialize(ConfigurableApplicationContext context) {
+        closeJCacheManagers();
         SpringPropertyInitializer.applyIfAvailable(
                 OAuthServerRedisIntegrationTestSupport::integrationTestsEnabled,
                 pairs -> OAuthServerRedisIntegrationTestSupport.getInstance().appendPropertyPairs(pairs),
                 context);
+    }
+
+    /** Releases the process-wide JSR-107 cache manager before another AS test context starts. */
+    private static void closeJCacheManagers() {
+        for (CachingProvider provider : Caching.getCachingProviders()) {
+            try {
+                CacheManager manager = provider.getCacheManager();
+                if (manager != null) {
+                    manager.close();
+                }
+            } catch (Exception ignored) {
+                // No provider or no initialized manager is expected on a first context.
+            }
+        }
     }
 }

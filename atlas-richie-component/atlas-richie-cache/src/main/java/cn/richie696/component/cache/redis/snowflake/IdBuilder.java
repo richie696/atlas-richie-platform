@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cn.richie696.component.dao.snowflake;
+package cn.richie696.component.cache.redis.snowflake;
 
 import cn.richie696.context.utils.data.Collections;
 

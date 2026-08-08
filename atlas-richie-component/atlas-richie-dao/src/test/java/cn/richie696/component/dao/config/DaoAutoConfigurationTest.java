@@ -15,9 +15,7 @@
  */
 package cn.richie696.component.dao.config;
 
-import cn.richie696.component.dao.snowflake.IdBuilder;
 import com.baomidou.mybatisplus.annotation.DbType;
-import com.baomidou.mybatisplus.autoconfigure.MybatisPlusProperties;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import org.junit.jupiter.api.Test;
 
@@ -32,8 +30,7 @@ class DaoAutoConfigurationTest {
         properties.setBatchUpdateLimit(500);
         properties.setEnableBlockAttack(true);
 
-        IdBuilder idBuilder = new IdBuilder(1L);
-        DaoAutoConfiguration config = new DaoAutoConfiguration(properties, idBuilder);
+        DaoAutoConfiguration config = new DaoAutoConfiguration(properties);
 
         MybatisPlusInterceptor interceptor = config.mybatisPlusInterceptor();
 
@@ -48,29 +45,13 @@ class DaoAutoConfigurationTest {
         properties.setBatchUpdateLimit(500);
         properties.setEnableBlockAttack(false);
 
-        IdBuilder idBuilder = new IdBuilder(1L);
-        DaoAutoConfiguration config = new DaoAutoConfiguration(properties, idBuilder);
+        DaoAutoConfiguration config = new DaoAutoConfiguration(properties);
 
         MybatisPlusInterceptor interceptor = config.mybatisPlusInterceptor();
 
         assertThat(interceptor.getInterceptors()).hasSize(3);
     }
 
-    @Test
-    void plusPropertiesCustomizer_wiresIdBuilderForIdentifierGeneration() {
-        DaoProperties properties = new DaoProperties();
-        IdBuilder idBuilder = new IdBuilder(5L);
-        DaoAutoConfiguration config = new DaoAutoConfiguration(properties, idBuilder);
-
-        var customizer = config.plusPropertiesCustomizer();
-
-        MybatisPlusProperties plusProperties = new MybatisPlusProperties();
-        customizer.customize(plusProperties);
-
-        var identifierGenerator = plusProperties.getGlobalConfig().getIdentifierGenerator();
-        Number id = identifierGenerator.nextId(new Object());
-        assertThat(id.longValue()).isPositive();
-    }
 
     @Test
     void mybatisPlusInterceptor_setsCorrectDbType() {
@@ -79,8 +60,7 @@ class DaoAutoConfigurationTest {
         properties.setBatchUpdateLimit(100);
         properties.setEnableBlockAttack(false);
 
-        IdBuilder idBuilder = new IdBuilder(1L);
-        DaoAutoConfiguration config = new DaoAutoConfiguration(properties, idBuilder);
+        DaoAutoConfiguration config = new DaoAutoConfiguration(properties);
 
         MybatisPlusInterceptor interceptor = config.mybatisPlusInterceptor();
 
