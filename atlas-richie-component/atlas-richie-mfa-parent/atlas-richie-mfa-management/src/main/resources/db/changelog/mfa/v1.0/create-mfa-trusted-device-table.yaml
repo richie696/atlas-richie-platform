@@ -74,7 +74,9 @@ databaseChangeLog:
               - column:
                   name: update_time
                   type: TIMESTAMP
-                  defaultValueComputed: CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                  # Keep the changelog portable across PostgreSQL and MySQL. The application
+                  # writes update_time on updates; ON UPDATE is MySQL-only syntax.
+                  defaultValueComputed: CURRENT_TIMESTAMP
                   constraints:
                     nullable: true
               - column:
