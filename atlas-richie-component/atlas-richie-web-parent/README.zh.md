@@ -951,8 +951,17 @@ API 版本 / Client Key）——业务方写一次，部署形态可选。
 | `tracing.prefer-w3c`           | boolean | `true`                       | 优先解析 `traceparent`       |
 | `hang-detection.enabled`       | boolean | **`false`**                  | 启用慢/挂请求检测（opt-in）  |
 | `degrade.enabled`              | boolean | **`false`**                  | 启用业务降级（opt-in）       |
+| `cors.enabled`                 | boolean | `false`                      | 仅调试时显式启用 Servlet MVC CORS；线上由前置服务/网关处理 |
+| `cors.allowed-origins`         | String[]| `[*]`                        | 允许的 Origin；启用 credentials 时必须使用精确 Origin，禁止 `*` |
+| `cors.allowed-methods`         | String[]| `GET,POST,PUT,DELETE,OPTIONS` | 允许的 HTTP 方法 |
+| `cors.allowed-headers`         | String[]| `[*]`                        | 允许的请求头 |
+| `cors.allow-credentials`       | boolean | `false`                      | 是否允许 Cookie/凭证 |
+| `cors.max-age`                 | long    | `3600`                       | 预检缓存秒数 |
 | `protection.*`                 | object  | 全部 `false`（见 §平台防护） | A/B 组防护开关（opt-in）     |
 | `business.*`                   | object  | 全部 `false`（见 §业务集成） | 业务能力集成开关（opt-in）   |
+
+> `cors` 由 `web-core` 统一注册为 `WebMvcConfigurer`，因此 Tomcat 与 Jetty 的响应行为一致。独立部署时可配置精确
+> Origin 和 `allow-credentials=true`；部署 gateway 时关闭它，避免重复的 `Access-Control-Allow-*` 响应头。
 
 ### 限流——`platform.component.web.rate-limit`
 

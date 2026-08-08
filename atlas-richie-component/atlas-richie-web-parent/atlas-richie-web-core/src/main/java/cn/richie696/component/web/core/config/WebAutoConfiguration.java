@@ -23,6 +23,7 @@ import cn.richie696.component.web.core.config.hang.HangDetectionProperties;
 import cn.richie696.component.web.core.config.login.LoginConfig;
 import cn.richie696.component.web.core.config.metrics.MetricsAutoConfiguration;
 import cn.richie696.component.web.core.config.mvc.CorsProperties;
+import cn.richie696.component.web.core.config.mvc.WebCorsAutoConfiguration;
 import cn.richie696.component.web.core.config.protection.PlatformProtectionProperties;
 import cn.richie696.component.web.core.config.ratelimit.CircuitBreakerProperties;
 import cn.richie696.component.web.core.config.ratelimit.RateLimitProperties;
@@ -83,7 +84,8 @@ import org.springframework.context.annotation.Import;
         HangAutoConfiguration.class,
         DegradeAutoConfiguration.class,
         WebRateLimitAutoConfiguration.class,
-        SseAutoConfiguration.class
+        SseAutoConfiguration.class,
+        WebCorsAutoConfiguration.class
 })
 @EnableConfigurationProperties({
         WebProperties.class,
