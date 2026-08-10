@@ -32,9 +32,9 @@ class GatewayRedisKeyTest {
     class EnumValues {
 
         @Test
-        @DisplayName("should have 27 enum values")
-        void shouldHaveTwentySevenEnumValues() {
-            assertThat(GatewayRedisKey.values()).hasSize(27);
+        @DisplayName("should have 28 enum values")
+        void shouldHaveTwentyEightEnumValues() {
+            assertThat(GatewayRedisKey.values()).hasSize(28);
         }
 
         @Test
@@ -222,6 +222,8 @@ class GatewayRedisKeyTest {
         void shouldGenerateCorrectKeysForEccAndDuplicateSubmitKeys() {
             assertThat(GatewayRedisKey.ECC_CLIENT_PUBLIC_KEY.getKey("c1")).isEqualTo("platform:gateway:ecc:client:publickey:c1");
             assertThat(GatewayRedisKey.ECC_SHARED_KEY.getKey("c1")).isEqualTo("platform:gateway:ecc:sharedkey:c1");
+            assertThat(GatewayRedisKey.ECC_SHARED_KEY_BY_GATEWAY_KEY.getKey("c1", "k1"))
+                    .isEqualTo("platform:gateway:ecc:sharedkey:c1:k1");
             assertThat(GatewayRedisKey.DUPLICATE_SUBMIT.getKey("r1")).isEqualTo("platform:gateway:duplicate-submit:r1");
         }
 

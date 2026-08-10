@@ -35,6 +35,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -305,6 +306,26 @@ class EccCryptoServiceImplTest {
             SecretKey result = service.getOrGenerateSharedKey(CLIENT_ID, privateKey);
 
             assertThat(result).isNull();
+        }
+
+        @Test
+        @DisplayName("网关密钥轮换时使用不同的共享密钥缓存键")
+        void getOrGenerateSharedKey_rotatedGatewayKey_usesDifferentCacheKey() {
+            PrivateKey first = mock(PrivateKey.class);
+            PrivateKey second = mock(PrivateKey.class);
+            when(first.getEncoded()).thenReturn(new byte[]{1, 2, 3});
+            when(second.getEncoded()).thenReturn(new byte[]{4, 5, 6});
+            when(structOps.get(anyString(), eq(SecretKey.class))).thenReturn(null);
+            when(valueOps.get(anyString(), eq(String.class))).thenReturn(null);
+
+            service.getOrGenerateSharedKey(CLIENT_ID, first);
+            service.getOrGenerateSharedKey(CLIENT_ID, second);
+
+            var keys = org.mockito.ArgumentCaptor.forClass(String.class);
+            verify(structOps, times(2)).get(keys.capture(), eq(SecretKey.class));
+            List<String> captured = keys.getAllValues();
+            assertThat(captured).hasSize(2).doesNotHaveDuplicates();
+            assertThat(captured.get(0)).startsWith("platform:gateway:ecc:sharedkey:" + CLIENT_ID + ":");
         }
     }
 

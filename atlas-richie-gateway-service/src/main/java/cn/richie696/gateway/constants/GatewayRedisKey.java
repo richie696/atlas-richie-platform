@@ -209,6 +209,19 @@ public enum GatewayRedisKey {
      */
     ECC_SHARED_KEY("platform:gateway:ecc:sharedkey:", "platform:gateway:ecc:sharedkey:%s"),
 
+    /**
+     * ECC 共享密钥缓存（绑定客户端与当前网关密钥版本）。
+     * Key: platform:gateway:ecc:sharedkey:{clientId}:{gatewayKeyFingerprint}
+     * Type: Hash
+     *
+     * <p>旧的 {@link #ECC_SHARED_KEY} 保留用于兼容清理历史缓存；新请求必须使用
+     * 绑定网关密钥版本的键，避免密钥轮换后复用旧共享密钥。</p>
+     */
+    ECC_SHARED_KEY_BY_GATEWAY_KEY(
+            "platform:gateway:ecc:sharedkey:",
+            "platform:gateway:ecc:sharedkey:%s:%s"
+    ),
+
     // ==================== 配置相关（从配置读取，仅作为文档说明）====================
 
     /**

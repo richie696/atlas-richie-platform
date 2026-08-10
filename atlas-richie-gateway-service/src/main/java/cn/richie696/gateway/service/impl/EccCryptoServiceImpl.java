@@ -29,6 +29,9 @@ import org.springframework.util.StringUtils;
 import javax.crypto.SecretKey;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -133,7 +136,10 @@ public class EccCryptoServiceImpl implements EccCryptoService {
             return null;
         }
 
-        String cacheKey = GatewayRedisKey.ECC_SHARED_KEY.getKey(clientId);
+        String cacheKey = GatewayRedisKey.ECC_SHARED_KEY_BY_GATEWAY_KEY.getKey(
+                clientId,
+                gatewayKeyFingerprint(gatewayPrivateKey)
+        );
 
         // 尝试从缓存获取共享密钥
         SecretKey cachedKey = GlobalCache.struct().get(cacheKey, SecretKey.class);
@@ -231,11 +237,31 @@ public class EccCryptoServiceImpl implements EccCryptoService {
         }
 
         String publicKeyCacheKey = GatewayRedisKey.ECC_CLIENT_PUBLIC_KEY.getKey(clientId);
-        String sharedKeyCacheKey = GatewayRedisKey.ECC_SHARED_KEY.getKey(clientId);
-
         GlobalCache.key().removeCache(publicKeyCacheKey);
-        GlobalCache.key().removeCache(sharedKeyCacheKey);
+        // 清理旧版键；版本化共享键依赖 TTL，避免误删其他网关密钥版本的并发请求。
+        GlobalCache.key().removeCache(GatewayRedisKey.ECC_SHARED_KEY.getKey(clientId));
 
         log.debug("清理客户端缓存: {}", clientId);
+    }
+
+    /**
+     * 根据网关私钥内容生成稳定的短版本标识。密钥轮换后该值变化，旧共享密钥
+     * 不会被新私钥错误复用；私钥不可编码时退化为进程内身份标识。
+     */
+    private String gatewayKeyFingerprint(PrivateKey gatewayPrivateKey) {
+        if (gatewayPrivateKey == null) {
+            return "unknown";
+        }
+        byte[] encoded = gatewayPrivateKey.getEncoded();
+        if (encoded == null || encoded.length == 0) {
+            return Integer.toHexString(System.identityHashCode(gatewayPrivateKey));
+        }
+        try {
+            return HexFormat.of().formatHex(
+                    MessageDigest.getInstance("SHA-256").digest(encoded), 0, 8
+            );
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is required by the JDK", e);
+        }
     }
 }
