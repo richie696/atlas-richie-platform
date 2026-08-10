@@ -15,7 +15,7 @@
                 AND (tenant_id IS NULL OR tenant_id = '')
             </otherwise>
         </choose>
-        AND deleted = 0
+        AND deleted = false
         LIMIT 1
     </select>
 

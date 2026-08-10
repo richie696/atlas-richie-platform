@@ -15,7 +15,7 @@
                 AND (tenant_id IS NULL OR tenant_id = '')
             </otherwise>
         </choose>
-        AND deleted = 0
+        AND deleted = false
         ORDER BY last_used_time DESC, create_time DESC
     </select>
 
@@ -33,7 +33,7 @@
                 AND (tenant_id IS NULL OR tenant_id = '')
             </otherwise>
         </choose>
-        AND deleted = 0
+        AND deleted = false
         LIMIT 1
     </select>
 
@@ -50,7 +50,7 @@
                 AND (tenant_id IS NULL OR tenant_id = '')
             </otherwise>
         </choose>
-        AND deleted = 0
+        AND deleted = false
     </select>
 
     <!-- 查询用户的主管理设备 -->
@@ -66,7 +66,7 @@
                 AND (tenant_id IS NULL OR tenant_id = '')
             </otherwise>
         </choose>
-        AND deleted = 0
+        AND deleted = false
         AND is_primary = 1
         LIMIT 1
     </select>
@@ -84,7 +84,7 @@
                 AND (tenant_id IS NULL OR tenant_id = '')
             </otherwise>
         </choose>
-        AND deleted = 0
+        AND deleted = false
     </update>
 
     <!-- 将指定设备设为主设备 -->
@@ -101,7 +101,7 @@
                 AND (tenant_id IS NULL OR tenant_id = '')
             </otherwise>
         </choose>
-        AND deleted = 0
+        AND deleted = false
     </update>
 
 </mapper>

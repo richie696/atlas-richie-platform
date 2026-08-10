@@ -150,22 +150,33 @@ public class MfaBindManager {
      *   <li>{@code backupCodes}：备份码列表（用于紧急情况，仅返回一次）</li>
      *   <li>{@code expiresIn}：二维码有效期（秒，默认600秒）</li>
      * </ul>
-     * @throws IllegalStateException 如果用户已绑定 MFA 设备
+     * @throws IllegalStateException 如果用户已有已启用/已禁用的 MFA 设备；未激活的绑定会复用原密钥恢复
      */
     @Transactional
     public MfaBindResult bindDevice(String tenantId, String userId, String deviceType) {
+        String actualTenantId = tenantSupport.isTenantEnabled() ? tenantId : null;
+        MfaUserInfo existing = mfaUserMapper.selectByTenantAndUser(actualTenantId, userId);
+        if (existing != null) {
+            if (existing.getStatus() == MfaStatusEnum.ENABLED) {
+                throw new IllegalStateException("MFA设备已绑定，请先解绑后再绑定");
+            }
+            if (existing.getStatus() == MfaStatusEnum.NOT_ACTIVATED) {
+                return resumePendingBinding(actualTenantId, tenantId, userId, deviceType, existing);
+            }
+            throw new IllegalStateException("MFA设备已存在，请先解绑后再绑定");
+        }
+
         // 1. 生成密钥
         String plainSecret = secretKeyManager.generateSecretKey();
 
-        // 调试日志：记录生成的密钥信息
-        log.info("=== MFA绑定密钥生成调试信息 ===");
-        log.info("tenantId: {}, userId: {}", tenantId, userId);
-        log.info("生成的 plainSecret: {}", plainSecret);
-        log.info("算法: {}, 位数: {}, 时间窗口: {}",
+        // Never log the TOTP secret. It is returned once to the caller and must
+        // not appear in application logs, traces, or audit payloads.
+        log.debug("MFA binding secret generated for tenantId={}, userId={}, algorithm={}, digits={}, period={}",
+                tenantId,
+                userId,
                 properties.getTotp().getAlgorithm(),
                 properties.getTotp().getDigits(),
                 properties.getTotp().getPeriod());
-        log.info("=================================");
 
         // 2. 存储密钥到 KMS（返回密钥引用，不存储加密后的密钥到数据库）
         String secretReference = secretKeyManager.storeSecret(tenantId, userId, plainSecret);
@@ -205,18 +216,6 @@ public class MfaBindManager {
         // 因为 NULL != NULL，所以需要应用层检查
         // 如果未启用租户，tenant_id为NULL，需要检查是否有任何 tenant_id IS NULL 的记录
         // 如果启用租户，通过uk_tenant_user保证(tenant_id, user_id)唯一
-        MfaUserInfo existing = mfaUserMapper.selectByTenantAndUser(tenantId, userId);
-        if (existing != null && existing.getStatus() == MfaStatusEnum.ENABLED) {
-            log.warn("MFA设备已绑定，tenantId: {}, userId: {}", tenantId, userId);
-            // 如果已存在，删除刚存储的密钥（回滚）
-            try {
-                secretKeyManager.deleteSecret(tenantId, userId);
-            } catch (Exception e) {
-                log.error("回滚密钥存储失败，secretReference: {}", secretReference, e);
-            }
-            throw new IllegalStateException("MFA设备已绑定，请先解绑后再绑定");
-        }
-
         // 6. 保存到数据库（事务）：不保存密钥，密钥存储在密钥管理器中
         MfaUserInfo userInfo = new MfaUserInfo();
         userInfo.setTenantId(tenantId);  // 如果未启用租户，则为null
@@ -247,6 +246,66 @@ public class MfaBindManager {
                 .backupCodes(plainBackupCodes)  // 仅返回一次
                 .expiresIn(600)  // 10分钟有效期
                 .build();
+    }
+
+    /**
+     * Resume a binding that was created but never activated. The secret is
+     * reused so repeated login attempts cannot silently rotate the QR code.
+     * Backup codes are regenerated because only their hashes are persisted.
+     */
+    private MfaBindResult resumePendingBinding(String actualTenantId, String tenantId, String userId,
+                                               String deviceType, MfaUserInfo existing) {
+        String plainSecret = secretKeyManager.retrieveSecret(actualTenantId, userId);
+        List<String> plainBackupCodes = backupCodeManager.generateBackupCodes(
+                properties.getSecurity().getBackupCode().getCount());
+        List<String> hashedBackupCodes = backupCodeManager.hashBackupCodes(plainBackupCodes);
+
+        String username = resolveUsername(userId);
+        String qrCodeUrl = qrCodeManager.generateQrCodeUrl(
+                actualTenantId,
+                userId,
+                username,
+                plainSecret,
+                properties.getManagement().getIssuer(),
+                existing.getAlgorithm(),
+                existing.getDigits() != null ? existing.getDigits() : properties.getTotp().getDigits(),
+                existing.getPeriod() != null ? existing.getPeriod() : properties.getTotp().getPeriod());
+
+        var updateWrapper = new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<MfaUserInfo>();
+        updateWrapper.eq(MfaUserInfo::getId, existing.getId())
+                .set(MfaUserInfo::getBackupCodesHashed, JsonUtils.getInstance().serialize(hashedBackupCodes))
+                .set(MfaUserInfo::getDeviceType, deviceType)
+                .set(MfaUserInfo::getStatus, MfaStatusEnum.NOT_ACTIVATED)
+                .set(MfaUserInfo::getBindTime, existing.getBindTime() != null
+                        ? existing.getBindTime() : OffsetDateTime.now(ZoneOffset.UTC));
+        if (mfaUserMapper.update(null, updateWrapper) <= 0) {
+            throw new IllegalStateException("恢复MFA绑定失败，请重试");
+        }
+
+        existing.setBackupCodesHashed(JsonUtils.getInstance().serialize(hashedBackupCodes));
+        existing.setDeviceType(deviceType);
+        existing.setStatus(MfaStatusEnum.NOT_ACTIVATED);
+        cacheSyncManager.syncToCache(existing);
+        if (auditEventPublisher != null) {
+            auditEventPublisher.publishSuccess(tenantId, userId, MfaOperationTypeEnum.BIND, deviceType, null);
+        }
+
+        return MfaBindResult.builder()
+                .qrCodeUrl(qrCodeUrl)
+                .secretKey(plainSecret)
+                .backupCodes(plainBackupCodes)
+                .expiresIn(600)
+                .build();
+    }
+
+    private String resolveUsername(String userId) {
+        try {
+            String username = LoginUserContextHolder.getUserInfo().getUsername();
+            return StringUtils.isBlank(username) ? userId : username;
+        } catch (Exception e) {
+            log.warn("无法从上下文获取用户登录名，使用 userId 作为备选，userId: {}", userId);
+            return userId;
+        }
     }
 
     /**
@@ -293,14 +352,8 @@ public class MfaBindManager {
             return false;
         }
 
-        // 调试日志：记录查询到的用户信息
-        log.info("=== MFA激活验证调试信息 ===");
-        log.info("查询参数 - tenantId: {}, userId: {}, actualTenantId: {}", tenantId, userId, actualTenantId);
-        log.info("查询结果 - id: {}, tenantId: {}, userId: {}, algorithm: {}, digits: {}, period: {}",
-                userInfo.getId(), userInfo.getTenantId(), userInfo.getUserId(),
-                userInfo.getAlgorithm(), userInfo.getDigits(), userInfo.getPeriod());
-        log.info("用户输入的验证码: {}", code);
-        log.info("===========================");
+        log.debug("MFA activation verification started for tenantId={}, userId={}, actualTenantId={}, userInfoId={}",
+                tenantId, userId, actualTenantId, userInfo.getId());
 
         // 调用TOTP验证引擎进行验证
         // window参数：允许±windowSize个时间窗口的容错（约±30秒，取决于配置的时间窗口）
@@ -312,7 +365,8 @@ public class MfaBindManager {
 
         // 从密钥管理器检索密钥（使用 tenantId 和 userId）
         String plainSecret = secretKeyManager.retrieveSecret(actualTenantId, userId);
-        log.info("从密钥管理器检索到的密钥: {} (长度: {})", plainSecret, plainSecret != null ? plainSecret.length() : 0);
+        log.debug("MFA activation secret retrieved for tenantId={}, userId={}, present={}",
+                actualTenantId, userId, StringUtils.isNotBlank(plainSecret));
 
         // 使用数据库中的 period 和 digits 进行验证，确保与二维码生成时使用的参数一致
         boolean valid = totpValidationEngine.verifyCode(

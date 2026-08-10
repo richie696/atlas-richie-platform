@@ -112,21 +112,10 @@ public class QrCodeManager {
             String qrCodeUrl = "otpauth://totp/%s?secret=%s&issuer=%s&algorithm=%s&digits=%d&period=%d".formatted(
                     encodedLabel, encodedSecret, encodedIssuer, normalizedAlgorithm, digits, period);
 
-            // 输出生成的二维码 URL 到控制台，便于调试
-            log.info("=== MFA 二维码 URL（调试信息）===");
-            log.info("原始 label: {}", label);
-            log.info("编码后 label: {}", encodedLabel);
-            log.info("原始 issuer: {}", issuer);
-            log.info("用户登录名 (username): {}", username);
-            log.info("issuer (追加用户登录名后): {}", issuerWithUsername);
-            log.info("编码后 issuer: {}", encodedIssuer);
-            log.info("原始密钥 (secret): {}", secret);
-            log.info("编码后密钥 (secret): {}", encodedSecret);
-            log.info("算法 (algorithm): {} -> {}", algorithm, normalizedAlgorithm);
-            log.info("位数 (digits): {}", digits);
-            log.info("时间窗口 (period): {}", period);
-            log.info("完整 otpauth:// URL: {}", qrCodeUrl);
-            log.info("===================================");
+            // Never log the otpauth URL or its secret query parameter. The URL
+            // is returned to the caller once and must not enter logs or traces.
+            log.debug("MFA QR payload generated for userId={}, tenantPresent={}, algorithm={}, digits={}, period={}",
+                    userId, tenantId != null && !tenantId.isEmpty(), normalizedAlgorithm, digits, period);
 
             return qrCodeUrl;
         } catch (Exception e) {
