@@ -24,6 +24,8 @@ import cn.richie696.component.web.core.config.login.LoginConfig;
 import cn.richie696.component.web.core.config.metrics.MetricsAutoConfiguration;
 import cn.richie696.component.web.core.config.mvc.CorsProperties;
 import cn.richie696.component.web.core.config.mvc.WebCorsAutoConfiguration;
+import cn.richie696.component.web.core.config.mvc.WebExceptionHandlingAutoConfiguration;
+import cn.richie696.component.web.core.config.mvc.WebHttpMessageConvertersAutoConfiguration;
 import cn.richie696.component.web.core.config.protection.PlatformProtectionProperties;
 import cn.richie696.component.web.core.config.ratelimit.CircuitBreakerProperties;
 import cn.richie696.component.web.core.config.ratelimit.RateLimitProperties;
@@ -85,7 +87,9 @@ import org.springframework.context.annotation.Import;
         DegradeAutoConfiguration.class,
         WebRateLimitAutoConfiguration.class,
         SseAutoConfiguration.class,
-        WebCorsAutoConfiguration.class
+        WebCorsAutoConfiguration.class,
+        WebExceptionHandlingAutoConfiguration.class,
+        WebHttpMessageConvertersAutoConfiguration.class
 })
 @EnableConfigurationProperties({
         WebProperties.class,

@@ -46,9 +46,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class CorsProperties {
 
     /**
-     * 是否启用 CORS。默认 true。
+     * 是否启用 CORS。默认 false；仅用于本地/调试场景显式开启。
      */
-    private boolean enabled = true;
+    private boolean enabled = false;
 
     /**
      * 允许的来源列表；默认 {@code *}。
