@@ -1,6 +1,7 @@
 package cn.richie696.component.mcp.client.spring.boot;
 
 import cn.richie696.component.mcp.api.McpOperations;
+import cn.richie696.component.mcp.api.McpDynamicOperations;
 import cn.richie696.component.mcp.transport.http.McpHttpToolClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -21,6 +22,7 @@ class McpClientAutoConfigurationTest {
                 .run(context -> {
                     assertThat(context).hasSingleBean(McpHttpToolClient.class);
                     assertThat(context).hasSingleBean(McpOperations.class);
+                    assertThat(context).hasSingleBean(McpDynamicOperations.class);
                     McpClientProperties properties = context.getBean(McpClientProperties.class);
                     assertThat(properties.getServers()).containsKey("demo");
                     assertThat(properties.getServers().get("demo").getHeaders())

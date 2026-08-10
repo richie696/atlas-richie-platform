@@ -1,5 +1,7 @@
 package cn.richie696.component.mcp.client.spring.boot;
 
+import cn.richie696.component.mcp.api.McpClientRequest;
+import cn.richie696.component.mcp.api.McpDynamicOperations;
 import cn.richie696.component.mcp.api.McpOperations;
 import cn.richie696.component.mcp.api.model.McpPromptContent;
 import cn.richie696.component.mcp.api.model.McpPromptDescriptor;
@@ -28,7 +30,7 @@ import java.util.function.Supplier;
 /**
  * 基于配置的 MCP HTTP Client 操作实现。
  */
-public final class McpHttpOperations implements McpOperations, McpClientCacheControl {
+public final class McpHttpOperations implements McpOperations, McpDynamicOperations, McpClientCacheControl {
     private final McpHttpToolClient client;
     private final McpClientProperties properties;
     private final McpProtocolEraCache protocolEraCache;
@@ -126,6 +128,85 @@ public final class McpHttpOperations implements McpOperations, McpClientCacheCon
                 endpoint(serverId), reference, argumentName, value, headers(serverId), contextArguments));
     }
 
+    /**
+     * Dynamic endpoint variant. Result caching is deliberately disabled here:
+     * request headers may carry a user or service credential, so a shared list
+     * cache would be unsafe without a caller-provided principal fingerprint.
+     */
+    @Override
+    public CompletionStage<List<McpToolDescriptor>> listTools(McpClientRequest request) {
+        Objects.requireNonNull(request, "request");
+        return async(() -> clientFor(request)
+                .listTools(request.endpoint(), request.headers())
+                .stream()
+                .map(tool -> new McpToolDescriptor(
+                        tool.name(),
+                        tool.title(),
+                        tool.description(),
+                        tool.inputSchema(),
+                        tool.outputSchema(),
+                        tool.annotations()))
+                .toList());
+    }
+
+    @Override
+    public CompletionStage<McpToolResponse> callTool(
+            McpClientRequest request,
+            String toolName,
+            Map<String, Object> arguments) {
+        Objects.requireNonNull(request, "request");
+        return async(() -> clientFor(request).callTool(
+                request.endpoint(), toolName, arguments, request.headers()));
+    }
+
+    @Override
+    public CompletionStage<List<McpResourceDescriptor>> listResources(McpClientRequest request) {
+        Objects.requireNonNull(request, "request");
+        return async(() -> clientFor(request).listResources(request.endpoint(), request.headers()));
+    }
+
+    @Override
+    public CompletionStage<List<McpResourceTemplateDescriptor>> listResourceTemplates(
+            McpClientRequest request) {
+        Objects.requireNonNull(request, "request");
+        return async(() -> clientFor(request)
+                .listResourceTemplates(request.endpoint(), request.headers()));
+    }
+
+    @Override
+    public CompletionStage<McpResourceContent> readResource(McpClientRequest request, String uri) {
+        Objects.requireNonNull(request, "request");
+        return async(() -> clientFor(request).readResource(request.endpoint(), uri, request.headers()));
+    }
+
+    @Override
+    public CompletionStage<List<McpPromptDescriptor>> listPrompts(McpClientRequest request) {
+        Objects.requireNonNull(request, "request");
+        return async(() -> clientFor(request).listPrompts(request.endpoint(), request.headers()));
+    }
+
+    @Override
+    public CompletionStage<McpPromptContent> getPrompt(
+            McpClientRequest request,
+            String name,
+            Map<String, Object> arguments) {
+        Objects.requireNonNull(request, "request");
+        return async(() -> clientFor(request)
+                .getPrompt(request.endpoint(), name, arguments, request.headers()));
+    }
+
+    @Override
+    public CompletionStage<McpCompletionResult> complete(
+            McpClientRequest request,
+            Map<String, Object> reference,
+            String argumentName,
+            String value,
+            Map<String, String> contextArguments) {
+        Objects.requireNonNull(request, "request");
+        return async(() -> clientFor(request).complete(
+                request.endpoint(), reference, argumentName, value, request.headers(), contextArguments));
+    }
+
     /** Invalidates list caches after a server list_changed/resource_updated notification. */
     @Override
     public void invalidateServerCache(String serverId) {
@@ -150,9 +231,27 @@ public final class McpHttpOperations implements McpOperations, McpClientCacheCon
                 .orElseGet(() -> negotiate(serverId, endpoint, cacheKey));
     }
 
+    private McpHttpToolClient clientFor(McpClientRequest request) {
+        if (!properties.isNegotiateProtocol()) {
+            return client;
+        }
+        URI endpoint = request.endpoint();
+        String cacheKey = request.endpointCacheKey();
+        return protocolEraCache.get(cacheKey)
+                .map(entry -> client.forProtocolVersion(entry.version()))
+                .orElseGet(() -> negotiate(endpoint, request.headers(), cacheKey));
+    }
+
     private McpHttpToolClient negotiate(String serverId, URI endpoint, String cacheKey) {
+        return negotiate(endpoint, headers(serverId), cacheKey);
+    }
+
+    private McpHttpToolClient negotiate(
+            URI endpoint,
+            Map<String, String> requestHeaders,
+            String cacheKey) {
         McpHttpToolClient probeClient = client.forProtocolVersion(McpProtocolVersions.V_2026_07_28);
-        McpDiscoverResult discovery = probeClient.discover(endpoint, headers(serverId));
+        McpDiscoverResult discovery = probeClient.discover(endpoint, requestHeaders);
         java.util.List<String> preferences = new java.util.ArrayList<>();
         preferences.add(properties.getPreferredProtocolVersion());
         McpProtocolVersions.SUPPORTED.stream()

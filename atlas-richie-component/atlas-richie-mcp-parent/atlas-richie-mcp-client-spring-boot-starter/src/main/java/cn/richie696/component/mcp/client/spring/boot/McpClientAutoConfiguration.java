@@ -88,7 +88,7 @@ public class McpClientAutoConfiguration {
                 oauth.getScopes());
     }
 
-    @Bean
+    @Bean(name = {"mcpOperations", "mcpDynamicOperations"})
     @ConditionalOnMissingBean(McpOperations.class)
     public McpHttpOperations mcpOperations(
             McpHttpToolClient client,
