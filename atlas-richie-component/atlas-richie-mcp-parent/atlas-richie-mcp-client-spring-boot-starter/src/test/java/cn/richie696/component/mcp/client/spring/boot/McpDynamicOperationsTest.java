@@ -17,6 +17,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * 验证 {@link McpHttpOperations} 在动态发现服务端时，会把请求级 {@code Authorization}
+ * 头透传到实际 JSON-RPC 端点，确保 OAuth / 多租户场景下调用方提供的临时凭证
+ * 不会在 {@code tools/list} 流程中被丢弃。
+ *
+ * @author richie696
+ * @since 2026-08-11
+ */
 class McpDynamicOperationsTest {
     private HttpServer server;
 

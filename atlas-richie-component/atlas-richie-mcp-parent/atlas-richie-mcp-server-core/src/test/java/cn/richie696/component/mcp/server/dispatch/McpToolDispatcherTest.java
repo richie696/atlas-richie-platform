@@ -5,6 +5,7 @@ import cn.richie696.component.mcp.api.McpCallContext;
 import cn.richie696.component.mcp.api.model.McpToolDescriptor;
 import cn.richie696.component.mcp.api.model.McpToolResponse;
 import cn.richie696.component.mcp.api.server.McpToolExecutionException;
+import cn.richie696.component.mcp.api.server.McpToolInvocationInterceptor;
 import cn.richie696.component.mcp.protocol.McpProtocolException;
 import cn.richie696.component.mcp.protocol.McpProtocolVersions;
 import cn.richie696.component.mcp.server.tool.McpToolRegistration;
@@ -16,10 +17,23 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * 验证 {@link McpToolDispatcher} 的端到端语义：输入校验失败时跳过 handler 并返回
+ * {@code MCP_TOOL_INPUT_VALIDATION_FAILED}；业务异常按结构化错误回传；handler
+ * 内部抛出的同步 {@link McpProtocolException} 原样保留；cancellation 在进入
+ * handler 之前终止；拦截器按 {@code order} 升序调用；工具超时产生 {@code MCP_TOOL_TIMEOUT}；
+ * 审计拦截器对 {@code sensitiveArguments} 名单字段打码；输出违反 schema 时升级为
+ * {@code MCP_INVALID_TOOL_OUTPUT}。
+ *
+ * @author richie696
+ * @since 2026-08-11
+ */
 class McpToolDispatcherTest {
     @Test
     void validatesInputExecutesHandlerAndValidatesStructuredOutput() {
@@ -141,8 +155,98 @@ class McpToolDispatcherTest {
         assertThat(called).isFalse();
     }
 
+    @Test
+    void invokesInterceptorsInDeclaredOrder() {
+        McpToolRegistry registry = registry((arguments, context) ->
+                CompletableFuture.completedFuture(success(Map.of(
+                        "customerId", "C-1", "active", true))));
+        List<Integer> calls = new CopyOnWriteArrayList<>();
+        McpToolInvocationInterceptor late = interceptor(20, calls);
+        McpToolInvocationInterceptor early = interceptor(10, calls);
+
+        new McpToolDispatcher(registry, List.of(late, early))
+                .dispatch("customer.lookup", Map.of("customerId", "C-1"), context())
+                .toCompletableFuture().join();
+
+        assertThat(calls).containsExactly(10, 20);
+    }
+
+    @Test
+    void appliesConfiguredToolTimeout() {
+        McpToolRegistry registry = registry(
+                (arguments, context) -> new CompletableFuture<>(),
+                Map.of("timeoutMs", 25L));
+
+        assertThatThrownBy(() -> new McpToolDispatcher(
+                registry, List.of(new McpTimeoutInvocationInterceptor()))
+                .dispatch("customer.lookup", Map.of("customerId", "C-1"), context())
+                .toCompletableFuture().join())
+                .isInstanceOf(CompletionException.class)
+                .cause()
+                .isInstanceOfSatisfying(McpProtocolException.class, exception -> {
+                    assertThat(exception.errorCode()).isEqualTo("MCP_TOOL_TIMEOUT");
+                    assertThat(exception.getMessage()).doesNotContain("customerId");
+                });
+    }
+
+    @Test
+    void auditInterceptorRedactsSchemaAndConventionSensitiveValues() {
+        AtomicReference<cn.richie696.component.mcp.api.server.McpToolAuditEvent> event =
+                new AtomicReference<>();
+        McpToolRegistry registry = new McpToolRegistry();
+        registry.register(new McpToolRegistration(
+                new McpToolDescriptor(
+                        "secret.check", null, null,
+                        Map.of(
+                                "type", "object",
+                                "properties", Map.of(
+                                        "customerId", Map.of("type", "string"),
+                                        "pin", Map.of("type", "string"),
+                                        "metadata", Map.of("type", "object")),
+                                "required", List.of("customerId", "pin")),
+                        Map.of(),
+                        Map.of("audit", true, "sensitiveArguments", List.of("pin"))),
+                (arguments, context) -> CompletableFuture.completedFuture(
+                        new McpToolResponse(List.of(), Map.of("ok", true), false))));
+
+        new McpToolDispatcher(registry, List.of(new McpAuditInvocationInterceptor(event::set)))
+                .dispatch("secret.check", Map.of(
+                        "customerId", "C-1",
+                        "pin", "123456",
+                        "metadata", Map.of("accessToken", "token-value")), context())
+                .toCompletableFuture().join();
+
+        assertThat(event.get().successful()).isTrue();
+        assertThat(event.get().arguments()).containsEntry("pin", "***");
+        assertThat(event.get().arguments().toString())
+                .doesNotContain("123456", "token-value");
+    }
+
+    private McpToolInvocationInterceptor interceptor(int order, List<Integer> calls) {
+        return new McpToolInvocationInterceptor() {
+            @Override
+            public int order() {
+                return order;
+            }
+
+            @Override
+            public java.util.concurrent.CompletionStage<McpToolResponse> intercept(
+                    cn.richie696.component.mcp.api.server.McpToolInvocation invocation,
+                    cn.richie696.component.mcp.api.server.McpToolInvocationChain chain) {
+                calls.add(order);
+                return chain.proceed(invocation);
+            }
+        };
+    }
+
     private McpToolRegistry registry(
             cn.richie696.component.mcp.api.server.McpToolHandler handler) {
+        return registry(handler, Map.of());
+    }
+
+    private McpToolRegistry registry(
+            cn.richie696.component.mcp.api.server.McpToolHandler handler,
+            Map<String, Object> annotations) {
         McpToolRegistry registry = new McpToolRegistry();
         registry.register(new McpToolRegistration(
                 new McpToolDescriptor(
@@ -162,7 +266,7 @@ class McpToolDispatcherTest {
                                         "active", Map.of("type", "boolean")),
                                 "required", List.of("customerId", "active"),
                                 "additionalProperties", false),
-                        Map.of()),
+                        annotations),
                 handler));
         return registry;
     }

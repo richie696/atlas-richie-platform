@@ -9,6 +9,15 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * 验证 {@link McpJsonSchemaValidator} 在安全默认（{@code secureDefaults}）下对 JSON Schema
+ * 2020-12 的编译与运行期校验：基础类型 / 必填 / 格式 / {@code $defs} + {@code unevaluatedProperties}；
+ * 拒绝非对象型根 schema；默认禁用外部 {@code $ref} / {@code $dynamicRef} 以阻断 SSRF；
+ * 拒绝自循环与超过深度限制的恶意载荷。该测试为 schema 校验链路提供安全基线。
+ *
+ * @author richie696
+ * @since 2026-08-11
+ */
 class McpJsonSchemaValidatorTest {
     private final McpJsonSchemaValidator validator = McpJsonSchemaValidators.secureDefaults();
 

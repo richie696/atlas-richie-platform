@@ -10,6 +10,15 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * 验证 MCP OAuth 适配层与通用 OAuth 契约（{@code atlas-richie-oauth-contract}）的对齐：
+ * {@link McpOAuthAccessToken} 可以被 {@link OAuthTestAssertions} 视作通用 token 校验；
+ * MCP 授权请求必须携带 {@code resource}（RFC 8707）和 {@code S256} PKCE challenge；
+ * 由此确保在多 AS 互通场景下凭证语义与通用 OAuth 2.1 保持一致。
+ *
+ * @author richie696
+ * @since 2026-08-11
+ */
 class McpOAuthContractTest {
 
     @Test

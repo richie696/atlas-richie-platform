@@ -12,6 +12,16 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * 验证 {@link McpJsonRpcValidator} 对 JSON-RPC 2.0 顶层结构与 id 类型规则的严格校验：
+ * 字符串 / 整数 / {@code null}（notification）id 合法；浮点 / 布尔 id 必须拒绝；
+ * 非 {@code 2.0} 版本号直接判定为 {@code -32600} invalid request；params 内允许
+ * 保留 JSON {@code null}；{@link McpJsonRpcResponse} 必须且只能包含 {@code result} 或
+ * {@code error} 之一，否则构造期抛 {@link IllegalArgumentException}。
+ *
+ * @author richie696
+ * @since 2026-08-11
+ */
 class McpJsonRpcValidatorTest {
     @Test
     void acceptsStringIntegerAndNotificationIds() {

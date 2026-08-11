@@ -83,13 +83,23 @@ public class WebUtils {
     private static JacksonJsonHttpMessageConverter createPlatformJacksonJsonConverter() {
         SimpleModule customModule = new SimpleModule();
         JacksonModule xmlModuleTemp = null;
+        JacksonModule kotlinModuleTemp = null;
         try {
             Class<?> xmlModuleClass = Class.forName("tools.jackson.dataformat.xml.JacksonXmlModule");
             xmlModuleTemp = (JacksonModule) xmlModuleClass.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             // 如果 jackson-dataformat-xml 不在 classpath 中，跳过 XML 模块
         }
+        try {
+            // Spring Boot 4 uses Jackson 3. Kotlin data classes need this optional module for
+            // absent JSON properties to use their Kotlin default values.
+            Class<?> kotlinModuleClass = Class.forName("tools.jackson.module.kotlin.KotlinModule");
+            kotlinModuleTemp = (JacksonModule) kotlinModuleClass.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            // Java-only services do not need jackson-module-kotlin; keep web-core container-neutral.
+        }
         final JacksonModule xmlModule = xmlModuleTemp;
+        final JacksonModule kotlinModule = kotlinModuleTemp;
 
         customModule.addSerializer(Long.class, ToStringSerializer.instance);
         customModule.addSerializer(BigInteger.class, ToStringSerializer.instance);
@@ -120,6 +130,9 @@ public class WebUtils {
                 .addModule(customModule);
         if (xmlModule != null) {
             baseMapperBuilder.addModule(xmlModule);
+        }
+        if (kotlinModule != null) {
+            baseMapperBuilder.addModule(kotlinModule);
         }
         ObjectMapper customMapper = baseMapperBuilder.build();
         if (!(customMapper instanceof JsonMapper customJsonMapper)) {

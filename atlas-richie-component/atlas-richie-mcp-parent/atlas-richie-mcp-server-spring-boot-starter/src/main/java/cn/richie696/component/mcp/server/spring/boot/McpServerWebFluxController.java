@@ -21,10 +21,15 @@ import java.util.concurrent.Flow;
 import java.util.stream.Collectors;
 
 /**
- * 将框架无关的 MCP HTTP Endpoint 绑定到 Spring WebFlux。
+ * 将框架无关的 {@link McpServerHttpEndpoint} 绑定到 Spring WebFlux（响应式）容器。
  *
- * <p>普通请求返回单个 JSON/SSE 响应；modern subscriptions/listen 通过
- * {@link java.util.concurrent.Flow.Publisher} 保持响应流直到订阅关闭。</p>
+ * <p>仅在 Reactive Web 环境下生效（{@code @ConditionalOnWebApplication(REACTIVE)}）；Servlet
+ * 环境请使用 {@link McpServerHttpController}。普通请求返回单个 JSON/SSE 响应；modern
+ * subscriptions / listen 通过 {@link java.util.concurrent.Flow.Publisher} 保持响应流直到
+ * 订阅关闭。</p>
+ *
+ * @author richie696
+ * @since 2026-08-11
  */
 @RestController
 @RequestMapping("${platform.component.mcp.server.path:/mcp}")
@@ -32,10 +37,22 @@ public final class McpServerWebFluxController {
     private final McpServerHttpEndpoint endpoint;
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
 
+    /**
+     * 构造 WebFlux 控制器。
+     *
+     * @param endpoint 框架无关的 HTTP 端点，不可为 {@code null}
+     */
     public McpServerWebFluxController(McpServerHttpEndpoint endpoint) {
         this.endpoint = endpoint;
     }
 
+    /**
+     * 处理 JSON 模式的 MCP 请求（单次响应）。
+     *
+     * @param body 原始 JSON 请求体的响应式包装
+     * @param headers HTTP 请求头集合
+     * @return 单次 JSON 响应实体；响应体可为空（仅状态码/Content-Type 有效）
+     */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<Object>> handleJson(
             @RequestBody Mono<String> body,
@@ -43,6 +60,17 @@ public final class McpServerWebFluxController {
         return body.map(json -> response(endpoint.handle(json, normalize(headers))));
     }
 
+    /**
+     * 处理 SSE 模式的 MCP 请求（流式响应）。
+     *
+     * <p>当底层响应体为 {@link java.util.concurrent.Flow.Publisher} 时，会被桥接到 Reactor
+     * 的 {@link Flux}，保持响应流直到订阅关闭；框架侧 {@code notifications} 会在 SSE 流的
+     * 起始处一次性发出。</p>
+     *
+     * @param body 原始 JSON 请求体的响应式包装
+     * @param headers HTTP 请求头集合
+     * @return SSE 事件流；事件类型统一为 {@code "message"}
+     */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<String>> handleSse(
             @RequestBody Mono<String> body,

@@ -10,6 +10,16 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * 验证 MCP OAuth 集成在安全维度的关键不变量：{@link McpOAuthAccessToken} 生成的
+ * Bearer Header 格式与 RFC 6750 一致；过期判断对时钟偏移宽容；401 challenge header
+ * 必须带 {@code resource_metadata} 与 {@code scope}；{@link McpOAuthUriPolicy#httpsOnly()}
+ * 拒绝非 HTTPS 及带 userinfo 的 URI；{@link McpOAuthPkce} 一律使用 S256。
+ * 是 OAuth 接入路径的安全基线。
+ *
+ * @author richie696
+ * @since 2026-08-11
+ */
 class McpOAuthSecurityTest {
     @Test
     void tokenProducesBearerHeaderAndExpiryIsClockSkewAware() {

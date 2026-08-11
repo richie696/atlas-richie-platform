@@ -12,6 +12,17 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * 验证 {@link Mcp20260728Dialect}（modern）与 {@link Mcp20251125Dialect}（legacy）双向
+ * 兼容：modern 协议版本要求完整的 per-request 元数据；缺失任一字段即报错
+ * {@code -32602}；header 与 body 协议版本不一致会触发 {@code MCP_HEADER_MISMATCH}；
+ * legacy initialize 自然 session 化、result 默认按 {@code COMPLETE} 编码，modern
+ * 端则强制显式输出 {@code resultType}。两端共同确保 dispatch 路径在不同方言之间
+ * 不会产生歧义。
+ *
+ * @author richie696
+ * @since 2026-08-11
+ */
 class McpDialectCompatibilityTest {
     private final Mcp20260728Dialect modern = new Mcp20260728Dialect();
     private final Mcp20251125Dialect legacy = new Mcp20251125Dialect();

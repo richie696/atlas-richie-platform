@@ -483,7 +483,17 @@ public class MfaBindManager {
 
         // 查询未删除的MFA绑定记录
         MfaUserInfo userInfo = mfaUserMapper.selectByTenantAndUser(actualTenantId, userId);
-        return userInfo != null && userInfo.getStatus() == MfaStatusEnum.ENABLED;
+        boolean bound = userInfo != null && userInfo.getStatus() == MfaStatusEnum.ENABLED;
+        // Validation reads the normalized user state from GlobalCache. A
+        // process restart or Redis eviction can leave the database binding
+        // intact while the cache is empty, producing the contradictory state
+        // mfaBound=true followed by MFA_NOT_BOUND during verification. Warm
+        // the cache from the authoritative row whenever login checks a bound
+        // account; this is idempotent and keeps the DB/cache contract intact.
+        if (bound) {
+            cacheSyncManager.syncToCache(userInfo);
+        }
+        return bound;
     }
 
     /**

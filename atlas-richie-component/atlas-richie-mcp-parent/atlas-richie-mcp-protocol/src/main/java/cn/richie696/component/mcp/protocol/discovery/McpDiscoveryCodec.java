@@ -16,21 +16,56 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * MCP 2026-07-28 server/discover 线模型编解码器。
+ * MCP 2026-07-28 {@code server/discover} 方法的请求/响应编解码器。
+ *
+ * <p>为什么独立建 codec：{@code server/discover} 是 2026-07-28 新增的"握手前探测"方法，
+ * 其请求与响应字段集（{@code supportedVersions / capabilities / ttlMs / cacheScope}）与其他
+ * 业务方法差异较大，复用通用编解码会让代码难读。把 {@code _meta} 注入、{@code ttlMs} 强
+ * 校验、缓存作用域枚举转换等逻辑集中在本类，业务侧只调用 {@link #encodeRequest} /
+ * {@link #encodeResult} / {@link #decodeRequest} / {@link #decodeResult} 四个对称方法即可。</p>
+ *
+ * <p>关键设计：
+ * <ul>
+ *   <li>{@code ttlMs} 用 {@link java.math.BigDecimal} 承载以确保 JSON 序列化保留数字类型
+ *       （与 {@link McpCacheHints} 同理）。</li>
+ *   <li>解码时执行多重约束：方法名必须为 {@link #METHOD}、不允许业务参数、必须为带 id 的
+ *       请求、响应类型必须为 {@code COMPLETE}。</li>
+ * </ul>
+ * </p>
+ *
+ * @author richie696
+ * @since 2026-08-11
  */
 public final class McpDiscoveryCodec {
+    /** {@code server/discover} 方法名常量。 */
     public static final String METHOD = "server/discover";
 
     private final Mcp20260728Dialect dialect;
 
+    /**
+     * 使用默认 2026-07-28 方言构造编解码器。
+     */
     public McpDiscoveryCodec() {
         this(new Mcp20260728Dialect());
     }
 
+    /**
+     * 使用注入的方言构造编解码器（便于测试）。
+     *
+     * @param dialect 2026-07-28 方言实现
+     */
     public McpDiscoveryCodec(Mcp20260728Dialect dialect) {
         this.dialect = dialect;
     }
 
+    /**
+     * 把客户端身份/能力编码为 {@code server/discover} 请求。
+     *
+     * @param id                请求 id
+     * @param clientInfo        客户端实现信息，可为 {@code null}
+     * @param clientCapabilities 客户端能力声明，可为 {@code null}（视为空 Map）
+     * @return 线格式 JSON-RPC 请求
+     */
     public McpJsonRpcRequest encodeRequest(
             Object id,
             McpImplementationInfo clientInfo,
@@ -45,6 +80,14 @@ public final class McpDiscoveryCodec {
         return new McpJsonRpcRequest("2.0", id, METHOD, Map.of("_meta", metadata));
     }
 
+    /**
+     * 把线格式请求解码为内部模型，并执行 {@code server/discover} 特有的强约束。
+     *
+     * @param request                  线格式请求
+     * @param transportProtocolVersion 传输层协议版本（可为 {@code null}）
+     * @return 归一化后的内部请求
+     * @throws McpProtocolException 当方法名不符、含业务参数或为通知型时
+     */
     public McpNormalizedRequest decodeRequest(
             McpJsonRpcRequest request,
             String transportProtocolVersion) {
@@ -61,6 +104,12 @@ public final class McpDiscoveryCodec {
         return normalized;
     }
 
+    /**
+     * 把内部结果编码为线格式响应。
+     *
+     * @param result 内部 {@code server/discover} 结果
+     * @return 线格式响应 Map（含 {@code resultType}）
+     */
     public Map<String, Object> encodeResult(McpDiscoverResult result) {
         Map<String, Object> payload = new LinkedHashMap<>(result.extensions());
         payload.put("supportedVersions", result.supportedVersions());
@@ -71,12 +120,22 @@ public final class McpDiscoveryCodec {
         if (result.instructions() != null) {
             payload.put("instructions", result.instructions());
         }
-        payload.put("ttlMs", result.ttlMs());
+        // Some platform ObjectMapper configurations intentionally serialize Java Long
+        // values as JSON strings for browser precision. MCP requires ttlMs to remain a
+        // JSON integer, so use an arbitrary-precision numeric carrier on the wire.
+        payload.put("ttlMs", java.math.BigDecimal.valueOf(result.ttlMs()));
         payload.put("cacheScope", result.cacheScope().wireValue());
         return dialect.encodeResult(
                 new McpNormalizedResult(McpNormalizedResult.ResultType.COMPLETE, payload));
     }
 
+    /**
+     * 把线格式响应解码为内部结果。
+     *
+     * @param wireResult 线格式响应 Map
+     * @return 内部 {@code server/discover} 结果
+     * @throws McpProtocolException 当字段缺失、类型错误或 {@code resultType} 非 {@code complete} 时
+     */
     public McpDiscoverResult decodeResult(Map<String, Object> wireResult) {
         McpNormalizedResult normalized = dialect.normalizeResult(wireResult);
         if (normalized.resultType() != McpNormalizedResult.ResultType.COMPLETE) {

@@ -80,7 +80,11 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
     private final MilvusServiceClient milvusClient;
 
     private static final int DEFAULT_DIMENSION = 1536;
-    private static final List<String> SEARCH_OUTPUT_FIELDS = List.of("id", "content");
+    /**
+     * 检索时必须同时取回 metadata。KnowledgeBaseVectorService 的 ACL、多样性和 citation
+     * 都依赖 documentId / chunkNo 等元数据；仅返回 content 会使召回结果丢失归属信息。
+     */
+    private static final List<String> SEARCH_OUTPUT_FIELDS = List.of("id", "content", "metadata");
 
     /**
      * 构造方法，注入Milvus客户端和配置
@@ -119,7 +123,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         String filter = compileProviderFilter(effectiveOptions);
         List<VectorSearchResult> results = similaritySearchByVector(indexName, queryVector, topK, minScore, filter).stream()
                 .map(document -> VectorSearchResult.of(document.getId(), document.getFormattedContent(),
-                        document.getScore(), null).setMetadata(document.getMetadata()))
+                        documentScore(document), null).setMetadata(document.getMetadata()))
                 .toList();
         return Boolean.TRUE.equals(effectiveOptions.getRerank()) ? tryRerank(text, results) : results;
     }
@@ -433,7 +437,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
     private double distanceToSimilarity(double distance, MetricType metricType) {
         double score;
         switch (metricType) {
-            case IP -> score = distance;
+            case IP, COSINE -> score = distance;
             case L2 -> score = 1.0 / (1.0 + distance);
             default -> score = 1.0 - distance;
         }
@@ -690,13 +694,19 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         // IDScore是Milvus SDK的内部类，包含：longID、strID（主键的两种类型）、score（距离值）
         List<SearchResultsWrapper.IDScore> idScores = wrapper.getIDScore(0);
 
-        // 检查content字段是否存在，避免用异常做控制流
+        // 检查返回字段是否存在，避免用异常做控制流
         // 通过遍历fieldsDataList判断字段是否存在
         List<?> contentData = null;
+        List<?> metadataData = null;
         boolean hasContentField = results.getResults().getFieldsDataList().stream()
                 .anyMatch(f -> "content".equals(f.getFieldName()));
         if (hasContentField) {
             contentData = wrapper.getFieldData("content", 0);
+        }
+        boolean hasMetadataField = results.getResults().getFieldsDataList().stream()
+                .anyMatch(f -> "metadata".equals(f.getFieldName()));
+        if (hasMetadataField) {
+            metadataData = wrapper.getFieldData("metadata", 0);
         }
 
         // 遍历每条搜索结果，提取id、content、score组成VectorSearchResult
@@ -721,11 +731,35 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
             double score = distanceToSimilarity(idScore.getScore(), milvusConfig.getMetricType());
 
             if (score >= minScore) {
-                searchResults.add(new Document(id, content, Map.of("score", score)));
+                Map<String, Object> metadata = metadataAt(metadataData, i);
+                metadata.put("score", score);
+                searchResults.add(new Document(id, content, metadata));
             }
         }
 
         return searchResults;
+    }
+
+    /**
+     * 把 schema 中的 metadata JSON 恢复为文档元数据。历史 collection 或异常数据可
+     * 缺失/损坏该字段，读取时降级为空 map，不能让一条脏数据中断整次召回。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> metadataAt(List<?> metadataData, int index) {
+        if (metadataData == null || index >= metadataData.size()) {
+            return new LinkedHashMap<>();
+        }
+        Object raw = metadataData.get(index);
+        if (raw == null || raw.toString().isBlank()) {
+            return new LinkedHashMap<>();
+        }
+        try {
+            Map<String, Object> parsed = JsonUtils.getInstance().deserialize(raw.toString(), Map.class);
+            return parsed == null ? new LinkedHashMap<>() : new LinkedHashMap<>(parsed);
+        } catch (Exception e) {
+            log.warn("Milvus metadata JSON 解析失败，忽略该条 metadata: {}", e.getMessage());
+            return new LinkedHashMap<>();
+        }
     }
 
     /**
@@ -800,7 +834,8 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
      * ACL 字段不能只存在于 metadata JSON；声明为标量字段后，缺值即拒绝写入。
      */
     private void appendConfiguredScalarFields(String indexName, List<Document> docs, List<InsertParam.Field> fields) {
-        for (String fieldName : configuredScalarFields(indexName).keySet()) {
+        for (Map.Entry<String, Object> configuredField : configuredScalarFields(indexName).entrySet()) {
+            String fieldName = configuredField.getKey();
             List<Object> values = new ArrayList<>(docs.size());
             for (Document doc : docs) {
                 Object value = doc.getMetadata().get(fieldName);
@@ -808,21 +843,70 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
                     throw new IllegalArgumentException("Milvus scalar field '" + fieldName
                             + "' is declared for index '" + indexName + "' but missing from record metadata");
                 }
-                values.add(value);
+                values.add(coerceScalarValue(fieldName, configuredField.getValue(), value));
             }
             fields.add(new InsertParam.Field(fieldName, values));
         }
     }
 
     private Map<String, Object> configuredScalarFields(String indexName) {
-        if (vectorProperties == null || vectorProperties.getIndexes() == null) {
-            return Map.of();
+        if (vectorProperties != null && vectorProperties.getIndexes() != null) {
+            VectorProperties.IndexConfig indexConfig = vectorProperties.getIndexes().get(indexName);
+            if (indexConfig != null && indexConfig.getAdditionalFields() != null) {
+                return indexConfig.getAdditionalFields();
+            }
         }
-        VectorProperties.IndexConfig indexConfig = vectorProperties.getIndexes().get(indexName);
-        if (indexConfig == null || indexConfig.getAdditionalFields() == null) {
-            return Map.of();
+
+        // 动态 collection（例如每个知识库一个 collection）不会出现在启动期静态配置中。
+        // 服务重启后仍必须按真实 schema 补齐必填标量字段，否则 Milvus 会拒绝写入。
+        DescribeCollectionParam param = DescribeCollectionParam.newBuilder().withCollectionName(indexName).build();
+        R<DescribeCollectionResponse> response = milvusClient.describeCollection(param);
+        if (response.getStatus() != R.Status.Success.getCode()) {
+            throw new RuntimeException("Milvus describeCollection failed while resolving scalar fields: "
+                    + response.getMessage());
         }
-        return indexConfig.getAdditionalFields();
+
+        Map<String, Object> discovered = new LinkedHashMap<>();
+        for (io.milvus.grpc.FieldSchema field : response.getData().getSchema().getFieldsList()) {
+            if (Set.of("id", "vector", "content", "metadata").contains(field.getName())) {
+                continue;
+            }
+            discovered.put(field.getName(), Map.of("data_type", field.getDataType().name()));
+        }
+        return discovered;
+    }
+
+    /**
+     * Milvus SDK 根据 Java 值类型编码标量列；配置和 metadata 都来自通用 Map，
+     * 因此这里在边界统一归一化，避免 Int64 被错误地作为 String 写入。
+     */
+    private Object coerceScalarValue(String fieldName, Object fieldConfig, Object value) {
+        String dataType = "VarChar";
+        if (fieldConfig instanceof Map<?, ?> config) {
+            Object configuredType = config.get("data_type");
+            if (configuredType == null) {
+                configuredType = config.get("data-type");
+            }
+            if (configuredType != null) {
+                dataType = configuredType.toString();
+            }
+        }
+        try {
+            return switch (DataType.valueOf(dataType)) {
+                case Int64 -> value instanceof Number number ? number.longValue() : Long.parseLong(value.toString());
+                case Int32 -> value instanceof Number number ? number.intValue() : Integer.parseInt(value.toString());
+                case Int16 -> value instanceof Number number ? number.shortValue() : Short.parseShort(value.toString());
+                case Int8 -> value instanceof Number number ? number.byteValue() : Byte.parseByte(value.toString());
+                case Float -> value instanceof Number number ? number.floatValue() : Float.parseFloat(value.toString());
+                case Double -> value instanceof Number number ? number.doubleValue() : Double.parseDouble(value.toString());
+                case Bool -> value instanceof Boolean ? value : Boolean.parseBoolean(value.toString());
+                case VarChar, String -> value.toString();
+                default -> value;
+            };
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Cannot coerce Milvus scalar field '" + fieldName
+                    + "' to " + dataType + ": " + value, e);
+        }
     }
 
     private String milvusStringLiteral(String value) {

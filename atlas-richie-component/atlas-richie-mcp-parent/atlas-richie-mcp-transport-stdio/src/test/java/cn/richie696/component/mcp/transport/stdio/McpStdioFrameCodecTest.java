@@ -9,6 +9,15 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * 验证 {@link McpStdioFrameCodec} 的 newline-delimited JSON framing 与
+ * {@link McpStdioTransport} 的 flush / EOF 行为：编码输出以 {@code \n} 结尾，
+ * 解码可还原原始对象；transport 能正确处理 half-line 缓冲与 EOF；超出配置的
+ * 帧上限必须被拒绝。该测试为 STDIO 通道的最小可运行契约。
+ *
+ * @author richie696
+ * @since 2026-08-11
+ */
 class McpStdioFrameCodecTest {
     @Test
     void encodesAndDecodesOneJsonObjectPerLine() throws Exception {

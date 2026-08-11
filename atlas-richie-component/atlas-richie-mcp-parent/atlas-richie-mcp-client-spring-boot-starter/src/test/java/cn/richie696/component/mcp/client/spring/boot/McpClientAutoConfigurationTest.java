@@ -8,6 +8,15 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * 验证 MCP 客户端 Spring Boot 自动装配：{@code platform.component.mcp.client.servers.*} 配置
+ * 会正确绑定到 {@link McpClientProperties}，并按需注册 {@link McpHttpToolClient}、
+ * {@link McpOperations} 与 {@link McpDynamicOperations}；同时，确认 {@code enabled=false}
+ * 可整体关闭客户端装配，避免空上下文场景下的误注入。
+ *
+ * @author richie696
+ * @since 2026-08-11
+ */
 class McpClientAutoConfigurationTest {
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(org.springframework.boot.autoconfigure.AutoConfigurations.of(

@@ -14,6 +14,16 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * 验证 {@link McpStreamableHttpRequestValidator} 在 Streamable HTTP 入站校验链上的
+ * 全部边界：方法 / Content-Type / Accept / Origin / 镜像 header
+ * （{@code Mcp-Method}/{@code Mcp-Name}/{@code Mcp-Param-*}/{@code MCP-Protocol-Version}）
+ * 的大小写、缺失、重复、版本不匹配等非法输入；与 body 字段不一致、Base64 名称
+ * 解码失败、外部 URL 路径等异常都被精确映射到 HTTP 状态码与 JSON-RPC 错误码。
+ *
+ * @author richie696
+ * @since 2026-08-11
+ */
 class McpStreamableHttpRequestValidatorTest {
     private final McpStreamableHttpRequestValidator validator =
             new McpStreamableHttpRequestValidator(

@@ -39,6 +39,7 @@ import org.springframework.context.annotation.Import;
  */
 @AutoConfiguration
 @EnableConfigurationProperties(VectorProperties.class)
+@ConditionalOnProperty(prefix = "platform.component.vector", name = "provider")
 @Import({ModalityAwareEmbeddingService.class, VectorMultiProviderGuard.class})
 public class VectorAutoConfiguration {
 

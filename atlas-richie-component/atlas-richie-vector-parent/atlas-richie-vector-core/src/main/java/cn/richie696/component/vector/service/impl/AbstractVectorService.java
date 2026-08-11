@@ -224,12 +224,32 @@ public abstract class AbstractVectorService implements VectorService {
                 .map(d -> VectorSearchResult.of(
                         d.getId(),
                         d.getFormattedContent(),
-                        d.getScore(),
+                        documentScore(d),
                         null).setMetadata(d.getMetadata()))
                 .collect(Collectors.toList());
 
         boolean rerankEnabled = Boolean.TRUE.equals(options.getRerank());
         return rerankEnabled ? tryRerank(text, mapped) : mapped;
+    }
+
+    /**
+     * Provider adapters may return a Spring AI Document created from raw fields, whose native
+     * {@code score} defaults to zero. The vector provider contract preserves the real score in
+     * metadata so that it survives that translation; prefer it when present.
+     */
+    protected static double documentScore(Document document) {
+        Object metadataScore = document.getMetadata().get("score");
+        if (metadataScore instanceof Number number) {
+            return number.doubleValue();
+        }
+        if (metadataScore != null) {
+            try {
+                return Double.parseDouble(metadataScore.toString());
+            } catch (NumberFormatException ignored) {
+                // Fall back to Spring AI's native score for malformed legacy metadata.
+            }
+        }
+        return document.getScore();
     }
 
     @Override
