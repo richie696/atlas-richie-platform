@@ -25,8 +25,11 @@ import cn.richie696.component.nats.enums.ConnectionState;
 import cn.richie696.component.nats.exception.NatsException;
 import io.nats.client.KeyValue;
 import io.nats.client.ObjectStore;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.SmartLifecycle;
+
+import java.time.Duration;
 
 /**
  * NATS 组件统一门面 + 生命周期管理
@@ -67,9 +70,12 @@ public class NatsComponent implements SmartLifecycle {
 
     /** 生命周期标志位，{@code volatile} 保证 {@link #isRunning()} 在多线程下的可见性。 */
     private volatile boolean running = false;
+    /** 防止 Spring 初始化回调与 SmartLifecycle.start() 重复建立连接或声明资源。 */
+    private volatile boolean initialized = false;
 
     /**
-     * 构造 NATS 组件门面实例。所有依赖由 Spring 注入，构造过程不建立连接，副作用延后到 {@link #start()}。
+     * 构造 NATS 组件门面实例。所有依赖由 Spring 注入，构造过程不建立连接；连接与拓扑声明在
+     * {@link #initialize()} / {@link #start()} 中执行。
      *
      * @param properties                 NATS 外部配置
      * @param connectionManager          连接持有者
@@ -183,6 +189,22 @@ public class NatsComponent implements SmartLifecycle {
     // ===== SmartLifecycle =====
 
     /**
+     * 在业务 Bean 的 {@code @PostConstruct} 之前完成 JetStream 拓扑声明。
+     *
+     * <p>{@link SmartLifecycle#start()} 发生在所有 Bean 的初始化回调之后，业务消费者如果在
+     * {@code @PostConstruct} 中注册订阅，会早于原实现的 Stream/Consumer 自动声明，最终得到
+     * {@code consumer not found}。这里把基础设施初始化提前到本 Bean 的初始化阶段，同时保留
+     * {@code start()} 作为生命周期兜底，确保直接调用 {@link NatsComponent} 的消费者也能安全注册。</p>
+     */
+    @PostConstruct
+    public void initialize() {
+        if (!properties.isEnabled()) {
+            return;
+        }
+        initializeInfrastructure();
+    }
+
+    /**
      * Spring 容器启动时触发：先建立连接，再按需声明 JetStream 资源。
      * <p>该方法遵循连接优先原则——只有连接建立成功后才能拿到
      * {@link io.nats.client.JetStream} 上下文；Stream/Consumer 声明失败会冒泡，便于
@@ -191,20 +213,26 @@ public class NatsComponent implements SmartLifecycle {
     @Override
     public void start() {
         log.info("NATS component starting...");
+        initializeInfrastructure();
+        running = true;
+        log.info("NATS component started successfully");
+    }
 
+    /** 建立连接并幂等声明 JetStream 资源；失败时不标记 initialized，便于生命周期重试。 */
+    private synchronized void initializeInfrastructure() {
+        if (initialized) {
+            return;
+        }
         // 1. 初始化连接
         connectionManager.getConnection();
         log.info("NATS connection established, state: {}", connectionManager.getState());
 
         // 2. JetStream Stream/Consumer 声明
         if (properties.getJetstream().isEnabled()) {
-            // 新 overload: 同时 provision 业务 stream + DLQ stream (R-Stream 命名 + R-HA queue group)
             jetStreamManagementService.provisionAll(properties);
             log.info("NATS JetStream streams/consumers provisioned");
         }
-
-        running = true;
-        log.info("NATS component started successfully");
+        initialized = true;
     }
 
     /**
