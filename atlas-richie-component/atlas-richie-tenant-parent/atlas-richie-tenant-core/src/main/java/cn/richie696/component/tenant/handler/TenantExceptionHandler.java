@@ -44,57 +44,60 @@ public class TenantExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleDataSourceUnavailable(
             DataSourceUnavailableException e) {
         log.warn("Data source unavailable: {}", e.getMessage());
-        return buildResponse(503, "TENANT_DATA_SOURCE_UNAVAILABLE", e.getMessage());
+        return buildResponse("TENANT_DATA_SOURCE_UNAVAILABLE", e.getMessage());
     }
 
     @ExceptionHandler(TenantMigratingException.class)
     public ResponseEntity<Map<String, Object>> handleTenantMigrating(
             TenantMigratingException e) {
         log.warn("Tenant migrating: {}", e.getMessage());
-        return buildResponse(503, "TENANT_MIGRATING", e.getMessage());
+        return buildResponse("TENANT_MIGRATING", e.getMessage());
     }
 
     @ExceptionHandler(TenantSwitchInTransactionException.class)
     public ResponseEntity<Map<String, Object>> handleTenantSwitchInTx(
             TenantSwitchInTransactionException e) {
         log.warn("Tenant switch in transaction: from={} to={}", e.getFromTenantId(), e.getToTenantId());
-        return buildResponse(403, "TENANT_SWITCH_IN_TRANSACTION", e.getMessage());
+        return buildResponse("TENANT_SWITCH_IN_TRANSACTION", e.getMessage());
     }
 
     @ExceptionHandler(TenantNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleTenantNotFound(
             TenantNotFoundException e) {
         log.warn("Tenant not found: {}", e.getMessage());
-        return buildResponse(404, "TENANT_NOT_FOUND", e.getMessage());
+        return buildResponse("TENANT_NOT_FOUND", e.getMessage());
     }
 
     @ExceptionHandler(TenantModeMigrationException.class)
     public ResponseEntity<Map<String, Object>> handleModeMigration(
             TenantModeMigrationException e) {
         log.warn("Mode migration denied: {}", e.getMessage());
-        return buildResponse(403, "TENANT_MODE_MIGRATION_DENIED", e.getMessage());
+        return buildResponse("TENANT_MODE_MIGRATION_DENIED", e.getMessage());
     }
 
     @ExceptionHandler(TenantProvisionException.class)
     public ResponseEntity<Map<String, Object>> handleProvision(
             TenantProvisionException e) {
         log.error("Tenant provision failed: {}", e.getMessage());
-        return buildResponse(500, "TENANT_PROVISION_FAILED", e.getMessage());
+        return buildResponse("TENANT_PROVISION_FAILED", e.getMessage());
     }
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Map<String, Object>> handleBusiness(
             BusinessException e) {
         log.warn("Tenant business error: {}", e.getMessage());
-        return buildResponse(403, e.getCode(), e.getMessage());
+        // Business failures are returned in the standard application envelope. They are not
+        // transport failures and must therefore not be converted into an HTTP error status.
+        return buildResponse(e.getCode(), e.getMessage());
     }
 
-    private ResponseEntity<Map<String, Object>> buildResponse(int httpStatus, String code, String msg) {
+    private ResponseEntity<Map<String, Object>> buildResponse(String code, String msg) {
         Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", false);
         body.put("code", code);
         body.put("msg", msg);
         body.put("timestamp", System.currentTimeMillis());
         body.put("data", null);
-        return ResponseEntity.status(httpStatus).body(body);
+        return ResponseEntity.status(200).body(body);
     }
 }

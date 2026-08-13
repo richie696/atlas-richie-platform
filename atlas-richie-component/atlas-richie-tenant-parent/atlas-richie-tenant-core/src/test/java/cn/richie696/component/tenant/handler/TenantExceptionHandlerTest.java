@@ -92,11 +92,11 @@ class TenantExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("BusinessException → 403 + 自定义 code")
+    @DisplayName("BusinessException → 200 + 自定义 code")
     void handleBusiness() {
         ResponseEntity<Map<String, Object>> resp =
                 handler.handleBusiness(new BusinessException("CUSTOM_CODE", "custom msg"));
-        assertThat(resp.getStatusCode().value()).isEqualTo(403);
+        assertThat(resp.getStatusCode().value()).isEqualTo(200);
         assertThat(resp.getBody().get("code")).isEqualTo("CUSTOM_CODE");
     }
 
@@ -110,7 +110,8 @@ class TenantExceptionHandlerTest {
             ResponseEntity<Map<String, Object>> resp =
                     handler.handleTenantNotFound(new TenantNotFoundException(1L));
             Map<String, Object> body = resp.getBody();
-            assertThat(body).containsKeys("code", "msg", "timestamp", "data");
+            assertThat(body).containsKeys("success", "code", "msg", "timestamp", "data");
+            assertThat(body.get("success")).isEqualTo(false);
             assertThat(body.get("data")).isNull();
             assertThat(body.get("timestamp")).isInstanceOf(Long.class);
         }
