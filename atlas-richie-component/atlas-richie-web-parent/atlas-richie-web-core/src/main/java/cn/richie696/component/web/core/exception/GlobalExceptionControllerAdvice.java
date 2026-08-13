@@ -58,7 +58,7 @@ public class GlobalExceptionControllerAdvice {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResult<Void>> business(BusinessException exception, HttpServletRequest request) {
-        return response(statusForBusiness(exception), code(exception.getCode(), "BUSINESS_ERROR"),
+        return response(HttpStatus.OK, code(exception.getCode(), "BUSINESS_ERROR"),
                 safeMessage(exception.getMessage(), "请求无法完成"), request, exception, false);
     }
 
@@ -149,11 +149,6 @@ public class GlobalExceptionControllerAdvice {
             builder.header(REQUEST_ID_HEADER, requestId);
         }
         return builder.body(result);
-    }
-
-    private static HttpStatus statusForBusiness(BusinessException exception) {
-        HttpStatus status = HttpStatus.resolve(parseCode(exception.getCode()));
-        return status != null && status.isError() ? status : HttpStatus.BAD_REQUEST;
     }
 
     private static HttpStatus statusFromCode(String value, HttpStatus fallback) {

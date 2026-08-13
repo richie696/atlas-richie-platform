@@ -62,11 +62,11 @@ class GlobalExceptionControllerAdviceTest {
 
     @Test
     void coversOtherPlatformExceptionFamilies() {
-        var business = advice.business(new BusinessException("BUSINESS_ERROR", "业务失败"), request(null));
+        var business = advice.business(new BusinessException("500", "业务失败"), request(null));
         var runtime = advice.platformRuntime(new PlatformRuntimeException("请求无法完成"), request(null));
 
-        assertThat(business.getStatusCode().value()).isEqualTo(400);
-        assertThat(business.getBody()).extracting(ApiResult::getCode).isEqualTo("BUSINESS_ERROR");
+        assertThat(business.getStatusCode().value()).isEqualTo(200);
+        assertThat(business.getBody()).extracting(ApiResult::getCode).isEqualTo("500");
         assertThat(runtime.getStatusCode().value()).isEqualTo(400);
         assertThat(runtime.getBody()).extracting(ApiResult::getCode).isEqualTo("REQUEST_ERROR");
     }
