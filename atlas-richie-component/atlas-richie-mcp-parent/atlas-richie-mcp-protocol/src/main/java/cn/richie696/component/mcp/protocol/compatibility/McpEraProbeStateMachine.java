@@ -17,7 +17,7 @@ import java.util.Set;
  * 哪个协议时代。本状态机接收一个已归一化的 {@link McpProbeEvent}，结合
  * {@link McpTransportBinding}，输出确定性的 {@link McpProbeDecision}。</p>
  *
- * <p>关键判定规则（按 {@code event.type()} 分发）：
+ * 关键判定规则（按 {@code event.type()} 分发）：
  * <ul>
  *   <li>{@code DISCOVER_RESULT} —— 根据对端声明的版本列表做协商；只有 2026-07-28 才被接受。</li>
  *   <li>{@code MODERN_SUCCESS} —— 探测成功，直接走无状态路径。</li>
@@ -25,7 +25,6 @@ import java.util.Set;
  *       与"传统错误码"；STDIO 传输下所有错误降级为传统初始化。</li>
  *   <li>{@code TRANSPORT_ERROR / TIMEOUT} —— STDIO 直接降级；HTTP 4xx 降级、5xx 重试。</li>
  * </ul>
- * </p>
  *
  * <p>为什么"现代错误码"集合来自协议规范：MCP 2026-07-28 引入了
  * {@code -32020}/{@code -32021}/{@code -32022} 三个错误码（header mismatch、missing

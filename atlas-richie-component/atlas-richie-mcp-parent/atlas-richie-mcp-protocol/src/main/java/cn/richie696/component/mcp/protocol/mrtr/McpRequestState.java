@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * MRTR 状态令牌的解析结果。
  *
- * <p>五个字段的语义：
+ * 五个字段的语义：
  * <ul>
  *   <li>{@code payload} —— 不透明负载，本类型不解析其内容。</li>
  *   <li>{@code principalFingerprint} —— 主体指纹，{@link McpRequestStateCodec#verify} 时校验。</li>
@@ -14,7 +14,6 @@ import java.util.Objects;
  *   <li>{@code expiresAt} —— 过期时间点。</li>
  *   <li>{@code nonce} —— 防重放随机串（UUID 形式）。</li>
  * </ul>
- * </p>
  *
  * <p>紧凑构造器强制所有字符串字段非空白、{@code expiresAt} 非 {@code null}，以保证
  * 通过 {@link McpRequestStateCodec} 解码后的状态不可能"半残"。</p>

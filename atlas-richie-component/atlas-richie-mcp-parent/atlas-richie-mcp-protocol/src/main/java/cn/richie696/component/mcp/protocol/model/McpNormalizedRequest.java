@@ -10,7 +10,7 @@ import java.util.Objects;
 /**
  * 两个协议时代汇合后的内部请求。
  *
- * <p>为什么需要"归一化"层：2025-11-25 的 {@code initialize} 把"协议版本/对端信息/能力"
+ * 为什么需要"归一化"层：2025-11-25 的 {@code initialize} 把"协议版本/对端信息/能力"
  * 放在请求顶层；2026-07-28 把它们迁到 {@code params._meta} 之下，业务侧若直接对接
  * 两种形态需要写两套解析。本 record 由 {@link cn.richie696.component.mcp.protocol.dialect.McpProtocolDialect}
  * 产出，提供：
@@ -19,7 +19,6 @@ import java.util.Objects;
  *   <li>剥离版本相关元数据后的 {@code arguments}，业务只需关心真正的业务参数；</li>
  *   <li>{@link #notification()} 便捷判定（{@code id == null}）。</li>
  * </ul>
- * </p>
  *
  * @param id              JSON-RPC 请求 id；通知型请求为 {@code null}
  * @param method          调用的方法名

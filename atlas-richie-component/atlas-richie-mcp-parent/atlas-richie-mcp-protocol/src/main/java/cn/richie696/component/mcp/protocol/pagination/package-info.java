@@ -10,13 +10,12 @@
  * 不暴露游标的内部结构（排序键、过滤条件等）可以避免被反推业务实现；如有更复杂
  * 的需求，应使用 MRTR 包中的 {@link cn.richie696.component.mcp.protocol.mrtr.McpRequestState}。</p>
  *
- * <p>核心类职责：
+ * 核心类职责：
  * <ul>
  *   <li>{@link cn.richie696.component.mcp.protocol.pagination.McpCursorCodec}：
  *       提供 {@code encode(offset)} / {@code decode(cursor)} 两个对称方法，
  *       内部使用 HMAC-SHA256 签名、Base64-URL 编码、严格 round-trip 校验。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

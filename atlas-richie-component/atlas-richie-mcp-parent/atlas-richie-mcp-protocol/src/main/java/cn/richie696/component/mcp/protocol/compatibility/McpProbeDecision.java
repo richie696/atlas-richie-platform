@@ -5,13 +5,12 @@ import cn.richie696.component.mcp.protocol.McpProtocolEra;
 /**
  * 探测状态机的确定性输出。
  *
- * <p>三个字段共同表达"下一步该做什么"：
+ * 三个字段共同表达"下一步该做什么"：
  * <ul>
  *   <li>{@code era} —— 当前被识别出的协议时代；{@code null} 表示尚未识别（如重试探测）。</li>
  *   <li>{@code action} —— 后续动作（使用现代 / 重试现代 / 传统握手 / 重试探测 / 不兼容失败）。</li>
  *   <li>{@code selectedVersion} —— 选定的协议版本，可能为 {@code null}（如需要重试）。</li>
  * </ul>
- * </p>
  *
  * @param era             识别出的协议时代，可能为 {@code null}
  * @param action          后续动作

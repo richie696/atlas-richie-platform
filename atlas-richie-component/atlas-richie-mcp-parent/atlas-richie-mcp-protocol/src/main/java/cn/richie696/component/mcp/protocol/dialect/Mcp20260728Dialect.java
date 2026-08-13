@@ -20,7 +20,7 @@ import java.util.Map;
  * 全部位于 {@code params._meta} 之下。同时响应必须显式带 {@code resultType} 字段
  * （{@code complete} / {@code input_required}）。</p>
  *
- * <p>强约束：
+ * 强约束：
  * <ul>
  *   <li>{@code _meta.protocolVersion} 必须等于本方言版本，否则按"unsupported version"处理。</li>
  *   <li>若调用方额外传入了 {@code transportProtocolVersion}（如来自 HTTP 头
@@ -28,7 +28,6 @@ import java.util.Map;
  *       不一致时报 {@code MCP_HEADER_MISMATCH}（错误码 {@code -32020}）。</li>
  *   <li>{@code _meta.clientCapabilities} 必传；{@code _meta.clientInfo} 选传。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

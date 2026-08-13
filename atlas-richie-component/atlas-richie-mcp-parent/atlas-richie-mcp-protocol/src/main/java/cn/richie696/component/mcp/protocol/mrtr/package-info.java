@@ -6,7 +6,7 @@
  * 篡改。本包用 HMAC-SHA256 提供一个签名版的"半不透明"令牌：服务器可以验证签名和过期，
  * 但不解析 payload（payload 是任意字符串）。</p>
  *
- * <p>关键安全设计：
+ * 关键安全设计：
  * <ul>
  *   <li>签名使用常量时间比较（{@link java.security.MessageDigest#isEqual}）避免时序攻击。</li>
  *   <li>secret 至少 32 字节，构造期强校验以防误用弱密钥。</li>
@@ -14,16 +14,14 @@
  *   <li>目标方法（method）参与校验，防止令牌被同主体的其他方法滥用。</li>
  *   <li>nonce 防止重放：每次 {@code protect} 调用都生成新 UUID。</li>
  * </ul>
- * </p>
  *
- * <p>核心类职责：
+ * 核心类职责：
  * <ul>
  *   <li>{@link cn.richie696.component.mcp.protocol.mrtr.McpRequestState}：
  *       不可变状态记录（payload/principal/method/expiresAt/nonce）。</li>
  *   <li>{@link cn.richie696.component.mcp.protocol.mrtr.McpRequestStateCodec}：
  *       签发与验证令牌；payload 本身不解析，只承担不透明载体职责。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

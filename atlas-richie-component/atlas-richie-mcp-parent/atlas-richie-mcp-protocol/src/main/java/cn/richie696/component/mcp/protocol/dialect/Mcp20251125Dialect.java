@@ -19,7 +19,7 @@ import java.util.Map;
  * 显式的 {@code resultType} 字段——若响应里出现非 {@code complete} 类型，直接视为协议
  * 违规。</p>
  *
- * <p>归一化策略：
+ * 归一化策略：
  * <ul>
  *   <li>{@code initialize} 请求：必传 {@code protocolVersion / clientInfo / capabilities}，
  *       三者从 {@code arguments} 中剥离以免业务侧重复处理。</li>
@@ -27,7 +27,6 @@ import java.util.Map;
  *       对端信息视为 {@code null}。</li>
  *   <li>响应：仅允许 {@code complete}（缺省即视为 complete）。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

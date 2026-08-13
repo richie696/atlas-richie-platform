@@ -13,7 +13,7 @@
  * （进程内 TTL 缓存）以避免重复探测，跨实例持久化由应用层自行用
  * {@code platform.cache} 包装。</p>
  *
- * <p>核心类职责：
+ * 核心类职责：
  * <ul>
  *   <li>{@link cn.richie696.component.mcp.protocol.compatibility.McpTransportBinding}：
  *       传输绑定枚举（STDIO / STREAMABLE_HTTP），决定不同探测分支的判定规则。</li>
@@ -28,7 +28,6 @@
  *   <li>{@link cn.richie696.component.mcp.protocol.compatibility.McpProtocolEraCache}：
  *       进程内 TTL 缓存，无 Redis 依赖。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

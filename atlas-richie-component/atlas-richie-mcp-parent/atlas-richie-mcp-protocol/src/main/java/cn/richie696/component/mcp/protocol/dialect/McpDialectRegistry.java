@@ -15,14 +15,13 @@ import java.util.Objects;
  * {@link McpProtocolDialect} 实现并注册到本类，无需改动任何业务侧代码。
  * 反之，移除旧版本方言时也仅需从注册集合中剔除。</p>
  *
- * <p>关键设计：
+ * 关键设计：
  * <ul>
  *   <li>默认注册 2026-07-28 与 2025-11-25 两个方言，顺序不影响查询（按版本号索引）。</li>
  *   <li>注册期检测重复版本号——同一版本号被多次注册属于配置错误，构造时直接拒绝。</li>
  *   <li>查询失败抛 {@link McpProtocolException}（错误码 {@code -32022}），与协议层
  *       "Unsupported Protocol Version" 语义对齐。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

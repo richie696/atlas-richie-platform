@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * 单个 MCP 协议版本与归一化模型之间的防腐层。
  *
- * <p>接口契约包含五个方法，分别承担：
+ * 接口契约包含五个方法，分别承担：
  * <ul>
  *   <li>{@link #version()} —— 标识本方言对应的协议版本号；</li>
  *   <li>{@link #era()} —— 标识本方言所属的协议时代；</li>
@@ -19,7 +19,6 @@ import java.util.Map;
  *   <li>{@link #normalizeResult(Map)} —— 把线格式响应负载转为 {@link McpNormalizedResult}；</li>
  *   <li>{@link #encodeResult(McpNormalizedResult)} —— 把内部结果反向编码为线格式响应。</li>
  * </ul>
- * </p>
  *
  * <p>实现要点：每个方法都应是"纯函数"语义——给定相同入参应返回相同结果，便于测试与回放。
  * 不应在此层做 I/O 或持有可变状态。</p>

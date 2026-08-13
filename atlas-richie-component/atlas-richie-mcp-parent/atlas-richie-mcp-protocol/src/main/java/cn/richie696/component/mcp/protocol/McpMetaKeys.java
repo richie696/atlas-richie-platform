@@ -8,13 +8,12 @@ package cn.richie696.component.mcp.protocol;
  * 之下，键名采用 {@code io.modelcontextprotocol/} 命名空间。这些字符串一旦写错会导致
  * 整个握手失败，但靠人来记是脆弱的——本类提供唯一定义点，避免魔法字符串与笔误。</p>
  *
- * <p>关键设计：
+ * 关键设计：
  * <ul>
  *   <li>{@link #PROGRESS_TOKEN} 不在 {@code io.modelcontextprotocol/} 命名空间下——
  *       它是 JSON-RPC 2.0 规范中通用的"进度通知令牌"键，故保留原样。</li>
  *   <li>构造器私有，确保仅作常量容器使用。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

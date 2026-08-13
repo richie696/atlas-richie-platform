@@ -24,14 +24,13 @@ import java.util.Map;
  * 校验、缓存作用域枚举转换等逻辑集中在本类，业务侧只调用 {@link #encodeRequest} /
  * {@link #encodeResult} / {@link #decodeRequest} / {@link #decodeResult} 四个对称方法即可。</p>
  *
- * <p>关键设计：
+ * 关键设计：
  * <ul>
  *   <li>{@code ttlMs} 用 {@link java.math.BigDecimal} 承载以确保 JSON 序列化保留数字类型
  *       （与 {@link McpCacheHints} 同理）。</li>
  *   <li>解码时执行多重约束：方法名必须为 {@link #METHOD}、不允许业务参数、必须为带 id 的
  *       请求、响应类型必须为 {@code COMPLETE}。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

@@ -13,13 +13,12 @@ import java.util.Objects;
  * {@link ResultType} 枚举可以让业务层在两个时代之上用同一套代码处理"是否需要再追问用户"。
  * </p>
  *
- * <p>关键设计：
+ * 关键设计：
  * <ul>
  *   <li>{@code resultType} 强制非空，避免旧协议默认值被无声丢失。</li>
  *   <li>{@code payload} 用 {@link LinkedHashMap} 拷贝后包装为不可变视图，保证顺序稳定、
  *       防止外部修改。</li>
  * </ul>
- * </p>
  *
  * @param resultType 结果类型（COMPLETE / INPUT_REQUIRED），必填
  * @param payload    业务负载 Map

@@ -15,7 +15,7 @@ import java.util.Base64;
  * 状态、且无任何防篡改保护。本类用 HMAC-SHA256 对分页偏移量进行签名，使游标对外
  * 表现为不透明字符串，攻击者无法猜测或篡改偏移量。</p>
  *
- * <p>关键安全设计：
+ * 关键安全设计：
  * <ul>
  *   <li>签名使用 {@link java.security.MessageDigest#isEqual} 常量时间比较，避免时序攻击。</li>
  *   <li>secret 至少 16 字节（构造期强校验）。</li>
@@ -23,7 +23,6 @@ import java.util.Base64;
  *       生成完全相同的输入字符串，防止攻击者通过构造变形 Base64 序列绕过签名。</li>
  *   <li>空/空白游标视为 {@code offset=0}（首页的便捷约定）。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

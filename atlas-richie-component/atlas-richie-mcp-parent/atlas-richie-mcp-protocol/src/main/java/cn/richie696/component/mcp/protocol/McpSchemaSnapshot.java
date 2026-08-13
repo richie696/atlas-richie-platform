@@ -11,7 +11,7 @@ import java.util.Properties;
 /**
  * 从 classpath 加载并校验固定版本的官方 MCP JSON Schema。
  *
- * <p>为什么需要这个类：MCP 协议要求客户端/服务端在协商时按官方发布的 JSON Schema 校验
+ * 为什么需要这个类：MCP 协议要求客户端/服务端在协商时按官方发布的 JSON Schema 校验
  * 报文结构。如果运行时直接下载/缓存远端 Schema，会面临两个风险：
  * <ol>
  *   <li>Schema 仓库被劫持或下线。</li>
@@ -19,9 +19,9 @@ import java.util.Properties;
  * </ol>
  * 本类采用"打包期内置 + 加载期强校验"模式：把每个版本对应的 Schema 与 manifest
  * 一起打入 classpath（{@code META-INF/mcp/schema/<version>/}），加载时强制校验
- * SHA-256 摘要与 manifest 中声明的协议版本，不一致即拒绝启动。</p>
+ * SHA-256 摘要与 manifest 中声明的协议版本，不一致即拒绝启动。
  *
- * <p>关键设计：
+ * 关键设计：
  * <ul>
  *   <li>目前仅支持 {@link McpProtocolVersions#V_2026_07_28}，扩展时只需新增
  *       {@code META-INF/mcp/schema/<version>/} 资源并在 {@code load} 中追加白名单。</li>
@@ -29,7 +29,6 @@ import java.util.Properties;
  *   <li>{@code source / sourceCommit} 字段记录了 Schema 来自哪个 Git 仓库的哪个 commit，
  *       便于审计与排障。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

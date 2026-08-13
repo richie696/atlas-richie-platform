@@ -10,7 +10,7 @@ import java.util.Objects;
 /**
  * 对端实现身份描述（名称/版本/标题/描述/网址/图标）。
  *
- * <p>为什么用 record：MCP 在 2025-11-25 与 2026-07-28 两个协议时代都要求上报
+ * 为什么用 record：MCP 在 2025-11-25 与 2026-07-28 两个协议时代都要求上报
  * "我是谁"信息（{@code clientInfo} / {@code serverInfo}），但字段集基本一致。
  * 把它建模为不可变 record：
  * <ul>
@@ -18,16 +18,14 @@ import java.util.Objects;
  *   <li>提供 {@link #fromWire(Map)} / {@link #toWire()} 双向转换，把"JSON 解析产物"
  *       与"领域对象"明确分开——这是防腐层（anti-corruption layer）通用做法。</li>
  * </ul>
- * </p>
  *
- * <p>关键设计：
+ * 关键设计：
  * <ul>
  *   <li>{@code name / version} 强制非空，{@code title / description / websiteUrl} 可选。</li>
  *   <li>{@code icons} 元素为 {@code Map<String, Object>}，每个内层 Map 会被
  *       拷贝为 {@link Collections#unmodifiableMap} 防止外部修改影响快照。</li>
  *   <li>{@link #toWire()} 使用 {@link LinkedHashMap} 保证字段顺序稳定，方便测试断言。</li>
  * </ul>
- * </p>
  *
  * @param name        实现名称（必填，非空）
  * @param version     实现版本（必填，非空）

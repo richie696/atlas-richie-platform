@@ -11,7 +11,7 @@ import java.util.Map;
  * 形态的信息。设计目标是：协议层任何位置抛出的错误，都能被外层传输模块直接转换为
  * 标准的 JSON-RPC 错误响应，而不需要业务侧再做"异常 → 错误对象"的二次映射。</p>
  *
- * <p>关键设计决策：
+ * 关键设计决策：
  * <ul>
  *   <li>同时持有 {@code errorCode}（业务级语义码，给监控/告警用）和
  *       {@code jsonRpcCode}（JSON-RPC 错误码，如 {@code -32600/-32602/-32020/-32022}），
@@ -20,7 +20,6 @@ import java.util.Map;
  *       二次修改影响错误响应的可重现性。</li>
  *   <li>{@code null} data 在构造时归一为 {@link Map#of()}，简化下游判空逻辑。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

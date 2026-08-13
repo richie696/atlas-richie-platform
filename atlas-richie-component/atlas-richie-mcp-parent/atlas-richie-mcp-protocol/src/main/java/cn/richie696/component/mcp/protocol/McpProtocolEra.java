@@ -3,7 +3,7 @@ package cn.richie696.component.mcp.protocol;
 /**
  * MCP 协议时代枚举：标识报文属于哪一种"协议形态世代"。
  *
- * <p>为什么区分"协议时代"而非仅靠版本号字符串：
+ * 为什么区分"协议时代"而非仅靠版本号字符串：
  * <ul>
  *   <li>同一版本号可能跨越多个时代（如 2025-11-25 与 2026-07-28 都是
  *       独立版本，但本质属于不同的协议形态）。</li>
@@ -14,7 +14,6 @@ package cn.richie696.component.mcp.protocol;
  *   <li>{@code SESSION_2025} 表示 2025-11-25 的会话/initialize 协议形态（基于
  *       {@code initialize}/{@code initialized} 握手建立会话）。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

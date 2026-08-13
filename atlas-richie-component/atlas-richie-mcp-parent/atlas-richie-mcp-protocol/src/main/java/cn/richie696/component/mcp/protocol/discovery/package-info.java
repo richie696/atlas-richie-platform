@@ -7,7 +7,7 @@
  * {@link cn.richie696.component.mcp.protocol.compatibility.McpEraProbeStateMachine}
  * 的快速路径。本包聚焦该方法的线格式与归一化结果之间的转换。</p>
  *
- * <p>核心类职责：
+ * 核心类职责：
  * <ul>
  *   <li>{@link cn.richie696.component.mcp.protocol.discovery.McpDiscoveryCodec}：
  *       {@code server/discover} 方法的请求/响应编解码器，承载协议版本、客户端元数据、
@@ -19,7 +19,6 @@
  *   <li>{@link cn.richie696.component.mcp.protocol.discovery.McpCacheHints}：
  *       通用缓存元数据（ttlMs / cacheScope）的写入工具，供其他完整结果复用。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

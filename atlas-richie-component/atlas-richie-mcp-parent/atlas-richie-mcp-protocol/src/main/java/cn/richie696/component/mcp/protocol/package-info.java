@@ -6,7 +6,7 @@
  * {@link cn.richie696.component.mcp.protocol.dialect}（协议方言）、
  * {@link cn.richie696.component.mcp.protocol.compatibility}（兼容层）等都建立在这些基础类之上。</p>
  *
- * <p>关键类职责：
+ * 关键类职责：
  * <ul>
  *   <li>{@link cn.richie696.component.mcp.protocol.McpProtocolException}：
  *       可无损映射为 JSON-RPC error 的协议层异常，统一错误码语义。</li>
@@ -23,7 +23,6 @@
  *   <li>{@link cn.richie696.component.mcp.protocol.McpSchemaSnapshot}：
  *       从 classpath 加载并校验固定版本的官方 JSON Schema（SHA-256 强校验）。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

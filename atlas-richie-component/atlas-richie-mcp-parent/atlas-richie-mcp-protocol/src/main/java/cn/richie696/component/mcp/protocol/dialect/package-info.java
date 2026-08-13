@@ -8,7 +8,7 @@
  * {@code McpNormalizedResult}；新增协议版本只需新增一个 {@code McpProtocolDialect}
  * 实现并注册到 {@link cn.richie696.component.mcp.protocol.dialect.McpDialectRegistry}。</p>
  *
- * <p>核心类职责：
+ * 核心类职责：
  * <ul>
  *   <li>{@link cn.richie696.component.mcp.protocol.dialect.McpProtocolDialect}：
  *       方言接口，定义版本号、时代、请求归一化、结果归一化与编码五个契约。</li>
@@ -21,7 +21,6 @@
  *   <li>{@link cn.richie696.component.mcp.protocol.dialect.DialectSupport}：
  *       包内私有工具类，集中处理"对象/字符串/实现信息"三种入参的解析与错误归一化。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

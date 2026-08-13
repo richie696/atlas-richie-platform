@@ -17,12 +17,11 @@ import java.util.Objects;
  * {@link McpDiscoverResult} 提供这一扁平化视图，{@link McpDiscoveryCodec} 负责其与
  * 线格式之间的转换。</p>
  *
- * <p>关键设计：
+ * 关键设计：
  * <ul>
  *   <li>{@code extensions} 字段透传未识别的扩展字段，方便协议演进。</li>
  *   <li>{@code supportedVersions} 在构造期去重并校验非空，{@code ttlMs} 强制非负。</li>
  * </ul>
- * </p>
  *
  * @param supportedVersions 对端支持的协议版本列表（去重后），至少一个非空
  * @param capabilities      对端能力声明

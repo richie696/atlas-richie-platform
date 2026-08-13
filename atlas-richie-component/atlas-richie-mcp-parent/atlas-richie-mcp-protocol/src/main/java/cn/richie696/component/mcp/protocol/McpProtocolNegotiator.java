@@ -14,7 +14,7 @@ import java.util.Set;
  * 这一信息集中在一处，并明确给出"本组件更偏好哪个版本"的顺序——这就是
  * {@code supportedVersions} 的入参顺序。</p>
  *
- * <p>关键设计：
+ * 关键设计：
  * <ul>
  *   <li>支持列表用 {@link LinkedHashSet} 去重同时保留顺序，确保偏好表达稳定。</li>
  *   <li>协商时按"本组件偏好"为外层、对端支持集合为过滤条件，命中即返回——保证选择
@@ -22,7 +22,6 @@ import java.util.Set;
  *   <li>协商失败抛 {@link McpProtocolException}，错误码 {@code -32022}（unified
  *       MCP_UNSUPPORTED_PROTOCOL_VERSION），并把本端支持版本附在 {@code data} 中。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

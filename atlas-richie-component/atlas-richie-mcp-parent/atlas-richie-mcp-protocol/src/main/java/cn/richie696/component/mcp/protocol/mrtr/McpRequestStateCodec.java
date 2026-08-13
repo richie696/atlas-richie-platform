@@ -18,7 +18,7 @@ import java.util.UUID;
  * 产生一个对外表现为"不透明字符串"的令牌，服务器可验证签名/过期/主体/方法，但不解析
  * payload 本身（payload 是任意字符串）。</p>
  *
- * <p>关键安全设计：
+ * 关键安全设计：
  * <ul>
  *   <li>签名使用 {@link java.security.MessageDigest#isEqual} 常量时间比较，避免时序攻击。</li>
  *   <li>secret 至少 32 字节（构造期强校验），低于此长度即抛 {@link IllegalArgumentException}。</li>
@@ -27,7 +27,6 @@ import java.util.UUID;
  *   <li>{@code principalFingerprint} 与 {@code method} 同时参与校验，防止令牌被其他
  *       会话/方法劫持复用。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11
