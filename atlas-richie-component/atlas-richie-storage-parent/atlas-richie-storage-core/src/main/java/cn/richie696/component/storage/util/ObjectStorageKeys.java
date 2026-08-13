@@ -27,6 +27,16 @@ public final class ObjectStorageKeys {
     }
 
     public static String realPath(String basePath, String key) {
-        return StringUtils.isNotBlank(basePath) ? basePath + "/" + key : key;
+        if (StringUtils.isBlank(basePath)) {
+            return key;
+        }
+        String normalizedBasePath = StringUtils.strip(basePath, "/");
+        String normalizedKey = StringUtils.stripStart(key, "/");
+        // 直传策略会把真实对象键回传给调用方。后续读取、删除或签发下载地址时
+        // 必须允许该键直接回传，避免把 basePath 重复拼接为 basePath/basePath/...
+        if (normalizedKey.equals(normalizedBasePath) || normalizedKey.startsWith(normalizedBasePath + "/")) {
+            return normalizedKey;
+        }
+        return normalizedBasePath + "/" + normalizedKey;
     }
 }

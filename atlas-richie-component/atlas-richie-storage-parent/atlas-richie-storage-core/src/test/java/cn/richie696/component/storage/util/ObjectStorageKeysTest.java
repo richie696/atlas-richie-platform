@@ -31,4 +31,12 @@ class ObjectStorageKeysTest {
         assertThat(ObjectStorageKeys.realPath("", "only-key")).isEqualTo("only-key");
         assertThat(ObjectStorageKeys.realPath(null, "only-key")).isEqualTo("only-key");
     }
+
+    @Test
+    void realPath_realKeyReturnedByDirectUpload_isIdempotent() {
+        assertThat(ObjectStorageKeys.realPath("uploads", "uploads/knowledge/manual.pdf"))
+                .isEqualTo("uploads/knowledge/manual.pdf");
+        assertThat(ObjectStorageKeys.realPath("/uploads/", "/uploads/knowledge/manual.pdf"))
+                .isEqualTo("uploads/knowledge/manual.pdf");
+    }
 }

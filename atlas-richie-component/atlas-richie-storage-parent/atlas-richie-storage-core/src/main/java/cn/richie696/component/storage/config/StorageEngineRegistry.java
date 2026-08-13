@@ -123,6 +123,7 @@ public class StorageEngineRegistry {
             throw new IllegalStateException("引擎类型 [" + engineType + "] 已注册，请勿重复注册");
         }
         holder.delegate = engine;
+        holder.engineId = engineId;
 
         // 对象存储引擎同步更新 objectProxy
         if (engineType.isObjectStorage()) {
@@ -224,6 +225,8 @@ public class StorageEngineRegistry {
             this.defaultEngineId = newEngineId;
         }
 
+        holder.engineId = newEngineId;
+
         log.info("存储引擎{}完成: type={}, id={}, engine={}, actor={}, reason={}",
                 oldEngine != null ? "切换" : "注册",
                 engineType, newEngineId, newEngine.getClass().getSimpleName(),
@@ -231,6 +234,124 @@ public class StorageEngineRegistry {
 
         metrics.incrementSwitch(engineType);
         return newEngine;
+    }
+
+    /**
+     * 清理指定类型的引擎，并解除其代理委托。
+     *
+     * <p>清理是幂等的：目标类型没有活动引擎时返回 {@code null}。清理顺序为：
+     * 先摘除代理引用，再调用 Provider.destroy 释放客户端/连接池；即使 destroy 失败，
+     * 引擎也不会继续被业务调用。</p>
+     *
+     * @param engineType 待清理的引擎类型
+     * @return 被清理的引擎实例；未初始化时返回 {@code null}
+     */
+    public StorageEngine clearEngine(StorageEngineEnum engineType) {
+        return clearEngine(engineType, "system", null);
+    }
+
+    /**
+     * 清理指定类型的引擎（带审计上下文）。
+     *
+     * <p>当被清理的是默认引擎时，会从其余已注册引擎中选择一个作为新的默认引擎；
+     * 当被清理的是当前对象存储时，会同步把统一对象代理切换到剩余对象存储，若没有则置空。</p>
+     */
+    public synchronized StorageEngine clearEngine(StorageEngineEnum engineType,
+                                                   String actor, String reason) {
+        return unregisterEngineInternal(engineType, actor, reason);
+    }
+
+    /**
+     * {@link #clearEngine(StorageEngineEnum)} 的语义别名，便于管理后台使用“注销”术语。
+     */
+    public StorageEngine unregisterEngine(StorageEngineEnum engineType) {
+        return unregisterEngine(engineType, "system", null);
+    }
+
+    /**
+     * 注销指定类型的引擎（带审计上下文）。
+     *
+     * <p>与 {@code clearEngine} 完全等价，两个名称都保留以兼容“清理运行时实例”和
+     * “注销 Provider 实例”两类调用方表达。</p>
+     */
+    public synchronized StorageEngine unregisterEngine(StorageEngineEnum engineType,
+                                                        String actor, String reason) {
+        return unregisterEngineInternal(engineType, actor, reason);
+    }
+
+    private StorageEngine unregisterEngineInternal(StorageEngineEnum engineType,
+                                                   String actor, String reason) {
+        Objects.requireNonNull(engineType, "engineType must not be null");
+
+        ProxyHolder holder = engineProxies.get(engineType);
+        if (holder == null) {
+            throw new IllegalStateException("未知的引擎类型: " + engineType);
+        }
+
+        StorageEngine removed = holder.delegate;
+        if (removed == null) {
+            return null;
+        }
+
+        // 先摘除代理，保证 destroy 期间不会再有新的业务调用进入旧实例。
+        holder.delegate = null;
+        holder.engineId = null;
+
+        if (engineType.isObjectStorage() && objectProxy.delegate == removed) {
+            objectProxy.delegate = findRegisteredObjectEngine(engineType);
+        }
+
+        if (defaultEngineType == engineType) {
+            Map.Entry<StorageEngineEnum, ProxyHolder> fallback = findRegisteredEngine(engineType);
+            if (fallback == null) {
+                defaultEngineType = null;
+                defaultEngineId = null;
+            } else {
+                defaultEngineType = fallback.getKey();
+                defaultEngineId = fallback.getValue().engineId;
+                if (fallback.getKey().isObjectStorage()) {
+                    objectProxy.delegate = fallback.getValue().delegate;
+                }
+            }
+        }
+
+        StorageEngineProvider provider = getProviders().stream()
+                .filter(p -> p.supportedEngineType() == engineType)
+                .findFirst()
+                .orElse(null);
+        if (provider != null) {
+            try {
+                provider.destroy(removed);
+            } catch (RuntimeException destroyEx) {
+                log.warn("注销存储引擎时资源销毁失败，但引擎已从代理摘除: type={}, actor={}, reason={}",
+                        engineType, actor, reason, destroyEx);
+            }
+        } else {
+            log.warn("注销存储引擎时未找到 Provider，跳过 destroy: type={}, actor={}, reason={}",
+                    engineType, actor, reason);
+        }
+
+        log.info("注销存储引擎完成: type={}, actor={}, reason={}", engineType, actor, reason);
+        return removed;
+    }
+
+    /** 查找除指定类型外的第一个已注册引擎，用于默认引擎回退。 */
+    private Map.Entry<StorageEngineEnum, ProxyHolder> findRegisteredEngine(StorageEngineEnum excludedType) {
+        return engineProxies.entrySet().stream()
+                .filter(entry -> entry.getKey() != excludedType && entry.getValue().delegate != null)
+                .findFirst()
+                .orElse(null);
+    }
+
+    /** 查找除指定类型外的第一个对象存储引擎，用于 objectStorageEngine 回退。 */
+    private StorageEngine findRegisteredObjectEngine(StorageEngineEnum excludedType) {
+        return engineProxies.entrySet().stream()
+                .filter(entry -> entry.getKey() != excludedType)
+                .filter(entry -> entry.getKey().isObjectStorage())
+                .map(entry -> entry.getValue().delegate)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 
     /**
@@ -303,6 +424,7 @@ public class StorageEngineRegistry {
         if (defaultEngineType == engineType) {
             this.defaultEngineId = newEngineId;
         }
+        holder.engineId = newEngineId;
 
         try {
             provider.destroy(oldEngine);
@@ -440,6 +562,7 @@ public class StorageEngineRegistry {
         final StorageEngineEnum engineType;
         final StorageEngine proxy;
         volatile StorageEngine delegate;
+        volatile String engineId;
 
         ProxyHolder(StorageEngineEnum engineType) {
             this.engineType = engineType;

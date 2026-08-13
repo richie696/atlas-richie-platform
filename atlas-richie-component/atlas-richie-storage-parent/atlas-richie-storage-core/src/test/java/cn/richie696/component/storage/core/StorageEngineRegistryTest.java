@@ -293,6 +293,60 @@ class StorageEngineRegistryTest {
         assertThat(registry.getDefaultEngine()).isNull();
     }
 
+    // ========== clearEngine / unregisterEngine ==========
+
+    @Test
+    void clearEngine_shouldDetachProxyDestroyEngineAndResetDefault() {
+        StubEngine engine = new StubEngine("minio-engine");
+        DestroyRecordingProvider provider = new DestroyRecordingProvider(
+                StorageEngineEnum.MINIO, new StubEngine("unused"));
+        registerProvider(provider);
+        registry.registerInitialEngine(StorageEngineEnum.MINIO, "minio-1", engine);
+
+        StorageEngine removed = registry.clearEngine(StorageEngineEnum.MINIO, "operator-1", "disable");
+
+        assertThat(removed).isSameAs(engine);
+        assertThat(registry.getEngine(StorageEngineEnum.MINIO)).isNull();
+        assertThat(registry.getRegisteredTypes()).isEmpty();
+        assertThat(registry.isInitialized()).isFalse();
+        assertThat(registry.getDefaultEngineType()).isNull();
+        assertThat(registry.getDefaultEngineId()).isNull();
+        assertThat(provider.destroyedEngines).containsExactly(engine);
+        assertThatThrownBy(() -> registry.getObjectProxy().putData("key", "value"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("未初始化");
+    }
+
+    @Test
+    void unregisterEngine_shouldKeepFallbackDefaultAndObjectProxy() {
+        StubEngine minio = new StubEngine("minio-engine");
+        StubEngine ftp = new StubEngine("ftp-engine");
+        DestroyRecordingProvider minioProvider = new DestroyRecordingProvider(
+                StorageEngineEnum.MINIO, new StubEngine("unused-minio"));
+        registerProvider(minioProvider);
+        registry.registerInitialEngine(StorageEngineEnum.MINIO, "minio-1", minio);
+        registry.registerInitialEngine(StorageEngineEnum.FTP, "ftp-1", ftp);
+
+        StorageEngine removed = registry.unregisterEngine(StorageEngineEnum.MINIO, "operator-1", "switch-off");
+
+        assertThat(removed).isSameAs(minio);
+        assertThat(registry.getEngine(StorageEngineEnum.MINIO)).isNull();
+        assertThat(registry.getDefaultEngineType()).isEqualTo(StorageEngineEnum.FTP);
+        assertThat(registry.getDefaultEngine()).isSameAs(ftp);
+        assertThat(registry.getObjectProxy()).isNotNull();
+        assertThatThrownBy(() -> registry.getObjectProxy().putData("key", "value"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("未初始化");
+        assertThat(minioProvider.destroyedEngines).containsExactly(minio);
+    }
+
+    @Test
+    void clearAndUnregister_shouldBeIdempotentForUninitializedType() {
+        assertThat(registry.clearEngine(StorageEngineEnum.MINIO)).isNull();
+        assertThat(registry.unregisterEngine(StorageEngineEnum.MINIO)).isNull();
+        assertThat(registry.isInitialized()).isFalse();
+    }
+
     // ========== isInitialized / getRegisteredTypes / getCurrentEngineType ==========
 
     @Test
