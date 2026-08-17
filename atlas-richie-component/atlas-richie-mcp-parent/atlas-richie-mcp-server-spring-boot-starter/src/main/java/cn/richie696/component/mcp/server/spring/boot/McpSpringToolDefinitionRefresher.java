@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *     <li>调用 {@link McpToolRegistry#replaceAll(java.util.Collection)} 完成原子替换；</li>
  *     <li>无论成败，均更新最近一次 {@link McpToolRefreshStatus} 用于运维查询。</li>
  * </ol>
- * 失败时不会破坏既有注册表（保留上一次成功状态），仅记录失败原因。</p>
+ * 失败时不会破坏既有注册表（保留上一次成功状态），仅记录失败原因。
  *
  * @author richie696
  * @since 2026-08-11

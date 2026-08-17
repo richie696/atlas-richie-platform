@@ -20,7 +20,7 @@ import java.util.concurrent.SubmissionPublisher;
  *   <li>工具/资源/提示列表发生变化时，端点调用对应的 {@code xxxChanged()} 方法批量通知。</li>
  *   <li>具体资源更新时调用 {@link #resourceUpdated(String)}，只推送给订阅了对应 URI 的连接。</li>
  *   <li>Web 适配器将 {@link Subscription} 桥接到 {@code Flow.Subscriber} 完成字节流输出。</li>
- * </ul></p>
+ * </ul>
  *
  * <p>为何用 {@link SubmissionPublisher}：MCP 通知是简单的 producer/consumer 关系，与 JDK 的
  * {@link Flow} 编程模型完全契合；用 {@link java.util.concurrent.Flow.Publisher}

@@ -11,7 +11,6 @@ import java.util.Objects;
  * <p>设计意图：2025-11-25 时代的结果只有"完成"一种隐式状态，而 2026-07-28 起
  * 协议显式区分 {@code complete} 与 {@code input_required}。把它们抽象成统一的
  * {@link ResultType} 枚举可以让业务层在两个时代之上用同一套代码处理"是否需要再追问用户"。
- * </p>
  *
  * 关键设计：
  * <ul>

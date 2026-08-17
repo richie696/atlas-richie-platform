@@ -20,10 +20,10 @@
  *       {@link cn.richie696.component.mcp.server.tool.McpToolRefreshResult} —
  *       不可变状态、快照与变更差异描述，用于 CAS 替换与变更广播。</li>
  * </ul>
- * </p>
+ * 
  *
  * <p>这些类集中在同一个包的原因：它们共同构成 Tool 能力的"内存模型"，
- * 缺一不可；按"能力"而非"层级"分包，便于阅读时一次性理解 Tool 子系统的全部契约。</p>
+ * 缺一不可；按"能力"而非"层级"分包，便于阅读时一次性理解 Tool 子系统的全部契约。
  *
  * @author richie696
  * @since 2026-08-11

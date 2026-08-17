@@ -6,9 +6,9 @@
  * RFC 7662（Token Introspection）、RFC 7591（Dynamic Client Registration）、
  * RFC 8707（Resource Indicators）、RFC 9728（Protected Resource Metadata）以及
  * RFC 6750（Bearer Token Usage）构建，旨在让 MCP Client Starter / Resource Server
- * 无需重复实现 OAuth 协议细节即可与任意合规 AS 对接。</p>
+ * 无需重复实现 OAuth 协议细节即可与任意合规 AS 对接。
  *
- * <p>包内主要类与职责：</p>
+ * <p>包内主要类与职责：
  *
  * <ul>
  *   <li>{@link cn.richie696.component.mcp.security.oauth.McpOAuthTokenProvider} —
@@ -43,7 +43,7 @@
  * 运行时模型"，相互之间通过 record / interface / SPI 紧密耦合（例如
  * {@code McpOAuthTokenManager} 依赖 {@code McpOAuthTokenClient}、{@code McpOAuthAccessToken}、
  * {@code McpOAuthUriPolicy}），分到子包反而会暴露内部实现细节并制造循环依赖。
- * 包级别安全策略与共享的 RFC 引用也让单包定位成为合理选择。</p>
+ * 包级别安全策略与共享的 RFC 引用也让单包定位成为合理选择。
  *
  * @author richie696
  * @since 2026-08-11

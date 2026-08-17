@@ -1,7 +1,7 @@
 /**
  * MCP Server 端稳定业务面：定义业务方法暴露成 MCP Tool 所需要的全部契约 SPI。
  *
- * <p>本包是 {@code atlas-richie-mcp-server} 实现层的"业务侧接口"，目的有两个：</p>
+ * <p>本包是 {@code atlas-richie-mcp-server} 实现层的"业务侧接口"，目的有两个：
  * <ol>
  *   <li>让业务开发者只需要面向这些接口编程：定义 {@code @McpTool} 业务方法、
  *       必要时提供 {@link cn.richie696.component.mcp.api.server.McpToolHandlerProvider}、
@@ -10,7 +10,7 @@
  *   <li>把协议层（HTTP/SSE/Stdio）放在更底层实现，避免业务实现被协议细节污染。</li>
  * </ol>
  *
- * <p>按职责归类本包内的类型：</p>
+ * <p>按职责归类本包内的类型：
  * <ul>
  *   <li>Tool 元数据与定义：
  *       {@link cn.richie696.component.mcp.api.server.McpToolDefinition}、{@link

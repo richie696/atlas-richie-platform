@@ -9,7 +9,7 @@ package cn.richie696.component.mcp.transport.http;
  *   <li>如果请求是浏览器发起的，{@code Origin} 必定存在且不为空。</li>
  *   <li>如果是非浏览器客户端（命令行、桌面应用、服务端内部调用），{@code Origin} 通常缺失
  *       ——此时不视为非法，是否另行鉴权由更上层的认证拦截器决定。</li>
- * </ul></p>
+ * </ul>
  *
  * <p>之所以把它定义成函数式接口而非具体类：Origin 允许策略可能涉及同源比较、白名单子网匹配、
  * 按配置下发的正则等多种实现；抽象成谓词后端点本身不感知策略细节，与 {@link McpHttpHeaders#ORIGIN}

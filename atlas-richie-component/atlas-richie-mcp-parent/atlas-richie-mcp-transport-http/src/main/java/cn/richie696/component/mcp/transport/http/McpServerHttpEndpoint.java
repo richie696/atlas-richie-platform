@@ -54,7 +54,7 @@ import java.nio.charset.StandardCharsets;
  *       {@link McpPromptRegistry} / {@link McpCompletionRegistry}）。</li>
  *   <li>统一错误格式、HTTP 状态码映射、SSE 通知聚合。</li>
  *   <li>维护运行时上下文（取消注册、订阅管理、call context 工厂）。</li>
- * </ul></p>
+ * </ul>
  *
  * <p>关键设计抉择：
  * <ul>
@@ -63,7 +63,7 @@ import java.nio.charset.StandardCharsets;
  *       保证不同 endpoint 之间不会跨边界泄露请求上下文。</li>
  *   <li>{@link #handle(String, Map)} 是单一入站入口，简化了 Spring MVC 与 Reactive 适配器
  *       在"是否单次请求"上的分歧——两端只需把框架对象归约为 (jsonBody, headers)。</li>
- * </ul></p>
+ * </ul>
  *
  * @author richie696
  * @since 2026-08-11
@@ -198,7 +198,7 @@ public final class McpServerHttpEndpoint {
      *   <li>若为 {@code subscriptions/listen} 则打开订阅并返回 SSE。</li>
      *   <li>其余请求：注册取消令牌 → 构造 {@link McpCallContext} → 按 method 分派 → 包装响应。
      *       在 finally 中确保取消令牌被清理防止内存泄漏。</li>
-     * </ol></p>
+     * </ol>
      *
      * <p>异常路径：所有异常会被捕获并转译为对应的 JSON-RPC 错误响应——
      * {@link McpHttpTransportException} 透传 HTTP 状态码与 {@link McpProtocolException}；

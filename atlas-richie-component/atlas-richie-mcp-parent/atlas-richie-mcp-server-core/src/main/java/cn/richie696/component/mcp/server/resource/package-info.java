@@ -13,10 +13,10 @@
  *   <li>{@link cn.richie696.component.mcp.server.resource.McpResourceVisibilityPolicy} —
  *       基于调用上下文的资源可见性策略 SPI，默认实现 {@code ALLOW_ALL} 一律放行。</li>
  * </ul>
- * </p>
+ * 
  *
  * <p>集中在同一个包的原因：精确资源与模板资源共享同一份注册表与可见性策略，
- * 拆分到多个包会导致读者在两个目录间反复跳转；按 MCP 协议中的能力维度聚合更易理解。</p>
+ * 拆分到多个包会导致读者在两个目录间反复跳转；按 MCP 协议中的能力维度聚合更易理解。
  *
  * @author richie696
  * @since 2026-08-11

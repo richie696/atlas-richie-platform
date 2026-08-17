@@ -6,7 +6,7 @@
  * 通过 {@link cn.richie696.component.mcp.protocol.dialect.McpProtocolDialect} 接口
  * 把这些差异封装起来，业务侧只需面对 {@code McpNormalizedRequest} /
  * {@code McpNormalizedResult}；新增协议版本只需新增一个 {@code McpProtocolDialect}
- * 实现并注册到 {@link cn.richie696.component.mcp.protocol.dialect.McpDialectRegistry}。</p>
+ * 实现并注册到 {@link cn.richie696.component.mcp.protocol.dialect.McpDialectRegistry}。
  *
  * 核心类职责：
  * <ul>

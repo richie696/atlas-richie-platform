@@ -32,7 +32,6 @@ import java.util.concurrent.CompletionStage;
  *   <li>异常隔离：写入失败被吞掉并通过 {@link McpToolAuditSink} 上层感知，
  *       保证审计能力不会反过来破坏 Tool 执行路径。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

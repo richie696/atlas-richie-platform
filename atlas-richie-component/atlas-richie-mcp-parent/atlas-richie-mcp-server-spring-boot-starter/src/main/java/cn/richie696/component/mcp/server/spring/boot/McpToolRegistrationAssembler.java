@@ -29,7 +29,8 @@ import java.util.TreeMap;
  *     <li>{@code tools.overrides}（按 TreeMap key 排序，仅覆写非空字段）；</li>
  *     <li>最终过滤：{@code enabled=false} 被丢弃，未在 {@code enabledGroups} 内的 Tool 被丢弃。</li>
  * </ol>
- * 装配结果是稳定的不可变列表，可由 {@link McpToolRegistry} 在幂等刷新时复用。</p>
+ * 装配结果是稳定的不可变列表，可由 {@link cn.richie696.component.mcp.server.tool.McpToolRegistry}
+ * 在幂等刷新时复用。
  *
  * <p>{@code fail-fast} 关闭时，配置错误仅记录 WARN 而不抛异常，便于灰度期间容忍部分配置缺失。</p>
  *

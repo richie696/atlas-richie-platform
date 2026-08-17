@@ -23,7 +23,6 @@ import java.util.Map;
  *       {@link McpProtocolException}（错误码 {@code -32602}），与 JSON-RPC 规范
  *       的 "Invalid Params" 语义对齐。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

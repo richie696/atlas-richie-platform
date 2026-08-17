@@ -3,7 +3,7 @@
  * 是协议层 (atlas-richie-mcp-protocol) 与业务接入层 (atlas-richie-mcp-server-core / atlas-richie-mcp-server-spring-boot-starter)
  * 之间的"类型↔协议"桥。
  *
- * <p>本包核心类与职责：</p>
+ * <p>本包核心类与职责：
  * <ul>
  *   <li>{@link cn.richie696.component.mcp.schema.McpTypeSchemaGenerator}：将 Java/Kotlin 类型转换为 JSON Schema 片段的策略接口。</li>
  *   <li>{@link cn.richie696.component.mcp.schema.JacksonMcpTypeSchemaGenerator}：基于 Jackson 反射的默认实现，覆盖 POJO/集合/Map/枚举/时间类型。</li>
@@ -16,7 +16,7 @@
  * </ul>
  *
  * <p>把这些类放在同一个包的原因：它们共同完成"Java 类型 → JSON Schema → 实例校验"的单向流水线，
- * 上游模块（API 注解、server-core）只依赖本包的端口与不可变结果模型，不会泄露 networknt/Jackson 实现细节到外层。</p>
+ * 上游模块（API 注解、server-core）只依赖本包的端口与不可变结果模型，不会泄露 networknt/Jackson 实现细节到外层。
  *
  * @author richie696
  * @since 2026-08-11

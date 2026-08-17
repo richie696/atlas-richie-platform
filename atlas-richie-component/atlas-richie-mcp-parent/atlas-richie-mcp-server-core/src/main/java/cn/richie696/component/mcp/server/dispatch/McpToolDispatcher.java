@@ -24,7 +24,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
-/** Tool invocation validation, governance chain, execution and safe error boundary. */
 /**
  * Tool 调度器：负责入参校验、治理链编排、调用执行、出参校验与安全错误边界。
  *
@@ -43,7 +42,6 @@ import java.util.concurrent.CompletionStage;
  *   <li>支持调用方通过 {@link cn.richie696.component.mcp.api.McpCancellationToken}
  *       在任意阶段提前取消。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

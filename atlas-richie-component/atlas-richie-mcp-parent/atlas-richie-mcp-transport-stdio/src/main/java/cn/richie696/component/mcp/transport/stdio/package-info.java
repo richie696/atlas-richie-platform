@@ -25,7 +25,7 @@
  * 进程对象、读写通道以及 framing 协议三者紧耦合（{@code McpStdioProcess} 默认构造
  * {@code McpStdioTransport} 与 {@code McpStdioFrameCodec}，{@code McpStdioTransport} 又依赖
  * 可插拔的 {@code McpStdioCodec}），拆到子包反而会暴露内部实现细节并造成循环依赖。
- * 包内严禁引入任何 Web 框架依赖，确保 STDIO 传输可在任意 JVM 进程内独立复用。</p>
+ * 包内严禁引入任何 Web 框架依赖，确保 STDIO 传输可在任意 JVM 进程内独立复用。
  *
  * @author richie696
  * @since 2026-08-11

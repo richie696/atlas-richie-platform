@@ -58,7 +58,7 @@ public final class McpMrtrCoordinator {
      *   <li>收到 {@code complete} 时立刻返回，调用方拿到完整结果。</li>
      *   <li>收到 {@code input_required} 时通过 {@link McpInputProvider} 收集输入，再把上一轮的
      *       {@code requestState} 与新输入作为下一轮参数；最多重试 {@link #maxRounds} 轮。</li>
-     * </ol></p>
+     * </ol>
      *
      * @param endpoint      远端 MCP 端点 URI
      * @param toolName      工具名

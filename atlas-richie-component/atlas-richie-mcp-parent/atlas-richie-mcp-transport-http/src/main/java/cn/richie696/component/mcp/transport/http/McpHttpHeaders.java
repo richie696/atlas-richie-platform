@@ -14,7 +14,7 @@ package cn.richie696.component.mcp.transport.http;
  *   <li>{@link #METHOD} / {@link #NAME} / {@link #PARAMETER_PREFIX} —— 镜像 JSON-RPC method / params.name /
  *       params.arguments 中的可表达为 ASCII 的字段，方便外部记录与路由。</li>
  *   <li>{@link #ACCEPT} / {@link #CONTENT_TYPE} / {@link #ORIGIN} —— 标准 HTTP 协商与 CORS 头。</li>
- * </ul></p>
+ * </ul>
  *
  * @author richie696
  * @since 2026-08-11

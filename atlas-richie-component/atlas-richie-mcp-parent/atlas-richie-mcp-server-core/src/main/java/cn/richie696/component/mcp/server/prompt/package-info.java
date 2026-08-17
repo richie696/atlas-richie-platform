@@ -9,10 +9,10 @@
  *       确定性 Prompt 注册表，按名称字典序维护；解析阶段会校验描述符中声明的必填参数，
  *       缺失时抛 {@link cn.richie696.component.mcp.protocol.McpProtocolException}。</li>
  * </ul>
- * </p>
+ * 
  *
  * <p>集中在同一个包的原因：Prompt 能力在 MCP 协议中粒度较小，仅需"注册项"与"注册表"两类；
- * 拆分为单类包会破坏"按能力聚合"的目录结构一致性。</p>
+ * 拆分为单类包会破坏"按能力聚合"的目录结构一致性。
  *
  * @author richie696
  * @since 2026-08-11

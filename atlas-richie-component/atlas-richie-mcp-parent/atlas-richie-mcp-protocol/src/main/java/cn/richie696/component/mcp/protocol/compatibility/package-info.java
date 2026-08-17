@@ -6,12 +6,12 @@
  * 然后把 HTTP 状态码、JSON-RPC 错误码、对端声明的协议版本列表归一化为
  * {@link cn.richie696.component.mcp.protocol.compatibility.McpProbeEvent}，
  * 再由 {@link cn.richie696.component.mcp.protocol.compatibility.McpEraProbeStateMachine}
- * 给出确定性的 {@link cn.richie696.component.mcp.protocol.compatibility.McpProbeDecision}。</p>
+ * 给出确定性的 {@link cn.richie696.component.mcp.protocol.compatibility.McpProbeDecision}。
  *
  * <p>关键设计：探测结果会被写入
  * {@link cn.richie696.component.mcp.protocol.compatibility.McpProtocolEraCache}
  * （进程内 TTL 缓存）以避免重复探测，跨实例持久化由应用层自行用
- * {@code platform.cache} 包装。</p>
+ * {@code platform.cache} 包装。
  *
  * 核心类职责：
  * <ul>

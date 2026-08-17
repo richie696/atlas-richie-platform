@@ -34,7 +34,6 @@ import java.util.regex.Pattern;
  *   <li>对外暴露的可见性受 {@link McpToolVisibilityPolicy} 控制，未授权 Tool
  *       对调用方不可见（同时 {@link #resolveAuthorized} 也会拒绝调用）。</li>
  * </ul>
- * </p>
  *
  * @author richie696
  * @since 2026-08-11

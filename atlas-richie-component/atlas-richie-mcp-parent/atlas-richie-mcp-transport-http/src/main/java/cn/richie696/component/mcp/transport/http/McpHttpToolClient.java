@@ -40,7 +40,7 @@ import java.util.UUID;
  *   <li>使用 JDK 内置 {@link HttpClient} 避免对 OkHttp / Apache HttpClient 的直接依赖，
  *       给上层一个零三方依赖的标准实现。</li>
  *   <li>把所有异常封包成 {@link McpHttpClientException}（屏蔽 wire 异常）。</li>
- * </ul></p>
+ * </ul>
  *
  * <p>典型使用模式：业务侧一般通过依赖注入构造一个实例，跨多次方法调用复用同一份连接池 /
  * 超时设置；MRTR 多轮交互通过 {@link McpMrtrCoordinator} 编排；调用方如需并发共享客户端

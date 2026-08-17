@@ -499,7 +499,8 @@ public class McpServerProperties {
         private String handlerRef;
 
         /**
-         * 获取 Handler 引用名（指向 {@link McpToolHandlerProvider}）。
+         * 获取 Handler 引用名（指向
+         * {@link cn.richie696.component.mcp.api.server.McpToolHandlerProvider}）。
          *
          * @return Handler 引用
          */

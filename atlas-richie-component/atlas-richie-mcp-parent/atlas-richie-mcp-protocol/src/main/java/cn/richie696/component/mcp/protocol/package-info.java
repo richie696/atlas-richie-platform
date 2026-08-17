@@ -4,7 +4,7 @@
  * <p>本包内的类不依赖任何具体协议版本（不调用 {@code dialect/}），是整个 {@code mcp-protocol}
  * 模块的"底座"——{@link cn.richie696.component.mcp.protocol.model}（数据模型）、
  * {@link cn.richie696.component.mcp.protocol.dialect}（协议方言）、
- * {@link cn.richie696.component.mcp.protocol.compatibility}（兼容层）等都建立在这些基础类之上。</p>
+ * {@link cn.richie696.component.mcp.protocol.compatibility}（兼容层）等都建立在这些基础类之上。
  *
  * 关键类职责：
  * <ul>

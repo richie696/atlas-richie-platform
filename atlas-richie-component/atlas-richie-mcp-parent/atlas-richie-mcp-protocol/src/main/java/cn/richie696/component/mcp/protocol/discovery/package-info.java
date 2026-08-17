@@ -5,7 +5,7 @@
  * 在 2026-07-28 中，协议允许通过 {@code server/discover} 方法在握手前就拿到对端支持的
  * 协议版本、能力和缓存策略（TTL / 缓存作用域），用以驱动
  * {@link cn.richie696.component.mcp.protocol.compatibility.McpEraProbeStateMachine}
- * 的快速路径。本包聚焦该方法的线格式与归一化结果之间的转换。</p>
+ * 的快速路径。本包聚焦该方法的线格式与归一化结果之间的转换。
  *
  * 核心类职责：
  * <ul>

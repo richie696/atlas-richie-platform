@@ -21,7 +21,7 @@
  *
  * <p>之所以把这些类放在同一个包：它们共同实现"Web 容器无关的 MCP 传输"这一抽象边界——这是 MCP 协议
  * 真正可移植到 Servlet / Spring MVC / WebFlux / 自研网关的唯一稳定接口。包内不允许出现任何
- * {@code jakarta.servlet}、{@code spring-web} 等 Web 框架依赖，确保传输内核可在不同运行时之间整体复用。</p>
+ * {@code jakarta.servlet}、{@code spring-web} 等 Web 框架依赖，确保传输内核可在不同运行时之间整体复用。
  *
  * @author richie696
  * @since 2026-08-11

@@ -37,7 +37,7 @@ import java.util.Set;
  *   <li>{@code MCP-Protocol-Version} 与 {@code params._meta.protocolVersion} 必须一致且被支持；</li>
  *   <li>{@code Mcp-Method} / {@code Mcp-Name} 等镜像头必须与 body 同步。</li>
  *   <li>所有形参 Header 通过 {@code Mcp-Param-*} 前缀声明的形参镜像集合也必须与 body 严格对齐。</li>
- * </ul></p>
+ * </ul>
  *
  * <p>校验失败时抛 {@link McpHttpTransportException} 以便端点统一映射到对应 HTTP 状态码和
  * JSON-RPC 协议错误；{@link McpProtocolValidator} 也参与了 body 层 schema 检查（属于协议层校验）。</p>
@@ -122,7 +122,7 @@ public final class McpStreamableHttpRequestValidator {
      *   <li>出现多个 Origin 头视为非法——HTTP 规范不允许；</li>
      *   <li>Origin 为空白字符串同样视为非法；</li>
      *   <li>最终必须由 {@link McpOriginPolicy} 决定是否放行。</li>
-     * </ul></p>
+     * </ul>
      *
      * @throws McpHttpTransportException 状态码 403
      */
@@ -323,7 +323,7 @@ public final class McpStreamableHttpRequestValidator {
      *   <li>不允许前后空白；</li>
      *   <li>不允许落在 Base64 哨兵内（避免混淆）；</li>
      *   <li>字符范围：{@code 0x20-0x7E}（可见 ASCII）以及水平制表符（{@code \t}）。</li>
-     * </ul></p>
+     * </ul>
      */
     private boolean safePlainHeader(String value) {
         if (!value.equals(value.strip()) || matchesBase64Sentinel(value)) {
