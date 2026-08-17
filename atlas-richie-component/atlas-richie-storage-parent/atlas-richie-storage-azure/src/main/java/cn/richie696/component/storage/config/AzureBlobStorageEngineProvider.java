@@ -24,12 +24,27 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Set;
+
+
 @Slf4j
 public class AzureBlobStorageEngineProvider implements StorageEngineProvider {
 
     @Override
     public StorageEngineEnum supportedEngineType() {
         return StorageEngineEnum.AZURE_BLOB;
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.StorageTypeEnum> supportedStorageTypes() {
+        // Azure Blob 当前实现未接入统一 StorageTypeConverter。
+        return Set.of();
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.AclTypeEnum> supportedAclTypes() {
+        // Azure Blob 当前实现未接入统一 AclTypeConverter。
+        return Set.of();
     }
 
     @Override

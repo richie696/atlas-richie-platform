@@ -26,12 +26,29 @@ import com.ksyun.ks3.service.Ks3Client;
 import com.ksyun.ks3.service.Ks3ClientConfig;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.EnumSet;
+import java.util.Set;
+
+import static cn.richie696.component.storage.enums.AclTypeEnum.*;
+import static cn.richie696.component.storage.enums.StorageTypeEnum.*;
+
 @Slf4j
 public class Ks3StorageEngineProvider implements StorageEngineProvider {
 
     @Override
     public StorageEngineEnum supportedEngineType() {
         return StorageEngineEnum.KSYUN_KS3;
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.StorageTypeEnum> supportedStorageTypes() {
+        return EnumSet.of(STANDARD, STANDARD_IA, ARCHIVE);
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.AclTypeEnum> supportedAclTypes() {
+        return EnumSet.of(PRIVATE, PUBLIC_READ, PUBLIC_READ_WRITE, AUTHENTICATED_READ,
+                BUCKET_OWNER_READ, BUCKET_OWNER_FULL_CONTROL);
     }
 
     @Override

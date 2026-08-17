@@ -27,6 +27,11 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.net.URI;
+import java.util.EnumSet;
+import java.util.Set;
+
+import static cn.richie696.component.storage.enums.AclTypeEnum.*;
+import static cn.richie696.component.storage.enums.StorageTypeEnum.*;
 
 @Slf4j
 public class S3StorageEngineProvider implements StorageEngineProvider {
@@ -34,6 +39,18 @@ public class S3StorageEngineProvider implements StorageEngineProvider {
     @Override
     public StorageEngineEnum supportedEngineType() {
         return StorageEngineEnum.AWS_S3;
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.StorageTypeEnum> supportedStorageTypes() {
+        return EnumSet.of(STANDARD, STANDARD_IA, ONEZONE_IA, SNOW, GLACIER, GLACIER_IR,
+                Outposts, REDUCED_REDUNDANCY, DEEP_COLD_ARCHIVE, INTELLIGENT_TIERING);
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.AclTypeEnum> supportedAclTypes() {
+        return EnumSet.of(PRIVATE, PUBLIC_READ, PUBLIC_READ_WRITE, AUTHENTICATED_READ,
+                BUCKET_OWNER_READ, BUCKET_OWNER_FULL_CONTROL);
     }
 
     @Override

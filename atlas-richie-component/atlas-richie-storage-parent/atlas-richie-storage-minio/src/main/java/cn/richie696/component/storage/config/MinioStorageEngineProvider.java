@@ -22,6 +22,11 @@ import cn.richie696.component.storage.enums.StorageEngineEnum;
 import io.minio.MinioAsyncClient;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.EnumSet;
+import java.util.Set;
+
+import static cn.richie696.component.storage.enums.AclTypeEnum.*;
+
 /**
  * MinIO 存储引擎 Provider
  * <p>
@@ -38,6 +43,17 @@ public class MinioStorageEngineProvider implements StorageEngineProvider {
     @Override
     public StorageEngineEnum supportedEngineType() {
         return StorageEngineEnum.MINIO;
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.StorageTypeEnum> supportedStorageTypes() {
+        // MinIO 当前引擎实现没有接入 StorageTypeConverter，不能向管理端宣称支持统一存储类型。
+        return Set.of();
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.AclTypeEnum> supportedAclTypes() {
+        return EnumSet.allOf(cn.richie696.component.storage.enums.AclTypeEnum.class);
     }
 
     @Override

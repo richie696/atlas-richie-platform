@@ -50,6 +50,6 @@ public class Ks3StorageTypeConverter implements StorageTypeConverter {
 
     @Override
     public StorageEngineEnum getSupportedEngine() {
-        return StorageEngineEnum.VOLCENGINE_TOS;
+        return StorageEngineEnum.KSYUN_KS3;
     }
 }

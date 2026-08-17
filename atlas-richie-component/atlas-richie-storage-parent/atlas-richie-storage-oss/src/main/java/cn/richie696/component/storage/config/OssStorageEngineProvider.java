@@ -25,12 +25,29 @@ import com.aliyun.oss.common.auth.CredentialsProviderFactory;
 import com.aliyun.oss.common.auth.DefaultCredentialProvider;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.EnumSet;
+import java.util.Set;
+
+import static cn.richie696.component.storage.enums.AclTypeEnum.*;
+import static cn.richie696.component.storage.enums.StorageTypeEnum.*;
+
 @Slf4j
 public class OssStorageEngineProvider implements StorageEngineProvider {
 
     @Override
     public StorageEngineEnum supportedEngineType() {
         return StorageEngineEnum.ALIYUN_OSS;
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.StorageTypeEnum> supportedStorageTypes() {
+        return EnumSet.of(STANDARD, STANDARD_IA, ARCHIVE, COLD_ARCHIVE, DEEP_COLD_ARCHIVE);
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.AclTypeEnum> supportedAclTypes() {
+        return EnumSet.of(PRIVATE, PUBLIC_READ, PUBLIC_READ_WRITE, AUTHENTICATED_READ,
+                BUCKET_OWNER_READ, BUCKET_OWNER_FULL_CONTROL);
     }
 
     @Override

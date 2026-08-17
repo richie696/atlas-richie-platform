@@ -27,12 +27,29 @@ import com.volcengine.tos.credential.StaticCredentialsProvider;
 import com.volcengine.tos.transport.TransportConfig;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.EnumSet;
+import java.util.Set;
+
+import static cn.richie696.component.storage.enums.AclTypeEnum.*;
+import static cn.richie696.component.storage.enums.StorageTypeEnum.*;
+
 @Slf4j
 public class TosStorageEngineProvider implements StorageEngineProvider {
 
     @Override
     public StorageEngineEnum supportedEngineType() {
         return StorageEngineEnum.VOLCENGINE_TOS;
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.StorageTypeEnum> supportedStorageTypes() {
+        return EnumSet.of(STANDARD, STANDARD_IA, ARCHIVE, ARCHIVE_FR, COLD_ARCHIVE,
+                DEEP_COLD_ARCHIVE, INTELLIGENT_TIERING);
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.AclTypeEnum> supportedAclTypes() {
+        return EnumSet.allOf(cn.richie696.component.storage.enums.AclTypeEnum.class);
     }
 
     @Override

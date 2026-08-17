@@ -22,12 +22,29 @@ import cn.richie696.component.storage.enums.StorageEngineEnum;
 import com.obs.services.ObsClient;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.EnumSet;
+import java.util.Set;
+
+import static cn.richie696.component.storage.enums.AclTypeEnum.*;
+import static cn.richie696.component.storage.enums.StorageTypeEnum.*;
+
 @Slf4j
 public class ObsStorageEngineProvider implements StorageEngineProvider {
 
     @Override
     public StorageEngineEnum supportedEngineType() {
         return StorageEngineEnum.HUAWEI_OBS;
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.StorageTypeEnum> supportedStorageTypes() {
+        return EnumSet.of(STANDARD, STANDARD_IA, ARCHIVE, COLD_ARCHIVE, DEEP_COLD_ARCHIVE,
+                INTELLIGENT_TIERING);
+    }
+
+    @Override
+    public Set<cn.richie696.component.storage.enums.AclTypeEnum> supportedAclTypes() {
+        return EnumSet.allOf(cn.richie696.component.storage.enums.AclTypeEnum.class);
     }
 
     @Override

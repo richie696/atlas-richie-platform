@@ -16,7 +16,11 @@
 package cn.richie696.component.storage.config;
 
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.enums.AclTypeEnum;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
+import cn.richie696.component.storage.enums.StorageTypeEnum;
+
+import java.util.Set;
 
 /**
  * 存储引擎提供者 SPI
@@ -34,6 +38,23 @@ public interface StorageEngineProvider {
      * 支持的引擎类型
      */
     StorageEngineEnum supportedEngineType();
+
+    /**
+     * 返回该 Provider 实际支持的统一存储类型。
+     *
+     * <p>管理端可据此生成配置选项，避免把所有云厂商的枚举混在一起。旧版
+     * Provider 未实现时返回空集合，表示该引擎没有声明可选的统一存储类型。</p>
+     */
+    default Set<StorageTypeEnum> supportedStorageTypes() {
+        return Set.of();
+    }
+
+    /**
+     * 返回该 Provider 实际支持的统一 ACL 类型。
+     */
+    default Set<AclTypeEnum> supportedAclTypes() {
+        return Set.of();
+    }
 
     /**
      * 根据配置创建存储引擎实例
