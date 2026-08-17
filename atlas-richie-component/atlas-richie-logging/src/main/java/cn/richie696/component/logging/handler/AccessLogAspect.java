@@ -17,7 +17,6 @@ package cn.richie696.component.logging.handler;
 
 import cn.richie696.component.cache.GlobalCache;
 import cn.richie696.component.concurrency.measurement.Stopwatch;
-import cn.richie696.component.dao.snowflake.IdBuilder;
 import cn.richie696.component.desensitize.core.service.ObjectMaskingService;
 import cn.richie696.component.logging.annotations.AccessLog;
 import cn.richie696.component.logging.callback.LogLifecycleCallback;
@@ -90,11 +89,6 @@ public class AccessLogAspect {
      * 日志记录数据库接口
      */
     private final AccessLogService accessLogService;
-
-    /**
-     * 日志ID生成器
-     */
-    private final IdBuilder idBuilder;
 
     /**
      * 脱敏服务（可选）：classpath 存在时自动对请求/响应体进行敏感字段脱敏。
@@ -479,7 +473,7 @@ public class AccessLogAspect {
     private void fillLogInfo(AccessLogInfo logInfo, AccessLog accessLog, OffsetDateTime operateTime,
                              String url, HttpServletRequest request, String requestBody,
                              String responseBody, long elapsedTime) {
-        logInfo.setId(idBuilder.nextId())
+        logInfo
                 .setTitle(accessLog == null ? "" : accessLog.value())
                 .setOperateTime(operateTime)
                 .setUrl(url)

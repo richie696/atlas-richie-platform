@@ -15,7 +15,6 @@
  */
 package cn.richie696.component.logging.handler;
 
-import cn.richie696.component.dao.snowflake.IdBuilder;
 import cn.richie696.component.logging.annotations.AccessLog;
 import cn.richie696.component.logging.config.OperateLogProperties;
 import cn.richie696.component.logging.domain.AccessLogInfo;
@@ -63,10 +62,8 @@ class AccessLogAspectTest {
 
         queueHandler = mock(QueueHandler.class);
         AccessLogService accessLogService = mock(AccessLogService.class);
-        IdBuilder idBuilder = mock(IdBuilder.class);
-        when(idBuilder.nextId()).thenReturn(12345L);
 
-        aspect = new AccessLogAspect(properties, queueHandler, accessLogService, idBuilder, mock());
+        aspect = new AccessLogAspect(properties, queueHandler, accessLogService, mock());
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/test");
         ServletRequestAttributes attrs = new ServletRequestAttributes(request);
