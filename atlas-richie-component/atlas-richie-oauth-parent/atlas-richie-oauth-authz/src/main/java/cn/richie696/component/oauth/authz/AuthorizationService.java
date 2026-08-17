@@ -17,16 +17,13 @@ import java.util.Base64;
  * grant_type 的全量校验并返回规范化请求;{@link #issueCode(OAuthAuthorizationRequest, String)} 仅
  * 在调用方已经完成用户认证与授权同意后生成授权码;{@link #createCodeVerifier()} 为 OAuth Service
  * 提供标准 verifier 生成入口。
- * </p>
  * <p>
  * 处于 oauth-authz 的框架无关协议位置:与 {@link AuthorizationEndpoint}(Servlet 适配层)并行存在,
  * 新业务或非 Servlet 场景(Reactive/Gateway)直接使用本类,无需依赖 Servlet API。
- * </p>
  * <p>
  * 解决的问题:把"授权请求校验"与"HTTP 框架"解耦,让 OAuth Service 可以在不绑定 Servlet 容器的
  * 场景(WebFlux/网关脚本)直接复用同一套协议语义;同时把"用户登录 + 同意"这一需要 UI 的步骤显式
  * 留在调用方,组件不假设登录方式。
- * </p>
  *
  * @author richie696
  * @since 2026-08-07

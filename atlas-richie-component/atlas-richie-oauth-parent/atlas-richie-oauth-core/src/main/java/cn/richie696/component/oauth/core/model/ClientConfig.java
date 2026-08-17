@@ -30,16 +30,13 @@ import java.util.List;
  * rate_limit)与生命周期(tokenValidDuration / refreshTokenValidDuration);同时定义
  * {@link Field} 枚举把字段名映射到 Redis Hash 的实际 Key,供
  * {@link cn.richie696.component.oauth.core.ClientRegistry} 做字段级只读访问。
- * </p>
  * <p>
  * 处于 oauth-core 的客户端数据契约位置:由 {@link cn.richie696.component.oauth.core.spi.ClientRepository} 读写,贯穿 Token 端点、
  * 授权端点、动态注册端点等所有需要客户端信息的协议路径;OAuth Service 可整体替换为带租户/标签
  * 等扩展字段的派生模型。
- * </p>
  * <p>
  * 解决的问题:把"客户端有哪些字段"统一为一个可序列化的模型,避免每个端点自行定义字段子集;
  * 同时通过 Field 枚举把"字段读取"与"模型映射"分离,支持字段级查询而不必加载整张配置。
- * </p>
  *
  * @author richie696
  * @since 2026-06-12

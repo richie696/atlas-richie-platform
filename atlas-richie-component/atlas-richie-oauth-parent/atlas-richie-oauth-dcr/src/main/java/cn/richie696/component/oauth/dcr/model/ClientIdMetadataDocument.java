@@ -29,17 +29,14 @@ import java.util.List;
  * 由 {@link cn.richie696.component.oauth.dcr.DynamicClientRegistrationEndpoint} 写入
  * {@link cn.richie696.component.oauth.core.config.OAuth2RedisKey#OAUTH2_CLIENT_META},由
  * {@link cn.richie696.component.oauth.dcr.support.DefaultClientIdMetadataDocumentResolver} 按 clientId 读取。
- * </p>
  * <p>
  * 处于 oauth-dcr 的元数据持久化位置:与 oauth-core 的 {@link cn.richie696.component.oauth.core.model.ClientConfig}
  * 并列,前者承载 RFC 7591 完整元数据,后者承载运行时高频读取字段;二者通过
  * {@link cn.richie696.component.oauth.dcr.support.RedisClientRegistrationStore} 同时落 Redis 保持一致。
- * </p>
  * <p>
  * 解决的问题:用独立模型承载 RFC 7591 的扩展元数据,避免把 OIDC logo/tos/policy/contacts 等
  * 字段塞进运行时高频读取的 ClientConfig;同时让"完整元数据按需加载"成为可能,降低
  * ClientRegistry 的内存与带宽占用。
- * </p>
  *
  * @author richie696
  * @since 2026-06-12

@@ -16,18 +16,15 @@ import java.util.Map;
  * IP 绑定、每日签发计数全部落到 Redis;Key 前缀统一走
  * {@link cn.richie696.component.oauth.core.config.OAuth2RedisKey}。消费 refresh_token 时同步写入
  * "已使用" 副本,实现重放检测。
- * </p>
  * <p>
  * 处于 oauth-core 的默认 Token 持久化实现位置:由
  * {@link cn.richie696.component.oauth.core.config.OAuth2AutoConfiguration} 在缺省 Bean 时注册;
  * 被 {@link cn.richie696.component.oauth.core.TokenEndpoint} 与
  * AuthorizationCodeGrant 共同持有。
- * </p>
  * <p>
  * 解决的问题:让 Token 端点与授权码兑换所需的全部状态(黑名单、IP 绑定、限流、一次性消费)有
  * 一个开箱即用的 Redis 实现,同时把 Key 命名收敛到 OAuth2RedisKey,避免散落;重放检测通过
  * "已使用副本"实现,即便消费动作因并发丢失也不会被静默放过。
- * </p>
  *
  * @author richie696
  * @since 2026-08-07

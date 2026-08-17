@@ -14,17 +14,14 @@ import java.util.Set;
  * 从 Gateway 既有 Redis 策略数据结构读取:api 索引走 {@code gateway:api:index},接口配置走
  * {@code gateway:api:{code}} Hash,接口所需 scope 走 {@code gateway:api:scopes:{code}} Set。
  * 适配层让 {@link cn.richie696.component.oauth.core.ScopeResolver} 不必关心数据如何落 Redis。
- * </p>
  * <p>
  * 处于 oauth-core 的策略适配位置:由 {@link cn.richie696.component.oauth.core.config.OAuth2AutoConfiguration}
  * 作为 {@link ScopePolicyRepository} 的默认 Bean 注册;OAuth Service 可整体替换为 Nacos / Apollo
  * 适配器,本类只负责"读旧版 Redis 数据"这一兼容职责。
- * </p>
  * <p>
  * 解决的问题:让既有的 Gateway Redis 策略数据无需迁移即可被 oauth 组件消费,降低接入成本;同时把
  * Key 命名收敛在 {@link cn.richie696.component.oauth.core.config.OAuth2RedisKey},避免与 Gateway
  * 业务逻辑出现命名冲突。
- * </p>
  *
  * @author richie696
  * @since 2026-08-07
