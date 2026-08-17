@@ -20,7 +20,6 @@ package cn.richie696.component.nats;
  * <p>
  * 集中维护跨包复用的字符串常量、默认超时与可观测性标识。
  * 设计为 final + 私有构造，禁止实例化或子类化，避免散落的魔法值影响追踪、幂等与日志格式的一致性。
- * </p>
  *
  * @author richie696
  * @since 1.0.0
