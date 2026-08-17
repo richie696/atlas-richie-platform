@@ -68,8 +68,14 @@ public class SignatureServiceImpl implements SignatureService {
             return ApiResult.success();
         }
         Date expiredTime = JwtUtils.getExpiredTime(token);
+        if (expiredTime == null) {
+            log.warn("作废令牌时未找到过期时间，跳过黑名单写入");
+            return ApiResult.success();
+        }
         long expired = expiredTime.getTime() - System.currentTimeMillis();
-        GlobalCache.value().set(config.getToken().getBlacklistPath() + token, JwtUtils.getUsername(token), expired);
+        if (expired > 0) {
+            GlobalCache.value().set(config.getToken().getBlacklistPath() + token, JwtUtils.getUsername(token), expired);
+        }
         return ApiResult.success();
     }
 

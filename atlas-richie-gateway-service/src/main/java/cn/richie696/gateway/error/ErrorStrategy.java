@@ -1,18 +1,3 @@
-/*
- * Copyright (c) 2026 Richie (https://www.github.com/richie696)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package cn.richie696.gateway.error;
 
 import cn.richie696.contract.model.ApiResult;
@@ -26,140 +11,116 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * 错误处理策略接口
- * 根据 HTTP 状态码和错误属性生成错误响应
+ * 网关错误处理策略接口。
+ * <p>
+ * 默认实现 {@link DefaultErrorStrategy} 统一通过 {@link GatewayErrorRegistry}
+ * 决定错误码、HTTP 状态、是否可重试、详情页相对路径（helpUrl）、i18n 键空间根，
+ * 并写入响应体的 {@code requestId}（来自
+ * {@link cn.richie696.gateway.filter.common.infrastructure.RequestIdGlobalFilter}）
+ * 与 {@code helpUrl} 字段。
+ * </p>
+ *
+ * <h3>环境行为差异</h3>
+ * <ul>
+ *   <li>开发 / 测试环境：返回详细异常信息（含堆栈），用于本地调试。</li>
+ *   <li>生产环境：根据 HTTP 状态码从 Registry 选条目，使用 i18n key
+ *       {@code <i18nKey>.meaning} 渲染用户消息，并将 requestId / helpUrl 写入响应体。</li>
+ * </ul>
  *
  * @author richie696
- * @version 1.0
- * @since 2025-01-16 18:03:18
+ * @since 2026-08-04
  */
 public interface ErrorStrategy {
 
     Logger log = LoggerFactory.getLogger(ErrorStrategy.class);
 
     /**
-     * 处理错误
+     * 处理错误并返回统一格式的响应体。
      *
-     * @param statusCode HTTP 状态码
-     * @param errorAttributes 错误属性，包含异常信息、堆栈跟踪等
-     * @param isDevOrTest 是否为开发或测试环境
-     * @return 错误响应结果
+     * @param statusCode      HTTP 状态码
+     * @param errorAttributes Spring 错误属性（dev 环境使用）
+     * @param isDevOrTest     是否开发或测试环境
+     * @param requestId       全链路请求 ID，可能为 {@code null}
+     * @return 错误响应 {@link ApiResult}
      */
-    ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest);
-
-    /** Adds protocol metadata without forcing individual strategy implementations to know the exchange. */
-    default ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes,
-                                  boolean isDevOrTest, String requestId) {
-        return handle(statusCode, errorAttributes, isDevOrTest).setRequestId(requestId);
-    }
+    ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest, String requestId);
 
     /**
-     * 从错误属性中提取错误消息
-     * 开发/测试环境：返回详细异常信息和堆栈
-     * 生产环境：返回封装后的通用错误信息，并生成唯一错误ID用于日志关联
+     * 提取 dev/test 环境的详细异常信息（含堆栈）。
      *
-     * @param statusCode HTTP 状态码
+     * @param statusCode      HTTP 状态码
      * @param errorAttributes 错误属性
-     * @param isDevOrTest 是否为开发或测试环境
-     * @return 错误消息（包含错误ID，如果是在生产环境）
+     * @param isDevOrTest     是否开发或测试环境
+     * @return 错误消息字符串
      */
     default String extractErrorMessage(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
         if (isDevOrTest) {
-            // 开发/测试环境：返回详细异常信息
             StringBuilder errorMessage = new StringBuilder();
-            
-            // 获取异常消息
             Object message = errorAttributes.get("message");
             if (Objects.nonNull(message)) {
                 errorMessage.append(I18n.get("ERROR_MESSAGE", message)).append("\n");
             }
-            
-            // 获取异常类型
             Object error = errorAttributes.get("error");
             if (Objects.nonNull(error)) {
                 errorMessage.append(I18n.get("ERROR_TYPE", error)).append("\n");
             }
-            
-            // 获取堆栈跟踪
             Object trace = errorAttributes.get("trace");
             if (Objects.nonNull(trace)) {
                 errorMessage.append(I18n.get("ERROR_STACK_TRACE")).append("\n").append(trace);
             } else {
-                // 如果没有 trace，尝试从 exception 字段获取
                 Object exception = errorAttributes.get("exception");
                 if (Objects.nonNull(exception)) {
                     errorMessage.append(I18n.get("ERROR_EXCEPTION_CLASS", exception)).append("\n");
                 }
             }
-            
             return errorMessage.length() > 0 ? errorMessage.toString() : I18n.get("ERROR_UNKNOWN");
-        } else {
-            // 生产环境：生成唯一错误ID，记录详细日志，返回包含错误ID的通用错误信息
-            String errorId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-            
-            // 记录详细错误信息到日志（包含错误ID）
-            logErrorDetails(errorId, statusCode, errorAttributes);
-            
-            // 根据 HTTP 状态码返回对应的国际化错误消息，并包含错误ID
-            String errorKey = getErrorKeyByStatusCode(statusCode);
-            String defaultMessage = I18n.get(errorKey);
-            
-            // 返回包含错误ID的错误消息
-            return I18n.get("ERROR_WITH_ID", defaultMessage, errorId);
         }
+        String errorId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        logErrorDetails(errorId, statusCode, errorAttributes);
+        String errorKey = getErrorKeyByStatusCode(statusCode);
+        String defaultMessage = I18n.get(errorKey);
+        return I18n.get("ERROR_WITH_ID", defaultMessage, errorId);
     }
 
     /**
-     * 记录详细错误信息到日志（仅在生产环境调用）
+     * 记录生产环境的完整错误日志（含 errorId、path、exception、stack trace）。
      *
-     * @param errorId 错误ID
-     * @param statusCode HTTP 状态码
+     * @param errorId         错误 ID
+     * @param statusCode      HTTP 状态码
      * @param errorAttributes 错误属性
      */
     default void logErrorDetails(String errorId, HttpStatus statusCode, Map<String, Object> errorAttributes) {
         StringBuilder logMessage = new StringBuilder();
         logMessage.append("错误ID: ").append(errorId).append("\n");
         logMessage.append("HTTP状态码: ").append(statusCode != null ? statusCode.value() : "未知").append("\n");
-        
-        // 获取请求路径
         Object path = errorAttributes.get("path");
         if (Objects.nonNull(path)) {
             logMessage.append("请求路径: ").append(path).append("\n");
         }
-        
-        // 获取异常消息
         Object message = errorAttributes.get("message");
         if (Objects.nonNull(message)) {
             logMessage.append("错误信息: ").append(message).append("\n");
         }
-        
-        // 获取异常类型
         Object error = errorAttributes.get("error");
         if (Objects.nonNull(error)) {
             logMessage.append("异常类型: ").append(error).append("\n");
         }
-        
-        // 获取异常类
         Object exception = errorAttributes.get("exception");
         if (Objects.nonNull(exception)) {
             logMessage.append("异常类: ").append(exception).append("\n");
         }
-        
-        // 获取堆栈跟踪
         Object trace = errorAttributes.get("trace");
         if (Objects.nonNull(trace)) {
             logMessage.append("堆栈跟踪:\n").append(trace);
         }
-        
-        // 记录错误日志
         log.error("Gateway错误详情 - {}", logMessage.toString());
     }
 
     /**
-     * 根据 HTTP 状态码获取对应的错误消息 key
+     * 根据 HTTP 状态码返回旧的 {@code ERROR_*} i18n key（dev/test 环境使用）。
      *
      * @param statusCode HTTP 状态码
-     * @return 错误消息 key
+     * @return i18n key
      */
     default String getErrorKeyByStatusCode(HttpStatus statusCode) {
         if (statusCode == null) {
@@ -179,393 +140,33 @@ public interface ErrorStrategy {
         };
     }
 
-
+    /**
+     * 默认错误策略：dev/test 返回详细异常，prod 通过 Registry 选 GW-* 错误码。
+     */
     class DefaultErrorStrategy implements ErrorStrategy {
+
+        /**
+         * 系统内部错误兜底码（Registry 找不到匹配时使用）。
+         */
+        private static final String FALLBACK_ERROR_CODE = "GW-SYSTEM-0001";
+
         @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
+        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest, String requestId) {
             if (isDevOrTest) {
-                return ApiResult.error(String.valueOf(statusCode.value()),
-                        extractErrorMessage(statusCode, errorAttributes, true));
+                String detailMessage = extractErrorMessage(statusCode, errorAttributes, true);
+                return ApiResult.<Void>error(String.valueOf(statusCode != null ? statusCode.value() : HttpStatus.INTERNAL_SERVER_ERROR.value()), detailMessage)
+                        .setRequestId(requestId);
             }
-            GatewayErrorCode code = GatewayErrorRegistry.byHttpStatus(statusCode.value());
-            return ApiResult.<Void>error(code.getCode(), I18n.get(code.getI18nKey() + ".meaning"))
-                    .setHelpUrl(GatewayErrorRegistry.helpUrl(code));
+            int httpStatusValue = statusCode != null ? statusCode.value() : HttpStatus.INTERNAL_SERVER_ERROR.value();
+            GatewayErrorEntry entry = GatewayErrorRegistry.getByHttpStatus(httpStatusValue);
+            if (entry == null) {
+                entry = GatewayErrorRegistry.getByCode(FALLBACK_ERROR_CODE);
+            }
+            String meaningKey = entry.getI18nKey() + ".meaning";
+            String meaning = I18n.get(meaningKey);
+            return ApiResult.<Void>error(entry.getErrorCode(), meaning)
+                    .setRequestId(requestId)
+                    .setHelpUrl(entry.getHelpUrl());
         }
     }
-
-    /**
-     * HttpStatus.BAD_REQUEST(400) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:08:32
-     */
-    class BadRequestErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.UNAUTHORIZED(401) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:08:52
-     */
-    class UnauthorizedErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.FORBIDDEN(403) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:09:03
-     */
-    class ForbiddenErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.NOT_FOUND(404) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:09:20
-     */
-    class NotFoundErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.METHOD_NOT_ALLOWED(405) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:09:36
-     */
-    class MethodNotAllowedErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.NOT_ACCEPTABLE(406) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:09:49
-     */
-    class NotAcceptableErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.PROXY_AUTHENTICATION_REQUIRED(407) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:09:49
-     */
-    class ProxyAuthenticationRequiredErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.REQUEST_TIMEOUT(408) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:09:52
-     */
-    class RequestTimeoutErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.UNSUPPORTED_MEDIA_TYPE(415) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:32:09
-     */
-    class UnsupportedMediaTypeErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE(416) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:32:09
-     */
-    class RequestedRangeNotSatisfiableErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.EXPECTATION_FAILED(417) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:32:09
-     */
-    class ExpectationFailedErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.IM_A_TEAPOT(418) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:32:09
-     */
-    class ImATeapotErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.UNPROCESSABLE_ENTITY(422) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:32:09
-     */
-    class UnprocessableEntityErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.TOO_EARLY(425) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:32:09
-     */
-    class TooEarlyErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.UPGRADE_REQUIRED(426) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:32:09
-     */
-    class UpgradeRequiredErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.PRECONDITION_REQUIRED(428) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:32:09
-     */
-    class PreconditionRequiredErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.TOO_MANY_REQUESTS(429) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:32:09
-     */
-    class TooManyRequestsErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE(431) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:32:09
-     */
-    class RequestHeaderFieldsTooLargeErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.UNAVAILABLE_FOR_LEGAL_REASONS(451) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:32:09
-     */
-    class UnavailableForLegalReasonsErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.INTERNAL_SERVER_ERROR(500) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:35:25
-     */
-    class InternalServerErrorErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.NOT_IMPLEMENTED(501) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:35:25
-     */
-    class NotImplementedErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.BAD_GATEWAY(502) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:35:25
-     */
-    class BadGatewayErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.SERVICE_UNAVAILABLE(503) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:35:25
-     */
-    class ServiceUnavailableErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.GATEWAY_TIMEOUT(504) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:35:25
-     */
-    class GatewayTimeoutErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
-    /**
-     * HttpStatus.HTTP_VERSION_NOT_SUPPORTED(505) 错误处理策略
-     *
-     * @author richie696
-     * @version 1.0
-     * @since 2025-01-16 18:35:25
-     */
-    class HttpVersionNotSupportedErrorStrategy implements ErrorStrategy {
-        @Override
-        public ApiResult<Void> handle(HttpStatus statusCode, Map<String, Object> errorAttributes, boolean isDevOrTest) {
-            String errorMessage = extractErrorMessage(statusCode, errorAttributes, isDevOrTest);
-            return ApiResult.error(statusCode.value() + "", errorMessage);
-        }
-    }
-
 }

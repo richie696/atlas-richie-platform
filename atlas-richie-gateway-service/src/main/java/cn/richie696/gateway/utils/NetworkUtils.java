@@ -1,25 +1,11 @@
-/*
- * Copyright (c) 2026 Richie (https://www.github.com/richie696)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package cn.richie696.gateway.utils;
 
 import cn.richie696.contract.model.ApiResult;
-import cn.richie696.gateway.error.GatewayErrorCode;
-import cn.richie696.gateway.error.GatewayErrorRegistry;
-import cn.richie696.gateway.filter.common.infrastructure.RequestIdGlobalFilter;
 import cn.richie696.context.utils.data.JsonUtils;
+import cn.richie696.gateway.error.GatewayErrorEntry;
+import cn.richie696.gateway.error.GatewayErrorRegistry;
+import cn.richie696.gateway.error.codes.GatewayErrorCode;
+import cn.richie696.gateway.filter.common.infrastructure.RequestIdGlobalFilter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
@@ -29,6 +15,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import reactor.core.publisher.Mono;
 
+import java.security.SecureRandom;
 import java.util.*;
 
 /**
@@ -78,28 +65,63 @@ public final class NetworkUtils {
     }
 
     /**
-     * 返回错误信息的方法
+     * 返回错误信息的方法。
+     * <p>
+     * 行为约束：
+     * </p>
+     * <ul>
+     *   <li>HTTP 响应行写 {@link HttpStatus#OK}（历史兼容，本期不修复）。</li>
+     *   <li>写入 {@code X-Request-Id} 响应头（若 request 中已携带则沿用，否则生成）。</li>
+     *   <li>从 {@link GatewayErrorRegistry} 查找匹配 HTTP 状态码的 GW-* 错误码条目，
+     *       写入响应体 {@code code} 与 {@code helpUrl} 字段；找不到匹配则使用
+     *       {@code GW-SYSTEM-0001} 兜底。</li>
+     * </ul>
      *
-     * @param response 应答对象
-     * @param httpStatus HTTP状态码
-     * @param message 错误信息
+     * @param response  应答对象
+     * @param httpStatus HTTP 状态码
+     * @param message    错误信息
      * @return 返回错误信息
      */
     public static Mono<Void> returnError(ServerHttpResponse response, HttpStatus httpStatus, String message) {
         response.setStatusCode(HttpStatus.OK);
         response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
-        GatewayErrorCode errorCode = GatewayErrorRegistry.byHttpStatus(httpStatus.value());
+
         String requestId = response.getHeaders().getFirst(RequestIdGlobalFilter.HEADER_NAME);
-        if (requestId == null || requestId.isBlank()) {
-            requestId = UUID.randomUUID().toString().replace("-", "");
-            response.getHeaders().set(RequestIdGlobalFilter.HEADER_NAME, requestId);
+        if (requestId == null || requestId.isEmpty()) {
+            requestId = generateRequestId();
         }
-        ApiResult<Void> result = ApiResult.<Void>error(errorCode.getCode(), message)
-                .setRequestId(requestId)
-                .setHelpUrl(GatewayErrorRegistry.helpUrl(errorCode));
+        response.getHeaders().set(RequestIdGlobalFilter.HEADER_NAME, requestId);
+
+        GatewayErrorEntry entry = GatewayErrorRegistry.getByHttpStatus(httpStatus.value());
+        if (entry == null) {
+            entry = GatewayErrorRegistry.getByCode(GatewayErrorCode.GW_SYSTEM_0001.getErrorCode());
+        }
+
+        ApiResult<Void> result = ApiResult.error(entry.getErrorCode(), message);
+        result.setCode(entry.getErrorCode());
+        result.setRequestId(requestId);
+        result.setHelpUrl(entry.getHelpUrl());
         DataBuffer wrap = response.bufferFactory()
                 .wrap(Objects.requireNonNull(JsonUtils.getInstance().serializeBytes(result)));
         return response.writeWith(Mono.just(wrap));
+    }
+
+    /**
+     * 生成 32 位小写十六进制随机 ID（与 {@link RequestIdGlobalFilter} 保持一致）。
+     *
+     * @return 32 位 ID
+     */
+    private static String generateRequestId() {
+        byte[] bytes = new byte[16];
+        new SecureRandom().nextBytes(bytes);
+        char[] hex = new char[32];
+        char[] hexChars = "0123456789abcdef".toCharArray();
+        for (int i = 0; i < 16; i++) {
+            int value = bytes[i] & 0xff;
+            hex[i * 2] = hexChars[value >>> 4];
+            hex[i * 2 + 1] = hexChars[value & 0x0f];
+        }
+        return new String(hex);
     }
 
 

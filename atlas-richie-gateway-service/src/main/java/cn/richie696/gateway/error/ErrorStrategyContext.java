@@ -1,18 +1,3 @@
-/*
- * Copyright (c) 2026 Richie (https://www.github.com/richie696)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package cn.richie696.gateway.error;
 
 import cn.richie696.contract.model.ApiResult;
@@ -21,62 +6,100 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
 
 import java.util.Arrays;
 import java.util.Map;
 
 /**
- * 错误处理策略上下文
- * 根据 HTTP 状态码选择对应的错误处理策略，并根据环境（dev/test/prod）决定是否返回详细错误信息
+ * 错误处理策略上下文。
+ * <p>
+ * 使用单例 {@link ErrorStrategy.DefaultErrorStrategy}，根据 HTTP 状态码从
+ * {@link GatewayErrorRegistry} 选条目，并从
+ * {@link ServerWebExchange#getAttribute(String)} 读取全链路
+ * {@code requestId}（由 {@link RequestIdGlobalFilter} 写入），最终写入响应体的
+ * {@code requestId} 与 {@code helpUrl} 字段。
+ * </p>
  *
  * @author richie696
- * @version 1.0
- * @since 2025-01-16 18:03:18
+ * @since 2026-08-04
  */
 @Slf4j
 @Component
 public class ErrorStrategyContext {
 
+    /**
+     * 默认错误策略单例。
+     */
     private final ErrorStrategy strategy = new ErrorStrategy.DefaultErrorStrategy();
+
+    /**
+     * Spring 环境（用于判断 dev / test）。
+     */
     private final Environment environment;
 
+    /**
+     * 构造方法。
+     *
+     * @param environment Spring 环境
+     */
     public ErrorStrategyContext(Environment environment) {
         this.environment = environment;
     }
 
     /**
-     * 处理错误
+     * 处理错误并返回统一格式的响应体。
+     * <p>
+     * 从 {@code ServerWebExchange} 读取 requestId（无 exchange 时为 {@code null}）。
+     * </p>
      *
-     * @param errorAttributes 错误属性，包含异常信息、堆栈跟踪等
-     * @return 错误响应结果
+     * @param errorAttributes Spring 错误属性
+     * @param exchange        ServerWebExchange（可为 {@code null}）
+     * @return 错误响应
      */
-    public ApiResult<Void> handleError(Map<String, Object> errorAttributes) {
+    public ApiResult<Void> handleError(Map<String, Object> errorAttributes, ServerWebExchange exchange) {
         Integer status = (Integer) errorAttributes.get("status");
         HttpStatus httpStatus = (status != null) ? HttpStatus.valueOf(status) : HttpStatus.INTERNAL_SERVER_ERROR;
-        return strategy.handle(httpStatus, errorAttributes, isDevOrTestEnvironment(), null);
-    }
-
-    public ApiResult<Void> handleError(Map<String, Object> errorAttributes, org.springframework.web.server.ServerWebExchange exchange) {
-        Integer status = (Integer) errorAttributes.get("status");
-        HttpStatus httpStatus = status != null ? HttpStatus.valueOf(status) : HttpStatus.INTERNAL_SERVER_ERROR;
-        String requestId = exchange == null ? null : exchange.getAttribute(RequestIdGlobalFilter.ATTRIBUTE_KEY);
+        String requestId = resolveRequestId(exchange);
         return strategy.handle(httpStatus, errorAttributes, isDevOrTestEnvironment(), requestId);
     }
 
     /**
-     * 判断当前是否为开发或测试环境
+     * 处理错误（不携带 exchange 的兼容版本）。
      *
-     * @return true 表示开发或测试环境，false 表示生产环境
+     * @param errorAttributes Spring 错误属性
+     * @return 错误响应
+     */
+    public ApiResult<Void> handleError(Map<String, Object> errorAttributes) {
+        return handleError(errorAttributes, null);
+    }
+
+    /**
+     * 从 exchange 读取 requestId。
+     *
+     * @param exchange ServerWebExchange
+     * @return requestId，可能为 {@code null}
+     */
+    private String resolveRequestId(ServerWebExchange exchange) {
+        if (exchange == null) {
+            return null;
+        }
+        return exchange.getAttribute(RequestIdGlobalFilter.ATTRIBUTE_KEY);
+    }
+
+    /**
+     * 判断当前是否为开发或测试环境。
+     *
+     * @return true 表示开发或测试环境
      */
     private boolean isDevOrTestEnvironment() {
         String[] activeProfiles = environment.getActiveProfiles();
         if (activeProfiles.length == 0) {
-            // 如果没有配置 profile，检查默认 profile
             String[] defaultProfiles = environment.getDefaultProfiles();
-            return Arrays.stream(defaultProfiles).anyMatch(profile -> 
-                "dev".equalsIgnoreCase(profile) || "test".equalsIgnoreCase(profile));
+            return Arrays.stream(defaultProfiles).anyMatch(profile ->
+                    "dev".equalsIgnoreCase(profile) || "test".equalsIgnoreCase(profile));
         }
-        return Arrays.stream(activeProfiles).anyMatch(profile -> 
-            "dev".equalsIgnoreCase(profile) || "test".equalsIgnoreCase(profile));
+        return Arrays.stream(activeProfiles).anyMatch(profile ->
+                "dev".equalsIgnoreCase(profile) || "test".equalsIgnoreCase(profile));
     }
 }

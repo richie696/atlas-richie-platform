@@ -139,7 +139,7 @@ public class MfaTokenUtils {
         }
 
         // 验证 Token 是否过期
-        java.util.Date expiredTime = JwtUtils.getExpiredTime(mfaToken);
+        Date expiredTime = JwtUtils.getExpiredTime(mfaToken);
         if (expiredTime == null || expiredTime.getTime() < System.currentTimeMillis()) {
             return false;
         }
