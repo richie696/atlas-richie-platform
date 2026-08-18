@@ -81,6 +81,20 @@ class MaskingStrategyTest {
     }
 
     @Test
+    void apiKeyMaskKeepsEdgesAndUsesFixedMaskLength() {
+        ApiKeyMaskingStrategy strategy = new ApiKeyMaskingStrategy();
+        String masked = strategy.mask("sk-w123456789tUsA", MaskRule.of(MaskType.API_KEY, '*'));
+        assertEquals("sk-w****tUsA", masked);
+    }
+
+    @Test
+    void apiKeyMaskLengthCanBeConfigured() {
+        ApiKeyMaskingStrategy strategy = new ApiKeyMaskingStrategy();
+        MaskRule rule = new MaskRule(MaskType.API_KEY, 4, 4, '*', null, 6);
+        assertEquals("sk-w******tUsA", strategy.mask("sk-w123456789tUsA", rule));
+    }
+
+    @Test
     void nullAndEmptyPassThrough() {
         PhoneMaskingStrategy strategy = new PhoneMaskingStrategy();
         assertNull(strategy.mask(null, MaskRule.of(MaskType.PHONE, '*')));

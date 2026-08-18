@@ -215,6 +215,7 @@ public class DesensitizeProperties {
             TypeRule rule = new TypeRule();
             rule.setKeepLeft(MaskRule.defaultKeepLeft(type));
             rule.setKeepRight(MaskRule.defaultKeepRight(type));
+            rule.setMaskLength(MaskRule.defaultMaskLength(type));
             rule.setMaskChar(null);
             map.put(type, rule);
         }
@@ -400,6 +401,11 @@ public class DesensitizeProperties {
          * 默认值：使用该 {@link MaskType} 的内置默认保留位。
          */
         private Integer keepRight;
+
+        /**
+         * 固定掩码字符数量；为空时按实际被替换长度输出。
+         */
+        private Integer maskLength;
 
         /**
          * 当前类型专属掩码字符。

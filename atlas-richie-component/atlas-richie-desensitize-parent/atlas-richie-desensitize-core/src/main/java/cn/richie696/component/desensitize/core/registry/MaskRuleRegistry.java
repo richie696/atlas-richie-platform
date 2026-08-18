@@ -90,7 +90,10 @@ public class MaskRuleRegistry {
         char maskChar = typeRule != null && typeRule.getMaskChar() != null
                 ? typeRule.getMaskChar()
                 : properties.getDefaultMaskChar();
-        return new MaskRule(type, keepLeft, keepRight, maskChar, null);
+        Integer maskLength = typeRule != null && typeRule.getMaskLength() != null
+                ? typeRule.getMaskLength()
+                : MaskRule.defaultMaskLength(type);
+        return new MaskRule(type, keepLeft, keepRight, maskChar, null, maskLength);
     }
 
     private Optional<MaskType> resolveFromAnnotation(Class<?> declaringClass, String fieldName, MaskScene scene) {

@@ -27,8 +27,16 @@ public record MaskRule(
         int keepLeft,
         int keepRight,
         char maskChar,
-        String customStrategy
+        String customStrategy,
+        Integer maskLength
 ) {
+
+    /**
+     * 兼容旧版五参数构造器。
+     */
+    public MaskRule(MaskType type, int keepLeft, int keepRight, char maskChar, String customStrategy) {
+        this(type, keepLeft, keepRight, maskChar, customStrategy, null);
+    }
 
     /**
      * 根据类型与掩码字符创建默认规则。
@@ -38,7 +46,8 @@ public record MaskRule(
      * @return 默认规则
      */
     public static MaskRule of (MaskType type,char maskChar){
-        return new MaskRule(type, defaultKeepLeft(type), defaultKeepRight(type), maskChar, null);
+        return new MaskRule(type, defaultKeepLeft(type), defaultKeepRight(type), maskChar, null,
+                defaultMaskLength(type));
     }
 
     /**
@@ -55,6 +64,7 @@ public record MaskRule(
             case NAME -> 1;
             case ADDRESS -> 6;
             case EMAIL, PASSWORD, CUSTOM -> 0;
+            case API_KEY -> 4;
         };
     }
 
@@ -69,6 +79,14 @@ public record MaskRule(
             case PHONE, BANK_CARD -> 4;
             case ID_CARD -> 4;
             case NAME, ADDRESS, EMAIL, PASSWORD, CUSTOM -> 0;
+            case API_KEY -> 4;
         };
+    }
+
+    /**
+     * 获取指定类型的默认掩码字符数量；{@code null} 表示按实际被替换长度输出。
+     */
+    public static Integer defaultMaskLength(MaskType type) {
+        return type == MaskType.API_KEY ? 4 : null;
     }
 }

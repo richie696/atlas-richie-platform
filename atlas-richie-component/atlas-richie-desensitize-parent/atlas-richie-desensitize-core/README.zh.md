@@ -87,15 +87,15 @@ flowchart TB
 
 | 包           | 类型                              | 职责                                                                                     |
 |--------------|-----------------------------------|------------------------------------------------------------------------------------------|
-| `model`      | `MaskType`                        | `PHONE` / `ID_CARD` / `EMAIL` / `BANK_CARD` / `NAME` / `ADDRESS` / `PASSWORD` / `CUSTOM` |
+| `model`      | `MaskType`                        | `PHONE` / `ID_CARD` / `EMAIL` / `BANK_CARD` / `NAME` / `ADDRESS` / `PASSWORD` / `API_KEY` / `CUSTOM` |
 | `model`      | `MaskScene`                       | `API_RESPONSE` / `LOG` / `AUDIT` / `EXCEPTION`                                           |
-| `model`      | `MaskRule`                        | `type`, `keepLeft`, `keepRight`, `maskChar`, `customStrategy`；提供默认左右保留位        |
+| `model`      | `MaskRule`                        | `type`, `keepLeft`, `keepRight`, `maskChar`, `maskLength`, `customStrategy`；支持固定掩码长度 |
 | `model`      | `MaskContext`                     | record `(scene, fieldName, declaringClass, roles)`；`withRoles(...)` 附加角色            |
 | `annotation` | `@Sensitive`                      | 字段注解：`type`, `scenes`, `customStrategy`                                             |
 | `support`    | `SensitiveLogArg`                 | `record(value, type)` 日志参数包装；提供 phone/idCard/email 等工厂方法                   |
 | `strategy`   | `MaskingStrategy`                 | SPI：`supports(MaskType)` + `mask(raw, rule)`                                            |
 | `strategy`   | `AbstractKeepEdgeMaskingStrategy` | 通用"左右保留"算法                                                                       |
-| `strategy`   | `*MaskingStrategy`                | 内置：Phone / IdCard / BankCard / Name / Address / Password / Email                      |
+| `strategy`   | `*MaskingStrategy`                | 内置：Phone / IdCard / BankCard / Name / Address / Password / API Key / Email            |
 | `strategy`   | `MaskingStrategyRegistry`         | SPI 加载器：按 `supports` 索引                                                           |
 | `registry`   | `MaskRuleRegistry`                | 解析字段脱敏类型：`@Sensitive` → YAML `fields`；按 `type-rules` 构造 `MaskRule`          |
 | `registry`   | `SensitiveKeyRegistry`            | 解析 Map key → `MaskType`，支持全局 + 分场景覆盖（大小写不敏感）                         |
@@ -127,6 +127,7 @@ flowchart TB
 | `sensitive-keys`                   | `Map<String, MaskType>` | `{}`                | 全局 key 名 → 类型，用于 API 返回 Map 和日志 Map；**大小写不敏感** |
 | `type-rules.<TYPE>.keepLeft`       | `Integer`               | 类型默认            | 覆盖默认左保留位数（如 PHONE 默认 3）                              |
 | `type-rules.<TYPE>.keepRight`      | `Integer`               | 类型默认            | 覆盖默认右保留位数（如 PHONE 默认 4）                              |
+| `type-rules.<TYPE>.maskLength`     | `Integer`               | 类型默认            | 固定输出掩码字符数量；为空时按实际被替换长度输出，`API_KEY` 默认 4 |
 | `type-rules.<TYPE>.maskChar`       | `Character`             | `default-mask-char` | 类型专属掩码字符                                                   |
 | `fields.<类全限定名>.<字段>`       | `MaskType`              | `{}`                | 当字段未标注 `@Sensitive` 时的兜底配置                             |
 | `api-response.sensitive-keys`      | `Map<String, MaskType>` | `{}`                | API 场景的覆盖（在全局之上合并）                                   |
@@ -165,6 +166,10 @@ platform:
           keep-right: 4
         EMAIL:
           mask-char: "#"
+        API_KEY:
+          keep-left: 4
+          keep-right: 4
+          mask-length: 4
       fields:
         com.example.api.UserVO:
           phone: PHONE

@@ -52,6 +52,10 @@ public enum MaskType {
      */
     PASSWORD,
     /**
+     * API 凭证：保留首尾并使用固定数量的掩码字符。
+     */
+    API_KEY,
+    /**
      * 自定义
      */
     CUSTOM

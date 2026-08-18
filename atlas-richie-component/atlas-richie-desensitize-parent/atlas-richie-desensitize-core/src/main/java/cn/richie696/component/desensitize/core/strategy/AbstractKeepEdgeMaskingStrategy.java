@@ -40,7 +40,9 @@ public abstract class AbstractKeepEdgeMaskingStrategy implements MaskingStrategy
         }
         String prefix = raw.substring(0, left);
         String suffix = raw.substring(raw.length() - right);
-        int maskLen = raw.length() - left - right;
+        int maskLen = rule.maskLength() != null && rule.maskLength() > 0
+                ? rule.maskLength()
+                : raw.length() - left - right;
         return prefix + String.valueOf(maskChar).repeat(maskLen) + suffix;
     }
 

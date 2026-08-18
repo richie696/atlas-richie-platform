@@ -490,9 +490,9 @@ sequenceDiagram
 
 | 类型                    | 职责                                                                                               |
 |-------------------------|----------------------------------------------------------------------------------------------------|
-| `MaskType`              | 脱敏类型枚举：`PHONE`、`ID_CARD`、`EMAIL`、`BANK_CARD`、`NAME`、`ADDRESS`、`PASSWORD`、`CUSTOM` 等 |
+| `MaskType`              | 脱敏类型枚举：`PHONE`、`ID_CARD`、`EMAIL`、`BANK_CARD`、`NAME`、`ADDRESS`、`PASSWORD`、`API_KEY`、`CUSTOM` 等 |
 | `MaskScene`             | 出口场景：`API_RESPONSE`、`LOG`、`AUDIT`、`EXCEPTION`                                              |
-| `MaskRule`              | 单条规则：`type`、`scenes`、`keepLeft`/`keepRight`、`maskChar`；`pattern` 仅用于可选正则兜底       |
+| `MaskRule`              | 单条规则：`type`、`scenes`、`keepLeft`/`keepRight`、`maskChar`、`maskLength`；`pattern` 仅用于可选正则兜底 |
 | `MaskContext`           | 一次脱敏上下文：`scene`、`fieldName`、`declaringClass`、`principal`（可选）                        |
 | `DesensitizeProperties` | `@ConfigurationProperties(prefix = "platform.component.desensitize")`                              |
 
@@ -541,6 +541,7 @@ sequenceDiagram
 | `BANK_CARD` | 6222021234567890   | 6222 **** **** 7890 | 保留前4后4                    |
 | `NAME`      | 张三丰             | 张**                | 保留首字                      |
 | `PASSWORD`  | any                | ******              | 全掩码                        |
+| `API_KEY`   | sk-w123456789tUsA  | sk-w****tUsA        | 默认保留首尾各4个字符，中间固定4个掩码字符；可通过 `type-rules.API_KEY` 覆盖 |
 | `CUSTOM`    | -                  | -                   | 通过 SPI Bean 名或 class 指定 |
 
 ---
@@ -575,6 +576,12 @@ platform:
     desensitize:
       enabled: true
       default-mask-char: "*"
+      # API_KEY 默认输出为“首4 + 固定4个掩码 + 尾4”；可按部署环境调整
+      type-rules:
+        API_KEY:
+          keep-left: 4
+          keep-right: 4
+          mask-length: 4
       scenes:
         api-response: true
         log: true

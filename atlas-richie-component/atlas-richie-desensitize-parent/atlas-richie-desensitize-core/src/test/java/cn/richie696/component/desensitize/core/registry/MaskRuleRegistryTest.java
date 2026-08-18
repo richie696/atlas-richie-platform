@@ -85,6 +85,20 @@ class MaskRuleRegistryTest {
     }
 
     @Test
+    void toRuleUsesConfiguredFixedMaskLength() {
+        DesensitizeProperties properties = new DesensitizeProperties();
+        DesensitizeProperties.TypeRule typeRule = new DesensitizeProperties.TypeRule();
+        typeRule.setKeepLeft(4);
+        typeRule.setKeepRight(4);
+        typeRule.setMaskLength(6);
+        properties.getTypeRules().put(MaskType.API_KEY, typeRule);
+
+        MaskRule rule = new MaskRuleRegistry(properties).toRule(MaskType.API_KEY);
+
+        assertThat(rule.maskLength()).isEqualTo(6);
+    }
+
+    @Test
     void toRuleFallsBackToDefaultsWhenTypeRulePartial() {
         DesensitizeProperties properties = new DesensitizeProperties();
         properties.getTypeRules().put(MaskType.EMAIL, new DesensitizeProperties.TypeRule());
