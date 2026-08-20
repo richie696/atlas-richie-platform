@@ -20,7 +20,7 @@ import java.util.UUID;
  * 与 {@code helpUrl} 字段。
  * </p>
  *
- * <h3>环境行为差异</h3>
+ * <h2>环境行为差异</h2>
  * <ul>
  *   <li>开发 / 测试环境：返回详细异常信息（含堆栈），用于本地调试。</li>
  *   <li>生产环境：根据 HTTP 状态码从 Registry 选条目，使用 i18n key

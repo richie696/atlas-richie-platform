@@ -46,7 +46,7 @@ import java.util.Map;
  *   <li>{@code GET /gateway/errors.json}：JSON 清单（locale 不影响）</li>
  * </ul>
  *
- * <h3>启动期预渲染</h3>
+ * <h2>启动期预渲染</h2>
  * <p>
  * 通过 {@link ApplicationListener} 监听 {@link ApplicationReadyEvent}，
  * 遍历 {@code classpath:i18n/messages*.properties} 收集所有可用 locale，
@@ -54,7 +54,7 @@ import java.util.Map;
  * 同时预渲染列表页。运行期请求零渲染开销。
  * </p>
  *
- * <h3>locale 解析</h3>
+ * <h2>locale 解析</h2>
  * <ol>
  *   <li>优先取请求头 {@code X-RD-Request-Language}。</li>
  *   <li>校验该 locale 是否在启动期收集的可用列表内；不在则 fallback。</li>

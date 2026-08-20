@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * 全部错误码清单（供 JSON 端点、详情页 RouterFunction 等使用）。
  * </p>
  *
- * <h3>helpUrl 相对路径规则</h3>
+ * <h2>helpUrl 相对路径规则</h2>
  * <ul>
  *   <li>helpUrl 始终是相对路径 {@code /gateway/errors/{errorCode}}，不拼接 Host / Origin。</li>
  *   <li>前端可基于 {@code window.location.origin} 自行拼接绝对 URL。</li>

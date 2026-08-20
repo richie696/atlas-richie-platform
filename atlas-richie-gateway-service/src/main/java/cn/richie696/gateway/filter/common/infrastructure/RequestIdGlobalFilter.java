@@ -28,7 +28,7 @@ import java.security.SecureRandom;
  *   <li>客户端响应头（{@code X-Request-Id}，无论成功 / 失败）</li>
  * </ol>
  *
- * <h3>实现要点</h3>
+ * <h2>实现要点</h2>
  * <ul>
  *   <li>请求入口若未携带 {@code X-Request-Id}，则生成 32 位小写十六进制随机 ID（16 字节）。</li>
  *   <li>同时实现 {@link GlobalFilter} 与 {@link WebFilter}：前者覆盖有路由的请求，后者覆盖

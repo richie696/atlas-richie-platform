@@ -170,6 +170,7 @@ public final class TikaDocumentParser implements DocumentParser {
         private int blockDepth;
         private int segmentCount;
         private int textCharacters;
+        private int currentPageNumber;
 
         private StreamingTextHandler(ParseListener listener, String nameHint, Integer maxSegmentLength) {
             this.listener = listener;
@@ -181,6 +182,12 @@ public final class TikaDocumentParser implements DocumentParser {
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes) {
             String tag = normalize(localName, qName);
+            if ("div".equals(tag) && isPageContainer(attributes)) {
+                // Tika's PDF XHTML renderer emits one <div class="page"> per PDF page.
+                // Keep the page number on every segment emitted from that container.
+                flush();
+                currentPageNumber++;
+            }
             if (blockDepth == 0 && BLOCKS.contains(tag)) {
                 flush();
                 blockTag = tag;
@@ -228,9 +235,19 @@ public final class TikaDocumentParser implements DocumentParser {
             Map<String, Object> meta = new HashMap<>();
             meta.put("format", "tika");
             if (blockTag != null) meta.put("tag", blockTag);
-            listener.onEvent(new ParseEvent.Streaming(new DocumentSegment(text, null,
-                    "/" + nameHint + "/Block[" + (segmentCount + 1) + "]", meta)));
+            if (currentPageNumber > 0) meta.put("pageNumber", currentPageNumber);
+            String location = currentPageNumber > 0
+                    ? "/" + nameHint + "/Page[" + currentPageNumber + "]"
+                    : "/" + nameHint + "/Block[" + (segmentCount + 1) + "]";
+            listener.onEvent(new ParseEvent.Streaming(new DocumentSegment(text,
+                    currentPageNumber > 0 ? currentPageNumber : null, location, meta)));
             segmentCount++;
+        }
+
+        private static boolean isPageContainer(Attributes attributes) {
+            if (attributes == null) return false;
+            String className = attributes.getValue("class");
+            return className != null && java.util.Arrays.asList(className.split("\\s+")).contains("page");
         }
 
         private static String normalize(String localName, String qName) {

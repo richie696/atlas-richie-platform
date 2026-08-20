@@ -81,6 +81,21 @@ class TikaDocumentParserTest {
     }
 
     @Test
+    @DisplayName("Text-based PDF segments retain one-based page numbers")
+    void textPdfRetainsPageNumber(@TempDir Path tempDir) throws IOException {
+        Path pdfFile = createTextPdf(tempDir, "Page one text ".repeat(30));
+        ParsedDocument doc = ParseSyncHelper.collect(parser,
+                new ParserSource.FileSource(pdfFile.toFile()),
+                ParserContext.defaults());
+        assertTrue(doc.segments().stream().anyMatch(segment -> segment.pageNumber() != null),
+                "PDF segments should carry pageNumber");
+        assertTrue(doc.segments().stream()
+                        .filter(segment -> segment.pageNumber() != null)
+                        .allMatch(segment -> segment.meta().get("pageNumber").equals(segment.pageNumber())),
+                "pageNumber must be present in the shared metadata map");
+    }
+
+    @Test
     @DisplayName("Image-only PDF with strict mode enabled should throw ImageOnlyPdfException")
     void imageOnlyPdf_strictModeEnabledThrows(@TempDir Path tempDir) throws IOException {
         // Build a parser with image-only-detection strict mode enabled
