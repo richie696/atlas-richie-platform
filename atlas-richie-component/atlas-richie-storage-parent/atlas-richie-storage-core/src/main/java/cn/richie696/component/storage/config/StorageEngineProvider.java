@@ -16,6 +16,7 @@
 package cn.richie696.component.storage.config;
 
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.StorageResponseNormalizer;
 import cn.richie696.component.storage.enums.AclTypeEnum;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
 import cn.richie696.component.storage.enums.StorageTypeEnum;
@@ -27,12 +28,23 @@ import java.util.Set;
  * <p>
  * 各引擎模块（minio、s3、ftp 等）实现此接口，提供从 StorageProperties 创建引擎的能力。
  * 注册为 Spring Bean 后由 Registry 自动发现。
+ * <p>
+ * Provider 创建的引擎必须只通过 {@code cn.richie696.component.storage.bean} 中的统一响应
+ * DTO 向上层返回结果；厂商 SDK 的响应对象、错误码和元数据字段只允许留在 Provider 实现内部。
  *
  * @author richie696
  * @version 1.0
  * @since 2024-01-01
  */
 public interface StorageEngineProvider {
+
+    /**
+     * 返回该 Provider 的响应统一化器。默认实现规范化中台 DTO 的可选字段；Provider
+     * 可以覆盖它处理自身 SDK 特有的错误码或元数据映射，但不得把 SDK 类型返回给业务层。
+     */
+    default StorageResponseNormalizer responseNormalizer() {
+        return StorageResponseNormalizer.standard();
+    }
 
     /**
      * 支持的引擎类型

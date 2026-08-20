@@ -271,6 +271,7 @@ class StorageEngineRegistryTest {
     void getObjectProxy_shouldReturnValidProxyBeforeInitialization() {
         StorageEngine proxy = registry.getObjectProxy();
         assertThat(proxy).isNotNull();
+        assertThat(proxy).isInstanceOf(DirectStorageEngine.class);
     }
 
     @Test

@@ -15,6 +15,8 @@
  */
 package cn.richie696.component.storage.core;
 
+import cn.richie696.component.storage.bean.DirectUploadPolicy;
+import cn.richie696.component.storage.bean.DirectUploadRequest;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
 import cn.richie696.component.storage.support.StorageEngineInvocationHandler;
 import org.junit.jupiter.api.DisplayName;
@@ -169,6 +171,28 @@ class StorageEngineInvocationHandlerTest {
                     StorageEngineInvocationHandler.unnamed(() -> delegate));
 
             assertThat(proxy.existsObject("key1")).isTrue();
+        }
+
+        @Test
+        @DisplayName("真实引擎覆写 default 方法时优先走引擎实现")
+        void invoke_defaultMethod_prefersDelegateOverride() {
+            StorageEngine delegate = newDelegateMock();
+            DirectUploadPolicy expected = DirectUploadPolicy.builder()
+                    .success(true)
+                    .method("PUT")
+                    .uploadUrl("https://cos.example/upload")
+                    .build();
+            when(((DirectStorageEngine) delegate).issueDirectUploadPolicy(any(DirectUploadRequest.class)))
+                    .thenReturn(expected);
+            DirectStorageEngine proxy = newProxy(
+                    StorageEngineInvocationHandler.unnamed(() -> delegate));
+
+            DirectUploadPolicy actual = proxy.issueDirectUploadPolicy(
+                    DirectUploadRequest.builder().key("knowledge/doc.txt").build());
+
+            assertThat(actual).isSameAs(expected);
+            verify((DirectStorageEngine) delegate)
+                    .issueDirectUploadPolicy(any(DirectUploadRequest.class));
         }
 
         @Test

@@ -16,6 +16,7 @@
 package cn.richie696.component.storage.config;
 
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.ObjectStorageEngine;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
 import cn.richie696.component.storage.observability.StorageHealthIndicator;
 import cn.richie696.component.storage.observability.StorageMetricsBinder;
@@ -124,7 +125,7 @@ public class StorageEngineAutoConfiguration {
     @Bean("objectStorageEngine")
     @ConditionalOnProperty(prefix = "platform.component.storage",
             name = "auto-init", havingValue = "false")
-    public StorageEngine manualObjectStorageEngine(StorageEngineRegistry registry) {
+    public ObjectStorageEngine manualObjectStorageEngine(StorageEngineRegistry registry) {
         return registry.getObjectProxy();
     }
 

@@ -27,6 +27,10 @@ import java.util.Map;
 /**
  * 面向客户端直传、直读及上传确认的对象存储能力。
  * <p>
+ * Provider 必须在本模块边界内将各厂商 SDK 的响应转换为
+ * {@link DirectUploadPolicy}、{@link DirectDownloadPolicy} 和
+ * {@link ObjectStatResponse}；业务代码不得依赖 COS/TOS/OBS 等 SDK 的响应类型。
+ * <p>
  * 调用方先申请直传策略，上传完成后通过 {@link #statObject(String)} 确认对象的实际元数据；需要对
  * 对象内容执行校验、识别或扫描时，使用 {@link #readObject(String, ObjectStreamConsumer)} 流式读取。
  *

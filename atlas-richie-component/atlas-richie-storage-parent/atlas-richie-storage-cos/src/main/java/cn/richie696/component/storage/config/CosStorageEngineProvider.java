@@ -100,6 +100,9 @@ public class CosStorageEngineProvider implements StorageEngineProvider {
 
     @Override
     public void destroy(StorageEngine engine) {
+        if (engine instanceof CosStorageEngine cosStorageEngine) {
+            cosStorageEngine.closeClient();
+        }
         log.info("COS 引擎已销毁");
     }
 

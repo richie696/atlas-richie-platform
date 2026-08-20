@@ -361,12 +361,17 @@ public final class TosStorageEngine extends AbstractObjectStorageEngine<TOSV2> i
             if (metadata.getContentMD5() != null) checksums.put("MD5", metadata.getContentMD5());
             if (metadata.getHashCrc64ecma() != null) checksums.put("CRC64_ECMA", metadata.getHashCrc64ecma());
             return ObjectStatResponse.builder().success(true).exists(true).bucketName(getBucketName()).key(key)
+                    .requestId(metadata.getRequestInfo() == null ? null : metadata.getRequestInfo().getRequestId())
                     .versionId(metadata.getVersionID()).contentLength(metadata.getContentLength()).contentType(metadata.getContentType())
                     .contentEncoding(metadata.getContentEncoding()).lastModified(metadata.getLastModifiedInDate() == null ? null
                             : OffsetDateTime.ofInstant(metadata.getLastModifiedInDate().toInstant(), java.time.ZoneId.systemDefault()))
                     .storageClass(metadata.getStorageClass() == null ? null : metadata.getStorageClass().toString()).etag(metadata.getEtag())
                     .checksums(Map.copyOf(checksums)).userMetadata(metadata.getCustomMetadata() == null ? Map.of() : Map.copyOf(metadata.getCustomMetadata())).build();
         } catch (TosServerException e) {
+            if (e.getStatusCode() == 404 || "NoSuchKey".equalsIgnoreCase(e.getCode()) || "NoSuchObject".equalsIgnoreCase(e.getCode())) {
+                return ObjectStatResponse.builder().success(true).exists(false).errorCode(e.getCode())
+                        .requestId(e.getRequestID()).bucketName(getBucketName()).key(key).build();
+            }
             return ObjectStatResponse.builder().success(false).exists(false).errorCode(e.getCode()).errorMessage(e.getMessage())
                     .requestId(e.getRequestID()).bucketName(getBucketName()).key(key).build();
         } catch (Exception e) { return ObjectStatResponse.builder().success(false).exists(false).errorCode(e.getClass().getSimpleName()).errorMessage(e.getMessage()).bucketName(getBucketName()).key(key).build(); }

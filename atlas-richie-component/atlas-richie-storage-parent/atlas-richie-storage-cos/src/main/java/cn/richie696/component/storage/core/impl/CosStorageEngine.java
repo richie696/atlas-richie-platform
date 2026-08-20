@@ -41,6 +41,7 @@ import com.qcloud.cos.utils.UrlEncoderUtils;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 
@@ -511,8 +512,21 @@ public final class CosStorageEngine extends AbstractObjectStorageEngine<COSClien
         return transferManager;
     }
 
+    /**
+     * COSClient 由 Spring Bean 或手动 Provider 持有，不能在每次业务操作结束时关闭。
+     * 否则手动模式下下一次直传确认/HEAD 会复用已 shutdown 的客户端。
+     */
     @Override
     void destroy(@Nonnull COSClient cosClient) {
-        cosClient.shutdown();
+        // 客户端生命周期由 closeClient() 管理。
+    }
+
+    /** 由 Spring 容器销毁或 StorageEngineProvider 切换旧引擎时调用。 */
+    @PreDestroy
+    public void closeClient() {
+        COSClient cosClient = getClient(COSClient.class);
+        if (cosClient != null) {
+            cosClient.shutdown();
+        }
     }
 }

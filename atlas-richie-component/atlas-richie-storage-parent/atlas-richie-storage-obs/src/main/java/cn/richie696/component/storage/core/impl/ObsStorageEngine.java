@@ -333,13 +333,20 @@ public final class ObsStorageEngine extends AbstractObjectStorageEngine<ObsClien
             if (metadata.getContentMd5() != null) checksums.put("MD5", metadata.getContentMd5());
             if (metadata.getCrc64() != null) checksums.put("CRC64_ECMA", metadata.getCrc64());
             return ObjectStatResponse.builder().success(true).exists(true).bucketName(getBucketName()).key(key)
+                    .requestId(metadata.getRequestId())
                     .contentLength(metadata.getContentLength()).contentType(metadata.getContentType()).contentEncoding(metadata.getContentEncoding())
                     .lastModified(metadata.getLastModified() == null ? null : OffsetDateTime.ofInstant(metadata.getLastModified().toInstant(), ZoneId.systemDefault()))
                     .storageClass(metadata.getStorageClass()).etag(metadata.getEtag()).checksums(Map.copyOf(checksums))
-                    .userMetadata(Map.of()).build();
+                    .userMetadata(metadata.getMetadata() == null ? Map.of() : metadata.getMetadata().entrySet().stream()
+                            .collect(java.util.stream.Collectors.toUnmodifiableMap(Map.Entry::getKey, entry -> String.valueOf(entry.getValue()))))
+                    .build();
         } catch (ObsException e) {
+            if (e.getResponseCode() == 404 || "NoSuchKey".equalsIgnoreCase(e.getErrorCode()) || "NoSuchObject".equalsIgnoreCase(e.getErrorCode())) {
+                return ObjectStatResponse.builder().success(true).exists(false).errorCode(e.getErrorCode())
+                        .requestId(e.getErrorRequestId()).bucketName(getBucketName()).key(key).build();
+            }
             return ObjectStatResponse.builder().success(false).exists(false).errorCode(e.getErrorCode()).errorMessage(e.getMessage())
-                    .bucketName(getBucketName()).key(key).build();
+                    .requestId(e.getErrorRequestId()).bucketName(getBucketName()).key(key).build();
         } finally { destroy(client); }
     }
 

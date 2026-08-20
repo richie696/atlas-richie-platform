@@ -16,7 +16,9 @@
 package cn.richie696.component.storage.config;
 
 import cn.richie696.component.storage.core.StorageEngine;
+import cn.richie696.component.storage.core.ObjectStorageEngine;
 import cn.richie696.component.storage.enums.StorageEngineEnum;
+import cn.richie696.component.storage.core.StorageResponseNormalizer;
 import cn.richie696.component.storage.observability.StorageEngineMetrics;
 import cn.richie696.component.storage.support.StorageEngineInvocationHandler;
 import cn.richie696.context.common.api.SpringContextHolder;
@@ -104,6 +106,24 @@ public class StorageEngineRegistry {
     }
 
     /**
+     * Resolve the Provider normalizer for an engine restored during startup.
+     * Unit tests and legacy manual callers may register an engine before a Spring
+     * context exists, so the standard normalizer remains the safe fallback.
+     */
+    private StorageResponseNormalizer resolveResponseNormalizer(StorageEngineEnum engineType) {
+        try {
+            return getProviders().stream()
+                    .filter(provider -> provider.supportedEngineType() == engineType)
+                    .map(StorageEngineProvider::responseNormalizer)
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .orElseGet(StorageResponseNormalizer::standard);
+        } catch (RuntimeException contextUnavailable) {
+            return StorageResponseNormalizer.standard();
+        }
+    }
+
+    /**
      * 注册初始引擎（启动时由自动配置调用，将 @Service Bean 绑定到对应类型的 Proxy）
      * <p>
      * 线程安全：synchronized 与 {@link #switchEngine} 共享同一把锁，
@@ -123,11 +143,13 @@ public class StorageEngineRegistry {
             throw new IllegalStateException("引擎类型 [" + engineType + "] 已注册，请勿重复注册");
         }
         holder.delegate = engine;
+        holder.responseNormalizer = resolveResponseNormalizer(engineType);
         holder.engineId = engineId;
 
         // 对象存储引擎同步更新 objectProxy
         if (engineType.isObjectStorage()) {
             objectProxy.delegate = engine;
+            objectProxy.responseNormalizer = holder.responseNormalizer;
         }
 
         // 第一个注册的引擎作为默认引擎
@@ -213,10 +235,12 @@ public class StorageEngineRegistry {
 
         // 6. 更新引用（volatile 保证可见性）
         holder.delegate = newEngine;
+        holder.responseNormalizer = provider.responseNormalizer();
 
         // 7. 对象存储引擎同步更新 objectProxy
         if (engineType.isObjectStorage()) {
             objectProxy.delegate = newEngine;
+            objectProxy.responseNormalizer = holder.responseNormalizer;
         }
 
         // 8. 如果是第一个引擎或替换的是默认引擎，更新默认
@@ -298,7 +322,11 @@ public class StorageEngineRegistry {
         holder.engineId = null;
 
         if (engineType.isObjectStorage() && objectProxy.delegate == removed) {
-            objectProxy.delegate = findRegisteredObjectEngine(engineType);
+            Map.Entry<StorageEngineEnum, ProxyHolder> fallbackObject = findRegisteredObjectEngineHolder(engineType);
+            objectProxy.delegate = fallbackObject != null ? fallbackObject.getValue().delegate : null;
+            objectProxy.responseNormalizer = fallbackObject != null
+                    ? fallbackObject.getValue().responseNormalizer
+                    : StorageResponseNormalizer.standard();
         }
 
         if (defaultEngineType == engineType) {
@@ -311,6 +339,7 @@ public class StorageEngineRegistry {
                 defaultEngineId = fallback.getValue().engineId;
                 if (fallback.getKey().isObjectStorage()) {
                     objectProxy.delegate = fallback.getValue().delegate;
+                    objectProxy.responseNormalizer = fallback.getValue().responseNormalizer;
                 }
             }
         }
@@ -343,13 +372,13 @@ public class StorageEngineRegistry {
                 .orElse(null);
     }
 
-    /** 查找除指定类型外的第一个对象存储引擎，用于 objectStorageEngine 回退。 */
-    private StorageEngine findRegisteredObjectEngine(StorageEngineEnum excludedType) {
+    /** 查找除指定类型外的第一个对象存储引擎及其响应规范化器。 */
+    private Map.Entry<StorageEngineEnum, ProxyHolder> findRegisteredObjectEngineHolder(
+            StorageEngineEnum excludedType) {
         return engineProxies.entrySet().stream()
                 .filter(entry -> entry.getKey() != excludedType)
                 .filter(entry -> entry.getKey().isObjectStorage())
-                .map(entry -> entry.getValue().delegate)
-                .filter(Objects::nonNull)
+                .filter(entry -> entry.getValue().delegate != null)
                 .findFirst()
                 .orElse(null);
     }
@@ -418,8 +447,10 @@ public class StorageEngineRegistry {
 
         StorageEngine oldEngine = holder.delegate;
         holder.delegate = newEngine;
+        holder.responseNormalizer = provider.responseNormalizer();
         if (engineType.isObjectStorage()) {
             objectProxy.delegate = newEngine;
+            objectProxy.responseNormalizer = holder.responseNormalizer;
         }
         if (defaultEngineType == engineType) {
             this.defaultEngineId = newEngineId;
@@ -473,8 +504,8 @@ public class StorageEngineRegistry {
      * <p>
      * 对应 {@code @Qualifier("objectStorageEngine")} 注入点。
      */
-    public StorageEngine getObjectProxy() {
-        return objectProxy.proxy;
+    public ObjectStorageEngine getObjectProxy() {
+        return (ObjectStorageEngine) objectProxy.proxy;
     }
 
     /**
@@ -562,14 +593,21 @@ public class StorageEngineRegistry {
         final StorageEngineEnum engineType;
         final StorageEngine proxy;
         volatile StorageEngine delegate;
+        volatile StorageResponseNormalizer responseNormalizer = StorageResponseNormalizer.standard();
         volatile String engineId;
 
         ProxyHolder(StorageEngineEnum engineType) {
             this.engineType = engineType;
+            // Only the shared objectStorageEngine proxy exposes direct-upload
+            // capabilities. Per-engine server proxies intentionally retain
+            // their StorageEngine-only contract.
+            Class<?>[] proxyInterfaces = engineType == null
+                    ? new Class<?>[]{ObjectStorageEngine.class}
+                    : new Class<?>[]{StorageEngine.class};
             this.proxy = (StorageEngine) Proxy.newProxyInstance(
                     StorageEngine.class.getClassLoader(),
-                    new Class<?>[]{StorageEngine.class},
-                    StorageEngineInvocationHandler.forType(engineType, () -> this.delegate)
+                    proxyInterfaces,
+                    StorageEngineInvocationHandler.forType(engineType, () -> this.delegate, () -> this.responseNormalizer)
             );
         }
 

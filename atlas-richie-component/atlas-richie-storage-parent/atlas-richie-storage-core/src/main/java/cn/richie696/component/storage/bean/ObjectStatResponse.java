@@ -29,7 +29,7 @@ import java.util.Map;
  * 调用方不得将其视为对象不存在。
  */
 @Data
-@Builder
+@Builder(toBuilder = true)
 public class ObjectStatResponse implements Serializable {
 
     private boolean success;

@@ -18,6 +18,7 @@ package cn.richie696.component.storage.core.impl;
 import cn.richie696.component.storage.bean.DirectDownloadPolicy;
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.DownloadResponse;
+import cn.richie696.component.storage.bean.ObjectStatResponse;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.bean.image.ImageOptions;
 import cn.richie696.component.storage.config.StorageProperties;
@@ -25,6 +26,7 @@ import cn.richie696.component.storage.core.DirectStorageEngine;
 import cn.richie696.component.storage.core.StorageEngine;
 import cn.richie696.context.utils.data.JsonUtils;
 import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.models.BlobProperties;
 import com.azure.storage.blob.sas.BlobSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import jakarta.annotation.Nonnull;
@@ -167,6 +169,41 @@ public final class AzureBlobStorageEngine extends AbstractObjectStorageEngine<Bl
         var blobContainerClient = getClient(BlobContainerClient.class);
         var blobClient = blobContainerClient.getBlobClient(key);
         return blobClient.exists();
+    }
+
+    /**
+     * 将 Azure Blob 属性转换为 Storage 组件统一的对象探测结果。
+     * 业务层不需要感知 BlobProperties，也不需要为 Azure 单独解析异常或元数据。
+     */
+    @Override
+    public ObjectStatResponse statObject(@Nonnull String key) {
+        String realKey = getRealPath(key);
+        var blobClient = getClient(BlobContainerClient.class).getBlobClient(realKey);
+        try {
+            if (!blobClient.exists()) {
+                return ObjectStatResponse.builder().success(true).exists(false)
+                        .bucketName(getBucketName()).key(key).build();
+            }
+            BlobProperties metadata = blobClient.getProperties();
+            return ObjectStatResponse.builder()
+                    .success(true)
+                    .exists(true)
+                    .bucketName(getBucketName())
+                    .key(key)
+                    .versionId(metadata.getVersionId())
+                    .contentLength(metadata.getBlobSize())
+                    .contentType(metadata.getContentType())
+                    .contentEncoding(metadata.getContentEncoding())
+                    .lastModified(metadata.getLastModified())
+                    .storageClass(null)
+                    .etag(metadata.getETag())
+                    .userMetadata(metadata.getMetadata() == null ? Map.of() : Map.copyOf(metadata.getMetadata()))
+                    .build();
+        } catch (Exception e) {
+            return ObjectStatResponse.builder().success(false).exists(false)
+                    .errorCode(e.getClass().getSimpleName()).errorMessage(e.getMessage())
+                    .bucketName(getBucketName()).key(key).build();
+        }
     }
 
     @Override
