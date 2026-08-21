@@ -20,6 +20,7 @@ import cn.richie696.component.vector.config.MilvusConfig;
 import cn.richie696.component.vector.config.VectorProperties;
 import cn.richie696.component.vector.model.*;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
+import cn.richie696.component.vector.service.VectorIndexRebuildOperations;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import cn.richie696.component.vector.service.VectorService;
 import cn.richie696.context.utils.data.JsonUtils;
@@ -74,7 +75,7 @@ import java.util.Map;
  */
 @Slf4j
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "milvus")
-public class MilvusVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, VectorIndexLifecycleOperations {
+public class MilvusVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, VectorIndexLifecycleOperations, VectorIndexRebuildOperations {
 
     private final MilvusConfig milvusConfig;
     private final MilvusServiceClient milvusClient;
@@ -201,6 +202,41 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         milvusClient.loadCollection(LoadCollectionParam.newBuilder()
                 .withCollectionName(indexName)
                 .build());
+    }
+
+    /**
+     * Prepare the isolated target collection used by a K11 rebuild.
+     *
+     * <p>The source collection is intentionally not copied here: changing the
+     * embedding model or vector dimension requires the application pipeline to
+     * re-embed the authoritative PG chunks. This provider owns the physical
+     * collection/index creation; the admin pipeline owns data migration.</p>
+     */
+    @Override
+    public void rebuildIndex(String sourceIndexName,
+                             String targetIndexName,
+                             VectorProperties.IndexConfig config) {
+        if (sourceIndexName == null || sourceIndexName.isBlank()) {
+            throw new IllegalArgumentException("sourceIndexName must not be blank");
+        }
+        if (targetIndexName == null || targetIndexName.isBlank()) {
+            throw new IllegalArgumentException("targetIndexName must not be blank");
+        }
+        if (sourceIndexName.equals(targetIndexName)) {
+            throw new IllegalArgumentException("sourceIndexName and targetIndexName must differ");
+        }
+        if (config == null) {
+            throw new IllegalArgumentException("rebuild config must not be null");
+        }
+        // A retry after a process crash is safe when the target was already
+        // prepared. Data writes remain idempotent by vector id.
+        if (indexExists(targetIndexName)) {
+            log.info("Milvus rebuild target already exists; reusing it: source={}, target={}",
+                    sourceIndexName, targetIndexName);
+            return;
+        }
+        createIndex(targetIndexName, config.setName(targetIndexName));
+        log.info("Milvus rebuild target prepared: source={}, target={}", sourceIndexName, targetIndexName);
     }
 
     /**
