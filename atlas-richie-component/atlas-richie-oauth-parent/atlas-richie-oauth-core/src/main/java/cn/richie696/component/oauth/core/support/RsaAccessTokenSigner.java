@@ -22,6 +22,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Base64;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 生产 Authorization Server 使用的 RSA Access Token 签名器,同时实现 {@link JwkSetProvider}。
@@ -40,10 +44,8 @@ import java.util.Base64;
  */
 public class RsaAccessTokenSigner implements AccessTokenSigner, JwkSetProvider {
 
-    private final RSAPrivateKey privateKey;
-    private final RSAPublicKey publicKey;
     private final OAuth2Properties properties;
-    private final String keyId;
+    private final AtomicReference<KeyWindow> keys;
 
     public RsaAccessTokenSigner(RSAPrivateKey privateKey, RSAPublicKey publicKey,
                                 OAuth2Properties properties) {
@@ -52,10 +54,11 @@ public class RsaAccessTokenSigner implements AccessTokenSigner, JwkSetProvider {
 
     public RsaAccessTokenSigner(String keyId, RSAPrivateKey privateKey, RSAPublicKey publicKey,
                                 OAuth2Properties properties) {
-        this.keyId = keyId;
-        this.privateKey = privateKey;
-        this.publicKey = publicKey;
         this.properties = properties;
+        this.keys = new AtomicReference<>(new KeyWindow(
+                new KeyMaterial(resolveKeyId(keyId, properties), privateKey, publicKey),
+                null,
+                null));
     }
 
     @Override
@@ -72,11 +75,12 @@ public class RsaAccessTokenSigner implements AccessTokenSigner, JwkSetProvider {
     @Override
     public String sign(String clientId, ClientConfig client, List<String> scopes,
                        String resource, String subject, Map<String, Object> additionalClaims) {
+        KeyMaterial signingKey = keys.get().current();
         long durationHours = client.getTokenValidDuration() == null
                 ? properties.getDefaultTokenValidDuration() : client.getTokenValidDuration();
         long expiresAt = System.currentTimeMillis() + durationHours * 3600_000L;
         var builder = JWT.create()
-                .withKeyId(keyId == null ? properties.getIssuer() : keyId)
+                .withKeyId(signingKey.keyId())
                 .withClaim(OAuth2Constants.JWT_CLAIM_USERNAME, clientId)
                 .withClaim(OAuth2Constants.JWT_CLAIM_CLIENT_ID, clientId)
                 .withClaim(OAuth2Constants.JWT_CLAIM_TYPE, OAuth2Constants.JWT_CLAIM_TYPE_THIRD_PARTY)
@@ -93,7 +97,7 @@ public class RsaAccessTokenSigner implements AccessTokenSigner, JwkSetProvider {
         if (additionalClaims != null) {
             additionalClaims.forEach((name, value) -> addClaim(builder, name, value));
         }
-        return builder.sign(Algorithm.RSA256(publicKey, privateKey));
+        return builder.sign(Algorithm.RSA256(signingKey.publicKey(), signingKey.privateKey()));
     }
 
     private Set<String> reservedClaims() {
@@ -125,27 +129,107 @@ public class RsaAccessTokenSigner implements AccessTokenSigner, JwkSetProvider {
     @Override
     public AccessTokenClaims verify(String accessToken) {
         try {
-            DecodedJWT jwt = JWT.require(Algorithm.RSA256(publicKey, null)).build().verify(accessToken);
-            Claim claim = jwt.getClaim(OAuth2Constants.JWT_CLAIM_SCOPE);
-            String scope = claim == null || claim.isNull() ? null : claim.asString();
-            List<String> scopes = StringUtils.isBlank(scope) ? List.of() : Arrays.stream(scope.split("\\s+")).toList();
-            return new AccessTokenClaims(jwt.getClaim(OAuth2Constants.JWT_CLAIM_CLIENT_ID).asString(),
-                    jwt.getSubject(), jwt.getIssuer(), jwt.getAudience().isEmpty() ? null : jwt.getAudience().getFirst(),
-                    jwt.getId(), jwt.getExpiresAt() == null ? 0 : jwt.getExpiresAt().getTime(), scopes);
-        } catch (Exception e) {
-            throw new BusinessException(OAuth2Constants.ERROR_INVALID_TOKEN, "Access token 无效");
+            KeyWindow window = activeWindow();
+            DecodedJWT decoded = JWT.decode(accessToken);
+            List<KeyMaterial> candidates = new ArrayList<>();
+            addMatching(candidates, window.current(), decoded.getKeyId());
+            if (window.previousActive()) {
+                addMatching(candidates, window.previous(), decoded.getKeyId());
+            }
+            for (KeyMaterial candidate : candidates) {
+                try {
+                    return verifyWith(accessToken, candidate.publicKey());
+                } catch (RuntimeException ignored) {
+                    // Try the remaining key in the bounded verification window.
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // Return the same sanitized protocol error for malformed and invalid tokens.
         }
+        throw new BusinessException(OAuth2Constants.ERROR_INVALID_TOKEN, "Access token 无效");
     }
 
     @Override
     public List<Map<String, Object>> keys() {
-        String modulus = Base64.getUrlEncoder().withoutPadding().encodeToString(unsigned(publicKey.getModulus().toByteArray()));
-        String exponent = Base64.getUrlEncoder().withoutPadding().encodeToString(unsigned(publicKey.getPublicExponent().toByteArray()));
-        return List.of(Map.of("kty", "RSA", "kid", keyId == null ? properties.getIssuer() : keyId, "use", "sig",
-                "alg", "RS256", "n", modulus, "e", exponent));
+        KeyWindow window = activeWindow();
+        List<Map<String, Object>> jwks = new ArrayList<>();
+        jwks.add(toJwk(window.current()));
+        if (window.previousActive() && window.previous() != null) {
+            jwks.add(toJwk(window.previous()));
+        }
+        return List.copyOf(jwks);
+    }
+
+    private KeyWindow activeWindow() {
+        KeyWindow window = keys.get();
+        if (window.previous() != null && !window.previousActive()) {
+            KeyWindow currentOnly = new KeyWindow(window.current(), null, null);
+            keys.compareAndSet(window, currentOnly);
+            return keys.get();
+        }
+        return window;
+    }
+
+    /**
+     * 原子切换当前 RSA 签名密钥，并在有界窗口内保留上一公钥用于验签和 JWKS 发布。
+     */
+    public void rotate(
+            String keyId,
+            RSAPrivateKey privateKey,
+            RSAPublicKey publicKey,
+            Duration verificationWindow) {
+        if (keyId == null || keyId.isBlank() || privateKey == null || publicKey == null) {
+            throw new IllegalArgumentException("RSA rotation key material must be complete");
+        }
+        if (verificationWindow == null || verificationWindow.isZero() || verificationWindow.isNegative()) {
+            throw new IllegalArgumentException("verificationWindow must be positive");
+        }
+        keys.updateAndGet(current -> new KeyWindow(
+                new KeyMaterial(keyId, privateKey, publicKey),
+                current.current(),
+                Instant.now().plus(verificationWindow)));
+    }
+
+    private AccessTokenClaims verifyWith(String accessToken, RSAPublicKey publicKey) {
+        DecodedJWT jwt = JWT.require(Algorithm.RSA256(publicKey, null)).build().verify(accessToken);
+        Claim claim = jwt.getClaim(OAuth2Constants.JWT_CLAIM_SCOPE);
+        String scope = claim == null || claim.isNull() ? null : claim.asString();
+        List<String> scopes = StringUtils.isBlank(scope)
+                ? List.of() : Arrays.stream(scope.split("\\s+")).toList();
+        return new AccessTokenClaims(jwt.getClaim(OAuth2Constants.JWT_CLAIM_CLIENT_ID).asString(),
+                jwt.getSubject(), jwt.getIssuer(), jwt.getAudience().isEmpty() ? null : jwt.getAudience().getFirst(),
+                jwt.getId(), jwt.getExpiresAt() == null ? 0 : jwt.getExpiresAt().getTime(), scopes);
+    }
+
+    private void addMatching(List<KeyMaterial> candidates, KeyMaterial key, String requestedKeyId) {
+        if (key != null && (requestedKeyId == null || requestedKeyId.equals(key.keyId()))) {
+            candidates.add(key);
+        }
+    }
+
+    private Map<String, Object> toJwk(KeyMaterial key) {
+        String modulus = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(unsigned(key.publicKey().getModulus().toByteArray()));
+        String exponent = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(unsigned(key.publicKey().getPublicExponent().toByteArray()));
+        return Map.of("kty", "RSA", "kid", key.keyId(), "use", "sig",
+                "alg", "RS256", "n", modulus, "e", exponent);
+    }
+
+    private static String resolveKeyId(String keyId, OAuth2Properties properties) {
+        return keyId == null ? properties.getIssuer() : keyId;
     }
 
     private byte[] unsigned(byte[] value) {
         return value.length > 1 && value[0] == 0 ? java.util.Arrays.copyOfRange(value, 1, value.length) : value;
+    }
+
+    private record KeyMaterial(String keyId, RSAPrivateKey privateKey, RSAPublicKey publicKey) {
+    }
+
+    private record KeyWindow(KeyMaterial current, KeyMaterial previous, Instant previousValidUntil) {
+        boolean previousActive() {
+            return previousValidUntil != null && Instant.now().isBefore(previousValidUntil);
+        }
     }
 }

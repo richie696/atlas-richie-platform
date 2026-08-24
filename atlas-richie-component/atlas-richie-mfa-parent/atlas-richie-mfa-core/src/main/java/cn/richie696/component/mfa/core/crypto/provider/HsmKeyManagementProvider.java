@@ -36,6 +36,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "platform.component.secret", name = "enabled", havingValue = "false", matchIfMissing = true)
 @RequiredArgsConstructor
 @ConditionalOnProperty(
         prefix = "platform.component.mfa.security.key-management",

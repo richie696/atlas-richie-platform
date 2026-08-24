@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.core.env.Environment;
 
 /**
  * MFA验证模块自动配置类
@@ -62,6 +63,7 @@ public class MfaAutoConfiguration {
      * 密钥管理配置属性（用于检查是否启用了 Vault）
      */
     private final MfaKeyManagementProperties keyManagementProperties;
+    private final Environment environment;
 
     /**
      * 初始化：检查依赖
@@ -70,6 +72,9 @@ public class MfaAutoConfiguration {
      */
     @PostConstruct
     public void checkDependencies() {
+        if (environment.getProperty("platform.component.secret.enabled", Boolean.class, false)) {
+            return;
+        }
         // 检查是否配置了 Vault 作为密钥管理引擎
         if (keyManagementProperties.getProvider() == KeyManagementProviderEnum.VAULT) {
             // 检查是否缺少 Spring Vault 依赖

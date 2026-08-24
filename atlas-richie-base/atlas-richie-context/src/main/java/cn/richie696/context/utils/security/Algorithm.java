@@ -46,6 +46,13 @@ public enum Algorithm {
     ECDSA,
 
     /**
+     * Edwards 曲线数字签名（RFC 8032）。
+     * <p>默认实现：Ed25519。用于 JWS 的 {@code EdDSA} 算法标识；密钥短、签名固定
+     * 64 字节，适合不可变配置清单等长期验签场景。</p>
+     */
+    EDDSA,
+
+    /**
      * ECDH 椭圆曲线密钥协商（NIST SP 800-56A）
      * <p>默认曲线：secp256r1（P-256），派生共享密钥。</p>
      */

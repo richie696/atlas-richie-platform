@@ -18,7 +18,6 @@ package cn.richie696.component.ai.config;
 import cn.richie696.component.ai.api.voicechat.StsTicket;
 import cn.richie696.component.ai.api.voicechat.VoiceChatModel;
 import cn.richie696.component.ai.config.chat.AiChatModel;
-import cn.richie696.component.ai.config.multimodal.audio.AbstractAudioModelConfig;
 import cn.richie696.component.ai.provider.dashscope.DashScopeQwenOmniVoiceChatModel;
 import cn.richie696.component.ai.provider.doubao.DoubaoBidirectionTtsVoiceChatModel;
 import cn.richie696.component.ai.provider.doubao.DoubaoStreamingAsrVoiceChatModel;
@@ -171,74 +170,49 @@ public class AiModelAutoConfiguration {
     @Bean("aiZhipuStsSigner")
     @ConditionalOnProperty(prefix = "platform.component.ai.tts.zhipu", name = "api-key")
     public StsSigner aiZhipuStsSigner(AiModelProperties properties) {
-        AbstractAudioModelConfig c = properties.getTts().get("zhipu");
-        return new BearerStsSigner(StsTicket.VENDOR_ZHIPU, c.getApiKey(),
-                c.getBaseUrl() != null ? c.getBaseUrl() : "https://open.bigmodel.cn/api/paas/v4/realtime");
+        return AiStsSignerFactory.zhipu(properties);
     }
 
     @Bean("aiDashscopeStsSigner")
     @ConditionalOnProperty(prefix = "platform.component.ai.tts.dashscope", name = "api-key")
     public StsSigner aiDashscopeStsSigner(AiModelProperties properties) {
-        AbstractAudioModelConfig c = properties.getTts().get("dashscope");
-        return new BearerStsSigner(StsTicket.VENDOR_DASHSCOPE, c.getApiKey(),
-                c.getBaseUrl() != null ? c.getBaseUrl() : "wss://dashscope.aliyuncs.com/api-ws/v1/realtime");
+        return AiStsSignerFactory.dashscope(properties);
     }
 
     @Bean("aiHunyuanTokenHubStsSigner")
     @ConditionalOnProperty(prefix = "platform.component.ai.tts.hunyuan", name = "api-key")
     public StsSigner aiHunyuanTokenHubStsSigner(AiModelProperties properties) {
-        AbstractAudioModelConfig c = properties.getTts().get("hunyuan");
-        return new BearerStsSigner(StsTicket.VENDOR_HUNYUAN_TOKENHUB, c.getApiKey(),
-                c.getBaseUrl() != null ? c.getBaseUrl() : "wss://hunyuan.tencent.com/v3/realtime");
+        return AiStsSignerFactory.hunyuanTokenHub(properties);
     }
 
     @Bean("aiHunyuanTtsStsSigner")
     @ConditionalOnProperty(prefix = "platform.component.ai.tts.hunyuan", name = "secret-id")
     public StsSigner aiHunyuanTtsStsSigner(AiModelProperties properties) {
-        AbstractAudioModelConfig c = properties.getTts().get("hunyuan");
-        return new Tc3StsSigner(StsTicket.VENDOR_HUNYUAN_TTS, c.getSecretId(), c.getSecretKey(),
-                c.getRegion() != null ? c.getRegion() : "ap-guangzhou",
-                "tts",
-                c.getEndpoint() != null ? c.getEndpoint() : "tts.tencentcloudapi.com");
+        return AiStsSignerFactory.hunyuanTts(properties);
     }
 
     @Bean("aiHunyuanSttStsSigner")
     @ConditionalOnProperty(prefix = "platform.component.ai.stt.hunyuan", name = "secret-id")
     public StsSigner aiHunyuanSttStsSigner(AiModelProperties properties) {
-        AbstractAudioModelConfig c = properties.getStt().get("hunyuan");
-        return new Tc3StsSigner(StsTicket.VENDOR_HUNYUAN_STT, c.getSecretId(), c.getSecretKey(),
-                c.getRegion() != null ? c.getRegion() : "ap-guangzhou",
-                "asr",
-                c.getEndpoint() != null ? c.getEndpoint() : "asr.tencentcloudapi.com");
+        return AiStsSignerFactory.hunyuanStt(properties);
     }
 
     @Bean("aiPanguStsSigner")
     @ConditionalOnProperty(prefix = "platform.component.ai.tts.pangu", name = "app-code")
     public StsSigner aiPanguStsSigner(AiModelProperties properties) {
-        AbstractAudioModelConfig c = properties.getTts().get("pangu");
-        return new AppCodeStsSigner(StsTicket.VENDOR_PANGU, c.getAppCode(),
-                c.getBaseUrl() != null ? c.getBaseUrl() : "https://pangu.apigw.com/v1/realtime");
+        return AiStsSignerFactory.pangu(properties);
     }
 
     @Bean("aiDoubaoOpenspeechStsSigner")
     @ConditionalOnProperty(prefix = "platform.component.ai.tts.doubao", name = "api-key")
     public StsSigner aiDoubaoOpenspeechStsSigner(AiModelProperties properties) {
-        AbstractAudioModelConfig c = properties.getTts().get("doubao");
-        return new XApiKeyStsSigner(StsTicket.VENDOR_DOUBAO_OPENSPEECH, c.getApiKey(),
-                c.getAppId(), c.getResourceId(),
-                c.getBaseUrl() != null ? c.getBaseUrl() : "wss://openspeech.bytedance.com/api/v3/tts/bidirection");
+        return AiStsSignerFactory.doubaoOpenspeech(properties);
     }
 
     @Bean("aiDoubaoVikingdbStsSigner")
     @ConditionalOnProperty(prefix = "platform.component.ai.tts.doubao", name = "secret-key")
     public StsSigner aiDoubaoVikingdbStsSigner(AiModelProperties properties) {
-        AbstractAudioModelConfig c = properties.getTts().get("doubao");
-        return new AkSkHmacStsSigner(StsTicket.VENDOR_DOUBAO_VIKINGDB,
-                c.getApiKey(),
-                c.getSecretKey(),
-                c.getRegion() != null ? c.getRegion() : "cn-north-1",
-                "vikingdb",
-                c.getBaseUrl() != null ? c.getBaseUrl() : "https://vikingdb.volcengineapi.com");
+        return AiStsSignerFactory.doubaoVikingdb(properties);
     }
 
     // ============ R-N.4-alpha: VoiceStsService 业务门面 ============

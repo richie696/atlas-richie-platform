@@ -21,6 +21,7 @@ import cn.richie696.component.storage.enums.StorageEngineEnum;
 import cn.richie696.component.storage.core.StorageResponseNormalizer;
 import cn.richie696.component.storage.observability.StorageEngineMetrics;
 import cn.richie696.component.storage.support.StorageEngineInvocationHandler;
+import cn.richie696.component.secret.bootstrap.refresh.PreparedSecretRefresh;
 import cn.richie696.context.common.api.SpringContextHolder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 存储引擎注册中心（多引擎并存模式）
@@ -473,6 +476,160 @@ public class StorageEngineRegistry {
         return newEngine;
     }
 
+    /**
+     * 为 Secret 完整快照预建全部受影响的存储引擎；只有所有候选均初始化成功后才允许提交。
+     */
+    public PreparedSecretRefresh prepareSecretRefresh(StorageProperties properties) {
+        Objects.requireNonNull(properties, "properties must not be null");
+        List<PreparedEngine> candidates = new ArrayList<>();
+        try {
+            for (StorageEngineEnum engineType : getRegisteredTypes()) {
+                if (engineType == StorageEngineEnum.LOCAL) {
+                    continue;
+                }
+                ProxyHolder holder = engineProxies.get(engineType);
+                StorageEngineProvider provider = findProvider(engineType);
+                provider.validate(properties);
+                StorageEngine candidate = provider.create(properties);
+                try {
+                    provider.afterPropertiesSet(candidate);
+                } catch (RuntimeException failure) {
+                    destroyQuietly(provider, candidate, engineType);
+                    throw failure;
+                }
+                candidates.add(new PreparedEngine(
+                        engineType,
+                        holder,
+                        holder.delegate,
+                        holder.responseNormalizer,
+                        holder.engineId,
+                        candidate,
+                        provider.responseNormalizer(),
+                        engineType.getConfigValue() + "-" + UUID.randomUUID().toString().substring(0, 8),
+                        provider));
+            }
+        } catch (RuntimeException failure) {
+            candidates.forEach(candidate -> destroyQuietly(
+                    candidate.provider(), candidate.candidate(), candidate.engineType()));
+            throw failure;
+        }
+
+        StorageEngine oldObjectDelegate = objectProxy.delegate;
+        StorageResponseNormalizer oldObjectNormalizer = objectProxy.responseNormalizer;
+        String oldDefaultEngineId = defaultEngineId;
+        return new PreparedSecretRefresh() {
+            private boolean committed;
+
+            @Override
+            public void commit() {
+                synchronized (StorageEngineRegistry.this) {
+                    for (PreparedEngine candidate : candidates) {
+                        if (candidate.holder().delegate != candidate.previous()) {
+                            throw new IllegalStateException(
+                                    "Storage engine changed while Secret refresh was being prepared: "
+                                            + candidate.engineType());
+                        }
+                    }
+                    for (PreparedEngine candidate : candidates) {
+                        candidate.holder().delegate = candidate.candidate();
+                        candidate.holder().responseNormalizer = candidate.normalizer();
+                        candidate.holder().engineId = candidate.candidateId();
+                        if (objectProxy.delegate == candidate.previous()) {
+                            objectProxy.delegate = candidate.candidate();
+                            objectProxy.responseNormalizer = candidate.normalizer();
+                        }
+                        if (defaultEngineType == candidate.engineType()) {
+                            defaultEngineId = candidate.candidateId();
+                        }
+                    }
+                    committed = true;
+                }
+            }
+
+            @Override
+            public void rollback() {
+                synchronized (StorageEngineRegistry.this) {
+                    if (committed) {
+                        for (PreparedEngine candidate : candidates) {
+                            candidate.holder().delegate = candidate.previous();
+                            candidate.holder().responseNormalizer = candidate.previousNormalizer();
+                            candidate.holder().engineId = candidate.previousId();
+                        }
+                        objectProxy.delegate = oldObjectDelegate;
+                        objectProxy.responseNormalizer = oldObjectNormalizer;
+                        defaultEngineId = oldDefaultEngineId;
+                    }
+                }
+                candidates.forEach(candidate -> destroyAfterInflight(
+                        candidate, candidate.candidate(), oldObjectDelegate == candidate.previous()));
+            }
+
+            @Override
+            public void complete() {
+                candidates.forEach(candidate -> {
+                    destroyAfterInflight(
+                            candidate, candidate.previous(), oldObjectDelegate == candidate.previous());
+                    metrics.incrementSwitch(candidate.engineType());
+                });
+            }
+        };
+    }
+
+    /**
+     * 等待通过稳定代理进入目标代际的调用全部退出，再释放该代际资源。
+     * 类型代理与对象统一代理拥有各自的读锁，因此对象存储需要同时取得两把写锁。
+     */
+    private void destroyAfterInflight(
+            PreparedEngine candidate,
+            StorageEngine engine,
+            boolean objectProxyReferencedPrevious) {
+        Lock typeWriteLock = candidate.holder().lifecycleLock.writeLock();
+        Lock objectWriteLock = objectProxyReferencedPrevious
+                ? objectProxy.lifecycleLock.writeLock()
+                : null;
+        typeWriteLock.lock();
+        try {
+            if (objectWriteLock != null) {
+                objectWriteLock.lock();
+            }
+            try {
+                destroyQuietly(candidate.provider(), engine, candidate.engineType());
+            } finally {
+                if (objectWriteLock != null) {
+                    objectWriteLock.unlock();
+                }
+            }
+        } finally {
+            typeWriteLock.unlock();
+        }
+    }
+
+    private void destroyQuietly(
+            StorageEngineProvider provider,
+            StorageEngine engine,
+            StorageEngineEnum engineType) {
+        if (engine == null) {
+            return;
+        }
+        try {
+            provider.destroy(engine);
+        } catch (RuntimeException failure) {
+            log.warn("存储引擎资源释放失败: type={}", engineType, failure);
+        }
+    }
+
+    private record PreparedEngine(
+            StorageEngineEnum engineType,
+            ProxyHolder holder,
+            StorageEngine previous,
+            StorageResponseNormalizer previousNormalizer,
+            String previousId,
+            StorageEngine candidate,
+            StorageResponseNormalizer normalizer,
+            String candidateId,
+            StorageEngineProvider provider) {
+    }
+
     private StorageEngineProvider findProvider(StorageEngineEnum engineType) {
         return getProviders().stream()
                 .filter(p -> p.supportedEngineType() == engineType)
@@ -595,6 +752,7 @@ public class StorageEngineRegistry {
         volatile StorageEngine delegate;
         volatile StorageResponseNormalizer responseNormalizer = StorageResponseNormalizer.standard();
         volatile String engineId;
+        final ReentrantReadWriteLock lifecycleLock = new ReentrantReadWriteLock(true);
 
         ProxyHolder(StorageEngineEnum engineType) {
             this.engineType = engineType;
@@ -607,7 +765,11 @@ public class StorageEngineRegistry {
             this.proxy = (StorageEngine) Proxy.newProxyInstance(
                     StorageEngine.class.getClassLoader(),
                     proxyInterfaces,
-                    StorageEngineInvocationHandler.forType(engineType, () -> this.delegate, () -> this.responseNormalizer)
+                    StorageEngineInvocationHandler.forType(
+                            engineType,
+                            () -> this.delegate,
+                            () -> this.responseNormalizer,
+                            lifecycleLock.readLock())
             );
         }
 

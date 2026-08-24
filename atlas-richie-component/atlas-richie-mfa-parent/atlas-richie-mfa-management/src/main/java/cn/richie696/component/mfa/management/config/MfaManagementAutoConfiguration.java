@@ -29,6 +29,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
 
 /**
  * MFA管理模块自动配置类
@@ -61,6 +62,7 @@ public class MfaManagementAutoConfiguration {
      * 密钥管理配置属性（用于检查是否启用了 Vault）
      */
     private final MfaKeyManagementProperties keyManagementProperties;
+    private final Environment environment;
 
     /**
      * 初始化：注册Liquibase变更集并检查依赖
@@ -85,6 +87,9 @@ public class MfaManagementAutoConfiguration {
      * 如果配置了使用 Vault 作为密钥管理引擎，但缺少 Spring Vault 依赖，则输出提示信息
      */
     private void checkVaultDependency() {
+        if (environment.getProperty("platform.component.secret.enabled", Boolean.class, false)) {
+            return;
+        }
         // 检查是否配置了 Vault 作为密钥管理引擎
         if (keyManagementProperties.getProvider() == KeyManagementProviderEnum.VAULT) {
             // 检查是否缺少 Spring Vault 依赖
@@ -147,6 +152,7 @@ public class MfaManagementAutoConfiguration {
     @Bean
     @Primary
     @ConditionalOnMissingBean(KeyManagementProvider.class)
+    @ConditionalOnProperty(prefix = "platform.component.secret", name = "enabled", havingValue = "false", matchIfMissing = true)
     public KeyManagementProvider localKmsProviderFallback() {
         log.warn("未找到KMS提供方实现，使用本地回退实现（不安全，仅用于开发/测试）");
         return new LocalKmsProviderFallback();

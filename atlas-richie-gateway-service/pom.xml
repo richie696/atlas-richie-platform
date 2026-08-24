@@ -41,6 +41,11 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- 默认禁用；Gateway 只声明逻辑密钥，不选择 Secret Provider -->
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-secret-bootstrap</artifactId>
+        </dependency>
         <!-- 跨服务共享契约：GatewayContract / TokenFilterConfig /
              DeployConfig / OAuth2AuditEvent / OAuth2AuditEventType / BaseStreamMessage -->
         <dependency>
@@ -154,6 +159,28 @@
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-test</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-secret-testkit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>cn.richie696.base</groupId>
+            <artifactId>atlas-richie-testing-support</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-secret-provider-vault</artifactId>
+            <version>${revision}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>

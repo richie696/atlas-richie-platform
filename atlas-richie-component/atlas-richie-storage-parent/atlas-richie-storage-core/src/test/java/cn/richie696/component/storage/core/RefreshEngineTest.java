@@ -28,6 +28,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.lang.reflect.Field;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -261,6 +264,85 @@ class RefreshEngineTest {
 
         StorageEngine returned = registry.refreshEngine(StorageEngineEnum.MINIO, new StorageProperties());
         assertThat(returned).isSameAs(newEngine);
+    }
+
+    @Test
+    void secretRefreshPlanKeepsOldEngineUntilCommitCompletes() {
+        StubEngine oldEngine = new StubEngine("old");
+        StubEngine newEngine = new StubEngine("new");
+        registry.registerInitialEngine(StorageEngineEnum.MINIO, "m-old", oldEngine);
+        ProgrammableProvider provider = new ProgrammableProvider(StorageEngineEnum.MINIO);
+        provider.engineToReturn = newEngine;
+        registerProvider(provider);
+
+        var prepared = registry.prepareSecretRefresh(new StorageProperties());
+
+        assertThat(registry.getEngine(StorageEngineEnum.MINIO)).isSameAs(oldEngine);
+        assertThat(provider.destroyedEngines).isEmpty();
+        prepared.commit();
+        assertThat(registry.getEngine(StorageEngineEnum.MINIO)).isSameAs(newEngine);
+        assertThat(provider.destroyedEngines).isEmpty();
+        prepared.complete();
+        assertThat(provider.destroyedEngines).containsExactly(oldEngine);
+    }
+
+    @Test
+    void secretRefreshPlanRollbackRestoresOldEngineAndDestroysCandidate() {
+        StubEngine oldEngine = new StubEngine("old");
+        StubEngine newEngine = new StubEngine("new");
+        registry.registerInitialEngine(StorageEngineEnum.MINIO, "m-old", oldEngine);
+        ProgrammableProvider provider = new ProgrammableProvider(StorageEngineEnum.MINIO);
+        provider.engineToReturn = newEngine;
+        registerProvider(provider);
+
+        var prepared = registry.prepareSecretRefresh(new StorageProperties());
+        prepared.commit();
+        prepared.rollback();
+
+        assertThat(registry.getEngine(StorageEngineEnum.MINIO)).isSameAs(oldEngine);
+        assertThat(provider.destroyedEngines).containsExactly(newEngine);
+    }
+
+    @Test
+    void secretRefreshCompleteWaitsForInflightCallsBeforeDestroyingOldEngine() throws Exception {
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        StubEngine oldEngine = new StubEngine("old") {
+            @Override
+            public boolean existsObject(@NonNull String key) {
+                entered.countDown();
+                try {
+                    assertThat(release.await(5, TimeUnit.SECONDS)).isTrue();
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(interrupted);
+                }
+                return true;
+            }
+        };
+        StubEngine newEngine = new StubEngine("new");
+        registry.registerInitialEngine(StorageEngineEnum.MINIO, "m-old", oldEngine);
+        ProgrammableProvider provider = new ProgrammableProvider(StorageEngineEnum.MINIO);
+        provider.engineToReturn = newEngine;
+        registerProvider(provider);
+
+        var prepared = registry.prepareSecretRefresh(new StorageProperties());
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var request = executor.submit(() -> registry.getObjectProxy().existsObject("inflight"));
+            assertThat(entered.await(5, TimeUnit.SECONDS)).isTrue();
+
+            prepared.commit();
+            var completion = executor.submit(prepared::complete);
+
+            assertThatThrownBy(() -> completion.get(100, TimeUnit.MILLISECONDS))
+                    .isInstanceOf(java.util.concurrent.TimeoutException.class);
+            assertThat(provider.destroyedEngines).isEmpty();
+
+            release.countDown();
+            assertThat(request.get(5, TimeUnit.SECONDS)).isTrue();
+            completion.get(5, TimeUnit.SECONDS);
+            assertThat(provider.destroyedEngines).containsExactly(oldEngine);
+        }
     }
 
     /**

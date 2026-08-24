@@ -186,6 +186,29 @@ class MfaValidationServiceImplTest {
     }
 
     @Test
+    void verifyMfaCode_storedReference_precedesLegacyPath() {
+        MfaUserInfo userInfo = enabledUser();
+        userInfo.setSecretReference("arse:v1:stored-envelope");
+        when(replayService.isCodeUsed(eq("u1"), isNull(), anyLong())).thenReturn(false);
+        when(keyManagementProvider.isAvailable()).thenReturn(true);
+        when(keyManagementProvider.retrieveSecret("arse:v1:stored-envelope")).thenReturn("SECRET");
+        when(totpEngine.verifyCode(eq("SECRET"), eq("654321"), eq("u1"), isNull(), anyInt(),
+                eq("SHA1"), eq(30), eq(6))).thenReturn(true);
+
+        try (MockedStatic<GlobalCache> cache = mockStatic(GlobalCache.class)) {
+            cache.when(GlobalCache::struct).thenReturn(structOps);
+            cache.when(GlobalCache::key).thenReturn(keyOps);
+            when(structOps.get(anyString(), eq(MfaUserInfo.class))).thenReturn(userInfo);
+
+            var result = validationService.verifyMfaCode("u1", null, "654321");
+
+            assertThat(result.isSuccess()).isTrue();
+            verify(keyManagementProvider).retrieveSecret("arse:v1:stored-envelope");
+            verify(keyManagementProvider, never()).retrieveSecret("mfa/u1");
+        }
+    }
+
+    @Test
     void checkTrustedDevice_validDevice_skipsMfa() {
         MfaTrustedDevice device = new MfaTrustedDevice();
         device.setTrustedUntil(OffsetDateTime.now(ZoneOffset.UTC).plusDays(1));

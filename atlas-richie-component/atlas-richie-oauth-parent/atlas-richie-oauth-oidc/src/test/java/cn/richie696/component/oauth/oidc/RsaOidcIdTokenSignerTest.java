@@ -9,6 +9,7 @@ import java.security.KeyPairGenerator;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -48,5 +49,45 @@ class RsaOidcIdTokenSignerTest {
                 .verify(token, "client-1", "nonce-1");
         assertThat(verified.subject()).isEqualTo("user-1");
         assertThat(verified.nonce()).isEqualTo("nonce-1");
+    }
+
+    @Test
+    void rotationPublishesCurrentAndPreviousJwk() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        KeyPair first = generator.generateKeyPair();
+        KeyPair second = generator.generateKeyPair();
+        OidcProperties properties = new OidcProperties();
+        properties.setIssuer("https://as.example.test");
+        RsaOidcIdTokenSigner signer = new RsaOidcIdTokenSigner("kid-1",
+                (java.security.interfaces.RSAPrivateKey) first.getPrivate(),
+                (java.security.interfaces.RSAPublicKey) first.getPublic(), properties);
+
+        signer.rotate("kid-2",
+                (java.security.interfaces.RSAPrivateKey) second.getPrivate(),
+                (java.security.interfaces.RSAPublicKey) second.getPublic(), Duration.ofHours(1));
+
+        assertThat(signer.keys()).extracting(jwk -> jwk.get("kid"))
+                .containsExactly("kid-2", "kid-1");
+    }
+
+    @Test
+    void previousOidcJwkLeavesPublishedSetAfterWindow() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        KeyPair first = generator.generateKeyPair();
+        KeyPair second = generator.generateKeyPair();
+        OidcProperties properties = new OidcProperties();
+        properties.setIssuer("https://as.example.test");
+        RsaOidcIdTokenSigner signer = new RsaOidcIdTokenSigner("kid-1",
+                (java.security.interfaces.RSAPrivateKey) first.getPrivate(),
+                (java.security.interfaces.RSAPublicKey) first.getPublic(), properties);
+
+        signer.rotate("kid-2",
+                (java.security.interfaces.RSAPrivateKey) second.getPrivate(),
+                (java.security.interfaces.RSAPublicKey) second.getPublic(), Duration.ofMillis(1));
+        Thread.sleep(10);
+
+        assertThat(signer.keys()).extracting(jwk -> jwk.get("kid")).containsExactly("kid-2");
     }
 }

@@ -17,6 +17,7 @@ package cn.richie696.component.ai.service.impl;
 
 import cn.richie696.component.ai.api.voicechat.StsTicket;
 import cn.richie696.component.ai.service.VoiceStsService;
+import cn.richie696.component.secret.bootstrap.refresh.PreparedSecretRefresh;
 import cn.richie696.component.ai.support.sign.StsSigner;
 import cn.richie696.component.ai.support.sign.VendorStsContext;
 import org.slf4j.Logger;
@@ -27,6 +28,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.List;
 import java.util.Map;
 
@@ -52,13 +54,13 @@ public class VoiceStsServiceImpl implements VoiceStsService {
 
     private static final Logger log = LoggerFactory.getLogger(VoiceStsServiceImpl.class);
 
-    private final List<StsSigner> signers;
-    private final ConcurrentMap<String, StsSigner> signerCache = new ConcurrentHashMap<>();
+    private final AtomicReference<SignerSnapshot> snapshot;
 
     public VoiceStsServiceImpl(List<StsSigner> signers) {
-        this.signers = signers == null ? List.of() : List.copyOf(signers);
+        this.snapshot = new AtomicReference<>(SignerSnapshot.of(signers));
+        List<StsSigner> currentSigners = snapshot.get().signers();
         log.info("VoiceStsService 初始化完成,已注册 {} 个 StsSigner 实现: {}",
-                this.signers.size(), this.signers.stream().map(StsSigner::vendor).toList());
+                currentSigners.size(), currentSigners.stream().map(StsSigner::vendor).toList());
     }
 
     @Override
@@ -111,6 +113,7 @@ public class VoiceStsServiceImpl implements VoiceStsService {
 
     @Override
     public List<String> listRegisteredVendors() {
+        List<StsSigner> signers = snapshot.get().signers();
         List<String> vendors = new ArrayList<>(signers.size());
         for (StsSigner s : signers) {
             vendors.add(s.vendor());
@@ -120,18 +123,19 @@ public class VoiceStsServiceImpl implements VoiceStsService {
 
     @Override
     public int signerCount() {
-        return signers.size();
+        return snapshot.get().signers().size();
     }
 
     private StsSigner resolve(VendorStsContext ctx) {
+        SignerSnapshot current = snapshot.get();
         String cacheKey = ctx.getVendor() + "|" + ctx.getAuthDomain();
-        StsSigner cached = signerCache.get(cacheKey);
+        StsSigner cached = current.cache().get(cacheKey);
         if (cached != null && cached.supports(ctx)) {
             return cached;
         }
-        for (StsSigner s : signers) {
+        for (StsSigner s : current.signers()) {
             if (s.supports(ctx)) {
-                signerCache.put(cacheKey, s);
+                current.cache().put(cacheKey, s);
                 return s;
             }
         }
@@ -140,6 +144,40 @@ public class VoiceStsServiceImpl implements VoiceStsService {
                         + "请检查 application.yml 是否配置了对应 vendor 的 long-term credential。已注册 vendor: %s",
                 ctx.getVendor(), ctx.getAuthDomain(), ctx.getCapability(), ctx.getModel(),
                 listRegisteredVendors()));
+    }
+
+    PreparedSecretRefresh prepareSecretRefresh(List<StsSigner> nextSigners) {
+        SignerSnapshot previous = snapshot.get();
+        SignerSnapshot candidate = SignerSnapshot.of(nextSigners);
+        return new PreparedSecretRefresh() {
+            private boolean committed;
+
+            @Override
+            public void commit() {
+                if (!snapshot.compareAndSet(previous, candidate)) {
+                    throw new IllegalStateException(
+                            "AI STS signer generation changed while Secret refresh was being prepared");
+                }
+                committed = true;
+            }
+
+            @Override
+            public void rollback() {
+                if (committed) {
+                    snapshot.compareAndSet(candidate, previous);
+                }
+            }
+        };
+    }
+
+    private record SignerSnapshot(
+            List<StsSigner> signers,
+            ConcurrentMap<String, StsSigner> cache) {
+        private static SignerSnapshot of(List<StsSigner> signers) {
+            return new SignerSnapshot(
+                    signers == null ? List.of() : List.copyOf(signers),
+                    new ConcurrentHashMap<>());
+        }
     }
 
     private String probeAuthDomain(String vendor) {

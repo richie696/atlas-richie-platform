@@ -1,0 +1,8 @@
+package cn.richie696.component.secret.provider.kmip;
+import cn.richie696.component.secret.api.exception.SecretConfigurationException; import java.net.URI; import java.nio.charset.StandardCharsets; import java.security.MessageDigest; import java.util.TreeMap;
+final class KmipSecretConfiguration {
+    private KmipSecretConfiguration() { }
+    static void validate(KmipSecretProperties p) { URI e=p.getEndpoint(); if(e==null||e.getHost()==null) invalid("KMIP endpoint is required"); if(e.getUserInfo()!=null||e.getQuery()!=null||e.getFragment()!=null) invalid("KMIP endpoint must not contain user-info, query, or fragment"); if(!"kmips".equalsIgnoreCase(e.getScheme())&&!"https".equalsIgnoreCase(e.getScheme())) invalid("KMIP endpoint must use kmips/HTTPS TLS"); if(p.getProtocolMajor()<1||p.getProtocolMajor()>2||p.getProtocolMinor()<0||p.getProtocolMinor()>9) invalid("KMIP protocol version is invalid"); for(var b:p.getKeyBindings().entrySet()){safe(b.getKey(),"KMIP logical key"); safe(b.getValue(),"KMIP unique identifier");} }
+    static String hash(String id,KmipSecretProperties p){String c=id+"\n"+p.getEndpoint()+"\n"+p.getTrustStore()+"\n"+p.getKeyStore()+"\n"+p.getProtocolMajor()+"."+p.getProtocolMinor()+"\n"+new TreeMap<>(p.getKeyBindings());try{return java.util.HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(c.getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}
+    private static void safe(String v,String l){if(v==null||v.isBlank()||v.contains("..")||v.contains("/"))invalid(l+" is invalid");} private static void invalid(String m){throw new SecretConfigurationException("SEC-BOOT-003",m);}
+}

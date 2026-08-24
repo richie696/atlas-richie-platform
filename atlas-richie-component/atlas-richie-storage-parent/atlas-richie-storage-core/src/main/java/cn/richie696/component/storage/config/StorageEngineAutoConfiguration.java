@@ -34,6 +34,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import cn.richie696.component.secret.bootstrap.refresh.SecretRefreshParticipant;
 
 import java.util.List;
 import java.util.Map;
@@ -76,6 +77,15 @@ public class StorageEngineAutoConfiguration {
     @ConditionalOnMissingBean
     public StorageEngineRegistry storageEngineRegistry() {
         return new StorageEngineRegistry();
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            prefix = "platform.component.secret",
+            name = "enabled",
+            havingValue = "true")
+    public SecretRefreshParticipant storageSecretRefreshParticipant(StorageEngineRegistry registry) {
+        return new StorageSecretRefreshParticipant(registry);
     }
 
     // ========== 可观测性：Actuator HealthIndicator + Micrometer 指标 ==========
@@ -231,7 +241,7 @@ public class StorageEngineAutoConfiguration {
                     defaultEntry.engine);
 
             // 绑定默认引擎到 @Primary Proxy
-            proxyFactory.setDelegate(defaultEntry.engine);
+            proxyFactory.setDelegate(registry.getDefaultProxy());
             log.info("自动模式启动绑定：默认引擎已绑定到 Proxy: type={}, id={}, engine={}, actor=auto-init, reason=startup",
                     defaultEngineType, defaultEngineId,
                     defaultEntry.engine.getClass().getSimpleName());

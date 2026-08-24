@@ -42,6 +42,12 @@ class ProviderFactoryTest {
     }
 
     @Test
+    void provider_eddsa() {
+        CryptoProvider p = ProviderFactory.provider(Algorithm.EDDSA);
+        assertInstanceOf(EdDSAProvider.class, p);
+    }
+
+    @Test
     void provider_ecdh() {
         CryptoProvider p = ProviderFactory.provider(Algorithm.ECDH);
         assertInstanceOf(ECDHProvider.class, p);

@@ -1,3 +1,4 @@
 cn.richie696.component.mfa.management.config.MfaManagementAutoConfiguration
 cn.richie696.component.mfa.core.config.MfaAutoConfiguration
+cn.richie696.component.mfa.core.config.MfaSecretBridgeAutoConfiguration
 cn.richie696.component.mfa.core.config.VaultDependencyChecker

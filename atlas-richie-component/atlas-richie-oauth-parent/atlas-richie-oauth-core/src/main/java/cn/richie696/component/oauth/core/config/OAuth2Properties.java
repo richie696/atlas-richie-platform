@@ -18,6 +18,8 @@ package cn.richie696.component.oauth.core.config;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
+
 /**
  * OAuth 2.1 组件的统一配置属性。
  * <p>
@@ -50,6 +52,9 @@ public class OAuth2Properties {
      * 启用组件时必填
      */
     private String tokenSecret;
+
+    /** 签名密钥轮换后保留上一版本用于验签的时间窗口。 */
+    private Duration signingKeyVerificationWindow = Duration.ofHours(2);
 
     /** access token 的 issuer，生产环境必须配置为稳定的 AS 标识。 */
     private String issuer = "Richie Inc.";

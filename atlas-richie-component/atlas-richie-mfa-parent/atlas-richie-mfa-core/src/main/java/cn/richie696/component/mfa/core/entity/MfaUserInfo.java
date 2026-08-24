@@ -113,6 +113,12 @@ public class MfaUserInfo extends AuditDomain {
     private OffsetDateTime keyRotationTime;
 
     /**
+     * Secret 关闭时保存旧 KMS/Vault 的逻辑引用；Secret 开启后的新写保存 arse:v1 信封密文。
+     */
+    @TableField("secret_reference")
+    private String secretReference;
+
+    /**
      * 备份码（哈希后，JSON格式）
      */
     private String backupCodesHashed;

@@ -24,7 +24,7 @@ class AlgorithmTest {
     @Test
     void values_allDefined() {
         Algorithm[] values = Algorithm.values();
-        assertEquals(7, values.length);
+        assertEquals(8, values.length);
     }
 
     @Test
@@ -40,6 +40,11 @@ class AlgorithmTest {
     @Test
     void valueOf_ecdsa() {
         assertEquals(Algorithm.ECDSA, Algorithm.valueOf("ECDSA"));
+    }
+
+    @Test
+    void valueOf_eddsa() {
+        assertEquals(Algorithm.EDDSA, Algorithm.valueOf("EDDSA"));
     }
 
     @Test

@@ -1,0 +1,8 @@
+package cn.richie696.component.secret.provider.kmip;
+import org.springframework.boot.context.properties.ConfigurationProperties; import java.net.URI; import java.util.LinkedHashMap; import java.util.Map;
+@ConfigurationProperties(prefix = KmipSecretProperties.PREFIX)
+public class KmipSecretProperties {
+    public static final String PREFIX = "platform.component.secret.kmip";
+    private URI endpoint; private String trustStore; private char[] trustStorePassword = new char[0]; private String keyStore; private char[] keyStorePassword = new char[0]; private int protocolMajor = 2; private int protocolMinor = 1; private Map<String,String> keyBindings = new LinkedHashMap<>();
+    public URI getEndpoint(){return endpoint;} public void setEndpoint(URI v){endpoint=v;} public String getTrustStore(){return trustStore;} public void setTrustStore(String v){trustStore=v;} public char[] getTrustStorePassword(){return trustStorePassword.clone();} public void setTrustStorePassword(char[] v){trustStorePassword=v==null?new char[0]:v.clone();} public String getKeyStore(){return keyStore;} public void setKeyStore(String v){keyStore=v;} public char[] getKeyStorePassword(){return keyStorePassword.clone();} public void setKeyStorePassword(char[] v){keyStorePassword=v==null?new char[0]:v.clone();} public int getProtocolMajor(){return protocolMajor;} public void setProtocolMajor(int v){protocolMajor=v;} public int getProtocolMinor(){return protocolMinor;} public void setProtocolMinor(int v){protocolMinor=v;} public Map<String,String> getKeyBindings(){return Map.copyOf(keyBindings);} public void setKeyBindings(Map<String,String> v){keyBindings=v==null?new LinkedHashMap<>():new LinkedHashMap<>(v);}
+}

@@ -232,9 +232,11 @@ public class TotpValidationEngine {
      * @throws RuntimeException 如果 Base32 解码失败或生成过程异常
      */
     private String generateCode(String secret, long timeStep, int digits, String algorithm) {
+        byte[] key = null;
+        byte[] hmacResult = null;
         try {
             // Base32解码
-            byte[] key = base32Decode(secret);
+            key = base32Decode(secret);
             log.debug("Base32解码后的密钥长度: {} 字节", key.length);
 
             // 时间步长转换为8字节数组（大端序）
@@ -257,7 +259,7 @@ public class TotpValidationEngine {
             // 计算HMAC
             hmac.init(new KeyParameter(key));
             hmac.update(data, 0, data.length);
-            byte[] hmacResult = new byte[hmac.getMacSize()];
+            hmacResult = new byte[hmac.getMacSize()];
             hmac.doFinal(hmacResult, 0);
             log.debug("HMAC结果长度: {} 字节, 算法: {}", hmacResult.length, normalizedAlgorithm);
 
@@ -271,11 +273,17 @@ public class TotpValidationEngine {
 
             int otp = binary % ((int) Math.pow(10, digits));
             String result = String.format("%0" + digits + "d", otp);
-            log.debug("生成的TOTP验证码: {} (binary: {}, digits: {})", result, binary, digits);
             return result;
         } catch (Exception e) {
-            log.error("生成TOTP验证码失败，algorithm: {}, secret: {}, timeStep: {}", algorithm, secret, timeStep, e);
+            log.error("生成TOTP验证码失败，algorithm: {}, timeStep: {}", algorithm, timeStep, e);
             throw new RuntimeException("生成TOTP验证码失败", e);
+        } finally {
+            if (key != null) {
+                java.util.Arrays.fill(key, (byte) 0);
+            }
+            if (hmacResult != null) {
+                java.util.Arrays.fill(hmacResult, (byte) 0);
+            }
         }
     }
 

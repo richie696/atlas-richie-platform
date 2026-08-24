@@ -3,6 +3,9 @@ package cn.richie696.component.oauth.core.support;
 import cn.richie696.component.oauth.core.config.OAuth2Properties;
 import cn.richie696.component.oauth.core.model.ClientConfig;
 import cn.richie696.component.oauth.core.spi.AccessTokenSigner;
+import cn.richie696.component.secret.api.SecretSnapshotChangedEvent;
+import cn.richie696.component.secret.bootstrap.refresh.PreparedSecretRefresh;
+import cn.richie696.component.secret.bootstrap.refresh.SecretRefreshParticipant;
 import cn.richie696.contract.exception.BusinessException;
 import cn.richie696.component.oauth.contract.OAuth2Constants;
 import com.auth0.jwt.JWT;
@@ -12,6 +15,8 @@ import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.core.env.ConfigurableEnvironment;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -19,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 兼容当前组件配置的 HMAC Access Token 签名器。
@@ -37,12 +45,14 @@ import java.util.UUID;
  * @author richie696
  * @since 2026-08-07
  */
-public class HmacAccessTokenSigner implements AccessTokenSigner {
+public class HmacAccessTokenSigner implements AccessTokenSigner, SecretRefreshParticipant {
 
     private final OAuth2Properties properties;
+    private final AtomicReference<KeyWindow> keys;
 
     public HmacAccessTokenSigner(OAuth2Properties properties) {
         this.properties = properties;
+        this.keys = new AtomicReference<>(new KeyWindow(properties.getTokenSecret(), null, null));
     }
 
     @Override
@@ -59,7 +69,7 @@ public class HmacAccessTokenSigner implements AccessTokenSigner {
     @Override
     public String sign(String clientId, ClientConfig client, List<String> scopes,
                        String resource, String subject, Map<String, Object> additionalClaims) {
-        String secret = properties.getTokenSecret();
+        String secret = keys.get().current();
         if (StringUtils.isBlank(secret)) {
             throw new BusinessException(OAuth2Constants.ERROR_INVALID_CONFIG, "Token 密钥未配置");
         }
@@ -115,22 +125,104 @@ public class HmacAccessTokenSigner implements AccessTokenSigner {
 
     @Override
     public AccessTokenClaims verify(String accessToken) {
-        String secret = properties.getTokenSecret();
+        KeyWindow window = activeWindow();
+        String secret = window.current();
         if (StringUtils.isBlank(secret)) {
             throw new BusinessException(OAuth2Constants.ERROR_INVALID_CONFIG, "Token 密钥未配置");
         }
         try {
-            JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secret)).build();
-            DecodedJWT jwt = verifier.verify(accessToken);
-            Claim scopeClaim = jwt.getClaim(OAuth2Constants.JWT_CLAIM_SCOPE);
-            String scope = scopeClaim == null || scopeClaim.isNull() ? null : scopeClaim.asString();
-            List<String> scopes = StringUtils.isBlank(scope)
-                    ? List.of() : Arrays.stream(scope.split("\\s+")).toList();
-            return new AccessTokenClaims(jwt.getClaim(OAuth2Constants.JWT_CLAIM_CLIENT_ID).asString(),
-                    jwt.getSubject(), jwt.getIssuer(), jwt.getAudience().isEmpty() ? null : jwt.getAudience().getFirst(),
-                    jwt.getId(), jwt.getExpiresAt() == null ? 0 : jwt.getExpiresAt().getTime(), scopes);
-        } catch (Exception e) {
+            return verifyWith(accessToken, secret);
+        } catch (RuntimeException currentFailure) {
+            if (window.previousActive() && StringUtils.isNotBlank(window.previous())) {
+                try {
+                    return verifyWith(accessToken, window.previous());
+                } catch (RuntimeException ignored) {
+                    // Fall through to the single sanitized error below.
+                }
+            }
             throw new BusinessException(OAuth2Constants.ERROR_INVALID_TOKEN, "Access token 无效");
+        }
+    }
+
+    private KeyWindow activeWindow() {
+        KeyWindow window = keys.get();
+        if (window.previous() != null && !window.previousActive()) {
+            KeyWindow currentOnly = new KeyWindow(window.current(), null, null);
+            keys.compareAndSet(window, currentOnly);
+            return keys.get();
+        }
+        return window;
+    }
+
+    private AccessTokenClaims verifyWith(String accessToken, String secret) {
+        JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secret)).build();
+        DecodedJWT jwt = verifier.verify(accessToken);
+        Claim scopeClaim = jwt.getClaim(OAuth2Constants.JWT_CLAIM_SCOPE);
+        String scope = scopeClaim == null || scopeClaim.isNull() ? null : scopeClaim.asString();
+        List<String> scopes = StringUtils.isBlank(scope)
+                ? List.of() : Arrays.stream(scope.split("\\s+")).toList();
+        return new AccessTokenClaims(jwt.getClaim(OAuth2Constants.JWT_CLAIM_CLIENT_ID).asString(),
+                jwt.getSubject(), jwt.getIssuer(), jwt.getAudience().isEmpty() ? null : jwt.getAudience().getFirst(),
+                jwt.getId(), jwt.getExpiresAt() == null ? 0 : jwt.getExpiresAt().getTime(), scopes);
+    }
+
+    @Override
+    public PreparedSecretRefresh prepare(
+            ConfigurableEnvironment environment,
+            SecretSnapshotChangedEvent candidate) {
+        OAuth2Properties next = Binder.get(environment)
+                .bind("platform.component.oauth", OAuth2Properties.class)
+                .orElseThrow(() -> new IllegalStateException("OAuth configuration is missing"));
+        if (StringUtils.isBlank(next.getTokenSecret())) {
+            throw new IllegalStateException("OAuth token Secret must not be blank");
+        }
+        Duration verificationWindow = next.getSigningKeyVerificationWindow();
+        if (verificationWindow == null || verificationWindow.isNegative() || verificationWindow.isZero()) {
+            throw new IllegalStateException("OAuth signing key verification window must be positive");
+        }
+        KeyWindow previous = keys.get();
+        Duration previousVerificationWindow = properties.getSigningKeyVerificationWindow();
+        if (next.getTokenSecret().equals(previous.current())) {
+            return new PreparedSecretRefresh() {
+                @Override
+                public void commit() {
+                    properties.setSigningKeyVerificationWindow(verificationWindow);
+                }
+
+                @Override
+                public void rollback() {
+                    properties.setSigningKeyVerificationWindow(previousVerificationWindow);
+                }
+            };
+        }
+        KeyWindow replacement = new KeyWindow(
+                next.getTokenSecret(),
+                previous.current(),
+                Instant.now().plus(verificationWindow));
+        String previousProperty = properties.getTokenSecret();
+        return new PreparedSecretRefresh() {
+            @Override
+            public void commit() {
+                if (!keys.compareAndSet(previous, replacement)) {
+                    throw new IllegalStateException(
+                            "OAuth signing key changed while Secret refresh was being prepared");
+                }
+                properties.setTokenSecret(next.getTokenSecret());
+                properties.setSigningKeyVerificationWindow(verificationWindow);
+            }
+
+            @Override
+            public void rollback() {
+                keys.compareAndSet(replacement, previous);
+                properties.setTokenSecret(previousProperty);
+                properties.setSigningKeyVerificationWindow(previousVerificationWindow);
+            }
+        };
+    }
+
+    private record KeyWindow(String current, String previous, Instant previousValidUntil) {
+        boolean previousActive() {
+            return previousValidUntil != null && Instant.now().isBefore(previousValidUntil);
         }
     }
 }

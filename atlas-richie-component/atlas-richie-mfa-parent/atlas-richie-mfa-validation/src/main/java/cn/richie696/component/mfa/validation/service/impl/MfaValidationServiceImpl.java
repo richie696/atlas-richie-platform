@@ -210,9 +210,12 @@ public class MfaValidationServiceImpl implements MfaValidationService {
 
             // 从密钥管理器检索密钥（使用 tenantId 和 userId）
             // 注意：validation 模块不直接依赖 SecretKeyManager，需要通过 KeyManagementProvider 检索
-            String secretReference = buildSecretReference(tenantId, userId);
+            String secretReference = StringUtils.isNotBlank(userInfo.getSecretReference())
+                    ? userInfo.getSecretReference()
+                    : buildSecretReference(tenantId, userId);
             String plainSecret = retrieveSecretFromKms(secretReference);
-            log.info("从密钥管理器检索到的密钥: {} (长度: {})", plainSecret, plainSecret != null ? plainSecret.length() : 0);
+            log.debug("MFA verification secret retrieved for tenantId={}, userId={}, present={}",
+                    tenantId, userId, StringUtils.isNotBlank(plainSecret));
 
             // 使用数据库中的 period 和 digits 进行验证，确保与二维码生成时使用的参数一致
             boolean valid = totpEngine.verifyCode(

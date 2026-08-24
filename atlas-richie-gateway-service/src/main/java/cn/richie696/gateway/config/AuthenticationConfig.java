@@ -39,7 +39,7 @@ public class AuthenticationConfig {
     /**
      * 鉴权秘钥
      */
-    private String secretKey;
+    private volatile String secretKey;
 
     /**
      * 签名方式

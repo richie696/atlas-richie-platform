@@ -1,0 +1,4 @@
+package cn.richie696.component.secret.provider.kmip;
+import cn.richie696.component.secret.api.SecretCapability; import cn.richie696.component.secret.bootstrap.BootstrapSecretProperties; import cn.richie696.component.secret.bootstrap.spi.*; import java.util.Set;
+@cn.richie696.component.secret.bootstrap.spi.SecretProviderType("kmip")
+public final class KmipSecretBootstrapProviderFactory implements SecretBootstrapProviderFactory { private static final Set<SecretCapability> CAPABILITIES=Set.of(SecretCapability.KEY_WRAP,SecretCapability.KEY_UNWRAP); @Override public String providerType(){return "kmip";} @Override public Set<SecretCapability> capabilities(){return CAPABILITIES;} @Override public SecretBootstrapClient create(BootstrapSecretProperties p,SecretBootstrapContext c){return KmipSecretClient.create(c.environment(),p);} }

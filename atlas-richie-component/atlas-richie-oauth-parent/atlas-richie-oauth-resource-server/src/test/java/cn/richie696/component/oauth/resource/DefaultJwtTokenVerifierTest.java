@@ -44,4 +44,25 @@ class DefaultJwtTokenVerifierTest {
                 new StaticJwkSource(Map.of())).verify("eyJhbGciOiJSUzI1NiIsImtpZCI6Im1pc3NpbmcifQ.x.y"))
                 .isInstanceOf(ResourceServerException.class);
     }
+
+    @Test
+    void enforcesRfc8705CertificateThumbprintWhenPresent() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        KeyPair pair = generator.generateKeyPair();
+        String token = JWT.create().withKeyId("k1").withIssuer("https://issuer")
+                .withAudience("api").withSubject("user-1")
+                .withClaim("scope", "api.read")
+                .withClaim("cnf", Map.of("x5t#S256", "thumbprint-1"))
+                .withExpiresAt(Date.from(Instant.now().plusSeconds(60)))
+                .sign(Algorithm.RSA256((RSAPublicKey) pair.getPublic(), (java.security.interfaces.RSAPrivateKey) pair.getPrivate()));
+        DefaultJwtTokenVerifier verifier = new DefaultJwtTokenVerifier("https://issuer", "api",
+                new StaticJwkSource(Map.of("k1", (RSAPublicKey) pair.getPublic())));
+
+        assertThat(verifier.verify(token, "thumbprint-1").subject()).isEqualTo("user-1");
+        assertThatThrownBy(() -> verifier.verify(token, "thumbprint-2"))
+                .isInstanceOf(ResourceServerException.class);
+        assertThatThrownBy(() -> verifier.verify(token))
+                .isInstanceOf(ResourceServerException.class);
+    }
 }

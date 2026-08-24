@@ -50,6 +50,8 @@
         <module>atlas-richie-mqtt</module>
         <!-- 通用MFA服务组件 -->
         <module>atlas-richie-mfa-parent</module>
+        <!-- 统一密钥与敏感配置访问组件 -->
+        <module>atlas-richie-secret-parent</module>
         <!-- 通用OAuth2.1鉴权组件 -->
         <module>atlas-richie-oauth-parent</module>
         <!-- Model Context Protocol 双端适配组件 -->

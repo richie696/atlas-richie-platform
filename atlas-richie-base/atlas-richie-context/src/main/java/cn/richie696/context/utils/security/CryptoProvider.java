@@ -92,7 +92,7 @@ interface CryptoProvider {
     /**
      * 生成非对称密钥对
      *
-     * @param keySize 密钥位数（如 RSA: 2048/3072/4096, DSA: 4096）
+     * @param keySize 密钥位数（如 RSA: 2048/3072/4096, DSA: 4096；Ed25519 使用 0）
      * @return 密钥对
      */
     default KeyPair generateKeyPair(int keySize) throws Exception {

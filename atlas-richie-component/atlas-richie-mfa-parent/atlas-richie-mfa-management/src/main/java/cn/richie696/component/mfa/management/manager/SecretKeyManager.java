@@ -112,26 +112,25 @@ public class SecretKeyManager {
      *   <li>详细方案参见：{@code docs-v2/使用ETCD做软件密码管理方案.md}</li>
      * </ul>
      *
-     * <p><b>当前实现</b>：简化实现，直接返回明文（仅用于开发/测试环境）
-     * <p><b>生产环境</b>：必须集成KMS/HSM服务，确保密钥安全存储
+     * <p><b>组件禁用时</b>：由 {@code LocalKeyManagementEngine} 明确提供本地实现，保持开发模式兼容。
+     * <p><b>组件启用时</b>：KMS 不可用或操作失败必须快速失败，禁止把明文写回持久化层。
      *
      * @param plainSecret 明文密钥
-     * @return 加密后的密钥（当前简化实现直接返回明文）
+     * @return 加密后的密钥
+     * @throws IllegalStateException KMS 不可用
+     * @throws RuntimeException KMS 加密失败
      */
     public String encryptSecretKey(String plainSecret) {
         // 检查KMS提供方是否可用
         if (!kmsProvider.isAvailable()) {
-            log.warn("KMS提供方不可用，使用本地加密（不安全，仅用于开发）");
-            return plainSecret;
+            throw new IllegalStateException("KMS提供方不可用，拒绝以明文保存密钥");
         }
 
         try {
             return kmsProvider.encrypt(plainSecret);
         } catch (Exception e) {
-            log.error("KMS加密失败，回退到本地模式（不安全）", e);
-            // 加密失败时，为了不阻塞业务流程，返回原文（但会记录错误日志）
-            // 生产环境应该配置告警，及时发现此类问题
-            return plainSecret;
+            log.error("KMS加密失败，拒绝以明文保存密钥", e);
+            throw new RuntimeException("KMS加密失败: %s".formatted(e.getMessage()), e);
         }
     }
 
@@ -153,17 +152,18 @@ public class SecretKeyManager {
      *   <li>密钥使用完毕后应立即置为null，便于GC回收</li>
      * </ul>
      *
-     * <p><b>当前实现</b>：简化实现，直接返回（仅用于开发/测试环境）
-     * <p><b>生产环境</b>：必须集成KMS/HSM服务，确保密钥安全解密
+     * <p><b>组件禁用时</b>：由本地 Provider 明确提供兼容实现。
+     * <p><b>组件启用时</b>：KMS 不可用或操作失败必须快速失败，避免把密文误当作明文。
      *
      * @param encryptedSecret 加密后的密钥
-     * @return 明文密钥（当前简化实现直接返回）
+     * @return 明文密钥
+     * @throws IllegalStateException KMS 不可用
+     * @throws RuntimeException KMS 解密失败
      */
     public String decryptSecretKey(String encryptedSecret) {
         // 检查KMS提供方是否可用
         if (!kmsProvider.isAvailable()) {
-            log.warn("KMS提供方不可用，使用本地解密（不安全，仅用于开发）");
-            return encryptedSecret;
+            throw new IllegalStateException("KMS提供方不可用，拒绝将密文当作明文使用");
         }
 
         try {
@@ -195,7 +195,7 @@ public class SecretKeyManager {
      */
     public String storeSecret(String tenantId, String userId, String plainSecret) {
         if (!kmsProvider.isAvailable()) {
-            log.warn("KMS提供方不可用，无法存储密钥（不安全，仅用于开发）");
+            log.warn("KMS提供方不可用，拒绝存储密钥");
             throw new RuntimeException("KMS提供方不可用，无法存储密钥");
         }
 
@@ -225,7 +225,7 @@ public class SecretKeyManager {
      */
     public String retrieveSecret(String secretReference) {
         if (!kmsProvider.isAvailable()) {
-            log.warn("KMS提供方不可用，无法检索密钥（不安全，仅用于开发）");
+            log.warn("KMS提供方不可用，拒绝检索密钥");
             throw new RuntimeException("KMS提供方不可用，无法检索密钥");
         }
 
@@ -257,7 +257,7 @@ public class SecretKeyManager {
     public String retrieveSecret(String tenantId, String userId) {
         // 构建密钥引用路径
         String secretReference = buildSecretReference(tenantId, userId);
-        return kmsProvider.retrieveSecret(secretReference);
+        return retrieveSecret(secretReference);
     }
 
     /**
@@ -274,6 +274,14 @@ public class SecretKeyManager {
     public void deleteSecret(String tenantId, String userId) {
         // 构建密钥引用路径
         String secretReference = buildSecretReference(tenantId, userId);
+        deleteSecret(secretReference);
+    }
+
+    /** 删除已经随业务记录保存的外部引用或 arse:v1 信封。 */
+    public void deleteSecret(String secretReference) {
+        if (!kmsProvider.isAvailable()) {
+            throw new IllegalStateException("KMS提供方不可用，无法删除密钥");
+        }
         kmsProvider.deleteSecret(secretReference);
     }
 

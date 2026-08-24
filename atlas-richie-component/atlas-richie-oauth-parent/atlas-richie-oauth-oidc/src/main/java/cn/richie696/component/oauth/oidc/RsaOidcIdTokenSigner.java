@@ -20,6 +20,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 使用 RSA SHA-256 签发 OIDC ID Token 的默认实现，同时承担 JWK 公钥发布者角色。
@@ -38,10 +41,8 @@ import java.util.UUID;
  */
 public final class RsaOidcIdTokenSigner implements OidcIdTokenSigner, JwkSetProvider {
 
-    private final String keyId;
-    private final RSAPrivateKey privateKey;
-    private final RSAPublicKey publicKey;
     private final OidcProperties properties;
+    private final AtomicReference<KeyWindow> keys;
 
     public RsaOidcIdTokenSigner(String keyId, RSAPrivateKey privateKey, OidcProperties properties) {
         this(keyId, privateKey, derivePublicKey(privateKey), properties);
@@ -49,22 +50,22 @@ public final class RsaOidcIdTokenSigner implements OidcIdTokenSigner, JwkSetProv
 
     public RsaOidcIdTokenSigner(String keyId, RSAPrivateKey privateKey,
                                 RSAPublicKey publicKey, OidcProperties properties) {
-        this.keyId = keyId;
-        this.privateKey = privateKey;
-        this.publicKey = publicKey;
         this.properties = properties;
+        this.keys = new AtomicReference<>(new KeyWindow(
+                new KeyMaterial(keyId, privateKey, publicKey), null, null));
     }
 
     @Override
     public String sign(OidcIdTokenRequest request) {
         requireRsaAlgorithm();
+        KeyMaterial signingKey = keys.get().current();
         long now = Instant.now().getEpochSecond();
         long authTime = request.authenticationTime() == null
                 ? now : request.authenticationTime().getEpochSecond();
         long expiresAt = now + properties.getIdTokenTtlSeconds();
 
         JWTCreator.Builder builder = JWT.create()
-                .withKeyId(keyId)
+                .withKeyId(signingKey.keyId())
                 .withIssuer(required(properties.getIssuer(), "OIDC issuer 未配置"))
                 .withSubject(request.subject())
                 .withAudience(request.clientId())
@@ -80,7 +81,7 @@ public final class RsaOidcIdTokenSigner implements OidcIdTokenSigner, JwkSetProv
             builder.withClaim(OidcConstants.CLAIM_AT_HASH, leftHalfHash(request.accessToken()));
         }
         request.claims().forEach((name, value) -> addClaim(builder, name, value));
-        return builder.sign(Algorithm.RSA256(null, privateKey));
+        return builder.sign(Algorithm.RSA256(null, signingKey.privateKey()));
     }
 
     private void addClaim(JWTCreator.Builder builder, String name, Object value) {
@@ -137,12 +138,52 @@ public final class RsaOidcIdTokenSigner implements OidcIdTokenSigner, JwkSetProv
 
     @Override
     public List<Map<String, Object>> keys() {
-        if (publicKey == null) {
+        KeyWindow window = activeWindow();
+        List<Map<String, Object>> jwks = new ArrayList<>();
+        jwks.add(toJwk(window.current()));
+        if (window.previousActive() && window.previous() != null) {
+            jwks.add(toJwk(window.previous()));
+        }
+        return List.copyOf(jwks);
+    }
+
+    private KeyWindow activeWindow() {
+        KeyWindow window = keys.get();
+        if (window.previous() != null && !window.previousActive()) {
+            KeyWindow currentOnly = new KeyWindow(window.current(), null, null);
+            keys.compareAndSet(window, currentOnly);
+            return keys.get();
+        }
+        return window;
+    }
+
+    /** 原子切换 ID Token 签名密钥，并在验证窗口内继续发布上一公钥。 */
+    public void rotate(
+            String keyId,
+            RSAPrivateKey privateKey,
+            RSAPublicKey publicKey,
+            Duration verificationWindow) {
+        if (keyId == null || keyId.isBlank() || privateKey == null || publicKey == null) {
+            throw new IllegalArgumentException("OIDC RSA rotation key material must be complete");
+        }
+        if (verificationWindow == null || verificationWindow.isZero() || verificationWindow.isNegative()) {
+            throw new IllegalArgumentException("verificationWindow must be positive");
+        }
+        keys.updateAndGet(current -> new KeyWindow(
+                new KeyMaterial(keyId, privateKey, publicKey),
+                current.current(),
+                Instant.now().plus(verificationWindow)));
+    }
+
+    private Map<String, Object> toJwk(KeyMaterial key) {
+        if (key.publicKey() == null) {
             throw new IllegalStateException("发布 OIDC JWKS 需要 RSA public key");
         }
-        return List.of(Map.of("kty", "RSA", "kid", keyId, "use", "sig", "alg", "RS256",
-                "n", Base64.getUrlEncoder().withoutPadding().encodeToString(unsigned(publicKey.getModulus().toByteArray())),
-                "e", Base64.getUrlEncoder().withoutPadding().encodeToString(unsigned(publicKey.getPublicExponent().toByteArray()))));
+        return Map.of("kty", "RSA", "kid", key.keyId(), "use", "sig", "alg", "RS256",
+                "n", Base64.getUrlEncoder().withoutPadding()
+                        .encodeToString(unsigned(key.publicKey().getModulus().toByteArray())),
+                "e", Base64.getUrlEncoder().withoutPadding()
+                        .encodeToString(unsigned(key.publicKey().getPublicExponent().toByteArray())));
     }
 
     private static RSAPublicKey derivePublicKey(RSAPrivateKey privateKey) {
@@ -160,5 +201,14 @@ public final class RsaOidcIdTokenSigner implements OidcIdTokenSigner, JwkSetProv
     private byte[] unsigned(byte[] value) {
         return value.length > 1 && value[0] == 0
                 ? java.util.Arrays.copyOfRange(value, 1, value.length) : value;
+    }
+
+    private record KeyMaterial(String keyId, RSAPrivateKey privateKey, RSAPublicKey publicKey) {
+    }
+
+    private record KeyWindow(KeyMaterial current, KeyMaterial previous, Instant previousValidUntil) {
+        boolean previousActive() {
+            return previousValidUntil != null && Instant.now().isBefore(previousValidUntil);
+        }
     }
 }

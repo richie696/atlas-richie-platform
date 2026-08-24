@@ -36,7 +36,7 @@ import java.security.PublicKey;
  * byte[] encrypted  = CryptoUtils.encrypt(Algorithm.RSA, data, publicKey);
  * byte[] decrypted  = CryptoUtils.decrypt(Algorithm.RSA, encrypted, privateKey);
  *
- * // 数字签名（ECDSA/DSA/RSA/SM2）
+ * // 数字签名（ECDSA/EdDSA/DSA/RSA/SM2）
  * byte[] sig = CryptoUtils.sign(Algorithm.ECDSA, data, privateKey);
  * boolean ok = CryptoUtils.verify(Algorithm.ECDSA, data, publicKey, sig);
  *
@@ -130,8 +130,8 @@ public final class CryptoUtils {
     /**
      * 生成非对称密钥对
      *
-     * @param algorithm 算法（RSA / ECDSA / ECDH / DSA / SM2）
-     * @param keySize   密钥位数（RSA: 2048, DSA: 4096, EC 系传 0 使用默认曲线）
+     * @param algorithm 算法（RSA / ECDSA / EDDSA / ECDH / DSA / SM2）
+     * @param keySize   密钥位数（RSA: 2048, DSA: 4096, EC 系传 0 使用默认曲线，Ed25519 使用 0）
      * @return 密钥对
      */
     public static KeyPair generateKeyPair(Algorithm algorithm, int keySize) {

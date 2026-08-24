@@ -87,6 +87,24 @@ class CryptoUtilsTest {
         assertFalse(CryptoUtils.verify(Algorithm.ECDSA, DATA, kp2.getPublic(), signature));
     }
 
+    // ========== EdDSA / Ed25519 签名 ==========
+
+    @Test
+    void eddsa_signVerify() {
+        KeyPair kp = CryptoUtils.generateKeyPair(Algorithm.EDDSA, 0);
+        byte[] signature = CryptoUtils.sign(Algorithm.EDDSA, DATA, kp.getPrivate());
+        assertEquals(64, signature.length);
+        assertTrue(CryptoUtils.verify(Algorithm.EDDSA, DATA, kp.getPublic(), signature));
+    }
+
+    @Test
+    void eddsa_wrongKey_fails() {
+        KeyPair kp1 = CryptoUtils.generateKeyPair(Algorithm.EDDSA, 0);
+        KeyPair kp2 = CryptoUtils.generateKeyPair(Algorithm.EDDSA, 0);
+        byte[] signature = CryptoUtils.sign(Algorithm.EDDSA, DATA, kp1.getPrivate());
+        assertFalse(CryptoUtils.verify(Algorithm.EDDSA, DATA, kp2.getPublic(), signature));
+    }
+
     // ========== DSA 签名 ==========
 
     @Test

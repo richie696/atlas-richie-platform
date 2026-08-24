@@ -17,6 +17,7 @@ package cn.richie696.component.ai.support.keypool;
 
 import cn.richie696.component.ai.config.AiModelProperties;
 import cn.richie696.component.ai.config.keypool.KeyPoolProperties;
+import cn.richie696.component.secret.bootstrap.refresh.PreparedSecretRefresh;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -26,8 +27,11 @@ import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.function.Supplier;
 
 /**
  * API Key 池管理器 — 按"业务名"懒加载创建 {@link ApiKeyPool}。
@@ -52,8 +56,10 @@ public class ApiKeyPoolManager {
 
     private static final Logger log = LoggerFactory.getLogger(ApiKeyPoolManager.class);
 
-    private final KeyPoolProperties properties;
-    private final ConcurrentMap<String, ApiKeyPoolImpl> pools = new ConcurrentHashMap<>();
+    private volatile KeyPoolProperties properties;
+    private volatile ConcurrentMap<String, ApiKeyPoolImpl> pools = new ConcurrentHashMap<>();
+    private final ThreadLocal<PoolGeneration> preparingGeneration = new ThreadLocal<>();
+    private final Queue<ApiKeyPoolImpl> retiredPools = new ConcurrentLinkedQueue<>();
 
     public ApiKeyPoolManager(AiModelProperties aiModelProperties) {
         this.properties = aiModelProperties.getKeyPool();
@@ -74,14 +80,77 @@ public class ApiKeyPoolManager {
             throw new IllegalStateException(
                     "ApiKeyPool[" + businessName + "] 无法创建, apiKeys 为空 — 请检查 application.yml");
         }
-        if (!properties.isEnabled()) {
+        PoolGeneration preparing = preparingGeneration.get();
+        KeyPoolProperties activeProperties = preparing == null ? properties : preparing.properties();
+        ConcurrentMap<String, ApiKeyPoolImpl> activePools = preparing == null ? pools : preparing.pools();
+        pruneRetiredPools();
+        if (!activeProperties.isEnabled()) {
             // 池关闭 — 用 NoOpPool 让调用方直接拿到第一个 key,不做轮询
             return new NoOpApiKeyPool(businessName, apiKeys);
         }
-        return pools.computeIfAbsent(poolKey(businessName), name -> {
+        return activePools.computeIfAbsent(poolKey(businessName), name -> {
             log.info("ApiKeyPool[{}] 首次创建, totalKeys={}", name, apiKeys.size());
-            return new ApiKeyPoolImpl(name, apiKeys, properties);
+            return new ApiKeyPoolImpl(name, apiKeys, activeProperties);
         });
+    }
+
+    /**
+     * 在隔离代际中构建客户端与 Key Pool。准备阶段不修改当前代际；提交时一次替换，
+     * 回滚时恢复旧代际，完成后仅在借出的 Key 全部归还时关闭旧池。
+     */
+    public <T> PreparedGeneration<T> prepareSecretRefresh(
+            AiModelProperties nextProperties,
+            Supplier<T> clientBuilder) {
+        ConcurrentMap<String, ApiKeyPoolImpl> previousPools = pools;
+        KeyPoolProperties previousProperties = properties;
+        PoolGeneration next = new PoolGeneration(
+                nextProperties.getKeyPool(), new ConcurrentHashMap<>());
+        if (preparingGeneration.get() != null) {
+            throw new IllegalStateException("Nested AI Key Pool refresh preparation is not supported");
+        }
+        T value;
+        preparingGeneration.set(next);
+        try {
+            value = clientBuilder.get();
+        } catch (RuntimeException failure) {
+            closeOrRetire(next.pools());
+            throw failure;
+        } finally {
+            preparingGeneration.remove();
+        }
+        PreparedSecretRefresh refresh = new PreparedSecretRefresh() {
+            private boolean committed;
+
+            @Override
+            public void commit() {
+                synchronized (ApiKeyPoolManager.this) {
+                    if (pools != previousPools) {
+                        throw new IllegalStateException(
+                                "AI Key Pool generation changed while Secret refresh was being prepared");
+                    }
+                    pools = next.pools();
+                    properties = next.properties();
+                    committed = true;
+                }
+            }
+
+            @Override
+            public void rollback() {
+                synchronized (ApiKeyPoolManager.this) {
+                    if (committed) {
+                        pools = previousPools;
+                        properties = previousProperties;
+                    }
+                }
+                closeOrRetire(next.pools());
+            }
+
+            @Override
+            public void complete() {
+                closeOrRetire(previousPools);
+            }
+        };
+        return new PreparedGeneration<>(value, refresh);
     }
 
     /**
@@ -96,12 +165,17 @@ public class ApiKeyPoolManager {
             }
         });
         pools.clear();
+        ApiKeyPoolImpl retired;
+        while ((retired = retiredPools.poll()) != null) {
+            closeQuietly(retired);
+        }
     }
 
     /**
      * 健康检查:列出所有池状态。
      */
     public Map<String, PoolStats> stats() {
+        pruneRetiredPools();
         Map<String, PoolStats> result = new LinkedHashMap<>();
         pools.forEach((name, p) -> result.put(name, new PoolStats(p.getTotalKeys(), p.getNumActive(), p.getNumCooldown())));
         return result;
@@ -115,6 +189,42 @@ public class ApiKeyPoolManager {
      * 池统计快照。
      */
     public record PoolStats(int totalKeys, int numActive, int numCooldown) {
+    }
+
+    public record PreparedGeneration<T>(T value, PreparedSecretRefresh refresh) {
+    }
+
+    private record PoolGeneration(
+            KeyPoolProperties properties,
+            ConcurrentMap<String, ApiKeyPoolImpl> pools) {
+    }
+
+    private void closeOrRetire(Map<String, ApiKeyPoolImpl> generation) {
+        generation.values().forEach(pool -> {
+            if (pool.getNumActive() == 0) {
+                closeQuietly(pool);
+            } else {
+                retiredPools.add(pool);
+            }
+        });
+    }
+
+    private void pruneRetiredPools() {
+        retiredPools.removeIf(pool -> {
+            if (pool.getNumActive() != 0) {
+                return false;
+            }
+            closeQuietly(pool);
+            return true;
+        });
+    }
+
+    private void closeQuietly(ApiKeyPoolImpl pool) {
+        try {
+            pool.close();
+        } catch (RuntimeException failure) {
+            log.warn("ApiKeyPool 关闭失败", failure);
+        }
     }
 
     /**

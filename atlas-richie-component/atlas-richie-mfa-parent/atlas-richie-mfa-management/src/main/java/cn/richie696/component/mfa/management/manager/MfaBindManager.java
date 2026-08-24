@@ -178,9 +178,10 @@ public class MfaBindManager {
                 properties.getTotp().getDigits(),
                 properties.getTotp().getPeriod());
 
-        // 2. 存储密钥到 KMS（返回密钥引用，不存储加密后的密钥到数据库）
+        // 2. 保护密钥：旧模式返回外部引用；统一 Secret 模式返回 arse:v1 信封。
         String secretReference = secretKeyManager.storeSecret(tenantId, userId, plainSecret);
-        log.info("密钥已存储到 KMS，secretReference: {}", secretReference);
+        log.debug("MFA binding secret protected for tenantId={}, userId={}, referenceType={}",
+                tenantId, userId, secretReference.startsWith("arse:v1:") ? "ENVELOPE" : "LEGACY_REFERENCE");
 
         // 3. 生成备份码
         List<String> plainBackupCodes = backupCodeManager.generateBackupCodes(
@@ -216,11 +217,11 @@ public class MfaBindManager {
         // 因为 NULL != NULL，所以需要应用层检查
         // 如果未启用租户，tenant_id为NULL，需要检查是否有任何 tenant_id IS NULL 的记录
         // 如果启用租户，通过uk_tenant_user保证(tenant_id, user_id)唯一
-        // 6. 保存到数据库（事务）：不保存密钥，密钥存储在密钥管理器中
+        // 6. 保存到数据库（事务）：只保存外部引用或信封密文，永不保存明文。
         MfaUserInfo userInfo = new MfaUserInfo();
         userInfo.setTenantId(tenantId);  // 如果未启用租户，则为null
         userInfo.setUserId(userId);
-        // 注意：不再保存 secretKeyEncrypted 字段，密钥存储在密钥管理器中（Redis/Vault等）
+        userInfo.setSecretReference(secretReference);
         userInfo.setBackupCodesHashed(JsonUtils.getInstance().serialize(hashedBackupCodes));
         userInfo.setDeviceType(deviceType);
         userInfo.setAlgorithm(properties.getTotp().getAlgorithm());
@@ -255,7 +256,7 @@ public class MfaBindManager {
      */
     private MfaBindResult resumePendingBinding(String actualTenantId, String tenantId, String userId,
                                                String deviceType, MfaUserInfo existing) {
-        String plainSecret = secretKeyManager.retrieveSecret(actualTenantId, userId);
+        String plainSecret = retrieveStoredSecret(existing, actualTenantId, userId);
         List<String> plainBackupCodes = backupCodeManager.generateBackupCodes(
                 properties.getSecurity().getBackupCode().getCount());
         List<String> hashedBackupCodes = backupCodeManager.hashBackupCodes(plainBackupCodes);
@@ -364,7 +365,7 @@ public class MfaBindManager {
         int window = properties.getTotp().getWindowSize();
 
         // 从密钥管理器检索密钥（使用 tenantId 和 userId）
-        String plainSecret = secretKeyManager.retrieveSecret(actualTenantId, userId);
+        String plainSecret = retrieveStoredSecret(userInfo, actualTenantId, userId);
         log.debug("MFA activation secret retrieved for tenantId={}, userId={}, present={}",
                 actualTenantId, userId, StringUtils.isNotBlank(plainSecret));
 
@@ -583,7 +584,16 @@ public class MfaBindManager {
 
         // 3. 从密钥管理器删除密钥（使用 tenantId 和 userId）
         try {
-            secretKeyManager.deleteSecret(actualTenantId, userId);
+            String storedReference = allRecords.stream()
+                    .map(MfaUserInfo::getSecretReference)
+                    .filter(StringUtils::isNotBlank)
+                    .findFirst()
+                    .orElse(null);
+            if (storedReference == null) {
+                secretKeyManager.deleteSecret(actualTenantId, userId);
+            } else {
+                secretKeyManager.deleteSecret(storedReference);
+            }
             log.debug("密钥已从密钥管理器删除，tenantId: {}, userId: {}", actualTenantId, userId);
         } catch (Exception e) {
             // 删除失败不影响解绑流程，只记录警告（可能密钥已被删除）
@@ -601,6 +611,16 @@ public class MfaBindManager {
 
         log.info("MFA设备解绑成功，tenantId: {}, userId: {}, 删除了 {} 条记录", tenantId, userId, deletedCount);
         return true;
+    }
+
+    private String retrieveStoredSecret(
+            MfaUserInfo userInfo,
+            String tenantId,
+            String userId) {
+        if (StringUtils.isNotBlank(userInfo.getSecretReference())) {
+            return secretKeyManager.retrieveSecret(userInfo.getSecretReference());
+        }
+        return secretKeyManager.retrieveSecret(tenantId, userId);
     }
 
     /**

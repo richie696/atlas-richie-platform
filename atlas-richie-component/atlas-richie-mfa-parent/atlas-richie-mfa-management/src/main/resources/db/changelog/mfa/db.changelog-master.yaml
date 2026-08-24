@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/mfa/v1.0/create-mfa-trusted-device-table.yaml
   - include:
       file: db/changelog/mfa/v1.1/normalize-postgresql-boolean-columns.yaml
+  - include:
+      file: db/changelog/mfa/v1.2/add-mfa-secret-reference.yaml

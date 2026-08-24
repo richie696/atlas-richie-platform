@@ -500,6 +500,9 @@ public class HardwareFingerprintUtils {
         }
 
         Claim fingerprintClaim = claims.get("hardwareFingerprint");
+        if (fingerprintClaim == null) {
+            return null;
+        }
         var fingerprintObj = fingerprintClaim.as(Object.class);
         switch (fingerprintObj) {
             case null -> {

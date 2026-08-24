@@ -56,18 +56,28 @@ public class ResourceServerAuthenticator {
     }
 
     public OAuthPrincipal authenticate(String accessToken) {
-        return authenticate(accessToken, null, null, null);
+        return authenticate(accessToken, null, null, null, null);
+    }
+
+    /** Minimal adapter-facing overload for certificate-bound access tokens. */
+    public OAuthPrincipal authenticate(String accessToken, String certificateThumbprint) {
+        return authenticate(accessToken, null, null, null, certificateThumbprint);
     }
 
     /** 使用 DPoP proof 验证请求绑定；未配置 DPoP 时保持原有 Bearer 行为。 */
     public OAuthPrincipal authenticate(String accessToken, String method,
                                        URI requestUri, String dpopProof) {
+        return authenticate(accessToken, method, requestUri, dpopProof, null);
+    }
+
+    public OAuthPrincipal authenticate(String accessToken, String method,
+                                       URI requestUri, String dpopProof, String certificateThumbprint) {
         OAuthPrincipal principal;
         try {
             if (jwtTokenVerifier == null) {
                 throw new ResourceServerException("未配置 JWT 校验器");
             }
-            principal = jwtTokenVerifier.verify(accessToken);
+            principal = jwtTokenVerifier.verify(accessToken, certificateThumbprint);
         } catch (RuntimeException jwtFailure) {
             if (metrics != null) metrics.authenticationFailed();
             if (!introspectionFallback || introspectionClient == null) {
@@ -84,6 +94,7 @@ public class ResourceServerAuthenticator {
                             ? java.util.List.of()
                             : Arrays.stream(response.scope().split("\\s+")).toList(),
                     response.claims());
+            verifyCertificateBinding(principal, certificateThumbprint);
         }
         if (dpopProof != null && !dpopProof.isBlank()) {
             if (dpopProofValidator == null) {
@@ -98,5 +109,16 @@ public class ResourceServerAuthenticator {
         }
         if (metrics != null) metrics.authenticationSucceeded();
         return principal;
+    }
+
+    private void verifyCertificateBinding(OAuthPrincipal principal, String certificateThumbprint) {
+        Object cnfValue = principal.claims().get("cnf");
+        if (!(cnfValue instanceof java.util.Map<?, ?> cnf)) return;
+        Object expected = cnf.get("x5t#S256");
+        if (expected != null && (certificateThumbprint == null || !java.security.MessageDigest.isEqual(
+                String.valueOf(expected).getBytes(java.nio.charset.StandardCharsets.US_ASCII),
+                certificateThumbprint.getBytes(java.nio.charset.StandardCharsets.US_ASCII)))) {
+            throw new ResourceServerException("Access Token 要求匹配的客户端证书");
+        }
     }
 }

@@ -16,10 +16,21 @@
     <packaging>jar</packaging>
 
     <dependencies>
+        <!-- 默认禁用；Provider 由最终业务系统选择，AI 只声明自己的敏感配置契约 -->
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-secret-bootstrap</artifactId>
+        </dependency>
         <!-- HTTP facade used by Rerank/Image adapters to call external providers (DashScope, etc.) -->
         <dependency>
             <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-http-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-http-jdk</artifactId>
+            <version>${revision}</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- R-N.5 API Key Pool — Token Plan 多 key 轮询 / 限流后冷却 (commons-pool2) -->
@@ -75,6 +86,11 @@
             <groupId>com.tngtech.archunit</groupId>
             <artifactId>archunit-junit5</artifactId>
             <version>1.4.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-secret-testkit</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -26,7 +26,7 @@ import cn.richie696.component.ai.support.AiChatOptionsResolver;
 import cn.richie696.component.ai.support.AiModelCircuitBreaker;
 import cn.richie696.component.ai.support.AiModelRouter;
 import cn.richie696.component.ai.support.ToolRegistry;
-import lombok.RequiredArgsConstructor;
+import cn.richie696.component.secret.bootstrap.refresh.PreparedSecretRefresh;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -47,18 +47,18 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 
 /**
  * AI模型服务实现类
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AiChatServiceImpl implements AiChatService {
 
-    @Qualifier("aiChatClients")
-    private final Map<String, ChatClient> chatClients;
-    private final AiModelProperties aiModelProperties;
+    private final AtomicReference<Map<String, ChatClient>> chatClients;
+    private final AtomicReference<AiModelProperties> aiModelProperties;
     private final AiChatClientFactory aiChatClientFactory;
     private final AiChatOptionsResolver optionsResolver;
     private final AiModelRouter aiModelRouter;
@@ -68,6 +68,24 @@ public class AiChatServiceImpl implements AiChatService {
     private String defaultModel;
     private final Map<String, AiModelInfo> modelInfoCache = new ConcurrentHashMap<>();
     private final Map<String, AiChatModel> runtimeModels = new ConcurrentHashMap<>();
+    private final Map<String, ChatClient> runtimeChatClients = new ConcurrentHashMap<>();
+
+    public AiChatServiceImpl(
+            @Qualifier("aiChatClients") Map<String, ChatClient> chatClients,
+            AiModelProperties aiModelProperties,
+            AiChatClientFactory aiChatClientFactory,
+            AiChatOptionsResolver optionsResolver,
+            AiModelRouter aiModelRouter,
+            AiModelCircuitBreaker circuitBreaker,
+            ToolRegistry toolRegistry) {
+        this.chatClients = new AtomicReference<>(immutableOrdered(chatClients));
+        this.aiModelProperties = new AtomicReference<>(aiModelProperties);
+        this.aiChatClientFactory = aiChatClientFactory;
+        this.optionsResolver = optionsResolver;
+        this.aiModelRouter = aiModelRouter;
+        this.circuitBreaker = circuitBreaker;
+        this.toolRegistry = toolRegistry;
+    }
 
     @Override
     public AiResponse call(AiRequest request) {
@@ -83,7 +101,7 @@ public class AiChatServiceImpl implements AiChatService {
 
         AiResponse lastFailure = null;
         for (String modelName : chain) {
-            if (!circuitBreaker.allow(modelName, aiModelProperties.getResilience())) {
+            if (!circuitBreaker.allow(modelName, properties().getResilience())) {
                 lastFailure = AiResponse.failure("模型熔断中: %s".formatted(modelName), "CIRCUIT_OPEN");
                 continue;
             }
@@ -92,7 +110,7 @@ public class AiChatServiceImpl implements AiChatService {
                 circuitBreaker.recordSuccess(modelName);
                 return response;
             }
-            circuitBreaker.recordFailure(modelName, aiModelProperties.getResilience());
+            circuitBreaker.recordFailure(modelName, properties().getResilience());
             lastFailure = response;
             log.warn("模型 {} 调用失败，errorCode={}，尝试降级", modelName, response.getErrorCode());
         }
@@ -119,7 +137,7 @@ public class AiChatServiceImpl implements AiChatService {
         }
 
         for (String modelName : chain) {
-            if (!circuitBreaker.allow(modelName, aiModelProperties.getResilience())) {
+            if (!circuitBreaker.allow(modelName, properties().getResilience())) {
                 continue;
             }
             ChatClient chatClient = getChatClient(modelName);
@@ -149,7 +167,7 @@ public class AiChatServiceImpl implements AiChatService {
                     .setDefaultModel(modelName.equals(getDefaultModel()))
                     .setCapabilities(getModelCapabilities(aiModel.getProvider()));
 
-            ChatClient chatClient = chatClients.get(modelName);
+            ChatClient chatClient = clients().get(modelName);
             if (chatClient != null) {
                 modelInfo.setAvailable(true);
                 if (circuitBreaker.isOpen(modelName)) {
@@ -183,7 +201,7 @@ public class AiChatServiceImpl implements AiChatService {
 
     @Override
     public boolean isModelAvailable(String modelName) {
-        return chatClients.containsKey(modelName) && !circuitBreaker.isOpen(modelName);
+        return clients().containsKey(modelName) && !circuitBreaker.isOpen(modelName);
     }
 
     @Override
@@ -230,23 +248,27 @@ public class AiChatServiceImpl implements AiChatService {
             runtimeModels.put(modelOptions.getModelName(), aiChatClientFactory.toAiModel(modelOptions));
         }
 
-        chatClients.putAll(dynamicClients);
+        runtimeChatClients.putAll(dynamicClients);
+        replaceClientsWithRuntime(clients());
         modelInfoCache.clear();
 
-        if (defaultModel == null || !chatClients.containsKey(defaultModel)) {
-            defaultModel = chatClients.keySet().iterator().next();
+        if (defaultModel == null || !clients().containsKey(defaultModel)) {
+            defaultModel = clients().keySet().iterator().next();
         }
 
-        log.info("动态初始化AI模型完成，新增/覆盖 {} 个模型，当前总模型数 {}", dynamicClients.size(), chatClients.size());
+        log.info("动态初始化AI模型完成，新增/覆盖 {} 个模型，当前总模型数 {}", dynamicClients.size(), clients().size());
     }
 
     @Override
     public synchronized void removeModel(String modelName) {
-        chatClients.remove(modelName);
+        runtimeChatClients.remove(modelName);
+        Map<String, ChatClient> next = new java.util.LinkedHashMap<>(clients());
+        next.remove(modelName);
+        chatClients.set(immutableOrdered(next));
         runtimeModels.remove(modelName);
         modelInfoCache.remove(modelName);
         if (modelName != null && modelName.equals(defaultModel)) {
-            defaultModel = chatClients.isEmpty() ? null : chatClients.keySet().iterator().next();
+            defaultModel = clients().isEmpty() ? null : clients().keySet().iterator().next();
         }
         log.info("已移除AI模型: {}", modelName);
     }
@@ -256,12 +278,12 @@ public class AiChatServiceImpl implements AiChatService {
         if (modelName == null || modelName.isBlank()) {
             return AiHealthResult.unhealthy(modelName, "UNKNOWN", false, "模型名称为空");
         }
-        if (!chatClients.containsKey(modelName)) {
+        if (!clients().containsKey(modelName)) {
             return AiHealthResult.unhealthy(modelName, getProviderName(modelName), false, "ChatClient不存在");
         }
 
         String provider = getProviderName(modelName);
-        if (!aiModelProperties.getHealthCheck().isLiveProbe()) {
+        if (!properties().getHealthCheck().isLiveProbe()) {
             return AiHealthResult.healthy(modelName, provider, false, 0);
         }
 
@@ -269,7 +291,7 @@ public class AiChatServiceImpl implements AiChatService {
                 .setModelName(modelName)
                 .setMessages(List.of(new AiRequest.Message().setRole("user").setContent("ping")))
                 .setOptions(new AiRequest.ModelOptions()
-                        .setMaxTokens(aiModelProperties.getHealthCheck().getProbeMaxTokens()));
+                        .setMaxTokens(properties().getHealthCheck().getProbeMaxTokens()));
 
         long start = System.currentTimeMillis();
         AiResponse response = callSingleModel(modelName, ping);
@@ -282,7 +304,7 @@ public class AiChatServiceImpl implements AiChatService {
 
     @Override
     public List<AiHealthResult> probeAll() {
-        return chatClients.keySet().stream().map(this::probe).toList();
+        return clients().keySet().stream().map(this::probe).toList();
     }
 
     private AiResponse callSingleModel(String modelName, AiRequest request) {
@@ -352,7 +374,7 @@ public class AiChatServiceImpl implements AiChatService {
                     return AiStreamChunk.finished(modelName, provider, extractUsage(lastResponse.get()));
                 }))
                 .onErrorResume(error -> {
-                    circuitBreaker.recordFailure(modelName, aiModelProperties.getResilience());
+                    circuitBreaker.recordFailure(modelName, properties().getResilience());
                     log.error("AI流式调用失败 - 模型: {}", modelName, error);
                     return Flux.just(AiStreamChunk.error(
                             "AI流式调用失败: %s".formatted(error.getMessage()),
@@ -399,11 +421,11 @@ public class AiChatServiceImpl implements AiChatService {
     }
 
     private List<String> resolveChain(AiRequest request) {
-        return aiModelRouter.resolveModelChain(request, getDefaultModel(), chatClients, aiModelProperties);
+        return aiModelRouter.resolveModelChain(request, getDefaultModel(), clients(), properties());
     }
 
     private ChatClient getChatClient(String modelName) {
-        return chatClients.get(modelName);
+        return clients().get(modelName);
     }
 
     private List<Message> buildMessages(AiRequest request) {
@@ -430,15 +452,15 @@ public class AiChatServiceImpl implements AiChatService {
 
     private Map<String, AiChatModel> getCurrentModels() {
         Map<String, AiChatModel> allModels = new ConcurrentHashMap<>();
-        if (aiModelProperties.isConfigInitializationEnabled() && aiModelProperties.getChat() != null) {
-            allModels.putAll(aiModelProperties.getChat());
+        if (properties().isConfigInitializationEnabled() && properties().getChat() != null) {
+            allModels.putAll(properties().getChat());
         }
         allModels.putAll(runtimeModels);
         return allModels;
     }
 
     private boolean isInitialized() {
-        return !chatClients.isEmpty();
+        return !clients().isEmpty();
     }
 
     private AiResponse checkInitialized() {
@@ -448,6 +470,54 @@ public class AiChatServiceImpl implements AiChatService {
         return AiResponse.failure(
                 "AI模型尚未初始化，无法执行调用，请先通过配置文件或 initializeModels 完成初始化",
                 "MODEL_NOT_INITIALIZED");
+    }
+
+    PreparedSecretRefresh prepareSecretRefresh(
+            AiModelProperties nextProperties,
+            Map<String, ChatClient> configuredClients) {
+        Map<String, ChatClient> previousClients = clients();
+        AiModelProperties previousProperties = properties();
+        String previousDefaultModel = defaultModel;
+        Map<String, ChatClient> nextClients = new java.util.LinkedHashMap<>(configuredClients);
+        nextClients.putAll(runtimeChatClients);
+        Map<String, ChatClient> immutableNext = immutableOrdered(nextClients);
+        return new PreparedSecretRefresh() {
+            @Override
+            public void commit() {
+                aiModelProperties.set(nextProperties);
+                chatClients.set(immutableNext);
+                modelInfoCache.clear();
+                if (previousDefaultModel == null || !immutableNext.containsKey(previousDefaultModel)) {
+                    defaultModel = immutableNext.isEmpty() ? null : immutableNext.keySet().iterator().next();
+                }
+            }
+
+            @Override
+            public void rollback() {
+                aiModelProperties.set(previousProperties);
+                chatClients.set(previousClients);
+                defaultModel = previousDefaultModel;
+                modelInfoCache.clear();
+            }
+        };
+    }
+
+    private Map<String, ChatClient> clients() {
+        return chatClients.get();
+    }
+
+    private AiModelProperties properties() {
+        return aiModelProperties.get();
+    }
+
+    private void replaceClientsWithRuntime(Map<String, ChatClient> base) {
+        Map<String, ChatClient> next = new java.util.LinkedHashMap<>(base);
+        next.putAll(runtimeChatClients);
+        chatClients.set(immutableOrdered(next));
+    }
+
+    private Map<String, ChatClient> immutableOrdered(Map<String, ChatClient> values) {
+        return Collections.unmodifiableMap(new LinkedHashMap<>(values));
     }
 
     private String getModelDescription(LlmProvider provider) {

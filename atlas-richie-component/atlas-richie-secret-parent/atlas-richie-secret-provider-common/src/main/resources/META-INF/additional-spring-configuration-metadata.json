@@ -1,0 +1,22 @@
+{
+  "properties": [
+    { "name": "platform.component.secret.azure.endpoint", "type": "java.net.URI", "description": "Azure provider adapter endpoint." },
+    { "name": "platform.component.secret.gcp.endpoint", "type": "java.net.URI", "description": "Google Cloud provider adapter endpoint." },
+    { "name": "platform.component.secret.tencent.endpoint", "type": "java.net.URI", "description": "Tencent Cloud provider adapter endpoint." },
+    { "name": "platform.component.secret.huawei.endpoint", "type": "java.net.URI", "description": "Huawei Cloud provider adapter endpoint." },
+    { "name": "platform.component.secret.volcengine.endpoint", "type": "java.net.URI", "description": "Volcengine provider adapter endpoint." },
+    { "name": "platform.component.secret.oci.endpoint", "type": "java.net.URI", "description": "OCI Vault provider adapter endpoint." },
+    { "name": "platform.component.secret.ibm-key-protect.endpoint", "type": "java.net.URI", "description": "IBM Key Protect provider adapter endpoint." },
+    { "name": "platform.component.secret.baidu.endpoint", "type": "java.net.URI", "description": "Baidu Cloud KMS provider adapter endpoint." },
+    { "name": "platform.component.secret.openbao.endpoint", "type": "java.net.URI", "description": "OpenBao KV/Transit endpoint." },
+    { "name": "platform.component.secret.barbican.endpoint", "type": "java.net.URI", "description": "OpenStack Barbican endpoint." },
+    { "name": "platform.component.secret.kmip.endpoint", "type": "java.net.URI", "description": "KMIP 2.1 TLS endpoint." },
+    { "name": "platform.component.secret.pkcs11.library", "type": "java.lang.String", "description": "PKCS#11 native module path." },
+    { "name": "platform.component.secret.*.authentication.signature", "type": "cn.richie696.component.secret.provider.common.RemoteProviderProperties$RequestSignature", "description": "Vendor request signature protocol." },
+    { "name": "platform.component.secret.*.authentication.workload-identity-token-file", "type": "java.lang.String", "description": "Short-lived workload identity token file." },
+    { "name": "platform.component.secret.*.tls.trust-store", "type": "java.lang.String", "description": "Provider TLS trust store." },
+    { "name": "platform.component.secret.*.tls.key-store", "type": "java.lang.String", "description": "Provider mTLS client key store." },
+    { "name": "platform.component.secret.*.proxy.host", "type": "java.lang.String", "description": "Provider egress proxy host." },
+    { "name": "platform.component.secret.*.proxy.port", "type": "java.lang.Integer", "description": "Provider egress proxy port." }
+  ]
+}

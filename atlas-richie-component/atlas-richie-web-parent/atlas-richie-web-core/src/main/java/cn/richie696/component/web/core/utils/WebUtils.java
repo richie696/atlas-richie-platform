@@ -101,7 +101,11 @@ public class WebUtils {
         final JacksonModule xmlModule = xmlModuleTemp;
         final JacksonModule kotlinModule = kotlinModuleTemp;
 
+        // Kotlin `Long` properties are emitted as primitive `long` in Jackson's
+        // runtime type model. Register both forms; otherwise snowflake IDs from
+        // Kotlin DTOs silently become JSON numbers and are rounded by browsers.
         customModule.addSerializer(Long.class, ToStringSerializer.instance);
+        customModule.addSerializer(Long.TYPE, ToStringSerializer.instance);
         customModule.addSerializer(BigInteger.class, ToStringSerializer.instance);
         customModule.addSerializer(Date.class, new StdSerializer<Date>(Date.class) {
             @Override

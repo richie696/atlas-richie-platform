@@ -48,6 +48,7 @@ import java.util.Map;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "platform.component.secret", name = "enabled", havingValue = "false", matchIfMissing = true)
 @RequiredArgsConstructor
 @ConditionalOnClass(name = "org.springframework.vault.authentication.ClientAuthentication")
 @ConditionalOnBean(VaultTemplate.class)

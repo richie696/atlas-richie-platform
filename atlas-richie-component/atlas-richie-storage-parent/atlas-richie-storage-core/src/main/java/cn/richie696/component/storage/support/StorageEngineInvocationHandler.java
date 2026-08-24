@@ -23,6 +23,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Objects;
+import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
 
 /**
@@ -55,13 +56,16 @@ public final class StorageEngineInvocationHandler implements InvocationHandler {
      */
     private final Supplier<StorageEngine> delegateSupplier;
     private final Supplier<StorageResponseNormalizer> responseNormalizerSupplier;
+    private final Lock invocationLock;
 
     private StorageEngineInvocationHandler(String engineTypeLabel,
                                            Supplier<StorageEngine> delegateSupplier,
-                                           Supplier<StorageResponseNormalizer> responseNormalizerSupplier) {
+                                           Supplier<StorageResponseNormalizer> responseNormalizerSupplier,
+                                           Lock invocationLock) {
         this.engineTypeLabel = engineTypeLabel;
         this.delegateSupplier = Objects.requireNonNull(delegateSupplier, "delegateSupplier must not be null");
         this.responseNormalizerSupplier = Objects.requireNonNull(responseNormalizerSupplier, "responseNormalizerSupplier must not be null");
+        this.invocationLock = invocationLock;
     }
 
     /**
@@ -76,7 +80,18 @@ public final class StorageEngineInvocationHandler implements InvocationHandler {
                                                          Supplier<StorageEngine> delegateSupplier,
                                                          Supplier<StorageResponseNormalizer> responseNormalizerSupplier) {
         return new StorageEngineInvocationHandler(
-                engineType != null ? engineType.name() : null, delegateSupplier, responseNormalizerSupplier);
+                engineType != null ? engineType.name() : null, delegateSupplier, responseNormalizerSupplier, null);
+    }
+
+    public static StorageEngineInvocationHandler forType(StorageEngineEnum engineType,
+                                                         Supplier<StorageEngine> delegateSupplier,
+                                                         Supplier<StorageResponseNormalizer> responseNormalizerSupplier,
+                                                         Lock invocationLock) {
+        return new StorageEngineInvocationHandler(
+                engineType != null ? engineType.name() : null,
+                delegateSupplier,
+                responseNormalizerSupplier,
+                Objects.requireNonNull(invocationLock, "invocationLock must not be null"));
     }
 
     /**
@@ -88,7 +103,7 @@ public final class StorageEngineInvocationHandler implements InvocationHandler {
 
     public static StorageEngineInvocationHandler unnamed(Supplier<StorageEngine> delegateSupplier,
                                                          Supplier<StorageResponseNormalizer> responseNormalizerSupplier) {
-        return new StorageEngineInvocationHandler(null, delegateSupplier, responseNormalizerSupplier);
+        return new StorageEngineInvocationHandler(null, delegateSupplier, responseNormalizerSupplier, null);
     }
 
     @Override
@@ -106,13 +121,16 @@ public final class StorageEngineInvocationHandler implements InvocationHandler {
             }
         }
 
-        // 委托给真实引擎
-        StorageEngine currentDelegate = delegateSupplier.get();
-        if (currentDelegate == null) {
-            throw new IllegalStateException(buildUninitializedMessage());
+        if (invocationLock != null) {
+            invocationLock.lock();
         }
-
         try {
+            // delegate 的读取和整个业务调用共享同一把读锁。运行期刷新在释放旧引擎前
+            // 获取写锁，因此已经进入旧 delegate 的请求一定先执行完毕。
+            StorageEngine currentDelegate = delegateSupplier.get();
+            if (currentDelegate == null) {
+                throw new IllegalStateException(buildUninitializedMessage());
+            }
             // 通过真实 delegate 做动态分派。对象存储的统一代理同时暴露
             // DirectStorageEngine，而直传策略的 request 重载在接口中有 fallback
             // default；直接反射调用 delegate 才能优先命中 COS/OSS 等 Provider 的
@@ -122,6 +140,10 @@ public final class StorageEngineInvocationHandler implements InvocationHandler {
             return normalizer == null ? response : normalizer.normalize(response);
         } catch (InvocationTargetException e) {
             throw e.getCause();
+        } finally {
+            if (invocationLock != null) {
+                invocationLock.unlock();
+            }
         }
     }
 

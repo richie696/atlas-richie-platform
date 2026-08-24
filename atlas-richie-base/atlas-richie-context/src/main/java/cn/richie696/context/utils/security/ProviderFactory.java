@@ -42,6 +42,7 @@ final class ProviderFactory {
         map.put(Algorithm.AES, new AESProvider());
         map.put(Algorithm.RSA, new RSAProvider());
         map.put(Algorithm.ECDSA, new ECDSAProvider());
+        map.put(Algorithm.EDDSA, new EdDSAProvider());
         map.put(Algorithm.ECDH, new ECDHProvider());
         map.put(Algorithm.DSA, new DSAProvider());
         map.put(Algorithm.SM2, new SM2Provider());

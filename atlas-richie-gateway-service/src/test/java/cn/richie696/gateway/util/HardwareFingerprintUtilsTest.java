@@ -528,6 +528,12 @@ class HardwareFingerprintUtilsTest {
         }
 
         @Test
+        @DisplayName("should return null when hardware fingerprint claim is absent")
+        void shouldReturnNullWhenHardwareFingerprintClaimIsAbsent() {
+            assertThat(HardwareFingerprintUtils.extractFingerprintFromClaims(new HashMap<>())).isNull();
+        }
+
+        @Test
         @DisplayName("should return null when claim value is null")
         void shouldReturnNullWhenClaimValueIsNull() {
             Claim claim = mock(Claim.class);

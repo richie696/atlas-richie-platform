@@ -42,9 +42,11 @@ class SecretKeyManagerTest {
     }
 
     @Test
-    void encryptSecretKey_fallsBackWhenKmsUnavailable() {
+    void encryptSecretKey_failsClosedWhenKmsUnavailable() {
         when(kmsProvider.isAvailable()).thenReturn(false);
-        assertThat(secretKeyManager.encryptSecretKey("plain")).isEqualTo("plain");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> secretKeyManager.encryptSecretKey("plain"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("拒绝以明文保存密钥");
     }
 
     @Test
@@ -56,17 +58,21 @@ class SecretKeyManagerTest {
     }
 
     @Test
-    void decryptSecretKey_fallsBackWhenKmsUnavailable() {
+    void decryptSecretKey_failsClosedWhenKmsUnavailable() {
         when(kmsProvider.isAvailable()).thenReturn(false);
-        assertThat(secretKeyManager.decryptSecretKey("plain")).isEqualTo("plain");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> secretKeyManager.decryptSecretKey("cipher"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("拒绝将密文当作明文使用");
     }
 
     @Test
-    void encryptSecretKey_fallsBackWhenKmsThrows() {
+    void encryptSecretKey_failsClosedWhenKmsThrows() {
         when(kmsProvider.isAvailable()).thenReturn(true);
         when(kmsProvider.encrypt("plain")).thenThrow(new RuntimeException("kms down"));
 
-        assertThat(secretKeyManager.encryptSecretKey("plain")).isEqualTo("plain");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> secretKeyManager.encryptSecretKey("plain"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("KMS加密失败");
     }
 
     @Test
@@ -92,6 +98,7 @@ class SecretKeyManagerTest {
 
     @Test
     void deleteSecret_delegatesToKms() {
+        when(kmsProvider.isAvailable()).thenReturn(true);
         secretKeyManager.deleteSecret("t1", "u1");
 
         verify(kmsProvider).deleteSecret("mfa/t1/u1");

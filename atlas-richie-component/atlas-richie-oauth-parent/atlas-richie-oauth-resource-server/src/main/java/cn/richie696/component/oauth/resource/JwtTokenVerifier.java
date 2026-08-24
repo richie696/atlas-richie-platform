@@ -21,4 +21,17 @@ import cn.richie696.component.oauth.contract.model.OAuthPrincipal;
 public interface JwtTokenVerifier {
 
     OAuthPrincipal verify(String accessToken);
+
+    /** Verifies a token and, when present, its RFC 8705 certificate binding. */
+    default OAuthPrincipal verify(String accessToken, String certificateThumbprint) {
+        OAuthPrincipal principal = verify(accessToken);
+        Object confirmation = principal.claims().get("cnf");
+        if (confirmation instanceof java.util.Map<?, ?> cnf && cnf.get("x5t#S256") != null
+                && (certificateThumbprint == null || !java.security.MessageDigest.isEqual(
+                String.valueOf(cnf.get("x5t#S256")).getBytes(java.nio.charset.StandardCharsets.US_ASCII),
+                certificateThumbprint.getBytes(java.nio.charset.StandardCharsets.US_ASCII)))) {
+            throw new ResourceServerException("Access Token 要求匹配的客户端证书");
+        }
+        return principal;
+    }
 }

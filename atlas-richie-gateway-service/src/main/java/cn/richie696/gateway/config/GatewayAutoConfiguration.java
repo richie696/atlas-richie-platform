@@ -19,6 +19,8 @@ import cn.richie696.gateway.handler.KeyPairManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import cn.richie696.component.secret.bootstrap.refresh.SecretRefreshParticipant;
 
 @Slf4j
 @Configuration(proxyBeanMethods = false)
@@ -33,5 +35,13 @@ public class GatewayAutoConfiguration {
      public KeyPairManager keyPairManager(GatewayConfig config) {
          return new KeyPairManager(config);
      }
-}
 
+    @Bean
+    @ConditionalOnProperty(
+            prefix = "platform.component.secret",
+            name = "enabled",
+            havingValue = "true")
+    public SecretRefreshParticipant gatewaySecretRefreshParticipant(AuthenticationConfig config) {
+        return new GatewaySecretRefreshParticipant(config);
+    }
+}

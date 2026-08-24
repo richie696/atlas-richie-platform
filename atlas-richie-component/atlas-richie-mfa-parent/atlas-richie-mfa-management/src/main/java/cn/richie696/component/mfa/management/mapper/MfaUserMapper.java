@@ -19,6 +19,7 @@ import cn.richie696.component.mfa.core.entity.MfaUserInfo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -61,4 +62,10 @@ public interface MfaUserMapper extends BaseMapper<MfaUserInfo> {
      */
     List<MfaUserInfo> selectAllByTenantAndUser(@Param("tenantId") String tenantId,
                                                @Param("userId") String userId);
+
+    /** Returns a bounded, resumable batch for legacy Secret migration. */
+    @Select("SELECT * FROM mfa_user_info WHERE deleted = false "
+            + "AND (secret_reference IS NULL OR secret_reference = '') "
+            + "ORDER BY id LIMIT #{limit}")
+    List<MfaUserInfo> selectSecretMigrationCandidates(@Param("limit") int limit);
 }

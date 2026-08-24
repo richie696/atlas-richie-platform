@@ -26,6 +26,7 @@ import cn.richie696.component.ai.config.multimodal.tts.TtsModelConfig;
 import cn.richie696.component.ai.provider.support.MultimodalModelFactory;
 import cn.richie696.component.ai.service.AiMultimodalService;
 import cn.richie696.component.http.core.HttpClient;
+import cn.richie696.component.secret.bootstrap.refresh.PreparedSecretRefresh;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.audio.transcription.TranscriptionModel;
@@ -34,8 +35,8 @@ import org.springframework.ai.image.ImageModel;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -84,27 +85,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
     /**
      * Rerank 模型运行时缓存，key = 业务名。{@link LinkedHashMap} 保持插入顺序。
      */
-    private final Map<String, RerankModel> rerankModels = new LinkedHashMap<>();
-
-    /**
-     * 文生图模型运行时缓存。
-     */
-    private final Map<String, ImageModel> imageModels = new LinkedHashMap<>();
-
-    /**
-     * 多模态向量(CLIP-equivalent)模型运行时缓存。
-     */
-    private final Map<String, ImageEmbeddingModel> imageEmbeddings = new LinkedHashMap<>();
-
-    /**
-     * TTS 模型运行时缓存。
-     */
-    private final Map<String, TextToSpeechModel> ttsModels = new LinkedHashMap<>();
-
-    /**
-     * STT / Transcription 模型运行时缓存。
-     */
-    private final Map<String, TranscriptionModel> sttModels = new LinkedHashMap<>();
+    private volatile ModelSnapshot snapshot = ModelSnapshot.empty();
 
     /**
      * 重新从 {@link AiModelProperties} 加载所有多模态模型。
@@ -123,12 +104,24 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
      */
     @Override
     public synchronized void refresh() {
+        Map<String, RerankModel> rerankModels = new LinkedHashMap<>();
+        Map<String, ImageModel> imageModels = new LinkedHashMap<>();
+        Map<String, ImageEmbeddingModel> imageEmbeddings = new LinkedHashMap<>();
+        Map<String, TextToSpeechModel> ttsModels = new LinkedHashMap<>();
+        Map<String, TranscriptionModel> sttModels = new LinkedHashMap<>();
         // 5 个维度的完整刷新顺序与日志粒度一一对应，便于故障时按 capability 维度排障。
-        int rerankCount = refreshRerank();
-        int imageCount = refreshImage();
-        int imageEmbeddingCount = refreshImageEmbedding();
-        int ttsCount = refreshTts();
-        int sttCount = refreshStt();
+        int rerankCount = refreshRerank(rerankModels);
+        int imageCount = refreshImage(imageModels);
+        int imageEmbeddingCount = refreshImageEmbedding(imageEmbeddings);
+        int ttsCount = refreshTts(ttsModels);
+        int sttCount = refreshStt(sttModels);
+
+        snapshot = new ModelSnapshot(
+                immutableOrdered(rerankModels),
+                immutableOrdered(imageModels),
+                immutableOrdered(imageEmbeddings),
+                immutableOrdered(ttsModels),
+                immutableOrdered(sttModels));
 
         if (rerankCount == 0 && imageCount == 0 && imageEmbeddingCount == 0
                 && ttsCount == 0 && sttCount == 0) {
@@ -144,7 +137,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
      *
      * @return 本轮新增/覆盖的 Rerank 模型数
      */
-    private int refreshRerank() {
+    private int refreshRerank(Map<String, RerankModel> rerankModels) {
         Map<String, RerankModelConfig> configs = aiModelProperties.getRerank();
         if (configs == null || configs.isEmpty()) {
             return 0;
@@ -173,7 +166,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
     /**
      * Image 维度刷新。
      */
-    private int refreshImage() {
+    private int refreshImage(Map<String, ImageModel> imageModels) {
         Map<String, ImageModelConfig> configs = aiModelProperties.getImage();
         if (configs == null || configs.isEmpty()) {
             return 0;
@@ -202,7 +195,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
     /**
      * Image Embedding (CLIP-equivalent) 维度刷新。
      */
-    private int refreshImageEmbedding() {
+    private int refreshImageEmbedding(Map<String, ImageEmbeddingModel> imageEmbeddings) {
         Map<String, ImageEmbeddingModelConfig> configs = aiModelProperties.getImageEmbedding();
         if (configs == null || configs.isEmpty()) {
             return 0;
@@ -231,7 +224,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
     /**
      * TTS 维度刷新。
      */
-    private int refreshTts() {
+    private int refreshTts(Map<String, TextToSpeechModel> ttsModels) {
         Map<String, TtsModelConfig> configs = aiModelProperties.getTts();
         if (configs == null || configs.isEmpty()) {
             return 0;
@@ -259,7 +252,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
     /**
      * STT 维度刷新。
      */
-    private int refreshStt() {
+    private int refreshStt(Map<String, TranscriptionModel> sttModels) {
         Map<String, SttModelConfig> configs = aiModelProperties.getStt();
         if (configs == null || configs.isEmpty()) {
             return 0;
@@ -291,7 +284,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
      */
     @Override
     public RerankModel getRerankModel(String name) {
-        return rerankModels.get(name);
+        return snapshot.rerankModels().get(name);
     }
 
     /**
@@ -299,7 +292,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
      */
     @Override
     public ImageModel getImageModel(String name) {
-        return imageModels.get(name);
+        return snapshot.imageModels().get(name);
     }
 
     /**
@@ -307,7 +300,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
      */
     @Override
     public ImageEmbeddingModel getImageEmbeddingModel(String name) {
-        return imageEmbeddings.get(name);
+        return snapshot.imageEmbeddings().get(name);
     }
 
     /**
@@ -315,7 +308,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
      */
     @Override
     public TextToSpeechModel getTextToSpeechModel(String name) {
-        return ttsModels.get(name);
+        return snapshot.ttsModels().get(name);
     }
 
     /**
@@ -323,7 +316,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
      */
     @Override
     public TranscriptionModel getTranscriptionModel(String name) {
-        return sttModels.get(name);
+        return snapshot.sttModels().get(name);
     }
 
     /**
@@ -331,7 +324,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
      */
     @Override
     public Set<String> getRerankModelNames() {
-        return Collections.unmodifiableSet(rerankModels.keySet());
+        return snapshot.rerankModels().keySet();
     }
 
     /**
@@ -339,7 +332,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
      */
     @Override
     public Set<String> getImageModelNames() {
-        return Collections.unmodifiableSet(imageModels.keySet());
+        return snapshot.imageModels().keySet();
     }
 
     /**
@@ -347,7 +340,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
      */
     @Override
     public Set<String> getImageEmbeddingModelNames() {
-        return Collections.unmodifiableSet(imageEmbeddings.keySet());
+        return snapshot.imageEmbeddings().keySet();
     }
 
     /**
@@ -355,7 +348,7 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
      */
     @Override
     public Set<String> getTextToSpeechModelNames() {
-        return Collections.unmodifiableSet(ttsModels.keySet());
+        return snapshot.ttsModels().keySet();
     }
 
     /**
@@ -363,6 +356,63 @@ public class AiMultimodalServiceImpl implements AiMultimodalService {
      */
     @Override
     public Set<String> getTranscriptionModelNames() {
-        return Collections.unmodifiableSet(sttModels.keySet());
+        return snapshot.sttModels().keySet();
+    }
+
+    ModelSnapshot currentSnapshot() {
+        return snapshot;
+    }
+
+    void replaceSnapshot(ModelSnapshot next) {
+        snapshot = next;
+    }
+
+    PreparedSecretRefresh prepareSecretRefresh(AiModelProperties nextProperties) {
+        AiMultimodalServiceImpl candidate = new AiMultimodalServiceImpl(nextProperties, httpClientProvider);
+        candidate.refresh();
+        ModelSnapshot next = candidate.currentSnapshot();
+        requireCompleteCandidate(nextProperties, next);
+        ModelSnapshot previous = snapshot;
+        return new PreparedSecretRefresh() {
+            @Override
+            public void commit() {
+                replaceSnapshot(next);
+            }
+
+            @Override
+            public void rollback() {
+                replaceSnapshot(previous);
+            }
+        };
+    }
+
+    private void requireCompleteCandidate(AiModelProperties properties, ModelSnapshot candidate) {
+        if (size(properties.getRerank()) != candidate.rerankModels().size()
+                || size(properties.getImage()) != candidate.imageModels().size()
+                || size(properties.getImageEmbedding()) != candidate.imageEmbeddings().size()
+                || size(properties.getTts()) != candidate.ttsModels().size()
+                || size(properties.getStt()) != candidate.sttModels().size()) {
+            throw new IllegalStateException("AI multimodal Secret refresh candidate is incomplete");
+        }
+    }
+
+    private int size(Map<?, ?> values) {
+        return values == null ? 0 : values.size();
+    }
+
+    private <T> Map<String, T> immutableOrdered(Map<String, T> values) {
+        return Collections.unmodifiableMap(new LinkedHashMap<>(values));
+    }
+
+    record ModelSnapshot(
+            Map<String, RerankModel> rerankModels,
+            Map<String, ImageModel> imageModels,
+            Map<String, ImageEmbeddingModel> imageEmbeddings,
+            Map<String, TextToSpeechModel> ttsModels,
+            Map<String, TranscriptionModel> sttModels) {
+
+        static ModelSnapshot empty() {
+            return new ModelSnapshot(Map.of(), Map.of(), Map.of(), Map.of(), Map.of());
+        }
     }
 }

@@ -1,0 +1,2 @@
+org.springframework.boot.EnvironmentPostProcessor=\
+cn.richie696.component.secret.bootstrap.AtlasSecretEnvironmentPostProcessor

@@ -45,6 +45,8 @@
         <huaweicloud.esdk-obs-java.version>3.25.10</huaweicloud.esdk-obs-java.version>
         <minio.version>9.0.1</minio.version>
         <s3.version>2.46.21</s3.version>
+        <aliyun-kms.version>1.2.3</aliyun-kms.version>
+        <aliyun-credentials.version>1.0.1</aliyun-credentials.version>
         <ve-tos-java-sdk.version>2.9.16</ve-tos-java-sdk.version>
         <ks3-kss-java-sdk.version>1.9.0</ks3-kss-java-sdk.version>
         <jcifs.version>3.0.2</jcifs.version>
@@ -630,6 +632,31 @@
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>s3</artifactId>
                 <version>${s3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>secretsmanager</artifactId>
+                <version>${s3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>kms</artifactId>
+                <version>${s3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>url-connection-client</artifactId>
+                <version>${s3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun</groupId>
+                <artifactId>kms20160120</artifactId>
+                <version>${aliyun-kms.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun</groupId>
+                <artifactId>credentials-java</artifactId>
+                <version>${aliyun-credentials.version}</version>
             </dependency>
             <!-- 火山引擎(抖音)对象存储 SDK -->
             <dependency>

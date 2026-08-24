@@ -43,6 +43,11 @@ public class DefaultJwtTokenVerifier implements JwtTokenVerifier {
 
     @Override
     public OAuthPrincipal verify(String accessToken) {
+        return verify(accessToken, null);
+    }
+
+    @Override
+    public OAuthPrincipal verify(String accessToken, String certificateThumbprint) {
         if (accessToken == null || accessToken.isBlank()) {
             throw new ResourceServerException("Bearer token 不能为空");
         }
@@ -61,6 +66,7 @@ public class DefaultJwtTokenVerifier implements JwtTokenVerifier {
                 verification.withAudience(audience);
             }
             DecodedJWT verified = verification.build().verify(accessToken);
+            verifyCertificateBinding(verified, certificateThumbprint);
             List<String> scopes = parseScopes(verified.getClaim("scope"));
             String subject = verified.getSubject();
             String clientId = claimText(verified, "client_id");
@@ -74,6 +80,16 @@ public class DefaultJwtTokenVerifier implements JwtTokenVerifier {
             throw e;
         } catch (Exception e) {
             throw new ResourceServerException("JWT access token 校验失败", e);
+        }
+    }
+
+    private void verifyCertificateBinding(DecodedJWT token, String certificateThumbprint) {
+        Map<String, Object> cnf = token.getClaim("cnf").asMap();
+        Object expected = cnf == null ? null : cnf.get("x5t#S256");
+        if (expected != null && (certificateThumbprint == null || !java.security.MessageDigest.isEqual(
+                String.valueOf(expected).getBytes(java.nio.charset.StandardCharsets.US_ASCII),
+                certificateThumbprint.getBytes(java.nio.charset.StandardCharsets.US_ASCII)))) {
+            throw new ResourceServerException("Access Token 要求匹配的客户端证书");
         }
     }
 
@@ -93,6 +109,14 @@ public class DefaultJwtTokenVerifier implements JwtTokenVerifier {
         Map<String, Object> result = new LinkedHashMap<>();
         jwt.getClaims().forEach((name, claim) -> {
             if (claim == null || claim.isNull()) return;
+            try {
+                Map<String, Object> nested = claim.asMap();
+                if (nested != null) {
+                    result.put(name, nested);
+                    return;
+                }
+            } catch (Exception ignored) {
+            }
             try {
                 String text = claim.asString();
                 if (text != null) {
