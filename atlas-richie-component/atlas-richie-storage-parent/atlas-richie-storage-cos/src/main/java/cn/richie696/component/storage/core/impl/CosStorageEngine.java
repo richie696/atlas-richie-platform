@@ -395,7 +395,7 @@ public final class CosStorageEngine extends AbstractObjectStorageEngine<COSClien
                     .errorMessage(e.getMessage())
                     .build();
         } finally {
-            transferManager.shutdownNow(true);
+            transferManager.shutdownNow(false);
         }
     }
 
