@@ -60,12 +60,12 @@ public final class StatemachineRedisIntegrationTestSupport implements RedisInteg
     }
 
     private static void appendComponentProperties(List<String> pairs) {
-        pairs.add("platform.cache.cache-provider=REDIS");
+        pairs.add("platform.component.cache.cache-provider=REDIS");
         pairs.add("spring.data.redis.enable-l2-caching=false");
         pairs.add("spring.data.redis.perf.enabled=true");
         pairs.add("spring.data.redis.perf.block-forbidden-tiers=false");
         pairs.add("spring.data.redis.perf.block-string-payload-violations=true");
-        pairs.add("platform.cache.bloom-filter.enable=false");
+        pairs.add("platform.component.cache.bloom-filter.enable=false");
         pairs.add("spring.data.local.provider=CAFFEINE");
         pairs.add("platform.component.statemachine.storage-type=REDIS");
         pairs.add("platform.component.statemachine.redis-stream.db-replication.enabled=false");

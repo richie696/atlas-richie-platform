@@ -20,17 +20,18 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * 令牌桶限流器子系统配置 —— 绑定 {@code platform.concurrency.rate-limiter.*} 命名空间。
+ * 令牌桶限流器子系统配置 —— 绑定 {@code platform.component.concurrency.rate-limiter.*} 命名空间。
  *
  * <p>管理本组件提供的 {@link cn.richie696.component.concurrency.algorithm.RateLimiter} 令牌桶
  * 限流器的注册开关与默认速率。配置示例：</p>
  *
  * <pre>{@code
  * platform:
- *   concurrency:
- *     rate-limiter:
- *       enabled: true
- *       permits-per-second: 200
+ *   component:
+ *     concurrency:
+ *       rate-limiter:
+ *         enabled: true
+ *         permits-per-second: 200
  * }</pre>
  *
  * <h2>字段说明</h2>
@@ -44,7 +45,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 1.0.0
  */
 @Data
-@ConfigurationProperties(prefix = "platform.concurrency.rate-limiter")
+@ConfigurationProperties(prefix = "platform.component.concurrency.rate-limiter")
 public class RateLimiterProperties {
 
     /**

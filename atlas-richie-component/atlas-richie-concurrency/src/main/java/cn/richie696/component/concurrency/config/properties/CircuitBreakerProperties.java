@@ -22,20 +22,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.time.Duration;
 
 /**
- * 熔断器子系统配置 —— 绑定 {@code platform.concurrency.circuit-breaker.*} 命名空间。
+ * 熔断器子系统配置 —— 绑定 {@code platform.component.concurrency.circuit-breaker.*} 命名空间。
  *
  * <p>管理本组件提供的 {@link cn.richie696.component.concurrency.algorithm.CircuitBreaker} 三态熔断器
  * 的注册开关与行为参数。配置示例：</p>
  *
  * <pre>{@code
  * platform:
- *   concurrency:
- *     circuit-breaker:
- *       enabled: true
- *       failure-rate-threshold: 0.5
- *       sliding-window-size: 100
- *       wait-duration: 30s
- *       half-open-max-successes: 3
+ *   component:
+ *     concurrency:
+ *       circuit-breaker:
+ *         enabled: true
+ *         failure-rate-threshold: 0.5
+ *         sliding-window-size: 100
+ *         wait-duration: 30s
+ *         half-open-max-successes: 3
  * }</pre>
  *
  * <h2>字段说明</h2>
@@ -55,7 +56,7 @@ import java.time.Duration;
  * @since 1.0.0
  */
 @Data
-@ConfigurationProperties(prefix = "platform.concurrency.circuit-breaker")
+@ConfigurationProperties(prefix = "platform.component.concurrency.circuit-breaker")
 public class CircuitBreakerProperties {
 
     /**

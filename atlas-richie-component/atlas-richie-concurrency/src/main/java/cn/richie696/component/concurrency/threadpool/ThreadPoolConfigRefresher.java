@@ -38,7 +38,7 @@ import java.util.Set;
  *
  * <p>当配置中心（Nacos / Apollo / Spring Cloud Config 等）推送配置变更时，Spring 会发布
  * {@code EnvironmentChangeEvent}。本组件拦截该事件，从中提取
- * {@code platform.concurrency.thread-pools.*} 前缀的变更，逐池比对可调整参数
+ * {@code platform.component.concurrency.thread-pools.*} 前缀的变更，逐池比对可调整参数
  * （corePoolSize / maximumPoolSize / keepAliveTime / rejectedHandler），
  * 自动调用对应 {@link DynamicExecutor#onResize(PoolResizeEvent)} 完成动态调整。</p>
  *
@@ -63,7 +63,7 @@ public class ThreadPoolConfigRefresher implements ApplicationListener<Applicatio
 
     private static final Logger log = LoggerFactory.getLogger(ThreadPoolConfigRefresher.class);
 
-    private static final String CONFIG_PREFIX = "platform.concurrency.thread-pools";
+    private static final String CONFIG_PREFIX = "platform.component.concurrency.thread-pools";
 
     private static final String ENVIRONMENT_CHANGE_EVENT_CLASS =
             "org.springframework.cloud.context.environment.EnvironmentChangeEvent";

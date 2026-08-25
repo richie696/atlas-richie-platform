@@ -55,7 +55,7 @@ class ThreadPoolConfigRefresherTest {
 
     private static final String ORDER = "order-executor";
     private static final String NOTIFY = "notification-executor";
-    private static final String PREFIX = "platform.concurrency.thread-pools";
+    private static final String PREFIX = "platform.component.concurrency.thread-pools";
 
     @BeforeEach
     void setUp() {

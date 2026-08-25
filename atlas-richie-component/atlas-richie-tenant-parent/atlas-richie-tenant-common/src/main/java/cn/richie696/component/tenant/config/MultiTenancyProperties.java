@@ -41,7 +41,7 @@ public class MultiTenancyProperties {
     /**
      * 组件配置前缀。
      */
-    public static final String PREFIX = "platform.tenant";
+    public static final String PREFIX = "platform.component.tenant";
 
     /**
      * 多租户功能总开关。默认 {@code false}；未显式启用时不会注册任何租户基础设施 Bean。

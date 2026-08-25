@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Unit tests for {@link ConcurrencyProperties}.
  *
- * <p>Verifies that the {@code @ConfigurationProperties(prefix = "platform.concurrency")}
+ * <p>Verifies that the {@code @ConfigurationProperties(prefix = "platform.component.concurrency")}
  * binding correctly resolves the nested {@link RateLimiterProperties} and
  * {@link CircuitBreakerProperties} groups from the documented YAML/property
  * namespace, and that all defaults match the documented contract.</p>
@@ -64,7 +64,7 @@ class ConcurrencyPropertiesTest {
     // ========================================================================================
 
     @Test
-    @DisplayName("Class-level @ConfigurationProperties binds to 'platform.concurrency'")
+    @DisplayName("Class-level @ConfigurationProperties binds to 'platform.component.concurrency'")
     void testConfigurationPropertiesPrefix() {
         ConfigurationProperties annotation = ConcurrencyProperties.class.getAnnotation(ConfigurationProperties.class);
 
@@ -72,8 +72,8 @@ class ConcurrencyPropertiesTest {
                 .as("ConcurrencyProperties must be annotated with @ConfigurationProperties")
                 .isNotNull();
         assertThat(annotation.prefix())
-                .as("prefix must be 'platform.concurrency' for YAML binding under platform.concurrency.*")
-                .isEqualTo("platform.concurrency");
+                .as("prefix must be 'platform.component.concurrency' for YAML binding under platform.component.concurrency.*")
+                .isEqualTo("platform.component.concurrency");
     }
 
     @Test
@@ -117,12 +117,12 @@ class ConcurrencyPropertiesTest {
         }
 
         @Test
-        @DisplayName("platform.concurrency.rate-limiter.* properties override defaults")
+        @DisplayName("platform.component.concurrency.rate-limiter.* properties override defaults")
         void testOverrides() {
             contextRunner
                     .withPropertyValues(
-                            "platform.concurrency.rate-limiter.enabled=true",
-                            "platform.concurrency.rate-limiter.permits-per-second=250")
+                            "platform.component.concurrency.rate-limiter.enabled=true",
+                            "platform.component.concurrency.rate-limiter.permits-per-second=250")
                     .run(ctx -> {
                         RateLimiterProperties rateLimiter =
                                 ctx.getBean(ConcurrencyProperties.class).getRateLimiter();
@@ -179,15 +179,15 @@ class ConcurrencyPropertiesTest {
         }
 
         @Test
-        @DisplayName("platform.concurrency.circuit-breaker.* properties override defaults")
+        @DisplayName("platform.component.concurrency.circuit-breaker.* properties override defaults")
         void testOverrides() {
             contextRunner
                     .withPropertyValues(
-                            "platform.concurrency.circuit-breaker.enabled=true",
-                            "platform.concurrency.circuit-breaker.failure-rate-threshold=0.75",
-                            "platform.concurrency.circuit-breaker.sliding-window-size=200",
-                            "platform.concurrency.circuit-breaker.wait-duration=PT15S",
-                            "platform.concurrency.circuit-breaker.half-open-max-successes=5")
+                            "platform.component.concurrency.circuit-breaker.enabled=true",
+                            "platform.component.concurrency.circuit-breaker.failure-rate-threshold=0.75",
+                            "platform.component.concurrency.circuit-breaker.sliding-window-size=200",
+                            "platform.component.concurrency.circuit-breaker.wait-duration=PT15S",
+                            "platform.component.concurrency.circuit-breaker.half-open-max-successes=5")
                     .run(ctx -> {
                         CircuitBreakerProperties cb =
                                 ctx.getBean(ConcurrencyProperties.class).getCircuitBreaker();

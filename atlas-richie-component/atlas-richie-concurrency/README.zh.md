@@ -73,7 +73,7 @@
 附加能力：
 
 - 限流、熔断、动态线程池三大子系统的 Spring Boot 自动装配。
-- 完整的配置属性绑定（`platform.concurrency.*`）。
+- 完整的配置属性绑定（`platform.component.concurrency.*`）。
 - 全部源码带 Javadoc，组件内部以 `sealed interface` / `record` 表达不可变结果。
 - 无运行时反射，所有 API 在编译期静态校验。
 
@@ -1291,7 +1291,7 @@ public class DebouncerExamples {
 在标准 `ThreadPoolExecutor` 之上扩展"事件驱动 resize + 拒绝计数 + 一站式运行态快照"，让线程池参数可以在不重启应用的前提下运行时调整。
 `threadpool/` 子包包含三大组件：`DynamicExecutor`（继承自 `ThreadPoolExecutor` 的可调整线程池）、`PoolResizeEvent`
 （热更新事件，只更新非 null 字段）、`PoolStatus`（9 个核心指标的不可变运行态快照）。多池场景通过
-`platform.concurrency.thread-pools` Map 配置驱动，`@Resource(name = "<poolName>")` 按名注入，无需在业务侧手写 `@Bean`。
+`platform.component.concurrency.thread-pools` Map 配置驱动，`@Resource(name = "<poolName>")` 按名注入，无需在业务侧手写 `@Bean`。
 
 ### 3.0 实现原理
 
@@ -1338,7 +1338,7 @@ public class DebouncerExamples {
 │                                                                  │
 │   ThreadPoolConfigRefresher                                      │
 │     ├─ @EventListener(EnvironmentChangeEvent.class)              │
-│     ├─ 过滤 keys 前缀 platform.concurrency.thread-pools.*        │
+│     ├─ 过滤 keys 前缀 platform.component.concurrency.thread-pools.*        │
 │     ├─ Binder 重新绑定最新 PoolProperties Map                    │
 │     └─ 对每个变更池调用 DynamicExecutor.onResize(...)            │
 └──────────────────────────────────────────────────────────────────┘
@@ -1347,7 +1347,7 @@ public class DebouncerExamples {
 各层关键点：
 
 - **核心层零 Spring 依赖**：`DynamicExecutor` 仅继承 `java.util.concurrent.ThreadPoolExecutor`，可在任何 Java 进程内使用。
-- **装配层只做"配置 → Bean"的转换**：`AlgorithmAutoConfiguration` 启动时遍历 `platform.concurrency.thread-pools` Map，把每个
+- **装配层只做"配置 → Bean"的转换**：`AlgorithmAutoConfiguration` 启动时遍历 `platform.component.concurrency.thread-pools` Map，把每个
   key 注册成一个 `DynamicExecutor` 单例 Bean，Bean 名 = key，方便 `@Qualifier` 引用。
 - **联动层按需激活**：只有当 Spring Cloud 的 `EnvironmentChangeEvent` 类在 classpath 上时才生效，缺这个依赖项目里不会出现这个
   Bean。对 Nacos/Apollo/Config/ZK/Consul 等任何能触发该事件的配置中心都通用。
@@ -1372,7 +1372,7 @@ Spring Cloud 刷新 Environment
 ThreadPoolConfigRefresher.onEnvironmentChange()
         │
         ▼
-过滤 keys: platform.concurrency.thread-pools.* 命中
+过滤 keys: platform.component.concurrency.thread-pools.* 命中
         │
         ▼
 Binder 重新绑定 ConcurrencyProperties.thread-pools Map
@@ -1413,7 +1413,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class ThreadPoolConfigRefresher {
 
-    private static final String POOL_PREFIX = "platform.concurrency.thread-pools.";
+    private static final String POOL_PREFIX = "platform.component.concurrency.thread-pools.";
 
     private final Map<String, DynamicExecutor> executors;
     private final Environment environment;
@@ -1436,7 +1436,7 @@ public class ThreadPoolConfigRefresher {
         }
 
         ConcurrencyProperties props = Binder.get(environment)
-                .bind("platform.concurrency", ConcurrencyProperties.class)
+                .bind("platform.component.concurrency", ConcurrencyProperties.class)
                 .orElse(null);
         if (props == null || props.getThreadPools() == null) {
             return;
@@ -1501,7 +1501,7 @@ public class ThreadPoolConfigRefresher {
 - **`queueCapacity` 与 `threadNamePrefix` 不可动态变更**：
     - **`queueCapacity`** 调整需要新建 `LinkedBlockingQueue` 并把旧队列里的任务"搬家"，JDK `ThreadPoolExecutor` 没有公开
       API 支持运行时换队列。本组件选择不在 `onResize` 里支持，启动时通过
-      `platform.concurrency.thread-pools.<poolName>.queue-capacity` 配置；如确需调整，请重启。
+      `platform.component.concurrency.thread-pools.<poolName>.queue-capacity` 配置；如确需调整，请重启。
     - **`threadNamePrefix`** 只影响"此后新创建的 Worker"，存量线程名无法回改。如果调参后立即观察线程名不一致是预期行为。
     - 上述两项如果出现在配置变更中，本组件会在日志里写一条 WARN 后静默忽略，不抛异常中断整批刷新。
 
@@ -1769,7 +1769,7 @@ public class DynamicExecutorExamples {
   // ========== 5) Spring 多池注入 ==========
 
   // 方式一：按名称获取指定线程池（@Resource + name）
-  // 对应配置: platform.concurrency.thread-pools.order-executor.*
+  // 对应配置: platform.component.concurrency.thread-pools.order-executor.*
   @jakarta.annotation.Resource(name = "order-executor")
   private DynamicExecutor orderExecutorByName;
 
@@ -1807,7 +1807,7 @@ public class DynamicExecutorExamples {
 - **拒绝策略作为运行时事件参数**：拒绝策略本质上是一个"运行时策略选择"，项目上线初期配置不合理时，无需改代码重新发版即可通过
   `onResize` 热更新。
 - **不包含 `queueCapacity`**：队列容量热更新无法解决"生产者-消费者速率不匹配"问题，反而会在实例宕机时积压更多未消费任务，扩大故障爆炸半径。
-  `queueCapacity` 只能在启动时通过 `platform.concurrency.thread-pools.*.queue-capacity` 配置。
+  `queueCapacity` 只能在启动时通过 `platform.component.concurrency.thread-pools.*.queue-capacity` 配置。
 - **CountingHandler 透明计数**：TPE 的 `rejectedExecution` 不是可覆写的 protected 方法，无法通过子类覆写来计数。
   `DynamicExecutor` 构造时把用户 handler 包装为内部 `CountingHandler`（`AtomicLong` 计数器），再传给 `super(...)`。
   `getRejectedExecutionHandler()` 经过覆写后返回用户原始 handler，监控代码不会感知包装层的存在。
@@ -1852,7 +1852,7 @@ public class DynamicExecutorExamples {
 通过 `PoolResizeEvent.builder()` 构建，所有字段独立可缺省；事件本身不可变，可跨线程安全传递。`onResize` 收到事件后只更新非
 null 字段，保持其余参数不变。`queueCapacity`
 不在事件字段中——队列容量热更新无法解决"生产者-消费者速率不匹配"问题，反而会在实例宕机时积压更多未消费任务，扩大故障爆炸半径。
-`queueCapacity` 只能在启动时通过 `platform.concurrency.thread-pools.<poolName>.queue-capacity`
+`queueCapacity` 只能在启动时通过 `platform.component.concurrency.thread-pools.<poolName>.queue-capacity`
 配置（详见 [配置说明](#配置说明)）。`PoolResizeEvent` 与 Nacos/Etcd
 等配置中心的对接示例见 [常见问题 Q17](#q17如何与配置中心nacosetcd集成实现动态调参)。
 
@@ -1894,7 +1894,7 @@ metrics.gauge("threadpool.rejected_count", status.getRejectedCount());
 
 ### 1) 统一配置入口
 
-所有配置通过 `platform.concurrency.*` 统一前缀挂载，由 `ConcurrencyProperties` 绑定：
+所有配置通过 `platform.component.concurrency.*` 统一前缀挂载，由 `ConcurrencyProperties` 绑定：
 
 ```yaml
 platform:
@@ -1977,14 +1977,14 @@ platform:
 
 ### 3) 字段说明
 
-#### 3.1 令牌桶限流器（`platform.concurrency.rate-limiter.*`，对应板块二 2.2）
+#### 3.1 令牌桶限流器（`platform.component.concurrency.rate-limiter.*`，对应板块二 2.2）
 
 | 配置项               | 类型    | 默认值  | 说明                                       |
 |----------------------|---------|---------|--------------------------------------------|
 | `enabled`            | boolean | `false` | 是否注册 `RateLimiter` Bean 到 Spring 容器 |
 | `permits-per-second` | int     | `100`   | 每秒补充令牌数（同时也是桶容量）           |
 
-#### 3.2 熔断器（`platform.concurrency.circuit-breaker.*`，对应板块二 2.3）
+#### 3.2 熔断器（`platform.component.concurrency.circuit-breaker.*`，对应板块二 2.3）
 
 | 配置项                    | 类型     | 默认值  | 说明                                          |
 |---------------------------|----------|---------|-----------------------------------------------|
@@ -1994,7 +1994,7 @@ platform:
 | `wait-duration`           | Duration | `30s`   | OPEN 状态持续时间                             |
 | `half-open-max-successes` | int      | `3`     | 半开探测成功次数（预留扩展，当前不参与计算）  |
 
-#### 3.3 动态线程池（`platform.concurrency.thread-pools.*`，对应板块三 3.1）
+#### 3.3 动态线程池（`platform.component.concurrency.thread-pools.*`，对应板块三 3.1）
 
 多池配置，每个 key 即为一个命名线程池，同时作为对应 Spring Bean 的名称。业务方通过 `@Resource(name = "<poolName>")` /
 `@Qualifier("<poolName>")` 注入，或通过 `Map<String, DynamicExecutor>` 批量注入。
@@ -2032,7 +2032,7 @@ platform:
 1. **优先用语义命名方法**：`gatherAll`、`race`、`withDeadline` 一眼表达意图，比 `CompletableFuture.allOf().get()` 更易维护。
 2. **虚拟线程优先**：JDK 25 项目默认启用 `spring.threads.virtual.enabled=true`，让 IO 密集型任务享受百万级并发。
 3. **零依赖哲学**：本组件不绑定第三方并发库；如确实需要 Resilience4j、Hystrix 等，请在业务模块自行引入。
-4. **配置驱动**：能用配置解决的不要写代码。`platform.concurrency.*` 配置项覆盖 90% 场景。
+4. **配置驱动**：能用配置解决的不要写代码。`platform.component.concurrency.*` 配置项覆盖 90% 场景。
 
 ### 板块一：结构化并发与虚拟线程
 
@@ -2108,7 +2108,7 @@ platform:
    `CallerRunsPolicy`。
 4. **不要频繁 `onResize`**：过度调整会导致 `ThreadPoolExecutor` 内部反复重建 Worker，建议每次调整间隔 > 1 分钟。
 5. **保留默认队列容量避免生产消费失衡**：高频抖动队列大小会加大系统抖动；队列容量通过
-   `platform.concurrency.thread-pools.<poolName>.queue-capacity` 启动时配置，运行期不参与 `onResize`。
+   `platform.component.concurrency.thread-pools.<poolName>.queue-capacity` 启动时配置，运行期不参与 `onResize`。
 
 ### 错误处理哲学
 
@@ -2169,7 +2169,7 @@ platform:
 | 任务包装（MDC / Ttl / Transmittable）         | **不支持**                                                                          | 内置 `MdcRunnable` / `TtlRunnable` / `TransmittableThreadLocal` 包装 |
 | 线程池数据持久化                              | **不支持**                                                                          | 内置基于数据库 / Redis 的持久化                                      |
 | 依赖体积                                      | 0 额外依赖（随本组件引入即可）                                                      | 需引入 `dynamic-tp-spring-boot-starter` 及传递依赖                   |
-| 自动装配                                      | 零配置（引入依赖后按 `platform.concurrency.thread-pools.*` 写配置即可）             | 需引入 starter 并配置 `dynamic-tp` 命名空间                          |
+| 自动装配                                      | 零配置（引入依赖后按 `platform.component.concurrency.thread-pools.*` 写配置即可）             | 需引入 starter 并配置 `dynamic-tp` 命名空间                          |
 
 #### 决策指南
 
@@ -2260,7 +2260,7 @@ OPEN 状态持续 `openDuration`（默认 10 秒）后自动进入 HALF_OPEN，�
 
 ### `Q11`：配置修改后需要重启应用吗？
 
-是的。所有 `platform.concurrency.*` 配置项通过 `ConcurrencyProperties` 在启动时绑定，运行期修改不会自动生效。如果需要动态调整，可以：
+是的。所有 `platform.component.concurrency.*` 配置项通过 `ConcurrencyProperties` 在启动时绑定，运行期修改不会自动生效。如果需要动态调整，可以：
 
 1. 通过 JMX 暴露 `RateLimiter.availablePermits()` 等监控指标。
 2. 业务侧自行用 `@RefreshScope` 重新创建组件实例（不推荐，影响其他 Bean 的依赖）。
@@ -2312,7 +2312,7 @@ private Map<String, DynamicExecutor> executors;
 ```
 
 无需在业务侧手写 `@Bean` 注册方法，`AlgorithmAutoConfiguration` 在 `PostConstruct` 阶段会遍历
-`platform.concurrency.thread-pools` Map 并把每个池注册成 Spring 单例 Bean。容器关闭时自动 `shutdown()`。
+`platform.component.concurrency.thread-pools` Map 并把每个池注册成 Spring 单例 Bean。容器关闭时自动 `shutdown()`。
 
 ### `Q15`：如何与配置中心（`Nacos`/`Etcd`）集成实现动态调参？
 

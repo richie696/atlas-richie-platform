@@ -102,7 +102,7 @@ public final class StorageRedisIntegrationTestSupport {
     }
 
     private static void appendComponentPropertyPairs(List<String> pairs) {
-        pairs.add("platform.cache.cache-provider=REDIS");
+        pairs.add("platform.component.cache.cache-provider=REDIS");
     }
 
     private static final class Holder {

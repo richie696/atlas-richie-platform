@@ -130,7 +130,7 @@ public final class StorageLocalIntegrationTestSupport {
     }
 
     private static void appendComponentPropertyPairs(List<String> pairs) {
-        pairs.add("platform.cache.cache-provider=REDIS");
+        pairs.add("platform.component.cache.cache-provider=REDIS");
         pairs.add("spring.data.redis.enable-l2-caching=true");
         pairs.add("spring.data.redis.l2-caching-data[0]=STRING");
         pairs.add("spring.data.redis.l2-caching-data[1]=HASH");

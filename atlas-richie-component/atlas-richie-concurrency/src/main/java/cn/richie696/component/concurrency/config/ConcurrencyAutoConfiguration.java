@@ -65,7 +65,7 @@ public class ConcurrencyAutoConfiguration {
 
     /**
      * 动态线程池 BeanDefinition 注册器 —— 在 Spring 最早扩展点
-     * 从 Environment 绑定 {@code platform.concurrency.thread-pools} 并注册
+     * 从 Environment 绑定 {@code platform.component.concurrency.thread-pools} 并注册
      * 每个命名池的 {@link DynamicExecutor} BeanDefinition。
      *
      * <p>Spring 会自动识别 {@code BeanDefinitionRegistryPostProcessor} 类型的 Bean

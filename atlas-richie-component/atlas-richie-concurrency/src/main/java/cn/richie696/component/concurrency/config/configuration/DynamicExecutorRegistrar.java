@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * 动态线程池 BeanDefinition 注册器 —— 在 Spring 最早扩展点
  * ({@link BeanDefinitionRegistryPostProcessor#postProcessBeanDefinitionRegistry})
- * 从 Environment 主动绑定 {@code platform.concurrency.thread-pools.*} 并注册
+ * 从 Environment 主动绑定 {@code platform.component.concurrency.thread-pools.*} 并注册
  * 每个命名池的 {@link DynamicExecutor} BeanDefinition。
  *
  * <h2>为什么用 BeanDefinitionRegistryPostProcessor 而不是 @Configuration + @Bean</h2>
@@ -80,9 +80,9 @@ public class DynamicExecutorRegistrar
     private static final Logger log = LoggerFactory.getLogger(DynamicExecutorRegistrar.class);
 
     /**
-     * {@code platform.concurrency.thread-pools} 配置前缀
+     * {@code platform.component.concurrency.thread-pools} 配置前缀
      */
-    private static final String THREAD_POOLS_PREFIX = "platform.concurrency.thread-pools";
+    private static final String THREAD_POOLS_PREFIX = "platform.component.concurrency.thread-pools";
 
     /**
      * 高优先级:在 ConcurrencyAutoConfiguration 创建后、其他业务 Bean 实例化之前执行,
@@ -150,7 +150,7 @@ public class DynamicExecutorRegistrar
     }
 
     /**
-     * 通过 {@link Binder} 主动从 {@link Environment} 绑定 {@code platform.concurrency.thread-pools}。
+     * 通过 {@link Binder} 主动从 {@link Environment} 绑定 {@code platform.component.concurrency.thread-pools}。
      *
      * @return 命名线程池配置 Map;无配置时返回空 Map(不会返回 null)
      */

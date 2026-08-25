@@ -63,7 +63,7 @@ class AlgorithmAutoConfigurationTest {
      *
      * <p>同时注册 {@link DynamicExecutorRegistrar} —— 它是 {@code BeanDefinitionRegistryPostProcessor},
      * Spring 容器刷新时会自动调用其 {@code postProcessBeanDefinitionRegistry} 从 Environment 主动绑定
-     * {@code platform.concurrency.thread-pools.*} 并注册命名池的 {@link DynamicExecutor} BeanDefinition。
+     * {@code platform.component.concurrency.thread-pools.*} 并注册命名池的 {@link DynamicExecutor} BeanDefinition。
      * 生产路径下该 Registrar 由 {@code ConcurrencyAutoConfiguration} 作为 {@code @Bean} 提供;
      * 单测只挂 {@link AlgorithmAutoConfiguration} 时需手动注册。</p>
      */
@@ -114,8 +114,8 @@ class AlgorithmAutoConfigurationTest {
         @DisplayName("enabled=true：创建 RateLimiter Bean，参数从配置读取")
         void enabled_createsBeanWithConfiguredProperties() {
             startContext(Map.of(
-                    "platform.concurrency.rate-limiter.enabled", "true",
-                    "platform.concurrency.rate-limiter.permits-per-second", "100"));
+                    "platform.component.concurrency.rate-limiter.enabled", "true",
+                    "platform.component.concurrency.rate-limiter.permits-per-second", "100"));
 
             assertThat(context.containsBean("rateLimiter")).isTrue();
             RateLimiter limiter = context.getBean("rateLimiter", RateLimiter.class);
@@ -127,7 +127,7 @@ class AlgorithmAutoConfigurationTest {
         @Test
         @DisplayName("enabled=false（显式）：不创建 RateLimiter Bean")
         void explicitlyDisabled_createsNoBean() {
-            startContext(Map.of("platform.concurrency.rate-limiter.enabled", "false"));
+            startContext(Map.of("platform.component.concurrency.rate-limiter.enabled", "false"));
 
             assertThat(context.containsBean("rateLimiter")).isFalse();
         }
@@ -152,10 +152,10 @@ class AlgorithmAutoConfigurationTest {
         @DisplayName("enabled=true：创建 CircuitBreaker Bean，可直接执行任务")
         void enabled_createsUsableBean() throws Exception {
             startContext(Map.of(
-                    "platform.concurrency.circuit-breaker.enabled", "true",
-                    "platform.concurrency.circuit-breaker.failure-rate-threshold", "0.5",
-                    "platform.concurrency.circuit-breaker.sliding-window-size", "10",
-                    "platform.concurrency.circuit-breaker.wait-duration", "1s"));
+                    "platform.component.concurrency.circuit-breaker.enabled", "true",
+                    "platform.component.concurrency.circuit-breaker.failure-rate-threshold", "0.5",
+                    "platform.component.concurrency.circuit-breaker.sliding-window-size", "10",
+                    "platform.component.concurrency.circuit-breaker.wait-duration", "1s"));
 
             assertThat(context.containsBean("circuitBreaker")).isTrue();
             CircuitBreaker breaker = context.getBean("circuitBreaker", CircuitBreaker.class);
@@ -186,11 +186,11 @@ class AlgorithmAutoConfigurationTest {
         @DisplayName("单个池：按池名注册 DynamicExecutor Bean，参数与配置一致")
         void singlePool_registersByName() {
             startContext(Map.of(
-                    "platform.concurrency.thread-pools.order-executor.core-pool-size", "8",
-                    "platform.concurrency.thread-pools.order-executor.maximum-pool-size", "16",
-                    "platform.concurrency.thread-pools.order-executor.keep-alive-time", "30s",
-                    "platform.concurrency.thread-pools.order-executor.queue-capacity", "500",
-                    "platform.concurrency.thread-pools.order-executor.rejected-handler", "AbortPolicy"));
+                    "platform.component.concurrency.thread-pools.order-executor.core-pool-size", "8",
+                    "platform.component.concurrency.thread-pools.order-executor.maximum-pool-size", "16",
+                    "platform.component.concurrency.thread-pools.order-executor.keep-alive-time", "30s",
+                    "platform.component.concurrency.thread-pools.order-executor.queue-capacity", "500",
+                    "platform.component.concurrency.thread-pools.order-executor.rejected-handler", "AbortPolicy"));
 
             assertThat(context.containsBean("order-executor")).isTrue();
             DynamicExecutor executor = context.getBean("order-executor", DynamicExecutor.class);
@@ -207,10 +207,10 @@ class AlgorithmAutoConfigurationTest {
         @DisplayName("多池：每个池成为独立 Bean，可注入全部 Map<String, DynamicExecutor>")
         void multiplePools_eachRegisteredSeparately() {
             startContext(Map.of(
-                    "platform.concurrency.thread-pools.pool-a.core-pool-size", "2",
-                    "platform.concurrency.thread-pools.pool-a.maximum-pool-size", "4",
-                    "platform.concurrency.thread-pools.pool-b.core-pool-size", "4",
-                    "platform.concurrency.thread-pools.pool-b.maximum-pool-size", "8"));
+                    "platform.component.concurrency.thread-pools.pool-a.core-pool-size", "2",
+                    "platform.component.concurrency.thread-pools.pool-a.maximum-pool-size", "4",
+                    "platform.component.concurrency.thread-pools.pool-b.core-pool-size", "4",
+                    "platform.component.concurrency.thread-pools.pool-b.maximum-pool-size", "8"));
 
             assertThat(context.containsBean("pool-a")).isTrue();
             assertThat(context.containsBean("pool-b")).isTrue();
@@ -227,9 +227,9 @@ class AlgorithmAutoConfigurationTest {
         @DisplayName("显式 threadNamePrefix：使用配置前缀而非池名")
         void explicitThreadNamePrefix_isUsedInsteadOfPoolName() {
             startContext(Map.of(
-                    "platform.concurrency.thread-pools.order-executor.core-pool-size", "2",
-                    "platform.concurrency.thread-pools.order-executor.maximum-pool-size", "4",
-                    "platform.concurrency.thread-pools.order-executor.thread-name-prefix", "custom-prefix-"));
+                    "platform.component.concurrency.thread-pools.order-executor.core-pool-size", "2",
+                    "platform.component.concurrency.thread-pools.order-executor.maximum-pool-size", "4",
+                    "platform.component.concurrency.thread-pools.order-executor.thread-name-prefix", "custom-prefix-"));
 
             DynamicExecutor executor = context.getBean("order-executor", DynamicExecutor.class);
             assertThat(executor).isNotNull();
@@ -253,11 +253,11 @@ class AlgorithmAutoConfigurationTest {
         @DisplayName("rejected-handler=CallerRunsPolicy：使用 CallerRunsPolicy 而非默认 AbortPolicy")
         void customRejectedHandler_callerRuns() {
             startContext(Map.of(
-                    "platform.concurrency.thread-pools.pool-a.core-pool-size", "1",
-                    "platform.concurrency.thread-pools.pool-a.maximum-pool-size", "1",
-                    "platform.concurrency.thread-pools.pool-a.keep-alive-time", "60s",
-                    "platform.concurrency.thread-pools.pool-a.queue-capacity", "1",
-                    "platform.concurrency.thread-pools.pool-a.rejected-handler", "CallerRunsPolicy"));
+                    "platform.component.concurrency.thread-pools.pool-a.core-pool-size", "1",
+                    "platform.component.concurrency.thread-pools.pool-a.maximum-pool-size", "1",
+                    "platform.component.concurrency.thread-pools.pool-a.keep-alive-time", "60s",
+                    "platform.component.concurrency.thread-pools.pool-a.queue-capacity", "1",
+                    "platform.component.concurrency.thread-pools.pool-a.rejected-handler", "CallerRunsPolicy"));
 
             DynamicExecutor executor = context.getBean("pool-a", DynamicExecutor.class);
             assertThat(executor.getRejectedExecutionHandler())
@@ -268,9 +268,9 @@ class AlgorithmAutoConfigurationTest {
         @DisplayName("不支持的 rejected-handler：启动时抛 IllegalArgumentException")
         void unsupportedRejectedHandler_failsFast() {
             assertThatThrownBy(() -> startContext(Map.of(
-                    "platform.concurrency.thread-pools.bad.core-pool-size", "1",
-                    "platform.concurrency.thread-pools.bad.maximum-pool-size", "1",
-                    "platform.concurrency.thread-pools.bad.rejected-handler", "UnsupportedPolicy")))
+                    "platform.component.concurrency.thread-pools.bad.core-pool-size", "1",
+                    "platform.component.concurrency.thread-pools.bad.maximum-pool-size", "1",
+                    "platform.component.concurrency.thread-pools.bad.rejected-handler", "UnsupportedPolicy")))
                     .isInstanceOf(org.springframework.beans.factory.BeanCreationException.class)
                     .hasCauseInstanceOf(IllegalArgumentException.class);
         }
@@ -279,9 +279,9 @@ class AlgorithmAutoConfigurationTest {
         @DisplayName("rejected-handler 大小写不敏感：callerrunspolicy 等同 CallerRunsPolicy")
         void rejectedHandlerIsCaseInsensitive() {
             startContext(Map.of(
-                    "platform.concurrency.thread-pools.pool-a.core-pool-size", "1",
-                    "platform.concurrency.thread-pools.pool-a.maximum-pool-size", "1",
-                    "platform.concurrency.thread-pools.pool-a.rejected-handler", "discardpolicy"));
+                    "platform.component.concurrency.thread-pools.pool-a.core-pool-size", "1",
+                    "platform.component.concurrency.thread-pools.pool-a.maximum-pool-size", "1",
+                    "platform.component.concurrency.thread-pools.pool-a.rejected-handler", "discardpolicy"));
 
             DynamicExecutor executor = context.getBean("pool-a", DynamicExecutor.class);
             assertThat(executor.getRejectedExecutionHandler())
@@ -292,10 +292,10 @@ class AlgorithmAutoConfigurationTest {
         @DisplayName("容器关闭时：所有 DynamicExecutor 都已 shutdown")
         void contextClose_shutsDownAllExecutors() {
             startContext(Map.of(
-                    "platform.concurrency.thread-pools.pool-a.core-pool-size", "1",
-                    "platform.concurrency.thread-pools.pool-a.maximum-pool-size", "1",
-                    "platform.concurrency.thread-pools.pool-b.core-pool-size", "1",
-                    "platform.concurrency.thread-pools.pool-b.maximum-pool-size", "1"));
+                    "platform.component.concurrency.thread-pools.pool-a.core-pool-size", "1",
+                    "platform.component.concurrency.thread-pools.pool-a.maximum-pool-size", "1",
+                    "platform.component.concurrency.thread-pools.pool-b.core-pool-size", "1",
+                    "platform.component.concurrency.thread-pools.pool-b.maximum-pool-size", "1"));
 
             DynamicExecutor a = context.getBean("pool-a", DynamicExecutor.class);
             DynamicExecutor b = context.getBean("pool-b", DynamicExecutor.class);
@@ -323,10 +323,10 @@ class AlgorithmAutoConfigurationTest {
         @DisplayName("ConcurrencyProperties 完整绑定（rateLimiter + circuitBreaker + threadPools）")
         void concurrencyProperties_bound() {
             startContext(Map.of(
-                    "platform.concurrency.rate-limiter.permits-per-second", "200",
-                    "platform.concurrency.circuit-breaker.failure-rate-threshold", "0.6",
-                    "platform.concurrency.circuit-breaker.sliding-window-size", "100",
-                    "platform.concurrency.circuit-breaker.wait-duration", "15s"));
+                    "platform.component.concurrency.rate-limiter.permits-per-second", "200",
+                    "platform.component.concurrency.circuit-breaker.failure-rate-threshold", "0.6",
+                    "platform.component.concurrency.circuit-breaker.sliding-window-size", "100",
+                    "platform.component.concurrency.circuit-breaker.wait-duration", "15s"));
 
             ConcurrencyProperties props = context.getBean(ConcurrencyProperties.class);
             assertThat(props.getRateLimiter().getPermitsPerSecond()).isEqualTo(200);

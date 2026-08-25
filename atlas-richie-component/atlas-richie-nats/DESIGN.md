@@ -534,7 +534,7 @@ cn.richie696.component.nats.config
 
 ```java
 @Data
-@ConfigurationProperties(prefix = "platform.nats")
+@ConfigurationProperties(prefix = "platform.component.nats")
 public class NatsProperties {
     private boolean enabled = true;
     private String server = "nats://localhost:4222";

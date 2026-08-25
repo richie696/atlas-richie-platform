@@ -84,7 +84,7 @@ sub-package:
 Additional capabilities:
 
 - Spring Boot auto-configuration for the three subsystems: rate limiting, circuit breaking, and dynamic thread pool.
-- Complete configuration property binding (`platform.concurrency.*`).
+- Complete configuration property binding (`platform.component.concurrency.*`).
 - All source code comes with Javadoc; the component uses `sealed interface` / `record` to express immutable results.
 - No runtime reflection; all APIs are statically validated at compile time.
 
@@ -1354,7 +1354,7 @@ Extends the standard `ThreadPoolExecutor` with "event-driven resize + rejection 
 allowing thread pool parameters to be adjusted at runtime without restarting the application. The `threadpool/`
 sub-package contains three components: `DynamicExecutor` (a tunable thread pool extending `ThreadPoolExecutor`),
 `PoolResizeEvent` (a hot-update event that updates only non-null fields), and `PoolStatus` (an immutable runtime
-snapshot of 9 core metrics). The multi-pool scenario is configuration-driven via the `platform.concurrency.thread-pools`
+snapshot of 9 core metrics). The multi-pool scenario is configuration-driven via the `platform.component.concurrency.thread-pools`
 Map, and injected by name with `@Resource(name = "<poolName>")`, without writing any `@Bean` methods on the business
 side.
 
@@ -1407,7 +1407,7 @@ unit tests can run without Spring.
 │                                                                  │
 │   ThreadPoolConfigRefresher                                      │
 │     ├─ @EventListener(EnvironmentChangeEvent.class)              │
-│     ├─ Filter keys with prefix platform.concurrency.thread-pools.*│
+│     ├─ Filter keys with prefix platform.component.concurrency.thread-pools.*│
 │     ├─ Binder rebinds the latest PoolProperties Map              │
 │     └─ Calls DynamicExecutor.onResize(...) for each changed pool │
 └──────────────────────────────────────────────────────────────────┘
@@ -1418,7 +1418,7 @@ Key points of each layer:
 - **Core layer has zero Spring dependency**: `DynamicExecutor` only extends `java.util.concurrent.ThreadPoolExecutor`;
   it can be used in any Java process.
 - **Auto-configuration layer only does "config → Bean" translation**: at startup, `AlgorithmAutoConfiguration` iterates
-  the `platform.concurrency.thread-pools` Map, registering each key as a `DynamicExecutor` singleton Bean; bean name =
+  the `platform.component.concurrency.thread-pools` Map, registering each key as a `DynamicExecutor` singleton Bean; bean name =
   key, making `@Qualifier` references easy.
 - **Integration layer activates on demand**: it is only effective when Spring Cloud's `EnvironmentChangeEvent` class is
   on the classpath; if that dependency is missing, this Bean will not appear in the project. It works with any config
@@ -1444,7 +1444,7 @@ Publishes EnvironmentChangeEvent
 ThreadPoolConfigRefresher.onEnvironmentChange()
         │
         ▼
-Filter keys: platform.concurrency.thread-pools.* hits
+Filter keys: platform.component.concurrency.thread-pools.* hits
         │
         ▼
 Binder rebinds ConcurrencyProperties.thread-pools Map
@@ -1486,7 +1486,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class ThreadPoolConfigRefresher {
 
-    private static final String POOL_PREFIX = "platform.concurrency.thread-pools.";
+    private static final String POOL_PREFIX = "platform.component.concurrency.thread-pools.";
 
     private final Map<String, DynamicExecutor> executors;
     private final Environment environment;
@@ -1509,7 +1509,7 @@ public class ThreadPoolConfigRefresher {
         }
 
         ConcurrencyProperties props = Binder.get(environment)
-                .bind("platform.concurrency", ConcurrencyProperties.class)
+                .bind("platform.component.concurrency", ConcurrencyProperties.class)
                 .orElse(null);
         if (props == null || props.getThreadPools() == null) {
             return;
@@ -1576,7 +1576,7 @@ public class ThreadPoolConfigRefresher {
     - **`queueCapacity`** adjustment requires creating a new `LinkedBlockingQueue` and "moving" tasks from the old
       queue, which the JDK `ThreadPoolExecutor` does not expose a public API for at runtime. This component chooses not
       to support it in `onResize`; configure it at startup via
-      `platform.concurrency.thread-pools.<poolName>.queue-capacity`. If you really need to adjust, please restart.
+      `platform.component.concurrency.thread-pools.<poolName>.queue-capacity`. If you really need to adjust, please restart.
     - **`threadNamePrefix`** only affects "Workers newly created from then on"; existing thread names cannot be
       retroactively changed. If thread names appear inconsistent immediately after a tuning change, that is the expected
       behavior.
@@ -1865,7 +1865,7 @@ public class DynamicExecutorExamples {
   // ========== 5) Spring multi-pool injection ==========
 
   // Style 1: Get a specific thread pool by name (@Resource + name)
-  // Config: platform.concurrency.thread-pools.order-executor.*
+  // Config: platform.component.concurrency.thread-pools.order-executor.*
   @jakarta.annotation.Resource(name = "order-executor")
   private DynamicExecutor orderExecutorByName;
 
@@ -1904,7 +1904,7 @@ public class DynamicExecutorExamples {
   initial configuration is unreasonable, it can be hot-updated via `onResize` without modifying code or re-releasing.
 - **Does not include `queueCapacity`**: hot-update of queue capacity cannot solve the "producer-consumer rate mismatch"
   problem; instead, it can accumulate more unconsumed tasks on instance crash, expanding the fault blast radius.
-  `queueCapacity` can only be configured at startup via `platform.concurrency.thread-pools.*.queue-capacity`.
+  `queueCapacity` can only be configured at startup via `platform.component.concurrency.thread-pools.*.queue-capacity`.
 - **Transparent counting in CountingHandler**: TPE's `rejectedExecution` is not an overridable protected method, so
   subclasses cannot count by overriding. `DynamicExecutor` wraps the user handler as an internal `CountingHandler` (with
   an `AtomicLong` counter) at construction, then passes it to `super(...)`. `getRejectedExecutionHandler()` is
@@ -1954,7 +1954,7 @@ pass across threads. After `onResize` receives the event, it updates only the no
 unchanged. `queueCapacity` is not part of the event fields — hot-update of queue capacity cannot solve the
 "producer-consumer rate mismatch" problem; instead, it can accumulate more unconsumed tasks on instance crash, expanding
 the fault blast radius. `queueCapacity` can only be configured at startup via
-`platform.concurrency.thread-pools.<poolName>.queue-capacity` (see [Configuration Reference](#configuration-reference)).
+`platform.component.concurrency.thread-pools.<poolName>.queue-capacity` (see [Configuration Reference](#configuration-reference)).
 See [FAQ Q15](#q15-how-to-integrate-with-config-centers-nacosetcd-for-dynamic-tuning) for an example of integrating
 `PoolResizeEvent` with config centers such as Nacos / Etcd.
 
@@ -2001,7 +2001,7 @@ provided via imperative Builders.
 
 ### 1) `Unified` `Configuration` `Entry`
 
-All configuration is mounted under the unified prefix `platform.concurrency.*`, bound by `ConcurrencyProperties`:
+All configuration is mounted under the unified prefix `platform.component.concurrency.*`, bound by `ConcurrencyProperties`:
 
 ```yaml
 platform:
@@ -2084,14 +2084,14 @@ platform:
 
 ### 3) `Field` `Reference`
 
-#### 3.1 Token Bucket Rate Limiter (`platform.concurrency.rate-limiter.*`, Module 2.2)
+#### 3.1 Token Bucket Rate Limiter (`platform.component.concurrency.rate-limiter.*`, Module 2.2)
 
 | Config Item          | Type    | Default | Description                                                      |
 |----------------------|---------|---------|------------------------------------------------------------------|
 | `enabled`            | boolean | `false` | Whether to register a `RateLimiter` Bean in the Spring container |
 | `permits-per-second` | int     | `100`   | Tokens refilled per second (also the bucket capacity)            |
 
-#### 3.2 Circuit Breaker (`platform.concurrency.circuit-breaker.*`, Module 2.3)
+#### 3.2 Circuit Breaker (`platform.component.concurrency.circuit-breaker.*`, Module 2.3)
 
 | Config Item               | Type     | Default | Description                                                                       |
 |---------------------------|----------|---------|-----------------------------------------------------------------------------------|
@@ -2101,7 +2101,7 @@ platform:
 | `wait-duration`           | Duration | `30s`   | Duration of the OPEN state                                                        |
 | `half-open-max-successes` | int      | `3`     | Successes required in HALF_OPEN probe (reserved; not used in current calculation) |
 
-#### 3.3 Dynamic Thread Pools (`platform.concurrency.thread-pools.*`, Module 3.1)
+#### 3.3 Dynamic Thread Pools (`platform.component.concurrency.thread-pools.*`, Module 3.1)
 
 Multi-pool config; each key is a named thread pool and is also the name of the corresponding Spring Bean. Business code
 injects via `@Resource(name = "<poolName>")` / `@Qualifier("<poolName>")`, or via bulk `Map<String, DynamicExecutor>`
@@ -2149,7 +2149,7 @@ Per-pool (`PoolProperties`) configurable items:
    enjoy million-level concurrency.
 3. **Zero-dependency philosophy**: this component does not bind to third-party concurrency libraries; if you really need
    Resilience4j, Hystrix, etc., please introduce them yourself in your business modules.
-4. **Configuration-driven**: if config can solve it, don't write code. `platform.concurrency.*` config items cover 90%
+4. **Configuration-driven**: if config can solve it, don't write code. `platform.component.concurrency.*` config items cover 90%
    of scenarios.
 
 ### `Module` 1 — `Structured` `Concurrency` and `Virtual` `Threads`
@@ -2250,7 +2250,7 @@ Per-pool (`PoolProperties`) configurable items:
    Workers; recommend at least 1 minute between adjustments.
 5. **Keep the default queue capacity to avoid producer-consumer imbalance**: frequent queue-size adjustments amplify
    system jitter; queue capacity is configured at startup via
-   `platform.concurrency.thread-pools.<poolName>.queue-capacity` and is not part of `onResize` at runtime.
+   `platform.component.concurrency.thread-pools.<poolName>.queue-capacity` and is not part of `onResize` at runtime.
 
 ### `Error` `Handling` `Philosophy`
 
@@ -2315,7 +2315,7 @@ feature-complete platform-grade thread pool management framework. The capability
 | Task wrapping (MDC / Ttl / Transmittable)                 | **Not supported**                                                                                           | Built-in `MdcRunnable` / `TtlRunnable` / `TransmittableThreadLocal` wrapping       |
 | Thread-pool data persistence                              | **Not supported**                                                                                           | Built-in DB / Redis-based persistence                                              |
 | Dependency footprint                                      | 0 extra dependencies (only comes with this component)                                                       | Need to introduce `dynamic-tp-spring-boot-starter` and its transitive dependencies |
-| Auto-configuration                                        | Zero config (just include this dependency and write `platform.concurrency.thread-pools.*` config)           | Need to introduce the starter and configure the `dynamic-tp` namespace             |
+| Auto-configuration                                        | Zero config (just include this dependency and write `platform.component.concurrency.thread-pools.*` config)           | Need to introduce the starter and configure the `dynamic-tp` namespace             |
 
 #### `Decision` `Guide`
 
@@ -2422,7 +2422,7 @@ breaker on the business side, or wait for this component to upgrade.
 
 ### `Q11` — `Do` `I` `Need` to `Restart` the `Application` `After` `Config` `Changes`?
 
-Yes. All `platform.concurrency.*` config items are bound through `ConcurrencyProperties` at startup; runtime
+Yes. All `platform.component.concurrency.*` config items are bound through `ConcurrencyProperties` at startup; runtime
 modifications will not take effect automatically. If dynamic adjustment is needed, you can:
 
 1. Expose monitoring metrics like `RateLimiter.availablePermits()` via JMX.
@@ -2477,7 +2477,7 @@ private Map<String, DynamicExecutor> executors;
 ```
 
 No need to write `@Bean` registration methods on the business side. `AlgorithmAutoConfiguration` iterates the
-`platform.concurrency.thread-pools` Map during `PostConstruct` and registers each pool as a Spring singleton Bean.
+`platform.component.concurrency.thread-pools` Map during `PostConstruct` and registers each pool as a Spring singleton Bean.
 `shutdown()` is called automatically on container shutdown.
 
 ### `Q15` — `How` to `Integrate` with `Config` `Centers` (`Nacos`/`Etcd`) for `Dynamic` `Tuning`?
