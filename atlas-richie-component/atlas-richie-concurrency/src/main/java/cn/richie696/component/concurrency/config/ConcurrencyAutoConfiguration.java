@@ -26,6 +26,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.bind.PropertySourcesPlaceholdersResolver;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -100,7 +101,9 @@ public class ConcurrencyAutoConfiguration {
         // Binder 由本方法主动创建,不依赖 Spring 容器提供 Binder bean。
         // ConfigurationPropertySources.get(env) 包含 application.yml + spring.config.import (Nacos)
         // 等所有来源,Nacos 推送时 RefreshEvent 会触发环境重建,Binder 自动看到最新值。
-        Binder binder = new Binder(ConfigurationPropertySources.get(environment));
+        Binder binder = new Binder(
+                ConfigurationPropertySources.get(environment),
+                new PropertySourcesPlaceholdersResolver(environment));
         return new ThreadPoolConfigRefresher(executors, binder, properties);
     }
 }

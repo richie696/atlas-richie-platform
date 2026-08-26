@@ -27,6 +27,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.bind.PropertySourcesPlaceholdersResolver;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.Ordered;
@@ -155,7 +156,9 @@ public class DynamicExecutorRegistrar
      * @return 命名线程池配置 Map;无配置时返回空 Map(不会返回 null)
      */
     private Map<String, PoolProperties> bindThreadPools() {
-        Binder binder = new Binder(ConfigurationPropertySources.get(environment));
+        Binder binder = new Binder(
+                ConfigurationPropertySources.get(environment),
+                new PropertySourcesPlaceholdersResolver(environment));
         return binder
                 .bind(THREAD_POOLS_PREFIX,
                         Bindable.mapOf(String.class, PoolProperties.class))

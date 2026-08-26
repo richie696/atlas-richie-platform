@@ -204,6 +204,18 @@ class AlgorithmAutoConfigurationTest {
         }
 
         @Test
+        @DisplayName("带默认值的占位符：动态线程池参数可在手工 Binder 阶段解析")
+        void placeholderWithDefault_isResolvedBeforeBinding() {
+            startContext(Map.of(
+                    "platform.component.concurrency.thread-pools.order-executor.core-pool-size", "${ORDER_CORE_POOL:8}",
+                    "platform.component.concurrency.thread-pools.order-executor.maximum-pool-size", "${ORDER_MAX_POOL:16}"));
+
+            DynamicExecutor executor = context.getBean("order-executor", DynamicExecutor.class);
+            assertThat(executor.getCorePoolSize()).isEqualTo(8);
+            assertThat(executor.getMaximumPoolSize()).isEqualTo(16);
+        }
+
+        @Test
         @DisplayName("多池：每个池成为独立 Bean，可注入全部 Map<String, DynamicExecutor>")
         void multiplePools_eachRegisteredSeparately() {
             startContext(Map.of(
