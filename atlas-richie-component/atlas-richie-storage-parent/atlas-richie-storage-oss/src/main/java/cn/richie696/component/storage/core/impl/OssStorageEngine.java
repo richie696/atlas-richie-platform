@@ -99,7 +99,7 @@ public final class OssStorageEngine extends AbstractObjectStorageEngine<OSS> imp
                     .requestId(result.getRequestId())
                     .hashValue(result.getETag())
                     .uploadTime(OffsetDateTime.now())
-                    .url("https://" + getBucketName() + "." + objectConfig().getEndpoint() + "/" + key)
+                    .url(publicObjectUrl(key))
                     .build();
         } catch (OSSException oe) {
             log.error("Caught an OSSException, which means your request made it to OSS, "
@@ -112,7 +112,7 @@ public final class OssStorageEngine extends AbstractObjectStorageEngine<OSS> imp
                     .success(false)
                     .errorMessage(oe.getErrorMessage())
                     .requestId(oe.getRequestId())
-                    .url("https://" + getBucketName() + "." + objectConfig().getEndpoint() + "/" + key)
+                    .url(publicObjectUrl(key))
                     .build();
         } catch (ClientException ce) {
             log.error("Caught an ClientException, which means the client encountered "
@@ -161,7 +161,7 @@ public final class OssStorageEngine extends AbstractObjectStorageEngine<OSS> imp
                     .requestId(result.getRequestId())
                     .uploadTime(OffsetDateTime.now())
                     .hashValue(result.getServerCRC().toString())
-                    .url("https://" + getBucketName() + "." + objectConfig().getEndpoint() + "/" + key)
+                    .url(publicObjectUrl(key))
                     .build();
 
         } catch (OSSException oe) {
@@ -483,8 +483,8 @@ public final class OssStorageEngine extends AbstractObjectStorageEngine<OSS> imp
                     .fallback(false)
                     .build();
         } catch (Exception e) {
-            log.warn("OSS 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
-            return buildFallbackDirectDownloadPolicy(key, safeExpire);
+            log.warn("OSS 下载预签名签发失败，返回安全失败策略。key={}, error={}", realKey, e.getMessage());
+            return buildUnavailableDirectDownloadPolicy(key, safeExpire);
         } finally {
             destroy(ossClient);
         }

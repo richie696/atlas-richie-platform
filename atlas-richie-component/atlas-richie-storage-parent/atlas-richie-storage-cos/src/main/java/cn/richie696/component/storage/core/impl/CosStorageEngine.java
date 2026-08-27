@@ -346,8 +346,8 @@ public final class CosStorageEngine extends AbstractObjectStorageEngine<COSClien
                     .fallback(false)
                     .build();
         } catch (Exception e) {
-            log.warn("COS 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
-            return buildFallbackDirectDownloadPolicy(key, safeExpire);
+            log.warn("COS 下载预签名签发失败，返回安全失败策略。key={}, error={}", realKey, e.getMessage());
+            return buildUnavailableDirectDownloadPolicy(key, safeExpire);
         } finally {
             destroy(cosClient);
         }
@@ -386,7 +386,7 @@ public final class CosStorageEngine extends AbstractObjectStorageEngine<COSClien
                     .checksums(Map.copyOf(checksums))
                     .bucketName(getBucketName())
                     .versionId(result.getVersionId())
-                    .url("https://" + getBucketName() + "." + objectConfig().getEndpoint() + "/" + key)
+                    .url(publicObjectUrl(key))
                     .build();
         } catch (InterruptedException e) {
             log.error("[Storage] COS upload interrupted exception: {}", e.getMessage());

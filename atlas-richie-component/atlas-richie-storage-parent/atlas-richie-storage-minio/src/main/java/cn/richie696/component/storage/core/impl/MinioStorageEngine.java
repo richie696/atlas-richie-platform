@@ -168,7 +168,7 @@ public final class MinioStorageEngine extends AbstractObjectStorageEngine<MinioA
                     .requestId(response.etag())
                     .versionId(response.versionId())
                     .uploadTime(OffsetDateTime.now())
-                    .url("https://" + getBucketName() + "." + objectConfig().getEndpoint() + "/" + key)
+                    .url(publicObjectUrl(key))
                     .build();
         } catch (Exception e) {
             return UploadResponse.builder()
@@ -208,7 +208,7 @@ public final class MinioStorageEngine extends AbstractObjectStorageEngine<MinioA
                     .requestId(response.etag())
                     .versionId(response.versionId())
                     .uploadTime(OffsetDateTime.now())
-                    .url("https://" + getBucketName() + "." + objectConfig().getEndpoint() + "/" + key)
+                    .url(publicObjectUrl(key))
                     .build();
         } catch (Exception e) {
             return UploadResponse.builder()
@@ -433,8 +433,8 @@ public final class MinioStorageEngine extends AbstractObjectStorageEngine<MinioA
                     .fallback(false)
                     .build();
         } catch (Exception e) {
-            log.warn("MinIO 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
-            return buildFallbackDirectDownloadPolicy(key, safeExpire);
+            log.warn("MinIO 下载预签名签发失败，返回安全失败策略。key={}, error={}", realKey, e.getMessage());
+            return buildUnavailableDirectDownloadPolicy(key, safeExpire);
         }
     }
 }

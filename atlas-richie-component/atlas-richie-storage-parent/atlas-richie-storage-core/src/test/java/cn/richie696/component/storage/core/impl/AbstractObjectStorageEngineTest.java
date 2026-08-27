@@ -16,6 +16,7 @@
 package cn.richie696.component.storage.core.impl;
 
 import cn.richie696.component.storage.bean.ObjectConfig;
+import cn.richie696.component.storage.bean.DirectUploadRequest;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.converter.StorageTypeConverter;
@@ -84,6 +85,15 @@ class AbstractObjectStorageEngineTest {
         assertThat(policy.isSuccess()).isTrue();
         assertThat(policy.isFallback()).isTrue();
         assertThat(policy.getExpireAt()).isNotNull();
+    }
+
+    @Test
+    void issueDirectUploadPolicy_requestOverloadDelegatesToProviderKeyOverload() {
+        var policy = engine.issueDirectUploadPolicy(
+                DirectUploadRequest.builder().key("doc.txt").expireSeconds(30).build());
+        assertThat(policy.isSuccess()).isTrue();
+        assertThat(policy.isFallback()).isTrue();
+        assertThat(policy.getKey()).isEqualTo("base/doc.txt");
     }
 
     @Test
@@ -179,16 +189,25 @@ class AbstractObjectStorageEngineTest {
     }
 
     @Test
+    void publicObjectUrl_resolvesBusinessKeyWithoutDuplicatingBasePath() {
+        assertThat(engine.publicObjectUrl("nested/file.pdf"))
+                .isEqualTo("https://bucket.cdn.example.com/base/nested/file.pdf");
+        assertThat(engine.publicObjectUrl("base/nested/file.pdf"))
+                .isEqualTo("https://bucket.cdn.example.com/base/nested/file.pdf");
+    }
+
+    @Test
     void issueDirectUploadPolicy_enforcesMinimumExpireSeconds() {
         var policy = engine.issueDirectUploadPolicy("k", 10);
         assertThat(policy.getExpireAt()).isAfter(java.time.OffsetDateTime.now().plusSeconds(59));
     }
 
     @Test
-    void issueDirectDownloadPolicy_returnsFallbackPolicy() {
+    void issueDirectDownloadPolicy_returnsSafeFailureWithoutPublicUrl() {
         var policy = engine.issueDirectDownloadPolicy("doc.txt", 30);
-        assertThat(policy.isSuccess()).isTrue();
-        assertThat(policy.isFallback()).isTrue();
+        assertThat(policy.isSuccess()).isFalse();
+        assertThat(policy.isFallback()).isFalse();
+        assertThat(policy.getDownloadUrl()).isNull();
         assertThat(policy.getExpireAt()).isNotNull();
     }
 
@@ -201,10 +220,35 @@ class AbstractObjectStorageEngineTest {
     @Test
     void issueDirectDownloadPolicy_populatesUrlKeyAndBucket() {
         var policy = engine.issueDirectDownloadPolicy("nested/path/file.bin", 600);
-        assertThat(policy.getDownloadUrl()).isEqualTo("https://bucket.cdn.example.com/base/nested/path/file.bin");
+        assertThat(policy.isSuccess()).isFalse();
+        assertThat(policy.getDownloadUrl()).isNull();
         assertThat(policy.getKey()).isEqualTo("base/nested/path/file.bin");
         assertThat(policy.getBucketName()).isEqualTo("bucket");
         assertThat(policy.getExpireAt()).isAfter(java.time.OffsetDateTime.now().plusSeconds(599));
+    }
+
+    @Test
+    void resolveDownloadPolicy_publicReadUsesStablePublicUrl() {
+        properties.getObject().setAcl(AclTypeEnum.PUBLIC_READ);
+
+        var policy = engine.resolveDownloadPolicy("nested/file.pdf", 600);
+
+        assertThat(policy.isSuccess()).isTrue();
+        assertThat(policy.isFallback()).isFalse();
+        assertThat(policy.getDownloadUrl()).isEqualTo("https://bucket.cdn.example.com/base/nested/file.pdf");
+        assertThat(policy.getKey()).isEqualTo("base/nested/file.pdf");
+    }
+
+    @Test
+    void resolveDownloadPolicy_nonPublicReadDelegatesToDirectPolicy() {
+        properties.getObject().setAcl(AclTypeEnum.PRIVATE);
+
+        var policy = engine.resolveDownloadPolicy("nested/file.pdf", 600);
+
+        assertThat(policy.isSuccess()).isFalse();
+        assertThat(policy.isFallback()).isFalse();
+        assertThat(policy.getDownloadUrl()).isNull();
+        assertThat(policy.getErrorMessage()).contains("安全下载地址");
     }
 
     @Test

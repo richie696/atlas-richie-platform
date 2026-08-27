@@ -115,7 +115,7 @@ public final class S3StorageEngine extends AbstractObjectStorageEngine<S3Client>
                     .requestId(putObjectResponse.eTag())
                     .hashValue(putObjectResponse.eTag()) // AWS SDK 2.x不再提供contentMd5
                     .uploadTime(OffsetDateTime.now())
-                    .url(buildObjectUrl(key))
+                    .url(publicObjectUrl(key))
                     .build();
         } catch (AwsServiceException e) {
             return UploadResponse.builder()
@@ -171,7 +171,7 @@ public final class S3StorageEngine extends AbstractObjectStorageEngine<S3Client>
                     .requestId(putObjectResponse.eTag())
                     .hashValue(putObjectResponse.eTag()) // AWS SDK 2.x不再提供contentMd5
                     .uploadTime(OffsetDateTime.now())
-                    .url(buildObjectUrl(key))
+                    .url(publicObjectUrl(key))
                     .build();
         } catch (AwsServiceException e) {
             return UploadResponse.builder()
@@ -501,28 +501,9 @@ public final class S3StorageEngine extends AbstractObjectStorageEngine<S3Client>
                     .fallback(false)
                     .build();
         } catch (Exception e) {
-            log.warn("S3 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
-            return buildFallbackDirectDownloadPolicy(key, safeExpire);
+            log.warn("S3 下载预签名签发失败，返回安全失败策略。key={}, error={}", realKey, e.getMessage());
+            return buildUnavailableDirectDownloadPolicy(key, safeExpire);
         }
     }
 
-    /**
-     * 构建对象访问URL
-     * <p>
-     * AWS S3 标准URL格式：<a href="https://bucket-name.s3.region.amazonaws.com/key">...</a>
-     * 如果 endpoint 包含协议前缀，则移除
-     *
-     * @param key 对象键
-     * @return 对象访问URL
-     */
-    private String buildObjectUrl(String key) {
-        String endpoint = objectConfig().getEndpoint();
-        // 移除协议前缀（如果存在）
-        if (endpoint.startsWith("http://")) {
-            endpoint = endpoint.substring(7);
-        } else if (endpoint.startsWith("https://")) {
-            endpoint = endpoint.substring(8);
-        }
-        return "https://%s.%s/%s".formatted(getBucketName(), endpoint, key);
-    }
 }

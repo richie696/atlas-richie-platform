@@ -429,8 +429,8 @@ public final class TosStorageEngine extends AbstractObjectStorageEngine<TOSV2> i
                     .fallback(false)
                     .build();
         } catch (Exception e) {
-            log.warn("TOS 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
-            return buildFallbackDirectDownloadPolicy(key, safeExpire);
+            log.warn("TOS 下载预签名签发失败，返回安全失败策略。key={}, error={}", realKey, e.getMessage());
+            return buildUnavailableDirectDownloadPolicy(key, safeExpire);
         } finally {
             destroy(client);
         }
@@ -439,147 +439,38 @@ public final class TosStorageEngine extends AbstractObjectStorageEngine<TOSV2> i
     /**
      * 为 GET 请求签发预签名 URL。
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private String invokeTosPresignForGet(TOSV2 client, String bucket, String key, int expireSeconds) throws Exception {
-        // 优先尝试常见签名方法：preSignedURL(PreSignedURLInput)
-        for (var method : client.getClass().getMethods()) {
-            String methodName = method.getName();
-            if (!("preSignedURL".equals(methodName) || "preSignedUrl".equals(methodName))) {
-                continue;
-            }
-            Class<?>[] paramTypes = method.getParameterTypes();
-            if (paramTypes.length != 1) {
-                continue;
-            }
-            Object input = buildTosPreSignedInputForGet(paramTypes[0], bucket, key, expireSeconds);
-            Object output = method.invoke(client, input);
-            return String.valueOf(output);
+        // ve-tos-java-sdk exposes a typed PreSignedURLOutput.  Do not use
+        // toString() here: it does not return a usable URL and silently causes
+        // callers to fall back to an insecure public URL.
+        PreSignedURLInput input = new PreSignedURLInput()
+                .setHttpMethod("GET")
+                .setBucket(bucket)
+                .setKey(key)
+                .setExpires(expireSeconds)
+                // TOS object keys use '/' as path separators. Encoding the
+                // separators as %2F changes the canonical resource and yields
+                // 403 for otherwise valid signatures.
+                .setEncodingSlash(false);
+        PreSignedURLOutput output = client.preSignedURL(input);
+        if (output == null || output.getSignedUrl() == null || output.getSignedUrl().isBlank()) {
+            throw new IllegalStateException("TOS presign returned an empty URL");
         }
-        // 次选：generatePresignedUrl(bucket,key,expire,methodEnum)
-        for (var method : client.getClass().getMethods()) {
-            if (!"generatePresignedUrl".equals(method.getName())) {
-                continue;
-            }
-            Class<?>[] paramTypes = method.getParameterTypes();
-            if (paramTypes.length == 4
-                    && paramTypes[0] == String.class
-                    && paramTypes[1] == String.class
-                    && (paramTypes[2] == int.class || paramTypes[2] == Integer.class)
-                    && paramTypes[3].isEnum()) {
-                Enum get = Enum.valueOf((Class<? extends Enum>) paramTypes[3], "GET");
-                Object url = method.invoke(client, bucket, key, expireSeconds, get);
-                return String.valueOf(url);
-            }
-        }
-        throw new NoSuchMethodException("TOS presign method not found");
+        return output.getSignedUrl();
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private Object buildTosPreSignedInputForGet(Class<?> inputClass, String bucket, String key, int expireSeconds) throws Exception {
-        // builder 风格
-        try {
-            Object builder = inputClass.getMethod("builder").invoke(null);
-            invokeIfPresent(builder, "bucket", String.class, bucket);
-            invokeIfPresent(builder, "setBucket", String.class, bucket);
-            invokeIfPresent(builder, "key", String.class, key);
-            invokeIfPresent(builder, "setKey", String.class, key);
-            invokeIfPresent(builder, "expires", int.class, expireSeconds);
-            invokeIfPresent(builder, "setExpires", int.class, expireSeconds);
-            Class<? extends Enum> httpMethodClass =
-                    (Class<? extends Enum>) Class.forName("com.volcengine.tos.comm.HttpMethod");
-            Enum get = Enum.valueOf(httpMethodClass, "GET");
-            invokeIfPresent(builder, "httpMethod", httpMethodClass, get);
-            invokeIfPresent(builder, "setHttpMethod", httpMethodClass, get);
-            return builder.getClass().getMethod("build").invoke(builder);
-        } catch (NoSuchMethodException ignore) {
-            Object input = inputClass.getConstructor().newInstance();
-            invokeIfPresent(input, "setBucket", String.class, bucket);
-            invokeIfPresent(input, "setKey", String.class, key);
-            invokeIfPresent(input, "setExpires", int.class, expireSeconds);
-            try {
-                Class<? extends Enum> httpMethodClass =
-                        (Class<? extends Enum>) Class.forName("com.volcengine.tos.comm.HttpMethod");
-                Enum get = Enum.valueOf(httpMethodClass, "GET");
-                invokeIfPresent(input, "setHttpMethod", httpMethodClass, get);
-            } catch (ClassNotFoundException ignored) {
-            }
-            return input;
-        }
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private String invokeTosPresign(TOSV2 client, String bucket, String key, int expireSeconds) throws Exception {
-        // 优先尝试常见签名方法：preSignedURL(PreSignedURLInput)
-        for (var method : client.getClass().getMethods()) {
-            String methodName = method.getName();
-            if (!("preSignedURL".equals(methodName) || "preSignedUrl".equals(methodName))) {
-                continue;
-            }
-            Class<?>[] paramTypes = method.getParameterTypes();
-            if (paramTypes.length != 1) {
-                continue;
-            }
-            Object input = buildTosPreSignedInput(paramTypes[0], bucket, key, expireSeconds);
-            Object output = method.invoke(client, input);
-            return String.valueOf(output);
+        PreSignedURLInput input = new PreSignedURLInput()
+                .setHttpMethod("PUT")
+                .setBucket(bucket)
+                .setKey(key)
+                .setExpires(expireSeconds)
+                .setEncodingSlash(false);
+        PreSignedURLOutput output = client.preSignedURL(input);
+        if (output == null || output.getSignedUrl() == null || output.getSignedUrl().isBlank()) {
+            throw new IllegalStateException("TOS presign returned an empty URL");
         }
-        // 次选：generatePresignedUrl(bucket,key,expire,methodEnum)
-        for (var method : client.getClass().getMethods()) {
-            if (!"generatePresignedUrl".equals(method.getName())) {
-                continue;
-            }
-            Class<?>[] paramTypes = method.getParameterTypes();
-            if (paramTypes.length == 4
-                    && paramTypes[0] == String.class
-                    && paramTypes[1] == String.class
-                    && (paramTypes[2] == int.class || paramTypes[2] == Integer.class)
-                    && paramTypes[3].isEnum()) {
-                Enum put = Enum.valueOf((Class<? extends Enum>) paramTypes[3], "PUT");
-                Object url = method.invoke(client, bucket, key, expireSeconds, put);
-                return String.valueOf(url);
-            }
-        }
-        throw new NoSuchMethodException("TOS presign method not found");
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private Object buildTosPreSignedInput(Class<?> inputClass, String bucket, String key, int expireSeconds) throws Exception {
-        // builder 风格
-        try {
-            Object builder = inputClass.getMethod("builder").invoke(null);
-            invokeIfPresent(builder, "bucket", String.class, bucket);
-            invokeIfPresent(builder, "setBucket", String.class, bucket);
-            invokeIfPresent(builder, "key", String.class, key);
-            invokeIfPresent(builder, "setKey", String.class, key);
-            invokeIfPresent(builder, "expires", int.class, expireSeconds);
-            invokeIfPresent(builder, "setExpires", int.class, expireSeconds);
-            Class<? extends Enum> httpMethodClass =
-                    (Class<? extends Enum>) Class.forName("com.volcengine.tos.comm.HttpMethod");
-            Enum put = Enum.valueOf(httpMethodClass, "PUT");
-            invokeIfPresent(builder, "httpMethod", httpMethodClass, put);
-            invokeIfPresent(builder, "setHttpMethod", httpMethodClass, put);
-            return builder.getClass().getMethod("build").invoke(builder);
-        } catch (NoSuchMethodException ignore) {
-            Object input = inputClass.getConstructor().newInstance();
-            invokeIfPresent(input, "setBucket", String.class, bucket);
-            invokeIfPresent(input, "setKey", String.class, key);
-            invokeIfPresent(input, "setExpires", int.class, expireSeconds);
-            try {
-                Class<? extends Enum> httpMethodClass =
-                        (Class<? extends Enum>) Class.forName("com.volcengine.tos.comm.HttpMethod");
-                Enum put = Enum.valueOf(httpMethodClass, "PUT");
-                invokeIfPresent(input, "setHttpMethod", httpMethodClass, put);
-            } catch (ClassNotFoundException ignored) {
-            }
-            return input;
-        }
-    }
-
-    private void invokeIfPresent(Object target, String methodName, Class<?> argType, Object arg) {
-        try {
-            target.getClass().getMethod(methodName, argType).invoke(target, arg);
-        } catch (Exception ignore) {
-        }
+        return output.getSignedUrl();
     }
 
     private UploadResponse getUploadResponse(String key, @Nonnull InputStream inputStream, TOSV2 client) {
@@ -615,7 +506,7 @@ public final class TosStorageEngine extends AbstractObjectStorageEngine<TOSV2> i
                 .requestId(output.getRequestInfo().getRequestId())
                 .hashValue(output.getEtag())
                 .uploadTime(OffsetDateTime.now())
-                .url("https://" + getBucketName() + "." + objectConfig().getEndpoint() + "/" + key)
+                .url(publicObjectUrl(key))
                 .build();
     }
 

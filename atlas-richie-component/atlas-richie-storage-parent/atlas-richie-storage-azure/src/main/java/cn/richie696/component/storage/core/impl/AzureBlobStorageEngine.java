@@ -56,6 +56,20 @@ import java.io.File;
         havingValue = "true", matchIfMissing = true)
 public final class AzureBlobStorageEngine extends AbstractObjectStorageEngine<BlobContainerClient> implements StorageEngine, DirectStorageEngine {
 
+    /** Azure Blob 使用 endpoint/container/blob 路径，不使用其他对象存储的 bucket 子域名规则。 */
+    @Override
+    public String publicObjectUrl(String key) {
+        String endpoint = objectConfig().getEndpoint();
+        String realKey = getRealPath(key);
+        if (endpoint == null || endpoint.isBlank()) return realKey;
+        String normalizedEndpoint = endpoint.startsWith("http://") || endpoint.startsWith("https://")
+                ? endpoint
+                : "https://" + endpoint;
+        String base = normalizedEndpoint.replaceAll("/+$", "");
+        if (base.endsWith("/" + getBucketName())) return base + "/" + realKey;
+        return base + "/" + getBucketName() + "/" + realKey;
+    }
+
     /**
      * 构造函数
      *
@@ -258,8 +272,8 @@ public final class AzureBlobStorageEngine extends AbstractObjectStorageEngine<Bl
                     .fallback(false)
                     .build();
         } catch (Exception e) {
-            log.warn("Azure 下载预签名签发失败，降级兜底直读链接。key={}, error={}", realKey, e.getMessage());
-            return buildFallbackDirectDownloadPolicy(key, safeExpire);
+            log.warn("Azure 下载预签名签发失败，返回安全失败策略。key={}, error={}", realKey, e.getMessage());
+            return buildUnavailableDirectDownloadPolicy(key, safeExpire);
         }
     }
 

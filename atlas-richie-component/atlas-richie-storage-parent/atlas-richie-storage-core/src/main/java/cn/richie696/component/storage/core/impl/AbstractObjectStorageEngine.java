@@ -16,12 +16,14 @@
 package cn.richie696.component.storage.core.impl;
 
 import cn.richie696.component.storage.bean.DirectDownloadPolicy;
+import cn.richie696.component.storage.bean.DirectUploadRequest;
 import cn.richie696.component.storage.bean.DirectUploadPolicy;
 import cn.richie696.component.storage.bean.ObjectConfig;
 import cn.richie696.component.storage.bean.UploadResponse;
 import cn.richie696.component.storage.config.StorageProperties;
 import cn.richie696.component.storage.converter.AclTypeConverter;
 import cn.richie696.component.storage.converter.StorageTypeConverter;
+import cn.richie696.component.storage.core.ObjectStorageEngine;
 import cn.richie696.component.storage.util.ObjectStorageKeys;
 import cn.richie696.context.utils.data.JsonUtils;
 import jakarta.annotation.Nonnull;
@@ -44,7 +46,8 @@ import java.util.Objects;
  * @since 2023-09-05
  */
 @RequiredArgsConstructor
-public abstract class AbstractObjectStorageEngine<T> extends AbstractDestroyEngine<T> {
+public abstract class AbstractObjectStorageEngine<T> extends AbstractDestroyEngine<T>
+        implements ObjectStorageEngine {
 
     /**
      * 存储组件统一配置
@@ -116,6 +119,14 @@ public abstract class AbstractObjectStorageEngine<T> extends AbstractDestroyEngi
     }
 
     /**
+     * 由 ObjectStorageEngine 统一暴露公开对象地址；Provider 不需要重复实现 ACL 决策。
+     */
+    @Override
+    public String publicObjectUrl(String key) {
+        return buildPublicObjectUrl(getRealPath(key));
+    }
+
+    /**
      * 获取桶名称的方法
      *
      * @return 返回桶名称
@@ -172,6 +183,20 @@ public abstract class AbstractObjectStorageEngine<T> extends AbstractDestroyEngi
     }
 
     /**
+     * 兼容带元数据的直传请求。
+     *
+     * <p>旧版 Provider 普遍覆盖的是 {@code (key, expireSeconds)} 重载，而业务层
+     * 为了传递文件大小、MIME 和校验值会调用 {@link DirectUploadRequest} 重载。
+     * 如果这里不做统一分派，接口默认实现会直接返回“暂不支持直传”，导致这些
+     * Provider 明明具备预签名能力却无法被上传流程使用。Provider 已覆盖请求重载
+     * （例如 COS）的实现仍会优先使用自身实现。</p>
+     */
+    @Override
+    public DirectUploadPolicy issueDirectUploadPolicy(@Nonnull DirectUploadRequest request) {
+        return issueDirectUploadPolicy(request.getKey(), request.getExpireSeconds());
+    }
+
+    /**
      * 构建兜底直读策略（当引擎未接入官方预签名时使用公开 URL 作为降级方案）。
      *
      * @param key           对象键
@@ -192,9 +217,25 @@ public abstract class AbstractObjectStorageEngine<T> extends AbstractDestroyEngi
                 .build();
     }
 
+    /**
+     * 安全失败策略：私有/受控 ACL 在官方签名失败时绝不能降级为公开 URL。
+     * 业务层可据此提示配置凭据或存储策略，而不会意外泄露对象。
+     */
+    protected DirectDownloadPolicy buildUnavailableDirectDownloadPolicy(String key, int expireSeconds) {
+        int safeExpire = Math.max(expireSeconds, 60);
+        return DirectDownloadPolicy.builder()
+                .success(false)
+                .errorMessage("无法为当前 ACL 签发安全下载地址，请检查对象存储凭据和 Provider 配置。")
+                .bucketName(getBucketName())
+                .key(getRealPath(key))
+                .expireAt(OffsetDateTime.now().plusSeconds(safeExpire))
+                .fallback(false)
+                .build();
+    }
+
     @Override
     public DirectDownloadPolicy issueDirectDownloadPolicy(@NonNull String key, int expireSeconds) {
-        return buildFallbackDirectDownloadPolicy(key, expireSeconds);
+        return buildUnavailableDirectDownloadPolicy(key, expireSeconds);
     }
 
     @Override

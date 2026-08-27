@@ -701,17 +701,17 @@ class MinioStorageEngineTest {
     }
 
     @Test
-    void issueDirectDownloadPolicy_fallsBackOnPresignError() throws Exception {
+    void issueDirectDownloadPolicy_returnsSafeFailureOnPresignError() throws Exception {
         when(minioAsyncClient.getPresignedObjectUrl(any(io.minio.GetPresignedObjectUrlArgs.class)))
                 .thenThrow(new RuntimeException("presign failed"));
 
         cn.richie696.component.storage.bean.DirectDownloadPolicy policy =
                 engine.issueDirectDownloadPolicy("test.txt", 600);
 
-        // Falls back to a direct URL pattern
-        assertThat(policy.isSuccess()).isTrue();
-        assertThat(policy.isFallback()).isTrue();
-        assertThat(policy.getDownloadUrl()).contains("test-bucket");
+        assertThat(policy.isSuccess()).isFalse();
+        assertThat(policy.isFallback()).isFalse();
+        assertThat(policy.getDownloadUrl()).isNull();
+        assertThat(policy.getErrorMessage()).contains("安全下载地址");
         assertThat(policy.getKey()).isEqualTo("base/test.txt");
     }
 }
