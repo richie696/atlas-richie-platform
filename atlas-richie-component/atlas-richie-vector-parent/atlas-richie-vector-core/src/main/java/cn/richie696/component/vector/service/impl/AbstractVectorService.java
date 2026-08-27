@@ -24,6 +24,10 @@ import cn.richie696.component.vector.embeddings.ModalityAwareEmbeddingService;
 import cn.richie696.component.vector.exceptions.UnsupportedModalityException;
 import cn.richie696.component.vector.filter.VectorFilterCompiler;
 import cn.richie696.component.vector.model.*;
+import cn.richie696.component.vector.observation.RetrievalObservationContext;
+import cn.richie696.component.vector.observation.RetrievalObservationEvent;
+import cn.richie696.component.vector.observation.RetrievalObservationHook;
+import cn.richie696.component.vector.observation.RetrievalStage;
 import cn.richie696.component.vector.service.VectorService;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -207,6 +211,9 @@ public abstract class AbstractVectorService implements VectorService {
         options = options == null ? SearchOptions.builder().build() : options;
         int topK = limit > 0 ? limit : 10;
         double minScore = options.getMinScore() != null ? options.getMinScore() : 0.0;
+        RetrievalObservationHook hook = options.getObservationHook();
+        RetrievalObservationContext context = observationContext(indexName, topK, options);
+        Instant totalStarted = Instant.now();
 
         SearchRequest request = SearchRequest.builder()
                 .query(text)
@@ -215,8 +222,28 @@ public abstract class AbstractVectorService implements VectorService {
                 .filterExpression(compileProviderFilter(options))
                 .build();
 
-        List<Document> results = vectorStore.similaritySearch(request);
+        Instant vectorSearchStarted = Instant.now();
+        List<Document> results;
+        try {
+            results = vectorStore.similaritySearch(request);
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
+                    RetrievalStage.VECTOR_SEARCH, Duration.between(vectorSearchStarted, Instant.now()),
+                    topK, results == null ? 0 : results.size(), true));
+        } catch (RuntimeException e) {
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(context,
+                    RetrievalStage.VECTOR_SEARCH, Duration.between(vectorSearchStarted, Instant.now()), topK, e));
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(context,
+                    RetrievalStage.TOTAL, Duration.between(totalStarted, Instant.now()), topK, e));
+            throw e;
+        }
+        if (results == null) {
+            results = List.of();
+        }
         if (results.isEmpty()) {
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.skipped(context,
+                    RetrievalStage.RERANK, 0, 0));
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
+                    RetrievalStage.TOTAL, Duration.between(totalStarted, Instant.now()), 0, 0, true));
             return List.of();
         }
 
@@ -229,7 +256,27 @@ public abstract class AbstractVectorService implements VectorService {
                 .collect(Collectors.toList());
 
         boolean rerankEnabled = Boolean.TRUE.equals(options.getRerank());
-        return rerankEnabled ? tryRerank(text, mapped) : mapped;
+        List<VectorSearchResult> finalResults = rerankEnabled
+                ? tryRerank(text, mapped, hook, context)
+                : emitRerankSkipped(mapped, hook, context);
+        RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
+                RetrievalStage.TOTAL, Duration.between(totalStarted, Instant.now()), mapped.size(),
+                finalResults == null ? 0 : finalResults.size(), true));
+        return finalResults;
+    }
+
+    protected static RetrievalObservationContext observationContext(String indexName, int topK, SearchOptions options) {
+        RetrievalObservationContext context = options.getObservationContext();
+        return context != null ? context : RetrievalObservationContext.forTextSearch(indexName, topK,
+                Boolean.TRUE.equals(options.getRerank()));
+    }
+
+    protected static List<VectorSearchResult> emitRerankSkipped(List<VectorSearchResult> results,
+                                                                RetrievalObservationHook hook,
+                                                                RetrievalObservationContext context) {
+        RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.skipped(context,
+                RetrievalStage.RERANK, results == null ? 0 : results.size(), results == null ? 0 : results.size()));
+        return results;
     }
 
     /**
@@ -410,7 +457,27 @@ public abstract class AbstractVectorService implements VectorService {
         SearchOptions inner = options != null && options.getSearchOptions() != null
                 ? options.getSearchOptions()
                 : SearchOptions.builder().build();
-        return hybridSearchImpl(indexName, text, keywordQuery, limit, vectorWeight, keywordWeight, inner);
+        RetrievalObservationHook hook = inner.getObservationHook();
+        int topK = limit > 0 ? limit : 10;
+        RetrievalObservationContext context = observationContext(indexName, topK, inner);
+        Instant searchStarted = Instant.now();
+        try {
+            List<VectorSearchResult> results = hybridSearchImpl(indexName, text, keywordQuery, limit,
+                    vectorWeight, keywordWeight, inner);
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
+                    RetrievalStage.VECTOR_SEARCH, Duration.between(searchStarted, Instant.now()),
+                    topK, results == null ? 0 : results.size(), true));
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
+                    RetrievalStage.TOTAL, Duration.between(searchStarted, Instant.now()), topK,
+                    results == null ? 0 : results.size(), true));
+            return results == null ? List.of() : results;
+        } catch (RuntimeException e) {
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(context,
+                    RetrievalStage.VECTOR_SEARCH, Duration.between(searchStarted, Instant.now()), topK, e));
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(context,
+                    RetrievalStage.TOTAL, Duration.between(searchStarted, Instant.now()), topK, e));
+            throw e;
+        }
     }
 
     public List<VectorSearchResult> searchByMultiVector(String indexName, List<float[]> vectors, int limit) {
@@ -673,8 +740,20 @@ public abstract class AbstractVectorService implements VectorService {
      * 重排序（仅文本搜索时生效）。
      */
     protected List<VectorSearchResult> tryRerank(String queryText, List<VectorSearchResult> results) {
+        return tryRerank(queryText, results, RetrievalObservationHook.NOOP,
+                RetrievalObservationContext.forTextSearch("", results == null ? 0 : results.size(), true));
+    }
+
+    /**
+     * 带观测上下文的重排入口；旧子类/调用方继续使用上面的兼容重载。
+     */
+    protected List<VectorSearchResult> tryRerank(String queryText, List<VectorSearchResult> results,
+                                                 RetrievalObservationHook hook,
+                                                 RetrievalObservationContext context) {
         if (rerankService == null || results == null || results.size() < 2
                 || queryText == null || queryText.isBlank()) {
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.skipped(context,
+                    RetrievalStage.RERANK, results == null ? 0 : results.size(), results == null ? 0 : results.size()));
             return results;
         }
 
@@ -683,14 +762,20 @@ public abstract class AbstractVectorService implements VectorService {
                 .collect(Collectors.toList());
 
         RerankResponse resp;
+        Instant rerankStarted = Instant.now();
         try {
             resp = rerankService.rerank(queryText, documents, null, null);
         } catch (Exception e) {
             log.warn("重排序服务调用异常，跳过重排", e);
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(context,
+                    RetrievalStage.RERANK, Duration.between(rerankStarted, Instant.now()), results.size(), e));
             return results;
         }
 
         if (!resp.isSuccess() || resp.getResults() == null || resp.getResults().isEmpty()) {
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
+                    RetrievalStage.RERANK, Duration.between(rerankStarted, Instant.now()), results.size(),
+                    results.size(), false));
             return results;
         }
 
@@ -710,10 +795,16 @@ public abstract class AbstractVectorService implements VectorService {
         }
 
         if (reranked.isEmpty()) {
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
+                    RetrievalStage.RERANK, Duration.between(rerankStarted, Instant.now()), results.size(),
+                    results.size(), false));
             return results;
         }
 
         log.debug("tryRerank: 重排生效，结果数 {} (原始 {})", reranked.size(), results.size());
+        RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
+                RetrievalStage.RERANK, Duration.between(rerankStarted, Instant.now()), results.size(),
+                reranked.size(), true));
         return reranked;
     }
 

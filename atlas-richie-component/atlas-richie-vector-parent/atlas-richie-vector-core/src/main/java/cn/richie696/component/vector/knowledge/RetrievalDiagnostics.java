@@ -28,10 +28,22 @@ import java.time.Duration;
  * @param elapsed        整个 {@link KnowledgeBaseVectorService#search} 调用的端到端耗时，
  *                       包含 ACL filter 构造、projection 版本解析、provider 调用、
  *                       MMR 多样性截断
+ * @param embeddingElapsed     查询 embedding 阶段耗时；provider 无法拆分时为 {@code null}
+ * @param vectorSearchElapsed  向量/混合候选召回阶段耗时
+ * @param rerankElapsed        重排序阶段耗时；未执行或失败时为 {@code null}
+ * @param diversifyElapsed     MMR 与单文档多样性截断阶段耗时
  * @author richie696
  * @version 1.0
  * @since 2025-07-01
  */
 public record RetrievalDiagnostics(int candidateCount, int returnedCount, boolean hybrid, boolean reranked,
-                                   Duration elapsed) {
+                                   Duration elapsed, Duration embeddingElapsed,
+                                   Duration vectorSearchElapsed, Duration rerankElapsed,
+                                   Duration diversifyElapsed) {
+
+    /** 向后兼容旧调用方；未提供阶段观测时阶段耗时为 {@code null}。 */
+    public RetrievalDiagnostics(int candidateCount, int returnedCount, boolean hybrid, boolean reranked,
+                                Duration elapsed) {
+        this(candidateCount, returnedCount, hybrid, reranked, elapsed, null, null, null, null);
+    }
 }

@@ -490,7 +490,7 @@ public final class CosStorageEngine extends AbstractObjectStorageEngine<COSClien
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            transferManager.shutdownNow(true);
+            transferManager.shutdownNow(false);
         }
     }
 

@@ -15,6 +15,8 @@
  */
 package cn.richie696.component.vector.model;
 
+import cn.richie696.component.vector.observation.RetrievalObservationContext;
+import cn.richie696.component.vector.observation.RetrievalObservationHook;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +26,8 @@ import lombok.NoArgsConstructor;
  * 搜索选项。
  * <p>
  * 用于在 {@code searchByText} / {@code searchByImage} / {@code hybridSearch} 等方法中传递精细控制参数。
+ * 可选的 {@link cn.richie696.component.vector.observation.RetrievalObservationHook}
+ * 仅用于采集阶段耗时，不参与检索决策。
  *
  * @author richie696
  * @since 2.0.0
@@ -65,4 +69,14 @@ public class SearchOptions {
      * 文档类型过滤（type == this）
      */
     private String type;
+
+    /**
+     * 可选的检索阶段观测钩子。默认不安装，避免 Vector Core 依赖业务指标系统。
+     */
+    private RetrievalObservationHook observationHook;
+
+    /**
+     * 单次检索的关联上下文；未提供时由 provider 搜索入口自动创建。
+     */
+    private RetrievalObservationContext observationContext;
 }

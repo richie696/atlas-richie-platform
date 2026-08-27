@@ -19,8 +19,13 @@ import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.config.MilvusConfig;
 import cn.richie696.component.vector.config.VectorProperties;
 import cn.richie696.component.vector.model.*;
+import cn.richie696.component.vector.observation.RetrievalObservationContext;
+import cn.richie696.component.vector.observation.RetrievalObservationEvent;
+import cn.richie696.component.vector.observation.RetrievalObservationHook;
+import cn.richie696.component.vector.observation.RetrievalStage;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorIndexRebuildOperations;
+import cn.richie696.component.vector.service.VectorIndexSchemaOperations;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import cn.richie696.component.vector.service.VectorService;
 import cn.richie696.context.utils.data.JsonUtils;
@@ -49,6 +54,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.List;
@@ -75,7 +82,7 @@ import java.util.Map;
  */
 @Slf4j
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "milvus")
-public class MilvusVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, VectorIndexLifecycleOperations, VectorIndexRebuildOperations {
+public class MilvusVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, VectorIndexLifecycleOperations, VectorIndexRebuildOperations, VectorIndexSchemaOperations {
 
     private final MilvusConfig milvusConfig;
     private final MilvusServiceClient milvusClient;
@@ -120,13 +127,48 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         SearchOptions effectiveOptions = options == null ? SearchOptions.builder().build() : options;
         int topK = limit > 0 ? limit : 10;
         double minScore = effectiveOptions.getMinScore() == null ? 0.0 : effectiveOptions.getMinScore();
-        float[] queryVector = embeddingModel.embed(text);
+        RetrievalObservationHook hook = effectiveOptions.getObservationHook();
+        RetrievalObservationContext context = observationContext(indexName, topK, effectiveOptions);
+        Instant totalStarted = Instant.now();
+        Instant embeddingStarted = Instant.now();
+        float[] queryVector;
+        try {
+            queryVector = embeddingModel.embed(text);
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
+                    RetrievalStage.EMBEDDING, Duration.between(embeddingStarted, Instant.now()),
+                    1, queryVector == null ? 0 : queryVector.length, true));
+        } catch (RuntimeException e) {
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(context,
+                    RetrievalStage.EMBEDDING, Duration.between(embeddingStarted, Instant.now()), 1, e));
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(context,
+                    RetrievalStage.TOTAL, Duration.between(totalStarted, Instant.now()), topK, e));
+            throw e;
+        }
         String filter = compileProviderFilter(effectiveOptions);
-        List<VectorSearchResult> results = similaritySearchByVector(indexName, queryVector, topK, minScore, filter).stream()
-                .map(document -> VectorSearchResult.of(document.getId(), document.getFormattedContent(),
-                        documentScore(document), null).setMetadata(document.getMetadata()))
-                .toList();
-        return Boolean.TRUE.equals(effectiveOptions.getRerank()) ? tryRerank(text, results) : results;
+        Instant vectorSearchStarted = Instant.now();
+        List<VectorSearchResult> results;
+        try {
+            results = similaritySearchByVector(indexName, queryVector, topK, minScore, filter).stream()
+                    .map(document -> VectorSearchResult.of(document.getId(), document.getFormattedContent(),
+                            documentScore(document), null).setMetadata(document.getMetadata()))
+                    .toList();
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
+                    RetrievalStage.VECTOR_SEARCH, Duration.between(vectorSearchStarted, Instant.now()),
+                    topK, results.size(), true));
+        } catch (RuntimeException e) {
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(context,
+                    RetrievalStage.VECTOR_SEARCH, Duration.between(vectorSearchStarted, Instant.now()), topK, e));
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(context,
+                    RetrievalStage.TOTAL, Duration.between(totalStarted, Instant.now()), topK, e));
+            throw e;
+        }
+        List<VectorSearchResult> finalResults = Boolean.TRUE.equals(effectiveOptions.getRerank())
+                ? tryRerank(text, results, hook, context)
+                : emitRerankSkipped(results, hook, context);
+        RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
+                RetrievalStage.TOTAL, Duration.between(totalStarted, Instant.now()), results.size(),
+                finalResults.size(), true));
+        return finalResults;
     }
 
     /**
@@ -299,6 +341,26 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         }
         // 索引类型和度量类型需要额外查询索引信息才能获取，此处暂不处理
         return config;
+    }
+
+    /**
+     * Expose the physical collection schema so the admin service can reject an
+     * otherwise-existing but ACL-incompatible rebuild target before switching it.
+     */
+    @Override
+    public Set<String> getFieldNames(String indexName) {
+        DescribeCollectionParam param = DescribeCollectionParam.newBuilder()
+                .withCollectionName(indexName)
+                .build();
+        R<DescribeCollectionResponse> resp = milvusClient.describeCollection(param);
+        if (resp.getStatus() != R.Status.Success.getCode()) {
+            throw new RuntimeException("Milvus describeCollection failed: %s".formatted(resp.getMessage()));
+        }
+        Set<String> names = new LinkedHashSet<>();
+        for (io.milvus.grpc.FieldSchema field : resp.getData().getSchema().getFieldsList()) {
+            names.add(field.getName());
+        }
+        return Set.copyOf(names);
     }
 
     /**

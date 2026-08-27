@@ -4,6 +4,12 @@ import cn.richie696.component.vector.model.HybridSearchOptions;
 import cn.richie696.component.vector.model.SearchOptions;
 import cn.richie696.component.vector.model.VectorFilter;
 import cn.richie696.component.vector.model.VectorSearchResult;
+import cn.richie696.component.vector.observation.RetrievalObservationCollector;
+import cn.richie696.component.vector.observation.RetrievalObservationContext;
+import cn.richie696.component.vector.observation.RetrievalObservationEvent;
+import cn.richie696.component.vector.observation.RetrievalObservationHook;
+import cn.richie696.component.vector.observation.RetrievalObservationSnapshot;
+import cn.richie696.component.vector.observation.RetrievalStage;
 import cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations;
 import cn.richie696.component.vector.service.VectorService;
 
@@ -12,6 +18,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 默认知识库检索编排：强制 ACL 预过滤、候选池与单文档多样性控制。
@@ -116,34 +123,73 @@ public final class DefaultKnowledgeBaseVectorService implements KnowledgeBaseVec
             throw new IllegalArgumentException("knowledgeBaseId must not be blank");
         }
         Instant started = Instant.now();
+        RetrievalObservationContext observationContext = RetrievalObservationContext.forKnowledgeSearch(
+                knowledgeBaseId, request.candidateK(), request.hybrid(), request.rerank(), request.mmr());
+        RetrievalObservationCollector observationCollector = new RetrievalObservationCollector(observationContext);
         VectorFilter filter = accessFilter(knowledgeBaseId, request.accessScope());
         if (request.additionalFilter() != null) {
             filter = VectorFilter.and(filter, request.additionalFilter());
         }
         if (activeProjectionVersionResolver != null) {
-            var activeVersions = activeProjectionVersionResolver.activeVersionIds(request.accessScope().tenantId(), knowledgeBaseId);
+            Set<String> activeVersions;
+            try {
+                activeVersions = activeProjectionVersionResolver.activeVersionIds(request.accessScope().tenantId(), knowledgeBaseId);
+            } catch (RuntimeException e) {
+                RetrievalObservationHook.safeEmit(observationCollector, RetrievalObservationEvent.failure(observationContext,
+                        RetrievalStage.TOTAL, Duration.between(started, Instant.now()), 0, e));
+                throw e;
+            }
             if (activeVersions.isEmpty()) {
-                return new RetrievalResult(List.of(), new RetrievalDiagnostics(0, 0, request.hybrid(), request.rerank(),
-                        Duration.between(started, Instant.now())));
+                RetrievalObservationHook.safeEmit(observationCollector, RetrievalObservationEvent.skipped(
+                        observationContext, RetrievalStage.DIVERSIFY, 0, 0));
+                Duration elapsed = Duration.between(started, Instant.now());
+                observationCollector.onEvent(RetrievalObservationEvent.success(observationContext,
+                        RetrievalStage.TOTAL, elapsed, 0, 0, false));
+                return new RetrievalResult(List.of(), diagnostics(0, 0, request.hybrid(), elapsed,
+                        observationCollector.snapshot()));
             }
             filter = VectorFilter.and(filter, VectorFilter.in("projectionVersionId", activeVersions));
         }
-        SearchOptions options = SearchOptions.builder().filter(filter).rerank(request.rerank()).build();
-        List<VectorSearchResult> candidates;
-        if (request.hybrid()) {
-            if (!(vectorService instanceof VectorAclAwareHybridSearchOperations hybrid)) {
-                throw new UnsupportedOperationException("configured vector provider does not support ACL-safe hybrid search");
+        SearchOptions options = SearchOptions.builder().filter(filter).rerank(request.rerank())
+                .observationHook(observationCollector).observationContext(observationContext).build();
+        try {
+            List<VectorSearchResult> candidates;
+            if (request.hybrid()) {
+                if (!(vectorService instanceof VectorAclAwareHybridSearchOperations hybrid)) {
+                    throw new UnsupportedOperationException("configured vector provider does not support ACL-safe hybrid search");
+                }
+                candidates = hybrid.hybridSearch(knowledgeBaseId, request.query(), request.keywordQuery(),
+                        request.candidateK(), HybridSearchOptions.builder().searchOptions(options)
+                                .keywordQuery(request.keywordQuery()).build(), filter);
+            } else {
+                candidates = vectorService.searchByText(knowledgeBaseId, request.query(), request.candidateK(), options);
             }
-            candidates = hybrid.hybridSearch(knowledgeBaseId, request.query(), request.keywordQuery(),
-                    request.candidateK(), HybridSearchOptions.builder().searchOptions(options)
-                            .keywordQuery(request.keywordQuery()).build(), filter);
-        } else {
-            candidates = vectorService.searchByText(knowledgeBaseId, request.query(), request.candidateK(), options);
+            if (candidates == null) candidates = List.of();
+            Instant diversifyStarted = Instant.now();
+            List<RetrievalCitation> citations = diversify(candidates, request.topK(), request.maxChunksPerDocument(),
+                    request.mmr(), request.mmrLambda());
+            RetrievalObservationHook.safeEmit(observationCollector, RetrievalObservationEvent.success(observationContext,
+                    RetrievalStage.DIVERSIFY, Duration.between(diversifyStarted, Instant.now()), candidates.size(),
+                    citations.size(), request.mmr() || citations.size() < candidates.size()));
+            Duration elapsed = Duration.between(started, Instant.now());
+            RetrievalObservationHook.safeEmit(observationCollector, RetrievalObservationEvent.success(observationContext,
+                    RetrievalStage.TOTAL, elapsed, candidates.size(), citations.size(), true));
+            return new RetrievalResult(citations, diagnostics(candidates.size(), citations.size(), request.hybrid(),
+                    elapsed, observationCollector.snapshot()));
+        } catch (RuntimeException e) {
+            RetrievalObservationHook.safeEmit(observationCollector, RetrievalObservationEvent.failure(observationContext,
+                    RetrievalStage.TOTAL, Duration.between(started, Instant.now()), 0, e));
+            throw e;
         }
-        List<RetrievalCitation> citations = diversify(candidates, request.topK(), request.maxChunksPerDocument(),
-                request.mmr(), request.mmrLambda());
-        return new RetrievalResult(citations, new RetrievalDiagnostics(candidates.size(), citations.size(), request.hybrid(),
-                request.rerank(), Duration.between(started, Instant.now())));
+    }
+
+    private static RetrievalDiagnostics diagnostics(int candidateCount, int returnedCount, boolean hybrid,
+                                                    Duration elapsed, RetrievalObservationSnapshot snapshot) {
+        return new RetrievalDiagnostics(candidateCount, returnedCount, hybrid, snapshot.applied(RetrievalStage.RERANK),
+                elapsed, snapshot.measuredElapsed(RetrievalStage.EMBEDDING),
+                snapshot.measuredElapsed(RetrievalStage.VECTOR_SEARCH),
+                snapshot.measuredElapsed(RetrievalStage.RERANK),
+                snapshot.measuredElapsed(RetrievalStage.DIVERSIFY));
     }
 
     /**

@@ -54,7 +54,7 @@ public interface VectorSearchOperations {
      * @param indexName 索引/collection 名称，非空
      * @param text      查询文本，非空白字符
      * @param limit     返回条数上限；{@code <= 0} 时默认 {@code 10}
-     * @param options   检索调谐选项（filter、rerank、minScore、namespace 等），
+     * @param options   检索调谐选项（filter、rerank、minScore、namespace 及可选观测 hook 等），
      *                  {@code null} 视为默认空选项
      * @return 按相关性降序的 {@link VectorSearchResult} 列表，可能为空但不会为 {@code null}
      * @throws IllegalArgumentException      当 {@code indexName} 或 {@code text} 为空时
