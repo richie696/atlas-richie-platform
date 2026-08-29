@@ -34,7 +34,6 @@ class Pkcs11IntegrationTest {
                 .withProperty("platform.component.secret.pkcs11.key-bindings.e2e-wrap", first("ATLAS_SECRET_PKCS11_WRAP_KEY_ALIAS", "ATLAS_SECRET_PKCS11_KEY_ALIAS"))
                 .withProperty("platform.component.secret.pkcs11.key-bindings.e2e-signing", first("ATLAS_SECRET_PKCS11_SIGNING_KEY_ALIAS", "ATLAS_SECRET_PKCS11_KEY_ALIAS"));
         if (value("ATLAS_SECRET_PKCS11_SLOT") != null) environment.withProperty("platform.component.secret.pkcs11.slot", value("ATLAS_SECRET_PKCS11_SLOT"));
-        if (value("ATLAS_SECRET_PKCS11_TOKEN_LABEL") != null) environment.withProperty("platform.component.secret.pkcs11.token-label", value("ATLAS_SECRET_PKCS11_TOKEN_LABEL"));
         BootstrapSecretProperties bootstrap = new BootstrapSecretProperties();
         bootstrap.setEnabled(true);
         try (Pkcs11SecretClient client = (Pkcs11SecretClient) new Pkcs11SecretBootstrapProviderFactory()
