@@ -7,6 +7,7 @@ import cn.richie696.component.secret.bootstrap.BootstrapSecretProperties;
 import cn.richie696.component.secret.bootstrap.spi.*;
 import cn.richie696.component.secret.core.DestroyableSecretValue;
 import cn.richie696.component.secret.provider.common.RemoteHttpClientFactory;
+import cn.richie696.component.secret.provider.common.HttpResponseRetryExecutor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.context.properties.bind.Binder;
@@ -15,6 +16,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -31,19 +34,32 @@ public final class BarbicanSecretClient implements SecretBootstrapClient, Secret
     private final BootstrapSecretProperties bootstrap;
     private final ObjectMapper mapper = new ObjectMapper();
     private final HttpClient http;
+    private final HttpResponseRetryExecutor retryExecutor;
     private final URI endpoint;
     private final char[] token;
     private final AtomicBoolean closed = new AtomicBoolean();
     private BarbicanSecretClient(String providerId, String hash, BarbicanSecretProperties properties, BootstrapSecretProperties bootstrap) {
         this.providerId = providerId; this.hash = hash; this.properties = properties; this.bootstrap = bootstrap;
         this.http = RemoteHttpClientFactory.create(bootstrap.getResilience().getConnectTimeout(), properties.getTls(), properties.getProxy());
+        this.retryExecutor = new HttpResponseRetryExecutor(bootstrap.getResilience().getMaxAttempts());
         String root = properties.getEndpoint().toString(); this.endpoint = URI.create(root.endsWith("/") ? root : root + "/");
         this.token = loadToken(properties.getAuthentication());
     }
     static BarbicanSecretClient create(ConfigurableEnvironment environment, BootstrapSecretProperties bootstrap) {
+        return create(environment, bootstrap, null);
+    }
+    static BarbicanSecretClient create(
+            ConfigurableEnvironment environment,
+            BootstrapSecretProperties bootstrap,
+            SecretBootstrapContext context) {
         String prefix = BarbicanSecretProperties.PREFIX, providerId = "barbican";
-        String active = bootstrap.getActiveProvider();
-        if (active != null && !active.isBlank() && bootstrap.getProviders().containsKey(active)) { prefix = BootstrapSecretProperties.PREFIX + ".providers." + active; providerId = active; }
+        if (context != null && context.providerId() != null && !context.providerId().isBlank()) {
+            providerId = context.providerId();
+            if (context.configurationPrefix() != null && !context.configurationPrefix().isBlank()) prefix = context.configurationPrefix();
+        } else {
+            String active = bootstrap.getActiveProvider();
+            if (active != null && !active.isBlank() && bootstrap.getProviders().containsKey(active)) { prefix = BootstrapSecretProperties.PREFIX + ".providers." + active; providerId = active; }
+        }
         BarbicanSecretProperties properties = Binder.get(environment).bind(prefix, BarbicanSecretProperties.class).orElseGet(BarbicanSecretProperties::new);
         BarbicanConfiguration.validate(properties);
         return new BarbicanSecretClient(providerId, BarbicanConfiguration.hash(providerId, properties), properties, bootstrap);
@@ -53,7 +69,9 @@ public final class BarbicanSecretClient implements SecretBootstrapClient, Secret
         for (String logical : request.logicalPaths()) {
             byte[] payload = fetchPayload(id(logical));
             if (payload == null) { if (bootstrap.getPropertySource().getMissingPolicy() == BootstrapSecretProperties.MissingPolicy.LOCAL) continue; throw new SecretBootstrapException("SEC-STORE-001", "Barbican Secret is missing"); }
-            values.put(logical, new String(payload, StandardCharsets.UTF_8)); Arrays.fill(payload, (byte) 0); versions.add(logical);
+            try { values.put(logical, decodePropertyValue(payload)); }
+            finally { Arrays.fill(payload, (byte) 0); }
+            versions.add(logical);
         }
         return new SecretBootstrapResult(providerId, digest(versions), String.join(",", request.logicalPaths()), Instant.now(), values, null);
     }
@@ -75,14 +93,21 @@ public final class BarbicanSecretClient implements SecretBootstrapClient, Secret
     private byte[] fetchPayload(String id) {
         JsonNode metadata = send("GET", "v1/secrets/" + encode(id), null, true);
         if (metadata == null) return null;
+        byte[] responseBody = null;
+        boolean ownershipTransferred = false;
         try {
             HttpRequest request = request("GET", "v1/secrets/" + encode(id) + "/payload", null).header("Accept", "application/octet-stream").build();
-            HttpResponse<byte[]> response = http.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            HttpResponse<byte[]> response = retryExecutor.send(http, request);
+            responseBody = response.body();
             if (response.statusCode() == 404) return null;
             if (response.statusCode() < 200 || response.statusCode() >= 300) throw providerFailure("Barbican payload request", response.statusCode());
-            return response.body();
+            ownershipTransferred = true;
+            return responseBody;
         } catch (InterruptedException exception) { Thread.currentThread().interrupt(); throw new SecretException("SEC-PROVIDER-001", "Barbican request interrupted", exception); }
         catch (IOException exception) { throw new SecretException("SEC-PROVIDER-001", "Barbican payload request failed", exception); }
+        finally {
+            if (!ownershipTransferred && responseBody != null) Arrays.fill(responseBody, (byte) 0);
+        }
     }
     private JsonNode send(String method, String suffix, Object body, boolean missingIsNull) {
         byte[] requestBody = null;
@@ -96,7 +121,7 @@ public final class BarbicanSecretClient implements SecretBootstrapClient, Secret
                 builder.header("Content-Type", "application/json")
                         .POST(HttpRequest.BodyPublishers.ofByteArray(requestBody));
             }
-            HttpResponse<byte[]> response = http.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
+            HttpResponse<byte[]> response = retryExecutor.send(http, builder.build());
             responseBody = response.body();
             if (response.statusCode() == 404 && missingIsNull) return null;
             if (response.statusCode() < 200 || response.statusCode() >= 300) throw providerFailure("Barbican request", response.statusCode());
@@ -130,5 +155,17 @@ public final class BarbicanSecretClient implements SecretBootstrapClient, Secret
         return new SecretException(code, operation + " failed with HTTP " + status);
     }
     private static Instant parse(String value) { try { return value == null ? null : Instant.parse(value); } catch (RuntimeException ignored) { return null; } }
+    static String decodePropertyValue(byte[] payload) {
+        try {
+            return StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(java.nio.ByteBuffer.wrap(payload))
+                    .toString();
+        } catch (CharacterCodingException exception) {
+            throw new SecretConfigurationException(
+                    "SEC-STORE-003", "Barbican property-source Secret payload must be valid UTF-8", exception);
+        }
+    }
     private static String digest(List<String> values) { try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(String.join("\n", values).getBytes(StandardCharsets.UTF_8))); } catch (Exception exception) { throw new IllegalStateException(exception); } }
 }

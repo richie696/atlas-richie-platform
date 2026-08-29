@@ -12,6 +12,7 @@ import cn.richie696.component.secret.bootstrap.BootstrapSecretProperties;
 import cn.richie696.component.secret.bootstrap.spi.*;
 import cn.richie696.component.secret.core.DestroyableSecretValue;
 import cn.richie696.component.secret.provider.common.RemoteHttpClientFactory;
+import cn.richie696.component.secret.provider.common.HttpResponseRetryExecutor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,6 +44,7 @@ public final class OpenBaoSecretClient implements SecretBootstrapClient, SecretB
     private final BootstrapSecretProperties bootstrap;
     private final ObjectMapper mapper;
     private final HttpClient http;
+    private final HttpResponseRetryExecutor retryExecutor;
     private final URI endpoint;
     private final char[] token;
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -55,6 +57,7 @@ public final class OpenBaoSecretClient implements SecretBootstrapClient, SecretB
         this.bootstrap = bootstrap;
         this.mapper = new ObjectMapper();
         this.http = RemoteHttpClientFactory.create(bootstrap.getResilience().getConnectTimeout(), properties.getTls(), properties.getProxy());
+        this.retryExecutor = new HttpResponseRetryExecutor(bootstrap.getResilience().getMaxAttempts());
         String root = properties.getEndpoint().toString();
         this.endpoint = URI.create(root.endsWith("/") ? root : root + "/");
         this.token = loadToken(properties.getAuthentication());
@@ -62,12 +65,25 @@ public final class OpenBaoSecretClient implements SecretBootstrapClient, SecretB
 
     static OpenBaoSecretClient create(ConfigurableEnvironment environment,
                                       BootstrapSecretProperties bootstrap) {
+        return create(environment, bootstrap, null);
+    }
+
+    static OpenBaoSecretClient create(ConfigurableEnvironment environment,
+                                      BootstrapSecretProperties bootstrap,
+                                      SecretBootstrapContext context) {
         String prefix = OpenBaoSecretProperties.PREFIX;
-        String active = bootstrap.getActiveProvider();
         String providerId = "openbao";
-        if (active != null && !active.isBlank() && bootstrap.getProviders().containsKey(active)) {
-            prefix = BootstrapSecretProperties.PREFIX + ".providers." + active;
-            providerId = active;
+        if (context != null && context.providerId() != null && !context.providerId().isBlank()) {
+            providerId = context.providerId();
+            if (context.configurationPrefix() != null && !context.configurationPrefix().isBlank()) {
+                prefix = context.configurationPrefix();
+            }
+        } else {
+            String active = bootstrap.getActiveProvider();
+            if (active != null && !active.isBlank() && bootstrap.getProviders().containsKey(active)) {
+                prefix = BootstrapSecretProperties.PREFIX + ".providers." + active;
+                providerId = active;
+            }
         }
         OpenBaoSecretProperties properties = Binder.get(environment)
                 .bind(prefix, OpenBaoSecretProperties.class)
@@ -218,7 +234,7 @@ public final class OpenBaoSecretClient implements SecretBootstrapClient, SecretB
                 builder.header("Content-Type", "application/json")
                         .POST(HttpRequest.BodyPublishers.ofByteArray(requestBody));
             }
-            HttpResponse<byte[]> response = http.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
+            HttpResponse<byte[]> response = retryExecutor.send(http, builder.build());
             responseBody = response.body();
             if (response.statusCode() == 404 && missingIsNull) return null;
             if (response.statusCode() < 200 || response.statusCode() >= 300) throw providerFailure("OpenBao request", response.statusCode());
@@ -239,7 +255,25 @@ public final class OpenBaoSecretClient implements SecretBootstrapClient, SecretB
         }
     }
     private String defaultPath(String logical) { return properties.getKv().getRuntimePrefix() + "/" + logical; }
-    private void addKeyVersion(Map<String, Object> body, String version) { try { if (version != null && !"current".equalsIgnoreCase(version)) body.put("key_version", Integer.parseInt(version)); } catch (NumberFormatException ignored) { } }
+    private void addKeyVersion(Map<String, Object> body, String version) {
+        if (version == null || "current".equalsIgnoreCase(version)) {
+            return;
+        }
+        if (!version.equals(version.trim())) {
+            throw new SecretConfigurationException(
+                    "SEC-KEY-003", "OpenBao key version must be a positive integer or 'current'");
+        }
+        try {
+            int parsed = Integer.parseInt(version);
+            if (parsed < 1) {
+                throw new NumberFormatException("non-positive");
+            }
+            body.put("key_version", parsed);
+        } catch (NumberFormatException exception) {
+            throw new SecretConfigurationException(
+                    "SEC-KEY-003", "OpenBao key version must be a positive integer or 'current'", exception);
+        }
+    }
     private void merge(Map<String, Object> target, Map<String, Object> source) { source.forEach((key, value) -> { if (target.containsKey(key) && !Objects.equals(target.get(key), value)) throw new SecretBootstrapException("SEC-STORE-002", "Ambiguous OpenBao Secret binding: " + key); target.put(key, value); }); }
     private String digest(List<String> values) { try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(String.join("\n", values).getBytes(StandardCharsets.UTF_8))); } catch (Exception exception) { throw new IllegalStateException(exception); } }
     private Instant parseInstant(String value) { try { return value == null ? null : Instant.parse(value); } catch (RuntimeException ignored) { return null; } }

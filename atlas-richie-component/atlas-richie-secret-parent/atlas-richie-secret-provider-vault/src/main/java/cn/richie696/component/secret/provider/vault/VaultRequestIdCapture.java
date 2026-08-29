@@ -6,30 +6,42 @@ package cn.richie696.component.secret.provider.vault;
 
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.UUID;
 
-/** Captures Vault's response request id without exposing the HTTP client to callers. */
+/**
+ * Attaches and captures a component-owned correlation id without exposing the
+ * HTTP client to callers. Vault's {@code X-Vault-Request} response header is a
+ * boolean safety flag, not a request id; the provider-native {@code request_id}
+ * lives in JSON responses that Spring Vault's typed KV API does not retain.
+ */
 final class VaultRequestIdCapture {
-    private static final String REQUEST_HEADER = "X-Vault-Request";
+    static final String CORRELATION_HEADER = "X-Atlas-Request-Id";
 
-    private final AtomicReference<String> lastRequestId = new AtomicReference<>();
+    private final ThreadLocal<String> currentCorrelationId = new ThreadLocal<>();
 
     ClientHttpRequestInterceptor interceptor() {
         return (request, body, execution) -> {
-            var response = execution.execute(request, body);
-            String requestId = response.getHeaders().getFirst(REQUEST_HEADER);
-            if (requestId != null && !requestId.isBlank()) {
-                lastRequestId.set(requestId);
+            String correlationId = currentCorrelationId.get();
+            if (correlationId == null) {
+                correlationId = newCorrelationId();
+                currentCorrelationId.set(correlationId);
             }
-            return response;
+            request.getHeaders().set(CORRELATION_HEADER, correlationId);
+            return execution.execute(request, body);
         };
     }
 
     void clear() {
-        lastRequestId.set(null);
+        currentCorrelationId.set(newCorrelationId());
     }
 
     String consume() {
-        return lastRequestId.getAndSet(null);
+        String correlationId = currentCorrelationId.get();
+        currentCorrelationId.remove();
+        return correlationId;
+    }
+
+    private String newCorrelationId() {
+        return UUID.randomUUID().toString();
     }
 }

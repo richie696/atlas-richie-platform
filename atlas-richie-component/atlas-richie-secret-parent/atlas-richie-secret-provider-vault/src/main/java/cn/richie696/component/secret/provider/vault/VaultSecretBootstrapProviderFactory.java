@@ -41,7 +41,7 @@ public final class VaultSecretBootstrapProviderFactory implements SecretBootstra
             BootstrapSecretProperties properties,
             SecretBootstrapContext context) {
         VaultSecretConfigurationResolver.ResolvedVaultConfiguration resolved =
-                new VaultSecretConfigurationResolver().resolve(context.environment(), properties);
+                new VaultSecretConfigurationResolver().resolve(context.environment(), properties, context);
         return new VaultClientFactory().create(resolved, properties);
     }
 }

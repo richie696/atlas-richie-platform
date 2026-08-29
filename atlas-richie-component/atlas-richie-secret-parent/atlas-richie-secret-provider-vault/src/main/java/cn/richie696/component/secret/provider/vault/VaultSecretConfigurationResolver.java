@@ -6,6 +6,7 @@ package cn.richie696.component.secret.provider.vault;
 
 import cn.richie696.component.secret.api.exception.SecretConfigurationException;
 import cn.richie696.component.secret.bootstrap.BootstrapSecretProperties;
+import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapContext;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.Environment;
 
@@ -23,13 +24,27 @@ final class VaultSecretConfigurationResolver {
     ResolvedVaultConfiguration resolve(
             Environment environment,
             BootstrapSecretProperties bootstrapProperties) {
+        return resolve(environment, bootstrapProperties, null);
+    }
+
+    ResolvedVaultConfiguration resolve(
+            Environment environment,
+            BootstrapSecretProperties bootstrapProperties,
+            SecretBootstrapContext context) {
         String providerId = "vault";
         String prefix = VaultSecretProperties.PREFIX;
+        if (context != null && context.providerId() != null && !context.providerId().isBlank()) {
+            providerId = context.providerId();
+            if (context.configurationPrefix() != null && !context.configurationPrefix().isBlank()) {
+                prefix = context.configurationPrefix();
+            }
+        } else {
         String activeProvider = bootstrapProperties.getActiveProvider();
         if (activeProvider != null && !activeProvider.isBlank()
                 && bootstrapProperties.getProviders().containsKey(activeProvider)) {
             providerId = activeProvider;
             prefix = BootstrapSecretProperties.PREFIX + ".providers." + activeProvider;
+        }
         }
         VaultSecretProperties properties = Binder.get(environment)
                 .bind(prefix, VaultSecretProperties.class)

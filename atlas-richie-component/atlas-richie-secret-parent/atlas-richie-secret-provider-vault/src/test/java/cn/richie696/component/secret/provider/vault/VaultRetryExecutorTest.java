@@ -6,6 +6,7 @@ package cn.richie696.component.secret.provider.vault;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
@@ -40,5 +41,23 @@ class VaultRetryExecutorTest {
             throw new HttpClientErrorException(HttpStatus.FORBIDDEN);
         })).isInstanceOf(HttpClientErrorException.class);
         assertThat(attempts).hasValue(1);
+    }
+
+    @Test
+    void retriesRateLimitAndAcceptsRetryAfterHeader() {
+        AtomicInteger attempts = new AtomicInteger();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Retry-After", "0");
+
+        String result = new VaultRetryExecutor(2).execute(() -> {
+            if (attempts.incrementAndGet() == 1) {
+                throw HttpClientErrorException.create(
+                        HttpStatus.TOO_MANY_REQUESTS, "rate limited", headers, null, null);
+            }
+            return "ok";
+        });
+
+        assertThat(result).isEqualTo("ok");
+        assertThat(attempts).hasValue(2);
     }
 }

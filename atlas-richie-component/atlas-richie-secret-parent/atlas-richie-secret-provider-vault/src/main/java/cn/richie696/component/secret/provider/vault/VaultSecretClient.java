@@ -115,8 +115,13 @@ public final class VaultSecretClient implements
         List<String> requestIds = new ArrayList<>();
         for (String logicalPath : request.logicalPaths()) {
             requestIdCapture.clear();
-            Versioned<Map<String, Object>> versioned = readVersion(logicalPath, Versioned.Version.unversioned());
-            String requestId = requestIdCapture.consume();
+            Versioned<Map<String, Object>> versioned;
+            String requestId;
+            try {
+                versioned = readVersion(logicalPath, Versioned.Version.unversioned());
+            } finally {
+                requestId = requestIdCapture.consume();
+            }
             if (requestId != null) {
                 requestIds.add(requestId);
             }

@@ -3,5 +3,5 @@ import cn.richie696.component.secret.bootstrap.*; import cn.richie696.component.
 @AutoConfiguration @AutoConfigureBefore(SecretRuntimeAutoConfiguration.class) @ConditionalOnProperty(prefix = BootstrapSecretProperties.PREFIX, name = "enabled", havingValue = "true")
 public class BarbicanSecretAutoConfiguration {
     @Bean(destroyMethod = "close") @ConditionalOnBean(SecretBootstrapState.class) @ConditionalOnMissingBean(BarbicanSecretClient.class)
-    BarbicanSecretClient barbicanSecretClient(SecretBootstrapState state) { if (!(state.client() instanceof BarbicanSecretClient client)) throw new IllegalStateException("Barbican bootstrap client is not available"); return client; }
+    BarbicanSecretClient barbicanSecretClient(SecretBootstrapState state) { return state.topology().clients().values().stream().filter(BarbicanSecretClient.class::isInstance).map(BarbicanSecretClient.class::cast).findFirst().orElse(null); }
 }

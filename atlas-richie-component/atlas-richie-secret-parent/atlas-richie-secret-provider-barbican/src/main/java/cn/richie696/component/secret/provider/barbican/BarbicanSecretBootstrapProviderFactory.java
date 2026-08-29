@@ -5,5 +5,5 @@ public final class BarbicanSecretBootstrapProviderFactory implements SecretBoots
     private static final Set<SecretCapability> CAPABILITIES = Set.of(SecretCapability.SECRET_READ, SecretCapability.SECRET_VERSIONING);
     @Override public String providerType() { return "barbican"; }
     @Override public Set<SecretCapability> capabilities() { return CAPABILITIES; }
-    @Override public SecretBootstrapClient create(BootstrapSecretProperties properties, SecretBootstrapContext context) { return BarbicanSecretClient.create(context.environment(), properties); }
+    @Override public SecretBootstrapClient create(BootstrapSecretProperties properties, SecretBootstrapContext context) { return BarbicanSecretClient.create(context.environment(), properties, context); }
 }

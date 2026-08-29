@@ -34,7 +34,7 @@ public class BarbicanSecretProperties {
         public AuthenticationType getType() { return type; }
         public void setType(AuthenticationType value) { type = value == null ? AuthenticationType.BEARER_TOKEN : value; }
         public char[] getToken() { return token.clone(); }
-        public void setToken(char[] value) { token = value == null ? new char[0] : value.clone(); }
+        public void setToken(char[] value) { char[] previous = token; token = value == null ? new char[0] : value.clone(); if (previous != null) java.util.Arrays.fill(previous, '\0'); }
         public String getTokenFile() { return tokenFile; }
         public void setTokenFile(String value) { tokenFile = value; }
     }

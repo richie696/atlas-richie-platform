@@ -35,18 +35,19 @@ public class VaultSecretAutoConfiguration {
     public VaultSecretClient vaultSecretClient(
             ConfigurableEnvironment environment,
             ObjectProvider<SecretBootstrapState> bootstrapStateProvider) {
+        SecretBootstrapState state = bootstrapStateProvider.getIfAvailable();
+        if (state != null) {
+            java.util.List<VaultSecretClient> clients = state.topology().clients().values().stream()
+                    .filter(VaultSecretClient.class::isInstance)
+                    .map(VaultSecretClient.class::cast)
+                    .toList();
+            return clients.size() == 1 ? clients.getFirst() : null;
+        }
         BootstrapSecretProperties bootstrapProperties = Binder.get(environment)
                 .bind(BootstrapSecretProperties.PREFIX, BootstrapSecretProperties.class)
                 .orElseGet(BootstrapSecretProperties::new);
         VaultSecretConfigurationResolver.ResolvedVaultConfiguration resolved =
                 new VaultSecretConfigurationResolver().resolve(environment, bootstrapProperties);
-        SecretBootstrapState state = bootstrapStateProvider.getIfAvailable();
-        if (state != null && state.client() instanceof VaultSecretClient bootstrapClient) {
-            if (!resolved.configurationHash().equals(bootstrapClient.configurationHash())) {
-                throw new IllegalStateException("Vault Secret Provider configuration changed after bootstrap");
-            }
-            return bootstrapClient;
-        }
         return new VaultClientFactory().create(resolved, bootstrapProperties);
     }
 }

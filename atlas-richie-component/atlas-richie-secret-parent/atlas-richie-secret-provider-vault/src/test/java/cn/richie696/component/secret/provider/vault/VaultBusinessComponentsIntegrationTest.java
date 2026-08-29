@@ -8,7 +8,7 @@ import cn.richie696.component.oauth.core.config.OAuth2Properties;
 import cn.richie696.component.oauth.core.model.ClientConfig;
 import cn.richie696.component.oauth.core.support.HmacAccessTokenSigner;
 import cn.richie696.component.secret.bootstrap.BootstrapSecretProperties;
-import cn.richie696.component.secret.bootstrap.SecretBootstrapTestHarness;
+import cn.richie696.component.secret.testkit.SecretBootstrapTestHarness;
 import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapContext;
 import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapRequest;
 import cn.richie696.component.secret.core.DefaultSecretOperations;

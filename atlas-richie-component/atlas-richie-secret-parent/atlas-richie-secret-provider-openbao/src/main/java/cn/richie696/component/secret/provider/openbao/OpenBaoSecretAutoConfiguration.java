@@ -18,7 +18,10 @@ public class OpenBaoSecretAutoConfiguration {
     @ConditionalOnBean(SecretBootstrapState.class)
     @ConditionalOnMissingBean(OpenBaoSecretClient.class)
     OpenBaoSecretClient openBaoSecretClient(SecretBootstrapState state) {
-        if (!(state.client() instanceof OpenBaoSecretClient client)) throw new IllegalStateException("OpenBao bootstrap client is not available");
-        return client;
+        return state.topology().clients().values().stream()
+                .filter(OpenBaoSecretClient.class::isInstance)
+                .map(OpenBaoSecretClient.class::cast)
+                .findFirst()
+                .orElse(null);
     }
 }

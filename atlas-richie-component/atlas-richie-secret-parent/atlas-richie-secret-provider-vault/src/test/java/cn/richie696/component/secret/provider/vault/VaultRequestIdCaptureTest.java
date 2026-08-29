@@ -13,15 +13,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class VaultRequestIdCaptureTest {
 
     @Test
-    void capturesAndConsumesVaultResponseRequestId() throws Exception {
+    void attachesAndConsumesAComponentCorrelationId() throws Exception {
         VaultRequestIdCapture capture = new VaultRequestIdCapture();
         MockClientHttpRequest request = new MockClientHttpRequest(HttpMethod.GET, URI.create("http://vault/v1/secret"));
         MockClientHttpResponse response = new MockClientHttpResponse(new byte[0], HttpStatus.OK);
-        response.getHeaders().add("X-Vault-Request", "req-123");
+        response.getHeaders().add("X-Vault-Request", "true");
 
+        capture.clear();
         capture.interceptor().intercept(request, new byte[0], (ignoredRequest, ignoredBody) -> response);
 
-        assertThat(capture.consume()).isEqualTo("req-123");
+        String correlationId = request.getHeaders().getFirst(VaultRequestIdCapture.CORRELATION_HEADER);
+        assertThat(correlationId).isNotBlank();
+        assertThat(capture.consume()).isEqualTo(correlationId);
         assertThat(capture.consume()).isNull();
     }
 }
