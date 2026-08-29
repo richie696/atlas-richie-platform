@@ -2,7 +2,7 @@
 
 `atlas-richie-secret` is the Atlas Richie technical platform's unified component for accessing secrets and sensitive configuration. Its goal is to shield the integration differences between Vault, cloud vendor Secret Manager/KMS, OpenBao, KMIP and other products, and to let business components such as MFA, OAuth, Storage, AI, and Gateway integrate transparently through configuration-driven patterns.
 
-> Current status: **The M1 baseline, M2 Provider adaptation packages, M3 OpenBao/Barbican/KMIP/PKCS#11 Providers, transparent integration of business components, runtime two-phase atomic refresh, OAuth dual-version signing window, and MFA new-write bridge have all been landed. No Maven version has been released yet.** This is treated as a brand-new project; no historical MFA data migration is included. Vault 1.21.2's KV v2 + Transit, Token File/AppRole/Agent, Docker Desktop Kubernetes Auth and Storage/Gateway/AI real-service E2E have all passed. OpenBao 2.6.2 Docker KV/Transit E2E and SoftHSM2 PKCS#11 AES Wrap/Unwrap + RSA Sign/Verify E2E have passed. KMIP has completed local TLS/TTLV connectivity validation, but PyKMIP 0.10.0 does not support the AES Key Wrap Padding required by the Provider's current specification, so full Wrap/Unwrap E2E remains blocked. Barbican has no Keystone/Barbican service stack locally, so real E2E awaits environment availability. Real-cloud E2E, real HSM, permission-denial/authentication-renewal/certificate-rotation validations are still pending target-environment verification; the component must not be used in production GA before those validations are complete.
+> Current status: **The M1 baseline, M2 Provider adaptation packages, M3 OpenBao/Barbican/KMIP/PKCS#11 Providers, transparent integration of business components, runtime two-phase atomic refresh, OAuth dual-version signing window, and MFA new-write bridge have all been landed. No Maven version has been released yet.** This is treated as a brand-new project; no historical MFA data migration is included. Vault 1.21.2's KV v2 + Transit, Token File/AppRole/Agent, Docker Desktop Kubernetes Auth and Storage/Gateway/AI real-service E2E have all passed. OpenBao 2.6.2 Docker KV/Transit E2E and SoftHSM2 PKCS#11 AES Wrap/Unwrap + RSA Sign/Verify E2E have passed. KMIP has completed local TLS/TTLV connectivity validation, but PyKMIP 0.10.0 does not support the AES Key Wrap Padding required by the Provider's current specification, so full Wrap/Unwrap E2E remains blocked. Barbican has no Keystone/Barbican service stack locally, so real E2E awaits environment availability. Real-cloud E2E, real HSM, permission-denial/authentication-renewal/certificate-rotation validations are still pending target-environment verification; the component must not be used in production GA before those validations are complete. Unified business audit events and trusted tenant-context isolation remain target architecture, not current public implementation.
 
 For the complete design background, architecture, lifecycle, SPI, threat model, sequence diagrams, flow diagrams, testing and evolution plan, please refer to [Atlas-Richie-Secret Component Complete Design Document](docs/en/design.md). This document only describes the final usage.
 
@@ -410,12 +410,12 @@ The table below shows the current code-level compatibility boundaries. `Implemen
 | IBM Key Protect | Bearer, Token File | No generic HMAC enabled | TrustStore/Proxy | Wire/Contract passed; real cloud pending verification |
 | Tencent Cloud | AccessKey, Token File/identity Agent | TC3-HMAC-SHA256 | TrustStore/Proxy | Signature Contract passed; real cloud pending verification |
 | Huawei Cloud | AccessKey, Token File/Agency Agent | SDK-HMAC-SHA256 | TrustStore/Proxy | Signature Contract passed; real cloud pending verification |
-| Volcano Engine | AccessKey, Token File/identity Agent | HMAC-SHA256 | TrustStore/Proxy | Signature Contract passed; real cloud pending verification |
+| Volcano Engine | AccessKey, Token File/identity Agent | HMAC-SHA256, KMS Encrypt/Decrypt | TrustStore/Proxy | Wire/signature Contract passed; real cloud pending verification |
 | Baidu Cloud KMS | AccessKey, Token File/identity Agent | BCE v2 | TrustStore/Proxy | Signature Contract passed; real cloud pending verification |
 | OpenBao | Token, Token File | No vendor HMAC enabled | TrustStore/Proxy; Kubernetes/JWT/AppRole exchanged to Token by Agent | OpenBao 2.6.2 Docker E2E passed |
 | Barbican | Bearer, Token File | No vendor HMAC enabled | TrustStore/Proxy | Protocol gate passed; local service stack missing |
 | KMIP 2.1 | mTLS client certificate | KMIP TTLV, no HTTP HMAC | mTLS; proxy provided by deployment network | Local TLS/TTLV connected; PyKMIP does not support AES KWP |
-| PKCS#11 HSM | Local Token/PIN, slot/token-label | HSM/JCA Sign/Verify | Does not use HTTP proxy | SoftHSM2 E2E passed; real HSM pending verification |
+| PKCS#11 HSM | Local Token/PIN, numeric slot | HSM/JCA Sign/Verify | Does not use HTTP proxy | SoftHSM2 E2E passed; real HSM pending verification |
 
 ### Local Verifiability Record
 
@@ -428,29 +428,49 @@ The table below shows the current code-level compatibility boundaries. `Implemen
 
 Workload identity files only carry short-term tokens; the Secret component does not perform token exchange for cloud platforms, nor does it write long-term AK/SK back to configuration. Specific identity Agents, ServiceAccounts, instance roles, and certificate rotation must be verified in the target deployment environment according to vendor documentation.
 
+`No Plaintext Fallback` applies to managed business Secrets and encryption keys: a provider failure never reactivates local business plaintext. AWS/Aliyun bootstrap identity is a separate trust boundary and follows the vendor SDK credential chain. Environment-variable AK/SK remains technically reachable through that chain for local development or controlled emergency use, but production must prefer workload/instance roles and enforce the allowed credential sources through deployment policy; the component never copies those credentials into business Properties.
+
 ## ⚙️ Configuration
 
 ### Provider Configuration Examples
 
 Different Providers only provide connection, identity, region, and product-specific parameters; common behavior is always controlled by `platform.component.secret`.
 
-The default wire profile of M2 Providers has been aggregated inside the component: GCP uses `projects/{project}/secrets/{secret}/versions/{version}:access` and Base64 payload at `payload.data`; OCI uses `secretBundle`; Azure uses Key Vault `secrets`/`wrapkey`; IBM Key Protect uses `/api/v2/keys/{id}/actions/{wrap,unwrap}`. Tencent Cloud, Huawei Cloud, Volcano Engine, and Baidu Cloud also provide default official resource paths; if the corporate gateway or vendor API version differs, you can override paths and response fields through `wire.*` only. The component does not write access keys to logs, nor does it fall back to plaintext or fake values when HTTP fails.
+The default wire profile of M2 Providers has been aggregated inside the component: GCP uses separate Secret Manager and Cloud KMS endpoints, `projects/{project}/secrets/{secret}/versions/{version}:access`, and the Base64 payload at `payload.data`; OCI uses `secretBundle`; Azure uses Key Vault `secrets`/`wrapkey`, `RSA-OAEP-256`, and Base64URL; IBM Key Protect uses `/api/v2/keys/{id}/actions/{wrap,unwrap}`. Volcano Engine uses the official KMS `Encrypt`/`Decrypt` actions, operation-specific `Plaintext`/`CiphertextBlob` fields, and `EncryptionContext`; it declares only `KEY_WRAP/KEY_UNWRAP`, so Secret reads must be routed to another Provider. Tencent Cloud, Huawei Cloud, and Baidu Cloud also provide default official resource paths, request fields, and operation-specific Action/API Version values. If the corporate gateway or vendor API version differs, paths and response fields can be overridden through `wire.*`. The component does not write access keys to logs, nor does it fall back to plaintext or fake values when HTTP fails.
 
 Cloud vendor authentication tokens, workload identity exchange, and request signatures must be configured according to the corresponding official documentation. Currently the generic REST transport supports `BEARER_TOKEN`, `TOKEN_FILE`, `WORKLOAD_IDENTITY_TOKEN_FILE`, `ACCESS_KEY`, and `NONE`. When using `ACCESS_KEY`, Huawei Cloud, Tencent Cloud, Volcano Engine, and Baidu Cloud automatically select the corresponding HMAC signature protocol, which can also be explicitly overridden via `authentication.signature`; the short-term JWT in the workload identity file is only used as a Bearer Token, with Token exchange handled by the cloud platform Agent or identity injector. AWS and Aliyun's native SDK Providers continue to use their respective default credential chains.
 
-Signature-related field example:
+Tencent SSM and KMS use different service endpoints and signing scopes. Operation-specific Action, API Version, and `ssm`/`kms` signing service values are internal wire-profile details and do not need to be repeated by applications:
 
 ```yaml
 platform.component.secret.tencent:
+  secret-endpoint: https://ssm.tencentcloudapi.com
+  kms-endpoint: https://kms.tencentcloudapi.com
   region: ap-guangzhou
   authentication:
     type: access-key
     access-key-id: ${TENCENT_SECRET_ID}
     access-key-secret: ${TENCENT_SECRET_KEY}
     signature: tencent-tc3-hmac-sha256
-    signing-service: kms
-    api-action: Encrypt
-    api-version: '2019-11-15'
+```
+
+When Secret Store and KMS genuinely share one service entry point, or an enterprise reverse proxy consolidates both behind one origin, the compatibility field `endpoint` remains sufficient. Otherwise configure `secret-endpoint` and `kms-endpoint` separately. Azure `key-bindings` must use `<key-name>/<key-version>` so versioned `wrapkey`/`unwrapkey` calls cannot silently select an unintended version.
+
+AWS KMS and PKCS#11 signing rotation use a “current signing key plus historical verification keys” model. Historical keys verify existing data only and are never used for new signatures; retain them for at least the longest business token/signature validity period:
+
+```yaml
+platform.component.secret.aws.kms:
+  key-bindings:
+    oauth-signing: arn:aws:kms:ap-southeast-1:123456789012:key/current
+  verification-key-bindings:
+    oauth-signing:
+      - arn:aws:kms:ap-southeast-1:123456789012:key/previous
+
+platform.component.secret.pkcs11:
+  key-bindings:
+    oauth-signing: oauth-signing-v2
+  verification-key-bindings:
+    oauth-signing: [oauth-signing-v1]
 ```
 
 Generic REST Provider TLS and proxy configuration:
@@ -580,6 +600,8 @@ path "transit/verify/order-service-signing" {
 
 The runtime identity does not need `sys/mounts`, Transit Key creation/rotation, KV write or delete permissions. Keys and auth roles must be pre-created by a separate management process, and the Provider will not create resources beyond its permission at application startup.
 
+OpenBao's `secret` and `transit` mounts are interoperability defaults, not tenant-isolation boundaries. A production multi-application or multi-tenant deployment must configure dedicated mounts/namespaces or constrain the token policy to the application's exact path prefix. Barbican `project-id` may be omitted only when the Keystone token is already project-scoped; otherwise it must be configured explicitly. Both cases require a negative cross-project/cross-tenant authorization test before production.
+
 #### AWS
 
 ```yaml
@@ -681,7 +703,6 @@ Behavioral conventions:
 | `platform.component.secret.resilience.read-timeout` | `5s` | Provider per-read timeout |
 | `platform.component.secret.resilience.max-attempts` | `3` | Maximum attempts for network errors, 429, 5xx |
 | `platform.component.secret.envelope.format` | `arse` | Envelope ciphertext format identifier |
-| `platform.component.secret.audit.enabled` | `true` | Whether to generate audit events without secret values |
 
 Provider-specific configurations are located at:
 
@@ -694,9 +715,9 @@ platform.component.secret.gcp.*
 ...
 ```
 
-M2 adaptation packages uniformly support the seven stable field groups `endpoint`, `authentication`, `secrets`, `key-bindings`, `wire`, `tls`, and `proxy`; `authentication.type` can be `none`, `bearer-token`, `token-file`, `workload-identity-token-file`, `access-key`, and credentials are validated for completeness at startup. Endpoints enforce HTTPS; only loopback local contract tests allow HTTP. `wire` only describes the vendor's official REST paths and fields, and does not disguise ciphertext as plaintext, nor does it record credentials in configuration. IBM Key Protect and Baidu Cloud currently only declare `KEY_WRAP/KEY_UNWRAP`, and will not masquerade as a Secret Store; Huawei, Tencent, Volcano Engine, and Baidu Cloud signature protocols have been implemented; real identity chains for Azure, GCP, OCI, IBM, and real E2E for all Providers still need target account verification before entering the GA compatibility matrix.
+M2 adaptation packages uniformly support `endpoint` (same-origin compatibility entry), `secret-endpoint`, `kms-endpoint`, `authentication`, `secrets`, `key-bindings`, `wire`, `tls`, and `proxy`; `authentication.type` can be `none`, `bearer-token`, `token-file`, `workload-identity-token-file`, `access-key`, and credentials are validated for completeness at startup. Endpoints enforce HTTPS; only loopback local contract tests allow HTTP. `wire` only describes the vendor's official REST paths and fields, and does not disguise ciphertext as plaintext, nor does it record credentials in configuration. IBM Key Protect, Volcano Engine, and Baidu Cloud currently only declare `KEY_WRAP/KEY_UNWRAP`, and will not masquerade as a Secret Store; Huawei, Tencent, Volcano Engine, and Baidu Cloud signature protocols have been implemented; real identity chains for Azure, GCP, OCI, IBM, and real E2E for all Providers still need target account verification before entering the GA compatibility matrix.
 
-M3 specific fields are: OpenBao `kv`/`transit`/`namespace`; Barbican `project-id` and Secret UUID mapping; KMIP `kmips` endpoint, trust-store/client keystore, and unique identifier mapping; PKCS#11 `library`, `slot`, `token-label`, `pin`, `signing-algorithm` and HSM key alias. PIN, Token, and certificate passwords can only be injected through controlled environment variables, files, or external configuration, and must not be written to Git.
+M3 specific fields are: OpenBao `kv`/`transit`/`namespace`; Barbican `project-id` and Secret UUID mapping; KMIP `kmips` endpoint, trust-store/client keystore, and unique identifier mapping; PKCS#11 `library`, numeric `slot`, `pin`, `signing-algorithm` and HSM key alias. SunPKCS11 has no portable token-label selector, so `token-label` is rejected at startup instead of being silently ignored. PIN, Token, and certificate passwords can only be injected through controlled environment variables, files, or external configuration, and must not be written to Git.
 
 The Vault Provider has generated Spring Configuration Metadata for `platform.component.secret.vault.*`, enabling IDE auto-completion for single-Provider configuration items. The named Provider's `providers.<id>.*` belongs to advanced multi-Provider configuration; the IDE cannot predict dynamic `<id>`, but the field structure is consistent with the single-Provider Vault configuration.
 

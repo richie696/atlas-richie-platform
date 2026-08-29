@@ -5,7 +5,7 @@
 > 目标版本：`1.0.0`  
 > 适用平台：JDK 25、Spring Boot 4.1.x、Spring Cloud 2025.1.x  
 > 最后更新：2026-08-23  
-> 当前实现状态：阶段 0、阶段 1 已完成；阶段 2 的 M1/M2 Provider 与 M3 OpenBao、Barbican、KMIP 2.1、PKCS#11 适配已经落地；阶段 3 已完成五个业务域的启动期透明属性接入、受约束动态目录、统一两阶段运行期刷新、Storage/AI/Gateway 原子代际切换、OAuth 双版本签名/JWKS 窗口、MFA `arse:v1` 新写桥接。M2 Transport 已实现华为云、腾讯云、火山引擎、百度云官方 HMAC 请求签名和工作负载 Token File 模式，并在启动期执行凭据、TLS、代理和路径安全校验；OpenBao 2.6.2 Docker 与 SoftHSM2 PKCS#11 已通过本地 E2E。KMIP 已完成本地 TLS/TTLV 连通性验证，但 PyKMIP 0.10.0 不支持当前 AES Key Wrap Padding；本机无 Keystone/Barbican 服务栈，Barbican 真实 E2E 尚未执行。Vault 已通过 1.21.2 真实服务 KV v2 + Transit E2E。代码级厂商签名/工作负载身份兼容矩阵、TLS/代理/权限错误门禁已经落地；云厂商真实云 E2E、OpenBao/Barbican/KMIP/HSM 实际目标服务、认证续期、证书轮换和目标环境故障演练仍待环境验收；MFA 历史数据迁移不在本项目范围内。
+> 当前实现状态：阶段 0、阶段 1 已完成；阶段 2 的 M1/M2 Provider 与 M3 OpenBao、Barbican、KMIP 2.1、PKCS#11 适配已经落地；阶段 3 已完成五个业务域的启动期透明属性接入、受约束动态目录、统一两阶段运行期刷新、Storage/AI/Gateway 原子代际切换、OAuth 双版本签名/JWKS 窗口、MFA `arse:v1` 新写桥接。M2 Transport 已实现 Secret/KMS 分离 endpoint、操作级官方 wire profile、华为云/腾讯云/火山引擎/百度云 HMAC 请求签名和工作负载 Token File 模式，并在启动期执行凭据、TLS、代理和路径安全校验；OpenBao 2.6.2 Docker 与 SoftHSM2 PKCS#11 已通过本地 E2E。KMIP 已完成本地 TLS/TTLV 连通性验证，但 PyKMIP 0.10.0 不支持当前 AES Key Wrap Padding；本机无 Keystone/Barbican 服务栈，Barbican 真实 E2E 尚未执行。Vault 已通过 1.21.2 真实服务 KV v2 + Transit E2E。代码级厂商签名/工作负载身份兼容矩阵、TLS/代理/权限错误门禁已经落地；云厂商真实云 E2E、OpenBao/Barbican/KMIP/HSM 实际目标服务、认证续期、证书轮换和目标环境故障演练仍待环境验收；MFA 历史数据迁移不在本项目范围内。本文的统一业务审计事件和可信租户上下文隔离章节属于目标架构，当前 1.0 公共 API 与运行期尚未实现。
 
 ---
 
@@ -1071,6 +1071,8 @@ flowchart LR
 
 ### 多租户与命名空间隔离
 
+> 实现边界：本节描述目标架构。当前 1.0 尚未公开 `TenantContext`、租户路径解析器或租户级 AAD 策略；调用方不得把下述模型理解为已经生效的隔离控制。现阶段必须由部署级 Provider Policy、应用/环境命名空间和独立身份完成隔离。
+
 #### 隔离目标
 
 - 租户 A 不能构造引用读取租户 B 的 Secret。
@@ -1415,6 +1417,8 @@ flowchart TB
 刷新策略：`RECREATE_CLIENT`。利用现有 Storage Registry/Proxy 先创建并验证新客户端，再原子替换 Delegate，旧客户端等待在途请求结束后关闭。
 
 优先级说明：若云 SDK 支持 Workload Identity，推荐不保存 AK/SK；Secret 只作为无法使用工作负载身份时的凭据来源。
+
+厂商 SDK 默认凭据链属于启动身份边界，不是受管业务明文的回退路径。环境变量 AK/SK 仍作为显式支持的开发/应急来源；生产必须通过部署策略把凭据链限制为工作负载或实例身份。Provider 失败不会使受管 Secret 值回退到本地配置。
 
 #### AI
 
@@ -1774,7 +1778,7 @@ public interface SecretProviderFactory {
 | Google Cloud | Secret Manager | Cloud KMS | 本地DEK + KMS Wrap | 是/MAC | 版本/轮换工作流 | M2 |
 | 腾讯云 | SSM/KMS配套 | KMS | GenerateDataKey | 是 | 按官方能力 | M2 |
 | 华为云 | CSMS/DEW配套 | DEW KMS | GenerateDataKey | 是 | 按官方能力 | M2 |
-| 火山引擎 | 配套Secret能力 | KMS | GenerateDataKey | 是 | 按官方能力 | M2 |
+| 火山引擎 | 路由到其他 Provider | KMS Encrypt/Decrypt | Encrypt/Decrypt | 是 | 本适配器仅 KMS | M2 |
 | OCI Vault | Vault Secrets | OCI Vault/KMS | Wrap/Unwrap | 依服务能力 | 版本/轮换 | M2 |
 | IBM Key Protect | 无（当前包） | Key Protect | Wrap/Unwrap | 依服务能力 | 否 | M2 |
 | 百度云 KMS | 无（当前包） | KMS | Wrap/Unwrap | 依服务能力 | 否 | M2 |
@@ -1802,9 +1806,17 @@ public interface SecretProviderFactory {
 | OpenBao | Token、Token File；其他认证由 Agent 换取 Token | OpenBao HTTP/KV/Transit | TrustStore/Proxy | OpenBao 2.6.2 Docker E2E | 目标环境续期/轮换待验收 |
 | Barbican | Bearer、Token File | Barbican REST | TrustStore/Proxy | 协议门禁 | 本机缺 Keystone/Barbican 服务栈 |
 | KMIP 2.1 | mTLS 客户端证书 | KMIP TTLV | mTLS；不内置 HTTP 代理 | 本地 TLS/TTLV 连通 | PyKMIP AES KWP 能力不足；目标 KMIP 待验收 |
-| PKCS#11 HSM | Token/PIN、slot/token-label | HSM/JCA Sign/Verify | 本地接口；不走 HTTP 代理 | SoftHSM2 E2E | 真实 HSM 待验收 |
+| PKCS#11 HSM | Token/PIN、数字 slot | HSM/JCA Sign/Verify | 本地接口；不走 HTTP 代理 | SoftHSM2 E2E | 真实 HSM 待验收 |
 
 统一 REST Transport 已实现工作负载 Token File、TLS TrustStore/KeyStore、代理及代理认证的启动期校验；华为、腾讯、火山和百度的签名器分别实现官方 HMAC 形态。工作负载身份交换由云平台 Agent 或部署系统负责，组件只读取短期令牌并在请求时使用，不持久化长期凭据。
+
+同一 Provider 的 Secret Store 与 KMS 可以分别配置 `secret-endpoint` 和 `kms-endpoint`；兼容字段 `endpoint` 只适用于真正同源或已经由企业代理收口的入口。请求路径变量采用 RFC 3986 百分号编码。当前官方 profile 进一步固定了：腾讯云 SSM `GetSecretValue`（`2019-09-23`、signing service `ssm`）与 KMS `Encrypt/Decrypt`（`2019-01-18`、`kms`）的操作级签名元数据；Azure `RSA-OAEP-256`、Base64URL 和 `<key-name>/<key-version>`；华为 CSMS/DEW 的嵌套响应与 `plain_text/cipher_text`；百度 KMS `Encrypt/Decrypt` Action 与 `algorithmMode=GCM`。这些是 Provider 内部协议细节，不进入业务外观 API。
+
+Starter 以运行期 `SecretProviderSession.descriptor().capabilities()` 为准发布 `SecretBackend`、`KeyWrappingBackend`、`SigningBackend` 及上层外观，不能用工厂声明的能力并集猜测。AWS KMS 与 PKCS#11 通过 `verification-key-bindings` 保留历史验签 Key；当前 Key 只负责新签名，历史 Key 只负责验证，移除历史项后旧签名立即失败关闭。
+
+火山引擎适配器映射官方 KMS `Encrypt`/`Decrypt` Action、操作专属请求字段与 `EncryptionContext`，仅声明 `KEY_WRAP/KEY_UNWRAP`；属性源和 Secret 读取必须通过多 Provider 路由交给其他 Provider。PKCS#11 使用数字 `slot` 选取 Token；由于 SunPKCS11 没有可移植的 token-label 选择器，配置 `token-label` 会直接启动失败。
+
+OpenBao 默认 mount 只用于互操作，隔离必须依赖独立 mount/namespace 或精确路径 Token Policy。Barbican 在缺少 `project-id` 时可以依赖 Token 的项目作用域，但生产部署评审必须显式记录该选择，并验证跨项目访问被拒绝。
 
 #### 本地验证结论（2026-08-23）
 
@@ -1831,7 +1843,7 @@ M2 当前已落地 Provider artifact、ServiceLoader 工厂、能力声明、统
 
 ##### M2：主流云覆盖
 
-完成 Azure、GCP、腾讯云、华为云、火山引擎后形成 `1.0 GA`，覆盖国际主流和国内常用云环境。
+目标是在 Azure、GCP、腾讯云、华为云、火山引擎的真实账号 E2E 与故障演练全部通过后形成 `1.0 GA`，覆盖国际主流和国内常用云环境；适配包或 Contract Test 完成不等于 GA。
 
 ##### M3：自建与标准协议
 
@@ -2307,6 +2319,8 @@ SecretException
 
 ### 可观测性与审计
 
+> 实现边界：当前代码已经提供刷新成功/失败计数、快照陈旧度健康状态、监听器失败诊断以及脱敏日志；下述通用操作指标、`SecretAuditEvent` 和跨厂商 Request ID 审计链是目标架构，尚未作为公共 API 或 `audit.enabled` 配置发布。
+
 #### 指标
 
 建议指标：
@@ -2497,6 +2511,8 @@ Secret 组件本身不备份 Provider 数据。运维必须针对具体产品定
 ### 配置、清单与参考资料
 
 #### 完整配置草案
+
+> 这是目标态配置全集，不是当前版本可直接复制的 `application.yml`。当前已实现字段以 README 的“公共配置项”和各 Provider 示例为准；`refresh.mode/poll-interval/jitter/failure-policy`、退避/熔断、`envelope.*` 与 `audit.*` 仍为规划字段。
 
 ```yaml
 platform:

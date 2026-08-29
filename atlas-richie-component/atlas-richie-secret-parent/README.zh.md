@@ -2,7 +2,7 @@
 
 `atlas-richie-secret` 是 Atlas Richie 技术中台统一的密钥与敏感配置访问组件，目标是屏蔽 Vault、云厂商 Secret Manager/KMS、OpenBao、KMIP 等产品之间的接入差异，并让 MFA、OAuth、Storage、AI、Gateway 等业务组件以配置驱动的方式透明接入。
 
-> 当前状态：**M1 基线、M2 Provider 适配包、M3 OpenBao/Barbican/KMIP/PKCS#11 Provider、业务组件透明接入、运行期两阶段原子刷新、OAuth 双版本签名窗口和 MFA 新写桥接均已落地；尚未发布 Maven 版本。** 当前按全新项目处理，不包含 MFA 历史数据迁移。Vault 1.21.2 的 KV v2 + Transit、Token File/AppRole/Agent、Docker Desktop Kubernetes Auth 与 Storage/Gateway/AI 真实服务 E2E 已通过；OpenBao 2.6.2 Docker KV/Transit E2E、SoftHSM2 PKCS#11 AES Wrap/Unwrap + RSA Sign/Verify E2E 已通过。KMIP 已完成本地 TLS/TTLV 连通性验证，但 PyKMIP 0.10.0 不支持 Provider 当前要求的 AES Key Wrap Padding，完整 Wrap/Unwrap E2E 保持阻塞；Barbican 本机没有 Keystone/Barbican 服务栈，真实 E2E 保持待环境。云厂商真实 E2E、真实 HSM、权限拒绝/认证续期/证书轮换仍待目标环境验收，在这些验收完成前不可用于生产 GA。
+> 当前状态：**M1 基线、M2 Provider 适配包、M3 OpenBao/Barbican/KMIP/PKCS#11 Provider、业务组件透明接入、运行期两阶段原子刷新、OAuth 双版本签名窗口和 MFA 新写桥接均已落地；尚未发布 Maven 版本。** 当前按全新项目处理，不包含 MFA 历史数据迁移。Vault 1.21.2 的 KV v2 + Transit、Token File/AppRole/Agent、Docker Desktop Kubernetes Auth 与 Storage/Gateway/AI 真实服务 E2E 已通过；OpenBao 2.6.2 Docker KV/Transit E2E、SoftHSM2 PKCS#11 AES Wrap/Unwrap + RSA Sign/Verify E2E 已通过。KMIP 已完成本地 TLS/TTLV 连通性验证，但 PyKMIP 0.10.0 不支持 Provider 当前要求的 AES Key Wrap Padding，完整 Wrap/Unwrap E2E 保持阻塞；Barbican 本机没有 Keystone/Barbican 服务栈，真实 E2E 保持待环境。云厂商真实 E2E、真实 HSM、权限拒绝/认证续期/证书轮换仍待目标环境验收，在这些验收完成前不可用于生产 GA。统一业务审计事件和可信租户上下文隔离仍是目标架构，不属于当前公开实现。
 
 完整的设计背景、架构、生命周期、SPI、威胁模型、时序图、流程图、测试与演进计划，请参阅 [Atlas-Richie-Secret 组件完整设计方案](docs/zh/design.md)。本文只说明最终使用方式。
 
@@ -411,12 +411,12 @@ Provider 是否可用必须以对应版本的发布说明、兼容性矩阵和�
 | IBM Key Protect | Bearer、Token File | 不启用通用 HMAC | TrustStore/Proxy | Wire/Contract 已通过；真实云待验收 |
 | 腾讯云 | AccessKey、Token File/身份 Agent | TC3-HMAC-SHA256 | TrustStore/Proxy | 签名 Contract 已通过；真实云待验收 |
 | 华为云 | AccessKey、Token File/Agency Agent | SDK-HMAC-SHA256 | TrustStore/Proxy | 签名 Contract 已通过；真实云待验收 |
-| 火山引擎 | AccessKey、Token File/身份 Agent | HMAC-SHA256 | TrustStore/Proxy | 签名 Contract 已通过；真实云待验收 |
+| 火山引擎 | AccessKey、Token File/身份 Agent | HMAC-SHA256、KMS Encrypt/Decrypt | TrustStore/Proxy | Wire/签名 Contract 已通过；真实云待验收 |
 | 百度云 KMS | AccessKey、Token File/身份 Agent | BCE v2 | TrustStore/Proxy | 签名 Contract 已通过；真实云待验收 |
 | OpenBao | Token、Token File | 不启用厂商 HMAC | TrustStore/Proxy；Kubernetes/JWT/AppRole 由 Agent 交换为 Token | OpenBao 2.6.2 Docker E2E 已通过 |
 | Barbican | Bearer、Token File | 不启用厂商 HMAC | TrustStore/Proxy | 协议门禁已通过；本机服务栈缺失 |
 | KMIP 2.1 | mTLS 客户端证书 | KMIP TTLV，不使用 HTTP HMAC | mTLS；代理由部署网络提供 | 本地 TLS/TTLV 已连通；PyKMIP 不支持 AES KWP |
-| PKCS#11 HSM | 本地 Token/PIN、slot/token-label | HSM/JCA Sign/Verify | 不走 HTTP 代理 | SoftHSM2 E2E 已通过；真实 HSM 待验收 |
+| PKCS#11 HSM | 本地 Token/PIN、数字 slot | HSM/JCA Sign/Verify | 不走 HTTP 代理 | SoftHSM2 E2E 已通过；真实 HSM 待验收 |
 
 ### 本地可验证性记录
 
@@ -429,17 +429,24 @@ Provider 是否可用必须以对应版本的发布说明、兼容性矩阵和�
 
 工作负载身份文件只承载短期令牌；Secret 组件不负责替云平台执行令牌交换，也不会把长期 AK/SK 写回配置。具体身份 Agent、ServiceAccount、实例角色和证书轮换必须在目标部署环境按厂商文档验收。
 
+`No Plaintext Fallback` 约束的是受管业务 Secret 和加密密钥：Provider 失败时绝不会重新启用本地业务明文。AWS/阿里云的启动身份属于独立信任边界，遵循厂商 SDK 默认凭据链；环境变量 AK/SK 因而仍可用于本地开发或受控应急，但生产必须优先使用工作负载/实例角色，并通过部署策略限制允许的凭据来源。组件不会把这些启动凭据复制到业务 Properties。
+
 ## ⚙️ 配置说明
 
 ### Provider 配置示例
 
 不同 Provider 只提供连接、身份、区域和产品特有参数；公共行为始终由 `platform.component.secret` 控制。
 
-M2 Provider 的默认 wire profile 已收口在组件内部：GCP 使用
+M2 Provider 的默认 wire profile 已收口在组件内部：GCP 使用相互独立的
+Secret Manager 与 Cloud KMS endpoint，并通过
 `projects/{project}/secrets/{secret}/versions/{version}:access` 和
 `payload.data` Base64 载荷，OCI 使用 `secretBundle`，Azure 使用 Key Vault
-`secrets`/`wrapkey`，IBM Key Protect 使用 `/api/v2/keys/{id}/actions/{wrap,unwrap}`。
-腾讯云、华为云、火山引擎和百度云同样提供官方资源路径默认值；如果企业网关或
+`secrets`/`wrapkey`、`RSA-OAEP-256` 和 Base64URL，IBM Key Protect 使用
+`/api/v2/keys/{id}/actions/{wrap,unwrap}`。
+火山引擎使用官方 KMS `Encrypt`/`Decrypt` Action、操作专属的
+`Plaintext`/`CiphertextBlob` 字段和 `EncryptionContext`，并且只声明
+`KEY_WRAP/KEY_UNWRAP`，Secret 读取必须路由到其他 Provider。腾讯云、华为云和百度云
+同样提供官方资源路径、请求字段和操作级 Action/API Version 默认值；如果企业网关或
 厂商 API 版本不同，可以只通过 `wire.*` 覆盖路径和响应字段。组件不会把访问密钥
 写入日志，也不会在 HTTP 失败时回退到明文或伪造值。
 
@@ -450,19 +457,42 @@ M2 Provider 的默认 wire profile 已收口在组件内部：GCP 使用
 工作负载身份文件中的短期 JWT 只作为 Bearer Token 使用，Token 交换由云平台 Agent
 或身份注入器完成。AWS、阿里云的原生 SDK Provider 继续使用各自的默认凭据链。
 
-签名相关字段示例：
+腾讯云 SSM 与 KMS 使用不同服务域名和不同签名作用域；Action、API Version 与
+`ssm`/`kms` signing service 已由操作级 wire profile 内聚，使用者不需要重复配置：
 
 ```yaml
 platform.component.secret.tencent:
+  secret-endpoint: https://ssm.tencentcloudapi.com
+  kms-endpoint: https://kms.tencentcloudapi.com
   region: ap-guangzhou
   authentication:
     type: access-key
     access-key-id: ${TENCENT_SECRET_ID}
     access-key-secret: ${TENCENT_SECRET_KEY}
     signature: tencent-tc3-hmac-sha256
-    signing-service: kms
-    api-action: Encrypt
-    api-version: '2019-11-15'
+```
+
+当 Secret Store 与 KMS 本来就共用同一服务入口，或企业反向代理把两者收口到同一
+origin 时，仍可只配置兼容字段 `endpoint`；否则必须分别配置 `secret-endpoint` 和
+`kms-endpoint`。Azure `key-bindings` 必须使用 `<key-name>/<key-version>`，以确保
+版本化 `wrapkey`/`unwrapkey` 请求不会悄然落到非预期版本。
+
+AWS KMS 和 PKCS#11 的签名轮换采用“当前签名 Key + 历史验签 Key”模型。历史 Key
+仅用于验签，不会参与新签名；最长保留时间应覆盖业务 Token/签名数据的最长有效期：
+
+```yaml
+platform.component.secret.aws.kms:
+  key-bindings:
+    oauth-signing: arn:aws:kms:ap-southeast-1:123456789012:key/current
+  verification-key-bindings:
+    oauth-signing:
+      - arn:aws:kms:ap-southeast-1:123456789012:key/previous
+
+platform.component.secret.pkcs11:
+  key-bindings:
+    oauth-signing: oauth-signing-v2
+  verification-key-bindings:
+    oauth-signing: [oauth-signing-v1]
 ```
 
 通用 REST Provider 的 TLS 和代理配置：
@@ -593,6 +623,8 @@ path "transit/verify/order-service-signing" {
 
 运行时身份不需要 `sys/mounts`、Transit Key 创建/轮换、KV 写入或删除权限。Key 与 auth role 必须由独立的管理流程预先创建，Provider 不会在应用启动时越权创建资源。
 
+OpenBao 的 `secret` 与 `transit` mount 只是互操作默认值，不是租户隔离边界。生产多应用/多租户部署必须配置独立 mount/namespace，或把 Token Policy 限制在应用自己的精确路径前缀。Barbican 只有在 Keystone Token 已完成项目作用域绑定时才可以省略 `project-id`，否则必须显式配置；两种场景上线前都要做跨项目/跨租户拒绝用例。
+
 #### AWS
 
 ```yaml
@@ -694,7 +726,6 @@ Secret PropertySource
 | `platform.component.secret.resilience.read-timeout` | `5s` | Provider 单次读取超时 |
 | `platform.component.secret.resilience.max-attempts` | `3` | 网络错误、429、5xx 的最大尝试次数 |
 | `platform.component.secret.envelope.format` | `arse` | 信封密文格式标识 |
-| `platform.component.secret.audit.enabled` | `true` | 是否生成不含秘密值的审计事件 |
 
 Provider 专属配置位于：
 
@@ -707,9 +738,9 @@ platform.component.secret.gcp.*
 ...
 ```
 
-M2 适配包统一支持 `endpoint`、`authentication`、`secrets`、`key-bindings`、`wire`、`tls` 和 `proxy` 七组稳定字段；`authentication.type` 可取 `none`、`bearer-token`、`token-file`、`workload-identity-token-file`、`access-key`，并在启动期校验凭据完整性。endpoint 强制 HTTPS，只有 loopback 本地契约测试允许 HTTP。`wire` 只描述厂商官方 REST 的路径和字段，不把密文伪装成明文，也不在配置中记录凭据。IBM Key Protect 与百度云当前只声明 `KEY_WRAP/KEY_UNWRAP`，不会伪装成 Secret Store；华为、腾讯、火山、百度的签名协议已经实现，Azure、GCP、OCI、IBM 的真实身份链与所有 Provider 的真实 E2E 仍需目标账号验收后再进入 GA 兼容矩阵。
+M2 适配包统一支持 `endpoint`（同源兼容入口）、`secret-endpoint`、`kms-endpoint`、`authentication`、`secrets`、`key-bindings`、`wire`、`tls` 和 `proxy` 等稳定字段；`authentication.type` 可取 `none`、`bearer-token`、`token-file`、`workload-identity-token-file`、`access-key`，并在启动期校验凭据完整性。endpoint 强制 HTTPS，只有 loopback 本地契约测试允许 HTTP。`wire` 只描述厂商官方 REST 的路径和字段，不把密文伪装成明文，也不在配置中记录凭据。IBM Key Protect、火山引擎与百度云当前只声明 `KEY_WRAP/KEY_UNWRAP`，不会伪装成 Secret Store；华为、腾讯、火山、百度的签名协议已经实现，Azure、GCP、OCI、IBM 的真实身份链与所有 Provider 的真实 E2E 仍需目标账号验收后再进入 GA 兼容矩阵。
 
-M3 的专属字段为：OpenBao `kv`/`transit`/`namespace`；Barbican `project-id` 与 Secret UUID 映射；KMIP `kmips` endpoint、信任库/客户端密钥库和唯一标识映射；PKCS#11 `library`、`slot`、`token-label`、`pin`、`signing-algorithm` 和 HSM key alias。PIN、Token、证书密码只能通过受控环境变量、文件或外部配置注入，不得写入 Git。
+M3 的专属字段为：OpenBao `kv`/`transit`/`namespace`；Barbican `project-id` 与 Secret UUID 映射；KMIP `kmips` endpoint、信任库/客户端密钥库和唯一标识映射；PKCS#11 `library`、数字 `slot`、`pin`、`signing-algorithm` 和 HSM key alias。SunPKCS11 没有可移植的 token-label 选择器，因此配置 `token-label` 会在启动期失败，避免静默选错 Token。PIN、Token、证书密码只能通过受控环境变量、文件或外部配置注入，不得写入 Git。
 
 Vault Provider 已生成 `platform.component.secret.vault.*` 的 Spring Configuration Metadata，使 IDE 能提示单 Provider 的正式配置项。命名 Provider 的 `providers.<id>.*` 属于多 Provider 高级配置，IDE 无法预知动态 `<id>`，字段结构与单 Provider Vault 配置一致。
 
