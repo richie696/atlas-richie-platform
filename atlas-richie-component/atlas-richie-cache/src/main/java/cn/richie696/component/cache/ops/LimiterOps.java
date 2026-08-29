@@ -16,7 +16,7 @@
 package cn.richie696.component.cache.ops;
 
 /**
- * 分布式限流API管理器，封装了基于Redis的滑动窗口限流算法。
+ * 分布式限流 API，封装基于 Redis 的固定窗口计数器。
  * <p>
  * 适用于接口防刷、限流、突发流量控制等场景。
  *
@@ -27,7 +27,7 @@ package cn.richie696.component.cache.ops;
 public interface LimiterOps {
 
     /**
-     * 滑动窗口限流，判断是否允许通过。
+     * 固定窗口限流，判断是否允许通过。
      *
      * @param key           限流标识键
      * @param maxCount      窗口内最大请求数

@@ -323,6 +323,11 @@
                 <version>${fury-core.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.fury</groupId>
+                <artifactId>fury-extensions</artifactId>
+                <version>${fury-core.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>co.elastic.clients</groupId>
                 <artifactId>elasticsearch-java</artifactId>
                 <version>${elasticsearch-client.version}</version>

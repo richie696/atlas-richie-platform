@@ -18,6 +18,7 @@ package cn.richie696.context.utils.security;
 import cn.richie696.context.utils.data.JsonUtils;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -737,6 +738,101 @@ class SignatureUtilsTest {
         if (json.contains("null")) {
             assertTrue(result, "null 值若被序列化则应该验证通过");
         }
+    }
+
+    // ---------------------------------------------------------------
+    // 版本化 HMAC-SHA256 签名测试
+    // ---------------------------------------------------------------
+
+    @Test
+    void testHmacV2_createSign_matchesCanonicalVector() {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("name", "张三");
+        params.put("age", 25);
+
+        String sign = SignatureUtils.createSign(
+                params, TEST_URL, TEST_SECRET, SignatureUtils.SignatureVersion.HMAC_SHA256_V2);
+
+        // v2 canonical: v2 + LF + HMAC-SHA256 + LF + /api/test + LF + age=25&name=张三
+        assertEquals("684c877f5d07d44c0ac44526c92ca3f872fd2c5c4447efe410910f7e0d4aa972", sign);
+        assertEquals(64, sign.length());
+        assertTrue(sign.matches("[0-9a-f]{64}"));
+    }
+
+    @Test
+    void testHmacV2_jsonRoundtrip_andTamperRejection() {
+        Map<String, Object> request = new LinkedHashMap<>();
+        request.put("storeId", "nj-fzm");
+        request.put("date", "2026-08-29");
+        String sign = SignatureUtils.createSign(
+                request, TEST_URL, TEST_SECRET, SignatureUtils.SignatureVersion.HMAC_SHA256_V2);
+        request.put("sign", sign);
+
+        assertTrue(SignatureUtils.checkSign(JsonUtils.getInstance().serialize(request), TEST_URL, TEST_SECRET,
+                SignatureUtils.SignatureVersion.HMAC_SHA256_V2));
+
+        request.put("date", "2026-08-30");
+        assertFalse(SignatureUtils.checkSign(JsonUtils.getInstance().serialize(request), TEST_URL, TEST_SECRET,
+                SignatureUtils.SignatureVersion.HMAC_SHA256_V2));
+    }
+
+    @Test
+    void testHmacV2_rejectsLegacySignatureAndWrongVersion() {
+        Map<String, Object> request = new LinkedHashMap<>();
+        request.put("orderId", "order-001");
+        String legacySign = SignatureUtils.createSign(request, TEST_URL, TEST_SECRET);
+        String hmacSign = SignatureUtils.createSign(
+                request, TEST_URL, TEST_SECRET, SignatureUtils.SignatureVersion.HMAC_SHA256_V2);
+
+        request.put("sign", legacySign);
+        String legacyJson = JsonUtils.getInstance().serialize(request);
+        assertTrue(SignatureUtils.checkSign(legacyJson, TEST_URL, TEST_SECRET));
+        assertFalse(SignatureUtils.checkSign(legacyJson, TEST_URL, TEST_SECRET,
+                SignatureUtils.SignatureVersion.HMAC_SHA256_V2));
+
+        request.put("sign", hmacSign);
+        String hmacJson = JsonUtils.getInstance().serialize(request);
+        assertTrue(SignatureUtils.checkSign(hmacJson, TEST_URL, TEST_SECRET,
+                SignatureUtils.SignatureVersion.HMAC_SHA256_V2));
+        assertFalse(SignatureUtils.checkSign(hmacJson, TEST_URL, TEST_SECRET));
+    }
+
+    @Test
+    void testHmacV2_dtoRoundtripAndMissingSignRejection() {
+        BasicSignDTO dto = new BasicSignDTO("张三", 25);
+        String sign = SignatureUtils.createSign(
+                dto, TEST_URL, TEST_SECRET, SignatureUtils.SignatureVersion.HMAC_SHA256_V2);
+
+        assertTrue(SignatureUtils.checkSign(dto, TEST_URL, TEST_SECRET, sign,
+                SignatureUtils.SignatureVersion.HMAC_SHA256_V2));
+        assertFalse(SignatureUtils.checkSign(dto, TEST_URL, TEST_SECRET, "",
+                SignatureUtils.SignatureVersion.HMAC_SHA256_V2));
+    }
+
+    @Test
+    void testHmacV2_requiresNonBlankUrlAndSecret() {
+        Map<String, Object> request = Map.of("id", "1");
+
+        IllegalArgumentException blankUrl = assertThrows(IllegalArgumentException.class,
+                () -> SignatureUtils.createSign(request, "", TEST_SECRET,
+                        SignatureUtils.SignatureVersion.HMAC_SHA256_V2));
+        assertTrue(blankUrl.getMessage().contains("url"));
+
+        IllegalArgumentException blankSecret = assertThrows(IllegalArgumentException.class,
+                () -> SignatureUtils.createSign(request, TEST_URL, " ",
+                        SignatureUtils.SignatureVersion.HMAC_SHA256_V2));
+        assertTrue(blankSecret.getMessage().contains("secretKey"));
+    }
+
+    @Test
+    void testHmacV2_emptyParametersAreSupported() {
+        String sign = SignatureUtils.createSign(Collections.emptyMap(), TEST_URL, TEST_SECRET,
+                SignatureUtils.SignatureVersion.HMAC_SHA256_V2);
+        Map<String, Object> request = new LinkedHashMap<>();
+        request.put("sign", sign);
+
+        assertTrue(SignatureUtils.checkSign(JsonUtils.getInstance().serialize(request), TEST_URL, TEST_SECRET,
+                SignatureUtils.SignatureVersion.HMAC_SHA256_V2));
     }
 
 }

@@ -403,9 +403,9 @@ class OrderHook {
 
 ## 🔧 核心能力
 
-### 1. 容器级限流（Rate Limit）
+### 1. 可选分布式业务限流（Rate Limit）
 
-**设计目的**：让业务方 **不写一行注解、不引入额外运行时**，就能在容器层对入站请求做按 key 分桶限流，且与 actuator/health 解耦。
+**设计目的**：让业务方在 Servlet 层做按用户、按路由的业务限流，同时不让所有 web-core 使用方强依赖 Cache。
 
 **解决什么问题**：Bucket4j 是单 key 库；Resilience4j RateLimiter 要 `@RateLimiter` 注解侵入业务方法；Sentinel
 引入控制台。本组件=容器层（不必侵入业务）+ per-key 分桶（共享会计一）+ 不引入额外运行时。
@@ -415,16 +415,15 @@ class OrderHook {
 - ❌ **不**做"按方法 / 按用户 / 按 IP"的细粒度限流语义——本组件专注"按 clientKey 分桶"，更细的粒度由业务方在 ctx 写入
   `clientKey` 实现
 - ❌ **不**做配额预扣 / 配额购买——业务场景差异大，本组件只解决"是否允许通过"
-- ❌ **不**做"集群级"限流同步——单机内存令牌桶足够大多数场景；分布式场景由业务方引入 Redis 自行扩展
+- ❌ **不**承担网关或 Servlet 容器的技术性过载保护——该职责仍属于 Gateway + Sentinel
 
-**实施策略**： **复用 `atlas-richie-concurrency:RateLimiter`**，不自己写 TokenBucket。`RateLimitInterceptor` 仅
-50 行包装。
+**实施策略**：按需引入 `atlas-richie-web-rate-limiter`，复用 Cache 的 `LimiterOps` Redis Lua 原子能力；
+`atlas-richie-web-core` 本身不依赖 Cache。
 
-**算法**：令牌桶 + 惰性补充。`capacity` + `refillTokens` + `refillPeriod` 三参数支持 burst；线程安全由
-`ConcurrentHashMap.computeIfAbsent` + 单 key 内桶原子操作保证。
+**算法**：Redis 原子固定窗口计数。首次成功请求设置 TTL，后续请求不会续期。
 
-**默认关闭（opt-in）**：业务方需显式开启 `platform.component.web.rate-limit.enabled=true` 才进入拦截器链；不开时
-RateLimitInterceptor 不注册，`concurrency.RateLimiter` 完全不会被调用。
+**默认关闭（opt-in）**：业务方需先引入可选模块并显式开启
+`platform.component.web.rate-limit.enabled=true`；未引入时不会带入 Cache 依赖或限流拦截器。
 
 **配置示例**：
 
@@ -715,8 +714,8 @@ DefaultHotReloadRegistry 遍历已 register 的 Reloadable
 
 - 仅依赖事件类名匹配（`org.springframework.cloud.context.environment.EnvironmentChangeEvent`），不引入 spring-cloud 编译期依赖
 - 反射调 `getKeys()` 提取变更 key 集合
-- 决策：`keys` 为 null/empty 或任一键以 `richie.web.` 前缀开头 → 触发 `registry.reloadAll()`
-- 配置变更示例：`richie.web.rate-limit.permits-per-second=20` 即触发 reload，业务无感
+- 决策：`keys` 为 null/empty 或任一键以 `platform.component.web.` 前缀开头 → 触发 `registry.reloadAll()`
+- 配置变更示例：`platform.component.web.rate-limit.permits-per-second=20` 即触发 reload，业务无感
 
 **配置**：不需要。Reloadable 实例默认实现是"重新读取最新 Properties 然后 accept"。
 
@@ -1088,7 +1087,7 @@ API 版本 / Client Key）——业务方写一次，部署形态可选。
 | **R1 决议** | 适配层与 Spring 衔接点                                                                          | ✅ 用户已选 D（jakarta.servlet.Filter + FilterRegistrationBean）   |
 | **A-1**     | web-core SPI 接口（WebRequestContext / WebInterceptor / Chain）                                 | ✅ 23 个单测全过                                                   |
 | **A-2**     | 跨容器 Servlet 适配层（InterceptingFilter + WebRequestContext + FilterRegistrationBean）        | ✅ 15 个单测全过                                                   |
-| **A-3**     | 限流 + 熔断薄插拔（RateLimitInterceptor + CircuitBreakerInterceptor）                           | ✅ 8 个集成场景全过                                                |
+| **A-3**     | 可选 Redis 业务限流 + 熔断                                                                   | 分布式限流已有放行、拒绝、可信 header 定向测试                    |
 | **A-4**     | 平台防护层 A 组 + 互斥（PlatformProtectionInterceptor）                                         | ✅ 31 个单测全过（阈值边界 + 旁路命中 + header 检测）              |
 | **A-5**     | 平台防护层 B 组（AnomalyDetection + BruteForce + ApiSignature）                                 | ✅ 67 个单测全过（Bot/Brute/Signature 三类 + 默认 false 装配隔离） |
 | **A-6**     | 业务能力集成（Tenant + Idempotency + ApiVersion，ClientKey 在 A-3 HeaderBasedKeyResolver 实现） | ✅ 32 个单测全过                                                   |
@@ -1212,7 +1211,7 @@ logging 的纯净性；web 侧被"切面"束缚（annotation 触发不是 web �
 **A**：限流拦截器默认不监听 `EnvironmentChangeEvent`——配置改了但拦截器内部 `RateLimiter` 实例还是旧的。两种解决方式：
 
 1. **手动 reload**：注入 `HotReloadRegistry`，调 `reload("rate-limit")` 或 `reloadAll()`
-2. **接 Spring Cloud Config**：引入 `spring-cloud-context` 后 `HotReloadCloudBridge` 自动激活，`richie.web.rate-limit.*`
+2. **接 Spring Cloud Config**：引入 `spring-cloud-context` 后 `HotReloadCloudBridge` 自动激活，`platform.component.web.rate-limit.*`
    任意键变更即触发 `reloadAll()`
 
 ### Q2：HangDetection 误杀长连接怎么办？
@@ -1252,14 +1251,13 @@ Spring Boot 标准 starter 提供，按业务方需求引入即可。HangDetecti
 SDK。业务方要导出 span / metric，自行引入 `opentelemetry-spring-boot-starter`，web-core 写入的 traceparent 与 OTel
 自动织入天然兼容。
 
-### Q7：`concurrency` 模块未引入时行为？
+### Q7：未引入 Cache 时行为？
 
-**A**：web-core 编译期零 `concurrency` 强依赖（`optional + 跳过 warn` 模式）。未引入 `concurrency` 时：
+**A**：web-core 编译期零 Cache 强依赖。未引入 `atlas-richie-web-rate-limiter` 时：
 
-- `RateLimitInterceptor` / `CircuitBreakerInterceptor` 自动装配 **跳过**，启动输出 WARN
-- 其他 7 价值点（OTEL / Hang / Hook / HotReload / 降级 / 防护 / 业务集成）正常工作
+- 分布式业务限流拦截器不存在；熔断和其他 web-core 能力正常工作
 
-如需限流熔断，引入 `atlas-richie-concurrency` 即可。
+如需分布式业务限流，引入 `atlas-richie-web-rate-limiter`；Cache 只会进入该服务。
 
 ### Q8：怎么让 BloomFilter 不命中时自动 404？
 

@@ -17,6 +17,8 @@
 
     <modules>
         <module>atlas-richie-web-core</module>
+        <!-- 可选的 Redis 全局业务限流；web-core 不强依赖 cache。 -->
+        <module>atlas-richie-web-rate-limiter</module>
         <module>atlas-richie-web-tomcat</module>
         <module>atlas-richie-web-jetty</module>
     </modules>

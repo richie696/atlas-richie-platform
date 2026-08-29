@@ -33,7 +33,7 @@ package cn.richie696.component.web.core.spi;
  * <ol>
  *   <li>{@code OtelSpanInterceptor}</li>
  *   <li>{@code RequestLifecycleHookInterceptor}</li>
- *   <li>{@code RateLimitInterceptor}</li>
+ *   <li>{@code DistributedRateLimitInterceptor}（可选模块）</li>
  *   <li>{@code CircuitBreakerInterceptor}</li>
  *   <li>{@code HangDetectionInterceptor}</li>
  * </ol>

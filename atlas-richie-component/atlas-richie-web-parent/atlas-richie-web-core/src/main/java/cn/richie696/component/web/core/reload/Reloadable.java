@@ -18,14 +18,14 @@ package cn.richie696.component.web.core.reload;
 /**
  * 可热替换对象 SPI（README.md §4.6）。
  * <p>
- * 实现类（如 {@code RateLimitInterceptor} / {@code CircuitBreakerInterceptor} /
+ * 实现类（如可选业务限流模块 / {@code CircuitBreakerInterceptor} /
  * {@code PlatformProtectionInterceptor}）实现此接口，把可变配置封装为
  * {@code Reloadable<S>}。配置变更时调
  * {@link HotReloadRegistry#reload(String)} / {@code reloadAll()} 即可生效。
  *
  * <h2>典型实现</h2>
  * <pre>{@code
- *   public class RateLimitInterceptor implements Reloadable<RateLimitProperties> {
+ *   public class SomeReloadable implements Reloadable<RateLimitProperties> {
  *       private volatile RateLimitProperties current;
  *
  *       public RateLimitProperties currentState() { return current; }

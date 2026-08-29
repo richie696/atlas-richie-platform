@@ -186,6 +186,17 @@ atlas-richie-base/
 - `SpringContextHolder`
 - `JsonUtilsModuleAutoConfiguration`（收集所有 `JsonUtilsModuleCustomizer` Bean，注册到全局 `JsonUtils`）
 
+### 请求签名迁移
+
+`SignatureUtils` 同时保留两个显式版本：
+
+- `v1` / `LEGACY_MD5`：仅为存量调用方保留，计算规则与历史 MD5 完全一致；旧的无版本重载已标记为 `@Deprecated`。
+- `v2` / `HMAC_SHA256_V2`：新接口必须使用。它以 UTF-8 对 `v2\nHMAC-SHA256\n<url>\n<sorted-params>` 执行 `HMAC-SHA256`，并以十六进制输出。
+
+版本必须由服务端基于客户端迁移配置（例如每个 client key 的策略）选择；不能根据请求体中的字段自动降级。建议在传输层使用 `X-Signature-Version: v2` 表达客户端版本，但入口应先校验该版本是否被该客户端允许，再将明确的 `SignatureVersion` 传给工具类。该工具类只校验完整性，不替代网关的时间戳、nonce 等防重放验签。
+
+迁移验证覆盖：v1 输出兼容、v2 固定规范化向量、JSON/DTO 往返、数据篡改、版本交叉校验、空签名和空密钥拒绝。待存量调用方迁移完成后，应在入口配置中禁用 `v1`，并在下一个不兼容主版本中移除其重载。
+
 ### 领域模型继承体系
 
 ```mermaid

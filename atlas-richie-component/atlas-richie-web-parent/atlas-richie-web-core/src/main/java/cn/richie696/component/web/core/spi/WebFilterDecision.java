@@ -28,7 +28,7 @@ package cn.richie696.component.web.core.spi;
  *       {@code OtelSpanInterceptor} 标记为 error span</li>
  * </ul>
  *
- * @param interceptor 触发决策的拦截器名（{@code SimpleName}），便于日志检索；如 {@code "RateLimitInterceptor"}
+ * @param interceptor 触发决策的拦截器名（{@code SimpleName}），便于日志检索；如 {@code "DistributedRateLimitInterceptor"}
  * @param key         决策键（rate-limit / circuit-breaker 使用的 key），可空
  * @param status      决策 HTTP 状态码（如 429 / 503）
  * @param reason      决策原因（自由文本，brief），如 {@code "rate_limit.exceeded"} / {@code "circuit_breaker.open"}

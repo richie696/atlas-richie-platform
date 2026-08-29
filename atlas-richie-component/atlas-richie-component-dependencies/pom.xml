@@ -30,6 +30,12 @@
                 <artifactId>atlas-richie-cache</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
+            <!-- 可选 Redis 全局业务限流组件；仅需要业务限流的服务显式引入。 -->
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-web-rate-limiter</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
             <!-- 数据库访问层组件 -->
             <dependency>
                 <groupId>cn.richie696.component</groupId>

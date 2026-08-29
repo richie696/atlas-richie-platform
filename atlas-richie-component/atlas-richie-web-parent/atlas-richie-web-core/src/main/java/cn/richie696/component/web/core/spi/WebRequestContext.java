@@ -31,7 +31,7 @@ import java.util.Set;
  * <ul>
  *   <li><strong>只读部分</strong>：method / path / header / query / pathVariables —— 一旦装配不可变。</li>
  *   <li><strong>可写部分</strong>：attributes / responseStatus / responseHeaders / shortCircuit —— 拦截器可改。</li>
- *   <li><strong>客户端 key</strong>：由 KeyResolver 解析后写入 {@link #clientKey()}，供 {@code RateLimitInterceptor}、
+ *   <li><strong>客户端 key</strong>：由 KeyResolver 解析后写入 {@link #clientKey()}，供可选业务限流模块、
  *       {@code CircuitBreakerInterceptor} 使用（见 README.md §4.1 / §4.2）。</li>
  *   <li><strong>traceId</strong>：由 {@code OtelSpanInterceptor} 或 {@code RequestLifecycleHookInterceptor} 写入，
  *       后续拦截器可在 attributes 中读取并写入响应头。</li>

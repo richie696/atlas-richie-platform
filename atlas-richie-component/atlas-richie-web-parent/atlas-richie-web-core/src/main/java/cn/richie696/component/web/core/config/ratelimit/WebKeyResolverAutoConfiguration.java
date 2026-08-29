@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Bean;
 /**
  * KeyResolver 默认装配（README.md §4.1）。
  * <p>
- * {@link cn.richie696.component.web.core.interceptor.RateLimitInterceptor} /
+ * 可选的 {@code atlas-richie-web-rate-limiter} /
  * {@link cn.richie696.component.web.core.interceptor.CircuitBreakerInterceptor} 都依赖
  * {@link KeyResolver} bean 解析 clientKey；用户未显式提供时，本类按 {@code WebFilterProperties#keyResolverHeader}
  * 配置（默认 {@code X-Client-Id}）注册 {@link HeaderBasedKeyResolver}。
@@ -37,9 +37,7 @@ import org.springframework.context.annotation.Bean;
  * <ul>
  *   <li>显式声明 {@code @Bean KeyResolver custom(...)}（{@link ConditionalOnMissingBean} 跳过本类）</li>
  *   <li>设置 {@code platform.component.web.key-resolver.enabled=false}（关闭默认）—— 若此时
- *       RateLimit / CB 的 {@code enabled=true} 且无自定义 KeyResolver，二者创建会因
- *       {@code @ConditionalOnBean(KeyResolver.class)} 失败而 bean 不存在（拦截器不生效），
- *       启动日志会有 warning</li>
+ *       业务限流会以 {@code client_unidentified} 安全拒绝，熔断仍会依据自身配置运行。</li>
  * </ul>
  *
  * @author richie696

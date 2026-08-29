@@ -438,14 +438,13 @@ class OrderHook {
 
 ## 🔧 Core Capabilities
 
-### 1. Container-Level Rate Limit (Rate Limit)
+### 1. Optional Distributed Business Rate Limit
 
-**Design purpose**: Let business teams apply per-key inbound rate limiting at the container layer **without writing a
-single annotation or adding any extra runtime**, decoupled from actuator/health.
+**Design purpose**: Let business teams apply per-user and per-route business limits at the Servlet layer without adding
+a Cache dependency to every web-core consumer.
 
-**Problem solved**: Bucket4j is a single-key library; Resilience4j RateLimiter requires `@RateLimiter` annotations that
-intrude into business methods; Sentinel introduces a console. This component = container layer (no business intrusion) +
-per-key buckets (shared accounting) + no extra runtime.
+**Problem solved**: the former in-JVM per-key buckets made multi-Pod quotas inconsistent and accumulated local limiter
+objects and schedulers as client keys grew. The optional module shares one Redis counter across Pods.
 
 **Explicitly not doing**:
 
@@ -453,18 +452,17 @@ per-key buckets (shared accounting) + no extra runtime.
   focuses on "per clientKey bucket"; finer granularity is implemented by business teams writing `clientKey` into ctx.
 - ❌ **Does not** handle quota pre-deduction / quota purchase — business scenarios vary too much; this component only
   answers "is this request allowed to pass".
-- ❌ **Does not** synchronize "cluster-level" rate limiting — an in-memory token bucket on a single node is enough for
-  most scenarios; distributed scenarios are left to business teams to extend with Redis.
+- ❌ **Does not** protect a saturated gateway or Servlet container — Gateway + Sentinel remain responsible for technical
+  overload protection.
 
-**Implementation strategy**: **reuse `atlas-richie-concurrency:RateLimiter`**, do not write a TokenBucket
-yourself. `RateLimitInterceptor` is only a 50-line wrapper.
+**Implementation strategy**: add `atlas-richie-web-rate-limiter` only where needed. It reuses Cache's `LimiterOps`
+Redis Lua primitive; `atlas-richie-web-core` has no Cache dependency.
 
-**Algorithm**: token bucket + lazy refill. The three parameters `capacity` + `refillTokens` + `refillPeriod` support
-bursts; thread safety is guaranteed by `ConcurrentHashMap.computeIfAbsent` + atomic operations within each key's bucket.
+**Algorithm**: Redis atomic fixed-window counter. The first successful request sets the TTL; later requests do not
+extend it.
 
-**Disabled by default (opt-in)**: business teams must explicitly enable `platform.component.web.rate-limit.enabled=true`
-to enter the interceptor chain; if not enabled, RateLimitInterceptor is not registered and `concurrency.RateLimiter` is
-never called.
+**Disabled by default (opt-in)**: business teams must explicitly add the optional module and enable
+`platform.component.web.rate-limit.enabled=true`; without it, no Cache dependency or rate-limit interceptor is loaded.
 
 **Configuration example**:
 
@@ -474,11 +472,13 @@ platform:
     web:
       rate-limit:
         enabled: true   # Explicit opt-in; default false
+        window-seconds: 1
         permits-per-second: 100
         deny-status: 429
-        deny-body-template: '{"error":"too_many_requests","reason":"{reason}"}'
-        deny-headers:
-          Retry-After: "1"
+        require-gateway-identity: true
+        routes:
+          - pattern: /api/v1/orders/**
+            permits-per-second: 5
 ```
 
 **Metrics** (Micrometer Counter):
@@ -788,8 +788,8 @@ When the business team adds `spring-cloud-context`, `HotReloadCloudBridge` auto-
 - Depends only on event class name matching (`org.springframework.cloud.context.environment.EnvironmentChangeEvent`), no
   compile-time spring-cloud dependency
 - Reflectively calls `getKeys()` to extract the changed key set
-- Decision: if `keys` is null/empty, or any key starts with `richie.web.`, trigger `registry.reloadAll()`
-- Config change example: `richie.web.rate-limit.permits-per-second=20` triggers reload — business remains unaware
+- Decision: if `keys` is null/empty, or any key starts with `platform.component.web.`, trigger `registry.reloadAll()`
+- Config change example: `platform.component.web.rate-limit.permits-per-second=20` triggers reload — business remains unaware
 
 **Configuration**: not required. The default Reloadable implementation is "reread the latest Properties then accept".
 
@@ -1192,7 +1192,7 @@ thresholds are tunable):
 | **R1 decision** | Adaptation layer & Spring bridging point                                                                                 | ✅ User chose D (`jakarta.servlet.Filter` + `FilterRegistrationBean`)                               |
 | **A-1**         | web-core SPI interfaces (WebRequestContext / WebInterceptor / Chain)                                                     | ✅ 23 unit tests all pass                                                                           |
 | **A-2**         | Cross-container Servlet adaptation layer (InterceptingFilter + WebRequestContext + FilterRegistrationBean)               | ✅ 15 unit tests all pass                                                                           |
-| **A-3**         | Thin pluggable rate limit + circuit breaker (RateLimitInterceptor + CircuitBreakerInterceptor)                           | ✅ 8 integration scenarios all pass                                                                 |
+| **A-3**         | Optional Redis business rate limit + circuit breaker                                                                        | Distributed limiter has focused allow / deny / trusted-header tests                                  |
 | **A-4**         | Platform protection layer Group A + mutual exclusion (PlatformProtectionInterceptor)                                     | ✅ 31 unit tests all pass (threshold boundaries + bypass hit + header detection)                    |
 | **A-5**         | Platform protection layer Group B (AnomalyDetection + BruteForce + ApiSignature)                                         | ✅ 67 unit tests all pass (Bot/Brute/Signature three categories + default-false assembly isolation) |
 | **A-6**         | Business capability integration (Tenant + Idempotency + ApiVersion, ClientKey implemented in A-3 HeaderBasedKeyResolver) | ✅ 32 unit tests all pass                                                                           |
@@ -1333,7 +1333,7 @@ but the interceptor's internal `RateLimiter` instance is still the old one. Two 
 
 1. **Manual reload**: inject `HotReloadRegistry` and call `reload("rate-limit")` or `reloadAll()`
 2. **Wire Spring Cloud Config**: after adding `spring-cloud-context`, `HotReloadCloudBridge` activates automatically;
-   any `richie.web.rate-limit.*` key change triggers `reloadAll()`
+   any `platform.component.web.rate-limit.*` key change triggers `reloadAll()`
 
 ### Q2: What to do when HangDetection falsely kills long-lived connections?
 
@@ -1377,15 +1377,13 @@ introduced based on business needs. HangDetection bypass is configured via `long
 `opentelemetry-spring-boot-starter` themselves; the traceparent written by web-core is naturally compatible with OTel
 auto-instrumentation.
 
-### Q7: Behavior when the `concurrency` module is not added?
+### Q7: Behavior when the Cache module is not added?
 
-**A**: web-core has zero compile-time hard dependency on `concurrency`, using the `optional + skip with warn` mode. When
-`concurrency` is not added:
+**A**: web-core has zero compile-time hard dependency on Cache. When `atlas-richie-web-rate-limiter` is not added:
 
-- `RateLimitInterceptor` / `CircuitBreakerInterceptor` autoconfig is **skipped**, and startup outputs WARN
-- The other 7 value points (OTEL / Hang / Hook / HotReload / degrade / protection / business integration) work normally
+- The Redis business rate-limit interceptor is absent; circuit breaker and other web-core capabilities work normally
 
-If you need rate limiting and circuit breaking, add `atlas-richie-concurrency`.
+If you need distributed business limits, add `atlas-richie-web-rate-limiter`; it brings Cache only to that service.
 
 ### Q8: How to make BloomFilter return 404 automatically on miss?
 

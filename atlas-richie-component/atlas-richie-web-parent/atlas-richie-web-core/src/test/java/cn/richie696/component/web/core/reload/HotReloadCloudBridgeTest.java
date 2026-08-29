@@ -83,7 +83,7 @@ class HotReloadCloudBridgeTest {
     @Test
     void onApplicationEvent_relevantKeys_directInvocationTriggersReload() {
         Set<String> keys = new HashSet<>();
-        keys.add("richie.web.rate-limit.permits-per-second");
+        keys.add("platform.component.web.rate-limit.permits-per-second");
         ProxyEnvironmentChangeEvent event = new ProxyEnvironmentChangeEvent(keys);
 
         bridge.onApplicationEvent(event);
@@ -113,8 +113,8 @@ class HotReloadCloudBridgeTest {
 
     @Test
     void shouldReload_relevantPrefix_triggers() {
-        assertThat(HotReloadCloudBridge.shouldReload(Set.of("richie.web.circuit-breaker.failures"))).isTrue();
-        assertThat(HotReloadCloudBridge.shouldReload(Set.of("spring.x", "richie.web.y"))).isTrue();
+        assertThat(HotReloadCloudBridge.shouldReload(Set.of("platform.component.web.circuit-breaker.failures"))).isTrue();
+        assertThat(HotReloadCloudBridge.shouldReload(Set.of("spring.x", "platform.component.web.y"))).isTrue();
     }
 
     @Test
@@ -124,7 +124,7 @@ class HotReloadCloudBridgeTest {
 
     @Test
     void extractKeys_reflectsGetKeys() {
-        Set<String> keys = Set.of("richie.web.x", "richie.web.y");
+        Set<String> keys = Set.of("platform.component.web.x", "platform.component.web.y");
         ProxyEnvironmentChangeEvent event = new ProxyEnvironmentChangeEvent(keys);
         Set<String> extracted = HotReloadCloudBridge.extractKeys(event);
         assertThat(extracted).containsExactlyInAnyOrderElementsOf(keys);

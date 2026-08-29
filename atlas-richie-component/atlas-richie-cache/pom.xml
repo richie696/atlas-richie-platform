@@ -93,6 +93,18 @@
             <groupId>org.apache.fury</groupId>
             <artifactId>fury-core</artifactId>
         </dependency>
+        <!-- Protobuf 类型深拷贝支持；避免运行时降级并反复输出可选序列化器告警。 -->
+        <dependency>
+            <groupId>org.apache.fury</groupId>
+            <artifactId>fury-extensions</artifactId>
+            <exclusions>
+                <!-- Fury 0.10.3 元数据误将测试工具作为编译依赖；运行时不需要该模块。 -->
+                <exclusion>
+                    <groupId>org.apache.fury</groupId>
+                    <artifactId>fury-test-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
         <dependency>
             <groupId>org.ehcache</groupId>

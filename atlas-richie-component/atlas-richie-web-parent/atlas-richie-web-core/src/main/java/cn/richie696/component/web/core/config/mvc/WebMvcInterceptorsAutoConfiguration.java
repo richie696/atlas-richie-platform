@@ -58,7 +58,7 @@ import java.util.List;
 @ConditionalOnClass(InterceptingFilter.class)
 @org.springframework.boot.autoconfigure.AutoConfigureAfter({
         cn.richie696.component.web.core.config.ratelimit.WebKeyResolverAutoConfiguration.class,
-        cn.richie696.component.web.core.config.ratelimit.WebRateLimitAutoConfiguration.class,
+        cn.richie696.component.web.core.config.ratelimit.WebCircuitBreakerAutoConfiguration.class,
         cn.richie696.component.web.core.config.hang.HangAutoConfiguration.class,
         cn.richie696.component.web.core.config.protection.PlatformProtectionAutoConfiguration.class
 })

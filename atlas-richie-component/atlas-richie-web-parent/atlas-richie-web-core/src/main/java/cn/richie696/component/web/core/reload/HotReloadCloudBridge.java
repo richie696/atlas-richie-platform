@@ -61,9 +61,9 @@ public class HotReloadCloudBridge implements SmartApplicationListener {
 
     /**
      * 当变更的任一 key 以此前缀开头时，认为与 richie 防护体系相关。
-     * <p>示例：{@code richie.web.rate-limit.permits-per-second=20} 触发 reload。
+     * <p>示例：{@code platform.component.web.rate-limit.permits-per-second=20} 触发 reload。
      */
-    public static final String KEY_PREFIX = "richie.web.";
+    public static final String KEY_PREFIX = "platform.component.web.";
 
     private final HotReloadRegistry registry;
 

@@ -28,7 +28,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * <p>atlas-richie-gateway-service 端的过滤器链会<strong>透传 client header</strong>到下游 web 服务（典型如 {@code X-Client-Id}）。
  * web 端本配置照常生效——gateway 不会解析限流 / 熔断的 clientKey，这一步仍由 web 端完成。
  * <p>但是 web-core 端 {@link #keyHeader} 配置名<strong>必须与 gateway 实际透传的 header 一致</strong>，
- * 否则 {@link cn.richie696.component.web.core.interceptor.RateLimitInterceptor} /
+ * 否则可选的 {@code atlas-richie-web-rate-limiter} /
  * {@link cn.richie696.component.web.core.interceptor.CircuitBreakerInterceptor} 拿不到 clientKey，
  * 会全部按"未识别"短路 401。
  * <p>部署 gateway 时建议显式写明对齐：

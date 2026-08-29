@@ -20,7 +20,7 @@ import cn.richie696.component.web.core.config.ratelimit.WebFilterProperties;
 /**
  * ClientKey 解析器（README.md §4.1 RateLimit 配置 {@code key-resolver}）。
  * <p>
- * {@link cn.richie696.component.web.core.interceptor.RateLimitInterceptor} 与
+ * 可选业务限流模块与
  * {@link cn.richie696.component.web.core.interceptor.CircuitBreakerInterceptor} 都依赖此 SPI
  * 决定按哪个 key 限流 / 熔断。
  *

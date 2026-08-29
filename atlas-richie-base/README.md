@@ -186,6 +186,17 @@ Registered in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfig
 - `SpringContextHolder`
 - `JsonUtilsModuleAutoConfiguration` (collects `JsonUtilsModuleCustomizer` beans and registers modules on global `JsonUtils`)
 
+### Request-signature migration
+
+`SignatureUtils` keeps two explicit versions:
+
+- `v1` / `LEGACY_MD5`: retained only for existing callers and byte-for-byte compatible with the former MD5 rule; the unversioned overloads are now `@Deprecated`.
+- `v2` / `HMAC_SHA256_V2`: mandatory for new endpoints. It calculates `HMAC-SHA256` over UTF-8 `v2\nHMAC-SHA256\n<url>\n<sorted-params>` and returns lowercase hexadecimal output.
+
+The server must select the version from a client migration policy (for example, a policy per client key); it must not automatically downgrade from a body field. A client may send `X-Signature-Version: v2`, but the entry point must authorize that version before passing the explicit `SignatureVersion` to this utility. This utility verifies integrity only; it does not replace timestamp/nonce replay protection at the gateway.
+
+The migration test matrix covers v1 compatibility, a fixed v2 canonical vector, JSON/DTO round trips, payload tampering, cross-version rejection, and rejection of missing signatures or blank HMAC inputs. Once every caller has migrated, disable `v1` in the entry policy and remove its overloads in the next breaking major version.
+
 ### Domain model hierarchy
 
 ```mermaid

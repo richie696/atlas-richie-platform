@@ -28,7 +28,7 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.stereotype.Component;
 
 /**
- * 分布式限流API管理器，封装了基于Redis的滑动窗口限流算法。
+ * 分布式限流 API 管理器，封装了基于 Redis 的固定窗口计数器。
  * <p>
  * 适用于接口防刷、限流、突发流量控制等场景。
  *
@@ -50,7 +50,8 @@ public class RedisLimiterManager implements LimiterOps {
     private final RedisPerfGuard redisPerfGuard;
 
     /**
-     * 滑动窗口限流，判断是否允许通过。
+     * 固定窗口限流，判断是否允许通过。窗口从该 key 首次成功计数时开始；
+     * 后续请求不会刷新 TTL，避免持续访问把配额窗口无限后移。
      *
      * @param key           限流标识键
      * @param maxCount      窗口内最大请求数
@@ -64,9 +65,11 @@ public class RedisLimiterManager implements LimiterOps {
     @Override
     public boolean tryAcquire(String key, int maxCount, int windowSeconds) {
         return redisPerfGuard.<Boolean>execute("RedisLimiterManager", "tryAcquire", RedisOperationCatalog.LIMITER_LUA, () -> {
-            String lua = "local c = redis.call('get', KEYS[1]) if c and tonumber(c) >= tonumber(ARGV[1])" +
-                    " then return 0 else redis.call('incr', KEYS[1])" +
-                    " redis.call('expire', KEYS[1], ARGV[2]) return 1 end";
+            String lua = "local c = redis.call('get', KEYS[1]) " +
+                    "if c and tonumber(c) >= tonumber(ARGV[1]) then return 0 end " +
+                    "local next = redis.call('incr', KEYS[1]) " +
+                    "if next == 1 then redis.call('expire', KEYS[1], ARGV[2]) end " +
+                    "return 1";
             Long result = redisTemplate.execute((RedisCallback<Long>) conn ->
                     conn.scriptingCommands().eval(lua.getBytes(), ReturnType.INTEGER, 1,
                             key.getBytes(), String.valueOf(maxCount).getBytes(), String.valueOf(windowSeconds).getBytes())

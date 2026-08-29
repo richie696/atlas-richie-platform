@@ -42,7 +42,6 @@ import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 
 /**
  * Embedded Jetty 12 专属自动配置（完整 Phase 1-5 集成）。
@@ -120,11 +119,11 @@ public class JettyAutoConfiguration {
      * <p>零配置中心依赖。消费方在 Nacos/Apollo/Spring Cloud Config 监听器中
      * 调用 {@link JettyThreadPoolUpdater#refresh()} 即可动态更新线程池参数。</p>
      *
-     * <p>使用 {@link Lazy} 注入 {@link Server} 以避免 BeanPostProcessor 阶段的循环依赖。
-     * updater 只在首次被实际调用时才解析 Server 引用，此时所有后处理器已完成。</p>
+     * <p>{@link Server} 在 WebServerFactory 创建阶段注册为 singleton，随后再创建 updater，
+     * 因而可直接注入；不要为 Jetty 的生命周期对象创建 CGLIB 延迟代理。</p>
      */
     @Bean
-    public JettyThreadPoolUpdater jettyThreadPoolUpdater(@Lazy Server server) {
+    public JettyThreadPoolUpdater jettyThreadPoolUpdater(Server server) {
         return new JettyThreadPoolUpdater(server);
     }
 
@@ -204,7 +203,7 @@ public class JettyAutoConfiguration {
      * 追加 {@code addServerCustomizers} lambda；该 lambda 在
      * {@code factory.getWebServer()} 内执行（BeanFactory 已就绪），把 {@link Server}
      * 注册为 bean——随后 {@code finishBeanFactoryInitialization} 实例化依赖 {@link Server}
-     * 的 bean 时类型匹配成功。{@code @Lazy} 仅为安全网，不能替代本 customizer。
+     * 的 bean 时类型匹配成功。
      */
     @Bean
     public WebServerFactoryCustomizer<JettyServletWebServerFactory> jettyServerBeanRegistrar(

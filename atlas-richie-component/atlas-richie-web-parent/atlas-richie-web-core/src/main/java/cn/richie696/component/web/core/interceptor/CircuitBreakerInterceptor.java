@@ -52,7 +52,7 @@ import java.util.Map;
  *
  * <h2>按接口粒度配置</h2>
  * <p>熔断按"被保护资源"分：CB key = {@code matchedPattern}；未命中 routes 的请求直接放行，
- * 与 {@link RateLimitInterceptor} 的 {@code clientKey + "::" + pattern} 复合 key 解耦。同一 path 的
+ * 与可选业务限流模块的 clientKey / path 配额 key 解耦。同一 path 的
  * 所有 clientKey 共享同一 CB 状态机——这符合经典 CB 语义（保护被调用资源，而非限制调用方）。命中 path
  * 路由后，使用该路由专属的阈值创建独立 CB。
  *
@@ -60,7 +60,7 @@ import java.util.Map;
  * <p>{@link #getOrder()} 返回 {@code 400}（晚于 RateLimit），见 §4 SPI 注释。
  *
  * <h2>HookBus 衔接</h2>
- * <p>同 {@link RateLimitInterceptor}：本拦截器只写 attribute，A-4 HookBus 读取。
+ * <p>与业务限流一样：本拦截器只写 attribute，A-4 HookBus 读取。
  *
  * @author richie696
  * @since 2026-07
