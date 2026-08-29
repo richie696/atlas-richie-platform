@@ -3,6 +3,8 @@ package cn.richie696.component.secret.provider.common;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -24,13 +26,18 @@ final class RemoteRequestSigner {
         if (signature == null || signature == RemoteProviderProperties.RequestSignature.NONE) return;
         String timestamp = UTC.format(Instant.now());
         String region = nonBlank(authentication.getSigningRegion(), variables.get("region"), "global");
-        String service = nonBlank(authentication.getSigningService(), variables.get("service"), "kms");
+        String service = nonBlank(
+                variables.get("signingService"),
+                authentication.getSigningService(),
+                nonBlank(variables.get("service"), "kms"));
         String host = uri.getHost();
         String contentType = "application/json";
         builder.header("Content-Type", contentType);
         switch (signature) {
             case HUAWEI_SDK_HMAC_SHA256 -> huawei(builder, uri, method, body, authentication, timestamp, host, contentType);
-            case TENCENT_TC3_HMAC_SHA256 -> tencent(builder, uri, method, body, authentication, timestamp, host, region, service, contentType);
+            case TENCENT_TC3_HMAC_SHA256 -> tencent(
+                    builder, uri, method, body, authentication, variables,
+                    timestamp, host, region, service, contentType);
             case VOLCENGINE_HMAC_SHA256 -> volcengine(builder, uri, method, body, authentication, timestamp, host, region, service, contentType);
             case BAIDU_BCE_V2 -> baidu(builder, uri, method, body, authentication, timestamp, host, region, service, contentType);
             case NONE -> { }
@@ -53,12 +60,13 @@ final class RemoteRequestSigner {
     }
 
     private static void tencent(HttpRequest.Builder builder, URI uri, String method, byte[] body,
-                                RemoteProviderProperties.Authentication auth, String timestamp,
+                                RemoteProviderProperties.Authentication auth, Map<String, String> variables,
+                                String timestamp,
                                 String host, String region, String service, String contentType) {
         long epoch = Instant.now().getEpochSecond();
         String date = java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC).format(Instant.ofEpochSecond(epoch));
-        String action = nonBlank(auth.getApiAction(), "Encrypt");
-        String version = nonBlank(auth.getApiVersion(), "2019-11-15");
+        String action = nonBlank(variables.get("apiAction"), auth.getApiAction(), "Encrypt");
+        String version = nonBlank(variables.get("apiVersion"), auth.getApiVersion(), "2019-01-18");
         String signed = "content-type;host;x-tc-action";
         String requestTimestamp = Long.toString(epoch);
         builder.header("X-TC-Action", action).header("X-TC-Version", version)
@@ -71,9 +79,18 @@ final class RemoteRequestSigner {
         String scope = date + "/" + service + "/tc3_request";
         String toSign = "TC3-HMAC-SHA256\n" + requestTimestamp + "\n" + scope + "\n" + sha256(canonical);
         byte[] raw = secret(auth);
+        byte[] tc3Key = new byte[3 + raw.length];
         byte[] dateKey;
-        try { dateKey = hmacBytes(("TC3" + new String(raw, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8), date); }
-        finally { java.util.Arrays.fill(raw, (byte) 0); }
+        try {
+            tc3Key[0] = 'T';
+            tc3Key[1] = 'C';
+            tc3Key[2] = '3';
+            System.arraycopy(raw, 0, tc3Key, 3, raw.length);
+            dateKey = hmacBytes(tc3Key, date);
+        } finally {
+            java.util.Arrays.fill(raw, (byte) 0);
+            java.util.Arrays.fill(tc3Key, (byte) 0);
+        }
         byte[] serviceKey = hmacBytes(dateKey, service);
         byte[] signingKey = hmacBytes(serviceKey, "tc3_request");
         try {
@@ -158,8 +175,17 @@ final class RemoteRequestSigner {
         char[] chars = auth.getAccessKeySecret();
         if (chars == null || chars.length == 0) return new byte[0];
         // getAccessKeySecret() returns a defensive copy; wipe only this request-local copy.
-        try { return new String(chars).getBytes(StandardCharsets.UTF_8); }
-        finally { java.util.Arrays.fill(chars, '\0'); }
+        ByteBuffer encoded = StandardCharsets.UTF_8.encode(CharBuffer.wrap(chars));
+        byte[] result = new byte[encoded.remaining()];
+        try {
+            encoded.get(result);
+            return result;
+        } finally {
+            if (encoded.hasArray()) {
+                java.util.Arrays.fill(encoded.array(), (byte) 0);
+            }
+            java.util.Arrays.fill(chars, '\0');
+        }
     }
     private static String nonBlank(String first, String second, String fallback) {
         return first != null && !first.isBlank() ? first : (second != null && !second.isBlank() ? second : fallback);
@@ -170,6 +196,10 @@ final class RemoteRequestSigner {
     private static String sha256(byte[] value) { try { return hex(MessageDigest.getInstance("SHA-256").digest(value == null ? new byte[0] : value)); } catch (Exception e) { throw new IllegalStateException(e); } }
     private static String sha256(String value) { return sha256(value.getBytes(StandardCharsets.UTF_8)); }
     private static byte[] hmacBytes(byte[] key, String value) { try { Mac mac=Mac.getInstance("HmacSHA256"); mac.init(new SecretKeySpec(key,"HmacSHA256")); return mac.doFinal(value.getBytes(StandardCharsets.UTF_8)); } catch (Exception e) { throw new IllegalStateException(e); } }
-    private static String hmacHex(byte[] key, String value) { return hex(hmacBytes(key, value)); }
+    private static String hmacHex(byte[] key, String value) {
+        byte[] digest = hmacBytes(key, value);
+        try { return hex(digest); }
+        finally { java.util.Arrays.fill(digest, (byte) 0); }
+    }
     private static String hex(byte[] value) { return java.util.HexFormat.of().formatHex(value); }
 }

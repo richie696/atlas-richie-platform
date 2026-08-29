@@ -9,6 +9,8 @@ import java.util.Map;
 /** Common external configuration used by the optional provider artifacts. */
 public class RemoteProviderProperties {
     private URI endpoint;
+    private URI secretEndpoint;
+    private URI kmsEndpoint;
     private Authentication authentication = new Authentication();
     private String region;
     private String projectId;
@@ -23,6 +25,10 @@ public class RemoteProviderProperties {
 
     public URI getEndpoint() { return endpoint; }
     public void setEndpoint(URI endpoint) { this.endpoint = endpoint; }
+    public URI getSecretEndpoint() { return secretEndpoint == null ? endpoint : secretEndpoint; }
+    public void setSecretEndpoint(URI value) { this.secretEndpoint = value; }
+    public URI getKmsEndpoint() { return kmsEndpoint == null ? endpoint : kmsEndpoint; }
+    public void setKmsEndpoint(URI value) { this.kmsEndpoint = value; }
     public String getRegion() { return region; }
     public void setRegion(String region) { this.region = region; }
     public String getProjectId() { return projectId; }
@@ -111,6 +117,11 @@ public class RemoteProviderProperties {
     /** Vendor REST shape kept inside the provider; never exposed by Secret API. */
     public static class Wire {
         private String secretPath = "/secrets/{path}";
+        private String secretLatestPath = "";
+        private HttpMethod secretMethod = HttpMethod.GET;
+        private String secretRequestNameField = "";
+        private String secretRequestVersionField = "";
+        private String latestVersionValue = "latest";
         private String wrapPath = "/keys/{key}/wrap";
         private String unwrapPath = "/keys/{key}/unwrap";
         private String secretValueField = "value";
@@ -120,10 +131,35 @@ public class RemoteProviderProperties {
         private String plaintextField = "plaintext";
         private String secretValueEncoding = "PLAIN";
         private String requestValueField = "value";
+        private String requestWrapValueField = "";
+        private String requestUnwrapValueField = "";
         private String requestAadField = "aad";
+        private RequestAadEncoding requestAadEncoding = RequestAadEncoding.BASE64;
+        private boolean requestAadEncodingConfigured;
         private String requestKeyField = "";
+        private ValueEncoding requestValueEncoding = ValueEncoding.BASE64;
+        private ValueEncoding responseValueEncoding = ValueEncoding.BASE64;
+        private String requestAlgorithmField = "";
+        private String requestAlgorithm = "";
+        private String secretAction = "";
+        private String secretApiVersion = "";
+        private String secretSigningService = "";
+        private String wrapAction = "";
+        private String unwrapAction = "";
+        private String kmsApiVersion = "";
+        private String kmsSigningService = "";
         public String getSecretPath() { return secretPath; }
         public void setSecretPath(String value) { this.secretPath = value == null ? "" : value; }
+        public String getSecretLatestPath() { return secretLatestPath; }
+        public void setSecretLatestPath(String value) { this.secretLatestPath = value == null ? "" : value; }
+        public HttpMethod getSecretMethod() { return secretMethod; }
+        public void setSecretMethod(HttpMethod value) { this.secretMethod = value == null ? HttpMethod.GET : value; }
+        public String getSecretRequestNameField() { return secretRequestNameField; }
+        public void setSecretRequestNameField(String value) { this.secretRequestNameField = value == null ? "" : value; }
+        public String getSecretRequestVersionField() { return secretRequestVersionField; }
+        public void setSecretRequestVersionField(String value) { this.secretRequestVersionField = value == null ? "" : value; }
+        public String getLatestVersionValue() { return latestVersionValue; }
+        public void setLatestVersionValue(String value) { this.latestVersionValue = value == null ? "latest" : value; }
         public String getWrapPath() { return wrapPath; }
         public void setWrapPath(String value) { this.wrapPath = value == null ? "" : value; }
         public String getUnwrapPath() { return unwrapPath; }
@@ -142,11 +178,51 @@ public class RemoteProviderProperties {
         public void setSecretValueEncoding(String value) { this.secretValueEncoding = value == null ? "" : value; }
         public String getRequestValueField() { return requestValueField; }
         public void setRequestValueField(String value) { this.requestValueField = value == null ? "" : value; }
+        public String getRequestWrapValueField() { return requestWrapValueField; }
+        public void setRequestWrapValueField(String value) { this.requestWrapValueField = value == null ? "" : value; }
+        public String getRequestUnwrapValueField() { return requestUnwrapValueField; }
+        public void setRequestUnwrapValueField(String value) { this.requestUnwrapValueField = value == null ? "" : value; }
         public String getRequestAadField() { return requestAadField; }
         public void setRequestAadField(String value) { this.requestAadField = value == null ? "" : value; }
+        public RequestAadEncoding getRequestAadEncoding() { return requestAadEncoding; }
+        public void setRequestAadEncoding(RequestAadEncoding value) {
+            this.requestAadEncoding = value == null ? RequestAadEncoding.BASE64 : value;
+            this.requestAadEncodingConfigured = value != null;
+        }
+        boolean isRequestAadEncodingConfigured() { return requestAadEncodingConfigured; }
         public String getRequestKeyField() { return requestKeyField; }
         public void setRequestKeyField(String value) { this.requestKeyField = value == null ? "" : value; }
+        public ValueEncoding getRequestValueEncoding() { return requestValueEncoding; }
+        public void setRequestValueEncoding(ValueEncoding value) {
+            this.requestValueEncoding = value == null ? ValueEncoding.BASE64 : value;
+        }
+        public ValueEncoding getResponseValueEncoding() { return responseValueEncoding; }
+        public void setResponseValueEncoding(ValueEncoding value) {
+            this.responseValueEncoding = value == null ? ValueEncoding.BASE64 : value;
+        }
+        public String getRequestAlgorithmField() { return requestAlgorithmField; }
+        public void setRequestAlgorithmField(String value) { this.requestAlgorithmField = value == null ? "" : value; }
+        public String getRequestAlgorithm() { return requestAlgorithm; }
+        public void setRequestAlgorithm(String value) { this.requestAlgorithm = value == null ? "" : value; }
+        public String getSecretAction() { return secretAction; }
+        public void setSecretAction(String value) { this.secretAction = value == null ? "" : value; }
+        public String getSecretApiVersion() { return secretApiVersion; }
+        public void setSecretApiVersion(String value) { this.secretApiVersion = value == null ? "" : value; }
+        public String getSecretSigningService() { return secretSigningService; }
+        public void setSecretSigningService(String value) { this.secretSigningService = value == null ? "" : value; }
+        public String getWrapAction() { return wrapAction; }
+        public void setWrapAction(String value) { this.wrapAction = value == null ? "" : value; }
+        public String getUnwrapAction() { return unwrapAction; }
+        public void setUnwrapAction(String value) { this.unwrapAction = value == null ? "" : value; }
+        public String getKmsApiVersion() { return kmsApiVersion; }
+        public void setKmsApiVersion(String value) { this.kmsApiVersion = value == null ? "" : value; }
+        public String getKmsSigningService() { return kmsSigningService; }
+        public void setKmsSigningService(String value) { this.kmsSigningService = value == null ? "" : value; }
     }
+
+    public enum RequestAadEncoding { BASE64, ATTRIBUTES }
+    public enum ValueEncoding { BASE64, BASE64_URL }
+    public enum HttpMethod { GET, POST }
 
     public static class SecretMapping {
         private String path;

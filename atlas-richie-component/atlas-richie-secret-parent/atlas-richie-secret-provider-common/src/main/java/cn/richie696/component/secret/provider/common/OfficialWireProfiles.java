@@ -32,25 +32,37 @@ public final class OfficialWireProfiles {
         }
         switch (type) {
             case "azure" -> {
-                defaults(wire, SECRET, "/keys/{key}/{version}/wrapkey", "/keys/{key}/{version}/unwrapkey");
+                if (properties.getApiVersion() == null || properties.getApiVersion().isBlank()) {
+                    properties.setApiVersion("2025-07-01");
+                }
+                defaults(wire,
+                        "/secrets/{path}/{version}?api-version={apiVersion}",
+                        "/keys/{key}/{version}/wrapkey?api-version={apiVersion}",
+                        "/keys/{key}/{version}/unwrapkey?api-version={apiVersion}");
+                if (wire.getSecretLatestPath().isBlank()) {
+                    wire.setSecretLatestPath("/secrets/{path}?api-version={apiVersion}");
+                }
                 fields(wire, "value", "id", "attributes.created", "value", "value");
+                wire.setRequestAadField("");
+                wire.setRequestAlgorithmField("alg");
+                if (wire.getRequestAlgorithm().isBlank()) wire.setRequestAlgorithm("RSA-OAEP-256");
+                wire.setRequestValueEncoding(RemoteProviderProperties.ValueEncoding.BASE64_URL);
+                wire.setResponseValueEncoding(RemoteProviderProperties.ValueEncoding.BASE64_URL);
             }
             case "gcp" -> {
                 defaults(wire, "/v1/projects/{projectId}/secrets/{path}/versions/{version}:access",
                         "/v1/projects/{projectId}/locations/{region}/keyRings/{namespace}/cryptoKeys/{key}:encrypt",
                         "/v1/projects/{projectId}/locations/{region}/keyRings/{namespace}/cryptoKeys/{key}:decrypt");
                 fields(wire, "payload.data", "name", "createTime", "ciphertext", "plaintext");
-                wire.setRequestValueField("plaintext");
-                wire.setRequestAadField("additionalAuthenticatedData");
+                requestFields(wire, "plaintext", "ciphertext", "additionalAuthenticatedData");
                 if ("PLAIN".equalsIgnoreCase(wire.getSecretValueEncoding())) wire.setSecretValueEncoding("BASE64");
             }
             case "oci" -> {
                 defaults(wire, "/20180608/secrets/{path}/versions/{version}/secretBundle",
                         "/20180608/encrypt", "/20180608/decrypt");
                 fields(wire, "secretBundleContent.content", "versionName", "timeOfCreation", "ciphertext", "plaintext");
-                wire.setRequestValueField("plaintext");
-                wire.setRequestAadField("associatedData");
-                wire.setRequestKeyField("keyId");
+                requestFields(wire, "plaintext", "ciphertext", "associatedData");
+                if (wire.getRequestKeyField().isBlank()) wire.setRequestKeyField("keyId");
                 if ("PLAIN".equalsIgnoreCase(wire.getSecretValueEncoding())) wire.setSecretValueEncoding("BASE64");
             }
             case "ibm-key-protect" -> {
@@ -58,11 +70,52 @@ public final class OfficialWireProfiles {
                 fields(wire, "value", "version", "createdAt", "ciphertext", "plaintext");
                 wire.setRequestValueField("plaintext");
             }
-            case "huawei" -> defaults(wire, "/v1/{projectId}/secrets/{path}/versions/{version}",
-                    "/v1/{projectId}/kms/encrypt", "/v1/{projectId}/kms/decrypt");
-            case "tencent" -> defaults(wire, SECRET, "/v1/kms/{key}/encrypt", "/v1/kms/{key}/decrypt");
-            case "baidu" -> defaults(wire, SECRET, "/v1/key/{key}/wrap", "/v1/key/{key}/unwrap");
-            case "volcengine" -> defaults(wire, SECRET, "/", "/");
+            case "huawei" -> {
+                defaults(wire, "/v1/{projectId}/secrets/{path}/versions/{version}",
+                        "/v1.0/{projectId}/kms/encrypt-data", "/v1.0/{projectId}/kms/decrypt-data");
+                fields(wire, "version.secret_string", "version.version_metadata.id",
+                        "version.version_metadata.create_time", "cipher_text", "plain_text");
+                requestFields(wire, "plain_text", "cipher_text", "additional_authenticated_data");
+                if (wire.getRequestKeyField().isBlank()) wire.setRequestKeyField("key_id");
+            }
+            case "tencent" -> {
+                defaults(wire, "/", "/", "/");
+                wire.setSecretMethod(RemoteProviderProperties.HttpMethod.POST);
+                wire.setSecretRequestNameField("SecretName");
+                wire.setSecretRequestVersionField("VersionId");
+                wire.setLatestVersionValue("SSM_Current");
+                fields(wire, "Response.SecretString", "Response.VersionId",
+                        "Response.RequestId", "Response.CiphertextBlob", "Response.Plaintext");
+                requestFields(wire, "Plaintext", "CiphertextBlob", "EncryptionContext");
+                if (wire.getRequestKeyField().isBlank()) wire.setRequestKeyField("KeyId");
+                wire.setRequestAadEncoding(RemoteProviderProperties.RequestAadEncoding.ATTRIBUTES);
+                wire.setSecretAction("GetSecretValue");
+                wire.setSecretApiVersion("2019-09-23");
+                wire.setSecretSigningService("ssm");
+                wire.setWrapAction("Encrypt");
+                wire.setUnwrapAction("Decrypt");
+                wire.setKmsApiVersion("2019-01-18");
+                wire.setKmsSigningService("kms");
+            }
+            case "baidu" -> {
+                defaults(wire, SECRET, "/?action=Encrypt", "/?action=Decrypt");
+                fields(wire, "value", "version", "createdAt", "ciphertext", "plaintext");
+                requestFields(wire, "plaintext", "ciphertext", "");
+                if (wire.getRequestKeyField().isBlank()) wire.setRequestKeyField("keyId");
+                wire.setRequestAlgorithmField("algorithmMode");
+                if (wire.getRequestAlgorithm().isBlank()) wire.setRequestAlgorithm("GCM");
+            }
+            case "volcengine" -> {
+                defaults(wire, SECRET,
+                        "/?Action=Encrypt&Version=2021-02-18&KeyringName={namespace}&KeyName={key}",
+                        "/?Action=Decrypt&Version=2021-02-18");
+                fields(wire, "value", "version", "createdAt",
+                        "Result.CiphertextBlob", "Result.Plaintext");
+                requestFields(wire, "Plaintext", "CiphertextBlob", "EncryptionContext");
+                if (!wire.isRequestAadEncodingConfigured()) {
+                    wire.setRequestAadEncoding(RemoteProviderProperties.RequestAadEncoding.ATTRIBUTES);
+                }
+            }
             default -> { }
         }
     }
@@ -79,5 +132,20 @@ public final class OfficialWireProfiles {
         if ("createdAt".equals(wire.getSecretCreatedAtField())) wire.setSecretCreatedAtField(created);
         if ("wrappedKey".equals(wire.getWrappedKeyField())) wire.setWrappedKeyField(wrapped);
         if ("plaintext".equals(wire.getPlaintextField())) wire.setPlaintextField(plaintext);
+    }
+    private static void requestFields(
+            RemoteProviderProperties.Wire wire,
+            String wrap,
+            String unwrap,
+            String aad) {
+        if (wire.getRequestWrapValueField().isBlank()
+                && "value".equals(wire.getRequestValueField())) {
+            wire.setRequestWrapValueField(wrap);
+        }
+        if (wire.getRequestUnwrapValueField().isBlank()
+                && "value".equals(wire.getRequestValueField())) {
+            wire.setRequestUnwrapValueField(unwrap);
+        }
+        if ("aad".equals(wire.getRequestAadField())) wire.setRequestAadField(aad);
     }
 }

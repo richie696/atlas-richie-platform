@@ -56,11 +56,17 @@ class RemoteProviderModuleSupportTest {
                 .isEqualTo("/v1/projects/{projectId}/secrets/{path}/versions/{version}:access");
         assertThat(properties.getWire().getSecretValueField()).isEqualTo("payload.data");
         assertThat(properties.getWire().getSecretValueEncoding()).isEqualTo("BASE64");
+        assertThat(properties.getWire().getRequestWrapValueField()).isEqualTo("plaintext");
+        assertThat(properties.getWire().getRequestUnwrapValueField()).isEqualTo("ciphertext");
 
         RemoteProviderProperties custom = new RemoteProviderProperties();
         custom.getWire().setSecretPath("/contract/{path}");
+        custom.getWire().setRequestValueField("payload");
+        custom.getWire().setRequestAadField("customAad");
         OfficialWireProfiles.apply("gcp", custom);
         assertThat(custom.getWire().getSecretPath()).isEqualTo("/contract/{path}");
+        assertThat(custom.getWire().getRequestWrapValueField()).isBlank();
+        assertThat(custom.getWire().getRequestAadField()).isEqualTo("customAad");
     }
 
     @Test
@@ -84,6 +90,24 @@ class RemoteProviderModuleSupportTest {
         assertThat(signatureFor("volcengine")).isEqualTo(RemoteProviderProperties.RequestSignature.VOLCENGINE_HMAC_SHA256);
         assertThat(signatureFor("baidu")).isEqualTo(RemoteProviderProperties.RequestSignature.BAIDU_BCE_V2);
         assertThat(signatureFor("gcp")).isEqualTo(RemoteProviderProperties.RequestSignature.NONE);
+    }
+
+    @Test
+    void appliesOfficialVolcengineKmsWireShape() {
+        RemoteProviderProperties properties = new RemoteProviderProperties();
+        OfficialWireProfiles.apply("volcengine", properties);
+
+        assertThat(properties.getWire().getWrapPath()).isEqualTo(
+                "/?Action=Encrypt&Version=2021-02-18&KeyringName={namespace}&KeyName={key}");
+        assertThat(properties.getWire().getUnwrapPath())
+                .isEqualTo("/?Action=Decrypt&Version=2021-02-18");
+        assertThat(properties.getWire().getRequestWrapValueField()).isEqualTo("Plaintext");
+        assertThat(properties.getWire().getRequestUnwrapValueField()).isEqualTo("CiphertextBlob");
+        assertThat(properties.getWire().getRequestAadField()).isEqualTo("EncryptionContext");
+        assertThat(properties.getWire().getRequestAadEncoding())
+                .isEqualTo(RemoteProviderProperties.RequestAadEncoding.ATTRIBUTES);
+        assertThat(properties.getWire().getWrappedKeyField()).isEqualTo("Result.CiphertextBlob");
+        assertThat(properties.getWire().getPlaintextField()).isEqualTo("Result.Plaintext");
     }
 
     @Test

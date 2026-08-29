@@ -20,11 +20,13 @@ public abstract class AbstractRemoteProviderFactory implements SecretBootstrapPr
     @Override
     public final SecretBootstrapClient create(BootstrapSecretProperties properties, SecretBootstrapContext context) {
         RemoteProviderProperties provider = RemoteProviderModuleSupport.bind(
-                context.environment(), properties, prefix(), RemoteProviderProperties.class);
+                context.environment(), properties, prefix(), RemoteProviderProperties.class, context);
         OfficialWireProfiles.apply(type(), provider);
-        RemoteProviderModuleSupport.validate(type(), provider);
+        RemoteProviderModuleSupport.validate(type(), provider, providerCapabilities());
+        String providerId = context.providerId() == null || context.providerId().isBlank()
+                ? type() : context.providerId();
         return RemoteProviderModuleSupport.client(
-                type(), type(), RemoteProviderModuleSupport.hash(type(), provider), provider, properties,
+                type(), providerId, RemoteProviderModuleSupport.hash(providerId, provider), provider, properties,
                 providerCapabilities());
     }
 }

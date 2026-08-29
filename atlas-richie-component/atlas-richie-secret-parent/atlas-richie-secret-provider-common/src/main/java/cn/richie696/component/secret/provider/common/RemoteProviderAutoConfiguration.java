@@ -24,9 +24,11 @@ public class RemoteProviderAutoConfiguration {
     public RemoteSecretProviderClient remoteSecretProviderClient(
             ObjectProvider<SecretBootstrapState> stateProvider) {
         SecretBootstrapState state = stateProvider.getIfAvailable();
-        if (state == null || !(state.client() instanceof RemoteSecretProviderClient client)) {
-            throw new IllegalStateException("Secret provider is enabled but no selected remote provider was bootstrapped");
-        }
-        return client;
+        if (state == null) return null;
+        java.util.List<RemoteSecretProviderClient> clients = state.topology().clients().values().stream()
+                .filter(RemoteSecretProviderClient.class::isInstance)
+                .map(RemoteSecretProviderClient.class::cast)
+                .toList();
+        return clients.size() == 1 ? clients.getFirst() : null;
     }
 }

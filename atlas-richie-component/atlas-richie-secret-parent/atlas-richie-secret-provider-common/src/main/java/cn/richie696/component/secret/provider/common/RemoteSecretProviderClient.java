@@ -102,7 +102,7 @@ public final class RemoteSecretProviderClient implements SecretBootstrapClient, 
             }
             value = map.get(field);
         }
-        byte[] bytes = String.valueOf(value).getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = scalarBytes(value, reference.logicalName());
         try { return DestroyableSecretValue.ofBytes(bytes); }
         finally { Arrays.fill(bytes, (byte) 0); }
     }
@@ -127,7 +127,9 @@ public final class RemoteSecretProviderClient implements SecretBootstrapClient, 
         if (physical == null || physical.isBlank()) {
             throw new SecretConfigurationException("SEC-KEY-001", "No " + providerType + " key binding exists for " + key.logicalKey());
         }
-        return new WrappedKey(transport.wrap(physical, plaintext, context), providerType + "-remote");
+        return new WrappedKey(
+                transport.wrap(physical, plaintext, providerContext(key, context)),
+                providerType + "-remote");
     }
 
     @Override
@@ -142,7 +144,7 @@ public final class RemoteSecretProviderClient implements SecretBootstrapClient, 
             throw new SecretConfigurationException("SEC-KEY-001", "No " + providerType + " key binding exists for " + key.logicalKey());
         }
         byte[] value = wrapped.value();
-        try { return transport.unwrap(physical, value, context); }
+        try { return transport.unwrap(physical, value, providerContext(key, context)); }
         finally { Arrays.fill(value, (byte) 0); }
     }
 
@@ -161,6 +163,22 @@ public final class RemoteSecretProviderClient implements SecretBootstrapClient, 
     private String defaultPath(String logicalName) {
         var source = bootstrap.getPropertySource();
         return "atlas-richie/" + source.getEnvironment() + "/" + source.getApplication() + "/runtime/" + logicalName;
+    }
+    private CryptoContext providerContext(KeyReference key, CryptoContext context) {
+        CryptoContext source = context == null ? CryptoContext.empty() : context;
+        Map<String, String> attributes = new LinkedHashMap<>(source.attributes());
+        attributes.put("atlas.secret.key", key.logicalKey());
+        attributes.put("atlas.secret.version", key.version());
+        attributes.put("atlas.secret.purpose", key.purpose().name());
+        return new CryptoContext(source.associatedData(), attributes);
+    }
+    private byte[] scalarBytes(Object value, String logicalName) {
+        if (value instanceof byte[] bytes) return bytes.clone();
+        if (value instanceof CharSequence || value instanceof Number || value instanceof Boolean) {
+            return value.toString().getBytes(StandardCharsets.UTF_8);
+        }
+        throw new SecretConfigurationException(
+                "SEC-STORE-003", "Remote Secret field is not scalar: " + logicalName);
     }
     private void require(SecretCapability capability) {
         if (!capabilities.contains(capability)) throw new SecretConfigurationException("SEC-CAP-001", providerType + " does not support " + capability);
