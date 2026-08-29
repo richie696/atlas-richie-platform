@@ -2,11 +2,13 @@
  * Copyright (c) 2026 Richie (https://www.github.com/richie696)
  * Licensed under the Apache License, Version 2.0.
  */
-package cn.richie696.component.secret.bootstrap;
+package cn.richie696.component.secret.testkit;
 
+import cn.richie696.component.secret.bootstrap.AtlasSecretEnvironmentPostProcessor;
+import cn.richie696.component.secret.bootstrap.BootstrapSecretProperties;
+import cn.richie696.component.secret.bootstrap.SecretProviderDiscovery;
 import cn.richie696.component.secret.bootstrap.catalog.SecretBindingCatalogLoader;
 import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapProviderFactory;
-import cn.richie696.component.secret.testkit.StaticSecretBootstrapProviderFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.bootstrap.DefaultBootstrapContext;
 import org.springframework.core.env.ConfigurableEnvironment;

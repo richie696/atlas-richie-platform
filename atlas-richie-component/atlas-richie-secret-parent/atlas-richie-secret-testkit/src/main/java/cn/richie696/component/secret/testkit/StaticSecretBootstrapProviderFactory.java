@@ -12,6 +12,10 @@ import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapProviderFactor
 import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapResult;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,7 +28,7 @@ public final class StaticSecretBootstrapProviderFactory implements SecretBootstr
 
     public StaticSecretBootstrapProviderFactory(String providerType, Map<String, Object> values) {
         this.providerType = providerType;
-        this.values = Map.copyOf(values);
+        this.values = deepCopyMap(values);
     }
 
     @Override
@@ -46,7 +50,40 @@ public final class StaticSecretBootstrapProviderFactory implements SecretBootstr
                 "test-v1",
                 String.join(",", request.logicalPaths()),
                 Instant.EPOCH,
-                values,
+                deepCopyMap(values),
                 "test-request");
+    }
+
+    private static Map<String, Object> deepCopyMap(Map<String, ?> source) {
+        Map<String, Object> copy = new LinkedHashMap<>();
+        if (source != null) {
+            source.forEach((key, value) -> copy.put(key, deepCopy(value)));
+        }
+        return Collections.unmodifiableMap(copy);
+    }
+
+    private static Object deepCopy(Object value) {
+        if (value instanceof byte[] bytes) {
+            return bytes.clone();
+        }
+        if (value instanceof char[] chars) {
+            return chars.clone();
+        }
+        if (value instanceof Map<?, ?> map) {
+            Map<Object, Object> copy = new LinkedHashMap<>();
+            map.forEach((key, nested) -> copy.put(key, deepCopy(nested)));
+            return Collections.unmodifiableMap(copy);
+        }
+        if (value instanceof List<?> list) {
+            List<Object> copy = new ArrayList<>(list.size());
+            list.forEach(nested -> copy.add(deepCopy(nested)));
+            return Collections.unmodifiableList(copy);
+        }
+        if (value instanceof Set<?> set) {
+            Set<Object> copy = new java.util.LinkedHashSet<>();
+            set.forEach(nested -> copy.add(deepCopy(nested)));
+            return Collections.unmodifiableSet(copy);
+        }
+        return value;
     }
 }
