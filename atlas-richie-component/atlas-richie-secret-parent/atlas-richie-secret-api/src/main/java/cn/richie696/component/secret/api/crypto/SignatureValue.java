@@ -11,10 +11,14 @@ package cn.richie696.component.secret.api.crypto;
  * the encoded value so verification remains correct after key rotation.</p>
  */
 public record SignatureValue(String value) {
+    private static final int MAX_SERIALIZED_LENGTH = 64 * 1024;
 
     public SignatureValue {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("signature value must not be blank");
+        }
+        if (value.length() > MAX_SERIALIZED_LENGTH) {
+            throw new IllegalArgumentException("signature value exceeds the maximum length");
         }
     }
 

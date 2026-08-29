@@ -42,6 +42,9 @@ public final class DestroyableSecretValue implements SecretValue {
             return new DestroyableSecretValue(bytes);
         } finally {
             Arrays.fill(bytes, (byte) 0);
+            if (encoded.hasArray()) {
+                Arrays.fill(encoded.array(), (byte) 0);
+            }
         }
     }
 
