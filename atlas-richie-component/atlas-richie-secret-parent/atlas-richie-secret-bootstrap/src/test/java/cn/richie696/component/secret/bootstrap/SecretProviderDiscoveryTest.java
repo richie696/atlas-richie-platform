@@ -12,6 +12,8 @@ import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapProviderFactor
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,6 +57,39 @@ class SecretProviderDiscoveryTest {
                 .isInstanceOf(SecretBootstrapException.class)
                 .extracting(exception -> ((SecretBootstrapException) exception).errorCode())
                 .isEqualTo("SEC-BOOT-002");
+    }
+
+    @Test
+    void namedProvidersResolveProviderIdsIndependentlyFromProviderTypes() {
+        BootstrapSecretProperties properties = new BootstrapSecretProperties();
+        BootstrapSecretProperties.Provider vault = new BootstrapSecretProperties.Provider();
+        vault.setType("vault");
+        BootstrapSecretProperties.Provider hsm = new BootstrapSecretProperties.Provider();
+        hsm.setType("pkcs11");
+        Map<String, BootstrapSecretProperties.Provider> providers = new LinkedHashMap<>();
+        providers.put("vault-primary", vault);
+        providers.put("signing-hsm", hsm);
+        properties.setProviders(providers);
+
+        SecretBootstrapProviderFactory vaultFactory = factory("vault");
+        SecretBootstrapProviderFactory hsmFactory = factory("pkcs11");
+
+        assertThat(discovery.selectAll(List.of(vaultFactory, hsmFactory), properties))
+                .containsEntry("vault-primary", vaultFactory)
+                .containsEntry("signing-hsm", hsmFactory)
+                .hasSize(2);
+    }
+
+    @Test
+    void routingCanSelectMultipleProviderTypesWithoutAnActiveProvider() {
+        BootstrapSecretProperties properties = new BootstrapSecretProperties();
+        properties.setRouting(Map.of(
+                SecretProviderTopology.PROPERTY_SOURCE, "vault",
+                SecretProviderTopology.SIGNING, "pkcs11"));
+
+        assertThat(discovery.selectAll(
+                List.of(factory("vault"), factory("pkcs11")), properties))
+                .containsOnlyKeys("vault", "pkcs11");
     }
 
     private SecretBootstrapProviderFactory factory(String type) {

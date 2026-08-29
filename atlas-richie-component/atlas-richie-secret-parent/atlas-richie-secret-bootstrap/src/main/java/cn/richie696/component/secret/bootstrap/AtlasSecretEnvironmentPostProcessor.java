@@ -4,6 +4,7 @@
  */
 package cn.richie696.component.secret.bootstrap;
 
+import cn.richie696.component.secret.api.SecretCapability;
 import cn.richie696.component.secret.api.exception.SecretBootstrapException;
 import cn.richie696.component.secret.api.exception.SecretConfigurationException;
 import cn.richie696.component.secret.bootstrap.catalog.SecretBinding;
@@ -24,27 +25,22 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * 在业务组件属性绑定前加载受控 Secret PropertySource。
  */
 public class AtlasSecretEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
+    private static final Logger log = LoggerFactory.getLogger(AtlasSecretEnvironmentPostProcessor.class);
     static final String ENABLED_PROPERTY = BootstrapSecretProperties.PREFIX + ".enabled";
     static final String PROPERTY_SOURCE_PREFIX = "atlas-richie-secret";
     private static final int MAX_BUNDLE_SEGMENT_LENGTH = 128;
-    private static final Set<String> FORBIDDEN_PROPERTIES = Set.of(
-            "server.port",
-            "spring.datasource.url",
-            "platform.component.secret.enabled",
-            "platform.component.oauth.enabled",
-            "platform.gateway.authentication.mode",
-            "management.endpoints.web.exposure.include");
 
     private final ConfigurableBootstrapContext bootstrapContext;
     private final SecretProviderDiscovery providerDiscovery;
@@ -54,7 +50,7 @@ public class AtlasSecretEnvironmentPostProcessor implements EnvironmentPostProce
         this(bootstrapContext, new SecretProviderDiscovery(), new SecretBindingCatalogLoader());
     }
 
-    AtlasSecretEnvironmentPostProcessor(
+    public AtlasSecretEnvironmentPostProcessor(
             ConfigurableBootstrapContext bootstrapContext,
             SecretProviderDiscovery providerDiscovery,
             SecretBindingCatalogLoader catalogLoader) {
@@ -73,15 +69,48 @@ public class AtlasSecretEnvironmentPostProcessor implements EnvironmentPostProce
         validate(properties, environment);
         ClassLoader classLoader = resolveClassLoader(application);
         List<SecretBootstrapProviderFactory> factories = providerDiscovery.discover(classLoader, properties);
-        SecretBootstrapProviderFactory factory = providerDiscovery.select(factories, properties);
+        Map<String, SecretBootstrapProviderFactory> selectedFactories =
+                providerDiscovery.selectAll(factories, properties);
         SecretBindingCatalogSet catalogs = catalogLoader.load(classLoader);
         SecretBootstrapRequest request = createRequest(properties, environment, catalogs);
-        SecretBootstrapClient client = null;
+        Map<String, SecretBootstrapClient> clients = new LinkedHashMap<>();
+        SecretProviderTopology topology = null;
         boolean registered = false;
         try {
-            client = factory.create(
-                    properties,
-                    new SecretBootstrapContext(environment, classLoader));
+            for (Map.Entry<String, SecretBootstrapProviderFactory> entry : selectedFactories.entrySet()) {
+                String providerId = entry.getKey();
+                SecretBootstrapProviderFactory providerFactory = entry.getValue();
+                String configurationPrefix = properties.getProviders().containsKey(providerId)
+                        ? BootstrapSecretProperties.PREFIX + ".providers." + providerId
+                        : null;
+                SecretBootstrapClient providerClient = providerFactory.create(
+                        properties,
+                        new SecretBootstrapContext(
+                                environment,
+                                classLoader,
+                                providerId,
+                                providerFactory.providerType(),
+                                configurationPrefix));
+                if (providerClient == null) {
+                    throw new SecretBootstrapException(
+                            "SEC-PROVIDER-001",
+                            "Secret Provider factory returned no client: " + providerId);
+                }
+                clients.put(providerId, providerClient);
+            }
+            topology = new SecretProviderTopology(
+                    selectedFactories,
+                    clients,
+                    properties.getRouting(),
+                    defaultProviderId(properties, selectedFactories));
+            String propertySourceProviderId = topology.providerId(SecretProviderTopology.PROPERTY_SOURCE);
+            SecretBootstrapProviderFactory factory = topology.factory(propertySourceProviderId);
+            if (!factory.capabilities().contains(SecretCapability.SECRET_READ)) {
+                throw new SecretBootstrapException(
+                        "SEC-CAP-001",
+                        "Property-source route requires SECRET_READ capability: " + propertySourceProviderId);
+            }
+            SecretBootstrapClient client = topology.client(propertySourceProviderId);
             SecretBootstrapResult result = load(client, request);
             Map<String, Object> filtered = filterAndValidate(result.values(), catalogs, properties, environment);
             String propertySourceName = PROPERTY_SOURCE_PREFIX + "[" + result.providerId() + ":" + result.version() + "]";
@@ -96,11 +125,16 @@ public class AtlasSecretEnvironmentPostProcessor implements EnvironmentPostProce
                                     result,
                                     request,
                                     catalogs,
-                                    propertySourceName)));
+                                    propertySourceName,
+                                    topology)));
             registered = true;
         } finally {
-            if (!registered && client != null) {
-                closeQuietly(client);
+            if (!registered) {
+                if (topology != null) {
+                    closeQuietly(topology);
+                } else {
+                    clients.values().forEach(this::closeQuietly);
+                }
             }
         }
     }
@@ -223,10 +257,27 @@ public class AtlasSecretEnvironmentPostProcessor implements EnvironmentPostProce
         }
     }
 
-    private void closeQuietly(SecretBootstrapClient client) {
+    private String defaultProviderId(
+            BootstrapSecretProperties properties,
+            Map<String, SecretBootstrapProviderFactory> factories) {
+        String active = properties.getActiveProvider();
+        if (active != null && !active.isBlank()) {
+            if (factories.containsKey(active)) {
+                return active;
+            }
+            return factories.entrySet().stream()
+                    .filter(entry -> entry.getValue().providerType().equalsIgnoreCase(active))
+                    .map(Map.Entry::getKey)
+                    .findFirst()
+                    .orElse(active);
+        }
+        return factories.size() == 1 ? factories.keySet().iterator().next() : null;
+    }
+
+    private void closeQuietly(AutoCloseable client) {
         try {
             client.close();
-        } catch (RuntimeException ignored) {
+        } catch (Exception ignored) {
             // Do not mask the sanitized bootstrap failure.
         }
     }
@@ -240,9 +291,12 @@ public class AtlasSecretEnvironmentPostProcessor implements EnvironmentPostProce
         for (Map.Entry<String, Object> entry : values.entrySet()) {
             String property = entry.getKey();
             java.util.Optional<SecretBinding> binding = catalogs.propertySourceBinding(property);
-            if (binding.isPresent() && !isForbidden(property)) {
+            if (binding.isPresent() && !SecretPropertyPolicy.isForbidden(property)) {
                 validateLength(property, entry.getValue(), binding.get());
                 filtered.put(property, entry.getValue());
+            } else {
+                log.warn("Secret Provider returned an unmanaged or forbidden property; value discarded: property={}",
+                        property);
             }
         }
         for (SecretBinding required : catalogs.requiredBindings(environment)) {
@@ -278,17 +332,22 @@ public class AtlasSecretEnvironmentPostProcessor implements EnvironmentPostProce
                 && environment.containsProperty(binding.property());
     }
 
-    private boolean isForbidden(String property) {
-        return property.startsWith(BootstrapSecretProperties.PREFIX + ".")
-                || FORBIDDEN_PROPERTIES.contains(property);
-    }
-
     private void validateLength(String property, Object value, SecretBinding binding) {
+        int length = scalarLength(property, value);
         if (binding.maxLength() == null) return;
-        int length = value instanceof byte[] bytes ? bytes.length : String.valueOf(value).length();
         if (length > binding.maxLength()) {
             throw new SecretConfigurationException(
                     "SEC-BOOT-003", "Secret exceeds declared maximum length for property " + property);
         }
+    }
+
+    private int scalarLength(String property, Object value) {
+        if (value instanceof byte[] bytes) return bytes.length;
+        if (value instanceof CharSequence sequence) return sequence.length();
+        if (value instanceof Number || value instanceof Boolean || value instanceof Character) {
+            return value.toString().length();
+        }
+        throw new SecretConfigurationException(
+                "SEC-BOOT-003", "Managed Secret property must be a scalar value: " + property);
     }
 }

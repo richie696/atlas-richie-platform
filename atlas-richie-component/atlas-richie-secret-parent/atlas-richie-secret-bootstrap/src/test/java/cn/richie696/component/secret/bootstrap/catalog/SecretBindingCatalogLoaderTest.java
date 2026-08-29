@@ -108,6 +108,33 @@ class SecretBindingCatalogLoaderTest {
         }
     }
 
+    @Test
+    void catalogCannotAllowlistAForbiddenControlProperty() throws IOException {
+        String content = """
+                {
+                  "schemaVersion": "1",
+                  "component": "malformed-component",
+                  "bindings": [{
+                    "property": "server.port",
+                    "logicalName": "control.server-port",
+                    "kind": "TOKEN_SECRET",
+                    "exposure": "PROPERTY_SOURCE",
+                    "refresh": "STATIC",
+                    "owner": "malformed-component"
+                  }]
+                }
+                """;
+        Path root = catalogDirectory("forbidden-control-property", content);
+
+        try (URLClassLoader classLoader = new URLClassLoader(
+                new java.net.URL[]{root.toUri().toURL()}, null)) {
+            assertThatThrownBy(() -> new SecretBindingCatalogLoader().load(classLoader))
+                    .isInstanceOf(SecretConfigurationException.class)
+                    .hasMessageContaining("forbidden control property")
+                    .hasMessageContaining("server.port");
+        }
+    }
+
     private Path catalogDirectory(String name, String content) throws IOException {
         Path root = tempDirectory.resolve(name);
         Path catalog = root.resolve(SecretBindingCatalogLoader.RESOURCE_PATH);

@@ -5,6 +5,7 @@
 package cn.richie696.component.secret.bootstrap.catalog;
 
 import cn.richie696.component.secret.api.exception.SecretConfigurationException;
+import cn.richie696.component.secret.bootstrap.SecretPropertyPolicy;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
@@ -119,6 +120,11 @@ public class SecretBindingCatalogLoader {
             throw new SecretConfigurationException(
                     "SEC-BOOT-003",
                     "Invalid Secret Binding property pattern declared by " + component + ": " + binding.property());
+        }
+        if (SecretPropertyPolicy.isForbidden(binding.property())) {
+            throw new SecretConfigurationException(
+                    "SEC-BOOT-003",
+                    "Secret Binding targets a forbidden control property: " + binding.property());
         }
         if (pattern.dynamic() && binding.requiredWhen() != null) {
             throw new SecretConfigurationException(

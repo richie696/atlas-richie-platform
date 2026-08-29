@@ -21,6 +21,7 @@ import org.springframework.mock.env.MockEnvironment;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.groups.Tuple.tuple;
 
 class AtlasSecretEnvironmentPostProcessorTest {
 
@@ -54,7 +56,6 @@ class AtlasSecretEnvironmentPostProcessorTest {
                 "platform.component.test.native-key", "must-not-enter-environment",
                 "platform.component.ai.chat.openai-4.api-keys[0]", "remote-ai-key",
                 "platform.component.ai.chat.openai.extra.api-keys[0]", "must-not-match-two-segments",
-                "platform.component.secret.vault.endpoint", "https://untrusted.example",
                 "server.port", "1"));
         SecretProviderDiscovery discovery = discoveryReturning(discoveryCalls, List.of(factory));
         MockEnvironment environment = enabledEnvironment();
@@ -69,7 +70,6 @@ class AtlasSecretEnvironmentPostProcessorTest {
         assertThat(environment.getProperty("platform.component.ai.chat.openai-4.api-keys[0]"))
                 .isEqualTo("remote-ai-key");
         assertThat(environment.getProperty("platform.component.ai.chat.openai.extra.api-keys[0]")).isNull();
-        assertThat(environment.getProperty("platform.component.secret.vault.endpoint")).isNull();
         assertThat(environment.getProperty("server.port")).isNull();
         assertThat(environment.getPropertySources().iterator().next().getName())
                 .isEqualTo("atlas-richie-secret[test:test-v1]");
@@ -87,6 +87,21 @@ class AtlasSecretEnvironmentPostProcessorTest {
                 .postProcessEnvironment(environment, new SpringApplication()))
                 .isInstanceOf(SecretBootstrapException.class)
                 .hasMessageContaining("platform.component.test.access-key-secret");
+    }
+
+    @Test
+    void rejectsCompositeValueForScalarPropertyBinding() {
+        MockEnvironment environment = enabledEnvironment();
+        SecretProviderDiscovery discovery = discoveryReturning(
+                new AtomicInteger(),
+                List.of(factory(Map.of(
+                        "platform.component.test.access-key-secret",
+                        Map.of("nested", "value")))));
+
+        assertThatThrownBy(() -> processor(discovery)
+                .postProcessEnvironment(environment, new SpringApplication()))
+                .isInstanceOf(SecretConfigurationException.class)
+                .hasMessageContaining("must be a scalar value");
     }
 
     @Test
@@ -129,6 +144,44 @@ class AtlasSecretEnvironmentPostProcessorTest {
                 .postProcessEnvironment(environment, new SpringApplication()))
                 .isInstanceOf(SecretBootstrapException.class);
         assertThat(closed).isTrue();
+    }
+
+    @Test
+    void namedProvidersReceiveTheirOwnContextAndPropertySourceUsesItsRoute() {
+        DefaultBootstrapContext bootstrapContext = new DefaultBootstrapContext();
+        List<SecretBootstrapContext> contexts = new ArrayList<>();
+        SecretBootstrapProviderFactory vault = contextualFactory(
+                "vault", contexts, Map.of("platform.component.test.access-key-secret", "remote"));
+        SecretBootstrapProviderFactory hsm = contextualFactory("pkcs11", contexts, Map.of());
+        MockEnvironment environment = enabledEnvironment();
+        environment.setProperty("platform.component.secret.providers.vault-primary.type", "vault");
+        environment.setProperty("platform.component.secret.providers.signing-hsm.type", "pkcs11");
+        environment.setProperty("platform.component.secret.routing.property-source", "vault-primary");
+        environment.setProperty("platform.component.secret.routing.secret-read", "vault-primary");
+        environment.setProperty("platform.component.secret.routing.signing", "signing-hsm");
+
+        new AtlasSecretEnvironmentPostProcessor(
+                bootstrapContext,
+                discoveryReturning(new AtomicInteger(), List.of(vault, hsm)),
+                new SecretBindingCatalogLoader())
+                .postProcessEnvironment(environment, new SpringApplication());
+
+        SecretBootstrapState state = bootstrapContext.get(SecretBootstrapState.class);
+        assertThat(contexts)
+                .extracting(
+                        SecretBootstrapContext::providerId,
+                        SecretBootstrapContext::configurationPrefix)
+                .containsExactlyInAnyOrder(
+                        tuple(
+                                "vault-primary",
+                                "platform.component.secret.providers.vault-primary"),
+                        tuple(
+                                "signing-hsm",
+                                "platform.component.secret.providers.signing-hsm"));
+        assertThat(state.topology().providerId(SecretProviderTopology.SIGNING))
+                .isEqualTo("signing-hsm");
+        assertThat(environment.getProperty("platform.component.test.access-key-secret"))
+                .isEqualTo("remote");
     }
 
     @Test
@@ -228,6 +281,39 @@ class AtlasSecretEnvironmentPostProcessorTest {
                 return request -> new SecretBootstrapResult(
                         "test",
                         "test-v1",
+                        String.join(",", request.logicalPaths()),
+                        Instant.EPOCH,
+                        values,
+                        "request-1");
+            }
+        };
+    }
+
+    private SecretBootstrapProviderFactory contextualFactory(
+            String type,
+            List<SecretBootstrapContext> contexts,
+            Map<String, Object> values) {
+        return new SecretBootstrapProviderFactory() {
+            @Override
+            public String providerType() {
+                return type;
+            }
+
+            @Override
+            public Set<SecretCapability> capabilities() {
+                return "vault".equals(type)
+                        ? Set.of(SecretCapability.SECRET_READ)
+                        : Set.of(SecretCapability.SIGN, SecretCapability.VERIFY);
+            }
+
+            @Override
+            public SecretBootstrapClient create(
+                    BootstrapSecretProperties properties,
+                    SecretBootstrapContext context) {
+                contexts.add(context);
+                return request -> new SecretBootstrapResult(
+                        context.providerId(),
+                        "v1",
                         String.join(",", request.logicalPaths()),
                         Instant.EPOCH,
                         values,

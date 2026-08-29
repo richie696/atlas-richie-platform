@@ -17,18 +17,7 @@ public interface SecretBootstrapProviderFactory {
     String providerType();
 
     default boolean supports(BootstrapSecretProperties properties) {
-        if (properties == null) {
-            return true;
-        }
-        String activeProvider = properties.getActiveProvider();
-        if (activeProvider == null || activeProvider.isBlank()) {
-            return true;
-        }
-        String configuredType = properties.getProviders().containsKey(activeProvider)
-                ? properties.getProviders().get(activeProvider).getType()
-                : activeProvider;
-        return configuredType == null || configuredType.isBlank()
-                || providerType().equalsIgnoreCase(configuredType);
+        return true;
     }
 
     Set<SecretCapability> capabilities();

@@ -207,6 +207,7 @@ public class BootstrapSecretProperties {
         private boolean enabled = true;
         private Duration initialDelay = Duration.ofMinutes(1);
         private Duration interval = Duration.ofMinutes(1);
+        private Duration maxStaleness = Duration.ofMinutes(5);
 
         public boolean isEnabled() {
             return enabled;
@@ -230,6 +231,14 @@ public class BootstrapSecretProperties {
 
         public void setInterval(Duration interval) {
             this.interval = interval;
+        }
+
+        public Duration getMaxStaleness() {
+            return maxStaleness;
+        }
+
+        public void setMaxStaleness(Duration maxStaleness) {
+            this.maxStaleness = maxStaleness;
         }
     }
 
