@@ -3,6 +3,7 @@ package cn.richie696.component.secret.provider.aliyun;
 
 import cn.richie696.component.secret.api.exception.SecretConfigurationException;
 import cn.richie696.component.secret.bootstrap.BootstrapSecretProperties;
+import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapContext;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.Environment;
 
@@ -15,12 +16,26 @@ import java.util.Map;
 
 final class AliyunSecretConfigurationResolver {
     ResolvedAliyunConfiguration resolve(Environment environment, BootstrapSecretProperties bootstrap) {
+        return resolve(environment, bootstrap, null);
+    }
+
+    ResolvedAliyunConfiguration resolve(
+            Environment environment,
+            BootstrapSecretProperties bootstrap,
+            SecretBootstrapContext context) {
         String providerId = "aliyun";
         String prefix = AliyunSecretProperties.PREFIX;
+        if (context != null && context.providerId() != null && !context.providerId().isBlank()) {
+            providerId = context.providerId();
+            if (context.configurationPrefix() != null && !context.configurationPrefix().isBlank()) {
+                prefix = context.configurationPrefix();
+            }
+        } else {
         String active = bootstrap.getActiveProvider();
         if (active != null && !active.isBlank() && bootstrap.getProviders().containsKey(active)) {
             providerId = active;
             prefix = BootstrapSecretProperties.PREFIX + ".providers." + active;
+        }
         }
         AliyunSecretProperties properties = Binder.get(environment)
                 .bind(prefix, AliyunSecretProperties.class)

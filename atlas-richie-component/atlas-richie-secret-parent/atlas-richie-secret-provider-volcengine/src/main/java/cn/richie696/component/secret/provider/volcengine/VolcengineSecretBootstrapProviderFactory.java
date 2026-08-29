@@ -8,5 +8,7 @@ import java.util.Set;
 public final class VolcengineSecretBootstrapProviderFactory extends AbstractRemoteProviderFactory {
     @Override protected String type() { return "volcengine"; }
     @Override protected String prefix() { return "platform.component.secret.volcengine"; }
-    @Override protected Set<SecretCapability> providerCapabilities() { return Set.of(SecretCapability.SECRET_READ, SecretCapability.SECRET_VERSIONING, SecretCapability.KEY_WRAP, SecretCapability.KEY_UNWRAP); }
+    @Override protected Set<SecretCapability> providerCapabilities() {
+        return Set.of(SecretCapability.KEY_WRAP, SecretCapability.KEY_UNWRAP);
+    }
 }

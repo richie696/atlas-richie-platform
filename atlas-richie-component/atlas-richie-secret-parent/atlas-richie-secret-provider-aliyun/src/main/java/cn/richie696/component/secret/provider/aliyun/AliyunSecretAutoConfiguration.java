@@ -25,17 +25,18 @@ public class AliyunSecretAutoConfiguration {
     public AliyunSecretClient aliyunSecretClient(
             ConfigurableEnvironment environment,
             ObjectProvider<SecretBootstrapState> bootstrapStateProvider) {
+        SecretBootstrapState state = bootstrapStateProvider.getIfAvailable();
+        if (state != null) {
+            java.util.List<AliyunSecretClient> clients = state.topology().clients().values().stream()
+                    .filter(AliyunSecretClient.class::isInstance)
+                    .map(AliyunSecretClient.class::cast)
+                    .toList();
+            return clients.size() == 1 ? clients.getFirst() : null;
+        }
         BootstrapSecretProperties bootstrap = Binder.get(environment)
                 .bind(BootstrapSecretProperties.PREFIX, BootstrapSecretProperties.class)
                 .orElseGet(BootstrapSecretProperties::new);
         var resolved = new AliyunSecretConfigurationResolver().resolve(environment, bootstrap);
-        SecretBootstrapState state = bootstrapStateProvider.getIfAvailable();
-        if (state != null && state.client() instanceof AliyunSecretClient bootstrapClient) {
-            if (!resolved.configurationHash().equals(bootstrapClient.configurationHash())) {
-                throw new IllegalStateException("Alibaba Cloud Secret Provider configuration changed after bootstrap");
-            }
-            return bootstrapClient;
-        }
         return new AliyunClientFactory().create(resolved, bootstrap);
     }
 }

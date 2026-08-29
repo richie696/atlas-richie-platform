@@ -162,7 +162,7 @@ public final class AwsSecretClient implements
             var response = kms.encrypt(EncryptRequest.builder()
                     .keyId(physicalKey(keyReference))
                     .plaintext(SdkBytes.fromByteArray(plaintextKey))
-                    .encryptionContext(encryptionContext(context))
+                    .encryptionContext(encryptionContext(keyReference, context))
                     .build());
             return new WrappedKey(response.ciphertextBlob().asByteArray(), WRAPPING_ALGORITHM);
         } catch (SecretException exception) {
@@ -184,7 +184,7 @@ public final class AwsSecretClient implements
             return kms.decrypt(DecryptRequest.builder()
                             .keyId(physicalKey(keyReference))
                             .ciphertextBlob(SdkBytes.fromByteArray(ciphertext))
-                            .encryptionContext(encryptionContext(context))
+                            .encryptionContext(encryptionContext(keyReference, context))
                             .build())
                     .plaintext().asByteArray();
         } catch (SecretException exception) {
@@ -232,9 +232,9 @@ public final class AwsSecretClient implements
         }
         try {
             SignatureEnvelope envelope = decodeSignature(signature.value());
-            String configuredKey = physicalKey(keyReference);
-            if (!configuredKey.equals(envelope.keyId())) {
-                throw new SecretCryptoException("SEC-SIGN-002", "Signature key does not match logical key binding");
+            if (!trustedSigningKeys(keyReference.logicalKey()).contains(envelope.keyId())) {
+                throw new SecretCryptoException(
+                        "SEC-SIGN-002", "Signature key is not trusted for the logical key binding");
             }
             byte[] copy = payload.clone();
             try {
@@ -309,6 +309,15 @@ public final class AwsSecretClient implements
         return key;
     }
 
+    private java.util.Set<String> trustedSigningKeys(String logicalKey) {
+        java.util.Set<String> trusted = new java.util.LinkedHashSet<>();
+        String current = properties.getKms().getKeyBindings().get(logicalKey);
+        if (current != null && !current.isBlank()) trusted.add(current);
+        trusted.addAll(properties.getKms().getVerificationKeyBindings()
+                .getOrDefault(logicalKey, java.util.List.of()));
+        return java.util.Set.copyOf(trusted);
+    }
+
     private void validateSigningKey(KeyReference reference) {
         if (reference == null || reference.purpose() != cn.richie696.component.secret.api.crypto.KeyPurpose.SIGNING) {
             throw new SecretConfigurationException("SEC-KEY-003", "Signing requires a KeyReference with SIGNING purpose");
@@ -353,16 +362,16 @@ public final class AwsSecretClient implements
 
     private record SignatureEnvelope(String keyId, String algorithm, byte[] signature) { }
 
-    private Map<String, String> encryptionContext(CryptoContext context) {
+    private Map<String, String> encryptionContext(KeyReference keyReference, CryptoContext context) {
         byte[] aad = context == null ? new byte[0] : context.associatedData();
         try {
             Map<String, String> result = new LinkedHashMap<>();
             result.put("atlas-component", "secret-envelope");
             result.put("atlas-aad-sha256", sha256(aad));
+            result.put("atlas-key", keyReference.logicalKey());
+            result.put("atlas-version", keyReference.version());
+            result.put("atlas-purpose", keyReference.purpose().name());
             if (context != null) {
-                copyEnvelopeAttribute(context, result, "atlas.secret.key", "atlas-key");
-                copyEnvelopeAttribute(context, result, "atlas.secret.version", "atlas-version");
-                copyEnvelopeAttribute(context, result, "atlas.secret.purpose", "atlas-purpose");
                 copyEnvelopeAttribute(context, result, "atlas.secret.envelope-version", "atlas-envelope-version");
                 copyEnvelopeAttribute(context, result, "atlas.secret.algorithm", "atlas-algorithm");
                 copyEnvelopeAttribute(context, result, "atlas.secret.nonce-sha256", "atlas-nonce-sha256");

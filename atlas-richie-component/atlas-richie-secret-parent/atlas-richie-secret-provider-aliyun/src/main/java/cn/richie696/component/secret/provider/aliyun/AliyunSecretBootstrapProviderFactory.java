@@ -20,7 +20,7 @@ public final class AliyunSecretBootstrapProviderFactory implements SecretBootstr
     @Override public Set<SecretCapability> capabilities() { return CAPABILITIES; }
     @Override public SecretBootstrapClient create(
             BootstrapSecretProperties properties, SecretBootstrapContext context) {
-        var resolved = new AliyunSecretConfigurationResolver().resolve(context.environment(), properties);
+        var resolved = new AliyunSecretConfigurationResolver().resolve(context.environment(), properties, context);
         return new AliyunClientFactory().create(resolved, properties);
     }
 }

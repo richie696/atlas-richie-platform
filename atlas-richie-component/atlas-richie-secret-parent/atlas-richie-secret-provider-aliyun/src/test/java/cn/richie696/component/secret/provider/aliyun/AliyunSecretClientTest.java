@@ -8,6 +8,7 @@ import cn.richie696.component.secret.api.crypto.KeyReference;
 import cn.richie696.component.secret.api.crypto.WrappedKey;
 import cn.richie696.component.secret.api.exception.SecretBootstrapException;
 import cn.richie696.component.secret.api.exception.SecretConfigurationException;
+import cn.richie696.component.secret.api.exception.SecretException;
 import cn.richie696.component.secret.bootstrap.BootstrapSecretProperties;
 import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapRequest;
 import com.aliyun.kms20160120.models.DecryptRequest;
@@ -19,6 +20,7 @@ import com.aliyun.kms20160120.models.EncryptResponseBody;
 import com.aliyun.kms20160120.models.GetSecretValueRequest;
 import com.aliyun.kms20160120.models.GetSecretValueResponse;
 import com.aliyun.kms20160120.models.GetSecretValueResponseBody;
+import com.aliyun.tea.TeaException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -127,7 +129,14 @@ class AliyunSecretClientTest {
                 .isEqualTo(gateway.lastDecryptRequest.getEncryptionContext());
         assertThat(gateway.lastEncryptRequest.getEncryptionContext().get("atlas-component"))
                 .isEqualTo("secret-envelope");
-        assertThat(gateway.lastEncryptRequest.getEncryptionContext()).containsKey("atlas-aad-sha256");
+        assertThat(gateway.lastEncryptRequest.getEncryptionContext())
+                .containsKey("atlas-aad-sha256");
+        assertThat(gateway.lastEncryptRequest.getEncryptionContext().get("atlas-key"))
+                .isEqualTo("default-envelope");
+        assertThat(gateway.lastEncryptRequest.getEncryptionContext().get("atlas-version"))
+                .isEqualTo("current");
+        assertThat(gateway.lastEncryptRequest.getEncryptionContext().get("atlas-purpose"))
+                .isEqualTo("ENVELOPE_ENCRYPTION");
     }
 
     @Test
@@ -149,6 +158,26 @@ class AliyunSecretClientTest {
                 .hasMessageContaining("closed");
     }
 
+    @Test
+    void mapsOnlyDocumentedResourceNotFoundCodeToMissing() {
+        gateway.failure = tea("Forbidden.ResourceNotFound");
+
+        assertThatThrownBy(() -> client.read(SecretReference.latest("database-password")))
+                .isInstanceOf(SecretException.class)
+                .hasMessageContaining("missing");
+
+        gateway.failure = tea("Forbidden.DKMSInstanceNotFound");
+        assertThatThrownBy(() -> client.read(SecretReference.latest("database-password")))
+                .isInstanceOf(SecretException.class)
+                .hasMessageContaining("read failed");
+    }
+
+    private TeaException tea(String code) {
+        TeaException exception = new TeaException();
+        exception.setCode(code);
+        return exception;
+    }
+
     private GetSecretValueResponse response(String version, String value) {
         var stages = new GetSecretValueResponseBody.GetSecretValueResponseBodyVersionStages()
                 .setVersionStage(List.of("ACSCurrent"));
@@ -168,11 +197,13 @@ class AliyunSecretClientTest {
         private EncryptRequest lastEncryptRequest;
         private DecryptRequest lastDecryptRequest;
         private byte[] unwrapped;
+        private TeaException failure;
 
         void put(String name, GetSecretValueResponse response) { values.put(name, response); }
 
         @Override public GetSecretValueResponse getSecretValue(GetSecretValueRequest request) {
             lastSecretRequest = request;
+            if (failure != null) throw failure;
             return values.get(request.getSecretName());
         }
         @Override public EncryptResponse encrypt(EncryptRequest request) {

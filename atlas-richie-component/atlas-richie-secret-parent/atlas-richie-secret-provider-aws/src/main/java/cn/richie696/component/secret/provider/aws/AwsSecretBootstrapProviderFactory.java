@@ -21,7 +21,7 @@ public final class AwsSecretBootstrapProviderFactory implements SecretBootstrapP
     @Override public Set<SecretCapability> capabilities() { return CAPABILITIES; }
     @Override public SecretBootstrapClient create(
             BootstrapSecretProperties properties, SecretBootstrapContext context) {
-        var resolved = new AwsSecretConfigurationResolver().resolve(context.environment(), properties);
+        var resolved = new AwsSecretConfigurationResolver().resolve(context.environment(), properties, context);
         return new AwsClientFactory().create(resolved, properties);
     }
 }

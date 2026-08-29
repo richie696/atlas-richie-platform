@@ -49,6 +49,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class AliyunSecretClient implements
         SecretBootstrapClient, SecretBackend, KeyWrappingBackend, SecretProviderSession {
     private static final String WRAPPING_ALGORITHM = "aliyun-kms-symmetric-default";
+    private static final Set<String> SECRET_NOT_FOUND_CODES = Set.of(
+            "Forbidden.ResourceNotFound");
     private static final Set<SecretCapability> CAPABILITIES = Set.of(
             SecretCapability.SECRET_READ, SecretCapability.SECRET_VERSIONING,
             SecretCapability.KEY_WRAP, SecretCapability.KEY_UNWRAP);
@@ -132,7 +134,7 @@ public final class AliyunSecretClient implements
             var response = gateway.encrypt(new EncryptRequest()
                     .setKeyId(physicalKey(reference))
                     .setPlaintext(Base64.getEncoder().encodeToString(plaintextKey))
-                    .setEncryptionContext(encryptionContext(context)));
+                    .setEncryptionContext(encryptionContext(reference, context)));
             if (response == null || response.getBody() == null
                     || response.getBody().getCiphertextBlob() == null) {
                 throw new SecretCryptoException("SEC-CRYPTO-001", "Alibaba Cloud KMS returned no ciphertext");
@@ -158,7 +160,7 @@ public final class AliyunSecretClient implements
         try {
             var response = gateway.decrypt(new DecryptRequest()
                     .setCiphertextBlob(new String(ciphertext, StandardCharsets.UTF_8))
-                    .setEncryptionContext(encryptionContext(context)));
+                    .setEncryptionContext(encryptionContext(reference, context)));
             if (response == null || response.getBody() == null || response.getBody().getPlaintext() == null) {
                 throw new SecretCryptoException("SEC-CRYPTO-002", "Alibaba Cloud KMS returned no plaintext");
             }
@@ -198,7 +200,7 @@ public final class AliyunSecretClient implements
             return response == null ? null : response.getBody();
         } catch (TeaException exception) {
             String code = exception.getCode();
-            if (code != null && code.toLowerCase(java.util.Locale.ROOT).contains("notfound")) return null;
+            if (code != null && SECRET_NOT_FOUND_CODES.contains(code.trim())) return null;
             throw new SecretException("SEC-PROVIDER-001", "Alibaba Cloud Secret Manager read failed", exception);
         } catch (Exception exception) {
             throw new SecretException("SEC-PROVIDER-001", "Alibaba Cloud Secret Manager read failed", exception);
@@ -227,16 +229,16 @@ public final class AliyunSecretClient implements
         }
         return key;
     }
-    private Map<String, String> encryptionContext(CryptoContext context) {
+    private Map<String, String> encryptionContext(KeyReference reference, CryptoContext context) {
         byte[] aad = context == null ? new byte[0] : context.associatedData();
         try {
             Map<String, String> result = new LinkedHashMap<>();
             result.put("atlas-component", "secret-envelope");
             result.put("atlas-aad-sha256", sha256(aad));
+            result.put("atlas-key", reference.logicalKey());
+            result.put("atlas-version", reference.version());
+            result.put("atlas-purpose", reference.purpose().name());
             if (context != null) {
-                copyEnvelopeAttribute(context, result, "atlas.secret.key", "atlas-key");
-                copyEnvelopeAttribute(context, result, "atlas.secret.version", "atlas-version");
-                copyEnvelopeAttribute(context, result, "atlas.secret.purpose", "atlas-purpose");
                 copyEnvelopeAttribute(context, result, "atlas.secret.envelope-version", "atlas-envelope-version");
                 copyEnvelopeAttribute(context, result, "atlas.secret.algorithm", "atlas-algorithm");
                 copyEnvelopeAttribute(context, result, "atlas.secret.nonce-sha256", "atlas-nonce-sha256");

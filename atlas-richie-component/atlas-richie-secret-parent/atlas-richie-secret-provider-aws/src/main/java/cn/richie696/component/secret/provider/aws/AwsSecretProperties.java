@@ -9,6 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
 
 /** AWS Provider 的外部变量配置。 */
 @ConfigurationProperties(prefix = AwsSecretProperties.PREFIX)
@@ -64,10 +65,22 @@ public class AwsSecretProperties {
 
     public static class Kms {
         private Map<String, String> keyBindings = new LinkedHashMap<>();
+        private Map<String, List<String>> verificationKeyBindings = new LinkedHashMap<>();
         private String signingAlgorithm = "RSASSA_PSS_SHA_256";
         public Map<String, String> getKeyBindings() { return Map.copyOf(keyBindings); }
         public void setKeyBindings(Map<String, String> keyBindings) {
             this.keyBindings = keyBindings == null ? new LinkedHashMap<>() : new LinkedHashMap<>(keyBindings);
+        }
+        public Map<String, List<String>> getVerificationKeyBindings() {
+            Map<String, List<String>> copy = new LinkedHashMap<>();
+            verificationKeyBindings.forEach((logical, values) -> copy.put(
+                    logical, values == null ? List.of() : List.copyOf(values)));
+            return Map.copyOf(copy);
+        }
+        public void setVerificationKeyBindings(Map<String, List<String>> value) {
+            verificationKeyBindings = new LinkedHashMap<>();
+            if (value != null) value.forEach((logical, values) -> verificationKeyBindings.put(
+                    logical, values == null ? List.of() : List.copyOf(values)));
         }
         public String getSigningAlgorithm() { return signingAlgorithm; }
         public void setSigningAlgorithm(String signingAlgorithm) {

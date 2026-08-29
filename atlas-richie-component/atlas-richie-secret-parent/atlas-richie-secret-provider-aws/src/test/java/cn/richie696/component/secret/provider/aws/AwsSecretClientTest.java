@@ -8,6 +8,8 @@ import cn.richie696.component.secret.api.SecretReference;
 import cn.richie696.component.secret.api.SecretVersionSelector;
 import cn.richie696.component.secret.api.crypto.CryptoContext;
 import cn.richie696.component.secret.api.crypto.KeyReference;
+import cn.richie696.component.secret.api.crypto.KeyPurpose;
+import cn.richie696.component.secret.api.crypto.SignatureValue;
 import cn.richie696.component.secret.api.crypto.WrappedKey;
 import cn.richie696.component.secret.api.exception.SecretBootstrapException;
 import cn.richie696.component.secret.api.exception.SecretConfigurationException;
@@ -22,6 +24,10 @@ import software.amazon.awssdk.services.kms.model.DecryptRequest;
 import software.amazon.awssdk.services.kms.model.DecryptResponse;
 import software.amazon.awssdk.services.kms.model.EncryptRequest;
 import software.amazon.awssdk.services.kms.model.EncryptResponse;
+import software.amazon.awssdk.services.kms.model.SignRequest;
+import software.amazon.awssdk.services.kms.model.SignResponse;
+import software.amazon.awssdk.services.kms.model.VerifyRequest;
+import software.amazon.awssdk.services.kms.model.VerifyResponse;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
@@ -41,11 +47,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AwsSecretClientTest {
     private AwsTestBackend backend;
     private AwsSecretClient client;
+    private AwsSecretProperties properties;
     private AtomicInteger closeCalls;
 
     @BeforeEach
     void setUp() {
-        AwsSecretProperties properties = new AwsSecretProperties();
+        properties = new AwsSecretProperties();
         properties.setRegion("ap-southeast-1");
         AwsSecretProperties.SecretsManager secretsManager = new AwsSecretProperties.SecretsManager();
         secretsManager.setPathPrefix("company");
@@ -169,6 +176,37 @@ class AwsSecretClientTest {
     }
 
     @Test
+    void verifiesAnOldSignatureOnlyWhenItsKeyRemainsInTheTrustedRotationWindow() {
+        String oldKey = "arn:aws:kms:ap-southeast-1:1:key/oauth-old";
+        String newKey = "arn:aws:kms:ap-southeast-1:1:key/oauth-new";
+        properties.getKms().setKeyBindings(Map.of("oauth-signing", oldKey));
+        byte[] payload = "oauth-token".getBytes(StandardCharsets.UTF_8);
+        SignatureValue signature = client.sign(
+                new KeyReference("oauth-signing", "current", KeyPurpose.SIGNING),
+                payload,
+                CryptoContext.empty());
+
+        properties.getKms().setKeyBindings(Map.of("oauth-signing", newKey));
+        properties.getKms().setVerificationKeyBindings(Map.of("oauth-signing", List.of(oldKey)));
+
+        assertThat(client.verify(
+                new KeyReference("oauth-signing", "current", KeyPurpose.SIGNING),
+                payload,
+                signature,
+                CryptoContext.empty())).isTrue();
+        assertThat(backend.lastVerifyRequest.keyId()).isEqualTo(oldKey);
+
+        properties.getKms().setVerificationKeyBindings(Map.of());
+        assertThatThrownBy(() -> client.verify(
+                new KeyReference("oauth-signing", "current", KeyPurpose.SIGNING),
+                payload,
+                signature,
+                CryptoContext.empty()))
+                .isInstanceOf(cn.richie696.component.secret.api.exception.SecretCryptoException.class)
+                .hasMessageContaining("not trusted");
+    }
+
+    @Test
     void closesOwnedResourcesExactlyOnceAndRejectsFurtherUse() {
         client.close();
         client.close();
@@ -195,6 +233,8 @@ class AwsSecretClientTest {
         private GetSecretValueRequest lastSecretRequest;
         private EncryptRequest lastEncryptRequest;
         private DecryptRequest lastDecryptRequest;
+        private SignRequest lastSignRequest;
+        private VerifyRequest lastVerifyRequest;
         private byte[] wrapped;
         private byte[] unwrapped;
 
@@ -226,6 +266,22 @@ class AwsSecretClientTest {
                     return DecryptResponse.builder()
                             .keyId(lastDecryptRequest.keyId())
                             .plaintext(SdkBytes.fromByteArray(unwrapped))
+                            .build();
+                }
+                if ("sign".equals(method.getName())) {
+                    lastSignRequest = (SignRequest) arguments[0];
+                    return SignResponse.builder()
+                            .keyId(lastSignRequest.keyId())
+                            .signature(SdkBytes.fromUtf8String("signature"))
+                            .signingAlgorithm(lastSignRequest.signingAlgorithm())
+                            .build();
+                }
+                if ("verify".equals(method.getName())) {
+                    lastVerifyRequest = (VerifyRequest) arguments[0];
+                    return VerifyResponse.builder()
+                            .keyId(lastVerifyRequest.keyId())
+                            .signatureValid(true)
+                            .signingAlgorithm(lastVerifyRequest.signingAlgorithm())
                             .build();
                 }
                 return defaultValue(method.getReturnType());

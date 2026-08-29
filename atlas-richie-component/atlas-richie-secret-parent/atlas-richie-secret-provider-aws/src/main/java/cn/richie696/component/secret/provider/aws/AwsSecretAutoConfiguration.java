@@ -26,17 +26,18 @@ public class AwsSecretAutoConfiguration {
     public AwsSecretClient awsSecretClient(
             ConfigurableEnvironment environment,
             ObjectProvider<SecretBootstrapState> bootstrapStateProvider) {
+        SecretBootstrapState state = bootstrapStateProvider.getIfAvailable();
+        if (state != null) {
+            java.util.List<AwsSecretClient> clients = state.topology().clients().values().stream()
+                    .filter(AwsSecretClient.class::isInstance)
+                    .map(AwsSecretClient.class::cast)
+                    .toList();
+            return clients.size() == 1 ? clients.getFirst() : null;
+        }
         BootstrapSecretProperties bootstrap = Binder.get(environment)
                 .bind(BootstrapSecretProperties.PREFIX, BootstrapSecretProperties.class)
                 .orElseGet(BootstrapSecretProperties::new);
         var resolved = new AwsSecretConfigurationResolver().resolve(environment, bootstrap);
-        SecretBootstrapState state = bootstrapStateProvider.getIfAvailable();
-        if (state != null && state.client() instanceof AwsSecretClient bootstrapClient) {
-            if (!resolved.configurationHash().equals(bootstrapClient.configurationHash())) {
-                throw new IllegalStateException("AWS Secret Provider configuration changed after bootstrap");
-            }
-            return bootstrapClient;
-        }
         return new AwsClientFactory().create(resolved, bootstrap);
     }
 }
