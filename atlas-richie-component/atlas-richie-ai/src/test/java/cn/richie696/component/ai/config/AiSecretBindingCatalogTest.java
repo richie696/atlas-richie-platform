@@ -5,7 +5,7 @@
 package cn.richie696.component.ai.config;
 
 import cn.richie696.component.secret.bootstrap.catalog.SecretBindingCatalogLoader;
-import cn.richie696.component.secret.bootstrap.SecretBootstrapTestHarness;
+import cn.richie696.component.secret.testkit.SecretBootstrapTestHarness;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.bind.Binder;
 
