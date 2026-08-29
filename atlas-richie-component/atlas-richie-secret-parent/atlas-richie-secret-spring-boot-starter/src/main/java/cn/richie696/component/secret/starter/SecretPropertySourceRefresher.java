@@ -8,11 +8,14 @@ import cn.richie696.component.secret.api.SecretSnapshotChangedEvent;
 import cn.richie696.component.secret.api.exception.SecretBootstrapException;
 import cn.richie696.component.secret.api.exception.SecretConfigurationException;
 import cn.richie696.component.secret.bootstrap.BootstrapSecretProperties;
+import cn.richie696.component.secret.bootstrap.SecretPropertyPolicy;
 import cn.richie696.component.secret.bootstrap.SecretBootstrapState;
 import cn.richie696.component.secret.bootstrap.catalog.SecretBinding;
 import cn.richie696.component.secret.bootstrap.refresh.PreparedSecretRefresh;
 import cn.richie696.component.secret.bootstrap.refresh.SecretRefreshParticipant;
 import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapResult;
+import cn.richie696.component.secret.core.SecretRuntimeSnapshot;
+import cn.richie696.component.secret.core.SecretSnapshotManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -41,12 +44,11 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class SecretPropertySourceRefresher implements SmartLifecycle, AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(SecretPropertySourceRefresher.class);
-    private static final String SECRET_PREFIX = BootstrapSecretProperties.PREFIX + ".";
 
     private final SecretBootstrapState state;
     private final ConfigurableEnvironment environment;
     private final ObjectProvider<SecretRefreshParticipant> participants;
-    private final ApplicationEventPublisher eventPublisher;
+    private final SecretSnapshotManager snapshotManager;
     private final SecretRefreshDiagnostics diagnostics;
     private final AtomicReference<SecretBootstrapResult> current;
     private final AtomicBoolean running = new AtomicBoolean();
@@ -67,12 +69,24 @@ public final class SecretPropertySourceRefresher implements SmartLifecycle, Auto
             ObjectProvider<SecretRefreshParticipant> participants,
             ApplicationEventPublisher eventPublisher,
             SecretRefreshDiagnostics diagnostics) {
+        this(state, environment, participants, snapshotManager(eventPublisher, diagnostics), diagnostics);
+    }
+
+    public SecretPropertySourceRefresher(
+            SecretBootstrapState state,
+            ConfigurableEnvironment environment,
+            ObjectProvider<SecretRefreshParticipant> participants,
+            SecretSnapshotManager snapshotManager,
+            SecretRefreshDiagnostics diagnostics) {
         this.state = state;
         this.environment = environment;
         this.participants = participants;
-        this.eventPublisher = eventPublisher;
         this.diagnostics = diagnostics == null ? new SecretRefreshDiagnostics() : diagnostics;
+        this.snapshotManager = java.util.Objects.requireNonNull(snapshotManager, "snapshotManager must not be null");
         this.current = new AtomicReference<>(state.result());
+        if (this.snapshotManager.current().isEmpty()) {
+            this.snapshotManager.initialize(runtimeSnapshot(state.result()));
+        }
     }
 
     @Override
@@ -121,7 +135,7 @@ public final class SecretPropertySourceRefresher implements SmartLifecycle, Auto
                 return false;
             }
 
-            Map<String, Object> filtered = filterAndValidate(candidate.values());
+            Map<String, Object> filtered = filter(candidate.values());
             SecretSnapshotChangedEvent metadata = new SecretSnapshotChangedEvent(
                     previous.providerId(),
                     previous.version(),
@@ -137,6 +151,7 @@ public final class SecretPropertySourceRefresher implements SmartLifecycle, Auto
             MapPropertySource candidateSource = new MapPropertySource(
                     state.propertySourceName(), filtered);
             ConfigurableEnvironment candidateEnvironment = candidateEnvironment(candidateSource);
+            validateRequired(filtered, candidateEnvironment);
             List<PreparedSecretRefresh> prepared = new ArrayList<>();
             try {
                 participants.orderedStream()
@@ -164,7 +179,7 @@ public final class SecretPropertySourceRefresher implements SmartLifecycle, Auto
                     log.warn("Secret refresh committed but retired resource cleanup failed", cleanupFailure);
                 }
             }
-            eventPublisher.publishEvent(metadata);
+            snapshotManager.replace(runtimeSnapshot(candidate));
             diagnostics.recordSuccess();
             log.info("Secret snapshot refreshed: provider={}, version={}",
                     candidate.providerId(), candidate.version());
@@ -178,23 +193,42 @@ public final class SecretPropertySourceRefresher implements SmartLifecycle, Auto
         return candidate;
     }
 
-    private Map<String, Object> filterAndValidate(Map<String, Object> values) {
+    private static SecretSnapshotManager snapshotManager(
+            ApplicationEventPublisher eventPublisher,
+            SecretRefreshDiagnostics diagnostics) {
+        SecretRefreshDiagnostics effective = diagnostics == null ? new SecretRefreshDiagnostics() : diagnostics;
+        SecretSnapshotManager manager = new SecretSnapshotManager(effective::recordListenerFailure);
+        if (eventPublisher != null) manager.addListener(eventPublisher::publishEvent);
+        return manager;
+    }
+
+    private static SecretRuntimeSnapshot runtimeSnapshot(SecretBootstrapResult result) {
+        return new SecretRuntimeSnapshot(
+                result.providerId(), result.version(), result.loadedAt(), Map.of());
+    }
+
+    private Map<String, Object> filter(Map<String, Object> values) {
         Map<String, Object> filtered = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : values.entrySet()) {
             Optional<SecretBinding> binding = state.catalogs().propertySourceBinding(entry.getKey());
-            if (binding.isEmpty() || entry.getKey().startsWith(SECRET_PREFIX)) {
+            if (binding.isEmpty() || SecretPropertyPolicy.isForbidden(entry.getKey())) {
+                log.warn("Secret refresh returned an unmanaged or forbidden property; value discarded: property={}",
+                        entry.getKey());
                 continue;
             }
             Integer maxLength = binding.get().maxLength();
-            int length = entry.getValue() instanceof byte[] bytes
-                    ? bytes.length : String.valueOf(entry.getValue()).length();
+            int length = scalarLength(entry.getKey(), entry.getValue());
             if (maxLength != null && length > maxLength) {
                 throw new SecretConfigurationException(
                         "SEC-BOOT-003", "Secret exceeds declared maximum length for property " + entry.getKey());
             }
             filtered.put(entry.getKey(), entry.getValue());
         }
-        for (SecretBinding required : state.catalogs().requiredBindings(environment)) {
+        return Collections.unmodifiableMap(filtered);
+    }
+
+    private void validateRequired(Map<String, Object> filtered, ConfigurableEnvironment candidateEnvironment) {
+        for (SecretBinding required : state.catalogs().requiredBindings(candidateEnvironment)) {
             if (!filtered.containsKey(required.property())) {
                 if (canUseLocalValue(required)) {
                     continue;
@@ -203,7 +237,16 @@ public final class SecretPropertySourceRefresher implements SmartLifecycle, Auto
                         "SEC-STORE-001", "Required Secret is missing for property " + required.property());
             }
         }
-        return Collections.unmodifiableMap(filtered);
+    }
+
+    private int scalarLength(String property, Object value) {
+        if (value instanceof byte[] bytes) return bytes.length;
+        if (value instanceof CharSequence sequence) return sequence.length();
+        if (value instanceof Number || value instanceof Boolean || value instanceof Character) {
+            return value.toString().length();
+        }
+        throw new SecretConfigurationException(
+                "SEC-BOOT-003", "Managed Secret property must be a scalar value: " + property);
     }
 
     private boolean canUseLocalValue(SecretBinding binding) {
@@ -240,7 +283,7 @@ public final class SecretPropertySourceRefresher implements SmartLifecycle, Auto
         try {
             refreshNow();
         } catch (RuntimeException failure) {
-            log.warn("Secret refresh failed; keeping the last good snapshot: failureType={}",
+            log.error("Secret refresh failed; keeping the last good snapshot: failureType={}",
                     failure.getClass().getName());
         }
     }

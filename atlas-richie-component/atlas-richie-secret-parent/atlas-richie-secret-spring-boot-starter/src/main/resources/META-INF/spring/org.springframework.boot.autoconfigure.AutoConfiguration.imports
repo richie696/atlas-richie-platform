@@ -1,2 +1,3 @@
 cn.richie696.component.secret.starter.SecretRuntimeAutoConfiguration
+cn.richie696.component.secret.starter.SecretObservabilityAutoConfiguration
 cn.richie696.component.secret.starter.SecretActuatorSanitizingAutoConfiguration

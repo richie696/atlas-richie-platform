@@ -38,6 +38,17 @@ public final class SecretSnapshotManager implements AutoCloseable {
         return Optional.ofNullable(current.get());
     }
 
+    /** Seeds the bootstrap generation without publishing a change event. */
+    public synchronized void initialize(SecretRuntimeSnapshot initial) {
+        if (initial == null) {
+            throw new IllegalArgumentException("initial snapshot must not be null");
+        }
+        if (!current.compareAndSet(null, initial)) {
+            initial.close();
+            throw new IllegalStateException("Secret snapshot has already been initialized");
+        }
+    }
+
     /**
      * 注册快照切换监听器。返回的句柄用于取消注册，不创建线程。
      */
@@ -76,7 +87,7 @@ public final class SecretSnapshotManager implements AutoCloseable {
             } catch (RuntimeException failure) {
                 // A post-commit observer cannot roll back an already published snapshot,
                 // but its failure must remain observable without exposing secret values.
-                log.warn("Secret snapshot listener failed: listenerType={}, failureType={}",
+                log.error("Secret snapshot listener failed: listenerType={}, failureType={}",
                         listener.getClass().getName(), failure.getClass().getName());
                 try {
                     listenerFailureHandler.accept(failure);

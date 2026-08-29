@@ -6,6 +6,8 @@ package cn.richie696.component.secret.starter;
 
 import cn.richie696.component.secret.bootstrap.catalog.SecretBindingCatalogLoader;
 import cn.richie696.component.secret.bootstrap.catalog.SecretBindingCatalogSet;
+import cn.richie696.component.secret.bootstrap.SecretBootstrapState;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.endpoint.SanitizingFunction;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -26,13 +28,19 @@ public class SecretActuatorSanitizingAutoConfiguration {
 
     @Bean("atlasSecretSanitizingFunction")
     @ConditionalOnMissingBean(name = "atlasSecretSanitizingFunction")
-    public SanitizingFunction atlasSecretSanitizingFunction() {
-        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        ClassLoader classLoader = contextClassLoader == null
-                ? getClass().getClassLoader()
-                : contextClassLoader;
-        SecretBindingCatalogSet catalog = new SecretBindingCatalogLoader().load(classLoader);
+    public SanitizingFunction atlasSecretSanitizingFunction(
+            ObjectProvider<SecretBootstrapState> bootstrapStateProvider) {
+        SecretBootstrapState state = bootstrapStateProvider.getIfAvailable();
+        SecretBindingCatalogSet catalog = state == null ? null : state.catalogs();
+        if (catalog == null) {
+            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            ClassLoader classLoader = contextClassLoader == null
+                    ? getClass().getClassLoader()
+                    : contextClassLoader;
+            catalog = new SecretBindingCatalogLoader().load(classLoader);
+        }
+        SecretBindingCatalogSet resolvedCatalog = catalog;
         return SanitizingFunction.sanitizeValue()
-                .ifKeyMatches(key -> catalog.propertySourceBinding(key).isPresent());
+                .ifKeyMatches(key -> resolvedCatalog.propertySourceBinding(key).isPresent());
     }
 }

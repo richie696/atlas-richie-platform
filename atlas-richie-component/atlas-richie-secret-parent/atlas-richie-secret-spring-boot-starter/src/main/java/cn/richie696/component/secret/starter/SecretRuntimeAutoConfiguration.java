@@ -22,15 +22,22 @@ import cn.richie696.component.secret.core.crypto.DefaultEnvelopeCrypto;
 import cn.richie696.component.secret.core.crypto.DefaultSecretCipher;
 import cn.richie696.component.secret.core.crypto.DefaultSigningService;
 import cn.richie696.component.secret.bootstrap.SecretBootstrapState;
+import cn.richie696.component.secret.bootstrap.SecretProviderTopology;
 import cn.richie696.component.secret.bootstrap.refresh.SecretRefreshParticipant;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.ConfigurableEnvironment;
 
@@ -47,6 +54,14 @@ import java.util.Map;
         name = "enabled",
         havingValue = "true")
 public class SecretRuntimeAutoConfiguration {
+
+    @Bean(destroyMethod = "close")
+    @Primary
+    @ConditionalOnBean(SecretBootstrapState.class)
+    @ConditionalOnMissingBean(SecretProviderRouter.class)
+    public SecretProviderRouter secretProviderRouter(SecretBootstrapState bootstrapState) {
+        return new SecretProviderRouter(bootstrapState);
+    }
 
     @Bean
     @ConditionalOnMissingBean
@@ -73,17 +88,41 @@ public class SecretRuntimeAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnBean(SecretProviderRouter.class)
+    @Conditional(SecretReadRouteCondition.class)
+    @ConditionalOnMissingBean(SecretBackend.class)
+    public SecretBackend routedSecretBackend(SecretProviderRouter router) {
+        return router.secretBackend().orElseThrow();
+    }
+
+    @Bean
+    @ConditionalOnBean(SecretProviderRouter.class)
+    @Conditional(EnvelopeCryptoRouteCondition.class)
+    @ConditionalOnMissingBean(KeyWrappingBackend.class)
+    public KeyWrappingBackend routedKeyWrappingBackend(SecretProviderRouter router) {
+        return router.keyWrappingBackend().orElseThrow();
+    }
+
+    @Bean
+    @ConditionalOnBean(SecretProviderRouter.class)
+    @Conditional(SigningRouteCondition.class)
+    @ConditionalOnMissingBean(SigningBackend.class)
+    public SigningBackend routedSigningBackend(SecretProviderRouter router) {
+        return router.signingBackend().orElseThrow();
+    }
+
+    @Bean
     @ConditionalOnBean(SecretBackend.class)
     @ConditionalOnMissingBean(SecretResolver.class)
-    public SecretResolver secretResolver(SecretBackend secretBackend) {
-        return new DefaultSecretResolver(secretBackend);
+    public SecretResolver secretResolver(SecretBackend backend) {
+        return new DefaultSecretResolver(backend);
     }
 
     @Bean
     @ConditionalOnBean(KeyWrappingBackend.class)
     @ConditionalOnMissingBean(EnvelopeCrypto.class)
-    public EnvelopeCrypto envelopeCrypto(KeyWrappingBackend keyWrappingBackend) {
-        return new DefaultEnvelopeCrypto(keyWrappingBackend);
+    public EnvelopeCrypto envelopeCrypto(KeyWrappingBackend backend) {
+        return new DefaultEnvelopeCrypto(backend);
     }
 
     @Bean
@@ -102,8 +141,8 @@ public class SecretRuntimeAutoConfiguration {
     @Bean
     @ConditionalOnBean(SigningBackend.class)
     @ConditionalOnMissingBean(SigningService.class)
-    public SigningService signingService(SigningBackend signingBackend) {
-        return new DefaultSigningService(signingBackend);
+    public SigningService signingService(SigningBackend backend) {
+        return new DefaultSigningService(backend);
     }
 
     @Bean
@@ -124,10 +163,10 @@ public class SecretRuntimeAutoConfiguration {
             SecretBootstrapState bootstrapState,
             ConfigurableEnvironment environment,
             ObjectProvider<SecretRefreshParticipant> participants,
-            ApplicationEventPublisher eventPublisher,
+            SecretSnapshotManager snapshotManager,
             SecretRefreshDiagnostics diagnostics) {
         return new SecretPropertySourceRefresher(
-                bootstrapState, environment, participants, eventPublisher, diagnostics);
+                bootstrapState, environment, participants, snapshotManager, diagnostics);
     }
 
     private CryptoContext defaultCryptoContext(Environment environment) {
@@ -139,5 +178,38 @@ public class SecretRuntimeAutoConfiguration {
         return new CryptoContext(
                 canonical.getBytes(StandardCharsets.UTF_8),
                 Map.of("schema", "atlas-bootstrap-v1"));
+    }
+
+    static final class SecretReadRouteCondition implements Condition {
+        @Override
+        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+            return supports(context, SecretProviderTopology.SECRET_READ);
+        }
+    }
+
+    static final class EnvelopeCryptoRouteCondition implements Condition {
+        @Override
+        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+            return supports(context, SecretProviderTopology.ENVELOPE_CRYPTO);
+        }
+    }
+
+    static final class SigningRouteCondition implements Condition {
+        @Override
+        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+            return supports(context, SecretProviderTopology.SIGNING);
+        }
+    }
+
+    private static boolean supports(ConditionContext context, String route) {
+        if (!(context.getBeanFactory() instanceof ConfigurableListableBeanFactory beanFactory)) {
+            return false;
+        }
+        String[] names = beanFactory.getBeanNamesForType(SecretBootstrapState.class, false, false);
+        if (names.length != 1) {
+            return false;
+        }
+        SecretBootstrapState state = beanFactory.getBean(names[0], SecretBootstrapState.class);
+        return state.topology() != null && state.topology().supportsRoute(route);
     }
 }

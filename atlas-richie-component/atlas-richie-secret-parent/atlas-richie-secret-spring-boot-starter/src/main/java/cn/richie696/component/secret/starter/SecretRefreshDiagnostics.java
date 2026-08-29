@@ -4,6 +4,7 @@
  */
 package cn.richie696.component.secret.starter;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * 不把异常消息中的潜在配置值暴露到诊断数据中。</p>
  */
 public final class SecretRefreshDiagnostics {
+    private final Clock clock;
     private final AtomicLong attempts = new AtomicLong();
     private final AtomicLong successes = new AtomicLong();
     private final AtomicLong failures = new AtomicLong();
@@ -22,24 +24,31 @@ public final class SecretRefreshDiagnostics {
     private volatile Instant lastFailureAt;
     private volatile String lastFailureType;
 
+    public SecretRefreshDiagnostics() {
+        this(Clock.systemUTC());
+    }
+
+    SecretRefreshDiagnostics(Clock clock) {
+        this.clock = java.util.Objects.requireNonNull(clock, "clock must not be null");
+    }
+
     public void recordAttempt() {
         attempts.incrementAndGet();
     }
 
     public void recordSuccess() {
         successes.incrementAndGet();
-        lastSuccessAt = Instant.now();
+        lastSuccessAt = clock.instant();
     }
 
     public void recordFailure(Throwable failure) {
         failures.incrementAndGet();
-        lastFailureAt = Instant.now();
+        lastFailureAt = clock.instant();
         lastFailureType = failure == null ? "unknown" : failure.getClass().getName();
     }
 
     public void recordListenerFailure(Throwable failure) {
         listenerFailures.incrementAndGet();
-        recordFailure(failure);
     }
 
     public Snapshot snapshot() {

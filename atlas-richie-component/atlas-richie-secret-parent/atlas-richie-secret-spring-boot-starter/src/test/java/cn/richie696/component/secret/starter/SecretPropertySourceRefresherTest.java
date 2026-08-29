@@ -17,6 +17,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -86,6 +92,21 @@ class SecretPropertySourceRefresherTest {
     }
 
     @Test
+    void listenerFailureAfterCommitDoesNotUndoOrMisreportRefresh() {
+        TestFixture fixture = fixture((environment, event) -> new PreparedSecretRefresh() {
+            @Override public void commit() { }
+            @Override public void rollback() { }
+        }, "new", true);
+
+        assertThat(fixture.refresher().refreshNow()).isTrue();
+
+        assertThat(fixture.environment().getProperty("test.component.password")).isEqualTo("new");
+        assertThat(fixture.diagnostics().snapshot().successes()).isEqualTo(1);
+        assertThat(fixture.diagnostics().snapshot().failures()).isZero();
+        assertThat(fixture.diagnostics().snapshot().listenerFailures()).isEqualTo(1);
+    }
+
+    @Test
     void refreshRetainsLocalFallbackWhenRemoteRequiredBindingIsTemporarilyMissing() {
         StandardEnvironment environment = new StandardEnvironment();
         environment.getPropertySources().addLast(new MapPropertySource(
@@ -116,7 +137,48 @@ class SecretPropertySourceRefresherTest {
         assertThat(environment.getProperty("test.component.password")).isEqualTo("local-value");
     }
 
+    @Test
+    void oneHundredConcurrentRefreshRequestsPublishOneAtomicGeneration() throws Exception {
+        AtomicInteger commits = new AtomicInteger();
+        SecretRefreshParticipant participant = (environment, event) -> new PreparedSecretRefresh() {
+            @Override public void commit() { commits.incrementAndGet(); }
+            @Override public void rollback() { }
+        };
+        TestFixture fixture = fixture(participant, "new");
+        ExecutorService executor = Executors.newFixedThreadPool(16);
+        CountDownLatch start = new CountDownLatch(1);
+        try {
+            List<Future<Boolean>> results = new java.util.ArrayList<>();
+            for (int index = 0; index < 100; index++) {
+                results.add(executor.submit(() -> {
+                    start.await();
+                    return fixture.refresher().refreshNow();
+                }));
+            }
+            start.countDown();
+            int published = 0;
+            for (Future<Boolean> result : results) {
+                if (result.get(5, TimeUnit.SECONDS)) published++;
+            }
+
+            assertThat(published).isEqualTo(1);
+            assertThat(commits).hasValue(1);
+            assertThat(fixture.events()).hasSize(1);
+            assertThat(fixture.environment().getProperty("test.component.password")).isEqualTo("new");
+            assertThat(fixture.diagnostics().snapshot().attempts()).isEqualTo(100);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
     private TestFixture fixture(SecretRefreshParticipant participant, String nextValue) {
+        return fixture(participant, nextValue, false);
+    }
+
+    private TestFixture fixture(
+            SecretRefreshParticipant participant,
+            String nextValue,
+            boolean failingListener) {
         String sourceName = "atlas-richie-secret[test:v1]";
         StandardEnvironment environment = new StandardEnvironment();
         environment.getPropertySources().addFirst(new MapPropertySource(
@@ -134,11 +196,17 @@ class SecretPropertySourceRefresherTest {
         beans.registerSingleton("participant", participant);
         List<Object> events = new java.util.ArrayList<>();
         SecretRefreshDiagnostics diagnostics = new SecretRefreshDiagnostics();
+        cn.richie696.component.secret.core.SecretSnapshotManager manager =
+                new cn.richie696.component.secret.core.SecretSnapshotManager(diagnostics::recordListenerFailure);
+        manager.addListener(event -> {
+            events.add(event);
+            if (failingListener) throw new IllegalStateException("listener failed");
+        });
         SecretPropertySourceRefresher refresher = new SecretPropertySourceRefresher(
                 state,
                 environment,
                 beans.getBeanProvider(SecretRefreshParticipant.class),
-                events::add,
+                manager,
                 diagnostics);
         return new TestFixture(refresher, environment, events, diagnostics);
     }
