@@ -5,7 +5,7 @@
 package cn.richie696.component.storage.core;
 
 import cn.richie696.component.secret.bootstrap.catalog.SecretBindingCatalogLoader;
-import cn.richie696.component.secret.bootstrap.SecretBootstrapTestHarness;
+import cn.richie696.component.secret.testkit.SecretBootstrapTestHarness;
 import cn.richie696.component.storage.config.StorageProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.bind.Binder;
