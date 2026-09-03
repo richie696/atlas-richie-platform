@@ -63,13 +63,6 @@ class BoundedListCapacityLimitsTest {
     }
 
     @Test
-    void validateBatchCount_shouldRejectZeroOrOverLimit() {
-        assertThrows(IllegalArgumentException.class, () -> BoundedListCapacityLimits.validateBatchCount(0));
-        assertThrows(IllegalArgumentException.class,
-                () -> BoundedListCapacityLimits.validateBatchCount(BoundedListCapacityLimits.MAX_BATCH_COUNT + 1));
-    }
-
-    @Test
     void parseMetaMaxLen_shouldRejectInvalid() {
         assertThrows(IllegalStateException.class,
                 () -> BoundedListCapacityLimits.parseMetaMaxLen("k", "not-a-number"));

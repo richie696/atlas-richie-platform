@@ -121,6 +121,10 @@ spring:
         block-forbidden-tiers: false        # 灰度阶段仅告警不阻断
         warn-string-payload-anti-patterns: true
         block-string-payload-violations: false
+        max-batch-read-items: 1000             # 批量读取守卫阈值
+        block-batch-read-violations: true      # 超阈值阻断
+        warn-hash-payload-violations: true     # Hash 字段/总载荷检测（独立于 enabled）
+        block-hash-payload-violations: true    # Hash 载荷 ERROR 时阻断
 
 platform:
   cache:
@@ -704,7 +708,7 @@ notify-keyspace-events KEA
 
 | 配置项                               | 类型         | 默认值            | 说明                                                                           |
 |--------------------------------------|--------------|-------------------|--------------------------------------------------------------------------------|
-| `enabled` ⚠️                         | boolean      | `false`           | 总开关。关闭则 perf 治理全部失效                                               |
+| `enabled` ⚠️                         | boolean      | `false`           | 复杂度与延迟治理总开关；批量读取和 Hash 载荷守卫独立生效                       |
 | `warn-non-o1`                        | boolean      | `true`            | 非 O(1) 操作打 WARN                                                            |
 | `toc-soft-ms`                        | long         | `8`               | 软阈值（毫秒），超过 WARN                                                      |
 | `toc-hard-ms`                        | long         | `50`              | 硬阈值（毫秒），超过 ERROR                                                     |
@@ -719,6 +723,14 @@ notify-keyspace-events KEA
 | `string-payload-max-bytes-warn`      | int          | `262_144` (256KB) | byte[] 写入 WARN 阈值                                                          |
 | `string-payload-max-bytes-error`     | int          | `1_048_576` (1MB) | byte[] 写入 ERROR 阈值                                                         |
 | `block-string-payload-violations` ⚠️ | boolean      | `false`           | 阻断 String 载荷违规写入（抛异常）                                             |
+| `max-batch-read-items`               | int          | `1000`            | 批量读取逻辑元素阈值（不再由 Manager 固定限制）                                |
+| `block-batch-read-violations`        | boolean      | `true`            | 超过批量读取阈值时阻断                                                         |
+| `warn-hash-payload-violations`       | boolean      | `true`            | 检测 Hash 单字段及单次写入总载荷大小（独立于 `enabled`）                        |
+| `hash-field-payload-max-bytes-warn`  | int          | `262144`          | Hash 单字段 WARN 阈值（字节）                                                  |
+| `hash-field-payload-max-bytes-error` | int          | `1048576`         | Hash 单字段 ERROR 阈值（字节）                                                 |
+| `hash-payload-max-bytes-warn`        | int          | `1048576`         | Hash 单次写入总载荷 WARN 阈值（字节）                                          |
+| `hash-payload-max-bytes-error`       | int          | `4194304`         | Hash 单次写入总载荷 ERROR 阈值（字节）                                         |
+| `block-hash-payload-violations`      | boolean      | `true`            | Hash 载荷达到 ERROR 阈值时阻断写入                                             |
 
 **生产推荐**（灰度完成）：
 
@@ -953,7 +965,7 @@ lock:order:789
 | `offer` / `push`    | RPUSH + LTRIM（queue）/ RPUSH 拒绝（stack） | O(1)     | 写路径 Lua 原子 |
 | `poll` / `pop`      | LPOP / RPOP                                 | O(1)     | 单元素弹出      |
 | `peek` / `peekTail` | LINDEX                                      | O(1)     | 只读不弹出      |
-| `drain(count)`      | LPOP count                                  | O(count) | count 上限 20   |
+| `drain(count)`      | LPOP count                                  | O(count) | count 由 `spring.data.redis.perf.max-batch-read-items` 统一治理 |
 | `size`              | LLEN                                        | O(1)     | 当前长度        |
 
 **选型**：语义是「集合/去重」用 `collection()`（Set）；「排行榜」用 `ranking()`（ZSet）；「削峰 FIFO」用 `queue()`；「最近 N 条 LIFO」用

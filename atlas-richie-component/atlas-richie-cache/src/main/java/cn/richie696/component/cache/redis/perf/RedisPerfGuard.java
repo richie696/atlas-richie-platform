@@ -16,11 +16,14 @@
 package cn.richie696.component.cache.redis.perf;
 
 import cn.richie696.component.cache.redis.config.base.AtlasRedisProperties;
+import cn.richie696.context.utils.data.JsonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.function.Supplier;
+import org.springframework.stereotype.Component;
 
 /**
  * Redis 调用性能守卫：非 O(1) 告警、慢查询分级、策略性阻断（与 {@link RedisComplexityTier} 对齐）。
@@ -109,6 +112,73 @@ public class RedisPerfGuard {
             }
             default -> {
             }
+        }
+    }
+
+    /**
+     * 校验批量读取的逻辑元素数量。该守卫替代各 Manager 中分散的固定数量判断。
+     */
+    public void checkBatchRead(String manager, String method, String key, long itemCount) {
+        var perf = redisProperties.getPerf();
+        if (itemCount <= perf.getMaxBatchReadItems()) {
+            return;
+        }
+        String msg = "[RedisPerf] batch read limit exceeded manager=%s method=%s key=%s count=%d limit=%d"
+                .formatted(manager, method, ellipsizeKey(key), itemCount, perf.getMaxBatchReadItems());
+        log.error(msg);
+        if (perf.isBlockBatchReadViolations()) {
+            throw new IllegalArgumentException(msg);
+        }
+    }
+
+    /**
+     * 在 Hash 写入边界检查每个 field 及本次写入的序列化载荷大小，避免大对象被塞入 Hash value。
+     */
+    public void checkHashWritePayload(String manager, String method, String key, Map<String, ?> values) {
+        var perf = redisProperties.getPerf();
+        if (!perf.isWarnHashPayloadViolations() || values == null || values.isEmpty()) {
+            return;
+        }
+        long totalBytes = 0L;
+        String violation = null;
+        for (var entry : values.entrySet()) {
+            long bytes = serializedBytes(entry.getValue());
+            totalBytes += bytes;
+            if (bytes >= perf.getHashFieldPayloadMaxBytesError()) {
+                violation = "field=%s bytes=%d >= errorThreshold=%d"
+                        .formatted(entry.getKey(), bytes, perf.getHashFieldPayloadMaxBytesError());
+                break;
+            }
+            if (bytes >= perf.getHashFieldPayloadMaxBytesWarn()) {
+                log.warn("[RedisPerf] Hash field payload is large manager={} method={} key={} field={} bytes={} warnThreshold={}",
+                        manager, method, ellipsizeKey(key), entry.getKey(), bytes, perf.getHashFieldPayloadMaxBytesWarn());
+            }
+        }
+        if (violation == null && totalBytes >= perf.getHashPayloadMaxBytesError()) {
+            violation = "totalBytes=%d >= errorThreshold=%d"
+                    .formatted(totalBytes, perf.getHashPayloadMaxBytesError());
+        } else if (totalBytes >= perf.getHashPayloadMaxBytesWarn()) {
+            log.warn("[RedisPerf] Hash payload is large manager={} method={} key={} fields={} totalBytes={} warnThreshold={}",
+                    manager, method, ellipsizeKey(key), values.size(), totalBytes, perf.getHashPayloadMaxBytesWarn());
+        }
+        if (violation != null) {
+            String msg = "[RedisPerf] Hash payload violation manager=%s method=%s key=%s %s"
+                    .formatted(manager, method, ellipsizeKey(key), violation);
+            log.error(msg);
+            if (perf.isBlockHashPayloadViolations()) {
+                throw new IllegalStateException(msg);
+            }
+        }
+    }
+
+    private static long serializedBytes(Object value) {
+        if (value == null) {
+            return 0L;
+        }
+        try {
+            return JsonUtils.getInstance().serializeBytes(value).length;
+        } catch (RuntimeException ex) {
+            return String.valueOf(value).getBytes(StandardCharsets.UTF_8).length;
         }
     }
 

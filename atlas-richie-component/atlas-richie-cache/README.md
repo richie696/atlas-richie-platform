@@ -130,6 +130,10 @@ spring:
         block-forbidden-tiers: false        # canary phase: warn only, do not block
         warn-string-payload-anti-patterns: true
         block-string-payload-violations: false
+        max-batch-read-items: 1000             # batch-read guard threshold
+        block-batch-read-violations: true      # block over threshold
+        warn-hash-payload-violations: true     # Hash payload checks (independent of enabled)
+        block-hash-payload-violations: true    # block Hash ERROR payloads
 
 platform:
   cache:
@@ -747,7 +751,7 @@ still holds the old value. It is recommended to keep L1 TTL at no more than `ori
 
 | Config                               | Type         | Default           | Description                                                                                             |
 |--------------------------------------|--------------|-------------------|---------------------------------------------------------------------------------------------------------|
-| `enabled` ⚠️                         | boolean      | `false`           | Master switch. When off, the entire perf governance is disabled                                         |
+| `enabled` ⚠️                         | boolean      | `false`           | Complexity/latency governance switch; batch-read and Hash payload guards remain independent           |
 | `warn-non-o1`                        | boolean      | `true`            | WARN on non-O(1) operations                                                                             |
 | `toc-soft-ms`                        | long         | `8`               | Soft threshold (ms); over this, WARN                                                                    |
 | `toc-hard-ms`                        | long         | `50`              | Hard threshold (ms); over this, ERROR                                                                   |
@@ -762,6 +766,14 @@ still holds the old value. It is recommended to keep L1 TTL at no more than `ori
 | `string-payload-max-bytes-warn`      | int          | `262_144` (256KB) | byte[] write WARN threshold                                                                             |
 | `string-payload-max-bytes-error`     | int          | `1_048_576` (1MB) | byte[] write ERROR threshold                                                                            |
 | `block-string-payload-violations` ⚠️ | boolean      | `false`           | Block String payload violations (throw an exception)                                                    |
+| `max-batch-read-items`               | int          | `1000`            | Batch-read logical item threshold (no Manager-level fixed cap)                                          |
+| `block-batch-read-violations`        | boolean      | `true`            | Block requests over the batch-read threshold                                                           |
+| `warn-hash-payload-violations`       | boolean      | `true`            | Inspect Hash field/total payload size (independent of `enabled`)                                        |
+| `hash-field-payload-max-bytes-warn`  | int          | `262144`          | Hash field WARN threshold (bytes)                                                                       |
+| `hash-field-payload-max-bytes-error` | int          | `1048576`         | Hash field ERROR threshold (bytes)                                                                      |
+| `hash-payload-max-bytes-warn`        | int          | `1048576`         | Hash write total WARN threshold (bytes)                                                                 |
+| `hash-payload-max-bytes-error`       | int          | `4194304`         | Hash write total ERROR threshold (bytes)                                                                |
+| `block-hash-payload-violations`      | boolean      | `true`            | Block Hash writes at the ERROR payload threshold                                                        |
 
 **Production-recommended** (canary done):
 
@@ -1008,7 +1020,7 @@ governed by `maxLen` (1 to 4,999).
 | `offer` / `push`    | RPUSH + LTRIM (queue) / RPUSH reject (stack) | O(1)       | Atomic Lua write path  |
 | `poll` / `pop`      | LPOP / RPOP                                  | O(1)       | Single-element pop     |
 | `peek` / `peekTail` | LINDEX                                       | O(1)       | Read-only, no pop      |
-| `drain(count)`      | LPOP count                                   | O(count)   | `count` upper bound 20 |
+| `drain(count)`      | LPOP count                                   | O(count)   | `count` governed by `spring.data.redis.perf.max-batch-read-items` |
 | `size`              | LLEN                                         | O(1)       | Current length         |
 
 **How to pick**: use `collection()` (Set) for "set / dedup" semantics, `ranking()` (ZSet) for "leaderboard", `queue()`
@@ -1067,4 +1079,3 @@ spring.data.redis.perf:
 |--------------------------------------------------|----------------------------------------------------------------------------------------------|
 | L2 / Distributed Lock / Performance Guard design | [Redis-L2-and-Performance-Guard-Design.md](docs/en/Redis-L2-and-Performance-Guard-Design.md) |
 | Cache core capabilities analysis                 | [Cache-Core-Capabilities.md](docs/en/Cache-Core-Capabilities.md)                             |
-

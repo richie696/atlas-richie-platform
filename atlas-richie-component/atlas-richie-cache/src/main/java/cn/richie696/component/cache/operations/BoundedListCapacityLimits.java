@@ -41,8 +41,6 @@ public final class BoundedListCapacityLimits {
 
     public static final long MIN_MAX_LEN = 1L;
 
-    public static final int MAX_BATCH_COUNT = 20;
-
     public static final String META_KEY_SUFFIX = ":meta";
 
     private BoundedListCapacityLimits() {
@@ -62,14 +60,6 @@ public final class BoundedListCapacityLimits {
             throw new IllegalArgumentException(
                     "maxLen must be in [%d, %d] (List BIGKEY ceiling), got %d"
                             .formatted(MIN_MAX_LEN, BOUNDED_MAX_LEN_CEILING, maxLen));
-        }
-    }
-
-    public static void validateBatchCount(int count) {
-        if (count < 1 || count > MAX_BATCH_COUNT) {
-            throw new IllegalArgumentException(
-                    "count must be in [%d, %d], got %d"
-                            .formatted(1, MAX_BATCH_COUNT, count));
         }
     }
 

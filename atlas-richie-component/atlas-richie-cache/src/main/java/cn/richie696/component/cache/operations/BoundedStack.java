@@ -16,6 +16,7 @@
 package cn.richie696.component.cache.operations;
 
 import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
+import cn.richie696.component.cache.redis.perf.RedisPerfGuard;
 import lombok.Getter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.redis.core.script.RedisScript;
@@ -43,16 +44,19 @@ public class BoundedStack<T> {
     private volatile long maxLen;
     private final Class<T> clazz;
     private final MultiRedisTemplate<Object> redisTemplate;
+    private final RedisPerfGuard redisPerfGuard;
     private volatile boolean destroyed;
 
     public BoundedStack(String key, long maxLen, Class<T> clazz,
-                        MultiRedisTemplate<Object> redisTemplate) {
+                        MultiRedisTemplate<Object> redisTemplate,
+                        RedisPerfGuard redisPerfGuard) {
         this.key = Objects.requireNonNull(key);
         BoundedListCapacityLimits.validateMaxLen(maxLen);
         this.maxLen = maxLen;
         this.metaKey = BoundedListCapacityLimits.metaKey(key);
         this.clazz = Objects.requireNonNull(clazz);
         this.redisTemplate = Objects.requireNonNull(redisTemplate);
+        this.redisPerfGuard = Objects.requireNonNull(redisPerfGuard);
     }
 
     private void assertAlive() {
@@ -118,7 +122,10 @@ public class BoundedStack<T> {
 
     public List<T> latest(int count) {
         assertMetaPresent();
-        BoundedListCapacityLimits.validateBatchCount(count);
+        if (count < 1) {
+            throw new IllegalArgumentException("count must be positive, got " + count);
+        }
+        redisPerfGuard.checkBatchRead("BoundedStack", "latest", key, count);
         var objects = redisTemplate.opsForList().range(key, -(long) count, -1);
         if (CollectionUtils.isEmpty(objects)) {
             return List.of();

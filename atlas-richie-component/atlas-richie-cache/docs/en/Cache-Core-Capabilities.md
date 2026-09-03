@@ -234,7 +234,7 @@ spring.data.redis:
 
 - **Hard capacity ceiling**: companion meta key + Lua-atomic write path.
 - **Clear semantics**: JDK Queue / Stack style API (`offer`/`poll`, `push`/`pop`).
-- **Batched pull**: `drain(count)` caps at 20 to control per-call Redis latency.
+- **Batched pull**: `drain(count)` is governed by `spring.data.redis.perf.max-batch-read-items` to control per-call Redis latency.
 
 ### Test Cases
 
@@ -812,6 +812,14 @@ spring.data.redis:
     block-string-payload-violations: false     # block String anti-pattern writes
     string-payload-max-chars-warn: 100000      # String char count WARN
     string-payload-max-chars-error: 1000000    # String char count ERROR
+    max-batch-read-items: 1000                 # batch-read guard threshold
+    block-batch-read-violations: true          # block over threshold
+    warn-hash-payload-violations: true         # Hash payload checks (independent of enabled)
+    hash-field-payload-max-bytes-warn: 262144
+    hash-field-payload-max-bytes-error: 1048576
+    hash-payload-max-bytes-warn: 1048576
+    hash-payload-max-bytes-error: 4194304
+    block-hash-payload-violations: true        # block Hash ERROR payloads
 ```
 
 ### Recommended Configuration
@@ -1392,7 +1400,7 @@ constrained at creation time by `maxLen` and platform constants:
 | `LIST_BIGKEY_RECOMMENDED_MAX_ELEMENTS` | 5000  | Recommended upper bound for business Lists in README                |
 | `BOUNDED_MAX_LEN_CEILING`              | 4999  | Upper bound of legal `maxLen` (strictly below the big-key red line) |
 | `MIN_MAX_LEN`                          | 1     | Minimum capacity                                                    |
-| `MAX_BATCH_COUNT`                      | 20    | Single-call upper bound for `drain(count)`                          |
+| `spring.data.redis.perf.max-batch-read-items` | 1000 | Batch-read guard threshold; `block-batch-read-violations` controls blocking |
 
 ```yaml
 spring.data.redis:
@@ -1405,7 +1413,7 @@ spring.data.redis:
 
 - **maxLen**: estimate by peak buffer volume. Start with a small capacity (e.g., 500 to 2000) and only call `grow()`
   when necessary. It doubles at most once up to the cap; do not jump straight to 4999.
-- **Consumer side**: scheduled tasks or dedicated workers should **actively** `poll` / `drain(≤20)`. For multi-instance
+- **Consumer side**: scheduled tasks or dedicated workers should **actively** `poll` / `drain(count)`. Batch size is governed by the Redis performance guard. For multi-instance
   competing consumers, evaluate whether "first to grab consumes" is acceptable.
 - **Key convention**: `{business}:bq:{scenario}:{id}`. **Do not** share the key with `rawList()`, Stream keys, or String
   cache.
@@ -1435,7 +1443,7 @@ q.offer(new Task("t2"));
 Task first = q.poll();
 assert "t1".equals(first.getId());
 
-// Batch drain (count must be in 1 to 20)
+// Batch drain (count must be positive; the performance guard applies the configured limit)
 List<Task> batch = q.drain(10);
 
 // getOrCreate: when the queue already exists, maxLen must be consistent
@@ -1485,7 +1493,7 @@ BoundedStack.push(item)
 ```
 pop()      → RIGHTPOP (pop from the top)
 peek()     → LINDEX -1
-latest(n)  → LRANGE -n,-1 (n ∈ [1,20], read-only, does not delete)
+latest(n)  → LRANGE -n,-1 (n ≥ 1, batch size governed by the Redis performance guard, read-only, does not delete)
 ```
 
 **Growth**: only the meta is updated (`grow` Lua). Unlike the queue, the stack does not run LTRIM after grow; when not
@@ -1513,7 +1521,7 @@ Same as [§22 Bounded Queue](#22-bounded-queue-queue): no independent configurat
 - **maxLen**: usually smaller than the queue (e.g., 50 to 500), representing a "latest N entries" window.
 - **Handling a full stack**: when `push` returns `false`, the business side should degrade (discard this entry, alert,
   or call `grow()` and retry).
-- **latest**: use `latest(count)` for preview, `pop()` for actual consumption. `count` must not exceed 20.
+- **latest**: use `latest(count)` for preview, `pop()` for actual consumption. `count` is governed by `spring.data.redis.perf.max-batch-read-items`.
 
 ### Design Wins
 

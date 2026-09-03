@@ -207,9 +207,7 @@ public class RedisSetManager implements SetFunction {
      */
     @Override
     public <T> Set<T> popMembersFromSet(String key, long count, Class<T> clazz) {
-        if (count > BATCH_SIZE) {
-            throw new IllegalArgumentException("一次性获取的数据量过大，不允许超过20条。");
-        }
+        redisPerfGuard.checkBatchRead("RedisSetManager", "popMembersFromSet", key, Math.toIntExact(Math.min(count, Integer.MAX_VALUE)));
         var members = redisTemplate.opsForSet().pop(key, count);
         if (members == null) {
             return null;

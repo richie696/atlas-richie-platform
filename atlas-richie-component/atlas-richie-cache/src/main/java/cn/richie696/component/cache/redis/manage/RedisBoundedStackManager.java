@@ -20,6 +20,7 @@ import cn.richie696.component.cache.operations.BoundedListRedisScripts;
 import cn.richie696.component.cache.operations.BoundedStack;
 import cn.richie696.component.cache.ops.BoundedStackOps;
 import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
+import cn.richie696.component.cache.redis.perf.RedisPerfGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -41,6 +42,7 @@ public class RedisBoundedStackManager implements BoundedStackOps {
 
     @Qualifier("jsonTemplate")
     private final MultiRedisTemplate<Object> redisTemplate;
+    private final RedisPerfGuard redisPerfGuard;
 
     @Override
     public <T> BoundedStack<T> create(String key, long maxLen, Class<T> clazz) {
@@ -49,7 +51,7 @@ public class RedisBoundedStackManager implements BoundedStackOps {
         if (!BoundedListRedisSupport.setMetaIfAbsent(redisTemplate, BoundedListCapacityLimits.metaKey(key), maxLen)) {
             throw new IllegalStateException("BoundedStack already exists: " + key);
         }
-        return new BoundedStack<>(key, maxLen, clazz, redisTemplate);
+        return new BoundedStack<>(key, maxLen, clazz, redisTemplate, redisPerfGuard);
     }
 
     @Override
@@ -59,7 +61,7 @@ public class RedisBoundedStackManager implements BoundedStackOps {
             return null;
         }
         long maxLen = BoundedListCapacityLimits.parseMetaMaxLen(key, raw);
-        return new BoundedStack<>(key, maxLen, clazz, redisTemplate);
+        return new BoundedStack<>(key, maxLen, clazz, redisTemplate, redisPerfGuard);
     }
 
     @Override
@@ -72,7 +74,7 @@ public class RedisBoundedStackManager implements BoundedStackOps {
         }
         BoundedListRedisSupport.assertListKeyCompatible(redisTemplate, key, KIND);
         if (BoundedListRedisSupport.setMetaIfAbsent(redisTemplate, BoundedListCapacityLimits.metaKey(key), maxLen)) {
-            return new BoundedStack<>(key, maxLen, clazz, redisTemplate);
+            return new BoundedStack<>(key, maxLen, clazz, redisTemplate, redisPerfGuard);
         }
         BoundedStack<T> raced = get(key, clazz);
         if (raced == null) {

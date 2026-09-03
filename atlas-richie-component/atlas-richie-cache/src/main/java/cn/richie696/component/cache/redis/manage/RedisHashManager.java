@@ -461,6 +461,7 @@ public class RedisHashManager implements HashFunction {
             // 1. 先用布隆过滤器判定
             if (!bloomConfig.isEnable() || bloomFilter.mightContain(key)) {
                 // 2. 布隆过滤器判定可能存在，查询Redis
+                checkHashSizeBeforeRead("getObjectFromHash", key);
                 var map = redisTemplate.opsForHash().entries(key);
                 if (map.isEmpty()) {
                     return null;
@@ -488,6 +489,7 @@ public class RedisHashManager implements HashFunction {
                 return null;
             }
             // 2. 查询Redis
+            checkHashSizeBeforeRead("getObjectFromHash", key);
             var map = redisTemplate.opsForHash().entries(key);
             if (map.isEmpty()) {
                 return null;
@@ -565,10 +567,8 @@ public class RedisHashManager implements HashFunction {
             }
             hashKeys = filteredKeys;
         }
+        redisPerfGuard.checkBatchRead("RedisHashManager", "getFromHash", key, hashKeys.size());
         try {
-            if (hashKeys.size() > BATCH_SIZE) {
-                throw new IllegalArgumentException("一次性获取的数据量过大，不允许超过20条。");
-            }
             HashOperations<String, String, Object> operations = redisTemplate.opsForHash();
             var origin = operations.multiGet(key, hashKeys);
             return origin.stream().filter(Objects::nonNull).map(o -> {
@@ -592,9 +592,7 @@ public class RedisHashManager implements HashFunction {
         if (hashKeys == null || hashKeys.isEmpty()) {
             return Collections.emptyMap();
         }
-        if (hashKeys.size() > BATCH_SIZE) {
-            throw new IllegalArgumentException("一次性获取的数据量过大，不允许超过20条。");
-        }
+        redisPerfGuard.checkBatchRead("RedisHashManager", "getFromHash", key, hashKeys.size());
         try {
             List<String> fields = List.copyOf(hashKeys);
             List<Object> redisFields = new ArrayList<>(fields);
@@ -629,9 +627,7 @@ public class RedisHashManager implements HashFunction {
         if (fields.isEmpty()) {
             return Collections.emptyMap();
         }
-        if (fields.size() > BATCH_SIZE) {
-            throw new IllegalArgumentException("一次性获取的数据量过大，不允许超过20条。");
-        }
+        redisPerfGuard.checkBatchRead("RedisHashManager", "getFromHashWithLock", key, fields.size());
 
         Map<String, T> value = getFromHash(key, fields, clazz);
         if (value.size() == fields.size()) {
@@ -684,6 +680,7 @@ public class RedisHashManager implements HashFunction {
             if (config.isEnable() && !bloomFilter.mightContain(key)) {
                 return Collections.emptyMap();
             }
+            checkHashSizeBeforeRead("getAllMapFromHash", key);
             try {
                 Map<Object, Object> map = redisTemplate.opsForHash().entries(key);
                 Map<String, T> resultMap = new HashMap<>(map.size());
@@ -707,6 +704,7 @@ public class RedisHashManager implements HashFunction {
     @Override
     public void addObject(String key, Object value) {
         Map<String, Object> map = JsonUtils.getInstance().convertObjectToMap(value);
+        redisPerfGuard.checkHashWritePayload("RedisHashManager", "addObject", key, map);
         redisTemplate.opsForHash().putAll(key, map);
         // 布隆过滤器同步
         var config = cacheProperties.getBloomFilter();
@@ -725,6 +723,7 @@ public class RedisHashManager implements HashFunction {
     @Override
     public void addObject(String key, Object value, long timeout) {
         Map<String, Object> map = JsonUtils.getInstance().convertObjectToMap(value);
+        redisPerfGuard.checkHashWritePayload("RedisHashManager", "addObject", key, map);
         redisTemplate.opsForHash().putAll(key, map);
         long realTimeout = timeout + CacheFunction.getRandomExtraMillis();
         redisTemplate.expire(key, realTimeout, TimeUnit.MILLISECONDS);
@@ -754,6 +753,7 @@ public class RedisHashManager implements HashFunction {
                 return null;
             }
             Map<String, Object> map = JsonUtils.getInstance().convertObjectToMap(newObject);
+            redisPerfGuard.checkHashWritePayload("RedisHashManager", "refreshObject", key, map);
             redisTemplate.opsForHash().putAll(key, map);
             // 布隆过滤器同步（刷新时确保布隆过滤器中有记录）
             var config = cacheProperties.getBloomFilter();
@@ -772,6 +772,9 @@ public class RedisHashManager implements HashFunction {
      */
     @Override
     public void batchAddToHash(Map<String, Map<String, ?>> map) {
+        if (map != null) {
+            map.forEach((key, values) -> redisPerfGuard.checkHashWritePayload("RedisHashManager", "batchAddToHash", key, values));
+        }
         redisTemplate.executePipelined(new SessionCallback<String>() {
             @Override
             public <K, V> String execute(@Nonnull RedisOperations<K, V> redisOperations) throws DataAccessException {
@@ -798,6 +801,7 @@ public class RedisHashManager implements HashFunction {
      */
     @Override
     public void addHash(String key, Map<String, ?> map) {
+        redisPerfGuard.checkHashWritePayload("RedisHashManager", "addHash", key, map);
         redisTemplate.opsForHash().putAll(key, map);
         // 布隆过滤器同步
         var config = cacheProperties.getBloomFilter();
@@ -815,8 +819,21 @@ public class RedisHashManager implements HashFunction {
      */
     @Override
     public void addHash(String key, String hashKey, Object hashValue) {
+        redisPerfGuard.checkHashWritePayload("RedisHashManager", "addHash", key, Collections.singletonMap(hashKey, hashValue));
         redisTemplate.opsForHash().put(key, hashKey, hashValue);
         registerHashFieldForBloom(key, hashKey);
+    }
+
+    private void checkHashSizeBeforeRead(String method, String key) {
+        try {
+            Long size = redisTemplate.opsForHash().size(key);
+            if (size != null) {
+                redisPerfGuard.checkBatchRead("RedisHashManager", method, key, size);
+            }
+        } catch (DataAccessException ex) {
+            // 预检失败时交由后续读取路径处理，避免守卫本身改变原有的空结果降级语义。
+            log.warn("Hash size preflight failed, method={}, key={}", method, key, ex);
+        }
     }
 
     /**

@@ -39,12 +39,6 @@ public interface CacheFunction {
      */
     long DB_LOADER_TIME_OUT = 10L;
     /**
-     * 批量加载数据大小
-     */
-    int BATCH_SIZE = 20;
-
-
-    /**
      * 生成1~10分钟的随机毫秒数（防止出现缓存雪崩）
      *
      * @return 随机毫秒数（1~10 分钟）

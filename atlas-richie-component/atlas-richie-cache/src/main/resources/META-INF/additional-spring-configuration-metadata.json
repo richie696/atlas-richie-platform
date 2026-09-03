@@ -107,6 +107,54 @@
       "type": "java.lang.Boolean",
       "description": "是否在 String 载荷 ERROR 级别问题时抛异常阻断写入（默认 false）。",
       "defaultValue": false
+    },
+    {
+      "name": "spring.data.redis.perf.max-batch-read-items",
+      "type": "java.lang.Integer",
+      "description": "批量读取的最大逻辑元素数，由性能守卫统一治理。",
+      "defaultValue": 1000
+    },
+    {
+      "name": "spring.data.redis.perf.block-batch-read-violations",
+      "type": "java.lang.Boolean",
+      "description": "是否阻断超过批量读取安全阈值的请求。",
+      "defaultValue": true
+    },
+    {
+      "name": "spring.data.redis.perf.warn-hash-payload-violations",
+      "type": "java.lang.Boolean",
+      "description": "是否检测 Hash 字段和单次 Hash 写入载荷大小（与 perf.enabled 独立）。",
+      "defaultValue": true
+    },
+    {
+      "name": "spring.data.redis.perf.hash-field-payload-max-bytes-warn",
+      "type": "java.lang.Integer",
+      "description": "单个 Hash field 载荷 WARN 阈值（字节）。",
+      "defaultValue": 262144
+    },
+    {
+      "name": "spring.data.redis.perf.hash-field-payload-max-bytes-error",
+      "type": "java.lang.Integer",
+      "description": "单个 Hash field 载荷 ERROR 阈值（字节）。",
+      "defaultValue": 1048576
+    },
+    {
+      "name": "spring.data.redis.perf.hash-payload-max-bytes-warn",
+      "type": "java.lang.Integer",
+      "description": "单次 Hash 写入总载荷 WARN 阈值（字节）。",
+      "defaultValue": 1048576
+    },
+    {
+      "name": "spring.data.redis.perf.hash-payload-max-bytes-error",
+      "type": "java.lang.Integer",
+      "description": "单次 Hash 写入总载荷 ERROR 阈值（字节）。",
+      "defaultValue": 4194304
+    },
+    {
+      "name": "spring.data.redis.perf.block-hash-payload-violations",
+      "type": "java.lang.Boolean",
+      "description": "是否在 Hash 载荷 ERROR 级别问题时抛异常阻断写入。",
+      "defaultValue": true
     }
   ]
 }

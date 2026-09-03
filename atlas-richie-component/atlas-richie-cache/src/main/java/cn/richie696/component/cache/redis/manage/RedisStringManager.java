@@ -419,6 +419,7 @@ public class RedisStringManager implements StringFunction {
     public <T> Map<String, T> getValueMap(final List<String> keys, TypeReference<T> reference) {
         return redisPerfGuard.<Map<String, T>>execute("RedisStringManager", "getValueMap", RedisOperationCatalog.STRING_MULTI_GET, () -> {
             List<String> workingKeys = keys;
+            redisPerfGuard.checkBatchRead("RedisStringManager", "getValueMap", null, workingKeys.size());
             var config = cacheProperties.getBloomFilter();
             if (config.isEnable()) {
                 // 过滤掉布隆过滤器判定不存在的key
@@ -463,9 +464,7 @@ public class RedisStringManager implements StringFunction {
     public <T> List<T> getObjects(final Collection<String> keys, TypeReference<T> reference) {
         return redisPerfGuard.<List<T>>execute("RedisStringManager", "getObjects", RedisOperationCatalog.STRING_MULTI_GET, () -> {
             Collection<String> workingKeys = keys;
-            if (workingKeys.size() > BATCH_SIZE) {
-                throw new IllegalArgumentException("一次性获取的数据量过大，不允许超过20条。");
-            }
+            redisPerfGuard.checkBatchRead("RedisStringManager", "getObjects", null, workingKeys.size());
             var config = cacheProperties.getBloomFilter();
             if (config.isEnable()) {
                 // 过滤掉布隆过滤器判定不存在的key

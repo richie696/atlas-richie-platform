@@ -226,5 +226,45 @@ public class AtlasRedisProperties extends DataRedisProperties {
                 owner = "richie696",
                 reason = "大 value 是 JVM GC 与网络热点的头号元凶，必须在写入边界硬阻断")
         private boolean blockStringPayloadViolations = false;
+
+        /**
+         * 批量读取的最大逻辑元素数。该值由性能守卫统一治理，不再由各 Manager 硬编码限制。
+         */
+        private int maxBatchReadItems = 1_000;
+
+        /**
+         * 是否阻断超过批量读取安全阈值的请求。
+         */
+        private boolean blockBatchReadViolations = true;
+
+        /**
+         * 是否检测 Hash 字段载荷（默认开启，与 perf.enabled 独立）。
+         */
+        private boolean warnHashPayloadViolations = true;
+
+        /**
+         * 单个 Hash field 的载荷 WARN 阈值（字节）。
+         */
+        private int hashFieldPayloadMaxBytesWarn = 262_144;
+
+        /**
+         * 单个 Hash field 的载荷 ERROR 阈值（字节）。
+         */
+        private int hashFieldPayloadMaxBytesError = 1_048_576;
+
+        /**
+         * 单次 Hash 写入总载荷 WARN 阈值（字节）。
+         */
+        private int hashPayloadMaxBytesWarn = 1_048_576;
+
+        /**
+         * 单次 Hash 写入总载荷 ERROR 阈值（字节）。
+         */
+        private int hashPayloadMaxBytesError = 4_194_304;
+
+        /**
+         * 是否在 Hash 载荷超出 ERROR 阈值时阻断写入。
+         */
+        private boolean blockHashPayloadViolations = true;
     }
 }

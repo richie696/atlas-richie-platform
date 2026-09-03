@@ -106,6 +106,54 @@ class RedisPerfGuardTest {
     }
 
     @Test
+    void checkBatchRead_allowsMcpEntityWithMoreThanTwentyFields() {
+        AtlasRedisProperties props = new AtlasRedisProperties();
+        RedisPerfGuard guard = new RedisPerfGuard(props);
+
+        guard.checkBatchRead("RedisHashManager", "getFromHash", "mcp:smp-001", 24);
+    }
+
+    @Test
+    void checkBatchRead_blocksOnlyConfiguredLogicalLimit() {
+        AtlasRedisProperties props = new AtlasRedisProperties();
+        props.getPerf().setMaxBatchReadItems(2);
+        props.getPerf().setBlockBatchReadViolations(true);
+        RedisPerfGuard guard = new RedisPerfGuard(props);
+
+        assertThatThrownBy(() -> guard.checkBatchRead("RedisStringManager", "getObjects", "k", 3))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("batch read limit exceeded");
+    }
+
+    @Test
+    void checkHashWritePayload_blocksOversizedFieldWhenConfigured() {
+        AtlasRedisProperties props = new AtlasRedisProperties();
+        AtlasRedisProperties.RedisPerf perf = OpsTestSupport.enabledPerf();
+        perf.setHashFieldPayloadMaxBytesError(1);
+        perf.setBlockHashPayloadViolations(true);
+        props.setPerf(perf);
+        RedisPerfGuard guard = new RedisPerfGuard(props);
+
+        assertThatThrownBy(() -> guard.checkHashWritePayload("RedisHashManager", "addHash", "k", Map.of("field", "value")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Hash payload violation");
+    }
+
+    @Test
+    void checkHashWritePayload_isIndependentFromPerformanceLoggingSwitch() {
+        AtlasRedisProperties props = new AtlasRedisProperties();
+        var perf = props.getPerf();
+        perf.setEnabled(false);
+        perf.setHashFieldPayloadMaxBytesError(1);
+        perf.setBlockHashPayloadViolations(true);
+        RedisPerfGuard guard = new RedisPerfGuard(props);
+
+        assertThatThrownBy(() -> guard.checkHashWritePayload("RedisHashManager", "addHash", "k", Map.of("field", "value")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Hash payload violation");
+    }
+
+    @Test
     void execute_voidRunnable_delegates() {
         AtlasRedisProperties props = new AtlasRedisProperties();
         props.getPerf().setEnabled(false);
