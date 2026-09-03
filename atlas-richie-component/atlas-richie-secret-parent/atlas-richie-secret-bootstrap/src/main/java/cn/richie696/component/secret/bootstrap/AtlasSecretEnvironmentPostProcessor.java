@@ -50,7 +50,7 @@ public class AtlasSecretEnvironmentPostProcessor implements EnvironmentPostProce
         this(bootstrapContext, new SecretProviderDiscovery(), new SecretBindingCatalogLoader());
     }
 
-    public AtlasSecretEnvironmentPostProcessor(
+    AtlasSecretEnvironmentPostProcessor(
             ConfigurableBootstrapContext bootstrapContext,
             SecretProviderDiscovery providerDiscovery,
             SecretBindingCatalogLoader catalogLoader) {

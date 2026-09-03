@@ -4,8 +4,8 @@
  */
 package cn.richie696.component.secret.testkit;
 
-import cn.richie696.component.secret.bootstrap.AtlasSecretEnvironmentPostProcessor;
 import cn.richie696.component.secret.bootstrap.BootstrapSecretProperties;
+import cn.richie696.component.secret.bootstrap.SecretBootstrapTestSupport;
 import cn.richie696.component.secret.bootstrap.SecretProviderDiscovery;
 import cn.richie696.component.secret.bootstrap.catalog.SecretBindingCatalogLoader;
 import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapProviderFactory;
@@ -30,7 +30,7 @@ public final class SecretBootstrapTestHarness {
             Map<String, Object> remoteValues) {
         StandardEnvironment environment = new StandardEnvironment();
         environment.getPropertySources().addFirst(new MapPropertySource("test-local", localProperties));
-        SecretBootstrapProviderFactory factory =
+        final SecretBootstrapProviderFactory factory =
                 new StaticSecretBootstrapProviderFactory("test", remoteValues);
         SecretProviderDiscovery discovery = new SecretProviderDiscovery() {
             @Override
@@ -42,7 +42,7 @@ public final class SecretBootstrapTestHarness {
         };
         SpringApplication application = new SpringApplication();
         application.setResourceLoader(new DefaultResourceLoader(classLoader));
-        new AtlasSecretEnvironmentPostProcessor(
+        SecretBootstrapTestSupport.postProcessor(
                 new DefaultBootstrapContext(), discovery, new SecretBindingCatalogLoader())
                 .postProcessEnvironment(environment, application);
         return environment;
