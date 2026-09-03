@@ -5,7 +5,7 @@
 package cn.richie696.gateway.config;
 
 import cn.richie696.component.secret.bootstrap.BootstrapSecretProperties;
-import cn.richie696.component.secret.bootstrap.SecretBootstrapTestHarness;
+import cn.richie696.component.secret.testkit.SecretBootstrapTestHarness;
 import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapContext;
 import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapRequest;
 import cn.richie696.component.secret.provider.vault.VaultSecretBootstrapProviderFactory;
