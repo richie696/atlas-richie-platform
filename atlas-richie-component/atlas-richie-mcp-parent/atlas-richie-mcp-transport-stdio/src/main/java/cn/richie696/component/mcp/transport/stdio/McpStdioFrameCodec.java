@@ -17,7 +17,7 @@ import java.util.Collections;
  * 关键设计点：</p>
  * <ul>
  *   <li><b>单行约束</b>：编码 / 解码两端均显式拒绝在 JSON 内夹带 {@code \n} 或 {@code \r}，避免
- *       对端 {@link BufferedReader#readLine()} 误判帧边界。</li>
+ *       对端 {@link java.io.BufferedReader#readLine()} 误判帧边界。</li>
  *   <li><b>字节上限</b>：默认 1 MiB，可由构造函数覆盖；任何超限帧都会被映射为
  *       {@code MCP_STDIO_INVALID_FRAME} 错误码，防止恶意 / 异常进程恶灌导致内存爆炸。</li>
  *   <li><b>非空对象约束</b>：空映射或仅含非字符串键的映射会被拒绝，确保 dispatcher 拿到的
