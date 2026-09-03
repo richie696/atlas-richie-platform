@@ -34,5 +34,7 @@ public enum LlmProvider {
     ANTHROPIC,
     OLLAMA,
     MINIMAX,
-    MOONSHOT
+    MOONSHOT,
+    /** 火山方舟：LLM 兼容 OpenAI Chat，Embedding 使用专用多模态协议。 */
+    VOLCENGINE
 }

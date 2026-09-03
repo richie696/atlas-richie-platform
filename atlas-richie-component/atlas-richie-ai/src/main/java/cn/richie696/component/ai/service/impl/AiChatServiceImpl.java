@@ -528,6 +528,7 @@ public class AiChatServiceImpl implements AiChatService {
             case ANTHROPIC -> "Anthropic Claude模型";
             case MINIMAX -> "MiniMax大语言模型";
             case MOONSHOT -> "Moonshot大语言模型";
+            case VOLCENGINE -> "火山方舟大语言模型";
             default -> "Ollama本地模型";
         };
     }
@@ -535,7 +536,7 @@ public class AiChatServiceImpl implements AiChatService {
     private AiModelInfo.ModelCapabilities getModelCapabilities(LlmProvider provider) {
         AiModelInfo.ModelCapabilities capabilities = new AiModelInfo.ModelCapabilities();
         switch (provider) {
-            case OPENAI, DEEPSEEK, MINIMAX, MOONSHOT -> capabilities.setSupportsTemperature(true)
+            case OPENAI, DEEPSEEK, MINIMAX, MOONSHOT, VOLCENGINE -> capabilities.setSupportsTemperature(true)
                     .setSupportsTopP(true)
                     .setSupportsFrequencyPenalty(true)
                     .setSupportsPresencePenalty(true)

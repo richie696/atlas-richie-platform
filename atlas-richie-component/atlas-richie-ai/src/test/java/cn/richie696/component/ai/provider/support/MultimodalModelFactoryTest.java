@@ -27,6 +27,7 @@ import cn.richie696.component.ai.provider.bailian.BailianRerankModel;
 import cn.richie696.component.ai.provider.ollama.OllamaImageEmbeddingAdapter;
 import cn.richie696.component.ai.provider.pangu.PanguRerankModel;
 import cn.richie696.component.ai.provider.tei.TeiImageEmbeddingAdapter;
+import cn.richie696.component.ai.provider.volcengine.VikingAiSearchRerankModel;
 import cn.richie696.component.ai.provider.zhipu.ZhipuRerankModel;
 import cn.richie696.component.ai.support.keypool.ApiKeyPoolManager;
 import cn.richie696.component.http.core.HttpClient;
@@ -90,6 +91,19 @@ class MultimodalModelFactoryTest {
     }
 
     @Test
+    void createRerankModel_vikingAiSearch_returnsVikingAiSearchAdapter() {
+        RerankModelConfig cfg = new RerankModelConfig();
+        cfg.setProvider(RerankProvider.VIKING_AI_SEARCH);
+        cfg.setApiKey("ark-key");
+        cfg.setApplicationId("app-1");
+        cfg.setSceneId("scene-1");
+
+        RerankModel model = MultimodalModelFactory.createRerankModel(cfg, mock(HttpClient.class));
+
+        assertThat(model).isNotNull().isInstanceOf(VikingAiSearchRerankModel.class);
+    }
+
+    @Test
     void createRerankModel_vendorCaseInsensitive_acceptsUpperCase() {
         // vendor 字段为大写也能正确分发 —— 由 normalizeVendor() 在工厂内部处理
         RerankModelConfig cfg = baseBailianCfg();
@@ -112,6 +126,18 @@ class MultimodalModelFactoryTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("rerank")
                 .hasMessageContaining("'null'");
+    }
+
+    @Test
+    void createRerankModel_legacyVikingDbAdapter_failsWithMigrationMessage() {
+        RerankModelConfig cfg = baseBailianCfg();
+        cfg.setAdapterCode("volcengine-viking-rerank");
+
+        assertThatThrownBy(() ->
+                MultimodalModelFactory.createRerankModel(cfg, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("已移除旧版 VikingDB Rerank")
+                .hasMessageContaining("Viking AI Search");
     }
 
     // -------- helpers --------

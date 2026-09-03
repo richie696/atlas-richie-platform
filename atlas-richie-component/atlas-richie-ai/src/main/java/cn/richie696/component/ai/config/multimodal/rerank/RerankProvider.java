@@ -24,5 +24,6 @@ public enum RerankProvider {
     BAILIAN,
     ZHIPU,
     PANGU,
-    DOUBAO
+    /** 火山引擎 Viking AI Search 精排接口（新版）。 */
+    VIKING_AI_SEARCH
 }

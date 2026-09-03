@@ -24,5 +24,7 @@ package cn.richie696.component.ai.config.multimodal.image;
 public enum ImageEmbeddingProvider {
     BAILIAN,
     TEI,
-    OLLAMA
+    OLLAMA,
+    /** 火山方舟 doubao-embedding-vision，多模态输入协议。 */
+    VOLCENGINE
 }

@@ -18,6 +18,7 @@ package cn.richie696.component.ai.config.multimodal.image;
 import lombok.Data;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.net.URL;
 
@@ -60,6 +61,18 @@ public class ImageEmbeddingModelConfig {
      * 厂商端点 URL(为空时适配器回落到默认 URL)。
      */
     private String baseUrl;
+
+    /** 能力专属适配器编码；为空时由 provider 兼容性回退。 */
+    private String adapterCode;
+
+    /** 适配器实际请求端点；为空时使用 baseUrl。 */
+    private String endpoint;
+
+    /** 适配器认证类型提示；不承载密钥。 */
+    private String authType;
+
+    /** 模型请求参数预设，不包含密钥。 */
+    private Map<String, Object> requestParameters;
 
     /**
      * 多模态嵌入模型名，默认 {@code multimodal-embedding-v1}，产出 1024 维向量。

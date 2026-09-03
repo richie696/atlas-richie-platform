@@ -34,7 +34,6 @@ import cn.richie696.component.ai.provider.bailian.BailianImageEmbeddingAdapter;
 import cn.richie696.component.ai.provider.bailian.BailianRerankModel;
 import cn.richie696.component.ai.provider.doubao.DoubaoTextToSpeechModel;
 import cn.richie696.component.ai.provider.doubao.DoubaoTranscriptionModel;
-import cn.richie696.component.ai.provider.doubao.DoubaoVikingRerankModel;
 import cn.richie696.component.ai.provider.hunyuan.HunyuanTextToSpeechModel;
 import cn.richie696.component.ai.provider.hunyuan.HunyuanTranscriptionModel;
 import cn.richie696.component.ai.provider.ollama.OllamaImageEmbeddingAdapter;
@@ -42,6 +41,10 @@ import cn.richie696.component.ai.provider.pangu.PanguRerankModel;
 import cn.richie696.component.ai.provider.pangu.PanguTextToSpeechModel;
 import cn.richie696.component.ai.provider.pangu.PanguTranscriptionModel;
 import cn.richie696.component.ai.provider.tei.TeiImageEmbeddingAdapter;
+import cn.richie696.component.ai.provider.volcengine.VolcengineEmbeddingAdapter;
+import cn.richie696.component.ai.provider.volcengine.VolcengineImageAdapter;
+import cn.richie696.component.ai.provider.volcengine.VolcengineTextEmbeddingAdapter;
+import cn.richie696.component.ai.provider.volcengine.VikingAiSearchRerankModel;
 import cn.richie696.component.ai.provider.zhipu.ZhipuRerankModel;
 import cn.richie696.component.ai.provider.zhipu.ZhipuTextToSpeechModel;
 import cn.richie696.component.ai.provider.zhipu.ZhipuTranscriptionModel;
@@ -69,8 +72,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * R-N 多模态工厂。
  *
- * <p>以各能力专属的 vendor 枚举为分派依据(类型安全)。当前支持 Rerank 的 Bailian/Zhipu/Pangu/Doubao、
- * Image 的 Bailian，以及 Image Embedding 的 Bailian/TEI/Ollama；TTS/STT 支持
+ * <p>优先以模型实例的 adapterCode 分派，未声明时再回退到各能力专属的 vendor 枚举。
+ * 当前支持 Rerank 的 Bailian/Zhipu/Pangu/Viking AI Search、Image 的 Bailian，以及 Image Embedding 的 Bailian/TEI/Ollama；TTS/STT 支持
  * Hunyuan/Zhipu/Doubao/Pangu。
  *
  * <h2>能力 × Vendor 分派总表</h2>
@@ -85,7 +88,7 @@ import java.util.concurrent.CompletableFuture;
  *   </tr>
  *   <tr><td>智谱</td><td>{@code ZHIPU}</td><td>{@code ZhipuRerankModel}</td><td>/paas/v4/rerank</td></tr>
  *   <tr><td>华为盘古</td><td>{@code PANGU}</td><td>{@code PanguRerankModel}</td><td>/pangu/search/v1/rerank</td></tr>
- *   <tr><td>火山 VikingDB</td><td>{@code DOUBAO}</td><td>{@code DoubaoVikingRerankModel}</td><td>AK/SK HMAC 鉴权</td></tr>
+ *   <tr><td>火山 Viking AI Search</td><td>{@code VIKING_AI_SEARCH}</td><td>{@code VikingAiSearchRerankModel}</td><td>/api/v1/application/{application}/{scene_id}/rerank，Bearer API Key</td></tr>
  *   <tr>
  *     <td>Image (文生图)</td>
  *     <td>阿里百炼</td><td>{@code BAILIAN}</td>
@@ -164,6 +167,17 @@ public final class MultimodalModelFactory {
     // ====================== Rerank ======================
 
     public static RerankModel createRerankModel(RerankModelConfig cfg, HttpClient httpClient) {
+        String adapterCode = cfg.getAdapterCode();
+        if (adapterCode != null && !adapterCode.isBlank()) {
+            if ("volcengine-viking-rerank".equalsIgnoreCase(adapterCode)) {
+                throw new IllegalArgumentException(
+                        "已移除旧版 VikingDB Rerank 适配器，请改用 Viking AI Search Rerank 适配器");
+            }
+            if ("volcengine-viking-ai-search-rerank".equalsIgnoreCase(adapterCode)) {
+                return new VikingAiSearchRerankModel(httpClient, cfg);
+            }
+            throw new IllegalArgumentException("未知的 Rerank adapter: " + adapterCode);
+        }
         RerankProvider vendor = cfg.getProvider();
         if (vendor == null) {
             throw vendorUnknown("rerank", null);
@@ -172,7 +186,7 @@ public final class MultimodalModelFactory {
             case BAILIAN -> createBailianRerankModel(cfg, httpClient);
             case ZHIPU -> createZhipuRerankModel(cfg, httpClient);
             case PANGU -> createPanguRerankModel(cfg, httpClient);
-            case DOUBAO -> createDoubaoVikingRerankModel(cfg, httpClient);
+            case VIKING_AI_SEARCH -> createVikingAiSearchRerankModel(cfg, httpClient);
         };
     }
 
@@ -208,20 +222,37 @@ public final class MultimodalModelFactory {
         return new PanguRerankModel(httpClient, cfg);
     }
 
-    private static DoubaoVikingRerankModel createDoubaoVikingRerankModel(
-            RerankModelConfig cfg, HttpClient httpClient) {
-        return new DoubaoVikingRerankModel(cfg);
+    private static VikingAiSearchRerankModel createVikingAiSearchRerankModel(RerankModelConfig cfg, HttpClient httpClient) {
+        return new VikingAiSearchRerankModel(httpClient, cfg);
     }
 
     // ====================== Image ======================
 
     public static ImageModel createImageModel(ImageModelConfig cfg, HttpClient httpClient) {
+        String adapterCode = cfg.getAdapterCode();
+        if ("volcengine-ark-image-generation".equalsIgnoreCase(adapterCode)) {
+            return new VolcengineImageAdapter(
+                    httpClient,
+                    cfg.getApiKey(),
+                    cfg.getEndpoint() != null ? cfg.getEndpoint() : cfg.getBaseUrl(),
+                    cfg.getModel(),
+                    cfg.getRequestParameters());
+        }
+        if (adapterCode != null && !adapterCode.isBlank()) {
+            throw new IllegalArgumentException("未知的 Image adapter: " + adapterCode);
+        }
         ImageProvider vendor = cfg.getProvider();
         if (vendor == null) {
             throw vendorUnknown("image", null);
         }
         return switch (vendor) {
             case BAILIAN -> new BailianImageAdapter(httpClient, cfg.getApiKey(), cfg.getBaseUrl(), cfg.getModel());
+            case VOLCENGINE -> new VolcengineImageAdapter(
+                    httpClient,
+                    cfg.getApiKey(),
+                    cfg.getEndpoint() != null ? cfg.getEndpoint() : cfg.getBaseUrl(),
+                    cfg.getModel(),
+                    cfg.getRequestParameters());
         };
     }
 
@@ -245,6 +276,26 @@ public final class MultimodalModelFactory {
     // ====================== Image Embedding (CLIP-equivalent) ======================
 
     public static ImageEmbeddingModel createImageEmbeddingModel(ImageEmbeddingModelConfig cfg, HttpClient httpClient) {
+        String adapterCode = cfg.getAdapterCode();
+        if ("volcengine-ark-embedding-multimodal".equalsIgnoreCase(adapterCode)) {
+            return new VolcengineEmbeddingAdapter(
+                    httpClient,
+                    cfg.getApiKey(),
+                    cfg.getEndpoint() != null ? cfg.getEndpoint() : cfg.getBaseUrl(),
+                    cfg.getModel(),
+                    cfg.getRequestParameters());
+        }
+        if ("volcengine-ark-embedding-text".equalsIgnoreCase(adapterCode)) {
+            return new VolcengineTextEmbeddingAdapter(
+                    httpClient,
+                    cfg.getApiKey(),
+                    cfg.getEndpoint() != null ? cfg.getEndpoint() : cfg.getBaseUrl(),
+                    cfg.getModel(),
+                    cfg.getRequestParameters());
+        }
+        if (adapterCode != null && !adapterCode.isBlank()) {
+            throw new IllegalArgumentException("未知的 Image Embedding adapter: " + adapterCode);
+        }
         ImageEmbeddingProvider vendor = cfg.getProvider();
         if (vendor == null) {
             throw vendorUnknown("image-embedding", null);
@@ -254,6 +305,12 @@ public final class MultimodalModelFactory {
                     new BailianImageEmbeddingAdapter(httpClient, cfg.getApiKey(), cfg.getBaseUrl(), cfg.getModel());
             case TEI -> new TeiImageEmbeddingAdapter(httpClient, cfg.getBaseUrl(), cfg.getModel(), cfg.getApiKey());
             case OLLAMA -> createOllamaImageEmbeddingModel(cfg, httpClient, null);
+            case VOLCENGINE -> new VolcengineEmbeddingAdapter(
+                    httpClient,
+                    cfg.getApiKey(),
+                    cfg.getEndpoint() != null ? cfg.getEndpoint() : cfg.getBaseUrl(),
+                    cfg.getModel(),
+                    cfg.getRequestParameters());
         };
     }
 
@@ -388,7 +445,7 @@ public final class MultimodalModelFactory {
 
     private static String implementedVendors(String capability) {
         return switch (capability) {
-            case "rerank" -> "bailian / zhipu / pangu / doubao";
+            case "rerank" -> "bailian / zhipu / pangu / viking-ai-search";
             case "image" -> "bailian";
             case "image-embedding" -> "bailian / tei / ollama";
             case "tts", "stt" -> "hunyuan / zhipu / doubao / pangu";

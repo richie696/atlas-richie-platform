@@ -40,6 +40,15 @@ public interface RerankService {
     RerankResponse rerank(String query, List<String> documents, String model, Integer topN);
 
     /**
+     * 带原生候选 ID 的重排入口。默认委托旧接口，保持现有厂商兼容；
+     * 需要候选 ID 的厂商（如 Viking AI Search）由实现覆盖。
+     */
+    default RerankResponse rerank(String query, List<String> documents, List<String> documentIds,
+                                   String model, Integer topN) {
+        return rerank(query, documents, model, topN);
+    }
+
+    /**
      * 异步重排序。
      *
      * @param query     查询文本
@@ -49,4 +58,9 @@ public interface RerankService {
      * @return 异步重排序结果
      */
     CompletableFuture<RerankResponse> rerankAsync(String query, List<String> documents, String model, Integer topN);
+
+    default CompletableFuture<RerankResponse> rerankAsync(String query, List<String> documents,
+                                                           List<String> documentIds, String model, Integer topN) {
+        return rerankAsync(query, documents, model, topN);
+    }
 }

@@ -18,6 +18,7 @@ package cn.richie696.component.ai.config.multimodal.image;
 import lombok.Data;
 import java.net.URL;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -54,6 +55,18 @@ public class ImageModelConfig {
      * 厂商端点 URL(为空时适配器回落到默认 URL)。
      */
     private String baseUrl;
+
+    /** 能力专属适配器编码；为空时由 provider 兼容性回退。 */
+    private String adapterCode;
+
+    /** 适配器实际请求端点；为空时使用 baseUrl。 */
+    private String endpoint;
+
+    /** 适配器认证类型提示；不承载密钥。 */
+    private String authType;
+
+    /** 模型请求参数预设，不包含密钥。 */
+    private Map<String, Object> requestParameters;
 
     /**
      * 文生图模型名(例如 "wanx-v1"),为空时使用默认值。

@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * AK-SK-HMAC 域 STS 签发器 — 火山引擎 OpenAPI 签名(Doubao VikingDB Rerank)。
+ * AK-SK-HMAC 域 STS 签发器 — 火山引擎 OpenAPI 签名。
  *
  * <p>本类遵循 R-N 设计 §14.3.3 原则 J:延迟签名(AkSkMaterial 留在 ticket 内),
  * 业务侧调 {@link StsTicket#asSignedHeaders(String, String, byte[])} 时按当前请求重算,

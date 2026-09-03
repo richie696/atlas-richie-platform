@@ -18,6 +18,7 @@ package cn.richie696.component.ai.config.chat;
 import lombok.Data;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -50,6 +51,27 @@ public class AiChatModel {
      * 厂商端点 URL(为空时由 {@code provider} + Spring AI 默认回落)。
      */
     private String baseUrl;
+
+    /**
+     * 能力专属适配器编码。为空时才允许由 provider 做兼容性回退；
+     * 配置了该值后，调用协议由模型实例自身决定。
+     */
+    private String adapterCode;
+
+    /** 适配器实际请求端点；为空时使用 baseUrl。 */
+    private String endpoint;
+
+    /** 适配器认证类型提示（例如 BEARER、AK/SK、TC3）；不承载密钥。 */
+    private String authType;
+
+    /** 适配器专属请求参数，不包含鉴权密钥。 */
+    private Map<String, Object> requestParameters;
+
+    /** 模型请求体字段映射；复杂协议由 adapter 解释，空值表示使用内置默认映射。 */
+    private Map<String, Object> requestMapping;
+
+    /** 模型响应体字段映射；复杂协议由 adapter 解释，空值表示使用内置默认映射。 */
+    private Map<String, Object> responseMapping;
 
     /**
      * 推理参数。

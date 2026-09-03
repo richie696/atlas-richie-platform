@@ -65,6 +65,7 @@ public class RerankResponse extends AiModelResponse<RerankResponse> {
      */
     public static RerankResponse failed(String errorCode, String errorMessage, Clock clock) {
         RerankResponse resp = new RerankResponse();
+        resp.results = List.of();
         return AiModelResponse.failed(resp, errorCode, errorMessage, clock);
     }
 }

@@ -72,9 +72,16 @@ public class RerankServiceImpl implements RerankService {
      * @throws IllegalStateException    当未注入 {@link RerankModel} 时
      */
     public RerankResponse rerank(String query, List<String> documents, String model, Integer topN) {
+        return rerank(query, documents, null, model, topN);
+    }
+
+    @Override
+    public RerankResponse rerank(String query, List<String> documents, List<String> documentIds,
+                                 String model, Integer topN) {
         validate(query, documents);
+        validateDocumentIds(documents, documentIds);
         RerankModel modelRef = requireModel();
-        RerankRequest request = new RerankRequest(query, documents, model, topN);
+        RerankRequest request = new RerankRequest(query, documents, model, topN, documentIds, null);
         RerankResponse resp = modelRef.rerank(request);
         if (resp.isSuccess() && resp.getResults() != null) {
             enrichDocuments(resp.getResults(), documents);
@@ -94,9 +101,16 @@ public class RerankServiceImpl implements RerankService {
      * @throws IllegalStateException    当未注入 {@link RerankModel} 时
      */
     public CompletableFuture<RerankResponse> rerankAsync(String query, List<String> documents, String model, Integer topN) {
+        return rerankAsync(query, documents, null, model, topN);
+    }
+
+    @Override
+    public CompletableFuture<RerankResponse> rerankAsync(String query, List<String> documents,
+                                                         List<String> documentIds, String model, Integer topN) {
         validate(query, documents);
+        validateDocumentIds(documents, documentIds);
         RerankModel modelRef = requireModel();
-        RerankRequest request = new RerankRequest(query, documents, model, topN);
+        RerankRequest request = new RerankRequest(query, documents, model, topN, documentIds, null);
         return modelRef.rerankAsync(request).thenApply(resp -> {
             if (resp.isSuccess() && resp.getResults() != null) {
                 enrichDocuments(resp.getResults(), documents);
@@ -117,6 +131,12 @@ public class RerankServiceImpl implements RerankService {
         }
         if (documents == null || documents.isEmpty()) {
             throw new IllegalArgumentException("documents 不能为空");
+        }
+    }
+
+    private void validateDocumentIds(List<String> documents, List<String> documentIds) {
+        if (documentIds != null && documentIds.size() != documents.size()) {
+            throw new IllegalArgumentException("documentIds 必须与 documents 数量一致");
         }
     }
 

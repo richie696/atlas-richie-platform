@@ -45,6 +45,15 @@ public class RerankRequest {
      */
     private Integer topN;
 
+    /**
+     * 厂商原生候选项 ID。Viking AI Search 精排接口按候选 item ID 工作，
+     * 与通用文本重排接口的 documents 内容并不等价。
+     */
+    private List<String> documentIds;
+
+    /** Viking AI Search 请求用户 ID（可选）。 */
+    private String userId;
+
     public RerankRequest() {
     }
 
@@ -57,10 +66,17 @@ public class RerankRequest {
      * @param topN      返回 Top-N（可选）
      */
     public RerankRequest(String query, List<String> documents, String model, Integer topN) {
+        this(query, documents, model, topN, null, null);
+    }
+
+    public RerankRequest(String query, List<String> documents, String model, Integer topN,
+                         List<String> documentIds, String userId) {
         this.query = query;
         this.documents = documents;
         this.model = model;
         this.topN = topN;
+        this.documentIds = documentIds;
+        this.userId = userId;
     }
 
     /**
@@ -73,6 +89,11 @@ public class RerankRequest {
      */
     public static RerankRequest of(String query, List<String> documents, String model, Integer topN) {
         return new RerankRequest(query, documents, model, topN);
+    }
+
+    public static RerankRequest ofWithDocumentIds(String query, List<String> documents,
+                                                   List<String> documentIds, String model, Integer topN) {
+        return new RerankRequest(query, documents, model, topN, documentIds, null);
     }
 
     public String getQuery() {
@@ -105,5 +126,21 @@ public class RerankRequest {
 
     public void setTopN(Integer topN) {
         this.topN = topN;
+    }
+
+    public List<String> getDocumentIds() {
+        return documentIds;
+    }
+
+    public void setDocumentIds(List<String> documentIds) {
+        this.documentIds = documentIds;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 }

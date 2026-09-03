@@ -95,7 +95,7 @@ public class AiChatOptionsResolver {
     public ChatOptions toChatOptions(LlmProvider provider,
                                      AiChatModelOptions options) {
         return switch (provider) {
-            case OPENAI, ZHIPUAI, MOONSHOT, MINIMAX -> toOpenAiChatOptions(options);
+            case OPENAI, ZHIPUAI, MOONSHOT, MINIMAX, VOLCENGINE -> toOpenAiChatOptions(options);
             case DEEPSEEK -> toDeepSeekChatOptions(options);
             case ANTHROPIC -> toAnthropicChatOptions(options);
             case OLLAMA -> toOllamaChatOptions(options);

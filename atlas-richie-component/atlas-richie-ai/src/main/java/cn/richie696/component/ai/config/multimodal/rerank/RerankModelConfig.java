@@ -16,8 +16,8 @@
 package cn.richie696.component.ai.config.multimodal.rerank;
 
 import lombok.Data;
-import java.net.URL;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -30,7 +30,7 @@ import java.util.Set;
  * <ul>
  *   <li>Bearer 型(DashScope / 智谱):{@link #apiKey}</li>
  *   <li>AppCode 型(华为云盘古):{@link #appCode}</li>
- *   <li>AK/SK HMAC-SHA256(火山引擎 VikingDB):{@link #accessKey} + {@link #secretKey}</li>
+ *   <li>可选 AK/SK 型适配器：{@link #accessKey} + {@link #secretKey}</li>
  * </ul>
  *
  * @author richie696
@@ -68,23 +68,38 @@ public class RerankModelConfig {
      */
     private String baseUrl;
 
+    /** 能力专属适配器编码；为空时由 provider 兼容性回退。 */
+    private String adapterCode;
+
+    /** 适配器实际请求端点；为空时使用 baseUrl。 */
+    private String endpoint;
+
+    /** 适配器认证类型提示；不承载密钥。 */
+    private String authType;
+
+    /** 模型请求参数预设，不包含密钥。 */
+    private Map<String, Object> requestParameters;
+
     /**
      * 重排序模型名(例如 "gte-rerank" / "rerank" / "pangu-rerank"),为空时使用默认值。
      */
     private String model;
 
-    /**
-     * 火山引擎(VikingDB)访问密钥,用于 HMAC-SHA256 签名。
-     */
+    /** 可选访问密钥；仅由声明支持 AK/SK 的适配器使用。 */
     private String accessKey;
 
-    /**
-     * 火山引擎(VikingDB)安全密钥。
-     */
+    /** 可选安全密钥；仅由声明支持 AK/SK 的适配器使用。 */
     private String secretKey;
 
-    /**
-     * 火山引擎服务区域(例如 {@code cn-north-1}),用于 HMAC-SHA256 签名 Credential Scope。
-     */
+    /** 可选服务区域；由具体适配器解释。 */
     private String region;
+
+    /** Viking AI Search 应用 ID；仅由 Viking AI Search 适配器使用。 */
+    private String applicationId;
+
+    /** Viking AI Search 场景/策略 ID；仅由 Viking AI Search 适配器使用。 */
+    private String sceneId;
+
+    /** Viking AI Search 请求用户 ID；可由请求级 userId 覆盖。 */
+    private String userId;
 }

@@ -42,10 +42,17 @@ public final class MultimodalConfigCloner {
         copy.setApiKey(apiKey);
         copy.setAppCode(src.getAppCode());
         copy.setBaseUrl(src.getBaseUrl());
+        copy.setAdapterCode(src.getAdapterCode());
+        copy.setEndpoint(src.getEndpoint());
+        copy.setAuthType(src.getAuthType());
+        copy.setRequestParameters(src.getRequestParameters());
         copy.setModel(src.getModel());
         copy.setAccessKey(src.getAccessKey());
         copy.setSecretKey(src.getSecretKey());
         copy.setRegion(src.getRegion());
+        copy.setApplicationId(src.getApplicationId());
+        copy.setSceneId(src.getSceneId());
+        copy.setUserId(src.getUserId());
         copy.setApiKeys(src.getApiKeys());  // 保留 key 池(向后兼容/调试)
         return copy;
     }
@@ -56,6 +63,10 @@ public final class MultimodalConfigCloner {
         copy.setName(src.getName());
         copy.setApiKey(apiKey);
         copy.setBaseUrl(src.getBaseUrl());
+        copy.setAdapterCode(src.getAdapterCode());
+        copy.setEndpoint(src.getEndpoint());
+        copy.setAuthType(src.getAuthType());
+        copy.setRequestParameters(src.getRequestParameters());
         copy.setModel(src.getModel());
         copy.setApiKeys(src.getApiKeys());
         return copy;
@@ -67,6 +78,10 @@ public final class MultimodalConfigCloner {
         copy.setName(src.getName());
         copy.setApiKey(apiKey);
         copy.setBaseUrl(src.getBaseUrl());
+        copy.setAdapterCode(src.getAdapterCode());
+        copy.setEndpoint(src.getEndpoint());
+        copy.setAuthType(src.getAuthType());
+        copy.setRequestParameters(src.getRequestParameters());
         copy.setModel(src.getModel());
         copy.setApiKeys(src.getApiKeys());
         return copy;

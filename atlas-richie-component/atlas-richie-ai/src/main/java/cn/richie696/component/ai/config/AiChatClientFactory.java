@@ -19,8 +19,11 @@ import cn.richie696.component.ai.config.chat.AiChatModel;
 import cn.richie696.component.ai.config.chat.AiChatModelOptions;
 import cn.richie696.component.ai.config.chat.LlmProvider;
 import cn.richie696.component.ai.model.ModelOptions;
+import cn.richie696.component.ai.provider.volcengine.VolcengineEmbeddingAdapter;
+import cn.richie696.component.ai.provider.volcengine.VolcengineTextEmbeddingAdapter;
 import cn.richie696.component.ai.support.AiChatOptionsResolver;
 import cn.richie696.component.ai.support.keypool.*;
+import cn.richie696.component.http.core.HttpClient;
 import com.openai.client.OpenAIClient;
 import com.openai.client.OpenAIClientAsync;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -46,6 +49,7 @@ import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.ai.openai.setup.OpenAiSetup;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.retry.RetryTemplate;
 import org.springframework.stereotype.Component;
 
@@ -74,12 +78,15 @@ public class AiChatClientFactory {
     private final ApiKeyPoolManager apiKeyPoolManager;
     private final ApiKeyValidator apiKeyValidator;
     private final int apiKeyRetryRounds;
+    private final HttpClient httpClient;
 
+    @Autowired
     public AiChatClientFactory(AiChatOptionsResolver optionsResolver,
                                ObjectProvider<ObservationRegistry> observationRegistryProvider,
                                ObjectProvider<MeterRegistry> meterRegistryProvider,
                                RetryTemplate retryTemplate,
-                               ApiKeyPoolManager apiKeyPoolManager) {
+                               ApiKeyPoolManager apiKeyPoolManager,
+                               HttpClient httpClient) {
         this.optionsResolver = optionsResolver;
         this.observationRegistry = observationRegistryProvider.getIfAvailable(() -> ObservationRegistry.NOOP);
         this.meterRegistry = meterRegistryProvider.getIfAvailable(SimpleMeterRegistry::new);
@@ -89,6 +96,16 @@ public class AiChatClientFactory {
         this.apiKeyRetryRounds = apiKeyPoolManager != null
                 ? 2
                 : 1;
+        this.httpClient = httpClient;
+    }
+
+    /** 保留组件测试和旧版直接构造方式；火山方舟 Embedding 需使用 Spring 注入的 HttpClient。 */
+    public AiChatClientFactory(AiChatOptionsResolver optionsResolver,
+                               ObjectProvider<ObservationRegistry> observationRegistryProvider,
+                               ObjectProvider<MeterRegistry> meterRegistryProvider,
+                               RetryTemplate retryTemplate,
+                               ApiKeyPoolManager apiKeyPoolManager) {
+        this(optionsResolver, observationRegistryProvider, meterRegistryProvider, retryTemplate, apiKeyPoolManager, null);
     }
 
     public Map<String, ChatClient> createChatClients(AiModelProperties properties) {
@@ -157,7 +174,7 @@ public class AiChatClientFactory {
     private ChatModel buildChatModelForKey(AiChatModel aiModel, String apiKeyValue) {
         AiChatModel single = cloneWithApiKey(aiModel, apiKeyValue);
         return switch (single.getProvider()) {
-            case OPENAI, ZHIPUAI, MOONSHOT, MINIMAX -> buildOpenAiChatModel(single);
+            case OPENAI, ZHIPUAI, MOONSHOT, MINIMAX, VOLCENGINE -> buildOpenAiChatModel(single);
             case DEEPSEEK -> {
                 DeepSeekApi deepSeekApi = DeepSeekApi.builder()
                         .apiKey(apiKeyValue)
@@ -199,12 +216,42 @@ public class AiChatClientFactory {
         AiChatModel copy = new AiChatModel();
         copy.setProvider(src.getProvider());
         copy.setBaseUrl(src.getBaseUrl());
+        copy.setAdapterCode(src.getAdapterCode());
+        copy.setEndpoint(src.getEndpoint());
+        copy.setAuthType(src.getAuthType());
+        copy.setRequestParameters(src.getRequestParameters());
+        copy.setRequestMapping(src.getRequestMapping());
+        copy.setResponseMapping(src.getResponseMapping());
         copy.setApiKey(apiKey);
         copy.setOptions(src.getOptions());
         return copy;
     }
 
     public EmbeddingModel createEmbeddingModel(String modelName, AiChatModel aiModel) {
+        String adapterCode = aiModel.getAdapterCode();
+        if ("volcengine-ark-embedding-multimodal".equalsIgnoreCase(adapterCode)
+                || (adapterCode == null && aiModel.getProvider() == LlmProvider.VOLCENGINE)) {
+                if (httpClient == null) {
+                    throw new IllegalStateException("Volcengine Embedding requires an injected HttpClient");
+                }
+                return new VolcengineEmbeddingAdapter(
+                        httpClient,
+                        aiModel.getApiKey(),
+                        aiModel.getEndpoint() != null ? aiModel.getEndpoint() : aiModel.getBaseUrl(),
+                        resolveConfiguredModel(aiModel),
+                        aiModel.getRequestParameters());
+        }
+        if ("volcengine-ark-embedding-text".equalsIgnoreCase(adapterCode)) {
+            if (httpClient == null) {
+                throw new IllegalStateException("Volcengine Embedding requires an injected HttpClient");
+            }
+            return new VolcengineTextEmbeddingAdapter(
+                    httpClient,
+                    aiModel.getApiKey(),
+                    aiModel.getEndpoint() != null ? aiModel.getEndpoint() : aiModel.getBaseUrl(),
+                    resolveConfiguredModel(aiModel),
+                    aiModel.getRequestParameters());
+        }
         return switch (aiModel.getProvider()) {
             case OPENAI, ZHIPUAI, MOONSHOT, DEEPSEEK, ANTHROPIC, MINIMAX -> buildOpenAiEmbeddingModel(aiModel);
             case OLLAMA -> OllamaEmbeddingModel.builder()
@@ -214,6 +261,7 @@ public class AiChatClientFactory {
                     .options(getOllamaEmbeddingOptions(aiModel.getOptions()))
                     .observationRegistry(observationRegistry)
                     .build();
+            case VOLCENGINE -> throw new IllegalArgumentException("未知的火山方舟 Embedding adapter: " + adapterCode);
         };
     }
 

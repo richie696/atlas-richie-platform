@@ -21,5 +21,7 @@ package cn.richie696.component.ai.config.multimodal.image;
  * <p>当前仅 {@code BAILIAN} 落地(R-N 多模态)。
  */
 public enum ImageProvider {
-    BAILIAN
+    BAILIAN,
+    /** 火山方舟 Seedream 图片生成 API。 */
+    VOLCENGINE
 }
