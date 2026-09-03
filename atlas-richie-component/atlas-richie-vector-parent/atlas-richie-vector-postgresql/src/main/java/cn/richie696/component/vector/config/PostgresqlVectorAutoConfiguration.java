@@ -16,17 +16,21 @@
 package cn.richie696.component.vector.config;
 
 import cn.richie696.component.vector.service.impl.PostgresqlVectorServiceImpl;
+import cn.richie696.component.vector.service.PrecomputedVectorOperations;
+import cn.richie696.component.vector.service.impl.PostgresqlPrecomputedVectorOperations;
+import cn.richie696.component.ai.service.RerankService;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
@@ -43,7 +47,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @Slf4j
 @AutoConfiguration
 @EnableConfigurationProperties(PostgresqlConfig.class)
-@Import(PostgresqlVectorServiceImpl.class)
 public class PostgresqlVectorAutoConfiguration {
 
     /**
@@ -64,6 +67,12 @@ public class PostgresqlVectorAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "postgresql")
+    @ConditionalOnProperty(
+            prefix = "platform.component.vector",
+            name = "spring-ai-store-enabled",
+            havingValue = "true",
+            matchIfMissing = true)
+    @ConditionalOnBean(EmbeddingModel.class)
     public VectorStore postgresVectorStore(@Qualifier("postgresqlJdbcTemplate") JdbcTemplate jdbcTemplate,
                                            EmbeddingModel embeddingModel, PostgresqlConfig config) {
         return PgVectorStore.builder(jdbcTemplate, embeddingModel)
@@ -100,6 +109,29 @@ public class PostgresqlVectorAutoConfiguration {
         dataSource.setAutoCommit(config.getAutoCommit());
         dataSource.setConnectionTestQuery(config.getConnectionTestQuery());
         return new JdbcTemplate(dataSource);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "postgresql")
+    public PrecomputedVectorOperations postgresqlPrecomputedVectorOperations(
+            @Qualifier("postgresqlJdbcTemplate") JdbcTemplate jdbcTemplate) {
+        return new PostgresqlPrecomputedVectorOperations(jdbcTemplate);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "postgresql")
+    @ConditionalOnProperty(
+            prefix = "platform.component.vector",
+            name = "spring-ai-store-enabled",
+            havingValue = "true",
+            matchIfMissing = true)
+    @ConditionalOnBean(VectorStore.class)
+    public PostgresqlVectorServiceImpl postgresqlVectorService(
+            @Autowired(required = false) RerankService rerankService,
+            VectorStore vectorStore,
+            @Qualifier("aiEmbeddingModel") EmbeddingModel embeddingModel,
+            @Qualifier("postgresqlJdbcTemplate") JdbcTemplate jdbcTemplate) {
+        return new PostgresqlVectorServiceImpl(rerankService, vectorStore, embeddingModel, jdbcTemplate);
     }
 
 }

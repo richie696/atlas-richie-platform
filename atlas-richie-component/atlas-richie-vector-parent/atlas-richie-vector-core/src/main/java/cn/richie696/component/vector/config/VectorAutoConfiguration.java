@@ -22,7 +22,9 @@ import cn.richie696.component.vector.knowledge.ActiveProjectionVersionResolver;
 import cn.richie696.component.vector.knowledge.DefaultKnowledgeBaseVectorService;
 import cn.richie696.component.vector.knowledge.KnowledgeBaseVectorService;
 import cn.richie696.component.vector.service.VectorService;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -40,8 +42,22 @@ import org.springframework.context.annotation.Import;
 @AutoConfiguration
 @EnableConfigurationProperties(VectorProperties.class)
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider")
-@Import({ModalityAwareEmbeddingService.class, VectorMultiProviderGuard.class})
+@Import(VectorMultiProviderGuard.class)
 public class VectorAutoConfiguration {
+
+    @Bean
+    @ConditionalOnProperty(
+            prefix = "platform.component.vector",
+            name = "spring-ai-store-enabled",
+            havingValue = "true",
+            matchIfMissing = true)
+    @ConditionalOnBean(EmbeddingModel.class)
+    @ConditionalOnMissingBean(ModalityAwareEmbeddingService.class)
+    public ModalityAwareEmbeddingService modalityAwareEmbeddingService(
+            EmbeddingModel textModel,
+            @Qualifier("imageEmbeddingModel") ObjectProvider<EmbeddingModel> imageModel) {
+        return new ModalityAwareEmbeddingService(textModel, imageModel.getIfAvailable());
+    }
 
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.vector", name = "spring-ai-filter-dsl-enabled", havingValue = "true")

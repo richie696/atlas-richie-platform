@@ -84,6 +84,25 @@ public abstract class AbstractVectorService implements VectorService {
     protected final EmbeddingModel embeddingModel;
     protected final RerankService rerankService;
 
+    @Autowired(required = false)
+    @Setter
+    protected cn.richie696.component.vector.embeddings.IndexEmbeddingModelResolver indexEmbeddingModelResolver;
+
+    /** Resolve per operation, including bulk worker threads; no ThreadLocal or default fallback after failure. */
+    protected EmbeddingModel embeddingModelForIndex(String indexName) {
+        if (indexEmbeddingModelResolver != null) {
+            return java.util.Objects.requireNonNull(indexEmbeddingModelResolver.resolve(indexName),
+                    "Business index Embedding binding is required");
+        }
+        return java.util.Objects.requireNonNull(embeddingModel, "EmbeddingModel is not configured");
+    }
+
+    private void rejectUnscopedStoreEmbedding() {
+        if (indexEmbeddingModelResolver != null) {
+            throw new UnsupportedOperationException("This provider path cannot honor business index Embedding bindings");
+        }
+    }
+
     /**
      * 可选的图片嵌入路由器；未配置时文本能力不受影响。
      */
@@ -161,6 +180,7 @@ public abstract class AbstractVectorService implements VectorService {
         }
 
         if (usesStoreManagedEmbedding()) {
+            rejectUnscopedStoreEmbedding();
             writeStoreManagedRecords(record.getIndexName(), List.of(record));
         } else {
             float[] embedding = embedRecord(record);
@@ -204,6 +224,7 @@ public abstract class AbstractVectorService implements VectorService {
 
     @Override
     public List<VectorSearchResult> searchByText(String indexName, String text, int limit, SearchOptions options) {
+        rejectUnscopedStoreEmbedding();
         validateIndexName(indexName);
         if (text == null || text.isBlank()) {
             throw new IllegalArgumentException("text 不能为空");
@@ -320,6 +341,7 @@ public abstract class AbstractVectorService implements VectorService {
 
     private List<VectorSearchResult> searchByImageVector(String indexName, VectorContent.ImageContent image,
                                                          int limit, double minScore) {
+        rejectUnscopedStoreEmbedding();
         validateIndexName(indexName);
         if (modalityService == null || !modalityService.supportsModality(Modality.IMAGE)) {
             throw new UnsupportedModalityException(Modality.IMAGE, "IMAGE 模态未配置 imageEmbeddingModel");
@@ -514,6 +536,7 @@ public abstract class AbstractVectorService implements VectorService {
 
     @Override
     public Flux<BulkOperationEvent> upsertAll(String indexName, Flux<VectorRecord> records) {
+        if (usesStoreManagedEmbedding()) rejectUnscopedStoreEmbedding();
         return (usesStoreManagedEmbedding() ? storeManagedBulkIngestionPipeline : bulkIngestionPipeline).execute(indexName, records,
                 vectorProperties == null ? null : vectorProperties.getBulk());
     }
@@ -673,6 +696,7 @@ public abstract class AbstractVectorService implements VectorService {
     private float[] embedRecord(VectorRecord record) {
         Modality modality = record.getContent().modality();
         if (modality == Modality.IMAGE) {
+            rejectUnscopedStoreEmbedding();
             if (modalityService == null || !modalityService.supportsModality(Modality.IMAGE)) {
                 throw new UnsupportedModalityException(Modality.IMAGE, "IMAGE 模态未配置 imageEmbeddingModel");
             }
@@ -696,14 +720,11 @@ public abstract class AbstractVectorService implements VectorService {
     }
 
     private float[] embedText(VectorRecord record) {
-        if (embeddingModel == null) {
-            throw new IllegalStateException("EmbeddingModel 未配置 — 无法执行嵌入");
-        }
         VectorContent content = record.getContent();
         if (!(content instanceof VectorContent.TextContent text)) {
             throw new IllegalArgumentException("该路径仅处理 TEXT 模态");
         }
-        return embeddingModel.embed(text.text());
+        return embeddingModelForIndex(record.getIndexName()).embed(text.text());
     }
 
     protected Document toAiDocument(VectorRecord record, float[] embedding) {
@@ -760,11 +781,14 @@ public abstract class AbstractVectorService implements VectorService {
         List<String> documents = results.stream()
                 .map(r -> r.getContent() != null ? r.getContent() : "")
                 .collect(Collectors.toList());
+        List<String> documentIds = results.stream()
+                .map(VectorSearchResult::getId)
+                .collect(Collectors.toList());
 
         RerankResponse resp;
         Instant rerankStarted = Instant.now();
         try {
-            resp = rerankService.rerank(queryText, documents, null, null);
+            resp = rerankService.rerank(queryText, documents, documentIds, null, null);
         } catch (Exception e) {
             log.warn("重排序服务调用异常，跳过重排", e);
             RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(context,

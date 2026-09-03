@@ -56,7 +56,8 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "postgresql")
-public class PostgresqlVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, VectorIndexLifecycleOperations {
+public class PostgresqlVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations,
+        VectorIndexLifecycleOperations {
 
     private final JdbcTemplate jdbcTemplate;
 

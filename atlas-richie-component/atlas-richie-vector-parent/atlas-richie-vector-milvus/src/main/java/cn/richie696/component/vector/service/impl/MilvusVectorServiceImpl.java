@@ -133,7 +133,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         Instant embeddingStarted = Instant.now();
         float[] queryVector;
         try {
-            queryVector = embeddingModel.embed(text);
+            queryVector = embeddingModelForIndex(indexName).embed(text);
             RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
                     RetrievalStage.EMBEDDING, Duration.between(embeddingStarted, Instant.now()),
                     1, queryVector == null ? 0 : queryVector.length, true));
