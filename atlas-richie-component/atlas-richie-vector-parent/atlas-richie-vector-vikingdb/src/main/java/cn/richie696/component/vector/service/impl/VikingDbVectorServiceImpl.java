@@ -5,12 +5,10 @@ import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.config.VikingDbConfig;
 import cn.richie696.component.vector.model.VectorRecord;
 import cn.richie696.component.vector.service.VectorService;
-import com.volcengine.vikingdb.runtime.exception.ApiClientException;
-import com.volcengine.vikingdb.runtime.exception.VectorApiException;
-import com.volcengine.vikingdb.runtime.vector.model.request.SearchByVectorRequest;
-import com.volcengine.vikingdb.runtime.vector.model.response.DataApiResponse;
-import com.volcengine.vikingdb.runtime.vector.model.response.SearchItem;
-import com.volcengine.vikingdb.runtime.vector.model.response.SearchResult;
+import cn.richie696.ai.vectorstore.vikingdb.model.VikingDbSearchHit;
+import cn.richie696.ai.vectorstore.vikingdb.model.VikingDbSearchResponse;
+import cn.richie696.ai.vectorstore.vikingdb.model.VikingDbSearchCommonOptions;
+import cn.richie696.ai.vectorstore.vikingdb.model.VikingDbVectorSearchRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -19,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,47 +34,44 @@ public class VikingDbVectorServiceImpl extends AbstractVectorService implements 
 
     private final VikingDbVectorStore vikingDbVectorStore;
     private final VikingDbConfig config;
+    private final String logicalIndexName;
 
     @Autowired
     public VikingDbVectorServiceImpl(@Autowired(required = false) RerankService rerankService,
                                      VectorStore vectorStore,
                                      @Qualifier("aiEmbeddingModel") EmbeddingModel embeddingModel,
                                      VikingDbConfig config) {
+        this(rerankService, vectorStore, embeddingModel, config, config.getCollectionName());
+    }
+
+    /** Store-bound constructor used by Named Multi-store. */
+    public VikingDbVectorServiceImpl(RerankService rerankService,
+                                     VectorStore vectorStore,
+                                     EmbeddingModel embeddingModel,
+                                     VikingDbConfig config,
+                                     String logicalIndexName) {
         super(rerankService, vectorStore, embeddingModel);
         if (!(vectorStore instanceof VikingDbVectorStore store)) {
             throw new IllegalStateException("VikingDB provider 需要 VikingDbVectorStore");
         }
         this.vikingDbVectorStore = store;
         this.config = config;
+        this.logicalIndexName = logicalIndexName;
     }
 
     @Override
     protected List<Document> similaritySearchByVector(String indexName, float[] vector, int limit, double minScore) {
         assertConfiguredIndex(indexName);
-        List<Float> denseVector = new ArrayList<>(vector.length);
-        for (float value : vector) {
-            denseVector.add(value);
-        }
-        DataApiResponse<SearchResult> response;
-        try {
-            response = vikingDbVectorStore.getNativeClient().orElseThrow()
-                    .searchByVector(SearchByVectorRequest.builder()
-                            .collectionName(config.getCollectionName())
-                            .indexName(config.getIndexName())
-                            .denseVector(denseVector)
-                            .limit(limit)
-                            .outputFields(vikingDbVectorStore.getOutputFields())
-                            .build());
-        } catch (VectorApiException | ApiClientException e) {
-            throw new IllegalStateException("VikingDB searchByVector failed", e);
-        }
-        if (response == null || !"Success".equalsIgnoreCase(response.getCode()) || response.getResult() == null
-                || response.getResult().getData() == null) {
-            throw new IllegalStateException("VikingDB searchByVector 失败: "
-                    + (response == null ? "null response" : response.getMessage()));
-        }
-        return response.getResult().getData().stream()
-                .filter(item -> item.getScore() == null || item.getScore() >= minScore)
+        VikingDbSearchResponse response = vikingDbVectorStore.search(VikingDbVectorSearchRequest.builder()
+                .mode(VikingDbVectorSearchRequest.Mode.DENSE)
+                .denseVector(vector)
+                .common(VikingDbSearchCommonOptions.builder()
+                        .limit(limit)
+                        .outputFields(vikingDbVectorStore.getOutputFields())
+                        .build())
+                .build());
+        return response.hits().stream()
+                .filter(item -> item.score() == null || item.score() >= minScore)
                 .map(this::toDocument)
                 .toList();
     }
@@ -119,14 +113,14 @@ public class VikingDbVectorServiceImpl extends AbstractVectorService implements 
         throw unsupportedRead("listDocuments", indexName);
     }
 
-    private Document toDocument(SearchItem item) {
-        Map<String, Object> metadata = new LinkedHashMap<>(item.getFields() == null ? Map.of() : item.getFields());
+    private Document toDocument(VikingDbSearchHit item) {
+        Map<String, Object> metadata = new LinkedHashMap<>(item.fields());
         Object content = metadata.remove(VikingDbVectorStore.CONTENT_FIELD_NAME);
         return Document.builder()
-                .id(String.valueOf(item.getId()))
+                .id(item.id())
                 .text(content == null ? "" : String.valueOf(content))
                 .metadata(metadata)
-                .score(item.getScore() == null ? null : item.getScore().doubleValue())
+                .score(item.score())
                 .build();
     }
 
@@ -139,8 +133,9 @@ public class VikingDbVectorServiceImpl extends AbstractVectorService implements 
     }
 
     private void assertConfiguredIndex(String indexName) {
-        if (!config.getCollectionName().equals(indexName)) {
-            throw new IllegalArgumentException("VikingDB Store 绑定 collection=" + config.getCollectionName()
+        if (!logicalIndexName.equals(indexName)) {
+            throw new IllegalArgumentException("VikingDB Store 绑定 logicalIndex=" + logicalIndexName
+                    + ", collection=" + config.getCollectionName()
                     + "，不能操作 index=" + indexName);
         }
     }

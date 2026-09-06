@@ -1,6 +1,8 @@
 package cn.richie696.component.vector.config;
 
 import cn.richie696.ai.vectorstore.vikingdb.VikingDbVectorStore;
+import cn.richie696.ai.vectorstore.vikingdb.VikingDbStoreSpec;
+import cn.richie696.ai.vectorstore.vikingdb.VikingDbVectorStoreFactory;
 import cn.richie696.component.vector.service.impl.VikingDbVectorServiceImpl;
 import com.volcengine.ApiClient;
 import com.volcengine.sign.Credentials;
@@ -15,19 +17,37 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.TokenCountBatchingStrategy;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.util.Assert;
+import org.springframework.beans.factory.ObjectProvider;
+import cn.richie696.component.ai.service.RerankService;
+import io.micrometer.observation.ObservationRegistry;
+import org.springframework.ai.vectorstore.observation.VectorStoreObservationConvention;
 
 /**
  * VikingDB 的平台配置到 Atlas Richie AI VectorStore 的适配装配。
  */
 @AutoConfiguration
+@AutoConfigureBefore(VectorAutoConfiguration.class)
 @EnableConfigurationProperties({VectorProperties.class, VikingDbConfig.class})
 @Import(VikingDbVectorServiceImpl.class)
 public class VikingDbVectorAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(VikingDbVectorProviderFactory.class)
+    public VikingDbVectorProviderFactory vikingDbVectorProviderFactory(
+            ObjectProvider<RerankService> rerankService,
+            ObjectProvider<ObservationRegistry> observationRegistry,
+            ObjectProvider<VectorStoreObservationConvention> observationConvention) {
+        return new VikingDbVectorProviderFactory(rerankService.getIfAvailable(),
+                observationRegistry.getIfAvailable(() -> ObservationRegistry.NOOP),
+                observationConvention.getIfAvailable());
+    }
 
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "vikingdb")
@@ -50,10 +70,17 @@ public class VikingDbVectorAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "vikingdb")
-    public VectorStore vikingDbVectorStore(VectorService vikingDbDataPlaneClient, VikingdbApi vikingDbControlPlaneClient,
-                                           EmbeddingModel embeddingModel, VikingDbConfig config) {
-        return new VikingDbVectorStore.Builder(embeddingModel, vikingDbDataPlaneClient)
-                .controlPlane(vikingDbControlPlaneClient)
+    public VikingDbVectorStore vikingDbVectorStore(VectorService vikingDbDataPlaneClient,
+                                                   VikingdbApi vikingDbControlPlaneClient,
+                                                   EmbeddingModel embeddingModel, VikingDbConfig config,
+                                                   ObjectProvider<ObservationRegistry> observationRegistry,
+                                                   ObjectProvider<VectorStoreObservationConvention> observationConvention) {
+        VikingDbVectorStoreFactory storeFactory = new VikingDbVectorStoreFactory(
+                embeddingModel, vikingDbDataPlaneClient, vikingDbControlPlaneClient,
+                new TokenCountBatchingStrategy(),
+                observationRegistry.getIfAvailable(() -> ObservationRegistry.NOOP),
+                observationConvention.getIfAvailable());
+        return storeFactory.create(VikingDbStoreSpec.builder()
                 .collectionName(config.getCollectionName())
                 .indexName(config.getIndexName())
                 .embeddingDimension(config.getEmbeddingDimension())
@@ -61,8 +88,12 @@ public class VikingDbVectorAutoConfiguration {
                 .projectName(config.getProjectName())
                 .description(config.getDescription())
                 .shardCount(config.getShardCount())
+                .scalarIndex(config.getScalarIndex())
                 .metadataFields(config.getMetadataFields())
-                .batchingStrategy(new TokenCountBatchingStrategy())
-                .build();
+                .filterValidationMode(config.getFilterValidationMode())
+                .searchDefaults(config.searchDefaultsModel())
+                .searchAdvanceDefaults(config.searchAdvanceDefaultsModel())
+                .indexVectorOptions(config.indexVectorOptionsModel())
+                .build());
     }
 }
