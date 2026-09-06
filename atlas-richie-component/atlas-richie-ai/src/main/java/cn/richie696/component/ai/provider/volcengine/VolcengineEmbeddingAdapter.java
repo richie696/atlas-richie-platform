@@ -6,6 +6,7 @@ package cn.richie696.component.ai.provider.volcengine;
 
 import cn.richie696.component.ai.api.image.ImageEmbeddingModel;
 import cn.richie696.component.http.core.HttpClient;
+import cn.richie696.component.http.core.HttpResponse;
 import cn.richie696.context.utils.data.JsonUtils;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.Embedding;
@@ -74,11 +75,14 @@ public final class VolcengineEmbeddingAdapter implements ImageEmbeddingModel {
         Map<String, Object> body = new LinkedHashMap<>(requestParameters);
         body.put("model", model);
         body.put("input", input);
-        String raw = httpClient.post(endpoint, body)
+        HttpResponse response = httpClient.post(endpoint, body)
                 .header("Authorization", "Bearer " + apiKey)
+                // HttpClient requires its JSON codec to serialize a Map body.
+                // A Content-Type header alone can produce a non-JSON Ark request.
+                .asJson()
                 .header("Content-Type", "application/json")
-                .execute()
-                .bodyAsString();
+                .execute();
+        String raw = requireSuccessfulResponse(response);
         return toResponse(raw, inputs.size());
     }
 
@@ -102,13 +106,17 @@ public final class VolcengineEmbeddingAdapter implements ImageEmbeddingModel {
         Map<String, Object> body = new LinkedHashMap<>(requestParameters);
         body.put("model", model);
         body.put("input", List.of(content));
-        String raw = httpClient.post(endpoint, body)
+        HttpResponse response = httpClient.post(endpoint, body)
                 .header("Authorization", "Bearer " + apiKey)
+                .asJson()
                 .header("Content-Type", "application/json")
-                .execute()
-                .bodyAsString();
+                .execute();
+        String raw = requireSuccessfulResponse(response);
         List<float[]> vectors = parseVectors(raw);
-        return vectors.isEmpty() ? new float[DIMENSIONS] : vectors.get(0);
+        if (vectors.size() != 1) {
+            throw new IllegalStateException("Volcengine embedding response must contain exactly one vector, actual=" + vectors.size());
+        }
+        return vectors.get(0);
     }
 
     @Override
@@ -119,37 +127,94 @@ public final class VolcengineEmbeddingAdapter implements ImageEmbeddingModel {
 
     private EmbeddingResponse toResponse(String raw, int expected) {
         List<float[]> vectors = parseVectors(raw);
+        if (vectors.size() != expected) {
+            throw new IllegalStateException("Volcengine embedding response count mismatch: expected=" + expected + ", actual=" + vectors.size());
+        }
         List<Embedding> results = new ArrayList<>(expected);
         for (int i = 0; i < expected; i++) {
-            results.add(new Embedding(i < vectors.size() ? vectors.get(i) : new float[DIMENSIONS], i));
+            results.add(new Embedding(vectors.get(i), i));
         }
         return new EmbeddingResponse(results);
     }
 
     @SuppressWarnings("unchecked")
+    private String requireSuccessfulResponse(HttpResponse response) {
+        String raw = response.bodyAsString();
+        if (response.isSuccessful()) return raw;
+        String detail = "";
+        try {
+            Map<String, Object> payload = JsonUtils.getInstance().deserialize(raw, Map.class);
+            detail = providerError(payload);
+        } catch (RuntimeException ignored) {
+            // Never include raw provider bodies in exceptions: they can contain request diagnostics.
+        }
+        throw new IllegalStateException("Volcengine embedding request failed: http=" + response.statusCode() + detail);
+    }
+
+    private static String providerError(Map<String, Object> payload) {
+        Object error = payload == null ? null : payload.get("error");
+        Map<?, ?> errorMap = error instanceof Map<?, ?> map ? map : payload;
+        if (errorMap == null) return "";
+        Object code = errorMap.get("code");
+        Object message = errorMap.get("message");
+        if (code == null && message == null) return "";
+        String normalized = message == null ? "" : String.valueOf(message).replaceAll("[\\r\\n]", " ");
+        if (normalized.length() > 240) normalized = normalized.substring(0, 240);
+        return (code == null ? "" : " code=" + code) + (normalized.isBlank() ? "" : " message=" + normalized);
+    }
+
+    @SuppressWarnings("unchecked")
     private List<float[]> parseVectors(String raw) {
-        if (raw == null || raw.isBlank()) return List.of();
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalStateException("Volcengine embedding response is empty");
+        }
         Map<String, Object> root = JsonUtils.getInstance().deserialize(raw, Map.class);
-        if (root == null || !(root.get("data") instanceof List<?> data)) return List.of();
+        if (root == null) throw new IllegalStateException("Volcengine embedding response is empty");
+        Object data = root.get("data");
         List<float[]> vectors = new ArrayList<>();
-        for (Object item : data) {
-            if (!(item instanceof Map<?, ?> map)) continue;
-            Object embedding = map.get("embedding");
-            if (!(embedding instanceof List<?> values)) continue;
-            if (!values.isEmpty() && values.get(0) instanceof List<?>) {
-                for (Object nested : values) vectors.add(toVector((List<?>) nested));
-            } else {
-                vectors.add(toVector(values));
+        if (data instanceof Map<?, ?> item) {
+            appendEmbedding(vectors, item);
+        } else if (data instanceof List<?> items) {
+            for (Object item : items) {
+                if (!(item instanceof Map<?, ?> map)) {
+                    throw new IllegalStateException("Volcengine embedding response contains an invalid data item");
+                }
+                appendEmbedding(vectors, map);
             }
+        } else {
+            throw new IllegalStateException("Volcengine embedding response is missing data" + providerError(root));
         }
         return vectors;
     }
 
+    private void appendEmbedding(List<float[]> vectors, Map<?, ?> item) {
+        Object embedding = item.get("embedding");
+        if (!(embedding instanceof List<?> values)) {
+            throw new IllegalStateException("Volcengine embedding response is missing embedding values");
+        }
+        if (!values.isEmpty() && values.get(0) instanceof List<?>) {
+            for (Object nested : values) vectors.add(toVector((List<?>) nested));
+        } else {
+            vectors.add(toVector(values));
+        }
+    }
+
     private float[] toVector(List<?> values) {
+        if (values.isEmpty()) {
+            throw new IllegalStateException("Volcengine embedding response contains an empty vector");
+        }
         float[] vector = new float[values.size()];
+        double squaredNorm = 0.0;
         for (int i = 0; i < values.size(); i++) {
             Object value = values.get(i);
-            if (value instanceof Number number) vector[i] = number.floatValue();
+            if (!(value instanceof Number number) || !Float.isFinite(number.floatValue())) {
+                throw new IllegalStateException("Volcengine embedding response contains a non-finite vector value");
+            }
+            vector[i] = number.floatValue();
+            squaredNorm += vector[i] * vector[i];
+        }
+        if (!(squaredNorm > 0.0) || !Double.isFinite(squaredNorm)) {
+            throw new IllegalStateException("Volcengine embedding response contains a zero vector");
         }
         return vector;
     }

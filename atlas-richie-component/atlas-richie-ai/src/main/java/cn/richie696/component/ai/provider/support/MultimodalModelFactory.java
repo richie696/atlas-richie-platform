@@ -211,7 +211,9 @@ public final class MultimodalModelFactory {
     }
 
     private static BailianRerankModel createBailianRerankModel(RerankModelConfig cfg, HttpClient httpClient) {
-        return new BailianRerankModel(httpClient, cfg.getApiKey(), cfg.getBaseUrl());
+        String endpoint = cfg.getEndpoint() != null && !cfg.getEndpoint().isBlank()
+                ? cfg.getEndpoint() : cfg.getBaseUrl();
+        return new BailianRerankModel(httpClient, cfg.getApiKey(), endpoint, cfg.getModel());
     }
 
     private static ZhipuRerankModel createZhipuRerankModel(RerankModelConfig cfg, HttpClient httpClient) {

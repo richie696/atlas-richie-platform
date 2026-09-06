@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -17,13 +18,34 @@ import static org.mockito.Mockito.*;
 class VolcengineEmbeddingAdapterTest {
 
     @Test
+    void call_rejectsMissingOrZeroVectorsInsteadOfSilentlyIndexingThem() {
+        HttpClient client = mock(HttpClient.class);
+        HttpRequest request = mock(HttpRequest.class);
+        HttpResponse response = mock(HttpResponse.class);
+        when(client.post(anyString(), any())).thenReturn(request);
+        when(request.asJson()).thenReturn(request);
+        when(request.header(anyString(), anyString())).thenReturn(request);
+        when(request.execute()).thenReturn(response);
+        when(response.isSuccessful()).thenReturn(true);
+        when(response.bodyAsString()).thenReturn("{\"data\":[{\"embedding\":[0,0]}]}");
+
+        VolcengineEmbeddingAdapter adapter = new VolcengineEmbeddingAdapter(client, "ark-test", "https://example.test", "model", Map.of());
+
+        assertThatThrownBy(() -> adapter.embed("should fail closed"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("zero vector");
+    }
+
+    @Test
     void call_usesDedicatedEndpointAndMergesModelParameters() {
         HttpClient client = mock(HttpClient.class);
         HttpRequest request = mock(HttpRequest.class);
         HttpResponse response = mock(HttpResponse.class);
         when(client.post(anyString(), any())).thenReturn(request);
+        when(request.asJson()).thenReturn(request);
         when(request.header(anyString(), anyString())).thenReturn(request);
         when(request.execute()).thenReturn(response);
+        when(response.isSuccessful()).thenReturn(true);
         when(response.bodyAsString()).thenReturn("{\"data\":[{\"embedding\":[0.1,0.2]}]}");
 
         VolcengineEmbeddingAdapter adapter = new VolcengineEmbeddingAdapter(
@@ -43,5 +65,24 @@ class VolcengineEmbeddingAdapterTest {
                         "model", "doubao-embedding-vision-241215",
                         "input", List.of(Map.of("type", "text", "text", "hello"))))
         );
+        verify(request).asJson();
+    }
+
+    @Test
+    void call_acceptsArkSingleResultObjectShape() {
+        HttpClient client = mock(HttpClient.class);
+        HttpRequest request = mock(HttpRequest.class);
+        HttpResponse response = mock(HttpResponse.class);
+        when(client.post(anyString(), any())).thenReturn(request);
+        when(request.asJson()).thenReturn(request);
+        when(request.header(anyString(), anyString())).thenReturn(request);
+        when(request.execute()).thenReturn(response);
+        when(response.isSuccessful()).thenReturn(true);
+        when(response.bodyAsString()).thenReturn("{\"data\":{\"embedding\":[0.1,0.2]}}");
+
+        float[] vector = new VolcengineEmbeddingAdapter(client, "ark-test", "https://example.test", "model", Map.of())
+                .embed("single object response");
+
+        assertThat(vector).containsExactly(0.1f, 0.2f);
     }
 }

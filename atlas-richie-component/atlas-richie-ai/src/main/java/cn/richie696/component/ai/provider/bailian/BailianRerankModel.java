@@ -65,11 +65,38 @@ public class BailianRerankModel implements RerankModel {
     private final HttpClient httpClient;
     private final String apiKey;
     private final String baseUrl;
+    private final String defaultModel;
 
     public BailianRerankModel(HttpClient httpClient, String apiKey, String baseUrl) {
+        this(httpClient, apiKey, baseUrl, DEFAULT_MODEL);
+    }
+
+    public BailianRerankModel(HttpClient httpClient, String apiKey, String baseUrl, String model) {
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
         this.apiKey = Objects.requireNonNull(apiKey, "apiKey must not be null");
-        this.baseUrl = (baseUrl == null || baseUrl.isBlank()) ? DEFAULT_BASE_URL : baseUrl;
+        this.baseUrl = resolveEndpoint(baseUrl);
+        this.defaultModel = (model == null || model.isBlank()) ? DEFAULT_MODEL : model;
+    }
+
+    /**
+     * 将百炼 OpenAI 兼容 baseUrl 解析为文本重排专用端点。
+     * Embedding 使用 /compatible-mode/v1/embeddings，而 gte-rerank 使用
+     * DashScope 原生 /api/v1/services/rerank/text-rerank/text-rerank。
+     */
+    static String resolveEndpoint(String baseUrl) {
+        if (baseUrl == null || baseUrl.isBlank()) {
+            return DEFAULT_BASE_URL;
+        }
+        String normalized = baseUrl.trim().replaceAll("/+$", "");
+        if (normalized.endsWith("/api/v1/services/rerank/text-rerank/text-rerank")) {
+            return normalized;
+        }
+        int compatibleMode = normalized.indexOf("/compatible-mode/v1");
+        if (compatibleMode >= 0) {
+            return normalized.substring(0, compatibleMode)
+                    + "/api/v1/services/rerank/text-rerank/text-rerank";
+        }
+        return normalized + "/api/v1/services/rerank/text-rerank/text-rerank";
     }
 
     @Override
@@ -112,7 +139,7 @@ public class BailianRerankModel implements RerankModel {
      */
     private Map<String, Object> buildRequestBody(RerankRequest request) {
         String model = (request.getModel() == null || request.getModel().isBlank())
-                ? DEFAULT_MODEL
+                ? defaultModel
                 : request.getModel();
 
         Map<String, Object> input = new HashMap<>();

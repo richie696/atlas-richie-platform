@@ -62,12 +62,18 @@ public final class VolcengineTextEmbeddingAdapter implements ImageEmbeddingModel
         body.put("input", inputs);
         String raw = httpClient.post(endpoint, body)
                 .header("Authorization", "Bearer " + apiKey)
+                // Match the connection probe: Map request bodies must opt in to
+                // HttpClient's JSON serializer instead of relying on a header.
+                .asJson()
                 .header("Content-Type", "application/json")
                 .execute().bodyAsString();
         List<float[]> vectors = parseVectors(raw);
+        if (vectors.size() != inputs.size()) {
+            throw new IllegalStateException("Volcengine text embedding response count mismatch: expected=" + inputs.size() + ", actual=" + vectors.size());
+        }
         List<Embedding> results = new ArrayList<>(inputs.size());
         for (int i = 0; i < inputs.size(); i++) {
-            results.add(new Embedding(i < vectors.size() ? vectors.get(i) : new float[DEFAULT_DIMENSIONS], i));
+            results.add(new Embedding(vectors.get(i), i));
         }
         return new EmbeddingResponse(results);
     }
@@ -96,15 +102,32 @@ public final class VolcengineTextEmbeddingAdapter implements ImageEmbeddingModel
 
     @SuppressWarnings("unchecked")
     private List<float[]> parseVectors(String raw) {
-        if (raw == null || raw.isBlank()) return List.of();
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalStateException("Volcengine text embedding response is empty");
+        }
         Map<String, Object> root = JsonUtils.getInstance().deserialize(raw, Map.class);
-        if (root == null || !(root.get("data") instanceof List<?> data)) return List.of();
+        if (root == null || !(root.get("data") instanceof List<?> data)) {
+            throw new IllegalStateException("Volcengine text embedding response is missing data array");
+        }
         List<float[]> vectors = new ArrayList<>();
         for (Object item : data) {
-            if (!(item instanceof Map<?, ?> map) || !(map.get("embedding") instanceof List<?> values)) continue;
+            if (!(item instanceof Map<?, ?> map) || !(map.get("embedding") instanceof List<?> values)) {
+                throw new IllegalStateException("Volcengine text embedding response contains an invalid data item");
+            }
+            if (values.isEmpty()) {
+                throw new IllegalStateException("Volcengine text embedding response contains an empty vector");
+            }
             float[] vector = new float[values.size()];
+            double squaredNorm = 0.0;
             for (int i = 0; i < values.size(); i++) {
-                if (values.get(i) instanceof Number number) vector[i] = number.floatValue();
+                if (!(values.get(i) instanceof Number number) || !Float.isFinite(number.floatValue())) {
+                    throw new IllegalStateException("Volcengine text embedding response contains a non-finite vector value");
+                }
+                vector[i] = number.floatValue();
+                squaredNorm += vector[i] * vector[i];
+            }
+            if (!(squaredNorm > 0.0) || !Double.isFinite(squaredNorm)) {
+                throw new IllegalStateException("Volcengine text embedding response contains a zero vector");
             }
             vectors.add(vector);
         }
