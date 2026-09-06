@@ -27,6 +27,7 @@
         <module>atlas-richie-vector-weaviate</module>
         <module>atlas-richie-vector-milvus</module>
         <module>atlas-richie-vector-vikingdb</module>
+        <module>atlas-richie-vector-integration-tests</module>
     </modules>
 
 </project>
