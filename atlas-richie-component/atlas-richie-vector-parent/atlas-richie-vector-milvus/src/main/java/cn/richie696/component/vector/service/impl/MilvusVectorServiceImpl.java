@@ -44,6 +44,7 @@ import io.milvus.param.dml.InsertParam;
 import io.milvus.param.dml.QueryParam;
 import io.milvus.param.dml.SearchParam;
 import io.milvus.param.index.CreateIndexParam;
+import io.milvus.param.index.DescribeIndexParam;
 import io.milvus.response.QueryResultsWrapper;
 import io.milvus.response.SearchResultsWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -148,7 +149,8 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         Instant vectorSearchStarted = Instant.now();
         List<VectorSearchResult> results;
         try {
-            results = similaritySearchByVector(indexName, queryVector, topK, minScore, filter).stream()
+            results = similaritySearchByVector(indexName, queryVector, topK, minScore, filter,
+                    effectiveOptions.getProviderSearchParameters()).stream()
                     .map(document -> VectorSearchResult.of(document.getId(), document.getFormattedContent(),
                             documentScore(document), null).setMetadata(document.getMetadata()))
                     .toList();
@@ -163,7 +165,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
             throw e;
         }
         List<VectorSearchResult> finalResults = Boolean.TRUE.equals(effectiveOptions.getRerank())
-                ? tryRerank(text, results, hook, context)
+                ? tryRerank(text, results, effectiveOptions.getRerankModel(), hook, context)
                 : emitRerankSkipped(results, hook, context);
         RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
                 RetrievalStage.TOTAL, Duration.between(totalStarted, Instant.now()), results.size(),
@@ -744,6 +746,17 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
     @Override
     protected List<Document> similaritySearchByVector(String indexName, float[] queryVector,
                                                       int limit, double minScore, String providerFilter) {
+        return similaritySearchByVector(indexName, queryVector, limit, minScore, providerFilter, Map.of());
+    }
+
+    /**
+     * Native Milvus query controls are passed only through a strict allow-list.
+     * This preserves the ACL filter path while preventing a control-plane value
+     * from becoming arbitrary SDK JSON.
+     */
+    protected List<Document> similaritySearchByVector(String indexName, float[] queryVector,
+                                                      int limit, double minScore, String providerFilter,
+                                                      Map<String, Integer> providerSearchParameters) {
         if (queryVector == null || queryVector.length == 0) {
             throw new IllegalArgumentException("查询向量不能为空");
         }
@@ -762,12 +775,19 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         // withTopK: 返回最近邻的数量，等同于limit
         // withMetricType: 距离度量类型（COSINE/L2/IP），决定如何计算相似度
         // withOutFields: 指定返回哪些字段（排除vector字段节省带宽）
+        // A collection can be created with a metric different from the process-wide
+        // default.  Searching with the default in that case makes Milvus interpret
+        // the stored vectors with the wrong distance function and then converts the
+        // result with the wrong score semantics.  Resolve the metric from the
+        // physical collection index before issuing the query.
+        MetricType metricType = resolveSearchMetricType(indexName);
         SearchParam.Builder searchBuilder = SearchParam.newBuilder()
                 .withCollectionName(indexName)
                 .withVectorFieldName("vector")
                 .withFloatVectors(Collections.singletonList(vectorList))
                 .withLimit((long) limit)
-                .withMetricType(milvusConfig.getMetricType())
+                .withMetricType(metricType)
+                .withParams(milvusSearchParameters(providerSearchParameters))
                 .withOutFields(SEARCH_OUTPUT_FIELDS);
         if (providerFilter != null && !providerFilter.isBlank()) {
             searchBuilder.withExpr(providerFilter);
@@ -826,7 +846,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
 
             // Milvus返回的是distance（距离），需要转换为similarity（相似度）
             // 转换规则取决于度量类型：COSINE/IP时similarity=distance；L2时similarity=1/(1+distance)
-            double score = distanceToSimilarity(idScore.getScore(), milvusConfig.getMetricType());
+            double score = distanceToSimilarity(idScore.getScore(), metricType);
 
             if (score >= minScore) {
                 Map<String, Object> metadata = metadataAt(metadataData, i);
@@ -836,6 +856,59 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         }
 
         return searchResults;
+    }
+
+    private String milvusSearchParameters(Map<String, Integer> parameters) {
+        if (parameters == null || parameters.isEmpty()) return "{}";
+        Map<String, Integer> translated = new LinkedHashMap<>();
+        parameters.forEach((key, value) -> {
+            if (value == null || value < 1 || value > 32_768) {
+                throw new IllegalArgumentException("Milvus provider search parameter " + key + " must be between 1 and 32768");
+            }
+            switch (key) {
+                case "milvus.ef" -> translated.put("ef", value);
+                case "milvus.nprobe" -> translated.put("nprobe", value);
+                default -> throw new IllegalArgumentException("unsupported Milvus provider search parameter: " + key);
+            }
+        });
+        String json = JsonUtils.getInstance().serialize(translated);
+        if (json == null) throw new IllegalStateException("Milvus provider search parameters cannot be serialized");
+        return json;
+    }
+
+    /**
+     * Returns the metric stored on the target collection's vector index.  The global
+     * configuration remains a backwards-compatible fallback for legacy collections
+     * whose index metadata cannot be read, but it must never override an explicit
+     * collection metric.
+     */
+    private MetricType resolveSearchMetricType(String indexName) {
+        try {
+            R<DescribeIndexResponse> response = milvusClient.describeIndex(DescribeIndexParam.newBuilder()
+                    .withCollectionName(indexName)
+                    .withFieldName("vector")
+                    .build());
+            if (response == null || response.getStatus() != R.Status.Success.getCode() || response.getData() == null) {
+                return milvusConfig.getMetricType();
+            }
+            for (IndexDescription description : response.getData().getIndexDescriptionsList()) {
+                for (KeyValuePair parameter : description.getParamsList()) {
+                    if ("metric_type".equalsIgnoreCase(parameter.getKey()) || "metric".equalsIgnoreCase(parameter.getKey())) {
+                        try {
+                            return MetricType.valueOf(parameter.getValue().trim().toUpperCase(Locale.ROOT));
+                        } catch (IllegalArgumentException unsupportedMetric) {
+                            log.warn("Milvus collection [{}] declares unsupported metric [{}]; falling back to configured metric [{}]",
+                                    indexName, parameter.getValue(), milvusConfig.getMetricType());
+                            return milvusConfig.getMetricType();
+                        }
+                    }
+                }
+            }
+        } catch (RuntimeException queryIndexFailed) {
+            log.warn("Milvus collection [{}] metric inspection failed; falling back to configured metric [{}]", indexName,
+                    milvusConfig.getMetricType(), queryIndexFailed);
+        }
+        return milvusConfig.getMetricType();
     }
 
     /**

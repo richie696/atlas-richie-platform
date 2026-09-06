@@ -15,11 +15,11 @@
  */
 package cn.richie696.component.vector.config;
 
+import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.filter.MilvusVectorFilterCompiler;
 import cn.richie696.component.vector.filter.VectorFilterCompiler;
 import cn.richie696.component.vector.service.impl.MilvusVectorServiceImpl;
 import io.milvus.client.MilvusServiceClient;
-import io.milvus.param.ConnectParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.TokenCountBatchingStrategy;
@@ -30,6 +30,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
@@ -49,6 +50,13 @@ import org.springframework.context.annotation.Import;
 @EnableConfigurationProperties({VectorProperties.class, MilvusConfig.class})
 @Import(MilvusVectorServiceImpl.class)
 public class MilvusVectorAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(MilvusVectorProviderFactory.class)
+    public MilvusVectorProviderFactory milvusVectorProviderFactory(
+            ObjectProvider<RerankService> rerankService) {
+        return new MilvusVectorProviderFactory(rerankService.getIfAvailable());
+    }
 
     /**
      * 构建 Spring AI Milvus {@link VectorStore}，作为 core 模块与 Milvus SDK 的桥接点。
@@ -102,37 +110,6 @@ public class MilvusVectorAutoConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "milvus")
     public MilvusServiceClient milvusClient(MilvusConfig config) {
-        // 用 withHost 而非 withUri：host 字段是裸主机名，ConnectParam.verify() 对 withUri 要求带 scheme 的完整 URL。
-        ConnectParam.Builder builder = ConnectParam.newBuilder()
-                .withHost(config.getHost())
-                .withPort(config.getPort())
-                .withConnectTimeout(config.getConnectTimeoutMs(), java.util.concurrent.TimeUnit.MILLISECONDS)
-                .withKeepAliveTime(config.getKeepAliveTimeMs(), java.util.concurrent.TimeUnit.MILLISECONDS)
-                .withKeepAliveTimeout(config.getKeepAliveTimeoutMs(), java.util.concurrent.TimeUnit.MILLISECONDS)
-                .withIdleTimeout(config.getIdleTimeoutMs(), java.util.concurrent.TimeUnit.MILLISECONDS);
-
-        // 认证配置
-        if (config.getUsername() != null && config.getPassword() != null) {
-            builder.withAuthorization(config.getUsername(), config.getPassword());
-        }
-
-        // SSL配置
-        if (config.isSecure()) {
-            if (config.getServerPemPath() != null) {
-                builder.withServerPemPath(config.getServerPemPath());
-            }
-            if (config.getServerName() != null) {
-                builder.withServerName(config.getServerName());
-            }
-            if (config.getCaPemPath() != null) {
-                builder.withCaPemPath(config.getCaPemPath());
-            }
-            if (config.getClientKeyPath() != null && config.getClientPemPath() != null) {
-                builder.withClientKeyPath(config.getClientKeyPath())
-                        .withClientPemPath(config.getClientPemPath());
-            }
-        }
-
-        return new MilvusServiceClient(builder.build());
+        return MilvusVectorProviderFactory.openClient(config);
     }
 }

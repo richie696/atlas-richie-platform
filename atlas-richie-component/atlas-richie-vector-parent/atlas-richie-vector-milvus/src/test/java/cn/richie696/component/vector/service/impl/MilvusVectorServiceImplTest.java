@@ -17,7 +17,9 @@ package cn.richie696.component.vector.service.impl;
 
 import cn.richie696.component.vector.config.MilvusConfig;
 import cn.richie696.component.vector.config.VectorProperties;
+import cn.richie696.component.vector.filter.MilvusVectorFilterCompiler;
 import cn.richie696.component.vector.model.VectorContent;
+import cn.richie696.component.vector.model.VectorFilter;
 import cn.richie696.component.vector.model.VectorRecord;
 import io.milvus.client.MilvusServiceClient;
 import io.milvus.grpc.*;
@@ -94,6 +96,19 @@ class MilvusVectorServiceImplTest {
         when(queryResp.getStatus()).thenReturn(R.Status.Success.getCode());
         when(queryResp.getData()).thenReturn(emptyQueryResults);
         when(milvusClient.query(any(QueryParam.class))).thenReturn(queryResp);
+
+        DescribeCollectionResponse baseSchema = DescribeCollectionResponse.newBuilder()
+                .setSchema(CollectionSchema.newBuilder()
+                        .addFields(FieldSchema.newBuilder().setName("id"))
+                        .addFields(FieldSchema.newBuilder().setName("vector"))
+                        .addFields(FieldSchema.newBuilder().setName("content"))
+                        .addFields(FieldSchema.newBuilder().setName("metadata")))
+                .build();
+        R<DescribeCollectionResponse> describeCollectionResp = mock(R.class);
+        when(describeCollectionResp.getStatus()).thenReturn(R.Status.Success.getCode());
+        when(describeCollectionResp.getData()).thenReturn(baseSchema);
+        when(milvusClient.describeCollection(any(DescribeCollectionParam.class)))
+                .thenReturn(describeCollectionResp);
     }
 
     @Nested
@@ -451,6 +466,98 @@ class MilvusVectorServiceImplTest {
             assertThatThrownBy(() -> service.similaritySearchByVector("test", vector, 0, 0.0))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("limit 必须大于 0");
+        }
+
+        @Test
+        @DisplayName("should use the physical collection metric instead of the global default")
+        void similaritySearchByVector_usesCollectionMetric() {
+            R<DescribeIndexResponse> describeResponse = mock(R.class);
+            when(describeResponse.getStatus()).thenReturn(R.Status.Success.getCode());
+            when(describeResponse.getData()).thenReturn(DescribeIndexResponse.newBuilder()
+                    .addIndexDescriptions(IndexDescription.newBuilder()
+                            .setFieldName("vector")
+                            .addParams(KeyValuePair.newBuilder().setKey("metric_type").setValue("L2"))
+                            .build())
+                    .build());
+            when(milvusClient.describeIndex(any())).thenReturn(describeResponse);
+
+            R<SearchResults> failResp = mock(R.class);
+            when(failResp.getStatus()).thenReturn(-1);
+            when(failResp.getMessage()).thenReturn("Search failed");
+            when(milvusClient.search(any(SearchParam.class))).thenReturn(failResp);
+
+            assertThatThrownBy(() -> service.similaritySearchByVector("kb_4_idx_v1", new float[]{0.1f}, 10, 0.0))
+                    .isInstanceOf(RuntimeException.class);
+
+            ArgumentCaptor<SearchParam> searchCaptor = ArgumentCaptor.forClass(SearchParam.class);
+            verify(milvusClient).search(searchCaptor.capture());
+            assertThat(searchCaptor.getValue().getMetricType()).isEqualTo("L2");
+        }
+
+        @Test
+        @DisplayName("should pass only approved query controls to native Milvus params")
+        void similaritySearchByVector_passesApprovedProviderParameters() {
+            R<SearchResults> failResp = mock(R.class);
+            when(failResp.getStatus()).thenReturn(-1);
+            when(failResp.getMessage()).thenReturn("Search failed");
+            when(milvusClient.search(any(SearchParam.class))).thenReturn(failResp);
+
+            assertThatThrownBy(() -> service.similaritySearchByVector("test", new float[]{0.1f}, 10, 0.0,
+                    null, Map.of("milvus.ef", 128)))
+                    .isInstanceOf(RuntimeException.class);
+
+            ArgumentCaptor<SearchParam> searchCaptor = ArgumentCaptor.forClass(SearchParam.class);
+            verify(milvusClient).search(searchCaptor.capture());
+            assertThat(searchCaptor.getValue().getParams()).isEqualTo("{\"ef\":128}");
+        }
+
+        @Test
+        @DisplayName("should preserve the legacy empty native params when no advanced controls are supplied")
+        void similaritySearchByVector_withoutProviderParameters_preservesLegacyRequest() {
+            R<SearchResults> failResp = mock(R.class);
+            when(failResp.getStatus()).thenReturn(-1);
+            when(failResp.getMessage()).thenReturn("Search failed");
+            when(milvusClient.search(any(SearchParam.class))).thenReturn(failResp);
+
+            assertThatThrownBy(() -> service.similaritySearchByVector(
+                    "test", new float[]{0.1f}, 10, 0.0, null, Map.of()))
+                    .isInstanceOf(RuntimeException.class);
+
+            ArgumentCaptor<SearchParam> searchCaptor = ArgumentCaptor.forClass(SearchParam.class);
+            verify(milvusClient).search(searchCaptor.capture());
+            assertThat(searchCaptor.getValue().getParams()).isEqualTo("{}");
+            assertThat(searchCaptor.getValue().getExpr()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("should compile and push ACL predicates into the native Milvus request")
+        void similaritySearchByVector_pushesCompiledAclBeforeRecall() {
+            R<SearchResults> failResp = mock(R.class);
+            when(failResp.getStatus()).thenReturn(-1);
+            when(failResp.getMessage()).thenReturn("Search failed");
+            when(milvusClient.search(any(SearchParam.class))).thenReturn(failResp);
+            String filter = new MilvusVectorFilterCompiler().compile(VectorFilter.and(
+                    VectorFilter.eq("tenantId", "tenant-a"),
+                    VectorFilter.in("principalId", List.of("user-1", "group-2"))));
+
+            assertThatThrownBy(() -> service.similaritySearchByVector(
+                    "test", new float[]{0.1f}, 10, 0.0, filter, Map.of()))
+                    .isInstanceOf(RuntimeException.class);
+
+            ArgumentCaptor<SearchParam> searchCaptor = ArgumentCaptor.forClass(SearchParam.class);
+            verify(milvusClient).search(searchCaptor.capture());
+            assertThat(searchCaptor.getValue().getExpr())
+                    .isEqualTo("(tenantId == \"tenant-a\" && principalId in [\"user-1\", \"group-2\"])");
+        }
+
+        @Test
+        @DisplayName("should reject an unknown provider query control before calling Milvus")
+        void similaritySearchByVector_rejectsUnknownProviderParameters() {
+            assertThatThrownBy(() -> service.similaritySearchByVector("test", new float[]{0.1f}, 10, 0.0,
+                    null, Map.of("malicious.params", 1)))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("unsupported Milvus provider search parameter");
+            verify(milvusClient, never()).search(any(SearchParam.class));
         }
 
         @Test
