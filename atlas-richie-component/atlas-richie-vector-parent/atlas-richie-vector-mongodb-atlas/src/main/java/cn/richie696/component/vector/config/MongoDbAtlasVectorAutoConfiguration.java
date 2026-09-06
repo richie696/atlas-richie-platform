@@ -22,11 +22,15 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.mongodb.atlas.MongoDBAtlasVectorStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.beans.factory.ObjectProvider;
+import cn.richie696.component.ai.service.RerankService;
 
 /**
  * MongoDB Atlas 向量数据库自动配置
@@ -39,9 +43,17 @@ import org.springframework.data.mongodb.core.MongoTemplate;
  */
 @Slf4j
 @AutoConfiguration
+@AutoConfigureBefore(VectorAutoConfiguration.class)
 @EnableConfigurationProperties({VectorProperties.class, MongodbConfig.class})
 @Import(MongoDbAtlasVectorServiceImpl.class)
 public class MongoDbAtlasVectorAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(MongoDbAtlasVectorProviderFactory.class)
+    public MongoDbAtlasVectorProviderFactory mongoDbAtlasVectorProviderFactory(
+            ObjectProvider<RerankService> rerankService) {
+        return new MongoDbAtlasVectorProviderFactory(rerankService.getIfAvailable());
+    }
 
     /**
      * 向量存储Bean自动注入

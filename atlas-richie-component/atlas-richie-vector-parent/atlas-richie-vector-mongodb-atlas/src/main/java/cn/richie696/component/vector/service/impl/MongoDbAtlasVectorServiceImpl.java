@@ -61,10 +61,12 @@ import java.util.Map;
 @Slf4j
 public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, VectorIndexLifecycleOperations {
 
-    private static final String VECTOR_FIELD = "vector";
+    private static final String VECTOR_FIELD = "embedding";
     private static final String VECTOR_INDEX = "vector_index";
 
     private final MongoTemplate mongoTemplate;
+    private final Map<String, String> managedCollections;
+    private final Map<String, String> managedSearchIndexes;
 
     /**
      * 构造方法.
@@ -81,8 +83,38 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
                                          VectorStore vectorStore,
                                          @Qualifier("aiEmbeddingModel") EmbeddingModel embeddingModel,
                                          MongoTemplate mongoTemplate) {
+        this(rerankService, vectorStore, embeddingModel, mongoTemplate, Map.of(), Map.of());
+    }
+
+    /** Store-bound constructor used by Named Multi-store. */
+    public MongoDbAtlasVectorServiceImpl(RerankService rerankService,
+                                         VectorStore vectorStore,
+                                         EmbeddingModel embeddingModel,
+                                         MongoTemplate mongoTemplate,
+                                         Map<String, String> managedCollections,
+                                         Map<String, String> managedSearchIndexes) {
         super(rerankService, vectorStore, embeddingModel);
         this.mongoTemplate = mongoTemplate;
+        this.managedCollections = Map.copyOf(managedCollections == null ? Map.of() : managedCollections);
+        this.managedSearchIndexes = Map.copyOf(managedSearchIndexes == null ? Map.of() : managedSearchIndexes);
+    }
+
+    @Override
+    protected void validateIndexName(String indexName) {
+        super.validateIndexName(indexName);
+        if (!managedCollections.isEmpty() && !managedCollections.containsKey(indexName)) {
+            throw new IllegalArgumentException("index is not declared by this MongoDB Atlas Store: " + indexName);
+        }
+    }
+
+    private String collectionName(String indexName) {
+        validateIndexName(indexName);
+        return managedCollections.isEmpty() ? indexName : managedCollections.get(indexName);
+    }
+
+    private String searchIndexName(String indexName) {
+        validateIndexName(indexName);
+        return managedSearchIndexes.isEmpty() ? VECTOR_INDEX : managedSearchIndexes.get(indexName);
     }
 
     // ==================== 索引管理（保留 v1 公开方法重写，多态分发仍生效） ====================
@@ -106,25 +138,27 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected void createIndexImpl(String indexName, VectorProperties.IndexConfig config) {
+        String collection = collectionName(indexName);
+        String searchIndex = searchIndexName(indexName);
         int dimension = config != null && config.getDimension() != null ? config.getDimension() : DEFAULT_DIMENSION;
         String metric = config != null && config.getMetric() != null ? config.getMetric() : "cosine";
         String similarity = mapSimilarity(metric);
 
         // Atlas Vector Search 索引定义：单字段 knnVector
-        Document knnField = new Document()
-                .append("type", "knnVector")
+        Document vectorField = new Document()
+                .append("type", "vector")
                 .append("path", VECTOR_FIELD)
                 .append("numDimensions", dimension)
                 .append("similarity", similarity);
 
-        Document searchIndex = new Document()
-                .append("name", VECTOR_INDEX)
+        Document searchIndexDefinition = new Document()
+                .append("name", searchIndex)
                 .append("type", "vectorSearch")
-                .append("definition", new Document().append("fields", List.of(knnField)));
+                .append("definition", new Document().append("fields", List.of(vectorField)));
 
         Document createCmd = new Document()
-                .append("createSearchIndexes", indexName)
-                .append("indexes", List.of(searchIndex));
+                .append("createSearchIndexes", collection)
+                .append("indexes", List.of(searchIndexDefinition));
 
         try {
             mongoTemplate.getDb().runCommand(createCmd);
@@ -162,6 +196,14 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected void deleteIndexImpl(String indexName) {
+        String collection = collectionName(indexName);
+        if (!managedCollections.isEmpty()) {
+            mongoTemplate.getDb().runCommand(new Document()
+                    .append("dropSearchIndex", collection)
+                    .append("name", searchIndexName(indexName)));
+            log.info("已删除集合 [{}] 的受控 Vector Search 索引", collection);
+            return;
+        }
         // 删除所有索引（不删除集合本身）
         // dropIndexes() 会删除该集合上的所有索引,不会影响文档数据
         mongoTemplate.getCollection(indexName).dropIndexes();
@@ -178,7 +220,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected boolean indexExistsImpl(String indexName) {
-        boolean exists = mongoTemplate.collectionExists(indexName);
+        boolean exists = mongoTemplate.collectionExists(collectionName(indexName));
         log.debug("集合 [{}] 是否存在: {}", indexName, exists);
         return exists;
     }
@@ -194,7 +236,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected VectorProperties.IndexConfig getIndexConfigImpl(String indexName) {
-        if (!mongoTemplate.collectionExists(indexName)) return null;
+        if (!mongoTemplate.collectionExists(collectionName(indexName))) return null;
         VectorProperties.IndexConfig config = new VectorProperties.IndexConfig();
         config.setName(indexName);
         log.debug("获取集合 [{}] 的索引配置: {}", indexName, config);
@@ -209,7 +251,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected long countDocumentsImpl(String indexName) {
-        long count = mongoTemplate.getCollection(indexName).countDocuments();
+        long count = mongoTemplate.getCollection(collectionName(indexName)).countDocuments();
         log.debug("集合 [{}] 文档总数: {}", indexName, count);
         return count;
     }
@@ -226,7 +268,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected long truncateIndexImpl(String indexName) {
-        DeleteResult result = mongoTemplate.getCollection(indexName).deleteMany(new Document());
+        DeleteResult result = mongoTemplate.getCollection(collectionName(indexName)).deleteMany(new Document());
         log.info("MongoDB Atlas 清空集合 [{}]，删除文档数={}", indexName, result.getDeletedCount());
         return result.getDeletedCount();
     }
@@ -250,6 +292,9 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected List<IndexInfo> listIndexesImpl() {
+        if (!managedCollections.isEmpty()) {
+            return managedCollections.keySet().stream().map(this::describeIndexImpl).toList();
+        }
         List<IndexInfo> indexes = new ArrayList<>();
         for (String name : mongoTemplate.getCollectionNames()) {
             if (!name.startsWith(VECTOR_COLLECTION_PREFIX)) {
@@ -279,15 +324,16 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected IndexInfo describeIndexImpl(String indexName) {
-        if (indexName == null || !mongoTemplate.collectionExists(indexName)) {
+        String collection = collectionName(indexName);
+        if (!mongoTemplate.collectionExists(collection)) {
             log.warn("MongoDB Atlas describeIndex: collection [{}] 不存在", indexName);
             return new IndexInfo(indexName, null, null, null, null,
                     IndexStatus.UNKNOWN, 0L, null, null, null);
         }
-        long count = mongoTemplate.getCollection(indexName).countDocuments();
+        long count = mongoTemplate.getCollection(collection).countDocuments();
         Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("engine", "mongodb-atlas");
-        metadata.put("searchIndex", VECTOR_INDEX);
+        metadata.put("searchIndex", searchIndexName(indexName));
         metadata.put("vectorField", VECTOR_FIELD);
         IndexInfo info = new IndexInfo(indexName, Modality.TEXT, null, null,
                 "vectorSearch", IndexStatus.READY, count, null, null, metadata);
@@ -311,15 +357,17 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected boolean updateIndexConfigImpl(String indexName, VectorProperties.IndexConfig config) {
-        if (indexName == null || !mongoTemplate.collectionExists(indexName)) {
+        String collection = collectionName(indexName);
+        String searchIndex = searchIndexName(indexName);
+        if (!mongoTemplate.collectionExists(collection)) {
             log.warn("MongoDB Atlas updateIndexConfig 失败: collection [{}] 不存在", indexName);
             return false;
         }
         // step 1: drop 旧的 Vector Search 索引
         try {
             Document dropCmd = new Document()
-                    .append("dropSearchIndex", indexName)
-                    .append("name", VECTOR_INDEX);
+                    .append("dropSearchIndex", collection)
+                    .append("name", searchIndex);
             mongoTemplate.getDb().runCommand(dropCmd);
             log.info("MongoDB Atlas 已 drop 旧 Vector Search 索引: collection={}, searchIndex={}",
                     indexName, VECTOR_INDEX);
@@ -350,12 +398,13 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected IndexInfo getIndexStatsImpl(String indexName) {
-        if (indexName == null || !mongoTemplate.collectionExists(indexName)) {
+        String collection = collectionName(indexName);
+        if (!mongoTemplate.collectionExists(collection)) {
             log.warn("MongoDB Atlas getIndexStats: collection [{}] 不存在", indexName);
             return new IndexInfo(indexName, null, null, null, null,
                     IndexStatus.UNKNOWN, 0L, null, null, null);
         }
-        long count = mongoTemplate.getCollection(indexName).countDocuments();
+        long count = mongoTemplate.getCollection(collection).countDocuments();
         IndexInfo info = new IndexInfo(indexName, Modality.TEXT, null, null,
                 "vectorSearch", IndexStatus.READY, count, null, Instant.now(), null);
         log.debug("MongoDB Atlas getIndexStats: collection={}, count={}", indexName, count);
@@ -376,6 +425,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected List<VectorRecord> listDocumentsImpl(String indexName, int offset, int limit) {
+        String collection = collectionName(indexName);
         Query query = new Query()
                 .skip(offset)
                 .limit(limit);
@@ -385,7 +435,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
                 .include("metadata")
                 .include("id")
                 .exclude(VECTOR_FIELD);
-        List<VectorRecord> docs = mongoTemplate.find(query, VectorRecord.class, indexName);
+        List<VectorRecord> docs = mongoTemplate.find(query, VectorRecord.class, collection);
         log.debug("分页查询集合 [{}]，offset={}, limit={}, 返回{}条", indexName, offset, limit, docs.size());
         return docs;
     }
@@ -399,10 +449,11 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected List<VectorRecord> getByIds(String indexName, List<String> ids) {
+        String collection = collectionName(indexName);
         if (ids == null || ids.isEmpty()) return List.of();
         Query query = new Query();
         query.addCriteria(Criteria.where("_id").in(ids));
-        return mongoTemplate.find(query, VectorRecord.class, indexName);
+        return mongoTemplate.find(query, VectorRecord.class, collection);
     }
 
     /**
@@ -413,10 +464,11 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected void deleteByIds(String indexName, List<String> ids) {
+        String collection = collectionName(indexName);
         if (ids == null || ids.isEmpty()) return;
         Query query = new Query();
         query.addCriteria(Criteria.where("_id").in(ids));
-        mongoTemplate.remove(query, indexName);
+        mongoTemplate.remove(query, collection);
         log.debug("从集合 [{}] 批量删除 {} 条文档", indexName, ids.size());
     }
 
@@ -431,6 +483,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected void addEmbeddings(String indexName, List<org.springframework.ai.document.Document> docs) {
+        collectionName(indexName);
         if (docs == null || docs.isEmpty()) return;
         vectorStore.add(docs);
     }
@@ -453,6 +506,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected void writeStoreManagedRecords(String indexName, List<VectorRecord> records) {
+        collectionName(indexName);
         vectorStore.add(records.stream().map(record -> toAiDocument(record, null)).toList());
     }
 
@@ -481,6 +535,8 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
     @Override
     protected List<org.springframework.ai.document.Document> similaritySearchByVector(
             String indexName, float[] vector, int limit, double minScore) {
+        String collection = collectionName(indexName);
+        String searchIndex = searchIndexName(indexName);
         if (vector == null || vector.length == 0) {
             throw new IllegalArgumentException("查询向量不能为空");
         }
@@ -495,7 +551,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
 
         // 构建 $vectorSearch 聚合阶段
         AggregationOperation vectorSearchStage = context -> new Document("$vectorSearch",
-                new Document("index", VECTOR_INDEX)
+                new Document("index", searchIndex)
                         .append("path", VECTOR_FIELD)
                         .append("queryVector", queryVectorList)
                         .append("numCandidates", Math.max(limit * 10, 100))
@@ -513,7 +569,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
                 vectorSearchStage, projectStage
         );
 
-        AggregationResults<Document> aggResults = mongoTemplate.aggregate(aggregation, indexName, Document.class);
+        AggregationResults<Document> aggResults = mongoTemplate.aggregate(aggregation, collection, Document.class);
 
         List<org.springframework.ai.document.Document> results = new ArrayList<>();
         for (Document doc : aggResults.getMappedResults()) {
@@ -551,6 +607,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected boolean optimizeImpl(String indexName) {
+        collectionName(indexName);
         return throwUnsupportedOps("optimize", indexName, "mongodb");
     }
 
@@ -567,6 +624,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected boolean createAliasImpl(String indexName, String alias) {
+        collectionName(indexName);
         return throwUnsupportedOps("createAlias", indexName, "mongodb");
     }
 
@@ -580,6 +638,8 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected boolean switchAliasImpl(String oldIndexName, String newIndexName, String alias) {
+        collectionName(oldIndexName);
+        collectionName(newIndexName);
         return throwUnsupportedOps("switchAlias", newIndexName, "mongodb");
     }
 
@@ -594,6 +654,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected boolean backupImpl(String indexName, String targetPath) {
+        collectionName(indexName);
         return throwUnsupportedOps("backup", indexName, "mongodb");
     }
 
@@ -606,6 +667,7 @@ public class MongoDbAtlasVectorServiceImpl extends AbstractVectorService impleme
      */
     @Override
     protected boolean restoreImpl(String sourcePath, String indexName) {
+        collectionName(indexName);
         return throwUnsupportedOps("restore", indexName, "mongodb");
     }
 
