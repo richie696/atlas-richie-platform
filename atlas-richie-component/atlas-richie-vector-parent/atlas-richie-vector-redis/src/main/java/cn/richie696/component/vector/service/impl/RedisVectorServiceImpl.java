@@ -18,6 +18,7 @@ package cn.richie696.component.vector.service.impl;
 import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.config.VectorProperties;
 import cn.richie696.component.vector.model.*;
+import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import cn.richie696.component.vector.service.VectorService;
 import lombok.extern.slf4j.Slf4j;
@@ -44,12 +45,37 @@ import java.util.Optional;
 
 @Slf4j
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "redis")
-public class RedisVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, InitializingBean {
+public class RedisVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations,
+        VectorIndexLifecycleOperations, InitializingBean {
+
+    private final Map<String, String> managedIndexes;
 
     public RedisVectorServiceImpl(@Autowired(required = false) RerankService rerankService,
                                   VectorStore vectorStore,
                                   @Qualifier("aiEmbeddingModel") EmbeddingModel embeddingModel) {
+        this(rerankService, vectorStore, embeddingModel, Map.of());
+    }
+
+    /** Store-bound constructor used by Named Multi-store. */
+    public RedisVectorServiceImpl(RerankService rerankService,
+                                  VectorStore vectorStore,
+                                  EmbeddingModel embeddingModel,
+                                  Map<String, String> managedIndexes) {
         super(rerankService, vectorStore, embeddingModel);
+        this.managedIndexes = Map.copyOf(managedIndexes == null ? Map.of() : managedIndexes);
+    }
+
+    @Override
+    protected void validateIndexName(String indexName) {
+        super.validateIndexName(indexName);
+        if (!managedIndexes.isEmpty() && !managedIndexes.containsKey(indexName)) {
+            throw new IllegalArgumentException("index is not declared by this Redis Store: " + indexName);
+        }
+    }
+
+    private String redisIndexName(String indexName) {
+        validateIndexName(indexName);
+        return managedIndexes.isEmpty() ? indexName : managedIndexes.get(indexName);
     }
 
     @Override
@@ -83,6 +109,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
 
     @Override
     protected List<Document> similaritySearchByVector(String indexName, float[] vector, int limit, double minScore) {
+        String redisIndex = redisIndexName(indexName);
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持向量搜索");
         }
@@ -98,7 +125,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
                     .returnFields("id", "content", "score")
                     .limit(0, limit)
                     .dialect(2);
-            SearchResult result = jedis.ftSearch(indexName, query);
+            SearchResult result = jedis.ftSearch(redisIndex, query);
             return result.getDocuments().stream()
                     .map(doc -> {
                         double distance = 0.0;
@@ -114,7 +141,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
                             return null;
                         }
                         String content = doc.hasProperty("content") ? doc.getString("content") : "";
-                        String docId = stripIndexPrefix(doc.getId(), indexName);
+                        String docId = stripIndexPrefix(doc.getId(), redisIndex);
                         return Document.builder()
                                 .id(docId)
                                 .text(content)
@@ -131,6 +158,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
 
     @Override
     protected void addEmbeddings(String indexName, List<Document> docs) {
+        redisIndexName(indexName);
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持 addEmbeddings");
         }
@@ -139,6 +167,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
 
     @Override
     protected void deleteByIds(String indexName, List<String> ids) {
+        redisIndexName(indexName);
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持 deleteByIds");
         }
@@ -147,6 +176,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
 
     @Override
     protected List<VectorRecord> getByIds(String indexName, List<String> ids) {
+        String redisIndex = redisIndexName(indexName);
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持 getByIds");
         }
@@ -159,7 +189,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
         for (String id : ids) {
             try {
                 var path2 = redis.clients.jedis.json.Path2.of("$");
-                List<?> jsonResults = jedis.jsonMGet(path2, new String[]{indexName + ":" + id});
+                List<?> jsonResults = jedis.jsonMGet(path2, new String[]{redisIndex + ":" + id});
                 if (jsonResults == null || jsonResults.isEmpty()) {
                     continue;
                 }
@@ -176,6 +206,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
 
     @Override
     protected List<VectorRecord> listDocumentsImpl(String indexName, int offset, int limit) {
+        String redisIndex = redisIndexName(indexName);
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持列表查询");
         }
@@ -185,7 +216,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
         }
         RedisClient jedis = clientOpt.get();
         try {
-            String prefix = indexName + ":";
+            String prefix = redisIndex + ":";
             ScanParams scanParams = new ScanParams().match(prefix + "*").count(500);
             String cursor = ScanParams.SCAN_POINTER_START;
             List<String> allKeys = new ArrayList<>();
@@ -227,6 +258,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
 
     @Override
     protected void createIndexImpl(String indexName, VectorProperties.IndexConfig config) {
+        String redisIndex = redisIndexName(indexName);
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持创建索引");
         }
@@ -276,9 +308,9 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
                 }
             }
         }
-        String prefix = indexName + ":";
+        String prefix = redisIndex + ":";
         try {
-            String resp = jedis.ftCreate(indexName,
+            String resp = jedis.ftCreate(redisIndex,
                     FTCreateParams.createParams().on(IndexDataType.JSON).addPrefix(prefix),
                     fields);
             if (!"OK".equals(resp)) {
@@ -296,6 +328,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
 
     @Override
     protected void deleteIndexImpl(String indexName) {
+        String redisIndex = redisIndexName(indexName);
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持删除索引");
         }
@@ -305,7 +338,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
         }
         RedisClient jedis = clientOpt.get();
         try {
-            jedis.ftDropIndex(indexName);
+            jedis.ftDropIndex(redisIndex);
             log.info("Redis向量索引删除成功: {}", indexName);
         } catch (Exception e) {
             throw new RuntimeException("删除索引失败: " + indexName, e);
@@ -314,6 +347,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
 
     @Override
     protected boolean indexExistsImpl(String indexName) {
+        String redisIndex = redisIndexName(indexName);
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             return false;
         }
@@ -323,7 +357,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
         }
         RedisClient jedis = clientOpt.get();
         try {
-            return jedis.ftList().contains(indexName);
+            return jedis.ftList().contains(redisIndex);
         } catch (Exception e) {
             return false;
         }
@@ -347,9 +381,9 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
             throw new IllegalStateException("无法获取Jedis客户端");
         }
         try {
-            List<IndexInfo> indexes = clientOpt.get().ftList().stream()
-                    .map(this::describeIndexImpl)
-                    .toList();
+            List<IndexInfo> indexes = managedIndexes.isEmpty()
+                    ? clientOpt.get().ftList().stream().map(this::describeIndexImpl).toList()
+                    : managedIndexes.keySet().stream().filter(this::indexExistsImpl).map(this::describeIndexImpl).toList();
             log.debug("Redis 向量索引列表查询完成，数量={}", indexes.size());
             return indexes;
         } catch (Exception e) {
@@ -385,6 +419,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected boolean updateIndexConfigImpl(String indexName, VectorProperties.IndexConfig config) {
+        redisIndexName(indexName);
         log.warn("Redis RediSearch 不支持原地修改向量索引配置，请删除后重建: indexName={}", indexName);
         return false;
     }
@@ -398,6 +433,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected boolean optimizeImpl(String indexName) {
+        redisIndexName(indexName);
         return throwUnsupportedOps("optimize", indexName, "redis");
     }
 
@@ -411,6 +447,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected boolean createAliasImpl(String indexName, String alias) {
+        redisIndexName(indexName);
         return throwUnsupportedOps("createAlias", indexName, "redis");
     }
 
@@ -425,6 +462,8 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected boolean switchAliasImpl(String oldIndexName, String newIndexName, String alias) {
+        redisIndexName(oldIndexName);
+        redisIndexName(newIndexName);
         return throwUnsupportedOps("switchAlias", newIndexName, "redis");
     }
 
@@ -438,6 +477,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected boolean backupImpl(String indexName, String targetPath) {
+        redisIndexName(indexName);
         return throwUnsupportedOps("backup", indexName, "redis");
     }
 
@@ -451,6 +491,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected boolean restoreImpl(String sourcePath, String indexName) {
+        redisIndexName(indexName);
         return throwUnsupportedOps("restore", indexName, "redis");
     }
 
@@ -465,6 +506,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected IndexInfo getIndexStatsImpl(String indexName) {
+        String redisIndex = redisIndexName(indexName);
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持获取索引统计");
         }
@@ -473,7 +515,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
             throw new IllegalStateException("无法获取Jedis客户端");
         }
         try {
-            Map<String, Object> info = clientOpt.get().ftInfo(indexName);
+            Map<String, Object> info = clientOpt.get().ftInfo(redisIndex);
             Map<String, Object> vectorAttributes = findVectorAttributes(info.get("attributes"));
             Object dimensionValue = getIgnoreCase(vectorAttributes, "dim");
             if (dimensionValue == null) {
@@ -514,6 +556,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
 
     @Override
     protected VectorProperties.IndexConfig getIndexConfigImpl(String indexName) {
+        String redisIndex = redisIndexName(indexName);
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持获取索引配置");
         }
@@ -523,7 +566,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
         }
         RedisClient jedis = clientOpt.get();
         try {
-            Map<String, Object> info = jedis.ftInfo(indexName);
+            Map<String, Object> info = jedis.ftInfo(redisIndex);
             VectorProperties.IndexConfig config = new VectorProperties.IndexConfig();
             config.setName(indexName);
             if (info.containsKey("num_docs")) {
@@ -537,6 +580,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
 
     @Override
     protected long truncateIndexImpl(String indexName) {
+        String redisIndex = redisIndexName(indexName);
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持truncateIndex");
         }
@@ -546,7 +590,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
         }
         RedisClient jedis = clientOpt.get();
         long deleted = 0;
-        String prefix = indexName + ":";
+        String prefix = redisIndex + ":";
         ScanParams scanParams = new ScanParams().match(prefix + "*").count(500);
         String cursor = ScanParams.SCAN_POINTER_START;
         do {
@@ -567,6 +611,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
 
     @Override
     protected long countDocumentsImpl(String indexName) {
+        String redisIndex = redisIndexName(indexName);
         if (!(vectorStore instanceof RedisVectorStore rvs)) {
             throw new UnsupportedOperationException("当前VectorStore不支持计数");
         }
@@ -576,7 +621,7 @@ public class RedisVectorServiceImpl extends AbstractVectorService implements Vec
         }
         RedisClient jedis = clientOpt.get();
         try {
-            Map<String, Object> info = jedis.ftInfo(indexName);
+            Map<String, Object> info = jedis.ftInfo(redisIndex);
             Object numDocs = info.get("num_docs");
             if (numDocs instanceof Long) return (Long) numDocs;
             if (numDocs instanceof Integer) return ((Integer) numDocs).longValue();

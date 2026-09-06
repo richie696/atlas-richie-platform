@@ -21,7 +21,11 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.ObjectProvider;
+import cn.richie696.component.ai.service.RerankService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -44,8 +48,15 @@ import redis.clients.jedis.RedisClient;
  */
 @Slf4j
 @AutoConfiguration
+@AutoConfigureBefore(VectorAutoConfiguration.class)
 @Import(RedisVectorServiceImpl.class)
 public class RedisVectorAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(RedisVectorProviderFactory.class)
+    public RedisVectorProviderFactory redisVectorProviderFactory(ObjectProvider<RerankService> rerankService) {
+        return new RedisVectorProviderFactory(rerankService.getIfAvailable());
+    }
 
     /**
      * 构造可直接用于 add/search 的 Redis Stack 向量存储。
