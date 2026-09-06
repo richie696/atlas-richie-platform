@@ -1,6 +1,9 @@
 package cn.richie696.component.vector.knowledge;
 
 import cn.richie696.component.vector.model.VectorFilter;
+import cn.richie696.component.vector.topology.VectorScoreThresholdKind;
+
+import java.util.Map;
 
 /**
  * 商用知识库的统一检索请求。
@@ -41,16 +44,35 @@ import cn.richie696.component.vector.model.VectorFilter;
  * @param mmrLambda            MMR 相关性/冗余度权重；{@code [0, 1]}，常用 {@code 0.6}
  * @param maxChunksPerDocument 单文档最大入选项数；{@code &le; 0} 时取 {@code 2}；
  *                             控制"单文档霸榜"
- * @param additionalFilter     业务侧追加的过滤条件；为 {@code null} 时由
- *                             {@link DefaultKnowledgeBaseVectorService} 替换为
- *                             {@code VectorFilter.exists("tenantId")} 兜底断言
+ * @param additionalFilter     业务侧追加的过滤条件；{@code null} 表示没有额外业务过滤，
+ *                             不影响 {@link DefaultKnowledgeBaseVectorService} 始终生成的 ACL 条件
+ * @param minScore             归一化后的最低相似度门槛；{@code null} 表示不启用门槛。
+ *                             值由 provider 的已声明分数适配器解释，不能传原始距离；
+ *                             当 {@code thresholdKind=PROVIDER_RAW} 时取值范围由 Store
+ *                             声明决定，框架层只校验有限性
+ * @param thresholdKind        阈值解释方式；{@code null} 时默认
+ *                             {@link VectorScoreThresholdKind#NORMALIZED_RELEVANCE}，
+ *                             旧调用方行为不变
+ * @param providerSearchParameters provider 查询期整数参数；仅 provider 的封闭键空间可接受，
+ *                                 不能承载连接、索引构建或安全配置
  * @author richie696
  * @version 1.0
  * @since 2025-07-01
  */
 public record KnowledgeSearchRequest(String query, int topK, int candidateK, AccessScope accessScope,
                                      boolean rerank, boolean hybrid, String keywordQuery,
-                                     boolean mmr, double mmrLambda, int maxChunksPerDocument, VectorFilter additionalFilter) {
+                                     boolean mmr, double mmrLambda, int maxChunksPerDocument, VectorFilter additionalFilter,
+                                     Double minScore, VectorScoreThresholdKind thresholdKind,
+                                     Map<String, Integer> providerSearchParameters, String rerankModel) {
+
+    /** Backward-compatible constructor without explicit {@code thresholdKind} (defaults to NORMALIZED_RELEVANCE). */
+    public KnowledgeSearchRequest(String query, int topK, int candidateK, AccessScope accessScope,
+                                  boolean rerank, boolean hybrid, String keywordQuery,
+                                  boolean mmr, double mmrLambda, int maxChunksPerDocument, VectorFilter additionalFilter,
+                                  Double minScore, Map<String, Integer> providerSearchParameters, String rerankModel) {
+        this(query, topK, candidateK, accessScope, rerank, hybrid, keywordQuery, mmr, mmrLambda,
+                maxChunksPerDocument, additionalFilter, minScore, null, providerSearchParameters, rerankModel);
+    }
     /**
      * 紧凑构造器：执行所有字段的合法性校验和默认值规范化。
      *
@@ -70,5 +92,25 @@ public record KnowledgeSearchRequest(String query, int topK, int candidateK, Acc
         if (accessScope == null) throw new IllegalArgumentException("accessScope must not be null");
         if (mmrLambda < 0.0 || mmrLambda > 1.0) throw new IllegalArgumentException("mmrLambda must be between 0 and 1");
         maxChunksPerDocument = maxChunksPerDocument <= 0 ? 2 : maxChunksPerDocument;
+        if (minScore != null && !Double.isFinite(minScore)) {
+            throw new IllegalArgumentException("minScore must be a finite value");
+        }
+        if (minScore != null && minScore < 0.0) {
+            throw new IllegalArgumentException("minScore must not be negative");
+        }
+        if (thresholdKind == VectorScoreThresholdKind.NORMALIZED_RELEVANCE
+                && minScore != null && minScore > 1.0) {
+            throw new IllegalArgumentException(
+                    "NORMALIZED_RELEVANCE minScore must be within [0, 1]");
+        }
+        providerSearchParameters = providerSearchParameters == null ? Map.of() : Map.copyOf(providerSearchParameters);
+        providerSearchParameters.forEach((key, value) -> {
+            if (key == null || !key.matches("[a-z][a-z0-9]*(\\.[a-z][a-zA-Z0-9]*)+")) {
+                throw new IllegalArgumentException("provider search parameter key is invalid");
+            }
+            if (value == null || value < 1 || value > 32_768) {
+                throw new IllegalArgumentException("provider search parameter value must be between 1 and 32768");
+            }
+        });
     }
 }

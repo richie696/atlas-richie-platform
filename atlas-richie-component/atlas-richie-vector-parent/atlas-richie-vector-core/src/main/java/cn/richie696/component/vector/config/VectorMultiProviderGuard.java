@@ -29,11 +29,28 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class VectorMultiProviderGuard {
 
+    static final String SINGLE_NAMED_COMPATIBILITY_BEAN = "singleNamedVectorService";
+
     private final ApplicationContext applicationContext;
+    private final VectorProperties properties;
 
     @PostConstruct
     public void guard() {
         Map<String, VectorService> beansOfType = applicationContext.getBeansOfType(VectorService.class);
+
+        if (properties.hasNamedTopology()) {
+            if (beansOfType.isEmpty()) {
+                return;
+            }
+            if (properties.getStores() != null
+                    && properties.getStores().size() == 1
+                    && beansOfType.size() == 1
+                    && beansOfType.containsKey(SINGLE_NAMED_COMPATIBILITY_BEAN)) {
+                return;
+            }
+            throw new IllegalStateException("Named vector topology must not expose global VectorService beans: "
+                    + String.join(", ", beansOfType.keySet()));
+        }
 
         if (beansOfType.size() <= 1) {
             return;

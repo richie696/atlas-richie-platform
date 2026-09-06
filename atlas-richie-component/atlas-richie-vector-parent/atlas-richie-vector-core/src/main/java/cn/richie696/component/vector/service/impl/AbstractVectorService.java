@@ -28,6 +28,7 @@ import cn.richie696.component.vector.observation.RetrievalObservationContext;
 import cn.richie696.component.vector.observation.RetrievalObservationEvent;
 import cn.richie696.component.vector.observation.RetrievalObservationHook;
 import cn.richie696.component.vector.observation.RetrievalStage;
+import cn.richie696.component.vector.service.VectorIndexStatsOperations;
 import cn.richie696.component.vector.service.VectorService;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -68,7 +69,7 @@ import java.util.UUID;
  * @since 2.0.0
  */
 @Slf4j
-public abstract class AbstractVectorService implements VectorService {
+public abstract class AbstractVectorService implements VectorService, VectorIndexStatsOperations {
 
     /**
      * 列表查询最大单页限制
@@ -118,6 +119,7 @@ public abstract class AbstractVectorService implements VectorService {
     protected VectorProperties vectorProperties;
 
     @Autowired(required = false)
+    @Setter
     protected VectorFilterCompiler vectorFilterCompiler;
 
     /**
@@ -278,7 +280,7 @@ public abstract class AbstractVectorService implements VectorService {
 
         boolean rerankEnabled = Boolean.TRUE.equals(options.getRerank());
         List<VectorSearchResult> finalResults = rerankEnabled
-                ? tryRerank(text, mapped, hook, context)
+                ? tryRerank(text, mapped, options.getRerankModel(), hook, context)
                 : emitRerankSkipped(mapped, hook, context);
         RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
                 RetrievalStage.TOTAL, Duration.between(totalStarted, Instant.now()), mapped.size(),
@@ -771,6 +773,13 @@ public abstract class AbstractVectorService implements VectorService {
     protected List<VectorSearchResult> tryRerank(String queryText, List<VectorSearchResult> results,
                                                  RetrievalObservationHook hook,
                                                  RetrievalObservationContext context) {
+        return tryRerank(queryText, results, null, hook, context);
+    }
+
+    protected List<VectorSearchResult> tryRerank(String queryText, List<VectorSearchResult> results,
+                                                 String rerankModel,
+                                                 RetrievalObservationHook hook,
+                                                 RetrievalObservationContext context) {
         if (rerankService == null || results == null || results.size() < 2
                 || queryText == null || queryText.isBlank()) {
             RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.skipped(context,
@@ -788,7 +797,7 @@ public abstract class AbstractVectorService implements VectorService {
         RerankResponse resp;
         Instant rerankStarted = Instant.now();
         try {
-            resp = rerankService.rerank(queryText, documents, documentIds, null, null);
+            resp = rerankService.rerank(queryText, documents, documentIds, rerankModel, null);
         } catch (Exception e) {
             log.warn("重排序服务调用异常，跳过重排", e);
             RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(context,

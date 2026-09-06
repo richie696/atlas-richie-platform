@@ -22,6 +22,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 /**
  * 搜索选项。
  * <p>
@@ -43,6 +45,9 @@ public class SearchOptions {
      */
     @Builder.Default
     private Boolean rerank = true;
+
+    /** Bound rerank model API name; null delegates to the provider default. */
+    private String rerankModel;
 
     /**
      * 最小相似度阈值（0-1）
@@ -69,6 +74,15 @@ public class SearchOptions {
      * 文档类型过滤（type == this）
      */
     private String type;
+
+    /**
+     * Provider-specific, query-time numeric controls.  Keys are a closed
+     * provider contract (for example {@code milvus.ef}); providers must reject
+     * unknown or inapplicable keys rather than interpolate arbitrary options.
+     * Connection, index-construction and security settings are intentionally
+     * not represented here.
+     */
+    private Map<String, Integer> providerSearchParameters;
 
     /**
      * 可选的检索阶段观测钩子。默认不安装，避免 Vector Core 依赖业务指标系统。

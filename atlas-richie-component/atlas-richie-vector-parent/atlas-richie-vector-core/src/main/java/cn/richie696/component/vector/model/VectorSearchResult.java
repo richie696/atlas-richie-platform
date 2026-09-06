@@ -41,8 +41,10 @@ public class VectorSearchResult {
     private String content;
 
     /**
-     * 相似度分数
-     * 取值范围：0.0 - 1.0，越高表示越相似
+     * 当前 Store 适配器返回的最终排序分数，越高表示排序越靠前。
+     *
+     * <p>分数范围和转换方式由 Store 暴露的
+     * {@code VectorScoreSemantics} 能力声明；不同 Store、不同查询之间默认不可直接比较。</p>
      */
     private Double score;
 

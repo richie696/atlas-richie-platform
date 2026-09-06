@@ -16,7 +16,7 @@ import java.util.List;
  * 在 hybrid 模式下会通过 {@code instanceof} 严格挑选实现此接口的 provider，否则抛
  * {@link UnsupportedOperationException}。</p>
  *
- * <p>当前只有 Milvus / Qdrant 等少数 provider 同时支持 hybrid + filter 下推；其他 provider
+ * <p>当前只有明确配置了 sparse/named-vector 通道并能同时下推 filter 的少数 provider
  * 应通过 hybridSearchImpl 的 UOE 默认行为显式拒绝 hybrid 调用，而不是退化为 dense + 后过滤。</p>
  *
  * <p>调用关系：

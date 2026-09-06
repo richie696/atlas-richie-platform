@@ -20,74 +20,91 @@ import cn.richie696.component.vector.model.VectorRecord;
 import cn.richie696.component.vector.model.VectorSearchResult;
 import cn.richie696.component.vector.service.VectorService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import reactor.core.publisher.Flux;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
 class VectorMultiProviderGuardTest {
-
-    @Mock
-    private ApplicationContext applicationContext;
 
     @Test
     void guard_withSingleProvider_shouldNotThrow() {
-        Map<String, VectorService> beans = new HashMap<>();
-        beans.put("redisVectorService", new StubVectorService("RedisVectorServiceImpl"));
-
-        when(applicationContext.getBeansOfType(VectorService.class)).thenReturn(beans);
-
-        VectorMultiProviderGuard guard = newGuard();
+        GenericApplicationContext context = contextWith("redisVectorService");
+        VectorMultiProviderGuard guard = newGuard(context, new VectorProperties());
 
         assertDoesNotThrow(guard::guard);
+        context.close();
     }
 
     @Test
     void guard_withMultipleProviders_shouldThrow() {
-        Map<String, VectorService> beans = new HashMap<>();
-        beans.put("redisVectorService", new StubVectorService("RedisVectorServiceImpl"));
-        beans.put("milvusVectorService", new StubVectorService("MilvusVectorServiceImpl"));
-
-        when(applicationContext.getBeansOfType(VectorService.class)).thenReturn(beans);
-
-        VectorMultiProviderGuard guard = newGuard();
+        GenericApplicationContext context = contextWith("redisVectorService", "milvusVectorService");
+        VectorMultiProviderGuard guard = newGuard(context, new VectorProperties());
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, guard::guard);
         assertTrue(exception.getMessage().contains("检测到多个 VectorService 实现被同时引入"));
         assertTrue(exception.getMessage().contains("redisVectorService"));
         assertTrue(exception.getMessage().contains("milvusVectorService"));
+        context.close();
     }
 
     @Test
-    void guard_withThreeProviders_shouldListAll() {
-        Map<String, VectorService> beans = new HashMap<>();
-        beans.put("redisVectorService", new StubVectorService("RedisVectorServiceImpl"));
-        beans.put("milvusVectorService", new StubVectorService("MilvusVectorServiceImpl"));
-        beans.put("neo4jVectorService", new StubVectorService("Neo4jVectorServiceImpl"));
+    void guard_withNamedTopologyAndNoGlobalService_shouldNotThrow() {
+        GenericApplicationContext context = contextWith();
+        VectorProperties properties = namedProperties();
 
-        when(applicationContext.getBeansOfType(VectorService.class)).thenReturn(beans);
-
-        VectorMultiProviderGuard guard = newGuard();
-
-        IllegalStateException exception = assertThrows(IllegalStateException.class, guard::guard);
-        assertTrue(exception.getMessage().contains("redisVectorService"));
-        assertTrue(exception.getMessage().contains("milvusVectorService"));
-        assertTrue(exception.getMessage().contains("neo4jVectorService"));
+        assertDoesNotThrow(() -> newGuard(context, properties).guard());
+        context.close();
     }
 
-    private VectorMultiProviderGuard newGuard() {
-        VectorMultiProviderGuard guard = new VectorMultiProviderGuard(applicationContext);
-        return guard;
+    @Test
+    void guard_withSingleNamedCompatibilityService_shouldNotThrow() {
+        GenericApplicationContext context = contextWith(VectorMultiProviderGuard.SINGLE_NAMED_COMPATIBILITY_BEAN);
+        VectorProperties properties = namedProperties();
+
+        assertDoesNotThrow(() -> newGuard(context, properties).guard());
+        context.close();
+    }
+
+    @Test
+    void guard_withNamedTopologyAndGlobalService_shouldThrow() {
+        GenericApplicationContext context = contextWith("legacyVectorService");
+        VectorProperties properties = namedProperties();
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> newGuard(context, properties).guard());
+        assertTrue(exception.getMessage().contains("Named vector topology"));
+        assertTrue(exception.getMessage().contains("legacyVectorService"));
+        context.close();
+    }
+
+    private static VectorMultiProviderGuard newGuard(
+            GenericApplicationContext context,
+            VectorProperties properties) {
+        return new VectorMultiProviderGuard(context, properties);
+    }
+
+    private static GenericApplicationContext contextWith(String... beanNames) {
+        GenericApplicationContext context = new GenericApplicationContext();
+        for (String beanName : beanNames) {
+            context.registerBean(beanName, VectorService.class, () -> new StubVectorService(beanName));
+        }
+        context.refresh();
+        return context;
+    }
+
+    private static VectorProperties namedProperties() {
+        VectorProperties properties = new VectorProperties();
+        properties.setConnections(java.util.Map.of(
+                "primary", new VectorProperties.ConnectionConfig()
+                        .setProvider(cn.richie696.component.vector.enums.VectorProvider.MILVUS)));
+        properties.setStores(java.util.Map.of(
+                "primary", new VectorProperties.StoreConfig().setConnectionRef("primary")));
+        return properties;
     }
 
     /**

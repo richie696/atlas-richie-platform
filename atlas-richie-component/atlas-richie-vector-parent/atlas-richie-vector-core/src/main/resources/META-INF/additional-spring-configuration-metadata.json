@@ -1,0 +1,174 @@
+{
+  "groups": [
+    {
+      "name": "platform.component.vector.connections",
+      "description": "Named physical connections used by the multi-store topology. Each entry is identified by a connection id; the provider-specific settings remain opaque to core and are strictly validated by the matching provider factory."
+    },
+    {
+      "name": "platform.component.vector.stores",
+      "description": "Named logical vector stores. Business code routes by this stable id, not by provider type or Spring bean name."
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.query-defaults",
+      "description": "Optional Store-level query defaults. Null or empty fields inherit provider and core defaults. Applied with precedence: Core < Provider < Store < request."
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.indexes",
+      "description": "Logical indexes bound to the Store. Each entry is identified by an index id and is mapped to a physical collection/table/class by the active provider factory."
+    }
+  ],
+  "properties": [
+    {
+      "name": "platform.component.vector.connections.<connectionId>.provider",
+      "type": "cn.richie696.component.vector.enums.VectorProvider",
+      "description": "Provider type for the connection (e.g. milvus, weaviate, qdrant, redis, postgresql, mongodb, neo4j, vikingdb). One connection maps to one provider.",
+      "defaultValue": null
+    },
+    {
+      "name": "platform.component.vector.connections.<connectionId>.settings",
+      "type": "java.util.Map<java.lang.String,java.lang.Object>",
+      "description": "Provider-owned opaque settings. The matching provider factory is the single authority for key allow-listing and type validation; core preserves them as data."
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.connection-ref",
+      "type": "java.lang.String",
+      "description": "Reference to a connection id declared under platform.component.vector.connections.",
+      "defaultValue": null
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.embedding-model-ref",
+      "type": "java.lang.String",
+      "description": "Spring bean name of the EmbeddingModel for this Store. Use a distinct model per Store to avoid cross-Store vector-space contamination.",
+      "defaultValue": "aiEmbeddingModel"
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.embedding-normalization",
+      "type": "cn.richie696.component.vector.topology.EmbeddingNormalization",
+      "description": "Normalization contract the bound EmbeddingModel guarantees. Affects retrieval accuracy and Provider-side index compatibility checks.",
+      "defaultValue": "UNSPECIFIED"
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.embedding-modalities",
+      "type": "java.util.Set<cn.richie696.component.vector.model.Modality>",
+      "description": "Modalities supported by the bound EmbeddingModel. Used for capability discovery and Store description; not used to silently coerce data.",
+      "defaultValue": "[TEXT]"
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.default-index",
+      "type": "java.lang.String",
+      "description": "Logical index id bound to this Store. Must be declared in the same Store's indexes map.",
+      "defaultValue": "documents"
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.required",
+      "type": "java.lang.Boolean",
+      "description": "If true, Store startup failure blocks the application. If false, the Store is optional and a startup failure degrades the Store to DOWN without affecting the rest of the topology.",
+      "defaultValue": true
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.required-capabilities",
+      "type": "java.util.Set<java.lang.String>",
+      "description": "Provider-neutral capability ids the active provider must prove at startup (e.g. NATIVE_FILTER, ACL_FILTER, ACL_SAFE_HYBRID, QUERY_TUNING, INDEX_LIFECYCLE). See VectorCapability."
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.query-defaults.top-k",
+      "type": "java.lang.Integer",
+      "description": "Default topK for Store-bound searches. Inherits when null.",
+      "defaultValue": null
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.query-defaults.min-score",
+      "type": "java.lang.Double",
+      "description": "Default minScore for Store-bound searches. Meaning depends on the Store's declared score threshold kind (NORMALIZED_RELEVANCE or PROVIDER_RAW).",
+      "defaultValue": null
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.query-defaults.candidate-limit",
+      "type": "java.lang.Integer",
+      "description": "Default number of candidates recalled from the Provider before framework-side diversification. Must be >= topK.",
+      "defaultValue": null
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.query-defaults.timeout",
+      "type": "java.time.Duration",
+      "description": "Default per-search timeout enforced by the framework execution guard.",
+      "defaultValue": null
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.query-defaults.consistency",
+      "type": "cn.richie696.component.vector.query.VectorConsistencyPreference",
+      "description": "Default consistency preference. PROVIDER_DEFAULT delegates to the active provider; other values may be rejected by individual provider adapters.",
+      "defaultValue": "PROVIDER_DEFAULT"
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.query-defaults.return-fields",
+      "type": "java.util.Set<java.lang.String>",
+      "description": "Default logical return field names. Provider-bound; not all providers honor projection.",
+      "defaultValue": []
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.indexes.<indexId>.name",
+      "type": "java.lang.String",
+      "description": "Physical index/collection/table/class name. Validated by the active provider factory; physical identity is bound to the Store, never accepted from a regular request.",
+      "defaultValue": null
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.indexes.<indexId>.dimension",
+      "type": "java.lang.Integer",
+      "description": "Vector dimension. Must match the bound EmbeddingModel; mismatches are rejected at Store creation.",
+      "defaultValue": 1536
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.indexes.<indexId>.metric",
+      "type": "java.lang.String",
+      "description": "Distance metric. Provider-specific values (cosine, euclidean/l2, dot/ip, ...). The chosen metric drives the score semantics declaration.",
+      "defaultValue": "cosine"
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.indexes.<indexId>.index-type",
+      "type": "java.lang.String",
+      "description": "Index algorithm (hnsw, ivf, flat, ...). Provider-specific.",
+      "defaultValue": "hnsw"
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.indexes.<indexId>.replicas",
+      "type": "java.lang.Integer",
+      "description": "Replica count. Many providers do not apply this from the vector adapter; in that case the validator forces the value to 1.",
+      "defaultValue": 1
+    },
+    {
+      "name": "platform.component.vector.stores.<vectorStoreId>.indexes.<indexId>.shards",
+      "type": "java.lang.Integer",
+      "description": "Shard count. Many providers do not apply this from the vector adapter; in that case the validator forces the value to 1.",
+      "defaultValue": 1
+    }
+  ],
+  "hints": [
+    {
+      "name": "platform.component.vector.provider",
+      "values": [
+        { "value": "milvus", "description": "Milvus" },
+        { "value": "weaviate", "description": "Weaviate" },
+        { "value": "qdrant", "description": "Qdrant" },
+        { "value": "redis", "description": "Redis Stack" },
+        { "value": "postgresql", "description": "PostgreSQL + pgvector" },
+        { "value": "mongodb", "description": "MongoDB Atlas Vector Search" },
+        { "value": "neo4j", "description": "Neo4j vector indexes" },
+        { "value": "vikingdb", "description": "Volcengine VikingDB" }
+      ]
+    },
+    {
+      "name": "platform.component.vector.connections.<connectionId>.provider",
+      "values": [
+        { "value": "milvus", "description": "Milvus" },
+        { "value": "weaviate", "description": "Weaviate" },
+        { "value": "qdrant", "description": "Qdrant" },
+        { "value": "redis", "description": "Redis Stack" },
+        { "value": "postgresql", "description": "PostgreSQL + pgvector" },
+        { "value": "mongodb", "description": "MongoDB Atlas Vector Search" },
+        { "value": "neo4j", "description": "Neo4j vector indexes" },
+        { "value": "vikingdb", "description": "Volcengine VikingDB" }
+      ]
+    }
+  ]
+}

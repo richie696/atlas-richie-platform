@@ -15,6 +15,9 @@
  */
 package cn.richie696.component.vector.exceptions;
 
+import cn.richie696.component.vector.diagnostics.VectorCategorizedError;
+import cn.richie696.component.vector.diagnostics.VectorErrorCategory;
+
 /**
  * 向量数据库不存在异常
  *
@@ -22,7 +25,7 @@ package cn.richie696.component.vector.exceptions;
  * @version 1.0
  * @since 2025-07-01 16:18:21
  */
-public class VectorStoreNotExistException extends RuntimeException {
+public class VectorStoreNotExistException extends RuntimeException implements VectorCategorizedError {
 
     public VectorStoreNotExistException() {
     }
@@ -41,5 +44,10 @@ public class VectorStoreNotExistException extends RuntimeException {
 
     public VectorStoreNotExistException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
+    }
+
+    @Override
+    public VectorErrorCategory errorCategory() {
+        return VectorErrorCategory.ROUTE_NOT_FOUND;
     }
 }

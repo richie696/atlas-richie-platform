@@ -121,6 +121,11 @@ public enum VectorProvider {
     NEO4J,
 
     /**
+     * 火山引擎 VikingDB 向量数据库。
+     */
+    VIKINGDB,
+
+    /**
      * Elasticsearch向量数据库
      * 基于Elasticsearch的向量检索能力
      * <p>

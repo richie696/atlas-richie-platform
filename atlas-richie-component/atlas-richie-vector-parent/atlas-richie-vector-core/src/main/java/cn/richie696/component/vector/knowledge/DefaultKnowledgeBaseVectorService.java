@@ -106,7 +106,7 @@ public final class DefaultKnowledgeBaseVectorService implements KnowledgeBaseVec
      * <ol>
      *   <li>校验 {@code knowledgeBaseId} 非空</li>
      *   <li>构造 ACL filter（含 tenantId/knowledgeBaseId/status + visibility 决策树），
-     *       并 AND 上 {@code additionalFilter}（或 {@code tenantId exists} 兜底）</li>
+     *       并在非空时 AND 上 {@code additionalFilter}</li>
      *   <li>若注入 resolver，附加 {@code projectionVersionId IN (active)}；空集短路</li>
      *   <li>根据 {@code request.hybrid()} 选择 hybrid 或 dense 检索</li>
      *   <li>对候选应用 MMR 与单文档多样性截断，产出 {@link RetrievalCitation} 列表</li>
@@ -150,7 +150,8 @@ public final class DefaultKnowledgeBaseVectorService implements KnowledgeBaseVec
             }
             filter = VectorFilter.and(filter, VectorFilter.in("projectionVersionId", activeVersions));
         }
-        SearchOptions options = SearchOptions.builder().filter(filter).rerank(request.rerank())
+        SearchOptions options = SearchOptions.builder().filter(filter).rerank(request.rerank()).minScore(request.minScore())
+                .providerSearchParameters(request.providerSearchParameters())
                 .observationHook(observationCollector).observationContext(observationContext).build();
         try {
             List<VectorSearchResult> candidates;

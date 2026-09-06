@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Map;
+
 class SearchOptionsTest {
 
     @Test
@@ -41,6 +43,7 @@ class SearchOptionsTest {
                 .namespace("tenant-1")
                 .limit(20)
                 .type("document")
+                .providerSearchParameters(Map.of("milvus.ef", 128))
                 .build();
 
         assertThat(opts.getRerank()).isFalse();
@@ -48,6 +51,7 @@ class SearchOptionsTest {
         assertThat(opts.getNamespace()).isEqualTo("tenant-1");
         assertThat(opts.getLimit()).isEqualTo(20);
         assertThat(opts.getType()).isEqualTo("document");
+        assertThat(opts.getProviderSearchParameters()).containsEntry("milvus.ef", 128);
     }
 
     @Test

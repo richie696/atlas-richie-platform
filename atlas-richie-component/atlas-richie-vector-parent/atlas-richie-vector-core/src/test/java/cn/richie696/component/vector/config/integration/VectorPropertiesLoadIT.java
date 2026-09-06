@@ -39,5 +39,9 @@ class VectorPropertiesLoadIT {
         assertThat(vectorProperties.getDefaultIndex()).isEqualTo("it-documents");
         assertThat(vectorProperties.getIndexes()).containsKey("it-documents");
         assertThat(vectorProperties.getIndexes().get("it-documents").getDimension()).isEqualTo(3);
+        vectorProperties.validateNamedTopology();
+        assertThat(vectorProperties.hasNamedTopology()).isFalse();
+        assertThat(vectorProperties.getConnections()).isEmpty();
+        assertThat(vectorProperties.getStores()).isEmpty();
     }
 }

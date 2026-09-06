@@ -13,8 +13,9 @@ import java.util.Objects;
  * 集合交集、区间、字段存在、取反、组合"等典型 RAG 过滤诉求。</p>
  *
  * <p>调用关系：{@link cn.richie696.component.vector.knowledge.KnowledgeSearchRequest#additionalFilter}
- * 持有本类型实例，作为业务侧追加的过滤条件（{@code null} 时由知识库门面
- * 替换为 {@code VectorFilter.exists("tenantId")} 兜底断言）；{@link cn.richie696.component.vector.filter.VectorFilterCompiler}
+ * 持有本类型实例，作为业务侧追加的过滤条件；知识库门面始终独立构造 tenant、知识库、状态和
+ * 可见性 ACL，{@code additionalFilter == null} 仅表示没有额外业务过滤；
+ * {@link cn.richie696.component.vector.filter.VectorFilterCompiler}
  * 负责把本类型编译为目标 provider 的服务端过滤语法。所有 provider 共用同一棵表达式树，避免在调用侧写
  * 7 套字符串 DSL；代价是部分 provider 不支持 {@link ContainsAny} / {@link Range}，由编译器在该场景下
  * 抛 {@link UnsupportedOperationException}。</p>
