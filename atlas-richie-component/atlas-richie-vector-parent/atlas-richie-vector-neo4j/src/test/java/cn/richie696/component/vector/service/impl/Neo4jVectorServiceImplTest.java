@@ -21,11 +21,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import org.neo4j.driver.*;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.summary.ResultSummary;
@@ -55,29 +50,29 @@ import static org.mockito.Mockito.*;
  *
  * <p>使用 Mockito 模拟 Neo4j Driver/Session/Result，避免对真实 Neo4j 实例的依赖。
  */
-@ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class Neo4jVectorServiceImplTest {
 
-    @Mock
     private VectorStore vectorStore;
 
-    @Mock
     private EmbeddingModel embeddingModel;
 
-    @Mock
     private Driver driver;
 
-    @Mock
     private Session session;
 
-    @Mock
     private Result result;
 
     private Neo4jVectorServiceImpl vectorService;
 
     @BeforeEach
     void setUp() {
+        // Explicit construction also initializes outer fixtures for every @Nested test on JDK 25.
+        vectorStore = mock(VectorStore.class);
+        embeddingModel = mock(EmbeddingModel.class);
+        driver = mock(Driver.class);
+        session = mock(Session.class);
+        result = mock(Result.class);
+        when(driver.session(any(SessionConfig.class))).thenReturn(session);
         // Neo4jVectorServiceImpl 构造器参数顺序: VectorStore, EmbeddingModel, Driver
         vectorService = new Neo4jVectorServiceImpl(null, vectorStore, embeddingModel, driver);
     }
@@ -94,7 +89,7 @@ class Neo4jVectorServiceImplTest {
             // when
             vectorService.createIndex("documents", new VectorProperties.IndexConfig());
             // then
-            verify(driver).session();
+            verify(driver).session(any(SessionConfig.class));
             // CONSTRAINT 与 VECTOR INDEX 两条 Cypher 都执行；用 contains 匹配子串
             verify(session, times(2)).run(anyString());
             verify(session, atLeastOnce()).run(contains("CREATE CONSTRAINT"));
@@ -171,7 +166,7 @@ class Neo4jVectorServiceImplTest {
             // when
             vectorService.deleteIndex("documents");
             // then
-            verify(driver).session();
+            verify(driver).session(any(SessionConfig.class));
             verify(session).run(contains("DROP CONSTRAINT"));
             verify(session).run(contains("VectorDocument_documents"));
             verify(session).close();
@@ -463,7 +458,7 @@ class Neo4jVectorServiceImplTest {
         @DisplayName("deleteByIds 空列表不应执行 Cypher")
         void deleteByIds_whenEmpty_shouldNotRunCypher() {
             vectorService.deleteByIds("documents", List.of());
-            verify(driver, never()).session();
+            verify(driver, never()).session(any(SessionConfig.class));
         }
     }
 
@@ -506,7 +501,7 @@ class Neo4jVectorServiceImplTest {
         @DisplayName("空 ID 列表应直接返回空列表")
         void getByIds_whenEmptyIds_shouldReturnEmpty() {
             assertThat(vectorService.getByIds("documents", List.of())).isEmpty();
-            verify(driver, never()).session();
+            verify(driver, never()).session(any(SessionConfig.class));
         }
     }
 

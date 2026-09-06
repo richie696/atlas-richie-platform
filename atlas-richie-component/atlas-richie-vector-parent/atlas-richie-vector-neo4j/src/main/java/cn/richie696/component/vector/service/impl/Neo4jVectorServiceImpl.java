@@ -65,6 +65,8 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      * <p>用于创建会话并执行 Cypher 查询语句.</p>
      */
     private final Driver driver;
+    private final SessionConfig sessionConfig;
+    private final Map<String, String> managedIndexes;
 
     /**
      * 构造函数.
@@ -81,8 +83,41 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
                                   VectorStore vectorStore,
                                   @Qualifier("aiEmbeddingModel") EmbeddingModel embeddingModel,
                                   Driver driver) {
+        this(rerankService, vectorStore, embeddingModel, driver, SessionConfig.defaultConfig(), Map.of());
+    }
+
+    /** Store-bound constructor used by Named Multi-store. */
+    public Neo4jVectorServiceImpl(RerankService rerankService,
+                                  VectorStore vectorStore,
+                                  EmbeddingModel embeddingModel,
+                                  Driver driver,
+                                  SessionConfig sessionConfig,
+                                  Map<String, String> managedIndexes) {
         super(rerankService, vectorStore, embeddingModel);
         this.driver = driver;
+        this.sessionConfig = sessionConfig == null ? SessionConfig.defaultConfig() : sessionConfig;
+        this.managedIndexes = Map.copyOf(managedIndexes == null ? Map.of() : managedIndexes);
+    }
+
+    @Override
+    protected void validateIndexName(String indexName) {
+        super.validateIndexName(indexName);
+        if (!managedIndexes.isEmpty() && !managedIndexes.containsKey(indexName)) {
+            throw new IllegalArgumentException("index is not declared by this Neo4j Store: " + indexName);
+        }
+    }
+
+    private String physicalIndexBase(String indexName) {
+        validateIndexName(indexName);
+        return managedIndexes.isEmpty() ? indexName : managedIndexes.get(indexName);
+    }
+
+    private String nodeLabel(String indexName) {
+        return VECTOR_LABEL_PREFIX + physicalIndexBase(indexName);
+    }
+
+    private String vectorIndexName(String indexName) {
+        return physicalIndexBase(indexName) + "_idx";
     }
 
     // ====================================================================
@@ -112,19 +147,20 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected void createIndexImpl(String indexName, VectorProperties.IndexConfig config) {
-        String label = VECTOR_LABEL_PREFIX + indexName;
+        String label = nodeLabel(indexName);
+        String vectorIndex = vectorIndexName(indexName);
         int dimension = config != null && config.getDimension() != null ? config.getDimension() : DEFAULT_DIMENSION;
         String metric = config != null && config.getMetric() != null ? config.getMetric() : "cosine";
         String similarity = mapMetric(metric);
 
         String constraintCypher = "CREATE CONSTRAINT IF NOT EXISTS FOR (n:" + label + ") REQUIRE n.id IS UNIQUE";
         // 字段名为 embedding；Neo4j 5.11+ vector.similarity_function 支持 cosine/euclidean/dot
-        String vectorIndexCypher = "CREATE VECTOR INDEX `" + indexName + "_idx` IF NOT EXISTS "
+        String vectorIndexCypher = "CREATE VECTOR INDEX `" + vectorIndex + "` IF NOT EXISTS "
                 + "FOR (n:" + label + ") ON (n.embedding) "
                 + "OPTIONS {indexConfig: {`vector.dimensions`: " + dimension
                 + ", `vector.similarity_function`: '" + similarity + "'}}";
 
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(sessionConfig)) {
             session.run(constraintCypher);
             session.run(vectorIndexCypher);
             log.info("Neo4j VECTOR INDEX 创建完成: label={}, dim={}, similarity={}", label, dimension, similarity);
@@ -156,9 +192,10 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected void deleteIndexImpl(String indexName) {
-        String label = VECTOR_LABEL_PREFIX + indexName;
+        String label = nodeLabel(indexName);
         String cypher = "DROP CONSTRAINT IF EXISTS FOR (n:" + label + ") REQUIRE n.id IS UNIQUE";
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(sessionConfig)) {
+            session.run("DROP INDEX `" + vectorIndexName(indexName) + "` IF EXISTS");
             session.run(cypher);
         }
     }
@@ -174,9 +211,9 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected boolean indexExistsImpl(String indexName) {
-        String label = VECTOR_LABEL_PREFIX + indexName;
+        String label = nodeLabel(indexName);
         String cypher = "SHOW CONSTRAINTS";
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(sessionConfig)) {
             Result result = session.run(cypher);
             while (result.hasNext()) {
                 Record record = result.next();
@@ -203,9 +240,9 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected VectorProperties.IndexConfig getIndexConfigImpl(String indexName) {
-        String label = VECTOR_LABEL_PREFIX + indexName;
+        String label = nodeLabel(indexName);
         String cypher = "SHOW CONSTRAINTS";
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(sessionConfig)) {
             Result result = session.run(cypher);
             while (result.hasNext()) {
                 Record record = result.next();
@@ -231,9 +268,9 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected long countDocumentsImpl(String indexName) {
-        String label = VECTOR_LABEL_PREFIX + indexName;
+        String label = nodeLabel(indexName);
         String cypher = "MATCH (n:" + label + ") RETURN count(n) as count";
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(sessionConfig)) {
             Result result = session.run(cypher);
             if (result.hasNext()) {
                 return result.next().get("count").asLong();
@@ -261,9 +298,12 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected List<IndexInfo> listIndexesImpl() {
+        if (!managedIndexes.isEmpty()) {
+            return managedIndexes.keySet().stream().map(this::describeIndexImpl).toList();
+        }
         String cypher = "SHOW INDEXES YIELD name, type, labelsOrTypes, options WHERE type = 'VECTOR'";
         List<IndexInfo> indexes = new ArrayList<>();
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(sessionConfig)) {
             Result result = session.run(cypher);
             while (result.hasNext()) {
                 Record record = result.next();
@@ -333,13 +373,13 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected IndexInfo describeIndexImpl(String indexName) {
-        String label = VECTOR_LABEL_PREFIX + indexName;
+        String label = nodeLabel(indexName);
         String cypher = "SHOW INDEXES YIELD name, type, labelsOrTypes, options WHERE type = 'VECTOR'";
 
         String vectorIndexName = null;
         Integer dimension = null;
         String similarity = null;
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(sessionConfig)) {
             Result result = session.run(cypher);
             while (result.hasNext()) {
                 Record record = result.next();
@@ -408,12 +448,12 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected boolean updateIndexConfigImpl(String indexName, VectorProperties.IndexConfig config) {
-        String label = VECTOR_LABEL_PREFIX + indexName;
-        String vectorIdxName = indexName + "_idx";
+        String label = nodeLabel(indexName);
+        String vectorIdxName = vectorIndexName(indexName);
         String dropIdxCypher = "DROP INDEX `" + vectorIdxName + "` IF EXISTS";
         String dropConstrCypher = "DROP CONSTRAINT IF EXISTS FOR (n:" + label + ") REQUIRE n.id IS UNIQUE";
 
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(sessionConfig)) {
             session.run(dropIdxCypher);
             session.run(dropConstrCypher);
             log.info("Neo4j 索引配置更新前清理完成: label={}, vectorIdx={}", label, vectorIdxName);
@@ -445,10 +485,10 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected IndexInfo getIndexStatsImpl(String indexName) {
-        String label = VECTOR_LABEL_PREFIX + indexName;
+        String label = nodeLabel(indexName);
         long count = countDocuments(indexName);
         Map<String, Object> metadata = new HashMap<>();
-        metadata.put("vectorIndexName", indexName + "_idx");
+        metadata.put("vectorIndexName", vectorIndexName(indexName));
         metadata.put("label", label);
         return new IndexInfo(
                 indexName,
@@ -482,10 +522,10 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected long truncateIndexImpl(String indexName) {
-        String label = VECTOR_LABEL_PREFIX + indexName;
+        String label = nodeLabel(indexName);
         long previousCount = countDocuments(indexName);
         String cypher = "MATCH (n:" + label + ") DETACH DELETE n";
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(sessionConfig)) {
             ResultSummary summary = session.run(cypher).consume();
             SummaryCounters counters = summary.counters();
             long deleted = counters.nodesDeleted();
@@ -509,6 +549,7 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected List<Document> similaritySearchByVector(String indexName, float[] vector, int limit, double minScore) {
+        String vectorIndex = vectorIndexName(indexName);
         if (vector == null || vector.length == 0) {
             throw new IllegalArgumentException("查询向量不能为空");
         }
@@ -516,14 +557,13 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
             throw new IllegalArgumentException("limit 必须大于 0");
         }
 
-        String label = VECTOR_LABEL_PREFIX + indexName;
         String cypher = "CALL db.index.vector.queryNodes($indexName, $limit, $queryVector) YIELD node, score " +
                 "RETURN node.id AS id, node.content AS content, score";
 
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(sessionConfig)) {
             Result result = session.run(cypher,
                     Values.parameters(
-                            "indexName", label,
+                            "indexName", vectorIndex,
                             "limit", limit,
                             "queryVector", vector
                     ));
@@ -562,6 +602,7 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected void addEmbeddings(String indexName, List<Document> docs) {
+        physicalIndexBase(indexName);
         if (docs == null || docs.isEmpty()) {
             return;
         }
@@ -575,6 +616,7 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
 
     @Override
     protected void writeStoreManagedRecords(String indexName, List<VectorRecord> records) {
+        physicalIndexBase(indexName);
         vectorStore.add(records.stream().map(record -> toAiDocument(record, null)).toList());
     }
 
@@ -592,9 +634,9 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
         if (ids == null || ids.isEmpty()) {
             return;
         }
-        String label = VECTOR_LABEL_PREFIX + indexName;
+        String label = nodeLabel(indexName);
         String cypher = "MATCH (n:" + label + ") WHERE n.id IN $ids DELETE n";
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(sessionConfig)) {
             session.run(cypher, Values.parameters("ids", ids));
         }
     }
@@ -615,9 +657,9 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
         if (ids == null || ids.isEmpty()) {
             return List.of();
         }
-        String label = VECTOR_LABEL_PREFIX + indexName;
+        String label = nodeLabel(indexName);
         String cypher = "MATCH (n:" + label + ") WHERE n.id IN $ids RETURN n";
-        return queryToRecords(label, cypher, Values.parameters("ids", ids));
+        return queryToRecords(indexName, cypher, Values.parameters("ids", ids));
     }
 
     /**
@@ -633,9 +675,9 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected List<VectorRecord> listDocumentsImpl(String indexName, int offset, int limit) {
-        String label = VECTOR_LABEL_PREFIX + indexName;
+        String label = nodeLabel(indexName);
         String cypher = "MATCH (n:" + label + ") RETURN n ORDER BY n.id SKIP $offset LIMIT $limit";
-        return queryToRecords(label, cypher, Values.parameters("offset", offset, "limit", limit));
+        return queryToRecords(indexName, cypher, Values.parameters("offset", offset, "limit", limit));
     }
 
     // ====================================================================
@@ -662,6 +704,7 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected boolean optimizeImpl(String indexName) {
+        physicalIndexBase(indexName);
         return throwUnsupportedOps("optimize", indexName, "neo4j");
     }
 
@@ -678,6 +721,7 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected boolean createAliasImpl(String indexName, String alias) {
+        physicalIndexBase(indexName);
         return throwUnsupportedOps("createAlias", indexName, "neo4j");
     }
 
@@ -695,6 +739,8 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected boolean switchAliasImpl(String oldIndexName, String newIndexName, String alias) {
+        physicalIndexBase(oldIndexName);
+        physicalIndexBase(newIndexName);
         return throwUnsupportedOps("switchAlias", newIndexName, "neo4j");
     }
 
@@ -711,6 +757,7 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected boolean backupImpl(String indexName, String targetPath) {
+        physicalIndexBase(indexName);
         return throwUnsupportedOps("backup", indexName, "neo4j");
     }
 
@@ -726,6 +773,7 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      */
     @Override
     protected boolean restoreImpl(String sourcePath, String indexName) {
+        physicalIndexBase(indexName);
         return throwUnsupportedOps("restore", indexName, "neo4j");
     }
 
@@ -740,16 +788,16 @@ public class Neo4jVectorServiceImpl extends AbstractVectorService implements Vec
      * 因为 {@link VectorContent.TextContent} 紧凑构造器拒绝空字符串）。</p>
      */
     @SuppressWarnings("unchecked")
-    private List<VectorRecord> queryToRecords(String label, String cypher, Value parameters) {
+    private List<VectorRecord> queryToRecords(String logicalIndexName, String cypher, Value parameters) {
         List<VectorRecord> records = new ArrayList<>();
-        try (Session session = driver.session()) {
+        try (Session session = driver.session(sessionConfig)) {
             Result result = session.run(cypher, parameters);
             while (result.hasNext()) {
                 Record record = result.next();
                 Map<String, Object> props = record.get("n").asNode().asMap();
                 VectorRecord vr = new VectorRecord()
                         .setId((String) props.get("id"))
-                        .setIndexName(label.substring(VECTOR_LABEL_PREFIX.length()));
+                        .setIndexName(logicalIndexName);
                 String content = props.get("content") instanceof String s ? s : " ";
                 vr.setContent(new VectorContent.TextContent(content, "text/plain"));
                 if (props.get("metadata") instanceof Map) {

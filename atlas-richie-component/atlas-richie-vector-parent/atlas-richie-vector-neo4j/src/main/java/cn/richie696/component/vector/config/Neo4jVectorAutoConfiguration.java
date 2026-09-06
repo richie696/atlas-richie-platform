@@ -22,12 +22,16 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.neo4j.Neo4jVectorStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
 import java.util.concurrent.TimeUnit;
+import org.springframework.beans.factory.ObjectProvider;
+import cn.richie696.component.ai.service.RerankService;
 
 /**
  * Neo4j向量数据库自动配置类
@@ -39,9 +43,16 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @AutoConfiguration
+@AutoConfigureBefore(VectorAutoConfiguration.class)
 @EnableConfigurationProperties(Neo4jConfig.class)
 @Import(Neo4jVectorServiceImpl.class)
 public class Neo4jVectorAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(Neo4jVectorProviderFactory.class)
+    public Neo4jVectorProviderFactory neo4jVectorProviderFactory(ObjectProvider<RerankService> rerankService) {
+        return new Neo4jVectorProviderFactory(rerankService.getIfAvailable());
+    }
 
     /**
      * Neo4j 向量数据库自动装配
