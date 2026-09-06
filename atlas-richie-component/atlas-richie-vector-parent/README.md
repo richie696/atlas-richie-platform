@@ -1,11 +1,8 @@
 # Atlas Richie Vector Component (atlas-richie-vector-parent)
 
-> **One-line value**: The data-access foundation for commercial RAG knowledge bases. "Semantic similarity" and "is this
-> content authorized for this caller" are resolved in a single query, with no binding to any specific vector database SDK.
+> **One-line value**: A provider-neutral multi-store vector data plane and capability-governance foundation for document RAG, prompt normalization, tool/MCP retrieval, and other retrieval workloads.
 >
-> **Core positioning**: In the RAG pipeline, this component **only handles the vector data plane**—file parsing is
-> delegated to `document-parser`, text chunking to `document-chunking`, Embedding/reranking to `component-ai`, and
-> ACL/document facts are owned by the business system. The complete pipeline:
+> **Core positioning**: This component **only handles the generic vector data plane**—connection/Store isolation, write, search, filtering, capability discovery, and query tuning. Parsing, chunking, business routing, authorization facts, and policy publication remain consumer responsibilities. RAG is one possible pipeline:
 
 ```text
 document-parser → document-chunking → vector-chunk-adapter → vector
@@ -72,13 +69,11 @@ document-parser → document-chunking → vector-chunk-adapter → vector
 
 ---
 
+For Named Multi-store configuration and migration, see [`docs/configuration/named-multi-store.md`](docs/configuration/named-multi-store.md) and [`docs/migration/legacy-to-named-multi-store.md`](docs/migration/legacy-to-named-multi-store.md).
+
 ## 🎯 Component Overview
 
-`atlas-richie-vector-parent` is the data-access foundation for commercial RAG knowledge bases. The challenge is not
-"how to write text into a vector database"—any SDK can do that. The real challenge is: in a multi-tenant,
-strictly-permissioned, frequently-updated, quality-sensitive commercial scenario, how to keep business code free of any
-specific vector database's filtering DSL, how to avoid being locked into one vector database's operational
-characteristics, and how to guarantee permissions are enforced at the recall stage rather than as an afterthought.
+`atlas-richie-vector-parent` is a generic vector data-access and capability-governance foundation. Its central concern is how multiple Stores and Providers safely coexist in one application, while document, prompt, tool, and other retrieval workloads receive isolated connections, embeddings, indexes, and evidence-backed capabilities.
 
 This component abstracts the vector data plane into four universal capabilities: **write, delete by vectorId, read by
 ID, basic semantic search**. Provider-specific capabilities (delete by documentId, alias, backup, native hybrid,
@@ -87,9 +82,8 @@ support, or doesn't implement at all**—this prevents business code from confus
 
 ### Key Features
 
-- ✅ **Unified Facade**: `VectorService` / `KnowledgeBaseVectorService` are the shared entry points for all providers;
-  business code only depends on abstractions
-- ✅ **10 Pluggable Providers**: Milvus, Qdrant, Weaviate, PostgreSQL/pgvector, Redis, MongoDB Atlas, Neo4j,
+- ✅ **Unified Facade**: simple projects keep `VectorService`; multi-store projects use `VectorServiceRegistry` and Store-bound handles
+- ✅ **8 Pluggable Providers**: Milvus, Qdrant, Weaviate, PostgreSQL/pgvector, Redis, MongoDB Atlas, Neo4j,
   VikingDB—declared by capability, not by brand
 - ✅ **Forced ACL Pushdown**: `KnowledgeBaseVectorService` mandates that tenant, visibility, status, and other structured
   filters are pushed down to the provider's native query execution—never "fetch Top-K then filter in JVM" which leaks
@@ -111,8 +105,8 @@ support, or doesn't implement at all**—this prevents business code from confus
 - ✅ **Failure Observability**: `BulkOperationEvent` stream
   (`Started / ItemStarted / ItemSucceeded / ItemFailed / Completed`) + `ChunkingSignal` + `OcrException` sealed
   exception hierarchy across the full pipeline
-- ✅ **Configuration-Driven**: `platform.component.vector.provider=milvus`—one line to switch backends, no business code
-  changes
+- ✅ **Progressive Configuration**: legacy single-provider projects need no new settings; Named Connections/Stores, multiple embeddings, and advanced capabilities are opt-in
+- ✅ **Typed Advanced Retrieval**: Store capabilities expose query defaults, provider extensions, execution receipts, candidate vectors/MMR, score semantics, and ACL-safe hybrid; see [Advanced vector query capabilities](docs/advanced-query-capabilities.md)
 
 ### Boundaries with Peer Components
 
@@ -1038,8 +1032,8 @@ same**. Different providers' `createIndex` may involve completely different meta
 | `VectorIndexLifecycleOperations`       | ✅      | createIndex / dropIndex          |
 | `VectorIndexStatsOperations`           | ✅      | Full statistics                  |
 | `VectorIndexAliasOperations`           | ✅      | createAlias / switchAlias        |
-| `VectorHybridSearchOperations`         | ✅      | dense + sparse                   |
-| `VectorAclAwareHybridSearchOperations` | ✅      | **ACL pushdown on hybrid**       |
+| `VectorHybridSearchOperations`         | ❌      | Current schema exposes dense only; no sparse channel |
+| `VectorAclAwareHybridSearchOperations` | ❌      | Requires a configured dense+sparse schema             |
 | `VectorMultiVectorSearchOperations`    | ✅      | named vector                     |
 | `VectorBackupOperations`               | ⚠️      | Metadata backup only, no vectors |
 | Multimodal (CLIP)                      | ✅      | 1024-d shared space              |
@@ -1056,7 +1050,7 @@ same**. Different providers' `createIndex` may involve completely different meta
 | `VectorIndexStatsOperations`           | ✅      | Complete                                                                        |
 | `VectorIndexAliasOperations`           | ❌      | No alias concept                                                                |
 | `VectorHybridSearchOperations`         | ⚠️      | dense + sparse, but sparse must be pre-generated                                |
-| `VectorAclAwareHybridSearchOperations` | ⚠️      | Filter pushdown works, but hybrid dual channels need business-side coordination |
+| `VectorAclAwareHybridSearchOperations` | ❌      | This adapter does not configure sparse/named-vector channels                  |
 | `VectorMultiVectorSearchOperations`    | ❌      | No named vector concept                                                         |
 | `VectorBackupOperations`               | ✅      | snapshot backup                                                                 |
 | Multimodal (CLIP)                      | ❌      | Requires external CLIP service                                                  |
@@ -1073,7 +1067,7 @@ same**. Different providers' `createIndex` may involve completely different meta
 | `VectorIndexStatsOperations`           | ✅      | Complete                        |
 | `VectorIndexAliasOperations`           | ❌      | No alias concept                |
 | `VectorHybridSearchOperations`         | ✅      | **Native hybrid is a strength** |
-| `VectorAclAwareHybridSearchOperations` | ✅      | Filter integrated with hybrid   |
+| `VectorAclAwareHybridSearchOperations` | ✅      | **where pushed down by Weaviate during hybrid retrieval** |
 | `VectorMultiVectorSearchOperations`    | ⚠️      | Implemented via named vectors   |
 | `VectorBackupOperations`               | ✅      | Complete                        |
 | Multimodal (CLIP)                      | ✅      | Native support                  |

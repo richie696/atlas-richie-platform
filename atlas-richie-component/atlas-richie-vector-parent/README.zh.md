@@ -1,10 +1,8 @@
 # Atlas Richie 向量组件 (atlas-richie-vector-parent)
 
-> **一句话价值**：商用 RAG 知识库的数据访问底座。把"语义相近"与"这条内容是否有权返回"放在同一次查询中完成，不绑定任何具体向量库
-> SDK。
+> **一句话价值**：通用的多向量库数据访问与能力治理底座。让文档 RAG、提示词归一化、工具/MCP 检索等用途在同一项目中按 Store 隔离并按真实能力使用，不绑定具体向量库 SDK。
 >
-> **核心定位**：在 RAG 链路中，它 **只负责向量数据面**——文件解析交给 `document-parser`，文本切片交给 `document-chunking`
-> ，Embedding/重排交给 `component-ai`，ACL/文档事实由业务系统承担。完整链路：
+> **核心定位**：它 **只负责通用向量数据面**——连接与 Store 隔离、写入、检索、过滤、能力发现和查询调优；文件解析、文本切片、业务路由、权限事实和策略发布由消费项目承担。RAG 只是其中一种使用链路：
 
 ```text
 document-parser → document-chunking → vector-chunk-adapter → vector
@@ -71,11 +69,11 @@ document-parser → document-chunking → vector-chunk-adapter → vector
 
 ---
 
+Named Multi-store 的配置与迁移请参阅 [`docs/configuration/named-multi-store.md`](docs/configuration/named-multi-store.md) 和 [`docs/migration/legacy-to-named-multi-store.md`](docs/migration/legacy-to-named-multi-store.md)。
+
 ## 🎯 组件概述
 
-`atlas-richie-vector-parent` 是商用 RAG 知识库的数据访问底座。它解决的不是"如何把文本写进向量库"——这件事任何 SDK
-都能做——而是 **在多租户、强权限、文档频繁更新、检索质量要求严苛的商用场景下**，如何让业务方不必关心向量库的过滤
-DSL、不被某个向量库的运维特性绑死、且仍能保证权限在召回阶段就生效。
+`atlas-richie-vector-parent` 是通用向量数据访问与能力治理底座。它解决的不是"如何把文本写进向量库"，而是同一应用如何安全并存多个 Store/Provider，并让文档、提示词、工具等不同检索用途获得隔离的连接、Embedding、索引和可验证能力。
 
 组件把向量数据面抽象为四类最通用能力： **写入、按 vectorId 删除、按 ID 查、基础语义检索**。Provider-specific 能力（按
 documentId 删除、alias、备份、原生 hybrid、多向量）拆为可选能力接口，Provider **没有的就不实现**
@@ -83,8 +81,8 @@ documentId 删除、alias、备份、原生 hybrid、多向量）拆为可选能
 
 ### 主要特性
 
-- ✅ **统一门面**：`VectorService` / `KnowledgeBaseVectorService` 是所有 Provider 共用入口，业务侧只依赖抽象
-- ✅ **10 种 Provider 可插拔**：Milvus、Qdrant、Weaviate、PostgreSQL/pgvector、Redis、MongoDB Atlas、Neo4j、VikingDB，按能力而非品牌声明
+- ✅ **统一门面**：简单项目继续使用 `VectorService`；多库项目通过 `VectorServiceRegistry` / `VectorStoreHandle` 使用 Store-bound 能力
+- ✅ **8 种 Provider 可插拔**：Milvus、Qdrant、Weaviate、PostgreSQL/pgvector、Redis、MongoDB Atlas、Neo4j、VikingDB，按能力而非品牌声明
 - ✅ **ACL 强制下推**：`KnowledgeBaseVectorService` 强制把租户、可见性、状态等结构化条件在 Provider 原生 query
   阶段执行，杜绝"先 Top-K 再 JVM 过滤"导致的内容泄露
 - ✅ **能力按 capability 拆分**：核心 4 类通用能力 + 6 类可选能力接口（hybrid / multi-vector / alias / backup / read /
@@ -98,7 +96,8 @@ documentId 删除、alias、备份、原生 hybrid、多向量）拆为可选能
 - ✅ **多模态向量**：文本与图片可通过 `ModalityAwareEmbeddingService` 路由到对应嵌入模型，CLIP 等效空间支持跨模态检索
 - ✅ **失败可观测**：`BulkOperationEvent` 流（`Started / ItemStarted / ItemSucceeded / ItemFailed / Completed`）+
   `ChunkingSignal` + `OcrException` 全链路 sealed 异常体系
-- ✅ **配置驱动**：`platform.component.vector.provider=milvus` 一行切换底层，无需改业务代码
+- ✅ **渐进配置**：旧单 Provider 配置零改动兼容；需要时再增加 Named Connection/Store、多 Embedding 与高级能力
+- ✅ **类型化高级检索**：查询默认值、Provider 扩展、执行回执、候选向量/MMR、分数语义与 ACL-safe hybrid 均按 Store Capability 暴露；详见 [通用高级向量检索能力](docs/advanced-query-capabilities.md)
 
 ### 与同类组件的边界
 
@@ -996,8 +995,8 @@ platform:
 | `VectorIndexLifecycleOperations`       | ✅   | createIndex / dropIndex    |
 | `VectorIndexStatsOperations`           | ✅   | 完整统计                   |
 | `VectorIndexAliasOperations`           | ✅   | createAlias / switchAlias  |
-| `VectorHybridSearchOperations`         | ✅   | dense + sparse             |
-| `VectorAclAwareHybridSearchOperations` | ✅   | **hybrid 时 ACL 下推**     |
+| `VectorHybridSearchOperations`         | ❌   | 当前单 dense schema 未提供 sparse 通道 |
+| `VectorAclAwareHybridSearchOperations` | ❌   | 需先配置 dense+sparse schema          |
 | `VectorMultiVectorSearchOperations`    | ✅   | named vector               |
 | `VectorBackupOperations`               | ⚠️   | 仅 metadata 备份，不含向量 |
 | 多模态（CLIP）                         | ✅   | 1024 维共享空间            |
@@ -1014,7 +1013,7 @@ platform:
 | `VectorIndexStatsOperations`           | ✅   | 完整                                          |
 | `VectorIndexAliasOperations`           | ❌   | 无 alias 概念                                 |
 | `VectorHybridSearchOperations`         | ⚠️   | dense + sparse 但 sparse 需预先生成           |
-| `VectorAclAwareHybridSearchOperations` | ⚠️   | filter 可下推但 hybrid 双通道需业务侧各自处理 |
+| `VectorAclAwareHybridSearchOperations` | ❌   | 当前适配器未配置 sparse/named-vector 双通道 |
 | `VectorMultiVectorSearchOperations`    | ❌   | 无 named vector 概念                          |
 | `VectorBackupOperations`               | ✅   | snapshot 备份                                 |
 | 多模态（CLIP）                         | ❌   | 需第三方 CLIP 服务                            |
@@ -1031,7 +1030,7 @@ platform:
 | `VectorIndexStatsOperations`           | ✅   | 完整                    |
 | `VectorIndexAliasOperations`           | ❌   | 无 alias 概念           |
 | `VectorHybridSearchOperations`         | ✅   | **原生 hybrid 强项**    |
-| `VectorAclAwareHybridSearchOperations` | ✅   | filter 与 hybrid 集成   |
+| `VectorAclAwareHybridSearchOperations` | ✅   | **where 在 hybrid 召回阶段服务端下推** |
 | `VectorMultiVectorSearchOperations`    | ⚠️   | 通过 named vectors 实现 |
 | `VectorBackupOperations`               | ✅   | 完整                    |
 | 多模态（CLIP）                         | ✅   | 原生支持                |
