@@ -19,6 +19,7 @@ import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.config.VectorProperties;
 import cn.richie696.component.vector.model.*;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
+import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorService;
 import cn.richie696.context.utils.data.Collections;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -61,12 +62,14 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "qdrant")
-public class QdRantVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations {
+public class QdRantVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations,
+        VectorIndexLifecycleOperations, cn.richie696.component.vector.service.VectorPayloadIndexOperations {
 
     /**
      * Qdrant客户端，用于与Qdrant服务通信
      */
     private final QdrantClient qdrantClient;
+    private final Map<String, String> managedCollections;
 
     /**
      * 异步操作等待超时时间（秒），防止无限期阻塞
@@ -89,8 +92,31 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
                                    VectorStore vectorStore,
                                    @Qualifier("aiEmbeddingModel") EmbeddingModel embeddingModel,
                                    QdrantClient qdrantClient) {
+        this(rerankService, vectorStore, embeddingModel, qdrantClient, Map.of());
+    }
+
+    /** Store-bound constructor used by Named Multi-store. */
+    public QdRantVectorServiceImpl(RerankService rerankService,
+                                   VectorStore vectorStore,
+                                   EmbeddingModel embeddingModel,
+                                   QdrantClient qdrantClient,
+                                   Map<String, String> managedCollections) {
         super(rerankService, vectorStore, embeddingModel);
         this.qdrantClient = qdrantClient;
+        this.managedCollections = Map.copyOf(managedCollections == null ? Map.of() : managedCollections);
+    }
+
+    @Override
+    protected void validateIndexName(String indexName) {
+        super.validateIndexName(indexName);
+        if (!managedCollections.isEmpty() && !managedCollections.containsKey(indexName)) {
+            throw new IllegalArgumentException("index is not declared by this Qdrant Store: " + indexName);
+        }
+    }
+
+    private String collectionName(String indexName) {
+        validateIndexName(indexName);
+        return managedCollections.isEmpty() ? indexName : managedCollections.get(indexName);
     }
 
     /**
@@ -110,6 +136,7 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
      */
     @Override
     protected void createIndexImpl(String indexName, VectorProperties.IndexConfig config) {
+        String collection = collectionName(indexName);
         int dimension = config != null && config.getDimension() != null ? config.getDimension() : DEFAULT_DIMENSION;
         String metric = config != null && config.getMetric() != null ? config.getMetric() : "cosine";
 
@@ -129,7 +156,7 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
 
         io.qdrant.client.grpc.Collections.CreateCollection createCollection =
                 io.qdrant.client.grpc.Collections.CreateCollection.newBuilder()
-                        .setCollectionName(indexName)
+                        .setCollectionName(collection)
                         .setVectorsConfig(io.qdrant.client.grpc.Collections.VectorsConfig.newBuilder()
                                 .setParams(vectorParams).build())
                         .setHnswConfig(hnswConfig)
@@ -170,7 +197,12 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
      */
     @Override
     protected void deleteIndexImpl(String indexName) {
-        throw new UnsupportedOperationException("qdrant不支持索引功能");
+        String collection = collectionName(indexName);
+        try {
+            qdrantClient.deleteCollectionAsync(collection).get(WAIT_TIMEOUT, TimeUnit.SECONDS);
+        } catch (Exception exception) {
+            throw new RuntimeException("Qdrant deleteCollection failed", exception);
+        }
     }
 
     /**
@@ -185,11 +217,12 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
      */
     @Override
     protected boolean indexExistsImpl(String indexName) {
+        String collection = collectionName(indexName);
         try {
             return qdrantClient.listCollectionsAsync()
                     .get(WAIT_TIMEOUT, TimeUnit.SECONDS)
                     .stream()
-                    .anyMatch(indexName::equals);
+                    .anyMatch(collection::equals);
         } catch (Exception e) {
             log.warn("Qdrant collection existence check failed: name={}", indexName, e);
             return false;
@@ -208,9 +241,10 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
      */
     @Override
     protected VectorProperties.IndexConfig getIndexConfigImpl(String indexName) {
+        String collection = collectionName(indexName);
         try {
             io.qdrant.client.grpc.Collections.CollectionInfo collectionInfo = qdrantClient
-                    .getCollectionInfoAsync(indexName)
+                    .getCollectionInfoAsync(collection)
                     .get(WAIT_TIMEOUT, TimeUnit.SECONDS);
             io.qdrant.client.grpc.Collections.VectorParams vectorParams = collectionInfo
                     .getConfig()
@@ -238,8 +272,9 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
      */
     @Override
     protected long countDocumentsImpl(String indexName) {
+        String collection = collectionName(indexName);
         // 调用Qdrant异步count API获取文档计数
-        var resp = qdrantClient.countAsync(indexName);
+        var resp = qdrantClient.countAsync(collection);
         Long count = 0L;
         try {
             // 等待异步结果，设置超时防止永久阻塞
@@ -276,8 +311,9 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
     }
 
     protected List<VectorRecord> listDocumentsHandler(String indexName, int offset, int limit) {
+        String collection = collectionName(indexName);
         List<VectorRecord> docs = new ArrayList<>();
-        Long lastId = null;
+        String lastId = null;
         int skipped = 0;
 
         // 循环分页获取文档，直到达到limit或数据遍历完毕
@@ -290,10 +326,10 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
             // 构建scroll points请求，设置分页参数
             // offset使用上一个文档的ID实现游标分页，避免offset大时的性能问题
             var scoredPointsBuilder = Points.ScrollPoints.newBuilder()
-                    .setCollectionName(indexName)
+                    .setCollectionName(collection)
                     .setLimit(limit);
             if (lastId != null) {
-                scoredPointsBuilder.setOffset(Common.PointId.newBuilder().setNum(lastId).build());
+                scoredPointsBuilder.setOffset(Common.PointId.newBuilder().setUuid(lastId).build());
             }
             Points.ScrollPoints scoredPoints = scoredPointsBuilder
                     .setWithVectors(withVectorsSelector)
@@ -322,11 +358,11 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
                 if (skipped < offset) {
                     skipped++;
                     // 更新lastId确保即使跳过也能维护正确的分页游标
-                    lastId = point.getId().getNum();
+                    lastId = point.getId().getUuid();
                     continue;
                 }
 
-                VectorRecord doc = VectorRecord.text(indexName, String.valueOf(point.getId().getNum()),
+                VectorRecord doc = VectorRecord.text(indexName, point.getId().getUuid(),
                         point.getPayloadMap().getOrDefault("content", JsonWithInt.Value.getDefaultInstance()).getStringValue());
                 Map<String, Object> metadata = Collections.mapOf();
                 point.getPayloadMap().forEach((key, value) -> metadata.put(key, value.getStringValue()));
@@ -346,15 +382,16 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
                 break;
             }
             // 获取下一页的offset游标，用于下一次scroll请求
-            lastId = scrollResponse.getNextPageOffset().getNum();
+            lastId = scrollResponse.getNextPageOffset().getUuid();
         }
         return docs;
     }
 
     protected long truncateIndexImpl(String indexName) {
+        String collection = collectionName(indexName);
         long previousCount = countDocumentsImpl(indexName);
         try {
-            qdrantClient.deleteAsync(indexName, Common.Filter.getDefaultInstance())
+            qdrantClient.deleteAsync(collection, Common.Filter.getDefaultInstance())
                     .get(WAIT_TIMEOUT, TimeUnit.SECONDS);
             return previousCount;
         } catch (Exception e) {
@@ -363,13 +400,14 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
     }
 
     protected List<Document> similaritySearchByVector(String indexName, float[] vector, int limit, double minScore) {
+        String collection = collectionName(indexName);
         List<Document> results = new ArrayList<>();
         List<Float> boxedVector = new ArrayList<>(vector.length);
         for (float value : vector) {
             boxedVector.add(value);
         }
         Points.SearchPoints searchPoints = Points.SearchPoints.newBuilder()
-                .setCollectionName(indexName)
+                .setCollectionName(collection)
                 .addAllVector(boxedVector)
                 .setLimit(limit)
                 .setWithVectors(Points.WithVectorsSelector.newBuilder().setEnable(true).build())
@@ -381,7 +419,7 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
                 if (scoredPoint.getScore() < minScore) {
                     continue;
                 }
-                String id = String.valueOf(scoredPoint.getId().getNum());
+                String id = scoredPoint.getId().getUuid();
                 String content = scoredPoint.getPayloadMap()
                         .getOrDefault("content", JsonWithInt.Value.getDefaultInstance()).getStringValue();
                 Map<String, Object> metadata = Collections.mapOf();
@@ -398,6 +436,7 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
 
     @Override
     protected void addEmbeddings(String indexName, List<Document> docs) {
+        String collection = collectionName(indexName);
         if (docs == null || docs.isEmpty()) {
             return;
         }
@@ -419,12 +458,27 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
                     .build();
 
             Map<String, JsonWithInt.Value> payload = new java.util.HashMap<>();
+            String text = doc.getText() != null ? doc.getText() : "";
             payload.put("content", JsonWithInt.Value.newBuilder()
-                    .setStringValue(doc.getText() != null ? doc.getText() : "").build());
+                    .setStringValue(text).build());
+            // Spring AI's QdrantVectorStore.toDocument reads the document text from
+            // the canonical "doc_content" payload key during similaritySearch; mirror the
+            // text under that key so the vector-store read path can recover it. The
+            // "content" alias above keeps the direct gRPC search path stable.
+            payload.put("doc_content", JsonWithInt.Value.newBuilder()
+                    .setStringValue(text).build());
+            // Spring AI's QdrantVectorStore reads the document id from
+            // ScoredPoint.getId().getUuid() during similaritySearch; mirror the id in the
+            // payload so vector-store search and direct gRPC search both have a stable
+            // canonical id.
+            if (doc.getId() != null && !doc.getId().isBlank()) {
+                payload.put("id", JsonWithInt.Value.newBuilder()
+                        .setStringValue(doc.getId()).build());
+            }
 
             Points.PointStruct point = Points.PointStruct.newBuilder()
                     .setId(Common.PointId.newBuilder()
-                            .setNum(Long.parseLong(doc.getId())).build())
+                            .setUuid(doc.getId() == null ? "" : doc.getId()).build())
                     .setVectors(vectors)
                     .putAllPayload(payload)
                     .build();
@@ -433,7 +487,7 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
         }
 
         Points.UpsertPoints upsertPoints = Points.UpsertPoints.newBuilder()
-                .setCollectionName(indexName)
+                .setCollectionName(collection)
                 .addAllPoints(points)
                 .build();
 
@@ -447,16 +501,17 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
 
     @Override
     protected void deleteByIds(String indexName, List<String> ids) {
+        String collection = collectionName(indexName);
         if (ids == null || ids.isEmpty()) {
             return;
         }
 
         List<Common.PointId> pointIds = ids.stream()
-                .map(id -> Common.PointId.newBuilder().setNum(Long.parseLong(id)).build())
+                .map(id -> Common.PointId.newBuilder().setUuid(id).build())
                 .toList();
 
         try {
-            qdrantClient.deleteAsync(indexName, pointIds).get(WAIT_TIMEOUT, TimeUnit.SECONDS);
+            qdrantClient.deleteAsync(collection, pointIds).get(WAIT_TIMEOUT, TimeUnit.SECONDS);
             log.debug("Qdrant 删除 Collection [{}] 文档，ID数={}", indexName, ids.size());
         } catch (Exception e) {
             throw new RuntimeException("Qdrant deleteByIds failed: " + e.getMessage(), e);
@@ -465,22 +520,23 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
 
     @Override
     protected List<VectorRecord> getByIds(String indexName, List<String> ids) {
+        String collection = collectionName(indexName);
         if (ids == null || ids.isEmpty()) {
             return List.of();
         }
 
         List<Common.PointId> pointIds = ids.stream()
-                .map(id -> Common.PointId.newBuilder().setNum(Long.parseLong(id)).build())
+                .map(id -> Common.PointId.newBuilder().setUuid(id).build())
                 .toList();
 
         try {
             List<Points.RetrievedPoint> retrieved = qdrantClient
-                    .retrieveAsync(indexName, pointIds, null)
+                    .retrieveAsync(collection, pointIds, null)
                     .get(WAIT_TIMEOUT, TimeUnit.SECONDS);
 
             List<VectorRecord> result = new ArrayList<>(retrieved.size());
             for (Points.RetrievedPoint point : retrieved) {
-                String pointId = String.valueOf(point.getId().getNum());
+                String pointId = point.getId().getUuid();
                 String content = point.getPayloadMap()
                         .getOrDefault("content", JsonWithInt.Value.getDefaultInstance())
                         .getStringValue();
@@ -498,6 +554,9 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
      * @return collection索引信息
      */
     protected List<IndexInfo> listIndexesImpl() {
+        if (!managedCollections.isEmpty()) {
+            return managedCollections.keySet().stream().map(this::describeIndexImpl).toList();
+        }
         try {
             return qdrantClient.listCollectionsAsync()
                     .get(WAIT_TIMEOUT, TimeUnit.SECONDS)
@@ -530,6 +589,7 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
      * @return 始终返回false
      */
     protected boolean updateIndexConfigImpl(String indexName, VectorProperties.IndexConfig config) {
+        collectionName(indexName);
         log.debug("Qdrant does not support direct collection config updates: name={}", indexName);
         return false;
     }
@@ -549,6 +609,7 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
 
 
     public List<VectorSearchResult> searchByVector(String indexName, float[] queryVector, int limit) {
+        String collection = collectionName(indexName);
         List<VectorSearchResult> results = new ArrayList<>();
 
         List<Float> boxedVector = new ArrayList<>(queryVector.length);
@@ -557,7 +618,7 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
         }
 
         Points.SearchPoints searchPoints = Points.SearchPoints.newBuilder()
-                .setCollectionName(indexName)
+                .setCollectionName(collection)
                 .addAllVector(boxedVector)
                 .setLimit(limit)
                 .setWithVectors(Points.WithVectorsSelector.newBuilder().setEnable(true).build())
@@ -570,8 +631,8 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
             // 等待搜索结果，设置超时
             List<Points.ScoredPoint> scoredPoints = resp.get(WAIT_TIMEOUT, TimeUnit.SECONDS);
             for (Points.ScoredPoint scoredPoint : scoredPoints) {
-                // 提取文档ID，从Qdrant的PointId中获取数值并转为字符串
-                String id = String.valueOf(scoredPoint.getId().getNum());
+                // 提取文档ID，从Qdrant的PointId中获取UUID并转为字符串
+                String id = scoredPoint.getId().getUuid();
 
                 // 提取文档内容，从payload中获取"content"字段
                 // 使用空字符串作为默认值，避免null值
@@ -618,14 +679,84 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
      */
     @Override
     protected boolean optimizeImpl(String indexName) {
+        String collection = collectionName(indexName);
         try {
-            qdrantClient.createSnapshotAsync(indexName).get(WAIT_TIMEOUT, TimeUnit.SECONDS);
+            qdrantClient.createSnapshotAsync(collection).get(WAIT_TIMEOUT, TimeUnit.SECONDS);
             log.info("Qdrant optimize (snapshot 触发) 完成: name={}", indexName);
             return true;
         } catch (Exception e) {
             log.warn("Qdrant optimize failed for [{}]: {}", indexName, e.getMessage());
             return false;
         }
+    }
+
+    @Override
+    public int createPayloadIndexes(String indexName, java.util.List<FieldDefinition> fields) {
+        if (indexName == null || indexName.isBlank()) {
+            throw new IllegalArgumentException("indexName must not be blank");
+        }
+        if (fields == null || fields.isEmpty()) {
+            return 0;
+        }
+        String collection = collectionName(indexName);
+        int created = 0;
+        for (FieldDefinition field : fields) {
+            io.qdrant.client.grpc.Collections.PayloadSchemaType schemaType = mapType(field.type());
+            io.qdrant.client.grpc.Collections.PayloadIndexParams params =
+                    io.qdrant.client.grpc.Collections.PayloadIndexParams.newBuilder().build();
+            try {
+                qdrantClient.createPayloadIndexAsync(collection, field.field(), schemaType, params,
+                        true, Points.WriteOrderingType.Weak, java.time.Duration.ofSeconds(WAIT_TIMEOUT)).get();
+                created++;
+                log.info("Qdrant payload index created: collection={}, field={}, type={}", collection, field.field(), field.type());
+            } catch (Exception e) {
+                throw new IllegalStateException(
+                        "Qdrant createPayloadIndex failed for field [" + field.field() + "] on collection ["
+                                + collection + "]", e);
+            }
+        }
+        return created;
+    }
+
+    @Override
+    public int dropPayloadIndexes(String indexName, java.util.List<String> fields) {
+        if (indexName == null || indexName.isBlank()) {
+            throw new IllegalArgumentException("indexName must not be blank");
+        }
+        if (fields == null || fields.isEmpty()) {
+            return 0;
+        }
+        String collection = collectionName(indexName);
+        int dropped = 0;
+        for (String field : fields) {
+            try {
+                qdrantClient.deletePayloadIndexAsync(collection, field,
+                        true, Points.WriteOrderingType.Weak,
+                        java.time.Duration.ofSeconds(WAIT_TIMEOUT)).get();
+                dropped++;
+                log.info("Qdrant payload index dropped: collection={}, field={}", collection, field);
+            } catch (Exception e) {
+                throw new IllegalStateException(
+                        "Qdrant deletePayloadIndex failed for field [" + field + "] on collection ["
+                                + collection + "]", e);
+            }
+        }
+        return dropped;
+    }
+
+    private static io.qdrant.client.grpc.Collections.PayloadSchemaType mapType(FieldType type) {
+        if (type == null) {
+            throw new IllegalArgumentException("Qdrant payload field type must not be null");
+        }
+        return switch (type) {
+            case KEYWORD -> io.qdrant.client.grpc.Collections.PayloadSchemaType.Keyword;
+            case INTEGER -> io.qdrant.client.grpc.Collections.PayloadSchemaType.Integer;
+            case FLOAT -> io.qdrant.client.grpc.Collections.PayloadSchemaType.Float;
+            case BOOL -> io.qdrant.client.grpc.Collections.PayloadSchemaType.Bool;
+            case GEO -> io.qdrant.client.grpc.Collections.PayloadSchemaType.Geo;
+            case TEXT -> io.qdrant.client.grpc.Collections.PayloadSchemaType.Text;
+            case DATETIME -> io.qdrant.client.grpc.Collections.PayloadSchemaType.Datetime;
+        };
     }
 
     /**

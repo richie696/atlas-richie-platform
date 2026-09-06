@@ -120,10 +120,15 @@ class QdRantVectorServiceImplTest {
     }
 
     @Test
-    void deleteIndex_throwsUnsupportedOperationException() {
-        UnsupportedOperationException ex = assertThrows(UnsupportedOperationException.class,
-                () -> service.deleteIndex("idx"));
-        assertEquals("qdrant不支持索引功能", ex.getMessage());
+    void deleteIndex_deletesTheBoundCollection() throws Exception {
+        ListenableFuture<io.qdrant.client.grpc.Collections.CollectionOperationResponse> mockFuture =
+                mock(ListenableFuture.class);
+        when(qdrantClient.deleteCollectionAsync("idx")).thenReturn(mockFuture);
+
+        service.deleteIndex("idx");
+
+        verify(qdrantClient).deleteCollectionAsync("idx");
+        verify(mockFuture).get(3, TimeUnit.SECONDS);
     }
 
     @SuppressWarnings("unchecked")
@@ -203,7 +208,7 @@ class QdRantVectorServiceImplTest {
     @Test
     void searchByVector_returnsResults() throws Exception {
         Points.ScoredPoint mockPoint = mock(Points.ScoredPoint.class);
-        when(mockPoint.getId()).thenReturn(Common.PointId.newBuilder().setNum(1).build());
+        when(mockPoint.getId()).thenReturn(Common.PointId.newBuilder().setUuid("doc-1").build());
         when(mockPoint.getScore()).thenReturn(0.95f);
         when(mockPoint.hasVectors()).thenReturn(true);
 
@@ -226,7 +231,7 @@ class QdRantVectorServiceImplTest {
         List<VectorSearchResult> results = service.searchByVector("test-collection", queryVector, 10);
 
         assertEquals(1, results.size());
-        assertEquals("1", results.get(0).getId());
+        assertEquals("doc-1", results.get(0).getId());
         assertEquals("test content", results.get(0).getContent());
         assertEquals(0.95, results.get(0).getScore(), 0.001);
     }
@@ -258,7 +263,7 @@ class QdRantVectorServiceImplTest {
     @Test
     void searchByVector_withNoVectors() throws Exception {
         Points.ScoredPoint mockPoint = mock(Points.ScoredPoint.class);
-        when(mockPoint.getId()).thenReturn(Common.PointId.newBuilder().setNum(2).build());
+        when(mockPoint.getId()).thenReturn(Common.PointId.newBuilder().setUuid("doc-2").build());
         when(mockPoint.getScore()).thenReturn(0.8f);
         when(mockPoint.hasVectors()).thenReturn(false);
         when(mockPoint.getPayloadMap()).thenReturn(Map.of());
@@ -283,9 +288,9 @@ class QdRantVectorServiceImplTest {
     }
 
     @SuppressWarnings("unchecked")
-    private Points.RetrievedPoint buildMockRetrievedPoint(long numId, List<Float> vectorData, Map<String, String> payload) {
+    private Points.RetrievedPoint buildMockRetrievedPoint(String id, List<Float> vectorData, Map<String, String> payload) {
         Points.RetrievedPoint mockPoint = mock(Points.RetrievedPoint.class);
-        when(mockPoint.getId()).thenReturn(Common.PointId.newBuilder().setNum(numId).build());
+        when(mockPoint.getId()).thenReturn(Common.PointId.newBuilder().setUuid(id).build());
 
         if (vectorData != null) {
             Points.VectorOutput mockVectorOutput = mock(Points.VectorOutput.class);
@@ -309,7 +314,7 @@ class QdRantVectorServiceImplTest {
 
     @Test
     void listDocumentsHandler_returnsDocuments() throws Exception {
-        Points.RetrievedPoint mockPoint = buildMockRetrievedPoint(99, List.of(0.1f, 0.2f),
+        Points.RetrievedPoint mockPoint = buildMockRetrievedPoint("doc-99", List.of(0.1f, 0.2f),
                 Map.of("content", "test content", "key1", "meta-data"));
         Points.ScrollResponse mockResponse = buildMockScrollResponse(List.of(mockPoint), false);
 
@@ -320,7 +325,7 @@ class QdRantVectorServiceImplTest {
         List<VectorRecord> docs = service.listDocumentsHandler("test-collection", 0, 10);
 
         assertEquals(1, docs.size());
-        assertEquals("99", docs.get(0).getId());
+        assertEquals("doc-99", docs.get(0).getId());
         assertNotNull(docs.get(0).getMetadata());
     }
 
@@ -339,7 +344,7 @@ class QdRantVectorServiceImplTest {
 
     @Test
     void listDocumentsHandler_respectsOffset() throws Exception {
-        Points.RetrievedPoint mockPoint = buildMockRetrievedPoint(1, List.of(0.1f),
+        Points.RetrievedPoint mockPoint = buildMockRetrievedPoint("doc-1", List.of(0.1f),
                 Map.of("content", "first doc"));
         Points.ScrollResponse mockResponse = buildMockScrollResponse(List.of(mockPoint, mockPoint), false);
 
@@ -434,7 +439,7 @@ class QdRantVectorServiceImplTest {
     @SuppressWarnings("unchecked")
     @Test
     void getByIds_returnsRetrievedPoints() throws Exception {
-        Points.RetrievedPoint mockPoint = buildMockRetrievedPoint(42, List.of(0.1f, 0.2f),
+        Points.RetrievedPoint mockPoint = buildMockRetrievedPoint("doc-42", List.of(0.1f, 0.2f),
                 Map.of("content", "retrieved content"));
         ListenableFuture<List<Points.RetrievedPoint>> mockFuture = mock(ListenableFuture.class);
         when(qdrantClient.retrieveAsync(anyString(), anyList(), any())).thenReturn(mockFuture);
@@ -443,7 +448,7 @@ class QdRantVectorServiceImplTest {
         List<VectorRecord> records = service.getByIds("test-collection", List.of("42"));
 
         assertEquals(1, records.size());
-        assertEquals("42", records.get(0).getId());
+        assertEquals("doc-42", records.get(0).getId());
         assertEquals("retrieved content", ((VectorContent.TextContent) records.get(0).getContent()).text());
     }
 

@@ -15,6 +15,7 @@
  */
 package cn.richie696.component.vector.config;
 
+import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.service.impl.QdRantVectorServiceImpl;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.QdrantGrpcClient;
@@ -23,10 +24,13 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.qdrant.QdrantVectorStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.beans.factory.ObjectProvider;
 
 /**
  * 向量数据库自动配置类
@@ -34,9 +38,16 @@ import org.springframework.context.annotation.Import;
  */
 @Slf4j
 @AutoConfiguration
+@AutoConfigureBefore(VectorAutoConfiguration.class)
 @EnableConfigurationProperties(QdRantConfig.class)
 @Import(QdRantVectorServiceImpl.class)
 public class QdrantVectorAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(QdrantVectorProviderFactory.class)
+    public QdrantVectorProviderFactory qdrantVectorProviderFactory(ObjectProvider<RerankService> rerankService) {
+        return new QdrantVectorProviderFactory(rerankService.getIfAvailable());
+    }
 
     /**
      * Qdrant 向量数据库自动装配
