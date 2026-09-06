@@ -15,11 +15,11 @@
  */
 package cn.richie696.component.vector.config;
 
+import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.service.impl.WeaviateVectorServiceImpl;
-import io.weaviate.client.Config;
-import io.weaviate.client.WeaviateAuthClient;
+import cn.richie696.component.vector.filter.VectorFilterCompiler;
+import cn.richie696.component.vector.filter.WeaviateVectorFilterCompiler;
 import io.weaviate.client.WeaviateClient;
-import io.weaviate.client.v1.auth.exception.AuthException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -27,12 +27,16 @@ import org.springframework.ai.vectorstore.weaviate.WeaviateVectorStore;
 import org.springframework.ai.vectorstore.weaviate.WeaviateVectorStoreOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Weaviate 向量库自动配置（当 provider=weaviate 时注册 VectorStore 与 WeaviateClient）。
@@ -42,9 +46,24 @@ import java.util.List;
  */
 @Slf4j
 @AutoConfiguration
+@AutoConfigureBefore(VectorAutoConfiguration.class)
 @EnableConfigurationProperties(WeaviateConfig.class)
 @Import(WeaviateVectorServiceImpl.class)
 public class WeaviateVectorAutoConfiguration {
+
+    /** Factory entry point used only when Named Multi-store topology is configured. */
+    @Bean
+    @ConditionalOnMissingBean(WeaviateVectorProviderFactory.class)
+    public WeaviateVectorProviderFactory weaviateVectorProviderFactory(
+            @Autowired(required = false) RerankService rerankService) {
+        return new WeaviateVectorProviderFactory(rerankService);
+    }
+
+    @Bean("weaviateVectorFilterCompiler")
+    @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "weaviate")
+    public VectorFilterCompiler weaviateVectorFilterCompiler() {
+        return new WeaviateVectorFilterCompiler();
+    }
 
     /**
      * Weaviate VectorStore Bean（依赖 spring-ai-starter-vector-store-weaviate）。
@@ -56,7 +75,6 @@ public class WeaviateVectorAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "weaviate")
-    @Autowired
     public VectorStore weaviateVectorStore(EmbeddingModel embeddingModel, WeaviateClient weaviateClient, WeaviateConfig config) {
         // 解析filterMetadataFields配置，支持格式如 country:text,year:number
         List<WeaviateVectorStore.MetadataField> metadataFields = List.of();
@@ -100,14 +118,10 @@ public class WeaviateVectorAutoConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "weaviate")
     public WeaviateClient weaviateClient(WeaviateConfig config) {
-        Config weaviateConfig = new Config(config.getScheme(), config.getHost());
-        if (config.getApiKey() != null && !config.getApiKey().isBlank()) {
-            try {
-                return WeaviateAuthClient.apiKey(weaviateConfig, config.getApiKey());
-            } catch (AuthException e) {
-                throw new RuntimeException("Weaviate 认证失败: " + e.getMessage(), e);
-            }
-        }
-        return new WeaviateClient(weaviateConfig);
+        Map<String, Object> settings = new LinkedHashMap<>();
+        if (config.getScheme() != null) settings.put("scheme", config.getScheme());
+        if (config.getHost() != null) settings.put("host", config.getHost());
+        if (config.getApiKey() != null) settings.put("api-key", config.getApiKey());
+        return WeaviateVectorProviderFactory.client(settings);
     }
 }

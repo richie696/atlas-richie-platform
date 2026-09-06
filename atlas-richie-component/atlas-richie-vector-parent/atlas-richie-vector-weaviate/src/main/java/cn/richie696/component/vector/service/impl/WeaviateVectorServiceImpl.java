@@ -19,6 +19,8 @@ import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.config.VectorProperties;
 import cn.richie696.component.vector.model.*;
 import cn.richie696.component.vector.service.VectorHybridSearchOperations;
+import cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations;
+import cn.richie696.component.vector.filter.VectorFilterCompiler;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import cn.richie696.component.vector.service.VectorService;
@@ -31,6 +33,7 @@ import io.weaviate.client.v1.misc.model.ReplicationConfig;
 import io.weaviate.client.v1.misc.model.VectorIndexConfig;
 import io.weaviate.client.v1.schema.model.Schema;
 import io.weaviate.client.v1.schema.model.WeaviateClass;
+import io.weaviate.client.v1.schema.model.Property;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -67,12 +70,14 @@ import java.util.Map;
  */
 @Slf4j
 @ConditionalOnProperty(prefix = "platform.component.vector", name = "provider", havingValue = "weaviate")
-public class WeaviateVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, VectorHybridSearchOperations, VectorIndexLifecycleOperations {
+public class WeaviateVectorServiceImpl extends AbstractVectorService implements VectorService, VectorRecordReadOperations, VectorHybridSearchOperations, VectorAclAwareHybridSearchOperations, VectorIndexLifecycleOperations {
 
     /**
      * Weaviate 原生客户端，用于执行 GraphQL、schema 与 batch delete 调用。
      */
     private final WeaviateClient weaviateClient;
+    private final VectorFilterCompiler weaviateFilterCompiler;
+    private final Map<String, String> managedClasses;
 
     /**
      * 构造 Weaviate 向量服务实现.
@@ -90,9 +95,35 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
     public WeaviateVectorServiceImpl(@Autowired(required = false) RerankService rerankService,
                                      VectorStore vectorStore,
                                      @Qualifier("aiEmbeddingModel") EmbeddingModel embeddingModel,
-                                     WeaviateClient weaviateClient) {
+                                     WeaviateClient weaviateClient,
+                                     @Qualifier("weaviateVectorFilterCompiler") VectorFilterCompiler weaviateFilterCompiler) {
+        this(rerankService, vectorStore, embeddingModel, weaviateClient, weaviateFilterCompiler, Map.of());
+    }
+
+    /** Store-bound constructor used by Named Multi-store. */
+    public WeaviateVectorServiceImpl(RerankService rerankService,
+                                     VectorStore vectorStore,
+                                     EmbeddingModel embeddingModel,
+                                     WeaviateClient weaviateClient,
+                                     VectorFilterCompiler weaviateFilterCompiler,
+                                     Map<String, String> managedClasses) {
         super(rerankService, vectorStore, embeddingModel);
         this.weaviateClient = weaviateClient;
+        this.weaviateFilterCompiler = weaviateFilterCompiler;
+        this.managedClasses = Map.copyOf(managedClasses == null ? Map.of() : managedClasses);
+    }
+
+    @Override
+    protected void validateIndexName(String indexName) {
+        super.validateIndexName(indexName);
+        if (!managedClasses.isEmpty() && !managedClasses.containsKey(indexName)) {
+            throw new IllegalArgumentException("index is not declared by this Weaviate Store: " + indexName);
+        }
+    }
+
+    private String className(String indexName) {
+        validateIndexName(indexName);
+        return managedClasses.isEmpty() ? indexName : managedClasses.get(indexName);
     }
 
     // ====================================================================
@@ -112,6 +143,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected void createIndexImpl(String indexName, VectorProperties.IndexConfig config) {
+        String physicalClass = className(indexName);
         VectorIndexConfig vectorConfig = VectorIndexConfig.builder()
                 .distance(config.getMetric() != null ? config.getMetric() : "cosine")
                 .efConstruction(128)
@@ -123,9 +155,10 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
                 .build();
 
         WeaviateClass weaviateClass = WeaviateClass.builder()
-                .className(indexName)
+                .className(physicalClass)
                 .vectorIndexType(config.getIndexType() != null ? config.getIndexType() : "hnsw")
                 .vectorizer("none")
+                .properties(schemaProperties(config))
                 .vectorIndexConfig(vectorConfig)
                 .replicationConfig(replicationConfig)
                 .build();
@@ -147,7 +180,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected void deleteIndexImpl(String indexName) {
-        Result<Boolean> result = weaviateClient.schema().classDeleter().withClassName(indexName).run();
+        Result<Boolean> result = weaviateClient.schema().classDeleter().withClassName(className(indexName)).run();
         if (result.hasErrors()) {
             throw new RuntimeException("Weaviate deleteIndex failed: " + result.getError().getMessages());
         }
@@ -163,7 +196,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected boolean indexExistsImpl(String indexName) {
-        Result<Boolean> result = weaviateClient.schema().exists().withClassName(indexName).run();
+        Result<Boolean> result = weaviateClient.schema().exists().withClassName(className(indexName)).run();
         if (result.hasErrors()) {
             throw new RuntimeException("Weaviate indexExists failed: " + result.getError().getMessages());
         }
@@ -181,7 +214,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected VectorProperties.IndexConfig getIndexConfigImpl(String indexName) {
-        Result<WeaviateClass> result = weaviateClient.schema().classGetter().withClassName(indexName).run();
+        Result<WeaviateClass> result = weaviateClient.schema().classGetter().withClassName(className(indexName)).run();
         if (result.hasErrors() || result.getResult() == null) {
             return null;
         }
@@ -210,7 +243,8 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected long countDocumentsImpl(String indexName) {
-        String graphql = "{ Get { " + indexName + " { _additional { id } } } }";
+        String physicalClass = className(indexName);
+        String graphql = "{ Get { " + physicalClass + " { _additional { id } } } }";
         var result = weaviateClient.graphQL().raw().withQuery(graphql).run();
         if (result.hasErrors()) {
             throw new RuntimeException("Weaviate countDocuments failed: " + result.getError().getMessages());
@@ -223,7 +257,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
         if (getResult == null) {
             return 0;
         }
-        List<?> items = (List<?>) getResult.get(indexName);
+        List<?> items = (List<?>) getResult.get(physicalClass);
         return items != null ? items.size() : 0;
     }
 
@@ -239,6 +273,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected long truncateIndexImpl(String indexName) {
+        String physicalClass = className(indexName);
         long previousCount = countDocumentsImpl(indexName);
         WhereFilter matchAll = WhereFilter.builder()
                 .path("_id")
@@ -246,7 +281,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
                 .valueText("")
                 .build();
         Result<BatchDeleteResponse> result = weaviateClient.batch().objectsBatchDeleter()
-                .withClassName(indexName)
+                .withClassName(physicalClass)
                 .withWhere(matchAll)
                 .withOutput("minimal")
                 .run();
@@ -278,6 +313,12 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected List<IndexInfo> listIndexesImpl() {
+        if (!managedClasses.isEmpty()) {
+            return managedClasses.keySet().stream()
+                    .map(indexName -> new IndexInfo(indexName, Modality.TEXT, null, null,
+                            "hnsw", IndexStatus.READY, null, null, null, Map.of()))
+                    .toList();
+        }
         Result<Schema> result = weaviateClient.schema().getter().run();
         if (result.hasErrors()) {
             throw new RuntimeException("Weaviate listIndexes failed: " + result.getError().getMessages());
@@ -305,7 +346,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected IndexInfo describeIndexImpl(String indexName) {
-        Result<WeaviateClass> result = weaviateClient.schema().classGetter().withClassName(indexName).run();
+        Result<WeaviateClass> result = weaviateClient.schema().classGetter().withClassName(className(indexName)).run();
         if (result.hasErrors() || result.getResult() == null) {
             log.warn("Weaviate describeIndex: class [{}] 不存在或读取失败", indexName);
             return null;
@@ -344,6 +385,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected boolean updateIndexConfigImpl(String indexName, VectorProperties.IndexConfig config) {
+        className(indexName);
         log.warn("Weaviate updateIndexConfig: 在线修改 schema 不被支持，请手工迁移。index={}, config={}",
                 indexName, config);
         return false;
@@ -360,7 +402,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected IndexInfo getIndexStatsImpl(String indexName) {
-        Result<WeaviateClass> result = weaviateClient.schema().classGetter().withClassName(indexName).run();
+        Result<WeaviateClass> result = weaviateClient.schema().classGetter().withClassName(className(indexName)).run();
         if (result.hasErrors() || result.getResult() == null) {
             log.warn("Weaviate getIndexStats: class [{}] 不存在或读取失败", indexName);
             return null;
@@ -404,20 +446,60 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
     protected List<VectorSearchResult> hybridSearchImpl(String indexName, String text, String keywordQuery,
                                                         int limit, double vectorWeight, double keywordWeight,
                                                         SearchOptions inner) {
+        return hybridSearchInternal(indexName, text, keywordQuery, limit, vectorWeight, keywordWeight, inner,
+                inner == null ? null : inner.getFilter());
+    }
+
+    /**
+     * ACL-safe hybrid entry point.  The same compiled {@code where} clause is
+     * attached to Weaviate's hybrid resolver, so neither BM25 nor vector
+     * candidates can bypass the access predicate.
+     */
+    @Override
+    public List<VectorSearchResult> hybridSearch(String indexName, String text, String keywordQuery, int limit,
+                                                 HybridSearchOptions options, cn.richie696.component.vector.model.VectorFilter filter) {
+        if (filter == null) {
+            throw new IllegalArgumentException("ACL filter must not be null");
+        }
+        double vectorWeight = options != null && options.getVectorWeight() != null ? options.getVectorWeight() : 0.7;
+        double keywordWeight = options != null && options.getKeywordWeight() != null ? options.getKeywordWeight() : 0.3;
+        if (!Double.isFinite(vectorWeight) || !Double.isFinite(keywordWeight)
+                || vectorWeight < 0.0 || vectorWeight > 1.0
+                || keywordWeight < 0.0 || keywordWeight > 1.0
+                || Math.abs(vectorWeight + keywordWeight - 1.0) > 0.000_001) {
+            throw new IllegalArgumentException("ACL-safe hybrid weights must be finite, within [0,1], and sum to 1");
+        }
+        SearchOptions inner = options != null && options.getSearchOptions() != null
+                ? options.getSearchOptions() : SearchOptions.builder().build();
+        if (inner.getFilter() != null && !inner.getFilter().equals(filter)) {
+            throw new IllegalArgumentException("ACL filter conflicts with hybrid search options filter");
+        }
+        return hybridSearchInternal(indexName, text, keywordQuery, limit, vectorWeight, keywordWeight, inner, filter);
+    }
+
+    private List<VectorSearchResult> hybridSearchInternal(String indexName, String text, String keywordQuery,
+                                                           int limit, double vectorWeight, double keywordWeight,
+                                                           SearchOptions inner, cn.richie696.component.vector.model.VectorFilter filter) {
+        String physicalClass = className(indexName);
         String effectiveQuery = (text != null && !text.isBlank()) ? text
                 : keywordQuery;
         if (effectiveQuery == null || effectiveQuery.isBlank()) {
-            log.warn("Weaviate hybridSearch: text 与 keywordQuery 都为空，降级为 searchByText");
-            return searchByText(indexName, text, limit, inner);
+            throw new IllegalArgumentException("text and keywordQuery must not both be blank");
         }
         double alpha = Math.clamp(vectorWeight, 0.0, 1.0);
+        String where = filter == null ? "" : "where: " + weaviateFilterCompiler.compile(filter);
+        String vector = alpha > 0.0
+                ? ", vector: " + vectorLiteral(embeddingModelForIndex(indexName).embed(effectiveQuery))
+                : "";
         String graphql = String.format("""
                 {
                   Get {
                     %s(
+                      %s
                       hybrid: {
                         query: "%s"
                         alpha: %s
+                        %s
                       }
                       limit: %d
                     ) {
@@ -429,7 +511,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
                     }
                   }
                 }
-                """, indexName, effectiveQuery.replace("\"", "\\\""), alpha, limit);
+                """, physicalClass, where, quoteGraphql(effectiveQuery), alpha, vector, limit > 0 ? limit : 10);
 
         var result = weaviateClient.graphQL().raw().withQuery(graphql).run();
         if (result.hasErrors()) {
@@ -443,7 +525,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
         if (getResult == null) {
             return List.of();
         }
-        List<?> items = (List<?>) getResult.get(indexName);
+        List<?> items = (List<?>) getResult.get(physicalClass);
         if (items == null) {
             return List.of();
         }
@@ -468,6 +550,56 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
             }
         }
         return docs;
+    }
+
+    private String quoteGraphql(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"")
+                .replace("\n", "\\n").replace("\r", "\\r");
+    }
+
+    private String vectorLiteral(float[] vector) {
+        if (vector == null || vector.length == 0) {
+            throw new IllegalStateException("EmbeddingModel returned an empty vector for Weaviate hybrid search");
+        }
+        StringBuilder literal = new StringBuilder("[");
+        for (int i = 0; i < vector.length; i++) {
+            if (i > 0) {
+                literal.append(",");
+            }
+            literal.append(Float.toString(vector[i]));
+        }
+        return literal.append("]").toString();
+    }
+
+    private List<Property> schemaProperties(VectorProperties.IndexConfig config) {
+        List<Property> properties = new ArrayList<>();
+        properties.add(Property.builder()
+                .name("content")
+                .dataType(List.of("text"))
+                .tokenization("word")
+                .build());
+        String configured = config.getAdditionalFields() == null
+                ? "" : String.valueOf(config.getAdditionalFields().getOrDefault("filter-metadata-fields", ""));
+        if (configured.isBlank()) {
+            return properties;
+        }
+        for (String pair : configured.split(",")) {
+            String[] parts = pair.trim().split(":", -1);
+            if (parts.length != 2 || !parts[0].matches("[A-Za-z_][A-Za-z0-9_]*")) {
+                throw new IllegalArgumentException("invalid Weaviate filter-metadata-fields entry");
+            }
+            Property.PropertyBuilder builder = Property.builder()
+                    .name("meta_" + parts[0])
+                    .indexFilterable(true);
+            switch (parts[1].toLowerCase(java.util.Locale.ROOT)) {
+                case "text" -> builder.dataType(List.of("text")).tokenization("field");
+                case "number" -> builder.dataType(List.of("number")).indexRangeFilters(true);
+                default -> throw new IllegalArgumentException(
+                        "unsupported Weaviate metadata field type: " + parts[1]);
+            }
+            properties.add(builder.build());
+        }
+        return properties;
     }
 
     /**
@@ -564,6 +696,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected List<VectorRecord> listDocumentsImpl(String indexName, int offset, int limit) {
+        String physicalClass = className(indexName);
         String graphql = String.format("""
                 {
                   Get {
@@ -575,7 +708,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
                     }
                   }
                 }
-                """, indexName, offset, limit);
+                """, physicalClass, offset, limit);
 
         var result = weaviateClient.graphQL().raw().withQuery(graphql).run();
         if (result.hasErrors()) {
@@ -591,7 +724,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
         if (getResult == null) {
             return docs;
         }
-        var items = (List<?>) getResult.get(indexName);
+        var items = (List<?>) getResult.get(physicalClass);
         if (items == null) {
             return docs;
         }
@@ -632,6 +765,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected List<Document> similaritySearchByVector(String indexName, float[] vector, int limit, double minScore) {
+        String physicalClass = className(indexName);
         if (vector == null || vector.length == 0) {
             throw new IllegalArgumentException("查询向量不能为空");
         }
@@ -658,7 +792,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
                     }
                   }
                 }
-                """, indexName, vectorStr, limit);
+                """, physicalClass, vectorStr, limit);
 
         var result = weaviateClient.graphQL().raw().withQuery(graphql).run();
         if (result.hasErrors()) {
@@ -674,7 +808,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
         if (getResult == null) {
             return docs;
         }
-        var items = (List<?>) getResult.get(indexName);
+        var items = (List<?>) getResult.get(physicalClass);
         if (items == null) {
             return docs;
         }
@@ -714,6 +848,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected void addEmbeddings(String indexName, List<Document> docs) {
+        className(indexName);
         if (docs == null || docs.isEmpty()) {
             return;
         }
@@ -744,6 +879,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected void writeStoreManagedRecords(String indexName, List<VectorRecord> records) {
+        className(indexName);
         vectorStore.add(records.stream().map(record -> toAiDocument(record, null)).toList());
     }
 
@@ -758,6 +894,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected void deleteByIds(String indexName, List<String> ids) {
+        className(indexName);
         if (ids == null || ids.isEmpty()) {
             return;
         }
@@ -777,6 +914,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
      */
     @Override
     protected List<VectorRecord> getByIds(String indexName, List<String> ids) {
+        String physicalClass = className(indexName);
         if (ids == null || ids.isEmpty()) {
             return List.of();
         }
@@ -793,7 +931,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
                         }
                       }
                     }
-                    """, indexName, id);
+                    """, physicalClass, quoteGraphql(id));
 
             var queryResult = weaviateClient.graphQL().raw().withQuery(graphql).run();
             if (queryResult.hasErrors()) {
@@ -807,7 +945,7 @@ public class WeaviateVectorServiceImpl extends AbstractVectorService implements 
             if (getResult == null) {
                 continue;
             }
-            var items = (List<?>) getResult.get(indexName);
+            var items = (List<?>) getResult.get(physicalClass);
             if (items == null || items.isEmpty()) {
                 continue;
             }
