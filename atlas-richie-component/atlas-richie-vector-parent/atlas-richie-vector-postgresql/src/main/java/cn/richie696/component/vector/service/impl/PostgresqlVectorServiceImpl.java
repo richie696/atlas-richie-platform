@@ -18,6 +18,10 @@ package cn.richie696.component.vector.service.impl;
 import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.config.VectorProperties;
 import cn.richie696.component.vector.model.*;
+import cn.richie696.component.vector.observation.RetrievalObservationContext;
+import cn.richie696.component.vector.observation.RetrievalObservationEvent;
+import cn.richie696.component.vector.observation.RetrievalObservationHook;
+import cn.richie696.component.vector.observation.RetrievalStage;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import cn.richie696.component.vector.service.VectorService;
@@ -30,6 +34,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,6 +65,9 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
         VectorIndexLifecycleOperations {
 
     private final JdbcTemplate jdbcTemplate;
+    private final String schemaName;
+    private final Map<String, String> managedTables;
+    private final PostgresqlPrecomputedVectorOperations precomputedOperations;
 
     /**
      * 构造PostgreSQL向量服务实例。
@@ -78,14 +86,123 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
                                        VectorStore vectorStore,
                                        @Qualifier("aiEmbeddingModel") EmbeddingModel embeddingModel,
                                        JdbcTemplate jdbcTemplate) {
+        this(rerankService, vectorStore, embeddingModel, jdbcTemplate, null, Map.of());
+    }
+
+    /**
+     * Creates a Store-bound PostgreSQL service. When {@code managedTables} is non-empty,
+     * callers may only use declared logical index names and cannot select arbitrary tables.
+     */
+    public PostgresqlVectorServiceImpl(RerankService rerankService,
+                                       VectorStore vectorStore,
+                                       EmbeddingModel embeddingModel,
+                                       JdbcTemplate jdbcTemplate,
+                                       String schemaName,
+                                       Map<String, String> managedTables) {
         super(rerankService, vectorStore, embeddingModel);
         this.jdbcTemplate = jdbcTemplate;
+        this.schemaName = schemaName;
+        this.managedTables = Map.copyOf(managedTables == null ? Map.of() : managedTables);
+        this.precomputedOperations = new PostgresqlPrecomputedVectorOperations(
+                jdbcTemplate, schemaName, this.managedTables);
     }
 
     /**
      * pgvector 默认向量维度（OpenAI text-embedding-3-small 等）
      */
     private static final int DEFAULT_DIMENSION = 1536;
+
+    /**
+     * Named PostgreSQL Stores use the framework-managed {@code vector} column schema.
+     * Route text search through the same native data plane as precomputed queries so
+     * reads, writes, filters and transaction-scoped tuning cannot drift to Spring AI's
+     * default {@code embedding} column contract.
+     */
+    @Override
+    public List<VectorSearchResult> searchByText(
+            String indexName, String text, int limit, SearchOptions options) {
+        validateIndexName(indexName);
+        if (text == null || text.isBlank()) {
+            throw new IllegalArgumentException("text 不能为空");
+        }
+        SearchOptions effective = options == null ? SearchOptions.builder().build() : options;
+        int topK = limit > 0 ? limit : 10;
+        RetrievalObservationHook hook = effective.getObservationHook();
+        RetrievalObservationContext context = observationContext(indexName, topK, effective);
+        Instant totalStarted = Instant.now();
+
+        float[] queryVector;
+        Instant embeddingStarted = Instant.now();
+        try {
+            queryVector = embeddingModelForIndex(indexName).embed(text);
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(
+                    context, RetrievalStage.EMBEDDING, Duration.between(embeddingStarted, Instant.now()),
+                    1, queryVector == null ? 0 : queryVector.length, true));
+        } catch (RuntimeException error) {
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(
+                    context, RetrievalStage.EMBEDDING, Duration.between(embeddingStarted, Instant.now()), 1, error));
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(
+                    context, RetrievalStage.TOTAL, Duration.between(totalStarted, Instant.now()), topK, error));
+            throw error;
+        }
+
+        List<VectorSearchResult> results;
+        Instant searchStarted = Instant.now();
+        try {
+            results = precomputedOperations.searchByVector(indexName, queryVector, topK, effective);
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(
+                    context, RetrievalStage.VECTOR_SEARCH, Duration.between(searchStarted, Instant.now()),
+                    topK, results.size(), true));
+        } catch (RuntimeException error) {
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(
+                    context, RetrievalStage.VECTOR_SEARCH, Duration.between(searchStarted, Instant.now()), topK, error));
+            RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(
+                    context, RetrievalStage.TOTAL, Duration.between(totalStarted, Instant.now()), topK, error));
+            throw error;
+        }
+
+        List<VectorSearchResult> finalResults = Boolean.TRUE.equals(effective.getRerank())
+                ? tryRerank(text, results, effective.getRerankModel(), hook, context)
+                : emitRerankSkipped(results, hook, context);
+        RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(
+                context, RetrievalStage.TOTAL, Duration.between(totalStarted, Instant.now()),
+                results.size(), finalResults.size(), true));
+        return finalResults;
+    }
+
+    /** Internal advanced path; raw vectors are fetched only after an explicit candidate-vector request. */
+    List<VectorSearchResult> searchCandidatesByText(
+            String indexName, String text, int limit, SearchOptions options, boolean includeVectors) {
+        validateIndexName(indexName);
+        if (text == null || text.isBlank()) {
+            throw new IllegalArgumentException("text 不能为空");
+        }
+        return precomputedOperations.searchByVector(
+                indexName,
+                embeddingModelForIndex(indexName).embed(text),
+                limit > 0 ? limit : 10,
+                options == null ? SearchOptions.builder().build() : options,
+                includeVectors);
+    }
+
+    @Override
+    protected void validateIndexName(String indexName) {
+        super.validateIndexName(indexName);
+        if (!managedTables.isEmpty() && !managedTables.containsKey(indexName)) {
+            throw new IllegalArgumentException("index is not declared by this PostgreSQL Store: " + indexName);
+        }
+    }
+
+    private String tableName(String indexName) {
+        validateIndexName(indexName);
+        String table = managedTables.isEmpty() ? "vector_" + indexName : managedTables.get(indexName);
+        return schemaName == null ? table : schemaName + "." + table;
+    }
+
+    private String physicalTableName(String indexName) {
+        validateIndexName(indexName);
+        return managedTables.isEmpty() ? "vector_" + indexName : managedTables.get(indexName);
+    }
 
     /**
      * 创建向量索引（Phase B 真实实现 — pgvector HNSW）。
@@ -107,7 +224,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      */
     @Override
     protected void createIndexImpl(String indexName, VectorProperties.IndexConfig config) {
-        String table = "vector_%s".formatted(indexName);
+        String table = tableName(indexName);
         int dimension = config != null && config.getDimension() != null ? config.getDimension() : DEFAULT_DIMENSION;
         String metric = config != null && config.getMetric() != null ? config.getMetric() : "cosine";
         String ops = mapMetricToOps(metric);
@@ -120,9 +237,10 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
                         + "vector vector(%d)"
                         + ")",
                 table, dimension);
+        String index = physicalTableName(indexName) + "_vector_idx";
         String createIndex = String.format(
-                "CREATE INDEX IF NOT EXISTS %s_vector_idx ON %s USING hnsw (vector %s)",
-                table, table, ops);
+                "CREATE INDEX IF NOT EXISTS %s ON %s USING hnsw (vector %s)",
+                index, table, ops);
 
         try {
             jdbcTemplate.execute(createTable);
@@ -190,9 +308,13 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
     protected boolean indexExistsImpl(String indexName) {
         // PostgreSQL的information_schema.tables是标准系统表，存储所有表信息
         // 通过查询该表可以判断向量表是否存在，这是一种标准且可靠的方式
-        String table = "vector_%s".formatted(indexName);
-        String sql = "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = ? )";
-        Boolean exists = jdbcTemplate.queryForObject(sql, Boolean.class, table);
+        String table = physicalTableName(indexName);
+        String sql = schemaName == null
+                ? "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = ? )"
+                : "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = ? AND table_name = ? )";
+        Boolean exists = schemaName == null
+                ? jdbcTemplate.queryForObject(sql, Boolean.class, table)
+                : jdbcTemplate.queryForObject(sql, Boolean.class, schemaName, table);
         return exists != null && exists;
     }
 
@@ -217,7 +339,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
         if (!indexExistsImpl(indexName)) {
             throw new UnsupportedOperationException("索引不存在: %s".formatted(indexName));
         }
-        String table = "vector_%s".formatted(indexName);
+        String table = tableName(indexName);
         // pg_attribute系统表存储表中所有列的元数据，attndims字段表示向量维度
         // attrelid使用::regclass转换以便进行表名比较
         String sql = "SELECT attndims FROM pg_attribute WHERE attrelid = ?::regclass AND attname = 'vector'";
@@ -227,7 +349,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
         // attndims为null表示该列不是向量类型，或表结构不符合预期
         config.setDimension(dim != null ? dim : 0);
         // 从 pg_indexes.indexdef 反查 HNSW ops 类，回填到业务 metric 字段
-        config.setMetric(readMetricFromPgIndex(table));
+        config.setMetric(readMetricFromPgIndex(indexName));
         return config;
     }
 
@@ -235,11 +357,16 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      * 从 pg_indexes 读取 HNSW 索引的 ops 类，反向映射回业务 metric 字符串。
      * 查询失败 / 不存在 HNSW 索引时回退到 {@code l2}，保持向后兼容。
      */
-    private String readMetricFromPgIndex(String table) {
+    private String readMetricFromPgIndex(String indexName) {
+        String table = physicalTableName(indexName);
         try {
-            String indexdef = jdbcTemplate.queryForObject(
-                    "SELECT indexdef FROM pg_indexes WHERE tablename = ? AND indexdef LIKE '%USING hnsw%' LIMIT 1",
-                    String.class, table);
+            String sql = schemaName == null
+                    ? "SELECT indexdef FROM pg_indexes WHERE tablename = ? AND indexdef LIKE '%USING hnsw%' LIMIT 1"
+                    : "SELECT indexdef FROM pg_indexes WHERE schemaname = ? AND tablename = ? "
+                            + "AND indexdef LIKE '%USING hnsw%' LIMIT 1";
+            String indexdef = schemaName == null
+                    ? jdbcTemplate.queryForObject(sql, String.class, table)
+                    : jdbcTemplate.queryForObject(sql, String.class, schemaName, table);
             if (indexdef == null) {
                 return "l2";
             }
@@ -274,7 +401,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      */
     @Override
     protected long countDocumentsImpl(String indexName) {
-        String table = "vector_%s".formatted(indexName);
+        String table = tableName(indexName);
         String sql = "SELECT COUNT(*) FROM %s".formatted(table);
         try {
             Long count = jdbcTemplate.queryForObject(sql, Long.class);
@@ -304,7 +431,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      */
     @Override
     protected long truncateIndexImpl(String indexName) {
-        String table = "vector_%s".formatted(indexName);
+        String table = tableName(indexName);
         String sql = "DELETE FROM %s".formatted(table);
         try {
             return jdbcTemplate.update(sql);
@@ -333,8 +460,8 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      */
     @Override
     protected boolean optimizeImpl(String indexName) {
-        String table = "vector_%s".formatted(indexName);
-        String sql = "VACUUM ANALYZE \"%s\"".formatted(table);
+        String table = tableName(indexName);
+        String sql = "VACUUM ANALYZE %s".formatted(table);
         try {
             // VACUUM ANALYZE 回收空间 + 更新统计；pgvector HNSW 索引无需 REINDEX（写入即增量维护图）
             jdbcTemplate.execute(sql);
@@ -431,6 +558,13 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      */
     @Override
     protected List<IndexInfo> listIndexesImpl() {
+        if (!managedTables.isEmpty()) {
+            return managedTables.keySet().stream()
+                    .map(indexName -> new IndexInfo(
+                            indexName, Modality.TEXT, null, null, "hnsw", IndexStatus.READY,
+                            null, null, null, Map.of()))
+                    .toList();
+        }
         String sql = "SELECT table_name FROM information_schema.tables WHERE table_name LIKE 'vector_%'";
         List<String> tables;
         try {
@@ -505,13 +639,14 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
         if (!indexExistsImpl(indexName)) {
             throw new UnsupportedOperationException("索引不存在: %s".formatted(indexName));
         }
-        String table = "vector_%s".formatted(indexName);
+        String table = tableName(indexName);
         int dimension = config != null && config.getDimension() != null ? config.getDimension() : DEFAULT_DIMENSION;
         String metric = config != null && config.getMetric() != null ? config.getMetric() : "cosine";
         String ops = mapMetricToOps(metric);
 
-        String pgIndex = "%s_vector_idx".formatted(table);
-        String dropSql = "DROP INDEX IF EXISTS %s".formatted(pgIndex);
+        String pgIndex = "%s_vector_idx".formatted(physicalTableName(indexName));
+        String qualifiedPgIndex = schemaName == null ? pgIndex : schemaName + "." + pgIndex;
+        String dropSql = "DROP INDEX IF EXISTS %s".formatted(qualifiedPgIndex);
         String createSql = "CREATE INDEX IF NOT EXISTS %s ON %s USING hnsw (vector %s)"
                 .formatted(pgIndex, table, ops);
 
@@ -573,7 +708,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      */
     @Override
     protected List<Document> similaritySearchByVector(String indexName, float[] vector, int limit, double minScore) {
-        String table = "vector_%s".formatted(indexName);
+        String table = tableName(indexName);
         String vectorStr = toVectorLiteral(vector);
         // 使用<->运算符计算L2距离，ORDER BY距离升序即按相似度降序
         String sql = String.format(
@@ -629,7 +764,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
         if (docs == null || docs.isEmpty()) {
             return;
         }
-        String table = "vector_%s".formatted(indexName);
+        String table = tableName(indexName);
         StringBuilder placeholders = new StringBuilder();
         List<Object[]> batchArgs = new ArrayList<>();
         for (int i = 0; i < docs.size(); i++) {
@@ -662,7 +797,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
         if (ids == null || ids.isEmpty()) {
             return;
         }
-        String table = "vector_%s".formatted(indexName);
+        String table = tableName(indexName);
         String inClause = ids.stream().map(s -> "?").collect(Collectors.joining(","));
         String sql = String.format("DELETE FROM %s WHERE id IN (%s)", table, inClause);
         jdbcTemplate.update(sql, ids.toArray());
@@ -684,7 +819,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
         if (ids == null || ids.isEmpty()) {
             return List.of();
         }
-        String table = "vector_%s".formatted(indexName);
+        String table = tableName(indexName);
         String inClause = ids.stream().map(s -> "?").collect(Collectors.joining(","));
         String sql = String.format("SELECT id, content, metadata FROM %s WHERE id IN (%s)", table, inClause);
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, ids.toArray());
@@ -708,7 +843,7 @@ public class PostgresqlVectorServiceImpl extends AbstractVectorService implement
      */
     @Override
     protected List<VectorRecord> listDocumentsImpl(String indexName, int offset, int limit) {
-        String table = "vector_%s".formatted(indexName);
+        String table = tableName(indexName);
         // 使用String.format构建SQL，注意OFFSET和LIMIT使用占位符防止SQL注入
         // ORDER BY id确保分页结果稳定，避免因数据变更导致的分页不一致
         String sql = String.format("SELECT id, content, metadata FROM %s ORDER BY id OFFSET ? LIMIT ?", table);

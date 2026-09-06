@@ -27,8 +27,10 @@ import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -46,8 +48,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 @Slf4j
 @AutoConfiguration
+@AutoConfigureBefore(VectorAutoConfiguration.class)
 @EnableConfigurationProperties(PostgresqlConfig.class)
 public class PostgresqlVectorAutoConfiguration {
+
+    /** Factory entry point used only when Named Multi-store topology is configured. */
+    @Bean
+    @ConditionalOnMissingBean(PostgresqlVectorProviderFactory.class)
+    public PostgresqlVectorProviderFactory postgresqlVectorProviderFactory(
+            @Autowired(required = false) RerankService rerankService) {
+        return new PostgresqlVectorProviderFactory(rerankService);
+    }
 
     /**
      * 构建 pgvector Spring AI {@link VectorStore}，作为 core 模块与
