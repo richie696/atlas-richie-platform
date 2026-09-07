@@ -68,6 +68,7 @@ import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Milvus向量数据库服务实现类
@@ -94,6 +95,12 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
     private final MilvusConfig milvusConfig;
     private final MilvusServiceClient milvusClient;
     private final MilvusClientV2 hybridClient;
+    /**
+     * Dynamic knowledge-base collections are not present in the startup-time
+     * vector.properties index map. Cache the schema decision after inspecting
+     * Milvus so retries and writes after a process restart use the same path.
+     */
+    private final Map<String, Boolean> hybridIndexCache = new ConcurrentHashMap<>();
 
     private static final int DEFAULT_DIMENSION = 1536;
     /**
@@ -214,6 +221,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
     protected void createIndexImpl(String indexName, VectorProperties.IndexConfig config) {
         if (hybridEnabled(config)) {
             createHybridIndex(indexName, config);
+            hybridIndexCache.put(indexName, true);
             return;
         }
         // 复用完整字段构造逻辑：id + vector + content + metadata + additionalFields
@@ -271,6 +279,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         milvusClient.loadCollection(LoadCollectionParam.newBuilder()
                 .withCollectionName(indexName)
                 .build());
+        hybridIndexCache.put(indexName, false);
     }
 
     /**
@@ -554,6 +563,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         if (resp.getStatus() != R.Status.Success.getCode()) {
             throw new RuntimeException("Milvus dropCollection failed: %s".formatted(resp.getMessage()));
         }
+        hybridIndexCache.remove(indexName);
         log.info("Milvus Collection [{}] 删除完成", indexName);
     }
 
@@ -1215,10 +1225,39 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         else target.addProperty(field, String.valueOf(value));
     }
 
-    private boolean hybridEnabledForIndex(String indexName) {
-        if (vectorProperties == null || vectorProperties.getIndexes() == null) return false;
-        VectorProperties.IndexConfig config = vectorProperties.getIndexes().get(indexName);
-        return config != null && hybridEnabled(config);
+    boolean hybridEnabledForIndex(String indexName) {
+        Boolean cached = hybridIndexCache.get(indexName);
+        if (cached != null) return cached;
+
+        if (vectorProperties != null && vectorProperties.getIndexes() != null) {
+            VectorProperties.IndexConfig config = vectorProperties.getIndexes().get(indexName);
+            if (config != null && hybridEnabled(config)) {
+                hybridIndexCache.put(indexName, true);
+                return true;
+            }
+        }
+
+        // Dynamic KB collections are created with the runtime IndexConfig and
+        // therefore do not appear in vectorProperties.indexes. Inspect the
+        // actual schema so a restarted service can still recognize the native
+        // BM25/sparse-vector collection and avoid the V1 insert path.
+        boolean discovered = hasHybridSchema(indexName);
+        hybridIndexCache.put(indexName, discovered);
+        return discovered;
+    }
+
+    private boolean hasHybridSchema(String indexName) {
+        DescribeCollectionParam param = DescribeCollectionParam.newBuilder()
+                .withCollectionName(indexName)
+                .build();
+        R<DescribeCollectionResponse> response = milvusClient.describeCollection(param);
+        if (response.getStatus() != R.Status.Success.getCode() || response.getData() == null) {
+            log.warn("Unable to inspect Milvus schema for index [{}]; falling back to dense insert: {}",
+                    indexName, response.getMessage());
+            return false;
+        }
+        return response.getData().getSchema().getFieldsList().stream()
+                .anyMatch(field -> MilvusAclAwareHybridSearchOperations.SPARSE_VECTOR_FIELD.equals(field.getName()));
     }
 
     /**

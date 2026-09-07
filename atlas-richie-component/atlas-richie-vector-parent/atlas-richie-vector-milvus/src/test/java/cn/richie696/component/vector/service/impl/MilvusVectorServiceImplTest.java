@@ -296,6 +296,36 @@ class MilvusVectorServiceImplTest {
     }
 
     @Nested
+    @DisplayName("hybrid schema detection")
+    class HybridSchemaDetectionTests {
+
+        @Test
+        @DisplayName("should detect native BM25 schema for a dynamic knowledge-base collection")
+        void detectsHybridSchemaForDynamicCollection() {
+            DescribeCollectionResponse hybridSchema = DescribeCollectionResponse.newBuilder()
+                    .setSchema(CollectionSchema.newBuilder()
+                            .addFields(FieldSchema.newBuilder().setName("id"))
+                            .addFields(FieldSchema.newBuilder().setName("vector"))
+                            .addFields(FieldSchema.newBuilder().setName("content"))
+                            .addFields(FieldSchema.newBuilder().setName("metadata"))
+                            .addFields(FieldSchema.newBuilder().setName("sparse_vector")))
+                    .build();
+            R<DescribeCollectionResponse> response = mock(R.class);
+            when(response.getStatus()).thenReturn(R.Status.Success.getCode());
+            when(response.getData()).thenReturn(hybridSchema);
+            when(milvusClient.describeCollection(any(DescribeCollectionParam.class))).thenReturn(response);
+
+            assertThat(service.hybridEnabledForIndex("kb_1_idx_v1")).isTrue();
+        }
+
+        @Test
+        @DisplayName("should keep dense path for a collection without sparse vector")
+        void keepsDensePathForDenseCollection() {
+            assertThat(service.hybridEnabledForIndex("kb_1_idx_v1")).isFalse();
+        }
+    }
+
+    @Nested
     @DisplayName("getIndexConfig")
     class GetIndexConfigTests {
 
