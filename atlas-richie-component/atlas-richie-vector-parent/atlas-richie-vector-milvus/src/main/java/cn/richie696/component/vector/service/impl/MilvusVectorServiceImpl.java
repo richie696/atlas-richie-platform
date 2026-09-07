@@ -29,6 +29,8 @@ import cn.richie696.component.vector.service.VectorIndexSchemaOperations;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import cn.richie696.component.vector.service.VectorService;
 import cn.richie696.context.utils.data.JsonUtils;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import io.milvus.client.MilvusServiceClient;
 import io.milvus.grpc.*;
 import io.milvus.param.IndexType;
@@ -47,6 +49,10 @@ import io.milvus.param.index.CreateIndexParam;
 import io.milvus.param.index.DescribeIndexParam;
 import io.milvus.response.QueryResultsWrapper;
 import io.milvus.response.SearchResultsWrapper;
+import io.milvus.v2.client.MilvusClientV2;
+import io.milvus.v2.common.IndexParam;
+import io.milvus.v2.service.collection.request.AddFieldReq;
+import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -87,6 +93,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
 
     private final MilvusConfig milvusConfig;
     private final MilvusServiceClient milvusClient;
+    private final MilvusClientV2 hybridClient;
 
     private static final int DEFAULT_DIMENSION = 1536;
     /**
@@ -111,9 +118,22 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
                                    VectorStore vectorStore,
                                    @Qualifier("aiEmbeddingModel") EmbeddingModel embeddingModel,
                                    MilvusConfig milvusConfig, MilvusServiceClient milvusClient) {
+        this(rerankService, vectorStore, embeddingModel, milvusConfig, milvusClient, null);
+    }
+
+    /**
+     * Multi-store constructor. The V2 client is created lazily by the provider factory only when
+     * an index opts in to native BM25 hybrid search.
+     */
+    public MilvusVectorServiceImpl(@Autowired(required = false) RerankService rerankService,
+                                   VectorStore vectorStore,
+                                   EmbeddingModel embeddingModel,
+                                   MilvusConfig milvusConfig, MilvusServiceClient milvusClient,
+                                   MilvusClientV2 hybridClient) {
         super(rerankService, vectorStore, embeddingModel);
         this.milvusConfig = milvusConfig;
         this.milvusClient = milvusClient;
+        this.hybridClient = hybridClient;
     }
 
     /**
@@ -191,6 +211,10 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
      */
     @Override
     protected void createIndexImpl(String indexName, VectorProperties.IndexConfig config) {
+        if (hybridEnabled(config)) {
+            createHybridIndex(indexName, config);
+            return;
+        }
         // 复用完整字段构造逻辑：id + vector + content + metadata + additionalFields
         List<FieldType> fields = buildFieldTypes(config);
 
@@ -246,6 +270,88 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         milvusClient.loadCollection(LoadCollectionParam.newBuilder()
                 .withCollectionName(indexName)
                 .build());
+    }
+
+    /**
+     * Creates the opt-in hybrid schema.  BM25 is computed by Milvus itself from {@code content},
+     * so callers continue to write only their existing content and dense embedding fields.
+     */
+    private void createHybridIndex(String indexName, VectorProperties.IndexConfig config) {
+        if (hybridClient == null) {
+            throw new IllegalStateException("Milvus hybrid-enabled index requires the V2 client supplied by MilvusVectorProviderFactory");
+        }
+        CreateCollectionReq.CollectionSchema schema = CreateCollectionReq.CollectionSchema.builder()
+                .enableDynamicField(true)
+                .build();
+        schema.addField(AddFieldReq.builder().fieldName("id")
+                .dataType(io.milvus.v2.common.DataType.VarChar).maxLength(65535)
+                .isPrimaryKey(true).autoID(false).build());
+        schema.addField(AddFieldReq.builder().fieldName(MilvusAclAwareHybridSearchOperations.DENSE_VECTOR_FIELD)
+                .dataType(io.milvus.v2.common.DataType.FloatVector)
+                .dimension(config.getDimension() != null ? config.getDimension() : milvusConfig.getEmbeddingDimension()).build());
+        schema.addField(AddFieldReq.builder().fieldName("content")
+                .dataType(io.milvus.v2.common.DataType.VarChar).maxLength(65535)
+                .enableAnalyzer(true).build());
+        schema.addField(AddFieldReq.builder().fieldName(MilvusAclAwareHybridSearchOperations.SPARSE_VECTOR_FIELD)
+                .dataType(io.milvus.v2.common.DataType.SparseFloatVector).build());
+        schema.addField(AddFieldReq.builder().fieldName("metadata")
+                .dataType(io.milvus.v2.common.DataType.VarChar).maxLength(65535).build());
+        addHybridScalarFields(schema, config);
+        schema.addFunction(CreateCollectionReq.Function.builder()
+                .name("content_bm25")
+                .functionType(io.milvus.common.clientenum.FunctionType.BM25)
+                .inputFieldNames(List.of("content"))
+                .outputFieldNames(List.of(MilvusAclAwareHybridSearchOperations.SPARSE_VECTOR_FIELD))
+                .build());
+
+        IndexParam denseIndex = IndexParam.builder()
+                .fieldName(MilvusAclAwareHybridSearchOperations.DENSE_VECTOR_FIELD)
+                .indexName("dense_index")
+                .indexType(IndexParam.IndexType.valueOf((config.getIndexType() != null
+                        ? config.getIndexType() : milvusConfig.getIndexType().name()).toUpperCase(Locale.ROOT)))
+                .metricType(IndexParam.MetricType.valueOf((config.getMetric() != null
+                        ? config.getMetric() : milvusConfig.getMetricType().name()).toUpperCase(Locale.ROOT)))
+                .extraParams(config.getIndexParams() == null ? Map.of() : config.getIndexParams())
+                .build();
+        IndexParam sparseIndex = IndexParam.builder()
+                .fieldName(MilvusAclAwareHybridSearchOperations.SPARSE_VECTOR_FIELD)
+                .indexName("sparse_bm25_index")
+                .indexType(IndexParam.IndexType.SPARSE_INVERTED_INDEX)
+                .metricType(IndexParam.MetricType.BM25)
+                .extraParams(Map.of("inverted_index_algo", "DAAT_MAXSCORE"))
+                .build();
+        hybridClient.createCollection(CreateCollectionReq.builder()
+                .databaseName(milvusConfig.getDatabaseName())
+                .collectionName(indexName)
+                .description("Vector collection with native BM25 hybrid search")
+                .numShards(config.getShards() != null ? config.getShards() : 1)
+                .collectionSchema(schema)
+                .indexParams(List.of(denseIndex, sparseIndex))
+                .build());
+        milvusClient.loadCollection(LoadCollectionParam.newBuilder().withCollectionName(indexName).build());
+    }
+
+    private static boolean hybridEnabled(VectorProperties.IndexConfig config) {
+        if (config.getAdditionalFields() == null) return false;
+        Object value = config.getAdditionalFields().get("hybrid-enabled");
+        return value instanceof Boolean bool ? bool : value != null && Boolean.parseBoolean(value.toString());
+    }
+
+    private static void addHybridScalarFields(CreateCollectionReq.CollectionSchema schema,
+                                              VectorProperties.IndexConfig config) {
+        if (config.getAdditionalFields() == null) return;
+        for (Map.Entry<String, Object> entry : config.getAdditionalFields().entrySet()) {
+            if ("hybrid-enabled".equals(entry.getKey())) continue;
+            String type = "VarChar";
+            if (entry.getValue() instanceof Map<?, ?> field && field.get("data_type") != null) {
+                type = field.get("data_type").toString();
+            }
+            io.milvus.v2.common.DataType dataType = io.milvus.v2.common.DataType.valueOf(type);
+            AddFieldReq.AddFieldReqBuilder<?> field = AddFieldReq.builder()
+                    .fieldName(entry.getKey()).dataType(dataType);
+            if (dataType == io.milvus.v2.common.DataType.VarChar) field.maxLength(65535);
+            schema.addField(field.build());
+        }
     }
 
     /**
@@ -609,6 +715,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         // 从配置中读取额外字段，允许用户自定义扩展字段
         if (config.getAdditionalFields() != null) {
             for (Map.Entry<String, Object> entry : config.getAdditionalFields().entrySet()) {
+                if ("hybrid-enabled".equals(entry.getKey())) continue;
                 FieldType additionalField = buildAdditionalFieldType(entry.getKey(), entry.getValue());
                 fieldTypes.add(additionalField);
             }
@@ -953,6 +1060,10 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         if (docs == null || docs.isEmpty()) {
             return;
         }
+        if (hybridEnabledForIndex(indexName)) {
+            addHybridEmbeddings(indexName, docs);
+            return;
+        }
 
         List<String> ids = docs.stream().map(Document::getId).toList();
         List<String> contents = docs.stream().map(d -> d.getText() != null ? d.getText() : "").toList();
@@ -1001,12 +1112,76 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
     }
 
     /**
+     * V1 SDK validates every vector field before the RPC and therefore cannot omit the BM25 output
+     * field.  The V2 data-plane API understands collection functions, so sparse_vector is omitted
+     * here deliberately and generated by Milvus from content.
+     */
+    private void addHybridEmbeddings(String indexName, List<Document> docs) {
+        if (hybridClient == null) {
+            throw new IllegalStateException("Milvus hybrid-enabled index requires the V2 data-plane client");
+        }
+        Gson gson = new Gson();
+        List<JsonObject> rows = new ArrayList<>(docs.size());
+        Map<String, Object> scalarFields = configuredScalarFields(indexName);
+        for (Document document : docs) {
+            Object embeddingValue = document.getMetadata().get("embedding");
+            if (!(embeddingValue instanceof float[] embedding) || embedding.length == 0) {
+                throw new IllegalArgumentException("Milvus hybrid write requires a non-empty float[] embedding");
+            }
+            JsonObject row = new JsonObject();
+            row.addProperty("id", document.getId());
+            row.add("vector", gson.toJsonTree(embedding));
+            row.addProperty("content", document.getText() == null ? "" : document.getText());
+            try {
+                Map<String, Object> metadata = new LinkedHashMap<>(document.getMetadata());
+                metadata.remove("embedding");
+                row.addProperty("metadata", JsonUtils.getInstance().serialize(metadata));
+            } catch (Exception error) {
+                throw new IllegalStateException("Milvus metadata serialization failed; refusing to lose ACL metadata", error);
+            }
+            for (Map.Entry<String, Object> configured : scalarFields.entrySet()) {
+                String field = configured.getKey();
+                if ("hybrid-enabled".equals(field)
+                        || MilvusAclAwareHybridSearchOperations.SPARSE_VECTOR_FIELD.equals(field)) continue;
+                Object value = document.getMetadata().get(field);
+                if (value == null) {
+                    throw new IllegalArgumentException("Milvus scalar field '" + field
+                            + "' is declared for index '" + indexName + "' but missing from record metadata");
+                }
+                addJsonScalar(row, field, coerceScalarValue(field, configured.getValue(), value));
+            }
+            rows.add(row);
+        }
+        hybridClient.insert(io.milvus.v2.service.vector.request.InsertReq.builder()
+                .databaseName(milvusConfig.getDatabaseName()).collectionName(indexName).data(rows).build());
+        R<FlushResponse> flush = milvusClient.flush(FlushParam.newBuilder().withCollectionNames(List.of(indexName)).build());
+        if (flush.getStatus() != R.Status.Success.getCode()) {
+            throw new RuntimeException("Milvus flush failed after hybrid insert: " + flush.getMessage());
+        }
+        log.info("Milvus hybrid 写入 Collection [{}] 完成，文档数={}", indexName, docs.size());
+    }
+
+    private static void addJsonScalar(JsonObject target, String field, Object value) {
+        if (value instanceof Number number) target.addProperty(field, number);
+        else if (value instanceof Boolean bool) target.addProperty(field, bool);
+        else target.addProperty(field, String.valueOf(value));
+    }
+
+    private boolean hybridEnabledForIndex(String indexName) {
+        if (vectorProperties == null || vectorProperties.getIndexes() == null) return false;
+        VectorProperties.IndexConfig config = vectorProperties.getIndexes().get(indexName);
+        return config != null && hybridEnabled(config);
+    }
+
+    /**
      * 将 IndexConfig.additionalFields 中显式声明的字段写入 Milvus 标量列。
      * ACL 字段不能只存在于 metadata JSON；声明为标量字段后，缺值即拒绝写入。
      */
     private void appendConfiguredScalarFields(String indexName, List<Document> docs, List<InsertParam.Field> fields) {
         for (Map.Entry<String, Object> configuredField : configuredScalarFields(indexName).entrySet()) {
             String fieldName = configuredField.getKey();
+            if ("hybrid-enabled".equals(fieldName)
+                    || MilvusAclAwareHybridSearchOperations.SPARSE_VECTOR_FIELD.equals(fieldName)) continue;
             List<Object> values = new ArrayList<>(docs.size());
             for (Document doc : docs) {
                 Object value = doc.getMetadata().get(fieldName);

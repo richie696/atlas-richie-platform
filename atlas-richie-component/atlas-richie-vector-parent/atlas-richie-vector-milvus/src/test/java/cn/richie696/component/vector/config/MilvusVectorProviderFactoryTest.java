@@ -77,6 +77,18 @@ class MilvusVectorProviderFactoryTest {
     }
 
     @Test
+    void shouldExposeAclSafeHybridOnlyForExplicitlyHybridEnabledStore() {
+        var capabilities = factory.capabilities(connection(Map.of()),
+                store("documents", "hnsw", "cosine", Map.of("hybrid-enabled", true)));
+
+        assertThat(capabilities.supports(VectorCapability.ACL_SAFE_HYBRID)).isTrue();
+        assertThat(capabilities.descriptor(VectorCapability.ACL_SAFE_HYBRID).orElseThrow().constraints())
+                .containsEntry("filter-stage", "provider-recall")
+                .containsEntry("schema", "hybrid-enabled");
+        assertThat(capabilities.supports(VectorCapability.CANDIDATE_VECTOR)).isFalse();
+    }
+
+    @Test
     void shouldRegisterFactoryWithoutCreatingLegacyClientOrStore() {
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(MilvusVectorAutoConfiguration.class))
@@ -94,8 +106,13 @@ class MilvusVectorProviderFactoryTest {
     }
 
     private static VectorStoreDefinition store(String indexName, String indexType, String metric) {
+        return store(indexName, indexType, metric, Map.of());
+    }
+
+    private static VectorStoreDefinition store(
+            String indexName, String indexType, String metric, Map<String, Object> additionalFields) {
         VectorIndexDefinition index = new VectorIndexDefinition(
-                indexName, indexName, 1536, metric, indexType, 1, 1, Map.of(), Map.of());
+                indexName, indexName, 1536, metric, indexType, 1, 1, additionalFields, Map.of());
         return new VectorStoreDefinition(
                 VectorStoreId.of("primary"),
                 VectorConnectionId.of("primary"),

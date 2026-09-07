@@ -10,9 +10,11 @@ import cn.richie696.component.vector.filter.MilvusVectorFilterCompiler;
 import cn.richie696.component.vector.filter.VectorFilterCompiler;
 import cn.richie696.component.vector.query.VectorQueryDefaults;
 import cn.richie696.component.vector.service.VectorAdvancedSearchOperations;
+import cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import cn.richie696.component.vector.service.impl.MilvusAdvancedSearchOperations;
+import cn.richie696.component.vector.service.impl.MilvusAclAwareHybridSearchOperations;
 import cn.richie696.component.vector.service.impl.MilvusVectorServiceImpl;
 import cn.richie696.component.vector.topology.VectorCapability;
 import cn.richie696.component.vector.topology.VectorCapabilityDescriptor;
@@ -29,6 +31,8 @@ import cn.richie696.component.vector.topology.VectorStoreCapabilities;
 import cn.richie696.component.vector.topology.VectorStoreDefinition;
 import cn.richie696.component.vector.topology.VectorStoreHandle;
 import io.milvus.client.MilvusServiceClient;
+import io.milvus.v2.client.ConnectConfig;
+import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.param.ConnectParam;
 import io.milvus.param.IndexType;
 import io.milvus.param.MetricType;
@@ -115,7 +119,7 @@ public final class MilvusVectorProviderFactory implements VectorProviderFactory 
             VectorConnectionDefinition connection,
             VectorStoreDefinition store) {
         requireProvider(connection);
-        return CAPABILITIES;
+        return hybridEnabled(store) ? hybridCapabilities() : CAPABILITIES;
     }
 
     @Override
@@ -171,7 +175,8 @@ public final class MilvusVectorProviderFactory implements VectorProviderFactory 
                 .initializeSchema(false)
                 .build();
         MilvusVectorServiceImpl service = new MilvusVectorServiceImpl(
-                rerankService, vectorStore, embeddingModel.model(), storeConfig, milvusConnection.client());
+                rerankService, vectorStore, embeddingModel.model(), storeConfig, milvusConnection.client(),
+                hybridEnabled(definition) ? milvusConnection.hybridClient() : null);
         service.setVectorProperties(storeProperties(definition));
         VectorFilterCompiler filterCompiler = new MilvusVectorFilterCompiler();
         service.setVectorFilterCompiler(filterCompiler);
@@ -189,9 +194,9 @@ public final class MilvusVectorProviderFactory implements VectorProviderFactory 
                         .map(VectorIndexDefinition::metric)
                         .orElse("cosine"))));
 
-        return VectorStoreHandle.builder(definition, provider(), service)
+        VectorStoreHandle.Builder handle = VectorStoreHandle.builder(definition, provider(), service)
                 .embeddingModel(embeddingModel)
-                .storeCapabilities(CAPABILITIES)
+                .storeCapabilities(capabilities(new VectorConnectionDefinition(connection.id(), provider(), Map.of()), definition))
                 .capability(VectorFilterCompiler.class, filterCompiler)
                 .capability(VectorScoreSemantics.class, VectorScoreSemantics.finalScore(
                         "milvus.adapter", 0.0D, 1.0D, true, "metric-aware-conversion-clamped",
@@ -199,8 +204,13 @@ public final class MilvusVectorProviderFactory implements VectorProviderFactory 
                         VectorScoreThresholdExecution.ADAPTER_NORMALIZED))
                 .capability(VectorRecordReadOperations.class, service)
                 .capability(VectorIndexLifecycleOperations.class, service)
-                .capability(VectorAdvancedSearchOperations.class, advancedSearch)
-                .build();
+                .capability(VectorAdvancedSearchOperations.class, advancedSearch);
+        if (hybridEnabled(definition)) {
+            handle.capability(VectorAclAwareHybridSearchOperations.class,
+                    new MilvusAclAwareHybridSearchOperations(
+                            milvusConnection.hybridClient(), embeddingModel.model(), filterCompiler));
+        }
+        return handle.build();
     }
 
     static MilvusServiceClient openClient(MilvusConfig config) {
@@ -223,6 +233,28 @@ public final class MilvusVectorProviderFactory implements VectorProviderFactory 
             }
         }
         return new MilvusServiceClient(builder.build());
+    }
+
+    static MilvusClientV2 openHybridClient(MilvusConfig config) {
+        String scheme = config.isSecure() ? "https" : "http";
+        ConnectConfig.ConnectConfigBuilder builder = ConnectConfig.builder()
+                .uri(scheme + "://" + config.getHost() + ":" + config.getPort())
+                .dbName(config.getDatabaseName())
+                .connectTimeoutMs(config.getConnectTimeoutMs())
+                .keepAliveTimeMs(config.getKeepAliveTimeMs())
+                .keepAliveTimeoutMs(config.getKeepAliveTimeoutMs())
+                .keepAliveWithoutCalls(config.isKeepAliveWithoutCalls())
+                .idleTimeoutMs(config.getIdleTimeoutMs())
+                .secure(config.isSecure())
+                .serverPemPath(config.getServerPemPath())
+                .serverName(config.getServerName())
+                .caPemPath(config.getCaPemPath())
+                .clientKeyPath(config.getClientKeyPath())
+                .clientPemPath(config.getClientPemPath());
+        if (config.getUsername() != null && config.getPassword() != null) {
+            builder.username(config.getUsername()).password(config.getPassword());
+        }
+        return new MilvusClientV2(builder.build());
     }
 
     private static MilvusConfig connectionConfig(Map<String, Object> settings) {
@@ -289,6 +321,22 @@ public final class MilvusVectorProviderFactory implements VectorProviderFactory 
         VectorIndexDefinition byId = store.indexes().get(store.defaultIndex());
         if (byId != null) return java.util.Optional.of(byId);
         return store.indexes().values().stream().filter(index -> index.name().equals(store.defaultIndex())).findFirst();
+    }
+
+    private static boolean hybridEnabled(VectorStoreDefinition store) {
+        return defaultIndex(store)
+                .map(VectorIndexDefinition::additionalFields)
+                .map(fields -> fields.get("hybrid-enabled"))
+                .map(value -> value instanceof Boolean bool ? bool : Boolean.parseBoolean(value.toString()))
+                .orElse(false);
+    }
+
+    private static VectorStoreCapabilities hybridCapabilities() {
+        List<VectorCapabilityDescriptor> descriptors = new java.util.ArrayList<>(CAPABILITIES.descriptors());
+        descriptors.add(new VectorCapabilityDescriptor(VectorCapability.ACL_SAFE_HYBRID, "1.0",
+                Map.of("transport", "milvus-v2-hybrid-search", "branches", "dense,bm25",
+                        "filter-stage", "provider-recall", "schema", "hybrid-enabled")));
+        return new VectorStoreCapabilities(descriptors);
     }
 
     private static VectorScoreSemantics scoreSemantics(MetricType metric) {
@@ -391,10 +439,35 @@ public final class MilvusVectorProviderFactory implements VectorProviderFactory 
         if (value != null) settings.put(key, value);
     }
 
-    private record MilvusConnectionHandle(
-            VectorConnectionId id,
-            MilvusServiceClient client,
-            MilvusConfig config) implements VectorConnectionHandle {
+    private static final class MilvusConnectionHandle implements VectorConnectionHandle {
+        private final VectorConnectionId id;
+        private final MilvusServiceClient client;
+        private final MilvusConfig config;
+        private MilvusClientV2 hybridClient;
+
+        private MilvusConnectionHandle(VectorConnectionId id, MilvusServiceClient client, MilvusConfig config) {
+            this.id = id;
+            this.client = client;
+            this.config = config;
+        }
+
+        @Override
+        public VectorConnectionId id() {
+            return id;
+        }
+
+        private MilvusServiceClient client() {
+            return client;
+        }
+
+        private MilvusConfig config() {
+            return config;
+        }
+
+        private synchronized MilvusClientV2 hybridClient() {
+            if (hybridClient == null) hybridClient = openHybridClient(config);
+            return hybridClient;
+        }
 
         @Override
         public VectorProvider provider() {
@@ -404,6 +477,7 @@ public final class MilvusVectorProviderFactory implements VectorProviderFactory 
         @Override
         public void close() {
             client.close();
+            if (hybridClient != null) hybridClient.close();
         }
 
         @Override

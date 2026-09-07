@@ -93,11 +93,16 @@ Core 提供确定性的客户端 MMR：先使用 Provider 已完成 Filter/ACL �
 
 ## 5. ACL-safe hybrid
 
-当前只有 Weaviate Store 声明 `ACL_SAFE_HYBRID`。调用必须提供非空结构化 `VectorFilter`；同一个编译后的 `where` 与 `hybrid` 位于单一 GraphQL Get 请求中，使 BM25 与向量候选共同受召回前过滤约束。
+Weaviate Store，以及显式启用原生 BM25 hybrid 的 Milvus Store，声明 `ACL_SAFE_HYBRID`。调用必须提供非空结构化 `VectorFilter`。
+
+- Weaviate 将同一个编译后的 `where` 与 `hybrid` 放在单一 GraphQL Get 请求中。
+- Milvus 将同一个编译后的表达式附着在 dense `vector` 与 BM25 `sparse_vector` 的每一个 `AnnSearchReq` 上，再由同一个 V2 `HybridSearchReq` 融合。因此两路候选都在 Provider 召回前受到 ACL 约束。
+
+Milvus 是可选增强，不改变普通 Store：默认 `hybrid-enabled=false`，仍使用原有 dense schema 与 `VectorService`。需要 ACL-safe hybrid 时，在新建逻辑索引的 `additional-fields` 中设置 `hybrid-enabled: true`；组件会创建 `content`、dense `vector`、BM25 `sparse_vector` 和 Milvus server-side BM25 Function 所需 schema。既有的纯 dense Collection 不能原地变成该 schema，必须新建/rebuild 后切换 Store。
 
 以下情况在发送 Provider 请求前拒绝：空 ACL、空主体集合、非法字段、显式 ACL 与 `HybridSearchOptions.searchOptions.filter` 冲突、非法权重。Filter 值由编译器和客户端双层转义。
 
-Milvus、PGVector、Qdrant、Redis、MongoDB 与 Neo4j 当前均不声明 `ACL_SAFE_HYBRID`。它们仍可使用各自已声明的基础检索或过滤能力。
+PGVector、Qdrant、Redis、MongoDB 与 Neo4j 当前不声明 `ACL_SAFE_HYBRID`。它们仍可使用各自已声明的基础检索或过滤能力。
 
 ## 6. 分数语义
 
@@ -124,7 +129,7 @@ Milvus、PGVector、Qdrant、Redis、MongoDB 与 Neo4j 当前均不声明 `ACL_S
 
 | Provider | Native Filter | ACL Filter | ACL-safe Hybrid | Typed Query Tuning | Candidate Vector | Score Stages | Index Lifecycle | 真实 Provider 证据 |
 |---|---|---|---|---|---|---|---|---|
-| Milvus | 是 | 是 | 否 | 是：HNSW `ef` / IVF `nprobe` | 否 | 是 | 是 | collection 创建、写入、默认/调优检索、清理；与 PG 同进程 |
+| Milvus | 是 | 是 | 条件：`hybrid-enabled=true` 的原生 BM25 schema | 是：HNSW `ef` / IVF `nprobe` | 否 | 是 | 是 | collection 创建、写入、默认/调优检索、ACL 负例 hybrid、清理；与 PG 同进程 |
 | PGVector | 是 | 是 | 否 | 是：事务级 HNSW/IVFFlat | 是，默认关闭 | 是 | 是 | schema/table 创建、过滤/调优/候选向量检索、同连接恢复默认、清理；与 Milvus 同进程 |
 | Qdrant | 是（仅 `SEARCH_TEXT`） | 是（仅 `SEARCH_TEXT`） | 否 | 否 | 否 | 是 | 是 | 原生 gRPC Filter 请求、跨租户负例、collection 写入/过滤检索/清理 |
 | Redis Stack | 条件 | 条件 | 否 | 否 | 否 | 是 | 是 | index、写入、检索、清理 |
