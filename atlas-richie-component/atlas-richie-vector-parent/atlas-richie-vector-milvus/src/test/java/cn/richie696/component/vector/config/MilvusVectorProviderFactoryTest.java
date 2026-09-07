@@ -71,9 +71,10 @@ class MilvusVectorProviderFactoryTest {
         var capabilities = factory.capabilities(connection(Map.of()), store("documents", "hnsw", "cosine"));
 
         assertThat(capabilities.ids()).containsExactlyInAnyOrder(
-                "NATIVE_FILTER", "ACL_FILTER", "QUERY_TUNING", "SCORE_STAGES", "INDEX_LIFECYCLE");
+                "NATIVE_FILTER", "ACL_FILTER", "CANDIDATE_VECTOR", "QUERY_TUNING", "SCORE_STAGES", "INDEX_LIFECYCLE");
         assertThat(capabilities.supports(VectorCapability.ACL_SAFE_HYBRID)).isFalse();
-        assertThat(capabilities.supports(VectorCapability.CANDIDATE_VECTOR)).isFalse();
+        assertThat(capabilities.descriptor(VectorCapability.CANDIDATE_VECTOR).orElseThrow().constraints())
+                .containsEntry("client-mmr", "true").containsEntry("server-mmr", "false");
     }
 
     @Test
@@ -85,7 +86,7 @@ class MilvusVectorProviderFactoryTest {
         assertThat(capabilities.descriptor(VectorCapability.ACL_SAFE_HYBRID).orElseThrow().constraints())
                 .containsEntry("filter-stage", "provider-recall")
                 .containsEntry("schema", "hybrid-enabled");
-        assertThat(capabilities.supports(VectorCapability.CANDIDATE_VECTOR)).isFalse();
+        assertThat(capabilities.supports(VectorCapability.CANDIDATE_VECTOR)).isTrue();
     }
 
     @Test

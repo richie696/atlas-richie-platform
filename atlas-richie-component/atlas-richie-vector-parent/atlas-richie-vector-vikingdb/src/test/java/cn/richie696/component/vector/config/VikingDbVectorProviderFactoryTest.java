@@ -95,6 +95,11 @@ class VikingDbVectorProviderFactoryTest {
                 assertThat(handle.capability(VectorAdvancedSearchOperations.class)).isPresent();
                 assertThat(handle.capability(cn.richie696.ai.vectorstore.vikingdb.api.VikingDbSearchOperations.class))
                         .isPresent();
+                assertThat(handle.requireCapability(
+                        cn.richie696.ai.vectorstore.vikingdb.api.VikingDbPermissionOperations.class)
+                        .describePermissionRequirements())
+                        .extracting(requirement -> requirement.operation().sdkOperation())
+                        .contains("createCollection", "upsertData", "searchByVector");
             } finally {
                 connection.close();
             }

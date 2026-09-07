@@ -20,6 +20,7 @@ import cn.richie696.component.vector.query.VectorQueryErrorCode;
 import cn.richie696.component.vector.query.VectorQueryRequest;
 import cn.richie696.component.vector.query.VectorQueryResolver;
 import cn.richie696.component.vector.query.VectorQueryValidationException;
+import cn.richie696.component.vector.query.VectorResultDiversifier;
 import cn.richie696.component.vector.query.VectorSearchExecution;
 import cn.richie696.component.vector.query.VectorSearchExecutionReceipt;
 import cn.richie696.component.vector.query.milvus.MilvusQueryOptions;
@@ -79,17 +80,16 @@ public final class MilvusAdvancedSearchOperations implements VectorAdvancedSearc
                 .minScore(query.minScore())
                 .filter(query.filter())
                 .providerSearchParameters(providerParameters)
+                .includeCandidateVectors(query.diversification().requiresCandidateVectors())
                 .build();
         List<VectorSearchResult> candidates = executionGuard.execute(query.timeout(), () -> service.searchByText(
                 logicalIndex, query.query(), query.candidateLimit(), options));
-        List<VectorSearchResult> results = candidates.stream().limit(query.topK()).toList();
+        List<VectorSearchResult> results = VectorResultDiversifier.apply(
+                candidates, query.topK(), query.diversification());
         return new VectorSearchExecution(results, receipt(request, query, providerParameters));
     }
 
     private void rejectUnsupportedCommonOptions(ResolvedVectorQuery query) {
-        if (query.diversification().requiresCandidateVectors()) {
-            throw unsupported("Milvus adapter does not expose candidate vectors or MMR");
-        }
         if (!query.returnFields().isEmpty()) {
             throw unsupported("Milvus adapter does not expose return field projection");
         }

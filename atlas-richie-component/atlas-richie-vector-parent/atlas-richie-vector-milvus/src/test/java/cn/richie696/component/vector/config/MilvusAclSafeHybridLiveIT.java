@@ -37,6 +37,32 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MilvusAclSafeHybridLiveIT {
 
     @Test
+    void projectsDenseCandidateVectorsOnlyWhenExplicitlyRequested() {
+        String collection = "atlas_dense_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        MilvusVectorProviderFactory factory = new MilvusVectorProviderFactory(null);
+        try (VectorConnectionHandle connection = factory.openConnection(connection())) {
+            VectorStoreHandle store = factory.createStore(connection, denseStore(collection),
+                    VectorEmbeddingModelBinding.of("live", embeddingModel()));
+            VectorIndexLifecycleOperations lifecycle = store.requireCapability(VectorIndexLifecycleOperations.class);
+            try {
+                lifecycle.createIndex(collection, indexConfig(collection, false));
+                store.service().upsert(VectorRecord.text(collection, "dense candidate", Map.of()).setId("dense"));
+
+                var defaultResults = store.service().searchByText(collection, "semantic query", 1,
+                        SearchOptions.builder().build());
+                var candidateResults = store.service().searchByText(collection, "semantic query", 1,
+                        SearchOptions.builder().includeCandidateVectors(true).build());
+
+                assertThat(defaultResults).singleElement().extracting(hit -> hit.getVector()).isNull();
+                assertThat(candidateResults).singleElement().extracting(hit -> hit.getVector())
+                        .isEqualTo(new float[]{1.0F, 0.0F, 0.0F, 0.0F});
+            } finally {
+                lifecycle.deleteIndex(collection);
+            }
+        }
+    }
+
+    @Test
     void filtersDenseAndBm25CandidateRecallBeforeHybridFusion() {
         String collection = "atlas_hybrid_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
         MilvusVectorProviderFactory factory = new MilvusVectorProviderFactory(null);
@@ -56,10 +82,11 @@ class MilvusAclSafeHybridLiveIT {
                 VectorAclAwareHybridSearchOperations hybrid = store.requireCapability(VectorAclAwareHybridSearchOperations.class);
                 var results = hybrid.hybridSearch(collection, "semantic query", "lexical marker", 10,
                         HybridSearchOptions.builder().vectorWeight(0.5D).keywordWeight(0.5D)
-                                .searchOptions(SearchOptions.builder().filter(acl).build()).build(), acl);
+                                .searchOptions(SearchOptions.builder().filter(acl).includeCandidateVectors(true).build()).build(), acl);
 
-                assertThat(store.storeCapabilities().ids()).contains("ACL_SAFE_HYBRID");
+                assertThat(store.storeCapabilities().ids()).contains("ACL_SAFE_HYBRID", "CANDIDATE_VECTOR");
                 assertThat(results).extracting(hit -> hit.getId()).containsExactly("allowed");
+                assertThat(results.getFirst().getVector()).containsExactly(1.0F, 0.0F, 0.0F, 0.0F);
             } finally {
                 lifecycle.deleteIndex(collection);
             }
@@ -82,14 +109,25 @@ class MilvusAclSafeHybridLiveIT {
                 "live", collection, true, Set.of(), Map.of(collection, index));
     }
 
+    private static VectorStoreDefinition denseStore(String collection) {
+        VectorIndexDefinition index = new VectorIndexDefinition(collection, collection, 4, "cosine", "hnsw", 1, 1,
+                Map.of(), Map.of());
+        return new VectorStoreDefinition(VectorStoreId.of("milvus-live"), VectorConnectionId.of("milvus-live"),
+                "live", collection, true, Set.of(), Map.of(collection, index));
+    }
+
     private static VectorProperties.IndexConfig indexConfig(String collection) {
+        return indexConfig(collection, true);
+    }
+
+    private static VectorProperties.IndexConfig indexConfig(String collection, boolean hybrid) {
         VectorProperties.IndexConfig index = new VectorProperties.IndexConfig();
         index.setName(collection);
         index.setDimension(4);
         index.setMetric("cosine");
         index.setIndexType("hnsw");
         index.setShards(1);
-        index.setAdditionalFields(store(collection).indexes().get(collection).additionalFields());
+        index.setAdditionalFields(hybrid ? store(collection).indexes().get(collection).additionalFields() : Map.of());
         return index;
     }
 

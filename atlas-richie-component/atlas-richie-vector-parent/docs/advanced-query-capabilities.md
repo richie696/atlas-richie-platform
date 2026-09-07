@@ -129,7 +129,7 @@ PGVector、Qdrant、Redis、MongoDB 与 Neo4j 当前不声明 `ACL_SAFE_HYBRID`�
 
 | Provider | Native Filter | ACL Filter | ACL-safe Hybrid | Typed Query Tuning | Candidate Vector | Score Stages | Index Lifecycle | 真实 Provider 证据 |
 |---|---|---|---|---|---|---|---|---|
-| Milvus | 是 | 是 | 条件：`hybrid-enabled=true` 的原生 BM25 schema | 是：HNSW `ef` / IVF `nprobe` | 否 | 是 | 是 | collection 创建、写入、默认/调优检索、ACL 负例 hybrid、清理；与 PG 同进程 |
+| Milvus | 是 | 是 | 条件：`hybrid-enabled=true` 的原生 BM25 schema | 是：HNSW `ef` / IVF `nprobe` | 是，默认关闭，客户端 MMR | 是 | 是 | collection 创建、写入、默认/调优检索、ACL 负例 hybrid、候选向量投影、清理；与 PG 同进程 |
 | PGVector | 是 | 是 | 否 | 是：事务级 HNSW/IVFFlat | 是，默认关闭 | 是 | 是 | schema/table 创建、过滤/调优/候选向量检索、同连接恢复默认、清理；与 Milvus 同进程 |
 | Qdrant | 是（仅 `SEARCH_TEXT`） | 是（仅 `SEARCH_TEXT`） | 否 | 否 | 否 | 是 | 是 | 原生 gRPC Filter 请求、跨租户负例、collection 写入/过滤检索/清理 |
 | Redis Stack | 条件 | 条件 | 否 | 否 | 否 | 是 | 是 | index、写入、检索、清理 |

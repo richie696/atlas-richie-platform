@@ -85,6 +85,15 @@ public class SearchOptions {
     private Map<String, Integer> providerSearchParameters;
 
     /**
+     * Requests raw dense vectors for provider-filtered candidates. This is an
+     * internal data-plane flag used by client-side diversification; it does not
+     * authorise exposing vectors to an application caller. Defaults to false so
+     * legacy/basic retrieval never pays vector projection cost.
+     */
+    @Builder.Default
+    private Boolean includeCandidateVectors = false;
+
+    /**
      * 可选的检索阶段观测钩子。默认不安装，避免 Vector Core 依赖业务指标系统。
      */
     private RetrievalObservationHook observationHook;

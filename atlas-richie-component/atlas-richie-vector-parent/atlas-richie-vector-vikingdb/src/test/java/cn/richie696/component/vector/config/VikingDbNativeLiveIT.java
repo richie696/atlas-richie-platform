@@ -42,8 +42,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Real VikingDB data-plane acceptance test. It is deliberately opt-in because it creates and
- * deletes a unique cloud collection. Credentials are accepted only through process environment.
+ * Real VikingDB acceptance tests. Provisioning is asynchronous: a successful create response means
+ * that VikingDB accepted the resource, not that the data plane is immediately searchable. The
+ * ready-state ACL test is therefore separately opt-in, so ordinary provider verification does not
+ * turn a cloud-side build queue into a false product failure.
  */
 @EnabledIfEnvironmentVariable(named = "VECTOR_VIKINGDB_IT_RUN", matches = "true")
 class VikingDbNativeLiveIT {
@@ -53,7 +55,17 @@ class VikingDbNativeLiveIT {
     private static final String DEFAULT_REGION = "cn-beijing";
 
     @Test
-    void createsIndexesWritesAndAclFiltersAUniqueCollection() {
+    void acceptsAsyncCollectionAndIndexProvisioning() {
+        runScenario(false);
+    }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "VIKINGDB_E2E_WAIT_FOR_READY", matches = "true")
+    void writesAndAclFiltersAfterTheAsyncIndexBecomesReady() {
+        runScenario(true);
+    }
+
+    private static void runScenario(boolean waitForReady) {
         String accessKey = requiredEnvironment("VIKINGDB_ACCESS_KEY");
         String secretKey = requiredEnvironment("VIKINGDB_SECRET_KEY");
         String region = optionalEnvironment("VIKINGDB_REGION", DEFAULT_REGION);
@@ -79,11 +91,17 @@ class VikingDbNativeLiveIT {
 
                 VikingDbCollectionOperations collections = handle.requireCapability(VikingDbCollectionOperations.class);
                 VikingDbIndexOperations indexes = handle.requireCapability(VikingDbIndexOperations.class);
+                assertThat(collections.getCollection(resource).fields())
+                        .containsKeys("doc_id", "content", "embedding", "tenantId", "principalId");
+                assertThat(indexes.getIndex(resource).target()).isEqualTo(resource);
+                assertThat(indexStatus(cleanupControlPlane, resource))
+                        .as("VikingDB must expose an accepted asynchronous index lifecycle")
+                        .isNotBlank();
+
+                if (!waitForReady) return;
+
                 VikingDbDocumentOperations documents = handle.requireCapability(VikingDbDocumentOperations.class);
                 VikingDbSearchOperations search = handle.requireCapability(VikingDbSearchOperations.class);
-                assertThat(collections.getCollection(resource).fields())
-                        .containsKeys("id", "content", "vector", "tenantId", "principalId");
-                assertThat(indexes.getIndex(resource).target()).isEqualTo(resource);
 
                 String allowedId = "allowed-" + suffix;
                 String deniedId = "denied-" + suffix;
@@ -91,7 +109,8 @@ class VikingDbNativeLiveIT {
                         record(allowedId, "tenant-a", "user-1"),
                         record(deniedId, "tenant-b", "user-2")));
 
-                VikingDbSearchResponse response = awaitAuthorizedResult(search, allowedId, deniedId);
+                VikingDbSearchResponse response = awaitAuthorizedResult(
+                        cleanupControlPlane, resource, search, allowedId, deniedId);
                 assertThat(response.hits()).extracting(hit -> String.valueOf(hit.id())).containsExactly(allowedId);
                 assertThat(response.execution().effectiveFilterDigest()).isNotBlank();
             }
@@ -102,7 +121,7 @@ class VikingDbNativeLiveIT {
             if (controlPlaneVerified) {
                 try {
                     if (collectionExists(cleanupControlPlane, resource)) {
-                        deleteCollectionIfPresent(cleanupControlPlane, collection, projectName);
+                        requestAsynchronousCleanup(cleanupControlPlane, collection, index, projectName);
                     }
                 } catch (Exception cleanupFailure) {
                     if (failure != null) {
@@ -130,13 +149,39 @@ class VikingDbNativeLiveIT {
         }
     }
 
-    private static void deleteCollectionIfPresent(VikingdbApi controlPlane, String collection, String projectName)
-            throws ApiException {
+    private static String indexStatus(VikingdbApi controlPlane, VikingDbResourceRef resource) {
+        try {
+            return controlPlane.getVikingdbIndex(new com.volcengine.vikingdb.model.GetVikingdbIndexRequest()
+                    .collectionName(resource.collectionName()).indexName(resource.indexName())
+                    .projectName(resource.projectName())).getStatus();
+        } catch (ApiException exception) {
+            throw new IllegalStateException("VikingDB control plane could not read the newly accepted index", exception);
+        }
+    }
+
+    /**
+     * VikingDB deletion is asynchronous. A delete request being accepted (including an already
+     * running delete task) is the cleanup contract for this short acceptance test; waiting for
+     * physical removal would turn provider queue latency into a false test failure.
+     */
+    private static void requestAsynchronousCleanup(
+            VikingdbApi controlPlane, String collection, String index, String projectName) throws ApiException {
+        try {
+            controlPlane.deleteVikingdbIndex(new com.volcengine.vikingdb.model.DeleteVikingdbIndexRequest()
+                    .collectionName(collection).indexName(index).projectName(projectName));
+        } catch (ApiException exception) {
+            if (!isNotFound(exception)
+                    && !String.valueOf(exception).contains("VikingdbIndexAsyncTask")) {
+                throw exception;
+            }
+        }
         try {
             controlPlane.deleteVikingdbCollection(new com.volcengine.vikingdb.model.DeleteVikingdbCollectionRequest()
                     .collectionName(collection).projectName(projectName));
         } catch (ApiException exception) {
-            if (!isNotFound(exception)) throw exception;
+            if (!isNotFound(exception) && !String.valueOf(exception).contains("associated indexes")) {
+                throw exception;
+            }
         }
     }
 
@@ -159,10 +204,16 @@ class VikingDbNativeLiveIT {
     }
 
     private static VikingDbSearchResponse awaitAuthorizedResult(
-            VikingDbSearchOperations search, String allowedId, String deniedId) {
+            VikingdbApi controlPlane, VikingDbResourceRef resource, VikingDbSearchOperations search,
+            String allowedId, String deniedId) {
         AssertionError lastFailure = null;
-        for (int attempt = 1; attempt <= 12; attempt++) {
+        String lastIndexStatus = null;
+        for (int attempt = 1; attempt <= 48; attempt++) {
             try {
+                lastIndexStatus = controlPlane.getVikingdbIndex(
+                        new com.volcengine.vikingdb.model.GetVikingdbIndexRequest()
+                                .collectionName(resource.collectionName()).indexName(resource.indexName())
+                                .projectName(resource.projectName())).getStatus();
                 VikingDbSearchResponse response = search.search(VikingDbVectorSearchRequest.builder()
                         .mode(VikingDbVectorSearchRequest.Mode.DENSE)
                         .denseVector(new float[]{1.0F, 0.0F, 0.0F, 0.0F})
@@ -176,9 +227,10 @@ class VikingDbNativeLiveIT {
                 if (ids.contains(allowedId) && !ids.contains(deniedId)) {
                     return response;
                 }
-                lastFailure = new AssertionError("VikingDB index is not ready for ACL filtering yet");
-            } catch (RuntimeException exception) {
-                lastFailure = new AssertionError("VikingDB search is not ready yet", exception);
+                lastFailure = new AssertionError("VikingDB index is not ready for ACL filtering yet; status=" + lastIndexStatus);
+            } catch (ApiException | RuntimeException exception) {
+                lastFailure = new AssertionError(
+                        "VikingDB search is not ready yet; index status=" + lastIndexStatus, exception);
             }
             try {
                 Thread.sleep(5_000L);

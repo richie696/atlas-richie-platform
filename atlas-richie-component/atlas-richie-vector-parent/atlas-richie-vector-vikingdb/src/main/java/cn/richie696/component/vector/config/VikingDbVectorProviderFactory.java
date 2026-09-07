@@ -10,6 +10,7 @@ import cn.richie696.ai.vectorstore.vikingdb.VikingDbVectorStoreFactory;
 import cn.richie696.ai.vectorstore.vikingdb.api.VikingDbCollectionOperations;
 import cn.richie696.ai.vectorstore.vikingdb.api.VikingDbDocumentOperations;
 import cn.richie696.ai.vectorstore.vikingdb.api.VikingDbIndexOperations;
+import cn.richie696.ai.vectorstore.vikingdb.api.VikingDbPermissionOperations;
 import cn.richie696.ai.vectorstore.vikingdb.api.VikingDbRerankOperations;
 import cn.richie696.ai.vectorstore.vikingdb.api.VikingDbSearchOperations;
 import cn.richie696.ai.vectorstore.vikingdb.model.VikingDbIndexVectorOptions;
@@ -243,6 +244,7 @@ public final class VikingDbVectorProviderFactory implements VectorProviderFactor
                 .capability(VikingDbSearchOperations.class, vectorStore)
                 .capability(VikingDbDocumentOperations.class, vectorStore)
                 .capability(VikingDbRerankOperations.class, vectorStore)
+                .capability(VikingDbPermissionOperations.class, vectorStore)
                 .capability(VectorScoreSemantics.class, scoreSemantics(index.metric()));
         vectorStore.getIndexOperations().ifPresent(operations -> handle.capability(VikingDbIndexOperations.class, operations));
         vectorStore.getCollectionOperations().ifPresent(operations -> handle.capability(VikingDbCollectionOperations.class, operations));

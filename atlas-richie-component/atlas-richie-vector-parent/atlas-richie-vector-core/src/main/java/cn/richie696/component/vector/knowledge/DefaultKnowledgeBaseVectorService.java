@@ -152,6 +152,7 @@ public final class DefaultKnowledgeBaseVectorService implements KnowledgeBaseVec
         }
         SearchOptions options = SearchOptions.builder().filter(filter).rerank(request.rerank()).minScore(request.minScore())
                 .providerSearchParameters(request.providerSearchParameters())
+                .includeCandidateVectors(request.mmr())
                 .observationHook(observationCollector).observationContext(observationContext).build();
         try {
             List<VectorSearchResult> candidates;

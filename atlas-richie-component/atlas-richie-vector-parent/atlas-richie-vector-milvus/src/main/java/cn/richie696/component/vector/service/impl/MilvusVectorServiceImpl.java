@@ -101,6 +101,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
      * 都依赖 documentId / chunkNo 等元数据；仅返回 content 会使召回结果丢失归属信息。
      */
     private static final List<String> SEARCH_OUTPUT_FIELDS = List.of("id", "content", "metadata");
+    private static final String CANDIDATE_VECTOR_METADATA_KEY = "__atlas_candidate_vector";
 
     /**
      * 构造方法，注入Milvus客户端和配置
@@ -169,10 +170,10 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         Instant vectorSearchStarted = Instant.now();
         List<VectorSearchResult> results;
         try {
+            boolean includeCandidateVectors = Boolean.TRUE.equals(effectiveOptions.getIncludeCandidateVectors());
             results = similaritySearchByVector(indexName, queryVector, topK, minScore, filter,
-                    effectiveOptions.getProviderSearchParameters()).stream()
-                    .map(document -> VectorSearchResult.of(document.getId(), document.getFormattedContent(),
-                            documentScore(document), null).setMetadata(document.getMetadata()))
+                    effectiveOptions.getProviderSearchParameters(), includeCandidateVectors).stream()
+                    .map(this::toSearchResult)
                     .toList();
             RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
                     RetrievalStage.VECTOR_SEARCH, Duration.between(vectorSearchStarted, Instant.now()),
@@ -864,6 +865,14 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
     protected List<Document> similaritySearchByVector(String indexName, float[] queryVector,
                                                       int limit, double minScore, String providerFilter,
                                                       Map<String, Integer> providerSearchParameters) {
+        return similaritySearchByVector(indexName, queryVector, limit, minScore, providerFilter,
+                providerSearchParameters, false);
+    }
+
+    private List<Document> similaritySearchByVector(String indexName, float[] queryVector,
+                                                     int limit, double minScore, String providerFilter,
+                                                     Map<String, Integer> providerSearchParameters,
+                                                     boolean includeCandidateVectors) {
         if (queryVector == null || queryVector.length == 0) {
             throw new IllegalArgumentException("查询向量不能为空");
         }
@@ -895,7 +904,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
                 .withLimit((long) limit)
                 .withMetricType(metricType)
                 .withParams(milvusSearchParameters(providerSearchParameters))
-                .withOutFields(SEARCH_OUTPUT_FIELDS);
+                .withOutFields(searchOutputFields(includeCandidateVectors));
         if (providerFilter != null && !providerFilter.isBlank()) {
             searchBuilder.withExpr(providerFilter);
         }
@@ -923,6 +932,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         // 通过遍历fieldsDataList判断字段是否存在
         List<?> contentData = null;
         List<?> metadataData = null;
+        List<?> vectorData = null;
         boolean hasContentField = results.getResults().getFieldsDataList().stream()
                 .anyMatch(f -> "content".equals(f.getFieldName()));
         if (hasContentField) {
@@ -932,6 +942,10 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
                 .anyMatch(f -> "metadata".equals(f.getFieldName()));
         if (hasMetadataField) {
             metadataData = wrapper.getFieldData("metadata", 0);
+        }
+        if (includeCandidateVectors && results.getResults().getFieldsDataList().stream()
+                .anyMatch(f -> "vector".equals(f.getFieldName()))) {
+            vectorData = wrapper.getFieldData("vector", 0);
         }
 
         // 遍历每条搜索结果，提取id、content、score组成VectorSearchResult
@@ -957,12 +971,46 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
 
             if (score >= minScore) {
                 Map<String, Object> metadata = metadataAt(metadataData, i);
+                if (includeCandidateVectors) {
+                    float[] candidateVector = vectorAt(vectorData, i);
+                    if (candidateVector == null) {
+                        throw new UnsupportedOperationException("Milvus candidate vector projection returned no vector");
+                    }
+                    metadata.put(CANDIDATE_VECTOR_METADATA_KEY, candidateVector);
+                }
                 metadata.put("score", score);
                 searchResults.add(new Document(id, content, metadata));
             }
         }
 
         return searchResults;
+    }
+
+    private static List<String> searchOutputFields(boolean includeCandidateVectors) {
+        if (!includeCandidateVectors) return SEARCH_OUTPUT_FIELDS;
+        List<String> fields = new ArrayList<>(SEARCH_OUTPUT_FIELDS);
+        fields.add("vector");
+        return List.copyOf(fields);
+    }
+
+    private VectorSearchResult toSearchResult(Document document) {
+        Map<String, Object> metadata = new LinkedHashMap<>(document.getMetadata());
+        Object rawVector = metadata.remove(CANDIDATE_VECTOR_METADATA_KEY);
+        return VectorSearchResult.of(document.getId(), document.getFormattedContent(), documentScore(document),
+                rawVector instanceof float[] vector ? vector : null).setMetadata(metadata);
+    }
+
+    private static float[] vectorAt(List<?> vectorData, int index) {
+        if (vectorData == null || index >= vectorData.size()) return null;
+        Object raw = vectorData.get(index);
+        if (raw instanceof float[] vector) return vector.clone();
+        if (!(raw instanceof List<?> values) || values.isEmpty()) return null;
+        float[] vector = new float[values.size()];
+        for (int position = 0; position < values.size(); position++) {
+            if (!(values.get(position) instanceof Number number)) return null;
+            vector[position] = number.floatValue();
+        }
+        return vector;
     }
 
     private String milvusSearchParameters(Map<String, Integer> parameters) {

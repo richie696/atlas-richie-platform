@@ -1023,6 +1023,8 @@ same**. Different providers' `createIndex` may involve completely different meta
 
 ### Milvus
 
+Provider-specific schema, capability boundaries, ACL-safe hybrid design, and the planned client-side MMR integration are documented in [the Milvus Provider Design](atlas-richie-vector-milvus/README.md) ([中文](atlas-richie-vector-milvus/README.zh.md)).
+
 | Capability                             | Support | Notes                            |
 |----------------------------------------|---------|----------------------------------|
 | `VectorSearchOperations`               | ✅      | Fully supported                  |
@@ -1032,8 +1034,8 @@ same**. Different providers' `createIndex` may involve completely different meta
 | `VectorIndexLifecycleOperations`       | ✅      | createIndex / dropIndex          |
 | `VectorIndexStatsOperations`           | ✅      | Full statistics                  |
 | `VectorIndexAliasOperations`           | ✅      | createAlias / switchAlias        |
-| `VectorHybridSearchOperations`         | ❌      | Current schema exposes dense only; no sparse channel |
-| `VectorAclAwareHybridSearchOperations` | ❌      | Requires a configured dense+sparse schema             |
+| `VectorHybridSearchOperations`         | ⚠️      | Native dense+BM25 only for a new `hybrid-enabled` schema |
+| `VectorAclAwareHybridSearchOperations` | ⚠️      | Declared only for `hybrid-enabled` Stores; the same ACL filter is pushed into both recall branches |
 | `VectorMultiVectorSearchOperations`    | ✅      | named vector                     |
 | `VectorBackupOperations`               | ⚠️      | Metadata backup only, no vectors |
 | Multimodal (CLIP)                      | ✅      | 1024-d shared space              |

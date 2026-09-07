@@ -116,10 +116,11 @@ public final class MilvusAclAwareHybridSearchOperations implements VectorAclAwar
                 .collectionName(indexName)
                 .searchRequests(List.copyOf(requests))
                 .ranker(WeightedRanker.builder().weights(List.copyOf(weights)).build())
-                .outFields(OUTPUT_FIELDS)
+                .outFields(outputFields(Boolean.TRUE.equals(searchOptions.getIncludeCandidateVectors())))
                 .limit(limit)
                 .build());
-        return translate(response, searchOptions.getMinScore());
+        return translate(response, searchOptions.getMinScore(),
+                Boolean.TRUE.equals(searchOptions.getIncludeCandidateVectors()));
     }
 
     private static void validateWeights(double vectorWeight, double keywordWeight) {
@@ -131,7 +132,7 @@ public final class MilvusAclAwareHybridSearchOperations implements VectorAclAwar
         }
     }
 
-    private static List<VectorSearchResult> translate(SearchResp response, Double minScore) {
+    private static List<VectorSearchResult> translate(SearchResp response, Double minScore, boolean includeCandidateVectors) {
         if (response == null || response.getSearchResults() == null || response.getSearchResults().isEmpty()) {
             return List.of();
         }
@@ -142,10 +143,30 @@ public final class MilvusAclAwareHybridSearchOperations implements VectorAclAwar
             if (score < threshold || hit.getId() == null) continue;
             Map<String, Object> entity = hit.getEntity() == null ? Map.of() : hit.getEntity();
             String content = String.valueOf(entity.getOrDefault("content", ""));
-            results.add(VectorSearchResult.of(String.valueOf(hit.getId()), content, score)
+            float[] vector = includeCandidateVectors ? vector(entity.get(DENSE_VECTOR_FIELD)) : null;
+            if (includeCandidateVectors && vector == null) {
+                throw new UnsupportedOperationException("Milvus hybrid candidate vector projection returned no vector");
+            }
+            results.add(VectorSearchResult.of(String.valueOf(hit.getId()), content, score, vector)
                     .setMetadata(metadata(entity.get("metadata"))));
         }
         return List.copyOf(results);
+    }
+
+    private static List<String> outputFields(boolean includeCandidateVectors) {
+        if (!includeCandidateVectors) return OUTPUT_FIELDS;
+        return List.of("content", "metadata", DENSE_VECTOR_FIELD);
+    }
+
+    private static float[] vector(Object raw) {
+        if (raw instanceof float[] vector) return vector.clone();
+        if (!(raw instanceof List<?> values) || values.isEmpty()) return null;
+        float[] vector = new float[values.size()];
+        for (int index = 0; index < values.size(); index++) {
+            if (!(values.get(index) instanceof Number number)) return null;
+            vector[index] = number.floatValue();
+        }
+        return vector;
     }
 
     @SuppressWarnings("unchecked")

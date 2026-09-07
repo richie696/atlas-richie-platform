@@ -11,6 +11,7 @@ import cn.richie696.component.vector.query.VectorParameterDisposition;
 import cn.richie696.component.vector.query.VectorQueryErrorCode;
 import cn.richie696.component.vector.query.VectorQueryRequest;
 import cn.richie696.component.vector.query.VectorQueryValidationException;
+import cn.richie696.component.vector.query.VectorDiversificationOptions;
 import cn.richie696.component.vector.query.milvus.MilvusQueryOptions;
 import cn.richie696.component.vector.topology.VectorStoreId;
 import org.junit.jupiter.api.Test;
@@ -81,6 +82,29 @@ class MilvusAdvancedSearchOperationsTest {
         assertThatThrownBy(() -> new MilvusQueryOptions(64, 8))
                 .isInstanceOfSatisfying(VectorQueryValidationException.class,
                         error -> assertThat(error.code()).isEqualTo(VectorQueryErrorCode.CONFLICTING_OPTIONS));
+    }
+
+    @Test
+    void requestsCandidateVectorsOnlyForMmrAndUsesTheCoreDiversifier() {
+        MilvusVectorServiceImpl service = mock(MilvusVectorServiceImpl.class);
+        when(service.searchByText(eq("docs"), eq("synthetic query"), eq(3), any()))
+                .thenReturn(List.of(
+                        VectorSearchResult.of("a", "a", 1.0, new float[]{1.0f, 0.0f}),
+                        VectorSearchResult.of("b", "b", 0.95, new float[]{0.99f, 0.01f}),
+                        VectorSearchResult.of("c", "c", 0.8, new float[]{0.0f, 1.0f})));
+        MilvusAdvancedSearchOperations operations = new MilvusAdvancedSearchOperations(
+                service, VectorStoreId.of("milvus-store"), "docs", "hnsw", null, null);
+
+        var execution = operations.search(new VectorQueryRequest(
+                "synthetic query", 2, null, null, Set.of(), 3, null,
+                VectorConsistencyPreference.PROVIDER_DEFAULT,
+                new VectorDiversificationOptions(false, true, 0.5D), null));
+
+        assertThat(execution.results()).extracting(VectorSearchResult::getId).containsExactly("a", "c");
+        assertThat(execution.results()).allSatisfy(result -> assertThat(result.getVector()).isNull());
+        ArgumentCaptor<SearchOptions> options = ArgumentCaptor.forClass(SearchOptions.class);
+        verify(service).searchByText(eq("docs"), eq("synthetic query"), eq(3), options.capture());
+        assertThat(options.getValue().getIncludeCandidateVectors()).isTrue();
     }
 
     private static VectorQueryRequest request(int topK, int candidates, MilvusQueryOptions options) {
