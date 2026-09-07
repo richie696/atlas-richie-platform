@@ -4,6 +4,7 @@
  */
 package cn.richie696.component.vector.service;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,7 +13,7 @@ import java.util.Map;
  *
  * <p>Payload indexes do not change the vector recall path; they accelerate filter
  * predicates that providers would otherwise scan linearly. They are not
- * {@link #createIndex index creation} and must be applied as a separate
+ * {@link #createPayloadIndexes(String, List)}  index creation} and must be applied as a separate
  * configuration layer or via an explicit lifecycle call.</p>
  *
  * <p>Implementations MUST NOT log credential values, raw query bodies or full

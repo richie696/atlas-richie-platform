@@ -15,7 +15,7 @@ import java.util.concurrent.CompletionStage;
  *
  * <p>为何返回 {@link CompletionStage}：MCP 客户端可能运行在虚拟线程上，访问令牌有时
  * 需要异步获取（如远程 vault、网络 AS 刷新），用 {@code CompletionStage} 既兼容同步
- * 实现（直接 {@link CompletableFuture#completedFuture}），也兼容响应式 reactive 风格，
+ * 实现（直接 {@link java.util.concurrent.CompletableFuture#completedFuture}），也兼容响应式 reactive 风格，
  * 避免在 SPI 层绑定单一并发模型。</p>
  *
  * <p>{@link Optional#empty()} 的语义：当调用方提供的 resource 不在当前 provider 的管理

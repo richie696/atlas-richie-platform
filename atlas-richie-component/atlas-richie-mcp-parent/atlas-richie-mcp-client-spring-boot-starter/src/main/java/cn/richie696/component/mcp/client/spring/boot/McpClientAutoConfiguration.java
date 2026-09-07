@@ -149,7 +149,7 @@ public class McpClientAutoConfiguration {
      * @param properties      MCP 客户端配置
      * @param protocolEraCache 协议 Era 缓存
      * @param resultCache     结果缓存
-     * @param tokenProviders  可选 OAuth Token Provider，使用 {@link ObjectProvider#getIfAvailable()} 兼容未启用 OAuth 的场景
+     * @param tokenProviders  可选 OAuth Token Provider，使用 {@link org.springframework.beans.factory.ObjectProvider#getIfAvailable()} 兼容未启用 OAuth 的场景
      * @return {@link McpHttpOperations} 实例
      */
     @Bean(name = {"mcpOperations", "mcpDynamicOperations"})

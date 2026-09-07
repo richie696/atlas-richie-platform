@@ -1,12 +1,14 @@
 package cn.richie696.component.mcp.api;
 
+import cn.richie696.component.mcp.api.model.McpToolResponse;
+
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 /**
  * Client-side MRTR input collection hook.
  *
- * <p>当 {@link McpToolResponse#resultType} 为 {@code input_required} 时，Client 需要向用户
+ * <p>当 {@link McpToolResponse#resultType()} 为 {@code input_required} 时，Client 需要向用户
  * 补全缺失输入后再次发起调用。{@code McpInputProvider} 即为这套"多轮 Tool 调用（Multi-Round
  * Tool Resolution, MRTR）"机制的入口回调，由上层应用实现以接入自身的输入采集通道
  * （CLI prompt、Web 表单、IM 机器人对话框等）。</p>

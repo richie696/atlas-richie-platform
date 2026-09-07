@@ -39,9 +39,6 @@ import java.util.Set;
  *   <li>所有形参 Header 通过 {@code Mcp-Param-*} 前缀声明的形参镜像集合也必须与 body 严格对齐。</li>
  * </ul>
  *
- * <p>校验失败时抛 {@link McpHttpTransportException} 以便端点统一映射到对应 HTTP 状态码和
- * JSON-RPC 协议错误；{@link McpProtocolValidator} 也参与了 body 层 schema 检查（属于协议层校验）。</p>
- *
  * @author richie696
  * @since 2026-08-11
  */
