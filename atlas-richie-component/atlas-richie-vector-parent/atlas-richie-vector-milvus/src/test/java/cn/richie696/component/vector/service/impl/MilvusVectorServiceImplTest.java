@@ -36,6 +36,8 @@ import io.milvus.param.dml.InsertParam;
 import io.milvus.param.dml.QueryParam;
 import io.milvus.param.dml.SearchParam;
 import io.milvus.param.index.CreateIndexParam;
+import io.milvus.v2.client.MilvusClientV2;
+import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -68,6 +70,9 @@ class MilvusVectorServiceImplTest {
     @Mock
     private MilvusServiceClient milvusClient;
 
+    @Mock
+    private MilvusClientV2 hybridClient;
+
     private MilvusConfig milvusConfig;
     private MilvusVectorServiceImpl service;
 
@@ -82,7 +87,8 @@ class MilvusVectorServiceImplTest {
         milvusConfig.setIndexType(IndexType.IVF_FLAT);
         milvusConfig.setMetricType(MetricType.COSINE);
 
-        service = new MilvusVectorServiceImpl(null, vectorStore, embeddingModel, milvusConfig, milvusClient);
+        service = new MilvusVectorServiceImpl(null, vectorStore, embeddingModel, milvusConfig, milvusClient,
+                hybridClient);
 
         // impl 在 insert/delete/truncate 后会调 flush；query 在 countDocuments (statCount > 0) 时被调；
         // 这俩全局 mock 成功避免 NPE，specific 测试需要时可覆盖
@@ -316,6 +322,35 @@ class MilvusVectorServiceImplTest {
             when(milvusClient.describeCollection(any(DescribeCollectionParam.class))).thenReturn(response);
 
             assertThat(service.hybridEnabledForIndex("kb_1_idx_v1")).isTrue();
+        }
+
+        @Test
+        @DisplayName("should recheck a dynamic collection after a cached negative result")
+        void rechecksDynamicCollectionAfterNegativeCache() {
+            assertThat(service.hybridEnabledForIndex("kb_1_idx_v1")).isFalse();
+
+            DescribeCollectionResponse hybridSchema = DescribeCollectionResponse.newBuilder()
+                    .setSchema(CollectionSchema.newBuilder()
+                            .addFields(FieldSchema.newBuilder().setName("id"))
+                            .addFields(FieldSchema.newBuilder().setName("sparse_vector")))
+                    .build();
+            R<DescribeCollectionResponse> response = mock(R.class);
+            when(response.getStatus()).thenReturn(R.Status.Success.getCode());
+            when(response.getData()).thenReturn(hybridSchema);
+            when(milvusClient.describeCollection(any(DescribeCollectionParam.class))).thenReturn(response);
+
+            assertThat(service.hybridEnabledForIndex("kb_1_idx_v1")).isTrue();
+        }
+
+        @Test
+        @DisplayName("should detect the hybrid field through the V2 collection API")
+        void detectsHybridSchemaThroughV2CollectionApi() {
+            DescribeCollectionResp response = mock(DescribeCollectionResp.class);
+            when(response.getFieldNames()).thenReturn(List.of("id", "vector", "content", "sparse_vector"));
+            when(hybridClient.describeCollection(any())).thenReturn(response);
+
+            assertThat(service.hybridEnabledForIndex("kb_1_idx_v1")).isTrue();
+            verify(hybridClient).describeCollection(any());
         }
 
         @Test

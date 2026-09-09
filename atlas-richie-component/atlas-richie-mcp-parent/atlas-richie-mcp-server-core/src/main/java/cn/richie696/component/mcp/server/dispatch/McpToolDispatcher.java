@@ -13,6 +13,8 @@ import cn.richie696.component.mcp.schema.McpSchemaValidationResult;
 import cn.richie696.component.mcp.schema.McpSchemaViolation;
 import cn.richie696.component.mcp.server.tool.McpResolvedTool;
 import cn.richie696.component.mcp.server.tool.McpToolRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -47,6 +49,8 @@ import java.util.concurrent.CompletionStage;
  * @since 2026-08-11
  */
 public final class McpToolDispatcher {
+    private static final Logger log = LoggerFactory.getLogger(McpToolDispatcher.class);
+
     /**
      * 校验失败时最多上报的违规条数，避免响应体被超大违规列表撑爆。
      */
@@ -116,13 +120,13 @@ public final class McpToolDispatcher {
                     new DefaultChain(0).proceed(invocation),
                     "MCP tool invocation chain returned null CompletionStage");
         } catch (Throwable throwable) {
-            return failedOrToolError(throwable);
+            return failedOrToolError(toolName, throwable);
         }
 
         CompletableFuture<McpToolResponse> result = new CompletableFuture<>();
         execution.whenComplete((response, throwable) -> {
             if (throwable != null) {
-                completeFailure(result, throwable);
+                completeFailure(result, toolName, throwable);
                 return;
             }
             try {
@@ -132,7 +136,7 @@ public final class McpToolDispatcher {
                 validateOutput(tool, nonNullResponse);
                 result.complete(nonNullResponse);
             } catch (Throwable failure) {
-                completeFailure(result, failure);
+                completeFailure(result, toolName, failure);
             }
         });
         return result;
@@ -175,7 +179,7 @@ public final class McpToolDispatcher {
         }
     }
 
-    private CompletionStage<McpToolResponse> failedOrToolError(Throwable throwable) {
+    private CompletionStage<McpToolResponse> failedOrToolError(String toolName, Throwable throwable) {
         Throwable failure = unwrap(throwable);
         if (failure instanceof McpToolExecutionException executionException) {
             return CompletableFuture.completedFuture(toolExecutionError(executionException));
@@ -187,20 +191,21 @@ public final class McpToolDispatcher {
                 || failure instanceof McpProtocolException) {
             return CompletableFuture.failedFuture(failure);
         }
-        return CompletableFuture.failedFuture(internalError(failure));
+        return CompletableFuture.failedFuture(internalError(toolName, failure));
     }
 
-    private void completeFailure(CompletableFuture<McpToolResponse> result, Throwable throwable) {
+    private void completeFailure(
+            CompletableFuture<McpToolResponse> result,
+            String toolName,
+            Throwable throwable) {
         Throwable failure = unwrap(throwable);
-        if (failure instanceof McpToolExecutionException executionException) {
-            result.complete(toolExecutionError(executionException));
-        } else if (failure instanceof McpArgumentBindingException bindingException) {
-            result.complete(bindingError(bindingException));
-        } else if (failure instanceof McpCallCancelledException
-                || failure instanceof McpProtocolException) {
-            result.completeExceptionally(failure);
-        } else {
-            result.completeExceptionally(internalError(failure));
+        switch (failure) {
+            case McpToolExecutionException executionException ->
+                    result.complete(toolExecutionError(executionException));
+            case McpArgumentBindingException bindingException -> result.complete(bindingError(bindingException));
+            case McpCallCancelledException mcpCallCancelledException -> result.completeExceptionally(mcpCallCancelledException);
+            case McpProtocolException mcpProtocolException -> result.completeExceptionally(mcpProtocolException);
+            case null, default -> result.completeExceptionally(internalError(toolName, failure));
         }
     }
 
@@ -243,13 +248,29 @@ public final class McpToolDispatcher {
                 true);
     }
 
-    private McpProtocolException internalError(Throwable cause) {
+    private McpProtocolException internalError(String toolName, Throwable cause) {
+        // 对客户端继续返回脱敏的 JSON-RPC 内部错误；完整异常仅记录在服务端日志中。
+        // 不记录 arguments、鉴权头或调用者身份；同时去掉异常 message，避免把业务数据与密钥写入日志。
+        // 保留异常类型、cause 链与完整调用栈，足以定位到实际的底层包路径。
+        log.error("MCP tool execution failed: tool={}", toolName, redactedThrowable(cause));
         return new McpProtocolException(
                 "MCP_TOOL_INTERNAL_ERROR",
                 -32603,
                 "Tool execution failed",
                 Map.of(),
                 cause);
+    }
+
+    private Throwable redactedThrowable(Throwable cause) {
+        RuntimeException redacted = new RuntimeException(cause.getClass().getName());
+        redacted.setStackTrace(cause.getStackTrace());
+        if (cause.getCause() != null && cause.getCause() != cause) {
+            redacted.initCause(redactedThrowable(cause.getCause()));
+        }
+        for (Throwable suppressed : cause.getSuppressed()) {
+            redacted.addSuppressed(redactedThrowable(suppressed));
+        }
+        return redacted;
     }
 
     private Duration timeout(Object value) {

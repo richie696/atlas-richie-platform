@@ -53,10 +53,8 @@ import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.*;
 import org.springframework.util.StringUtils;
-import tools.jackson.databind.DefaultTyping;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
-import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -298,14 +296,13 @@ public class RedisBaseAutoConfiguration {
      */
     @Bean("redisSerializer")
     public GenericJacksonJsonRedisSerializer redisValueSerializer() {
-        // 使用 BasicPolymorphicTypeValidator 允许所有类型（Redis 序列化场景需要）
-        PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
-                .allowIfBaseType(Object.class)
+        // GenericJacksonJsonRedisSerializer 自行配置与其读取端匹配的类型信息。
+        // 注入外部 ObjectMapper 会破坏该约定，造成缓存可写入但无法读回。
+        return GenericJacksonJsonRedisSerializer.builder()
+                .enableDefaultTyping(BasicPolymorphicTypeValidator.builder()
+                        .allowIfBaseType(Object.class)
+                        .build())
                 .build();
-        ObjectMapper objectMapper = JsonUtils.getInstance().cloneMapper()
-                .activateDefaultTyping(ptv, DefaultTyping.NON_FINAL)
-                .build();
-        return new GenericJacksonJsonRedisSerializer(objectMapper);
     }
 
     /**

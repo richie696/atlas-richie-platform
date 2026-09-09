@@ -53,6 +53,8 @@ import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.common.IndexParam;
 import io.milvus.v2.service.collection.request.AddFieldReq;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
+import io.milvus.v2.service.collection.request.DescribeCollectionReq;
+import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -165,7 +167,7 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
             queryVector = embeddingModelForIndex(indexName).embed(text);
             RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,
                     RetrievalStage.EMBEDDING, Duration.between(embeddingStarted, Instant.now()),
-                    1, queryVector == null ? 0 : queryVector.length, true));
+                    1, queryVector.length, true));
         } catch (RuntimeException e) {
             RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.failure(context,
                     RetrievalStage.EMBEDDING, Duration.between(embeddingStarted, Instant.now()), 1, e));
@@ -1227,15 +1229,21 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
 
     boolean hybridEnabledForIndex(String indexName) {
         Boolean cached = hybridIndexCache.get(indexName);
-        if (cached != null) return cached;
-
         if (vectorProperties != null && vectorProperties.getIndexes() != null) {
             VectorProperties.IndexConfig config = vectorProperties.getIndexes().get(indexName);
-            if (config != null && hybridEnabled(config)) {
-                hybridIndexCache.put(indexName, true);
-                return true;
+            if (config != null) {
+                boolean enabled = hybridEnabled(config);
+                hybridIndexCache.put(indexName, enabled);
+                return enabled;
             }
         }
+
+        // Dynamic KB collections are not keys in vectorProperties.indexes. A
+        // negative result for one of these collections must not be trusted
+        // forever: another worker may have created the hybrid collection
+        // after this instance first observed it, or the collection may have
+        // been created before this process restarted.
+        if (Boolean.TRUE.equals(cached)) return true;
 
         // Dynamic KB collections are created with the runtime IndexConfig and
         // therefore do not appear in vectorProperties.indexes. Inspect the
@@ -1247,6 +1255,30 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
     }
 
     private boolean hasHybridSchema(String indexName) {
+        if (hybridClient != null) {
+            try {
+                DescribeCollectionResp response = hybridClient.describeCollection(
+                        DescribeCollectionReq.builder()
+                                .databaseName(milvusConfig.getDatabaseName())
+                                .collectionName(indexName)
+                                .build());
+                if (response != null) {
+                    if (response.getFieldNames() != null
+                            && response.getFieldNames().contains(MilvusAclAwareHybridSearchOperations.SPARSE_VECTOR_FIELD)) {
+                        return true;
+                    }
+                    if (response.getCollectionSchema() != null
+                            && response.getCollectionSchema().getFieldSchemaList().stream()
+                            .anyMatch(field -> MilvusAclAwareHybridSearchOperations.SPARSE_VECTOR_FIELD.equals(field.getName()))) {
+                        return true;
+                    }
+                }
+            } catch (Exception error) {
+                log.debug("V2 schema inspection failed for index [{}]; trying V1 inspection: {}",
+                        indexName, error.getMessage());
+            }
+        }
+
         DescribeCollectionParam param = DescribeCollectionParam.newBuilder()
                 .withCollectionName(indexName)
                 .build();
