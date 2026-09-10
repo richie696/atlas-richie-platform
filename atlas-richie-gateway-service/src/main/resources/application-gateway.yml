@@ -119,7 +119,8 @@ spring:
                 allowed-origin-patterns: "*"
                 allow-credentials: true
                 allowed-methods: "*"
-                exposed-headers: "*"
+                # 带凭据的跨域响应不能依赖通配符暴露自定义头；前端需读取令牌、ECC 加密标记与追踪标识。
+                exposed-headers: "x-rd-request-apitoken, X-Response-Encrypted, X-Trace-Id"
           # 超时配置
           httpclient:
             # 连接超时时间（默认：30，单位：秒）
@@ -187,6 +188,8 @@ platform:
     ecc-crypto:
       # 是否启用ECC加密
       enabled: false
+      # 仅 dev/test Profile 可生效的 HTTP 调试降级；生产环境无条件忽略。
+      allow-plaintext-in-dev: false
 
       # 网关密钥对（可选，如果不配置将自动生成）
       # gateway-private-key: "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg..."
@@ -207,10 +210,7 @@ platform:
       client-key-cache-expire: 3600
       # 网关密钥对过期时间（小时）
       gateway-key-expire: 6
-      # 网关私钥（通常不推荐配置，配置以后密钥将不会过期，当不填写的时候网关会在令牌过期或不存在的时候自动生成，内存级动态密钥对安全性更高）
-      gateway-private-key: xxx
-      # 网关公钥（通常不推荐配置，配置以后密钥将不会过期，当不填写的时候网关会在令牌过期或不存在的时候自动生成，内存级动态密钥对安全性更高）
-      gateway-public-key: xxx
+      # 不配置私钥/公钥时，Gateway 运行期自动生成并按 gateway-key-expire 轮换。
 
     # 是否启用API接口安全过滤器
     security:

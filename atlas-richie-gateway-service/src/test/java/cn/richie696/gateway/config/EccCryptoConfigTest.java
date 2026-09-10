@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+
 /**
  * Tests for {@link EccCryptoConfig}.
  */
@@ -39,6 +41,7 @@ class EccCryptoConfigTest {
             assertThat(config.getGatewayPrivateKey()).isNull();
             assertThat(config.getGatewayPublicKey()).isNull();
             assertThat(config.getEncryptPaths()).containsExactly("/api/**");
+            assertThat(config.getEncryptRules()).isEmpty();
             assertThat(config.getExcludePaths()).containsExactly("/api/health/**", "/api/public/**");
             assertThat(config.getGatewayKeyExpire()).isEqualTo(6);
             assertThat(config.getClientKeyCacheExpire()).isEqualTo(3600L);
@@ -80,6 +83,19 @@ class EccCryptoConfigTest {
             String[] paths = {"/secure/**"};
             config.setEncryptPaths(paths);
             assertThat(config.getEncryptPaths()).isEqualTo(paths);
+        }
+
+        @Test
+        @DisplayName("setEncryptRules should update value")
+        void setEncryptRulesShouldUpdateValue() {
+            EccCryptoConfig config = new EccCryptoConfig();
+            EccCryptoConfig.EncryptionRule rule = new EccCryptoConfig.EncryptionRule();
+            rule.setPath("/api/secure");
+            rule.setMethods(List.of("POST"));
+
+            config.setEncryptRules(List.of(rule));
+
+            assertThat(config.getEncryptRules()).containsExactly(rule);
         }
 
         @Test
