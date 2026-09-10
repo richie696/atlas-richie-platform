@@ -1,12 +1,10 @@
 package cn.richie696.component.vector.config;
 
-import cn.richie696.component.vector.filter.QdrantVectorFilterCompiler;
 import cn.richie696.component.vector.filter.VectorFilterCompiler;
 import cn.richie696.component.vector.enums.VectorProvider;
 import cn.richie696.component.vector.model.SearchOptions;
 import cn.richie696.component.vector.model.VectorFilter;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
-import cn.richie696.component.vector.service.impl.QdRantVectorServiceImpl;
 import cn.richie696.component.vector.topology.VectorCapability;
 import cn.richie696.component.vector.topology.VectorConnectionDefinition;
 import cn.richie696.component.vector.topology.VectorConnectionHandle;
@@ -16,14 +14,10 @@ import cn.richie696.component.vector.topology.VectorIndexDefinition;
 import cn.richie696.component.vector.topology.VectorScoreSemantics;
 import cn.richie696.component.vector.topology.VectorStoreDefinition;
 import cn.richie696.component.vector.topology.VectorStoreId;
-import com.google.common.util.concurrent.Futures;
 import io.qdrant.client.QdrantClient;
-import io.qdrant.client.grpc.Points;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.ai.vectorstore.qdrant.QdrantVectorStore;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
@@ -33,11 +27,6 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class QdrantVectorProviderFactoryTest {
 
@@ -70,53 +59,26 @@ class QdrantVectorProviderFactoryTest {
     }
 
     @Test
-    void compilesStructuredAclIntoTheNativeQdrantSearchRequest() {
-        QdrantClient client = mock(QdrantClient.class);
-        when(client.searchAsync(any(Points.SearchPoints.class)))
-                .thenReturn(Futures.immediateFuture(java.util.List.of()));
-        EmbeddingModel embeddingModel = embeddingModel(4);
-        QdrantVectorStore vectorStore = QdrantVectorStore.builder(client, embeddingModel)
-                .collectionName("documents_qdrant")
-                .build();
-        QdRantVectorServiceImpl service = new QdRantVectorServiceImpl(
-                null, vectorStore, embeddingModel, client, Map.of("documents", "documents_qdrant"));
-        service.setVectorFilterCompiler(new QdrantVectorFilterCompiler());
+    void compilesStructuredAclIntoTheNativeQdrantFilterShape() {
+        var filter = new cn.richie696.component.vector.filter.QdrantGrpcFilterMapper().map(
+                VectorFilter.and(
+                        VectorFilter.eq("tenantId", "tenant-a"),
+                        VectorFilter.in("principalId", java.util.List.of("user-1", "group-2"))));
 
-        assertThat(service.searchByText(
-                "documents",
-                "employee handbook",
-                5,
-                SearchOptions.builder()
-                        .rerank(false)
-                        .filter(VectorFilter.and(
-                                VectorFilter.eq("tenantId", "tenant-a"),
-                                VectorFilter.in("principalId", java.util.List.of("user-1", "group-2"))))
-                        .build())).isEmpty();
-
-        ArgumentCaptor<Points.SearchPoints> request = ArgumentCaptor.forClass(Points.SearchPoints.class);
-        verify(client).searchAsync(request.capture());
-        assertThat(request.getValue().getCollectionName()).isEqualTo("documents_qdrant");
-        assertThat(request.getValue().getFilter().toString())
-                .contains("tenantId", "tenant-a", "principalId", "user-1", "group-2");
+        assertThat(filter.getMustCount()).isEqualTo(2);
+        assertThat(filter.getMust(0).getField().getKey()).isEqualTo("tenantId");
+        assertThat(filter.getMust(0).getField().getMatch().getKeyword()).isEqualTo("tenant-a");
+        assertThat(filter.getMust(1).getField().getKey()).isEqualTo("principalId");
+        assertThat(filter.getMust(1).getField().getMatch().getKeywords().getStringsList())
+                .containsExactly("user-1", "group-2");
     }
 
     @Test
-    void rejectsUnsupportedFilterNodesBeforeCallingQdrant() {
-        QdrantClient client = mock(QdrantClient.class);
-        EmbeddingModel embeddingModel = embeddingModel(4);
-        QdrantVectorStore vectorStore = QdrantVectorStore.builder(client, embeddingModel)
-                .collectionName("documents_qdrant")
-                .build();
-        QdRantVectorServiceImpl service = new QdRantVectorServiceImpl(
-                null, vectorStore, embeddingModel, client, Map.of("documents", "documents_qdrant"));
-        service.setVectorFilterCompiler(new QdrantVectorFilterCompiler());
-
-        assertThatThrownBy(() -> service.searchByText(
-                "documents", "query", 5,
-                SearchOptions.builder().filter(VectorFilter.exists("tenantId")).build()))
+    void rejectsUnsupportedFilterNodesBeforeAnyProviderRequestCanBeBuilt() {
+        assertThatThrownBy(() -> new cn.richie696.component.vector.filter.QdrantGrpcFilterMapper()
+                .map(VectorFilter.exists("tenantId")))
                 .isInstanceOf(UnsupportedOperationException.class)
                 .hasMessageContaining("does not support exists");
-        verify(client, never()).searchAsync(any(Points.SearchPoints.class));
     }
 
     @Test

@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -373,14 +374,17 @@ class QdRantVectorServiceImplTest {
     @Test
     void addEmbeddings_insertsPointsViaUpsertAsync() throws Exception {
         Document doc = new Document("1", "hello world",
-                Map.of("embedding", new float[]{0.1f, 0.2f, 0.3f}));
+                Map.of("embedding", new float[]{0.1f, 0.2f, 0.3f}, "tenantId", "tenant-a", "visibility", 1));
         ListenableFuture<Points.UpdateResult> mockFuture = mock(ListenableFuture.class);
         when(qdrantClient.upsertAsync(any(Points.UpsertPoints.class))).thenReturn(mockFuture);
         doReturn(Points.UpdateResult.getDefaultInstance()).when(mockFuture).get(3, TimeUnit.SECONDS);
 
         service.addEmbeddings("test-collection", List.of(doc));
 
-        verify(qdrantClient).upsertAsync(any(Points.UpsertPoints.class));
+        ArgumentCaptor<Points.UpsertPoints> request = ArgumentCaptor.forClass(Points.UpsertPoints.class);
+        verify(qdrantClient).upsertAsync(request.capture());
+        assertEquals("tenant-a", request.getValue().getPoints(0).getPayloadMap().get("tenantId").getStringValue());
+        assertEquals(1L, request.getValue().getPoints(0).getPayloadMap().get("visibility").getIntegerValue());
         verify(mockFuture).get(3, TimeUnit.SECONDS);
     }
 

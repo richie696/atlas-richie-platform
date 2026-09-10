@@ -17,6 +17,7 @@ package cn.richie696.component.vector.config;
 
 import cn.richie696.component.ai.service.RerankService;
 import cn.richie696.component.vector.service.impl.QdRantVectorServiceImpl;
+import cn.richie696.component.vector.service.SparseVectorizerRegistry;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.QdrantGrpcClient;
 import lombok.extern.slf4j.Slf4j;
@@ -45,8 +46,10 @@ public class QdrantVectorAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(QdrantVectorProviderFactory.class)
-    public QdrantVectorProviderFactory qdrantVectorProviderFactory(ObjectProvider<RerankService> rerankService) {
-        return new QdrantVectorProviderFactory(rerankService.getIfAvailable());
+    public QdrantVectorProviderFactory qdrantVectorProviderFactory(ObjectProvider<RerankService> rerankService,
+                                                                    ObjectProvider<SparseVectorizerRegistry> sparseVectorizers) {
+        return new QdrantVectorProviderFactory(rerankService.getIfAvailable(),
+                sparseVectorizers.getIfAvailable(() -> new SparseVectorizerRegistry(java.util.Map.of())));
     }
 
     /**

@@ -10,7 +10,13 @@ import cn.richie696.component.vector.filter.QdrantVectorFilterCompiler;
 import cn.richie696.component.vector.filter.VectorFilterCompiler;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
+import cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations;
+import cn.richie696.component.vector.service.SparseVectorizer;
+import cn.richie696.component.vector.service.SparseVectorizerRegistry;
+import cn.richie696.component.vector.service.impl.QdrantAclAwareHybridSearchOperations;
 import cn.richie696.component.vector.service.impl.QdRantVectorServiceImpl;
+import cn.richie696.component.vector.model.HybridStoreOptions;
+import cn.richie696.component.vector.filter.QdrantGrpcFilterMapper;
 import cn.richie696.component.vector.topology.VectorCapability;
 import cn.richie696.component.vector.topology.VectorCapabilityDescriptor;
 import cn.richie696.component.vector.topology.VectorCapabilityOperation;
@@ -44,7 +50,9 @@ public final class QdrantVectorProviderFactory implements VectorProviderFactory 
     private static final Set<String> CONNECTION_KEYS = Set.of(
             "host", "port", "use-transport-layer-security", "api-key", "timeout-ms");
     private static final Set<String> INDEX_ADDITIONAL_FIELDS = Set.of(
-            "initialize-schema", "content-field-name", "payload-indexes");
+            "initialize-schema", "content-field-name", "payload-indexes",
+            "hybrid-enabled", "dense-field", "sparse-field", "sparse-vectorizer",
+            "hybrid-candidate-limit", "hybrid-fallback-mode");
     private static final Map<String, String> FILTER_CONSTRAINTS = Map.of(
             "filter-stage", "provider-recall",
             "transport", "qdrant-grpc-filter",
@@ -61,9 +69,15 @@ public final class QdrantVectorProviderFactory implements VectorProviderFactory 
             VectorCapabilityDescriptor.supported(VectorCapability.INDEX_LIFECYCLE)));
 
     private final RerankService rerankService;
+    private final SparseVectorizerRegistry sparseVectorizers;
 
     public QdrantVectorProviderFactory(RerankService rerankService) {
+        this(rerankService, new SparseVectorizerRegistry(Map.of()));
+    }
+
+    public QdrantVectorProviderFactory(RerankService rerankService, SparseVectorizerRegistry sparseVectorizers) {
         this.rerankService = rerankService;
+        this.sparseVectorizers = sparseVectorizers;
     }
 
     @Override
@@ -120,6 +134,7 @@ public final class QdrantVectorProviderFactory implements VectorProviderFactory 
         booleanValue(index.additionalFields(), "initialize-schema", false);
         text(index.additionalFields(), "content-field-name", "content");
         payloadIndexFields(index.additionalFields().get("payload-indexes"));
+        HybridStoreOptions.fromAdditionalFields(index.additionalFields());
     }
 
     @Override
@@ -127,7 +142,7 @@ public final class QdrantVectorProviderFactory implements VectorProviderFactory 
             VectorConnectionDefinition connection,
             VectorStoreDefinition store) {
         requireProvider(connection);
-        return CAPABILITIES;
+        return capabilitiesFor(boundIndex(store));
     }
 
     @Override
@@ -166,12 +181,18 @@ public final class QdrantVectorProviderFactory implements VectorProviderFactory 
         if (embeddingModel.dimensions() > 0 && embeddingModel.dimensions() != index.dimension()) {
             throw new IllegalArgumentException("Qdrant index dimension does not match the bound EmbeddingModel");
         }
+        HybridStoreOptions hybrid = HybridStoreOptions.fromAdditionalFields(index.additionalFields());
+        SparseVectorizer sparseVectorizer = hybrid.enabled() ? sparseVectorizers.require(hybrid.vectorizerBeanName()) : null;
+        boolean initializeSchema = booleanValue(index.additionalFields(), "initialize-schema", false);
+        if (hybrid.enabled() && initializeSchema) {
+            createHybridCollection(qdrantConnection.client(), index.name(), index, hybrid);
+        }
         QdrantVectorStore vectorStore = QdrantVectorStore.builder(qdrantConnection.client(), embeddingModel.model())
                 .collectionName(index.name())
                 .contentFieldName(text(index.additionalFields(), "content-field-name", "content"))
-                .initializeSchema(booleanValue(index.additionalFields(), "initialize-schema", false))
+                .initializeSchema(initializeSchema && !hybrid.enabled())
                 .build();
-        if (booleanValue(index.additionalFields(), "initialize-schema", false)) {
+        if (initializeSchema && !hybrid.enabled()) {
             try {
                 vectorStore.afterPropertiesSet();
             } catch (Exception exception) {
@@ -183,7 +204,7 @@ public final class QdrantVectorProviderFactory implements VectorProviderFactory 
                 vectorStore,
                 embeddingModel.model(),
                 qdrantConnection.client(),
-                Map.of(definition.defaultIndex(), index.name()));
+                Map.of(definition.defaultIndex(), index.name()), hybrid, sparseVectorizer);
         VectorFilterCompiler filterCompiler = new QdrantVectorFilterCompiler();
         service.setVectorProperties(storeProperties(definition, index));
         service.setVectorFilterCompiler(filterCompiler);
@@ -191,11 +212,16 @@ public final class QdrantVectorProviderFactory implements VectorProviderFactory 
                 payloadIndexFields(index.additionalFields().get("payload-indexes"));
         VectorStoreHandle.Builder handle = VectorStoreHandle.builder(definition, provider(), service)
                 .embeddingModel(embeddingModel)
-                .storeCapabilities(CAPABILITIES)
+                .storeCapabilities(capabilitiesFor(index))
                 .capability(VectorScoreSemantics.class, scoreSemantics(index.metric()))
                 .capability(VectorFilterCompiler.class, filterCompiler)
                 .capability(VectorRecordReadOperations.class, service)
                 .capability(VectorIndexLifecycleOperations.class, service);
+        if (hybrid.enabled()) {
+            handle.capability(VectorAclAwareHybridSearchOperations.class,
+                    new QdrantAclAwareHybridSearchOperations(qdrantConnection.client(), embeddingModel.model(),
+                            sparseVectorizer, hybrid, new QdrantGrpcFilterMapper()));
+        }
         if (!payloadFields.isEmpty()) {
             handle.capability(cn.richie696.component.vector.service.VectorPayloadIndexOperations.class, service);
         }
@@ -209,6 +235,44 @@ public final class QdrantVectorProviderFactory implements VectorProviderFactory 
             }
         }
         return built;
+    }
+
+    private static VectorStoreCapabilities capabilitiesFor(VectorIndexDefinition index) {
+        HybridStoreOptions hybrid = HybridStoreOptions.fromAdditionalFields(index.additionalFields());
+        if (!hybrid.enabled()) return CAPABILITIES;
+        List<VectorCapabilityDescriptor> descriptors = new ArrayList<>(CAPABILITIES.descriptors());
+        descriptors.add(new VectorCapabilityDescriptor(VectorCapability.ACL_SAFE_HYBRID, "1.0",
+                Map.of("filter-stage", "provider-recall", "execution", "core-rrf-fallback",
+                        "schema", "named-dense-and-sparse")));
+        return new VectorStoreCapabilities(descriptors);
+    }
+
+    private static void createHybridCollection(QdrantClient client, String collection,
+                                               VectorIndexDefinition index, HybridStoreOptions options) {
+        try {
+            if (client.listCollectionsAsync().get().contains(collection)) return;
+            io.qdrant.client.grpc.Collections.VectorParams dense = io.qdrant.client.grpc.Collections.VectorParams.newBuilder()
+                    .setSize(index.dimension()).setDistance(metric(index.metric())).build();
+            io.qdrant.client.grpc.Collections.CreateCollection request = io.qdrant.client.grpc.Collections.CreateCollection.newBuilder()
+                    .setCollectionName(collection)
+                    .setVectorsConfig(io.qdrant.client.grpc.Collections.VectorsConfig.newBuilder()
+                            .setParamsMap(io.qdrant.client.grpc.Collections.VectorParamsMap.newBuilder()
+                                    .putMap(options.denseField(), dense)))
+                    .setSparseVectorsConfig(io.qdrant.client.grpc.Collections.SparseVectorConfig.newBuilder()
+                            .putMap(options.sparseField(), io.qdrant.client.grpc.Collections.SparseVectorParams.newBuilder().build()))
+                    .build();
+            client.createCollectionAsync(request).get();
+        } catch (Exception exception) {
+            throw new IllegalStateException("Qdrant hybrid collection initialization failed", exception);
+        }
+    }
+
+    private static io.qdrant.client.grpc.Collections.Distance metric(String value) {
+        return switch (value.toLowerCase(Locale.ROOT)) {
+            case "l2", "euclidean" -> io.qdrant.client.grpc.Collections.Distance.Euclid;
+            case "ip", "dot" -> io.qdrant.client.grpc.Collections.Distance.Dot;
+            default -> io.qdrant.client.grpc.Collections.Distance.Cosine;
+        };
     }
 
     private static List<cn.richie696.component.vector.service.VectorPayloadIndexOperations.FieldDefinition> payloadIndexFields(Object configured) {
