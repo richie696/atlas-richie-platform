@@ -182,7 +182,18 @@
             <id>richie696</id>
             <name>Richie Wang</name>
             <email>richie696@icloud.com</email>
-            <organization>Richie Technology Co., Ltd.</organization>
+            <organization>Atlas Richie Team</organization>
+            <organizationUrl>https://www.richie696.cn</organizationUrl>
+            <roles>
+                <role>Architect</role>
+            </roles>
+            <timezone>Asia/Shanghai</timezone>
+        </developer>
+        <developer>
+            <id>nessis</id>
+            <name>Nessis</name>
+            <email>nessis@qq.com</email>
+            <organization>Atlas Richie Team</organization>
             <organizationUrl>https://www.richie696.cn</organizationUrl>
             <roles>
                 <role>Architect</role>
@@ -193,17 +204,6 @@
 
     <!-- 贡献者信息 - 用于生成团队信息页面 -->
     <contributors>
-        <!-- 可以添加贡献者信息 -->
-        <contributor>
-            <name>Nessis</name>
-            <email>contributor@example.com</email>
-            <organization>Organization Name</organization>
-            <organizationUrl>https://www.example.com</organizationUrl>
-            <roles>
-                <role>Contributor</role>
-            </roles>
-            <timezone>Asia/Shanghai</timezone>
-        </contributor>
     </contributors>
 
     <dependencies>
