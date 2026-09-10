@@ -29,11 +29,14 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -41,7 +44,9 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.security.PrivateKey;
 import java.util.UUID;
 
 import static cn.richie696.contract.constant.GlobalConstants.*;
@@ -61,6 +66,7 @@ public class EccCryptoFilter extends AbstractBaseFilter {
 
     private final EccCryptoService eccCryptoService;
     private final KeyPairManager keyPairManager;
+    private final Environment environment;
 
     /**
      * 构造函数
@@ -69,10 +75,12 @@ public class EccCryptoFilter extends AbstractBaseFilter {
      * @param i18n   国际化解析器
      */
     public EccCryptoFilter(GatewayConfig config, I18nResolver i18n,
-                           EccCryptoService eccCryptoService, KeyPairManager keyPairManager) {
+                           EccCryptoService eccCryptoService, KeyPairManager keyPairManager,
+                           Environment environment) {
         super(config, i18n);
         this.eccCryptoService = eccCryptoService;
         this.keyPairManager = keyPairManager;
+        this.environment = environment;
     }
 
     /**
@@ -97,8 +105,23 @@ public class EccCryptoFilter extends AbstractBaseFilter {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getPath().value();
 
+        // 密钥交换不是业务加密路由；即使它位于 excludePaths，也必须由网关本身处理。
+        if ("/api/crypto/exchange".equals(path)) {
+            return handleKeyExchangeRequest(exchange);
+        }
+
         // 检查是否需要加密处理
-        if (!eccCryptoService.shouldEncrypt(path)) {
+        String method = request.getMethod() == null ? null : request.getMethod().name();
+        if (!eccCryptoService.shouldEncrypt(path, method)) {
+            return chain.filter(exchange);
+        }
+
+        // 开发环境的明文降级仅用于尚未接入 ECC 的调用方；已明确携带
+        // body-v1 标记的请求必须继续经过解密与响应加密链路，不能被降级
+        // 分支直接转发，否则浏览器会收到与协议预期不一致的响应。
+        if (isPlaintextFallbackAllowed()
+                && !"body-v1".equals(request.getHeaders().getFirst(X_ENCRYPTED_DATA))) {
+            log.warn("ECC 明文降级已启用：仅用于开发/测试环境，path={}, method={}", path, method);
             return chain.filter(exchange);
         }
 
@@ -115,22 +138,36 @@ public class EccCryptoFilter extends AbstractBaseFilter {
             return sendKeyPairChangedResponse(exchange);
         }
 
-        // 处理客户端公钥交换
         String clientPublicKey = request.getHeaders().getFirst(X_CLIENT_PUBLIC_KEY);
         String clientId = request.getHeaders().getFirst(X_CLIENT_ID);
 
         if (StringUtils.hasText(clientPublicKey) && StringUtils.hasText(clientId)) {
             // 缓存客户端公钥
             eccCryptoService.cacheClientPublicKey(clientId, clientPublicKey);
-
-            // 如果是密钥交换请求，直接返回网关公钥
-            if (path.endsWith("/api/crypto/exchange")) {
-                return handleKeyExchange(exchange);
-            }
         }
 
-        // 处理加密的请求数据
-        return handleEncryptedRequest(exchange, chain);
+        // 同一请求的入站解密与出站加密必须绑定同一把网关私钥。不能在异步
+        // 响应阶段再次从 KeyPairManager 读取，否则密钥轮换边界上可能对同一
+        // HTTP 交互派生出不同的共享密钥，导致客户端无法解密 200 响应。
+        PrivateKey gatewayPrivateKey = keyPairManager.getKeyPair().getPrivate();
+        return handleEncryptedRequest(exchange, chain, gatewayPrivateKey);
+    }
+
+    private Mono<Void> handleKeyExchangeRequest(ServerWebExchange exchange) {
+        if (!config.getEccCrypto().isEnabled()) {
+            return handleError(exchange, "加密通道未启用", HttpStatus.SERVICE_UNAVAILABLE);
+        }
+        ServerHttpRequest request = exchange.getRequest();
+        String clientPublicKey = request.getHeaders().getFirst(X_CLIENT_PUBLIC_KEY);
+        String clientId = request.getHeaders().getFirst(X_CLIENT_ID);
+        if (!StringUtils.hasText(clientPublicKey) || !StringUtils.hasText(clientId)) {
+            return handleError(exchange, "密钥交换参数不完整", HttpStatus.BAD_REQUEST);
+        }
+        if (keyPairManager.isExpired()) {
+            keyPairManager.refreshKeyPair();
+        }
+        eccCryptoService.cacheClientPublicKey(clientId, clientPublicKey);
+        return handleKeyExchange(exchange);
     }
 
     /**
@@ -162,7 +199,9 @@ public class EccCryptoFilter extends AbstractBaseFilter {
      * @param chain    过滤器链
      * @return 过滤结果
      */
-    private Mono<Void> handleEncryptedRequest(ServerWebExchange exchange, GatewayFilterChain chain) {
+    private Mono<Void> handleEncryptedRequest(ServerWebExchange exchange,
+                                              GatewayFilterChain chain,
+                                              PrivateKey gatewayPrivateKey) {
         ServerHttpRequest request = exchange.getRequest();
         String clientId = request.getHeaders().getFirst(X_CLIENT_ID);
         String encryptedData = request.getHeaders().getFirst(X_ENCRYPTED_DATA);
@@ -173,25 +212,47 @@ public class EccCryptoFilter extends AbstractBaseFilter {
         }
 
         String finalClientId = clientId;
-        // 如果有加密数据，进行解密
-        if (StringUtils.hasText(encryptedData)) {
+        if ("body-v1".equals(encryptedData)) {
             return DataBufferUtils.join(request.getBody())
                     .flatMap(dataBuffer -> {
                         try {
-                            // 解密请求数据
-                            String decryptedData = eccCryptoService.decryptRequestData(
-                                    encryptedData, finalClientId, keyPairManager.getKeyPair().getPrivate());
+                            byte[] encryptedPayload = new byte[dataBuffer.readableByteCount()];
+                            dataBuffer.read(encryptedPayload);
+                            // 为本次请求固定共享密钥，响应阶段复用同一实例，避免
+                            // Redis 缓存刷新或网关密钥轮换影响同一次往返。
+                            SecretKey sharedKey = eccCryptoService.getOrGenerateSharedKey(
+                                    finalClientId,
+                                    gatewayPrivateKey
+                            );
+                            if (sharedKey == null) {
+                                return handleError(exchange, "无法建立加密会话", HttpStatus.BAD_REQUEST);
+                            }
+                            String decryptedData = EccCryptoUtils.decrypt(
+                                    new String(encryptedPayload, StandardCharsets.UTF_8),
+                                    sharedKey
+                            );
 
                             if (decryptedData == null) {
                                 return handleError(exchange, "解密失败", HttpStatus.BAD_REQUEST);
                             }
 
-                            // 创建新的请求体
-                            DataBuffer newBuffer = dataBuffer.factory()
-                                    .wrap(decryptedData.getBytes(StandardCharsets.UTF_8));
+                            byte[] decryptedPayload = decryptedData.getBytes(StandardCharsets.UTF_8);
+                            DataBuffer newBuffer = exchange.getResponse().bufferFactory().wrap(decryptedPayload);
+                            HttpHeaders headers = new HttpHeaders();
+                            headers.putAll(request.getHeaders());
+                            headers.remove(HttpHeaders.CONTENT_LENGTH);
+                            headers.remove(X_ENCRYPTED_DATA);
+                            headers.setContentLength(decryptedPayload.length);
+                            headers.setContentType(MediaType.APPLICATION_JSON);
 
                             // 创建新的请求
                             ServerHttpRequest newRequest = new ServerHttpRequestDecorator(request) {
+                                @Nonnull
+                                @Override
+                                public HttpHeaders getHeaders() {
+                                    return headers;
+                                }
+
                                 @Nonnull
                                 @Override
                                 public Flux<DataBuffer> getBody() {
@@ -205,7 +266,7 @@ public class EccCryptoFilter extends AbstractBaseFilter {
                                     .build();
 
                             // 包裹响应，进行加密
-                            return chain.filter(decorateExchangeForResponse(newExchange, finalClientId));
+                            return chain.filter(decorateExchangeForResponse(newExchange, sharedKey));
 
                         } catch (Exception e) {
                             log.error("处理加密请求失败", e);
@@ -214,16 +275,15 @@ public class EccCryptoFilter extends AbstractBaseFilter {
                             DataBufferUtils.release(dataBuffer);
                         }
                     });
-        } else {
-            // 没有加密数据，正常处理请求，包裹响应
-            return chain.filter(decorateExchangeForResponse(exchange, finalClientId));
         }
+
+        return handleError(exchange, "该接口要求使用加密通道", HttpStatus.BAD_REQUEST);
     }
 
     /**
      * 包裹响应，拦截writeWith进行加密
      */
-    private ServerWebExchange decorateExchangeForResponse(ServerWebExchange exchange, String clientId) {
+    private ServerWebExchange decorateExchangeForResponse(ServerWebExchange exchange, SecretKey sharedKey) {
         ServerHttpResponse originalResponse = exchange.getResponse();
         DataBufferFactory bufferFactory = originalResponse.bufferFactory();
         ServerHttpResponseDecorator decoratedResponse = new ServerHttpResponseDecorator(originalResponse) {
@@ -243,10 +303,16 @@ public class EccCryptoFilter extends AbstractBaseFilter {
                             }
                             dataBuffers.forEach(DataBufferUtils::release);
                             String responseBody = new String(content, StandardCharsets.UTF_8);
-                            String encrypted = eccCryptoService.encryptResponseData(responseBody, clientId, keyPairManager.getKeyPair().getPrivate());
+                            String encrypted = EccCryptoUtils.encrypt(responseBody, sharedKey);
                             if (encrypted != null) {
+                                byte[] encryptedPayload = encrypted.getBytes(StandardCharsets.UTF_8);
+                                // 下游已写入明文 Content-Length。AES-GCM 产生的 Base64 密文
+                                // 长度不同；若保留旧值，Netty/浏览器会截断密文，造成认证标签校验失败。
+                                originalResponse.getHeaders().remove(HttpHeaders.CONTENT_LENGTH);
+                                originalResponse.getHeaders().setContentLength(encryptedPayload.length);
+                                originalResponse.getHeaders().setContentType(MediaType.APPLICATION_OCTET_STREAM);
                                 originalResponse.getHeaders().set(X_RESPONSE_ENCRYPTED, "true");
-                                DataBuffer buffer = bufferFactory.wrap(encrypted.getBytes(StandardCharsets.UTF_8));
+                                DataBuffer buffer = bufferFactory.wrap(encryptedPayload);
                                 return super.writeWith(Mono.just(buffer));
                             } else {
                                 // 加密失败，返回原始响应
@@ -294,7 +360,14 @@ public class EccCryptoFilter extends AbstractBaseFilter {
      */
     @Override
     protected boolean enableVerifyFilter(ServerWebExchange exchange) {
-        return config.getEccCrypto().isEnabled();
+        // 握手属于网关本地协议端点，绝不能在关闭 ECC 时被继续路由到下游服务。
+        return "/api/crypto/exchange".equals(exchange.getRequest().getPath().value())
+                || config.getEccCrypto().isEnabled();
+    }
+
+    private boolean isPlaintextFallbackAllowed() {
+        return config.getEccCrypto().isAllowPlaintextInDev()
+                && environment.acceptsProfiles(Profiles.of("dev", "test"));
     }
 
     private Mono<Void> sendKeyPairChangedResponse(ServerWebExchange exchange) {
