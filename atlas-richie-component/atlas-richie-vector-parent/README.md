@@ -54,6 +54,8 @@ document-parser → document-chunking → vector-chunk-adapter → vector
     - [MongoDB Atlas](#mongodb-atlas)
     - [Neo4j](#neo4j)
     - [VikingDB](#vikingdb)
+    - [DashVector](#dashvector)
+    - [Tencent VectorDB](#tencent-vectordb)
 - [⏱️ Sequence Diagram Reference](#⏱️-sequence-diagram-reference)
     - [Vector Ingestion Sequence](#vector-ingestion-sequence)
     - [Knowledge Base Retrieval Sequence](#knowledge-base-retrieval-sequence)
@@ -83,8 +85,8 @@ support, or doesn't implement at all**—this prevents business code from confus
 ### Key Features
 
 - ✅ **Unified Facade**: simple projects keep `VectorService`; multi-store projects use `VectorServiceRegistry` and Store-bound handles
-- ✅ **8 Pluggable Providers**: Milvus, Qdrant, Weaviate, PostgreSQL/pgvector, Redis, MongoDB Atlas, Neo4j,
-  VikingDB—declared by capability, not by brand
+- ✅ **10 Pluggable Providers**: Milvus, Qdrant, Weaviate, PostgreSQL/pgvector, Redis, MongoDB Atlas, Neo4j,
+  VikingDB, DashVector and Tencent VectorDB—declared by capability, not by brand
 - ✅ **Forced ACL Pushdown**: `KnowledgeBaseVectorService` mandates that tenant, visibility, status, and other structured
   filters are pushed down to the provider's native query execution—never "fetch Top-K then filter in JVM" which leaks
   content
@@ -1042,6 +1044,8 @@ Provider-specific schema, capability boundaries, ACL-safe hybrid design, and the
 
 ### Qdrant
 
+Provider details: [English](atlas-richie-vector-qdrant/README.md) | [中文](atlas-richie-vector-qdrant/README.zh.md)
+
 | Capability                             | Support | Notes                                                                           |
 |----------------------------------------|---------|---------------------------------------------------------------------------------|
 | `VectorSearchOperations`               | ✅      | Complete                                                                        |
@@ -1052,7 +1056,7 @@ Provider-specific schema, capability boundaries, ACL-safe hybrid design, and the
 | `VectorIndexStatsOperations`           | ✅      | Complete                                                                        |
 | `VectorIndexAliasOperations`           | ❌      | No alias concept                                                                |
 | `VectorHybridSearchOperations`         | ⚠️      | dense + sparse, but sparse must be pre-generated                                |
-| `VectorAclAwareHybridSearchOperations` | ❌      | This adapter does not configure sparse/named-vector channels                  |
+| `VectorAclAwareHybridSearchOperations` | ⚠️      | Opt-in named dense+sparse schema; same Qdrant filter on both recalls, Core RRF |
 | `VectorMultiVectorSearchOperations`    | ❌      | No named vector concept                                                         |
 | `VectorBackupOperations`               | ✅      | snapshot backup                                                                 |
 | Multimodal (CLIP)                      | ❌      | Requires external CLIP service                                                  |
@@ -1076,6 +1080,8 @@ Provider-specific schema, capability boundaries, ACL-safe hybrid design, and the
 
 ### PostgreSQL/pgvector
 
+Provider details: [English](atlas-richie-vector-postgresql/README.md) | [中文](atlas-richie-vector-postgresql/README.zh.md)
+
 | Capability                             | Support | Notes                                                                |
 |----------------------------------------|---------|----------------------------------------------------------------------|
 | `VectorSearchOperations`               | ✅      | Complete                                                             |
@@ -1085,14 +1091,16 @@ Provider-specific schema, capability boundaries, ACL-safe hybrid design, and the
 | `VectorIndexLifecycleOperations`       | ✅      | Full DDL                                                             |
 | `VectorIndexStatsOperations`           | ✅      | pg_stats                                                             |
 | `VectorIndexAliasOperations`           | ❌      | No alias (can simulate with views)                                   |
-| `VectorHybridSearchOperations`         | ❌      | Requires ES or tsvector combo                                        |
-| `VectorAclAwareHybridSearchOperations` | ❌      | Not supported                                                        |
+| `VectorHybridSearchOperations`         | ⚠️      | Opt-in pgvector + generated `tsvector` candidate paths              |
+| `VectorAclAwareHybridSearchOperations` | ⚠️      | Same parameterized JSONB ACL `WHERE` on both paths, Core RRF         |
 | `VectorMultiVectorSearchOperations`    | ❌      | Single form, single vector                                           |
 | `VectorBackupOperations`               | ✅      | pg_dump                                                              |
 | Multimodal (CLIP)                      | ❌      | Requires external integration                                        |
 | **Strength**                           | —       | **Strong transactional consistency, reuses existing infrastructure** |
 
 ### Redis
+
+Provider details: [English](atlas-richie-vector-redis/README.md) | [中文](atlas-richie-vector-redis/README.zh.md)
 
 | Capability                             | Support | Notes                                                      |
 |----------------------------------------|---------|------------------------------------------------------------|
@@ -1103,14 +1111,16 @@ Provider-specific schema, capability boundaries, ACL-safe hybrid design, and the
 | `VectorIndexLifecycleOperations`       | ✅      | Complete                                                   |
 | `VectorIndexStatsOperations`           | ✅      | Basic                                                      |
 | `VectorIndexAliasOperations`           | ❌      | None                                                       |
-| `VectorHybridSearchOperations`         | ❌      | Not supported                                              |
-| `VectorAclAwareHybridSearchOperations` | ❌      | Not supported                                              |
+| `VectorHybridSearchOperations`         | ⚠️      | Opt-in KNN + RediSearch text candidate paths               |
+| `VectorAclAwareHybridSearchOperations` | ⚠️      | Same RediSearch ACL predicate on both paths, Core RRF       |
 | `VectorMultiVectorSearchOperations`    | ❌      | Not supported                                              |
 | `VectorBackupOperations`               | ⚠️      | Requires RDB                                               |
 | Multimodal (CLIP)                      | ❌      | Not supported                                              |
 | **Best For**                           | —       | Small-to-medium scale, low latency, existing Redis cluster |
 
 ### MongoDB Atlas
+
+Provider details: [English](atlas-richie-vector-mongodb-atlas/README.md) | [中文](atlas-richie-vector-mongodb-atlas/README.zh.md)
 
 | Capability                             | Support | Notes                      |
 |----------------------------------------|---------|----------------------------|
@@ -1121,14 +1131,16 @@ Provider-specific schema, capability boundaries, ACL-safe hybrid design, and the
 | `VectorIndexLifecycleOperations`       | ✅      | Collection                 |
 | `VectorIndexStatsOperations`           | ✅      | Basic                      |
 | `VectorIndexAliasOperations`           | ❌      | None                       |
-| `VectorHybridSearchOperations`         | ❌      | Not supported              |
-| `VectorAclAwareHybridSearchOperations` | ❌      | Not supported              |
+| `VectorHybridSearchOperations`         | ⚠️      | Opt-in Atlas Vector Search + Atlas Search                  |
+| `VectorAclAwareHybridSearchOperations` | ⚠️      | Same Atlas ACL filter on both pipelines, Core RRF           |
 | `VectorMultiVectorSearchOperations`    | ❌      | Not supported              |
 | `VectorBackupOperations`               | ✅      | mongodump                  |
 | Multimodal (CLIP)                      | ❌      | Not supported              |
 | **Best For**                           | —       | Existing MongoDB ecosystem |
 
 ### Neo4j
+
+Provider details: [English](atlas-richie-vector-neo4j/README.md) | [中文](atlas-richie-vector-neo4j/README.zh.md)
 
 | Capability                             | Support | Notes                                                         |
 |----------------------------------------|---------|---------------------------------------------------------------|
@@ -1139,14 +1151,16 @@ Provider-specific schema, capability boundaries, ACL-safe hybrid design, and the
 | `VectorIndexLifecycleOperations`       | ✅      | Complete                                                      |
 | `VectorIndexStatsOperations`           | ✅      | Complete                                                      |
 | `VectorIndexAliasOperations`           | ❌      | None                                                          |
-| `VectorHybridSearchOperations`         | ❌      | Not supported                                                 |
-| `VectorAclAwareHybridSearchOperations` | ❌      | Not supported                                                 |
+| `VectorHybridSearchOperations`         | ⚠️      | Opt-in dense + lexical ACL-first Cypher paths                 |
+| `VectorAclAwareHybridSearchOperations` | ⚠️      | Same parameterized ACL predicate, Core RRF                    |
 | `VectorMultiVectorSearchOperations`    | ❌      | Not supported                                                 |
 | `VectorBackupOperations`               | ✅      | Complete                                                      |
 | Multimodal (CLIP)                      | ❌      | Not supported                                                 |
 | **Best For**                           | —       | **Graph-RAG: entity relationships + vector hybrid retrieval** |
 
 ### VikingDB
+
+Provider details: [English](atlas-richie-vector-vikingdb/README.md) | [中文](atlas-richie-vector-vikingdb/README.zh.md)
 
 | Capability                             | Support | Notes                  |
 |----------------------------------------|---------|------------------------|
@@ -1157,12 +1171,32 @@ Provider-specific schema, capability boundaries, ACL-safe hybrid design, and the
 | `VectorIndexLifecycleOperations`       | ✅      | Complete               |
 | `VectorIndexStatsOperations`           | ✅      | Basic                  |
 | `VectorIndexAliasOperations`           | ❌      | Currently not declared |
-| `VectorHybridSearchOperations`         | ❌      | Not supported          |
-| `VectorAclAwareHybridSearchOperations` | ❌      | Not supported          |
+| `VectorHybridSearchOperations`         | ⚠️      | Native VikingDB hybrid for `hnsw-hybrid` schema |
+| `VectorAclAwareHybridSearchOperations` | ⚠️      | Explicit scalar ACL fields + sparse encoder required |
 | `VectorMultiVectorSearchOperations`    | ❌      | Not supported          |
 | `VectorBackupOperations`               | ❌      | Currently not declared |
 | Multimodal (CLIP)                      | ❌      | Not supported          |
 | **Best For**                           | —       | ByteDance ecosystem    |
+
+### DashVector
+
+Provider details: [English](atlas-richie-vector-dashvector/README.md) | [中文](atlas-richie-vector-dashvector/README.zh.md)
+
+| Capability | Support | Notes |
+|---|---|---|
+| `VectorSearchOperations` | ✅ | Dense retrieval and native filters |
+| `VectorAclAwareHybridSearchOperations` | ⚠️ | Opt-in native dense+sparse request with the same ACL filter; cloud E2E is environment-gated |
+| AI-plugin typed operations | ✅ | Collection, document, partition and search ports are exposed only from the Store handle |
+
+### Tencent VectorDB
+
+Provider details: [English](atlas-richie-vector-tencent-vectordb/README.md) | [中文](atlas-richie-vector-tencent-vectordb/README.zh.md)
+
+| Capability | Support | Notes |
+|---|---|---|
+| `VectorSearchOperations` | ✅ | Dense retrieval and native filters |
+| `VectorAclAwareHybridSearchOperations` | ⚠️ | Native `HybridSearchParam` first; classified unsupported-native errors use ACL-preserving Core RRF fallback; cloud E2E is environment-gated |
+| AI-plugin typed operations | ✅ | Database, collection, document, search and index ports are exposed only from the Store handle |
 
 ---
 
