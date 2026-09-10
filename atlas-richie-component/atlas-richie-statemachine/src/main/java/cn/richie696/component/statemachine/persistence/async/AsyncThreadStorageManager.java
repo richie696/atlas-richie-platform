@@ -38,7 +38,10 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -117,9 +120,17 @@ public class AsyncThreadStorageManager {
     private final ConcurrentLinkedQueue<StateSyncKey> sharedBuffer = new ConcurrentLinkedQueue<>();
 
     /**
+     * 已进入缓冲区的同步键。
+     * <p>
+     * 同一状态机实例在一次刷写前只保留一个同步信号。同步消息只包含业务键，真正写库时会从状态存储读取最新状态，
+     * 因此合并重复键不会丢失当前状态。
+     */
+    private final Set<StateSyncKey> enqueuedKeys = ConcurrentHashMap.newKeySet();
+
+    /**
      * 共享的计数器
      * <p>
-     * 记录当前缓冲区中的消息数量，用于判断是否需要触发批量刷写。
+     * 记录当前缓冲区中的唯一同步键数量，用于判断是否需要触发批量刷写。
      * 使用 {@link AtomicInteger} 保证线程安全。
      */
     private final AtomicInteger sharedCounter = new AtomicInteger(0);
@@ -204,11 +215,12 @@ public class AsyncThreadStorageManager {
             } else {
                 this.dbType = null;
                 log.warn("不支持的数据库类型: {}，将使用查询+分离方式", databaseProductName);
-                return;
             }
 
-            log.info("状态机数据库复制服务已初始化，自动检测数据库类型: {} (产品名称: {})",
-                    dbType, databaseProductName);
+            if (dbType != null) {
+                log.info("状态机数据库复制服务已初始化，自动检测数据库类型: {} (产品名称: {})",
+                        dbType, databaseProductName);
+            }
         } catch (Exception e) {
             log.warn("无法从 DataSource 自动检测数据库类型，将使用查询+分离方式: {}", e.getMessage());
             this.dbType = null;
@@ -273,12 +285,11 @@ public class AsyncThreadStorageManager {
      */
     private void processSyncTask(String stateMachineName, Long businessId) {
         try {
-            // 添加到共享缓冲区
             StateSyncKey syncKey = new StateSyncKey(stateMachineName, businessId);
-            sharedBuffer.offer(syncKey);
-
-            // 增加计数器并检查是否需要刷写
-            int currentCount = sharedCounter.incrementAndGet();
+            int currentCount = enqueueIfAbsent(syncKey);
+            if (currentCount < 0) {
+                return;
+            }
             int batchSize = config.getBatchSize();
             int bufferCapacity = config.getBufferCapacity();
 
@@ -303,7 +314,16 @@ public class AsyncThreadStorageManager {
      *
      */
     private void doFlushBatch() {
-        if (isShuttingDown.get()) {
+        doFlushBatch(false);
+    }
+
+    /**
+     * 批量刷写到数据库。
+     *
+     * @param flushDuringShutdown 是否允许在服务关闭阶段刷写
+     */
+    private void doFlushBatch(boolean flushDuringShutdown) {
+        if (isShuttingDown.get() && !flushDuringShutdown) {
             return;
         }
 
@@ -323,7 +343,8 @@ public class AsyncThreadStorageManager {
                 log.debug("批量刷写状态同步完成: currentCount={}, historyCount={}",
                         syncData.currentStates().size(), syncData.histories().size());
             } catch (Exception e) {
-                log.error("批量刷写状态同步失败", e);
+                requeueSyncKeys(syncKeys);
+                log.error("批量刷写状态同步失败，已重新加入缓冲区: count={}", syncKeys.size(), e);
             }
         }
     }
@@ -336,16 +357,42 @@ public class AsyncThreadStorageManager {
      * @return 同步键列表
      */
     private List<StateSyncKey> drainBuffer() {
-        List<StateSyncKey> syncKeys = new ArrayList<>();
+        Set<StateSyncKey> syncKeys = new LinkedHashSet<>();
         StateSyncKey syncKey;
         while ((syncKey = sharedBuffer.poll()) != null) {
             syncKeys.add(syncKey);
+            if (enqueuedKeys.remove(syncKey)) {
+                sharedCounter.decrementAndGet();
+            }
         }
 
-        // 重置计数器
-        sharedCounter.set(0);
+        return new ArrayList<>(syncKeys);
+    }
 
-        return syncKeys;
+    /**
+     * 将同步键加入缓冲区，同一业务键在被取出前仅保留一次。
+     *
+     * @param syncKey 同步键
+     * @return 当前缓冲区中的唯一键数量，重复键返回 {@code -1}
+     */
+    private int enqueueIfAbsent(StateSyncKey syncKey) {
+        if (!enqueuedKeys.add(syncKey)) {
+            return -1;
+        }
+        int currentCount = sharedCounter.incrementAndGet();
+        sharedBuffer.offer(syncKey);
+        return currentCount;
+    }
+
+    /**
+     * 将刷写失败的同步键重新加入缓冲区，等待下一次定时或阈值刷写。
+     *
+     * @param syncKeys 刷写失败的同步键
+     */
+    private void requeueSyncKeys(List<StateSyncKey> syncKeys) {
+        for (StateSyncKey syncKey : syncKeys) {
+            enqueueIfAbsent(syncKey);
+        }
     }
 
     /**
@@ -492,29 +539,69 @@ public class AsyncThreadStorageManager {
         if (currentStateBatch.isEmpty()) {
             return;
         }
+        List<StateMachineStateCurrent> uniqueCurrentStates = deduplicateCurrentStates(currentStateBatch);
 
         // 根据数据库类型选择不同的实现
         if (dbType == null) {
             // 如果数据库类型未初始化，回退到查询+分离方式
             log.warn("数据库类型未初始化，使用查询+分离方式批量写入");
-            writeCurrentStateBatchWithQuery(currentStateBatch);
+            writeCurrentStateBatchWithQuery(uniqueCurrentStates);
             return;
         }
 
         try {
             switch (dbType) {
-                case MYSQL -> currentStateMapper.insertOrUpdateBatchForMysql(currentStateBatch);
-                case POSTGRE_SQL -> currentStateMapper.insertOrUpdateBatchForPostgresql(currentStateBatch);
-                case ORACLE -> currentStateMapper.insertOrUpdateBatchForOracle(currentStateBatch);
+                case MYSQL -> currentStateMapper.insertOrUpdateBatchForMysql(uniqueCurrentStates);
+                case POSTGRE_SQL -> currentStateMapper.insertOrUpdateBatchForPostgresql(uniqueCurrentStates);
+                case ORACLE -> currentStateMapper.insertOrUpdateBatchForOracle(uniqueCurrentStates);
                 default -> {
                     log.warn("数据库类型 {} 不支持批量插入或更新，使用查询+分离方式", dbType);
-                    writeCurrentStateBatchWithQuery(currentStateBatch);
+                    writeCurrentStateBatchWithQuery(uniqueCurrentStates);
                 }
             }
         } catch (Exception e) {
             log.error("批量插入或更新失败，回退到查询+分离方式: dbType={}", dbType, e);
-            writeCurrentStateBatchWithQuery(currentStateBatch);
+            writeCurrentStateBatchWithQuery(uniqueCurrentStates);
         }
+    }
+
+    /**
+     * 按状态机名称和业务 ID 合并当前状态，保留序列号最大的记录。
+     *
+     * @param currentStates 当前状态列表
+     * @return 去重后的当前状态列表
+     */
+    private List<StateMachineStateCurrent> deduplicateCurrentStates(
+            List<StateMachineStateCurrent> currentStates) {
+        Map<String, StateMachineStateCurrent> latestByKey = new LinkedHashMap<>();
+        for (StateMachineStateCurrent current : currentStates) {
+            String key = StateSyncKey.build(current.getStateMachine(), current.getBusinessId());
+            latestByKey.merge(key, current, this::selectLatestCurrentState);
+        }
+        return new ArrayList<>(latestByKey.values());
+    }
+
+    /**
+     * 从同一业务键的两个当前状态中选择较新的记录。
+     *
+     * @param existing  已合并的状态
+     * @param candidate 候选状态
+     * @return 序列号较大、相同序列号下更新时间较晚的状态
+     */
+    private StateMachineStateCurrent selectLatestCurrentState(
+            StateMachineStateCurrent existing,
+            StateMachineStateCurrent candidate) {
+        long existingSeq = Objects.requireNonNullElse(existing.getSeq(), 0L);
+        long candidateSeq = Objects.requireNonNullElse(candidate.getSeq(), 0L);
+        if (candidateSeq != existingSeq) {
+            return candidateSeq > existingSeq ? candidate : existing;
+        }
+        LocalDateTime existingTime = existing.getUpdatedAt();
+        LocalDateTime candidateTime = candidate.getUpdatedAt();
+        if (candidateTime != null && (existingTime == null || candidateTime.isAfter(existingTime))) {
+            return candidate;
+        }
+        return existing;
     }
 
     /**
@@ -537,7 +624,7 @@ public class AsyncThreadStorageManager {
         );
 
         Set<String> existingKeys = existingList.stream()
-                .map(current -> current.getStateMachine() + ":" + current.getBusinessId())
+                .map(current -> StateSyncKey.build(current.getStateMachine(), current.getBusinessId()))
                 .collect(Collectors.toSet());
 
         // 分离插入和更新
@@ -545,7 +632,7 @@ public class AsyncThreadStorageManager {
         List<StateMachineStateCurrent> toUpdate = new ArrayList<>();
 
         for (StateMachineStateCurrent current : currentStateBatch) {
-            String key = current.getStateMachine() + ":" + current.getBusinessId();
+            String key = StateSyncKey.build(current.getStateMachine(), current.getBusinessId());
             if (existingKeys.contains(key)) {
                 toUpdate.add(current);
             } else {
@@ -579,12 +666,27 @@ public class AsyncThreadStorageManager {
      * @param historyBatch 要写入的历史记录列表
      */
     private void writeHistoryBatch(List<StateMachineStateHistory> historyBatch) {
-        Set<String> existingKeys = queryExistingHistoryKeys(historyBatch);
-        List<StateMachineStateHistory> toInsert = historyBatch.stream()
+        List<StateMachineStateHistory> uniqueHistories = deduplicateHistories(historyBatch);
+        Set<String> existingKeys = queryExistingHistoryKeys(uniqueHistories);
+        List<StateMachineStateHistory> toInsert = uniqueHistories.stream()
                 .filter(history -> !existingKeys.contains(buildHistoryKey(history)))
                 .toList();
 
         insertHistoriesWithDeduplication(toInsert);
+    }
+
+    /**
+     * 按数据库唯一键合并批次内的重复历史记录。
+     *
+     * @param histories 历史记录列表
+     * @return 去重后的历史记录列表
+     */
+    private List<StateMachineStateHistory> deduplicateHistories(List<StateMachineStateHistory> histories) {
+        Map<String, StateMachineStateHistory> uniqueByKey = new LinkedHashMap<>();
+        for (StateMachineStateHistory history : histories) {
+            uniqueByKey.putIfAbsent(buildHistoryKey(history), history);
+        }
+        return new ArrayList<>(uniqueByKey.values());
     }
 
     /**
@@ -615,9 +717,12 @@ public class AsyncThreadStorageManager {
      * @return 历史记录键
      */
     private String buildHistoryKey(StateMachineStateHistory history) {
-        return history.getStateMachine() + HISTORY_KEY_SEPARATOR
-                + history.getBusinessId() + HISTORY_KEY_SEPARATOR
-                + history.getSeq();
+        return String.join(
+                HISTORY_KEY_SEPARATOR,
+                history.getStateMachine(),
+                String.valueOf(history.getBusinessId()),
+                String.valueOf(history.getSeq())
+        );
     }
 
     /**
@@ -675,7 +780,7 @@ public class AsyncThreadStorageManager {
             shutdownExecutors();
 
             // 刷写剩余的缓冲区
-            doFlushBatch();
+            doFlushBatch(true);
 
             log.info("异步线程池数据库复制服务已关闭");
         } catch (Exception e) {
