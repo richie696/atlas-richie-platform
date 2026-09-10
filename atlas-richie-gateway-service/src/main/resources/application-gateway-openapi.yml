@@ -33,7 +33,9 @@ spring:
         # 控制方式：可按QPS、并发线程数进行限制，支持快速失败、预热、排队等流控效果
         flow:
           nacos:
-            server-addr: 10.100.0.112:8848
+            server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+            username: ${NACOS_USERNAME:nacos}
+            password: ${NACOS_PASSWORD:nacos}
             namespace: development
             data-id: gateway-flow-rules.json
             groupId: gateway
@@ -47,7 +49,9 @@ spring:
         # 恢复机制：熔断时间窗口过后会进入半开状态，逐步恢复调用
         degrade:
           nacos:
-            server-addr: 10.100.0.112:8848
+            server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+            username: ${NACOS_USERNAME:nacos}
+            password: ${NACOS_PASSWORD:nacos}
             namespace: development
             data-id: gateway-degrade-rules.json
             groupId: gateway
@@ -63,7 +67,9 @@ spring:
         # 特色功能：支持参数例外项，可为特定参数值设置不同的限流阈值
         param-flow:
           nacos:
-            server-addr: 10.100.0.112:8848
+            server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+            username: ${NACOS_USERNAME:nacos}
+            password: ${NACOS_PASSWORD:nacos}
             namespace: development
             data-id: gateway-param-flow-rules.json
             groupId: gateway
@@ -81,7 +87,9 @@ spring:
         # 应用场景：系统过载保护、资源不足时的流量控制、确保系统稳定性
         system:
           nacos:
-            server-addr: 10.100.0.112:8848
+            server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+            username: ${NACOS_USERNAME:nacos}
+            password: ${NACOS_PASSWORD:nacos}
             namespace: development
             data-id: gateway-system-rules.json
             groupId: gateway
@@ -101,7 +109,9 @@ spring:
         # 来源识别：通过请求Header中的来源标识进行判断
         authority:
           nacos:
-            server-addr: 10.100.0.112:8848
+            server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+            username: ${NACOS_USERNAME:nacos}
+            password: ${NACOS_PASSWORD:nacos}
             namespace: development
             data-id: gateway-authority-rules.json
             groupId: gateway
