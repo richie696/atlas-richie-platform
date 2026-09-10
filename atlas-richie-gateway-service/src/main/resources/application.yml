@@ -20,5 +20,7 @@ server:
 spring:
     application:
         name: platform-gateway-service
-#    profiles:
-#        include: cache,gateway
+    # Gateway 的路由、CORS 和 HTTP 客户端配置位于 application-gateway.yml。
+    # 默认启用 gateway profile，避免通过 IDEA 或 java -jar 启动时路由表为空。
+    profiles:
+        include: cache,gateway

@@ -79,7 +79,11 @@ public class WebConfig {
         corsConfig.setAllowedHeaders(Collections.singletonList("*"));
         corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         corsConfig.setAllowCredentials(true);
-        corsConfig.setExposedHeaders(Collections.singletonList("*"));
+        // 浏览器在带凭据的跨域请求中不会将通配符当作可读取的自定义响应头。
+        // 管理端还必须读取 ECC 响应加密标记，否则会将密文误作为 JSON 解析。
+        corsConfig.setExposedHeaders(Arrays.asList(
+                "x-rd-request-apitoken", "X-Response-Encrypted", "X-Trace-Id"
+        ));
         corsConfig.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
