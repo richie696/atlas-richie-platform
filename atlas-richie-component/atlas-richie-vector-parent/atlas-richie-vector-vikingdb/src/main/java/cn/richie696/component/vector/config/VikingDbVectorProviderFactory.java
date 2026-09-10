@@ -23,6 +23,12 @@ import cn.richie696.component.vector.service.impl.VikingDbAdvancedSearchOperatio
 import cn.richie696.component.vector.service.VectorAdvancedSearchOperations;
 import cn.richie696.component.vector.query.VectorQueryDefaults;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
+import cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations;
+import cn.richie696.component.vector.service.SparseVectorizerRegistry;
+import cn.richie696.component.vector.service.SparseVectorizer;
+import cn.richie696.component.vector.model.HybridStoreOptions;
+import cn.richie696.component.vector.service.impl.VikingDbAclAwareHybridSearchOperations;
+import cn.richie696.ai.vectorstore.vikingdb.model.VikingDbResourceRef;
 import cn.richie696.component.vector.topology.VectorCapability;
 import cn.richie696.component.vector.topology.VectorCapabilityDescriptor;
 import cn.richie696.component.vector.topology.VectorConnectionDefinition;
@@ -64,7 +70,7 @@ public final class VikingDbVectorProviderFactory implements VectorProviderFactor
             "host", "control-endpoint", "region", "access-key", "secret-key", "scheme");
     private static final Set<String> INDEX_ADDITIONAL_FIELDS = Set.of(
             "initialize-schema", "index-name", "project-name", "description",
-            "metadata-fields", "scalar-index", "filter-validation-mode");
+            "metadata-fields", "scalar-index", "filter-validation-mode", "hybrid-enabled", "dense-field", "sparse-field", "sparse-vectorizer", "hybrid-candidate-limit", "hybrid-fallback-mode");
     private static final Set<String> INDEX_PARAM_KEYS = Set.of(
             "quantization", "hnsw-m", "hnsw-cef", "hnsw-sef",
             "diskann-m", "diskann-cef", "cache-ratio", "pq-code-ratio");
@@ -79,17 +85,23 @@ public final class VikingDbVectorProviderFactory implements VectorProviderFactor
     private final RerankService rerankService;
     private final ObservationRegistry observationRegistry;
     private final VectorStoreObservationConvention observationConvention;
+    private final SparseVectorizerRegistry sparseVectorizers;
 
     public VikingDbVectorProviderFactory(RerankService rerankService) {
-        this(rerankService, ObservationRegistry.NOOP, null);
+        this(rerankService, ObservationRegistry.NOOP, null, new SparseVectorizerRegistry(Map.of()));
     }
 
     public VikingDbVectorProviderFactory(RerankService rerankService,
                                          ObservationRegistry observationRegistry,
                                          VectorStoreObservationConvention observationConvention) {
+        this(rerankService, observationRegistry, observationConvention, new SparseVectorizerRegistry(Map.of()));
+    }
+    public VikingDbVectorProviderFactory(RerankService rerankService, ObservationRegistry observationRegistry,
+                                         VectorStoreObservationConvention observationConvention, SparseVectorizerRegistry sparseVectorizers) {
         this.rerankService = rerankService;
         this.observationRegistry = observationRegistry == null ? ObservationRegistry.NOOP : observationRegistry;
         this.observationConvention = observationConvention;
+        this.sparseVectorizers = sparseVectorizers;
     }
 
     @Override
@@ -141,6 +153,12 @@ public final class VikingDbVectorProviderFactory implements VectorProviderFactor
         List<String> scalarFields = scalarFields(index.additionalFields().get("scalar-index"));
         if (!metadataFields(index.additionalFields().get("metadata-fields")).keySet().containsAll(scalarFields)) {
             throw new IllegalArgumentException("Every VikingDB scalar-index field must be declared in metadata-fields");
+        }
+        HybridStoreOptions hybrid = HybridStoreOptions.fromAdditionalFields(index.additionalFields());
+        if (hybrid.enabled()) {
+            if (vectorType(index.indexType()) != VikingDbIndexVectorOptions.Type.HNSW_HYBRID) throw new IllegalArgumentException("VikingDB ACL-safe hybrid requires index-type hnsw-hybrid");
+            sparseVectorizers.require(hybrid.vectorizerBeanName());
+            if (scalarFields.isEmpty()) throw new IllegalArgumentException("VikingDB ACL-safe hybrid requires declared scalar-index ACL fields");
         }
     }
 
@@ -201,6 +219,7 @@ public final class VikingDbVectorProviderFactory implements VectorProviderFactor
             throw new IllegalArgumentException("VikingDB index dimension does not match the bound EmbeddingModel");
         }
         boolean initializeSchema = booleanValue(index.additionalFields(), "initialize-schema", false);
+        HybridStoreOptions hybrid = HybridStoreOptions.fromAdditionalFields(index.additionalFields());
         VikingDbConfig config = storeConfig(index, initializeSchema);
         VikingDbVectorStoreFactory storeFactory = new VikingDbVectorStoreFactory(
                 embeddingModel.model(), vikingConnection.dataPlane(), vikingConnection.controlPlane(),
@@ -252,6 +271,11 @@ public final class VikingDbVectorProviderFactory implements VectorProviderFactor
             service.setVectorFilterCompiler(filterCompiler);
             handle.capability(VectorFilterCompiler.class, filterCompiler);
         }
+        if (hybrid.enabled()) {
+            SparseVectorizer sparse = sparseVectorizers.require(hybrid.vectorizerBeanName());
+            handle.capability(VectorAclAwareHybridSearchOperations.class, new VikingDbAclAwareHybridSearchOperations(vectorStore, embeddingModel.model(), sparse, hybrid,
+                    Map.of(definition.defaultIndex(), new VikingDbResourceRef(config.getProjectName(), config.getCollectionName(), config.getIndexName()))));
+        }
         return handle.build();
     }
 
@@ -283,6 +307,8 @@ public final class VikingDbVectorProviderFactory implements VectorProviderFactor
         if (nullableText(connection.settings(), "control-endpoint") != null) {
             descriptors.add(VectorCapabilityDescriptor.supported(VectorCapability.INDEX_LIFECYCLE));
         }
+        HybridStoreOptions hybrid = HybridStoreOptions.fromAdditionalFields(index.additionalFields());
+        if (hybrid.enabled()) descriptors.add(new VectorCapabilityDescriptor(VectorCapability.ACL_SAFE_HYBRID, "1.0", Map.of("filter-stage", "provider-recall", "execution", "native", "sparse-mode", "vikingdb-hybrid")));
         return new VectorStoreCapabilities(descriptors);
     }
 
