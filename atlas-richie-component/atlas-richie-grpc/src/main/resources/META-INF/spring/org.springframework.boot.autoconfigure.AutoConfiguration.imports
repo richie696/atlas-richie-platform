@@ -1,1 +1,2 @@
 cn.richie696.component.grpc.config.GrpcAutoConfiguration
+cn.richie696.component.grpc.discovery.GrpcDiscoveryAutoConfiguration
