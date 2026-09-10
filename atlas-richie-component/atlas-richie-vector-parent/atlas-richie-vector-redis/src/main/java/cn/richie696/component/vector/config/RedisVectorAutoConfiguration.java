@@ -16,6 +16,7 @@
 package cn.richie696.component.vector.config;
 
 import cn.richie696.component.vector.service.impl.RedisVectorServiceImpl;
+import cn.richie696.component.vector.service.SparseVectorizerRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -54,8 +55,10 @@ public class RedisVectorAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(RedisVectorProviderFactory.class)
-    public RedisVectorProviderFactory redisVectorProviderFactory(ObjectProvider<RerankService> rerankService) {
-        return new RedisVectorProviderFactory(rerankService.getIfAvailable());
+    public RedisVectorProviderFactory redisVectorProviderFactory(ObjectProvider<RerankService> rerankService,
+                                                                  ObjectProvider<SparseVectorizerRegistry> sparseVectorizers) {
+        return new RedisVectorProviderFactory(rerankService.getIfAvailable(),
+                sparseVectorizers.getIfAvailable(() -> new SparseVectorizerRegistry(java.util.Map.of())));
     }
 
     /**
