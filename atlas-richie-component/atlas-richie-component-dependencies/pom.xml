@@ -716,7 +716,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
-                        <argLine>@{argLine} --enable-preview</argLine>
+                        <argLine>@{argLine} --enable-preview -javaagent:${org.mockito:mockito-core:jar}</argLine>
                         <excludes>
                             <exclude>**/*IT.java</exclude>
                             <exclude>**/*ITCase.java</exclude>
@@ -728,7 +728,7 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${maven-failsafe-plugin.version}</version>
                     <configuration>
-                        <argLine>@{argLine} --enable-preview</argLine>
+                        <argLine>@{argLine} --enable-preview -javaagent:${org.mockito:mockito-core:jar}</argLine>
                         <includes>
                             <include>**/*IT.java</include>
                             <include>**/*ITCase.java</include>
