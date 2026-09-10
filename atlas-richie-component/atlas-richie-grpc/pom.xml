@@ -46,6 +46,7 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-commons</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <!-- Lombok -->
