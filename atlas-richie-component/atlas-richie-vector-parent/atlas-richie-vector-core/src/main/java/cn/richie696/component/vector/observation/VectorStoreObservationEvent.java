@@ -30,7 +30,15 @@ public record VectorStoreObservationEvent(
         Duration elapsed,
         String indexFingerprint,
         Set<String> effectiveCapabilities,
-        VectorErrorCategory errorCategory) {
+        VectorErrorCategory errorCategory,
+        String execution) {
+
+    public VectorStoreObservationEvent(
+            VectorStoreId storeId, VectorProvider provider, VectorStoreOperation operation,
+            VectorStoreOperationResult result, Duration elapsed, String indexFingerprint,
+            Set<String> effectiveCapabilities, VectorErrorCategory errorCategory) {
+        this(storeId, provider, operation, result, elapsed, indexFingerprint, effectiveCapabilities, errorCategory, "unknown");
+    }
 
     public VectorStoreObservationEvent {
         Objects.requireNonNull(storeId, "storeId must not be null");
@@ -40,6 +48,9 @@ public record VectorStoreObservationEvent(
         Objects.requireNonNull(elapsed, "elapsed must not be null");
         Objects.requireNonNull(indexFingerprint, "indexFingerprint must not be null");
         Objects.requireNonNull(errorCategory, "errorCategory must not be null");
+        if (!Set.of("native", "core-rrf", "unknown").contains(execution)) {
+            throw new IllegalArgumentException("execution must be native, core-rrf, or unknown");
+        }
         if (elapsed.isNegative()) {
             throw new IllegalArgumentException("elapsed must not be negative");
         }
@@ -64,7 +75,8 @@ public record VectorStoreObservationEvent(
                 "vector.result", result.name(),
                 "vector.index.fingerprint", indexFingerprint,
                 "vector.capabilities", String.join(",", new TreeSet<>(effectiveCapabilities)),
-                "vector.error.category", errorCategory.name());
+                "vector.error.category", errorCategory.name(),
+                "vector.hybrid.execution", execution);
     }
 
     public static String fingerprint(String logicalIndex) {

@@ -21,9 +21,12 @@ import cn.richie696.component.vector.model.*;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorService;
+import cn.richie696.component.vector.service.SparseVector;
+import cn.richie696.component.vector.service.SparseVectorizer;
 import cn.richie696.context.utils.data.Collections;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.qdrant.client.QdrantClient;
+import io.qdrant.client.ValueFactory;
 import io.qdrant.client.grpc.Common;
 import io.qdrant.client.grpc.JsonWithInt;
 import io.qdrant.client.grpc.Points;
@@ -70,6 +73,8 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
      */
     private final QdrantClient qdrantClient;
     private final Map<String, String> managedCollections;
+    private final cn.richie696.component.vector.model.HybridStoreOptions hybridOptions;
+    private final SparseVectorizer sparseVectorizer;
 
     /**
      * 异步操作等待超时时间（秒），防止无限期阻塞
@@ -101,9 +106,23 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
                                    EmbeddingModel embeddingModel,
                                    QdrantClient qdrantClient,
                                    Map<String, String> managedCollections) {
+        this(rerankService, vectorStore, embeddingModel, qdrantClient, managedCollections, null, null);
+    }
+
+    /** Store-bound hybrid constructor; null options retain the legacy dense-only data plane. */
+    public QdRantVectorServiceImpl(RerankService rerankService,
+                                   VectorStore vectorStore,
+                                   EmbeddingModel embeddingModel,
+                                   QdrantClient qdrantClient,
+                                   Map<String, String> managedCollections,
+                                   cn.richie696.component.vector.model.HybridStoreOptions hybridOptions,
+                                   SparseVectorizer sparseVectorizer) {
         super(rerankService, vectorStore, embeddingModel);
         this.qdrantClient = qdrantClient;
         this.managedCollections = Map.copyOf(managedCollections == null ? Map.of() : managedCollections);
+        this.hybridOptions = hybridOptions != null && hybridOptions.enabled() ? hybridOptions : null;
+        this.sparseVectorizer = this.hybridOptions == null ? null
+                : java.util.Objects.requireNonNull(sparseVectorizer, "sparseVectorizer must not be null for hybrid Store");
     }
 
     @Override
@@ -449,13 +468,7 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
                 vectorList.add(v);
             }
 
-            Points.Vector vector = Points.Vector.newBuilder()
-                    .addAllData(vectorList)
-                    .build();
-
-            Points.Vectors vectors = Points.Vectors.newBuilder()
-                    .setVector(vector)
-                    .build();
+            Points.Vectors vectors = vectors(vectorList, doc.getText());
 
             Map<String, JsonWithInt.Value> payload = new java.util.HashMap<>();
             String text = doc.getText() != null ? doc.getText() : "";
@@ -475,6 +488,12 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
                 payload.put("id", JsonWithInt.Value.newBuilder()
                         .setStringValue(doc.getId()).build());
             }
+            doc.getMetadata().forEach((key, value) -> {
+                if (key != null && !key.isBlank() && value != null
+                        && !key.equals("content") && !key.equals("doc_content") && !key.equals("id")) {
+                    payload.put(key, payloadValue(value));
+                }
+            });
 
             Points.PointStruct point = Points.PointStruct.newBuilder()
                     .setId(Common.PointId.newBuilder()
@@ -497,6 +516,41 @@ public class QdRantVectorServiceImpl extends AbstractVectorService implements Ve
         } catch (Exception e) {
             throw new RuntimeException("Qdrant addEmbeddings failed: " + e.getMessage(), e);
         }
+    }
+
+    private Points.Vectors vectors(List<Float> dense, String text) {
+        if (hybridOptions == null) {
+            return Points.Vectors.newBuilder().setVector(Points.Vector.newBuilder().addAllData(dense)).build();
+        }
+        SparseVector sparse = sparseVectorizer.encode(text == null ? "" : text);
+        if (sparse.coordinates().keySet().stream().anyMatch(id -> id > Integer.MAX_VALUE)) {
+            throw new IllegalArgumentException("Qdrant sparse token id exceeds 32-bit index range");
+        }
+        Points.SparseVector.Builder sparseVector = Points.SparseVector.newBuilder();
+        sparse.coordinates().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+            sparseVector.addIndices(entry.getKey().intValue());
+            sparseVector.addValues(entry.getValue());
+        });
+        Points.NamedVectors named = Points.NamedVectors.newBuilder()
+                .putVectors(hybridOptions.denseField(), Points.Vector.newBuilder()
+                        .setDense(Points.DenseVector.newBuilder().addAllData(dense)).build())
+                .putVectors(hybridOptions.sparseField(), Points.Vector.newBuilder().setSparse(sparseVector).build())
+                .build();
+        return Points.Vectors.newBuilder().setVectors(named).build();
+    }
+
+    private static JsonWithInt.Value payloadValue(Object value) {
+        if (value instanceof String text) return ValueFactory.value(text);
+        if (value instanceof Boolean bool) return ValueFactory.value(bool);
+        if (value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long) {
+            return ValueFactory.value(((Number) value).longValue());
+        }
+        if (value instanceof Number number) return ValueFactory.value(number.doubleValue());
+        if (value instanceof java.util.Collection<?> values) {
+            return ValueFactory.list(values.stream().filter(java.util.Objects::nonNull)
+                    .map(QdRantVectorServiceImpl::payloadValue).toList());
+        }
+        return ValueFactory.value(String.valueOf(value));
     }
 
     @Override

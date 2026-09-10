@@ -39,7 +39,9 @@
 | T-NEO-002 | P0 | 召回后 Filter 被误报为 ACL-safe | Capability 负向断言 | 构造候选截断数据集验证 |
 | T-VIK-001 | P0 | Store 逻辑索引串 Collection/Index | 双 Handle 白名单负例 | live VikingDB 双 Collection 检索 |
 | T-VIK-002 | P1 | Android fastjson2 破坏 SDK 签名 | Maven 依赖树断言 JVM 版 2.0.58 | live SDK ping/检索 |
-| T-ALL-001 | P0 | 多个 Provider Jar 同 classpath 抢占默认实例或创建外部资源 | 独立组合测试模块加载 8 个 AutoConfiguration | 业务应用完整依赖集启动回归 |
+| T-DASH-001 | P0 | DashVector 的 sparse 写入和原生 hybrid 使用不同 ACL 条件 | Factory/过滤适配器/能力集合断言 | live DashVector 跨租户负例与 collection 清理 |
+| T-TCV-001 | P0 | 腾讯云 VectorDB 的 native 与 Core RRF 回退任一分支绕过 ACL | 回退分类、两路 filter 形态与能力集合断言 | live VectorDB 跨租户负例、非能力错误不回退和 collection 清理 |
+| T-ALL-001 | P0 | 多个 Provider Jar 同 classpath 抢占默认实例或创建外部资源 | 独立组合测试模块加载 10 个 AutoConfiguration | 业务应用完整依赖集启动回归 |
 
 ## VMS-004 自动化用例
 
@@ -84,7 +86,8 @@
 - Qdrant Factory 测试只证明独立 Client、受控 Collection 映射、关闭生命周期和能力不虚报；真实 Collection CRUD/检索完成前不勾选对应 Provider 父任务。
 - Redis Factory 与 legacy 配置/装配测试共 8 个无 Mockito 用例通过；旧 `RedisVectorServiceImplTest` 的 68 个用例在 JDK 25 下被 Mockito/Byte Buddy 自附加初始化阻断，未进入断言，不能记为业务失败或回归通过。
 - MongoDB Atlas、Neo4j、VikingDB Factory 各 5 个无 Mockito 契约测试通过；这些测试证明配置、资源归属、逻辑白名单和 Capability 边界，不替代真实云服务/数据库的请求与效果证据。
-- `atlas-richie-vector-integration-tests` 在同一 Spring Context 加载 8 个 Provider 自动配置，断言 8 个 Factory 均存在且无未配置 Client、DataSource、Driver 或 VectorStore Bean。
+- `atlas-richie-vector-integration-tests` 在同一 Spring Context 加载 10 个 Provider 自动配置，断言 10 个 Factory 均存在且无未配置 Client、DataSource、Driver 或 VectorStore Bean。
+- `MilvusPostgresqlLiveCoexistenceTest` 在两个真实本地 Provider 中验证同一 Spring Context 的命名 Store 隔离：连接、物理 schema/collection、写入/检索、调优参数和 Store/Provider 观测标签必须分别归属；trace 属性不含检索正文。
 - Legacy 自动装配测试证明旧 Service 被同一对象包装为 `default` Store，单 Named Store 的兼容 Bean 与 Handle Service 是同一对象，多 Named Store 不暴露全局 Service；这仍不替代现有项目的真实基础检索回归。
 - Store 诊断测试覆盖 UP/DOWN/UNKNOWN、单 Store 故障隔离、optional 启动失败、legacy `default` 聚合、route/capability 稳定错误分类，并断言 Provider 异常正文不进入快照。
 - Store 观测测试覆盖成功/失败事件、稳定错误分类、固定 metric 标签集合、脱敏 trace 属性、Hook 故障隔离及装配期可选启用；这些是导出契约证据，实际 Micrometer/OpenTelemetry 后端绑定仍需集成验证。

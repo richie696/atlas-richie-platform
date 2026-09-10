@@ -11,9 +11,12 @@ import cn.richie696.component.vector.service.PrecomputedVectorOperations;
 import cn.richie696.component.vector.service.VectorAdvancedSearchOperations;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
+import cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations;
 import cn.richie696.component.vector.service.impl.PostgresqlAdvancedSearchOperations;
+import cn.richie696.component.vector.service.impl.PostgresqlAclAwareHybridSearchOperations;
 import cn.richie696.component.vector.service.impl.PostgresqlPrecomputedVectorOperations;
 import cn.richie696.component.vector.service.impl.PostgresqlVectorServiceImpl;
+import cn.richie696.component.vector.model.HybridStoreOptions;
 import cn.richie696.component.vector.topology.VectorCapability;
 import cn.richie696.component.vector.topology.VectorCapabilityDescriptor;
 import cn.richie696.component.vector.topology.VectorConnectionDefinition;
@@ -46,7 +49,9 @@ public final class PostgresqlVectorProviderFactory implements VectorProviderFact
             "idle-timeout-ms", "max-lifetime-ms", "connection-timeout-ms", "validation-timeout-ms",
             "pool-name", "auto-commit", "connection-test-query");
     private static final Set<String> INDEX_ADDITIONAL_FIELDS = Set.of(
-            "schema-name", "initialize-schema", "vector-table-validations-enabled", "max-document-batch-size");
+            "schema-name", "initialize-schema", "vector-table-validations-enabled", "max-document-batch-size",
+            "hybrid-enabled", "dense-field", "sparse-field", "sparse-vectorizer",
+            "hybrid-candidate-limit", "hybrid-fallback-mode");
     private static final VectorStoreCapabilities CAPABILITIES = new VectorStoreCapabilities(List.of(
             new VectorCapabilityDescriptor(VectorCapability.NATIVE_FILTER, "1.0",
                     Map.of("api", PrecomputedVectorOperations.class.getName(), "filter-stage", "provider-recall")),
@@ -129,6 +134,7 @@ public final class PostgresqlVectorProviderFactory implements VectorProviderFact
         if (batchSize <= 0) {
             throw new IllegalArgumentException("PostgreSQL max-document-batch-size must be greater than zero");
         }
+        HybridStoreOptions.fromAdditionalFields(index.additionalFields());
     }
 
     @Override
@@ -136,7 +142,7 @@ public final class PostgresqlVectorProviderFactory implements VectorProviderFact
             VectorConnectionDefinition connection,
             VectorStoreDefinition store) {
         requireProvider(connection);
-        return CAPABILITIES;
+        return storeCapabilities(boundIndex(store));
     }
 
     @Override
@@ -178,6 +184,7 @@ public final class PostgresqlVectorProviderFactory implements VectorProviderFact
 
         String schema = schemaName(index);
         String table = physicalTable(index.name());
+        HybridStoreOptions hybrid = HybridStoreOptions.fromAdditionalFields(index.additionalFields());
         PgVectorStore vectorStore = PgVectorStore.builder(postgresqlConnection.jdbcTemplate(), embeddingModel.model())
                 .schemaName(schema)
                 .vectorTableName(table)
@@ -189,6 +196,9 @@ public final class PostgresqlVectorProviderFactory implements VectorProviderFact
                         index.additionalFields(), "vector-table-validations-enabled", true))
                 .maxDocumentBatchSize(integer(index.additionalFields(), "max-document-batch-size", 10_000))
                 .build();
+        if (hybrid.enabled()) {
+            ensureHybridSearchSchema(postgresqlConnection.jdbcTemplate(), schema, table);
+        }
 
         Map<String, String> managedTables = Map.of(definition.defaultIndex(), table);
         PostgresqlVectorServiceImpl service = new PostgresqlVectorServiceImpl(
@@ -210,15 +220,20 @@ public final class PostgresqlVectorProviderFactory implements VectorProviderFact
                 definition.queryDefaults(),
                 scoreSemantics(index.metric()));
 
-        return VectorStoreHandle.builder(definition, provider(), service)
+        VectorStoreHandle.Builder handle = VectorStoreHandle.builder(definition, provider(), service)
                 .embeddingModel(embeddingModel)
-                .storeCapabilities(CAPABILITIES)
+                .storeCapabilities(storeCapabilities(index))
                 .capability(VectorScoreSemantics.class, scoreSemantics(index.metric()))
                 .capability(PrecomputedVectorOperations.class, precomputed)
                 .capability(VectorRecordReadOperations.class, service)
                 .capability(VectorIndexLifecycleOperations.class, service)
-                .capability(VectorAdvancedSearchOperations.class, advancedSearch)
-                .build();
+                .capability(VectorAdvancedSearchOperations.class, advancedSearch);
+        if (hybrid.enabled()) {
+            handle.capability(VectorAclAwareHybridSearchOperations.class,
+                    new PostgresqlAclAwareHybridSearchOperations(postgresqlConnection.jdbcTemplate(), embeddingModel.model(),
+                            hybrid, schema, managedTables));
+        }
+        return handle.build();
     }
 
     private static HikariDataSource dataSource(VectorConnectionDefinition definition) {
@@ -253,6 +268,22 @@ public final class PostgresqlVectorProviderFactory implements VectorProviderFact
                 .setAdditionalFields(index.additionalFields())
                 .setIndexParams(index.indexParams())));
         return properties;
+    }
+
+    private static VectorStoreCapabilities storeCapabilities(VectorIndexDefinition index) {
+        if (!HybridStoreOptions.fromAdditionalFields(index.additionalFields()).enabled()) return CAPABILITIES;
+        List<VectorCapabilityDescriptor> descriptors = new java.util.ArrayList<>(CAPABILITIES.descriptors());
+        descriptors.add(new VectorCapabilityDescriptor(VectorCapability.ACL_SAFE_HYBRID, "1.0",
+                Map.of("filter-stage", "provider-recall", "execution", "core-rrf", "sparse-mode", "postgresql-tsvector")));
+        return new VectorStoreCapabilities(descriptors);
+    }
+
+    private static void ensureHybridSearchSchema(JdbcTemplate jdbc, String schema, String table) {
+        String qualified = schema + "." + table;
+        jdbc.execute("ALTER TABLE " + qualified + " ADD COLUMN IF NOT EXISTS search_tsv tsvector "
+                + "GENERATED ALWAYS AS (to_tsvector('simple', coalesce(content, ''))) STORED");
+        jdbc.execute("CREATE INDEX IF NOT EXISTS " + table + "_search_tsv_idx ON " + qualified + " USING GIN (search_tsv)");
+        jdbc.execute("CREATE INDEX IF NOT EXISTS " + table + "_metadata_acl_idx ON " + qualified + " USING GIN (metadata jsonb_path_ops)");
     }
 
     private static VectorIndexDefinition boundIndex(VectorStoreDefinition store) {

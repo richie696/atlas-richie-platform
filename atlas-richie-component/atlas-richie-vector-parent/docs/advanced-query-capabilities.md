@@ -85,7 +85,7 @@ VectorSearchExecution execution = advanced.search(new VectorQueryRequest(
 
 ## 4. 候选向量与 MMR
 
-PGVector Store 暴露 `CANDIDATE_VECTOR`；通过 `VectorDiversificationOptions` 显式启用后，Adapter 才增加原始向量投影。未启用时 SQL 不读取、结果不携带原始向量。
+Milvus Store 暴露 `CANDIDATE_VECTOR`；通过 `VectorDiversificationOptions` 显式启用后，Adapter 才增加原始向量投影。未启用时请求不投影、结果不携带原始向量。
 
 Core 提供确定性的客户端 MMR：先使用 Provider 已完成 Filter/ACL 的候选，再进行多样化选择。限制包括：候选最多 2000、向量维度最多 4096、候选向量载荷最多 4 MiB、整个高级响应估算最多 8 MiB、每 Store 高级调用默认最多并发 16。`includeVectors=false` 时，MMR 可使用候选向量但在最终结果中移除它们。
 
@@ -93,16 +93,17 @@ Core 提供确定性的客户端 MMR：先使用 Provider 已完成 Filter/ACL �
 
 ## 5. ACL-safe hybrid
 
-Weaviate Store，以及显式启用原生 BM25 hybrid 的 Milvus Store，声明 `ACL_SAFE_HYBRID`。调用必须提供非空结构化 `VectorFilter`。
+只有显式启用且具备完整双路数据面的 Store 才声明 `ACL_SAFE_HYBRID`。调用必须提供非空结构化 `VectorFilter`。
 
 - Weaviate 将同一个编译后的 `where` 与 `hybrid` 放在单一 GraphQL Get 请求中。
-- Milvus 将同一个编译后的表达式附着在 dense `vector` 与 BM25 `sparse_vector` 的每一个 `AnnSearchReq` 上，再由同一个 V2 `HybridSearchReq` 融合。因此两路候选都在 Provider 召回前受到 ACL 约束。
+- Milvus、Weaviate、VikingDB、DashVector、腾讯云 VectorDB 使用各自原生 hybrid 请求；同一 ACL Filter 必须进入该请求的候选召回阶段。腾讯云 VectorDB 只有在服务端明确报告 native hybrid 不支持、且 Store 选择 `core-rrf` 时，才以同 ACL 的两次召回做回退。
+- Qdrant、Redis Stack、PGVector、MongoDB Atlas 与 Neo4j 以两次各自 ACL-first 的候选查询加 Core 加权 RRF 实现 hybrid；不得把其中任何一次变成后置 ACL 过滤。
 
 Milvus 是可选增强，不改变普通 Store：默认 `hybrid-enabled=false`，仍使用原有 dense schema 与 `VectorService`。需要 ACL-safe hybrid 时，在新建逻辑索引的 `additional-fields` 中设置 `hybrid-enabled: true`；组件会创建 `content`、dense `vector`、BM25 `sparse_vector` 和 Milvus server-side BM25 Function 所需 schema。既有的纯 dense Collection 不能原地变成该 schema，必须新建/rebuild 后切换 Store。
 
 以下情况在发送 Provider 请求前拒绝：空 ACL、空主体集合、非法字段、显式 ACL 与 `HybridSearchOptions.searchOptions.filter` 冲突、非法权重。Filter 值由编译器和客户端双层转义。
 
-PGVector、Qdrant、Redis、MongoDB 与 Neo4j 当前不声明 `ACL_SAFE_HYBRID`。它们仍可使用各自已声明的基础检索或过滤能力。
+所有上述能力均为 Store 级 opt-in；缺少 schema、文本/稀疏侧或编码器时，dense-only Store 继续工作且不声明 hybrid。
 
 ## 6. 分数语义
 
@@ -129,13 +130,16 @@ PGVector、Qdrant、Redis、MongoDB 与 Neo4j 当前不声明 `ACL_SAFE_HYBRID`�
 
 | Provider | Native Filter | ACL Filter | ACL-safe Hybrid | Typed Query Tuning | Candidate Vector | Score Stages | Index Lifecycle | 真实 Provider 证据 |
 |---|---|---|---|---|---|---|---|---|
-| Milvus | 是 | 是 | 条件：`hybrid-enabled=true` 的原生 BM25 schema | 是：HNSW `ef` / IVF `nprobe` | 是，默认关闭，客户端 MMR | 是 | 是 | collection 创建、写入、默认/调优检索、ACL 负例 hybrid、候选向量投影、清理；与 PG 同进程 |
-| PGVector | 是 | 是 | 否 | 是：事务级 HNSW/IVFFlat | 是，默认关闭 | 是 | 是 | schema/table 创建、过滤/调优/候选向量检索、同连接恢复默认、清理；与 Milvus 同进程 |
-| Qdrant | 是（仅 `SEARCH_TEXT`） | 是（仅 `SEARCH_TEXT`） | 否 | 否 | 否 | 是 | 是 | 原生 gRPC Filter 请求、跨租户负例、collection 写入/过滤检索/清理 |
-| Redis Stack | 条件 | 条件 | 否 | 否 | 否 | 是 | 是 | index、写入、检索、清理 |
-| MongoDB Local | 条件 | 条件 | 否 | 否 | 否 | 是 | 是 | collection/search index、写入、检索、清理 |
-| Neo4j | 候选后过滤 | 否 | 否 | 否 | 否 | 是 | 是 | vector index、节点、检索、清理；不宣称 ACL 安全 |
-| Weaviate | 是 | 是 | 是 | hybrid 权重专用入口 | 否 | 是 | 是 | class、写入、真实 ACL-safe hybrid、清理；请求级负例 |
+| Milvus | 是 | 是 | 条件：原生 | 是：HNSW `ef` / IVF `nprobe` | 是，默认关闭，客户端 MMR | 是 | 是 | 已有本地验证 |
+| PGVector | 是 | 是 | 条件：Core RRF | 是：事务级 HNSW/IVFFlat | 否 | 是 | 是 | 本地 hybrid E2E 已通过 |
+| Qdrant | 是 | 是 | 条件：Core RRF | 否 | 否 | 是 | 是 | 本地 hybrid E2E 已通过 |
+| Redis Stack | 是 | 是 | 条件：Core RRF | 否 | 否 | 是 | 是 | 本地 hybrid E2E 已通过 |
+| MongoDB Atlas | 是 | 是 | 条件：Core RRF | 否 | 否 | 是 | 是 | Atlas Local hybrid E2E 已通过 |
+| Neo4j | 是 | 是 | 条件：Core RRF / ACL-first Cypher | 否 | 否 | 是 | 是 | 本地 hybrid E2E 已通过 |
+| VikingDB | 条件 | 条件 | 条件：原生 | 是 | 否 | 是 | 条件 | 云端 E2E 待凭据/IAM |
+| DashVector | 是 | 是 | 条件：原生 | 否 | 否 | 条件 | 条件 | 云端 E2E 待端点/密钥 |
+| Tencent VectorDB | 是 | 是 | 条件：native-first，受控 Core RRF | 条件 | 否 | 条件 | 条件 | E2E 待实例/凭据 |
+| Weaviate | 是 | 是 | 是 | hybrid 权重专用入口 | 否 | 是 | 是 | 请求级负例 |
 
 验证层级严格区分：
 

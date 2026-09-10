@@ -24,14 +24,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.List;
+import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,36 +50,60 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class EccCryptoServiceImpl implements EccCryptoService {
 
+    private static final String SHARED_KEY_ALGORITHM = "AES";
+
     private final EccCryptoConfig config;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     /**
-     * 检查请求路径是否需要加密
+     * 检查请求路径与 HTTP 方法是否需要加密
      *
      * @param path 请求路径
      * @return 是否需要加密
      */
     @Override
-    public boolean shouldEncrypt(String path) {
+    public boolean shouldEncrypt(String path, String method) {
         if (!config.isEnabled()) {
             return false;
         }
 
         // 检查排除路径
-        for (String excludePath : config.getExcludePaths()) {
-            if (pathMatcher.match(excludePath, path)) {
-                return false;
+        String[] excludePaths = config.getExcludePaths();
+        if (excludePaths != null) {
+            for (String excludePath : excludePaths) {
+                if (pathMatcher.match(excludePath, path)) {
+                    return false;
+                }
             }
         }
 
-        // 检查包含路径
-        for (String encryptPath : config.getEncryptPaths()) {
-            if (pathMatcher.match(encryptPath, path)) {
-                return true;
+        List<EccCryptoConfig.EncryptionRule> encryptRules = config.getEncryptRules();
+        if (!CollectionUtils.isEmpty(encryptRules)) {
+            return encryptRules.stream().anyMatch(rule -> matchesEncryptionRule(rule, path, method));
+        }
+
+        // 兼容没有配置精确规则的历史部署。
+        String[] encryptPaths = config.getEncryptPaths();
+        if (encryptPaths != null) {
+            for (String encryptPath : encryptPaths) {
+                if (pathMatcher.match(encryptPath, path)) {
+                    return true;
+                }
             }
         }
 
         return false;
+    }
+
+    private boolean matchesEncryptionRule(EccCryptoConfig.EncryptionRule rule, String path, String method) {
+        if (rule == null || !StringUtils.hasText(rule.getPath()) || !pathMatcher.match(rule.getPath(), path)) {
+            return false;
+        }
+        if (CollectionUtils.isEmpty(rule.getMethods())) {
+            return true;
+        }
+        return StringUtils.hasText(method)
+                && rule.getMethods().stream().anyMatch(configuredMethod -> method.equalsIgnoreCase(configuredMethod));
     }
 
     /**
@@ -141,10 +169,17 @@ public class EccCryptoServiceImpl implements EccCryptoService {
                 gatewayKeyFingerprint(gatewayPrivateKey)
         );
 
-        // 尝试从缓存获取共享密钥
-        SecretKey cachedKey = GlobalCache.struct().get(cacheKey, SecretKey.class);
-        if (cachedKey != null) {
-            return cachedKey;
+        // JCA SecretKey 是接口，不能直接作为 JSON/Hash 对象反序列化。缓存其原始
+        // AES 密钥的 Base64 值，并在使用时恢复为 SecretKeySpec。
+        try {
+            String cachedKeyBase64 = GlobalCache.value().get(cacheKey, String.class);
+            if (StringUtils.hasText(cachedKeyBase64)) {
+                return new SecretKeySpec(Base64.getDecoder().decode(cachedKeyBase64), SHARED_KEY_ALGORITHM);
+            }
+        } catch (Exception e) {
+            // 兼容已存在的 Hash 结构历史缓存；删除后会以 String 形式重新写入。
+            log.warn("共享密钥缓存格式无效，将重新协商: {}", clientId, e);
+            GlobalCache.key().removeCache(cacheKey);
         }
 
         // 生成新的共享密钥
@@ -157,9 +192,18 @@ public class EccCryptoServiceImpl implements EccCryptoService {
         try {
             SecretKey sharedKey = EccCryptoUtils.generateSharedSecret(gatewayPrivateKey, clientPublicKey);
 
-            // 缓存共享密钥
-            GlobalCache.struct().set(cacheKey, sharedKey, config.getClientKeyCacheExpire());
-            GlobalCache.key().setExpiredTime(cacheKey, TimeUnit.SECONDS.toMillis(config.getClientKeyCacheExpire()));
+            byte[] encodedSharedKey = sharedKey.getEncoded();
+            if (encodedSharedKey == null || encodedSharedKey.length == 0) {
+                throw new IllegalStateException("共享密钥未提供可缓存的编码值");
+            }
+
+            // 旧版可能已用 Hash 写入同名键；先移除，确保 String 写入不会遇到 WRONGTYPE。
+            GlobalCache.key().removeCache(cacheKey);
+            GlobalCache.value().set(
+                    cacheKey,
+                    Base64.getEncoder().encodeToString(encodedSharedKey),
+                    TimeUnit.SECONDS.toMillis(config.getClientKeyCacheExpire())
+            );
 
             log.debug("生成新的共享密钥: {}", clientId);
             return sharedKey;

@@ -10,6 +10,9 @@ import cn.richie696.component.vector.filter.SpringAiVectorFilterCompiler;
 import cn.richie696.component.vector.filter.VectorFilterCompiler;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
+import cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations;
+import cn.richie696.component.vector.model.HybridStoreOptions;
+import cn.richie696.component.vector.service.impl.MongoDbAtlasAclAwareHybridSearchOperations;
 import cn.richie696.component.vector.service.impl.MongoDbAtlasVectorServiceImpl;
 import cn.richie696.component.vector.topology.VectorCapability;
 import cn.richie696.component.vector.topology.VectorConnectionDefinition;
@@ -24,8 +27,10 @@ import cn.richie696.component.vector.topology.VectorScoreThresholdKind;
 import cn.richie696.component.vector.topology.VectorStoreCapabilities;
 import cn.richie696.component.vector.topology.VectorStoreDefinition;
 import cn.richie696.component.vector.topology.VectorStoreHandle;
+import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import org.bson.Document;
 import org.springframework.ai.vectorstore.mongodb.atlas.MongoDBAtlasVectorStore;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
@@ -41,7 +46,9 @@ public final class MongoDbAtlasVectorProviderFactory implements VectorProviderFa
 
     private static final Set<String> CONNECTION_KEYS = Set.of("connection-string", "database");
     private static final Set<String> INDEX_ADDITIONAL_FIELDS = Set.of(
-            "initialize-schema", "vector-index-name", "filter-metadata-fields");
+            "initialize-schema", "vector-index-name", "text-index-name", "filter-metadata-fields",
+            "hybrid-enabled", "dense-field", "sparse-field", "sparse-vectorizer",
+            "hybrid-candidate-limit", "hybrid-fallback-mode");
     private static final Set<String> INDEX_PARAM_KEYS = Set.of("numCandidates");
     private static final VectorStoreCapabilities BASE_CAPABILITIES = VectorStoreCapabilities.of(
             VectorCapability.SCORE_STAGES,
@@ -113,6 +120,11 @@ public final class MongoDbAtlasVectorProviderFactory implements VectorProviderFa
         mongoIdentifier(text(index.additionalFields(), "vector-index-name", "vector_index"),
                 "vector-index-name");
         metadataFields(index.additionalFields().get("filter-metadata-fields"));
+        mongoIdentifier(text(index.additionalFields(), "text-index-name", "text_index"), "text-index-name");
+        HybridStoreOptions hybrid = HybridStoreOptions.fromAdditionalFields(index.additionalFields());
+        if (hybrid.enabled() && metadataFields(index.additionalFields().get("filter-metadata-fields")).isEmpty()) {
+            throw new IllegalArgumentException("MongoDB Atlas ACL-safe hybrid requires filter-metadata-fields for provider-side vector filtering");
+        }
         positiveInteger(index.indexParams(), "numCandidates", 200);
     }
 
@@ -155,8 +167,10 @@ public final class MongoDbAtlasVectorProviderFactory implements VectorProviderFa
             throw new IllegalArgumentException("MongoDB Atlas index dimension does not match the bound EmbeddingModel");
         }
         String vectorIndex = text(index.additionalFields(), "vector-index-name", "vector_index");
+        String textIndex = text(index.additionalFields(), "text-index-name", "text_index");
         List<String> filterFields = metadataFields(index.additionalFields().get("filter-metadata-fields"));
         boolean initializeSchema = booleanValue(index.additionalFields(), "initialize-schema", false);
+        HybridStoreOptions hybrid = HybridStoreOptions.fromAdditionalFields(index.additionalFields());
         MongoDBAtlasVectorStore.Builder builder = MongoDBAtlasVectorStore
                 .builder(mongoConnection.template(), embeddingModel.model())
                 .collectionName(index.name())
@@ -172,6 +186,9 @@ public final class MongoDbAtlasVectorProviderFactory implements VectorProviderFa
             } catch (Exception exception) {
                 throw new IllegalStateException("MongoDB Atlas named Store schema initialization failed", exception);
             }
+        }
+        if (hybrid.enabled()) {
+            ensureTextSearchIndex(mongoConnection.template(), index.name(), textIndex, filterFields);
         }
         VectorFilterCompiler filterCompiler = new SpringAiVectorFilterCompiler();
         VectorStoreCapabilities capabilities = storeCapabilities(index);
@@ -196,17 +213,28 @@ public final class MongoDbAtlasVectorProviderFactory implements VectorProviderFa
             service.setVectorFilterCompiler(filterCompiler);
             handle.capability(VectorFilterCompiler.class, filterCompiler);
         }
+        if (hybrid.enabled()) {
+            handle.capability(VectorAclAwareHybridSearchOperations.class,
+                    new MongoDbAtlasAclAwareHybridSearchOperations(mongoConnection.template(), embeddingModel.model(), hybrid,
+                            Map.of(definition.defaultIndex(), index.name()), Map.of(definition.defaultIndex(), vectorIndex),
+                            Map.of(definition.defaultIndex(), textIndex)));
+        }
         return handle.build();
     }
 
     private static VectorStoreCapabilities storeCapabilities(VectorIndexDefinition index) {
-        return metadataFields(index.additionalFields().get("filter-metadata-fields")).isEmpty()
+        VectorStoreCapabilities base = metadataFields(index.additionalFields().get("filter-metadata-fields")).isEmpty()
                 ? BASE_CAPABILITIES
                 : VectorStoreCapabilities.of(
                         VectorCapability.NATIVE_FILTER,
                         VectorCapability.ACL_FILTER,
                         VectorCapability.SCORE_STAGES,
                         VectorCapability.INDEX_LIFECYCLE);
+        if (!HybridStoreOptions.fromAdditionalFields(index.additionalFields()).enabled()) return base;
+        java.util.ArrayList<cn.richie696.component.vector.topology.VectorCapabilityDescriptor> descriptors = new java.util.ArrayList<>(base.descriptors());
+        descriptors.add(new cn.richie696.component.vector.topology.VectorCapabilityDescriptor(VectorCapability.ACL_SAFE_HYBRID, "1.0",
+                Map.of("filter-stage", "provider-recall", "execution", "core-rrf", "sparse-mode", "atlas-search")));
+        return new VectorStoreCapabilities(descriptors);
     }
 
     private static List<String> metadataFields(Object configured) {
@@ -226,6 +254,43 @@ public final class MongoDbAtlasVectorProviderFactory implements VectorProviderFa
             throw new IllegalArgumentException("duplicate MongoDB Atlas filter metadata field");
         }
         return fields;
+    }
+
+    /**
+     * Creates the Atlas Search definition for the lexical hybrid branch.
+     *
+     * <p>ACL fields are nested beneath {@code metadata} and must be explicitly
+     * indexed as {@code token}; dynamic string mapping alone cannot serve the
+     * {@code equals}/{@code in} clauses used by the structured ACL compiler.</p>
+     */
+    static Document textSearchIndexDefinition(String index, List<String> filterMetadataFields) {
+        Document aclFields = new Document();
+        filterMetadataFields.forEach(field -> aclFields.append(field, new Document("type", "token")));
+        Document mappings = new Document("dynamic", true);
+        if (!aclFields.isEmpty()) {
+            mappings.append("fields", new Document("metadata", new Document("type", "document")
+                    .append("fields", aclFields)));
+        }
+        return new Document("name", index).append("type", "search")
+                .append("definition", new Document("mappings", mappings));
+    }
+
+    private static void ensureTextSearchIndex(
+            MongoTemplate template, String collection, String index, List<String> filterMetadataFields) {
+        Document command = new Document("createSearchIndexes", collection).append("indexes", List.of(
+                textSearchIndexDefinition(index, filterMetadataFields)));
+        try {
+            template.getDb().runCommand(command);
+        } catch (MongoCommandException exception) {
+            if (!isExistingSearchIndex(exception)) {
+                throw new IllegalStateException("MongoDB Atlas text search index initialization failed", exception);
+            }
+        }
+    }
+
+    private static boolean isExistingSearchIndex(MongoCommandException exception) {
+        String message = String.valueOf(exception.getErrorMessage()).toLowerCase(java.util.Locale.ROOT);
+        return message.contains("already exists") || message.contains("indexalreadyexists");
     }
 
     private static VectorIndexDefinition boundIndex(VectorStoreDefinition store) {

@@ -42,6 +42,12 @@
             <artifactId>spring-boot-autoconfigure</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- Spring Cloud 服务发现与注册抽象；具体 Nacos/Consul 实现仍由应用按需引入。 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-commons</artifactId>
+            <optional>true</optional>
+        </dependency>
 
         <!-- Lombok -->
         <dependency>
@@ -77,6 +83,12 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

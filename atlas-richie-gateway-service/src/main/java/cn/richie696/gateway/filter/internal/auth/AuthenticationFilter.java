@@ -53,6 +53,19 @@ import java.util.concurrent.TimeUnit;
 public class AuthenticationFilter extends AbstractBaseFilter {
 
     /**
+     * 登录页启动时读取的公开配置接口。该接口不能依赖远程 ignore-uri-list 的完整性，
+     * 否则 Nacos 配置以整数组覆盖本地默认值时，会导致登录成功后首次加载页面配置即被踢出。
+     */
+    private static final String PUBLIC_LOGIN_CONFIG_PATH = "/api/admin/v1/auth/login-config";
+    /** ECC 密钥协商由网关自身处理，在任何业务认证之前必须允许匿名访问。 */
+    private static final String PUBLIC_CRYPTO_EXCHANGE_PATH = "/api/crypto/exchange";
+    /**
+     * Web 业务限流只接受 Gateway 经 JWT 校验后写入的身份键；下游不得信任客户端自带同名 header。
+     */
+    private static final String CLIENT_ID_HEADER = "X-Client-Id";
+    private static final String USER_ID_HEADER = "X-User-Id";
+
+    /**
      * 构造函数
      *
      * @param config 网关配置
@@ -77,23 +90,23 @@ public class AuthenticationFilter extends AbstractBaseFilter {
         // 获取header中的Token信息
         String token = exchange.getRequest().getHeaders().getFirst(JwtUtils.X_ACCESS_TOKEN);
         if (StringUtils.isBlank(token) || "null".equalsIgnoreCase(token)) {
-            log.info("JWT令牌为空，token：{}", token);
+            logAuthFailure(exchange, "JWT令牌为空");
             return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_1"));
         }
         Date expiredTime = JwtUtils.getExpiredTime(token);
         // 验证令牌是否过期
         if (expiredTime == null || expiredTime.getTime() < System.currentTimeMillis()) {
-            log.info("JWT令牌已过期，token：{}", token);
+            logAuthFailure(exchange, "JWT令牌已过期");
             return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_3"));
         }
         // 验证令牌是否在黑名单中
         if (GlobalCache.key().hasKey(config.getToken().getBlacklistPath() + token)) {
-            log.info("JWT令牌已被加入黑名单，token：{}", token);
+            logAuthFailure(exchange, "JWT令牌已被加入黑名单");
             return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_2"));
         }
         // 认证JWT令牌有效性
         if (!JwtUtils.verify(token, config.getToken().getSecret())) {
-            log.info("JWT令牌认证未通过，token：{}", token);
+            logAuthFailure(exchange, "JWT令牌认证未通过");
             return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_2"));
         }
 
@@ -102,8 +115,7 @@ public class AuthenticationFilter extends AbstractBaseFilter {
         if (StringUtils.isNotBlank(tokenDeviceId)) {
             String requestDeviceId = extractDeviceId(exchange);
             if (StringUtils.isBlank(requestDeviceId) || !tokenDeviceId.equals(requestDeviceId)) {
-                log.warn("Token设备ID不匹配，token中的deviceId: {}, 请求中的deviceId: {}, token: {}",
-                    tokenDeviceId, requestDeviceId, token);
+                logAuthFailure(exchange, "Token设备ID不匹配");
                 return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_2"));
             }
         }
@@ -114,14 +126,14 @@ public class AuthenticationFilter extends AbstractBaseFilter {
             // 从请求头获取签名后的硬件指纹
             String signedFingerprint = extractSignedHardwareFingerprintFromRequest(exchange);
             if (StringUtils.isBlank(signedFingerprint)) {
-                log.warn("Token中包含硬件指纹，但请求中未提供硬件指纹");
+                logAuthFailure(exchange, "Token中包含硬件指纹，但请求中未提供硬件指纹");
                 return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_2"));
             }
 
             // 1. 分离签名和JSON部分
             HardwareFingerprintUtils.SignedFingerprintParts parts = HardwareFingerprintUtils.separateSignedFingerprint(signedFingerprint);
             if (parts == null) {
-                log.warn("分离签名后的硬件指纹失败，格式错误");
+                logAuthFailure(exchange, "分离签名后的硬件指纹失败，格式错误");
                 return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_2"));
             }
 
@@ -131,15 +143,13 @@ public class AuthenticationFilter extends AbstractBaseFilter {
             HardwareFingerprintUtils.HardwareFingerprint requestFingerprint = HardwareFingerprintUtils
                     .parseAndVerifySignedFingerprint(parts.getJsonPart(), parts.getSignature(), hmacSecret, timestampValidDuration);
             if (requestFingerprint == null) {
-                log.warn("硬件指纹签名验证或时间戳验证失败，拒绝请求");
+                logAuthFailure(exchange, "硬件指纹签名验证或时间戳验证失败，拒绝请求");
                 return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_2"));
             }
 
             // 5. 验证硬件指纹特征匹配（排除timestamp和nonce字段）
             if (!HardwareFingerprintUtils.verifyFingerprint(requestFingerprint, tokenFingerprint)) {
-                log.warn("硬件指纹不匹配，拒绝请求。Token中的指纹: {}, 请求中的指纹: {}",
-                    HardwareFingerprintUtils.serializeFingerprint(tokenFingerprint),
-                    HardwareFingerprintUtils.serializeFingerprint(requestFingerprint));
+                logAuthFailure(exchange, "硬件指纹不匹配，拒绝请求");
                 return NetworkUtils.returnError(response, HttpStatus.UNAUTHORIZED, i18n.get("MSG_GATEWAY_TIP_2"));
             }
         }
@@ -168,19 +178,51 @@ public class AuthenticationFilter extends AbstractBaseFilter {
 
         // 租户相关 header 只能由 Gateway 的 TenantFilter 生成，先清理客户端传入值，
         // 防止 TenantFilter 被关闭或未命中时仍把伪造租户上下文透传到下游。
-        ServerHttpRequest sanitizedRequest = exchange.getRequest().mutate()
+        String authenticatedUserId = StringUtils.firstNonBlank(
+                JwtUtils.getArgument(token, "userId"),
+                JwtUtils.getUsername(token));
+        ServerHttpRequest sanitizedRequest = sanitizeInternalHeaders(exchange.getRequest(), authenticatedUserId);
+        return chain.filter(exchange.mutate().request(sanitizedRequest).build());
+    }
+
+    /**
+     * Removes client-controlled internal headers and adds the identity derived from a verified JWT.
+     * Kept package-visible so the header trust boundary can be verified without invoking token or cache infrastructure.
+     */
+    static ServerHttpRequest sanitizeInternalHeaders(ServerHttpRequest request, String authenticatedUserId) {
+        return request.mutate()
                 .headers(headers -> {
                     headers.remove(GlobalConstants.X_TENANT_ID);
                     headers.remove("X-Tenant-ID");
                     headers.remove(GlobalConstants.X_TENANT_ASSERTION);
+                    headers.remove(CLIENT_ID_HEADER);
+                    headers.remove(USER_ID_HEADER);
+                    if (StringUtils.isNotBlank(authenticatedUserId)) {
+                        headers.set(CLIENT_ID_HEADER, authenticatedUserId);
+                        headers.set(USER_ID_HEADER, authenticatedUserId);
+                    }
                 })
                 .build();
-        return chain.filter(exchange.mutate().request(sanitizedRequest).build());
     }
 
     protected boolean enableVerifyFilter(ServerWebExchange exchange) {
-        return config.getToken().isEnable() && config.getToken().getIgnoreUriList().stream().noneMatch(exchange.getRequest().getURI().getPath()::matches)
-                && config.getToken().getLoginUriList().stream().noneMatch(exchange.getRequest().getURI().getPath()::matches);
+        String path = exchange.getRequest().getURI().getPath();
+        // login-config 是登录页必需的匿名接口，作为协议级公开端点保留内置兜底；
+        // 其余公开接口仍由 Nacos 的 ignore-uri-list 统一管理。
+        if (PUBLIC_LOGIN_CONFIG_PATH.equals(path) || PUBLIC_CRYPTO_EXCHANGE_PATH.equals(path)) {
+            return false;
+        }
+        return config.getToken().isEnable() && config.getToken().getIgnoreUriList().stream().noneMatch(path::matches)
+                && config.getToken().getLoginUriList().stream().noneMatch(path::matches);
+    }
+
+    /**
+     * 记录认证失败原因，但不记录 JWT 或硬件指纹等敏感信息。
+     */
+    private void logAuthFailure(ServerWebExchange exchange, String reason) {
+        String requestId = exchange.getRequest().getHeaders().getFirst("X-Request-Id");
+        log.warn("Gateway认证失败: reason={}, path={}, requestId={}",
+            reason, exchange.getRequest().getURI().getPath(), requestId);
     }
 
     /**

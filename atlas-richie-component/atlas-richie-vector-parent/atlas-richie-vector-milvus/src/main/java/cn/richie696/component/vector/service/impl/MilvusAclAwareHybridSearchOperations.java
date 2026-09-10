@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Native Milvus hybrid search backed by a dense field and the server-side BM25 function.
@@ -39,13 +40,21 @@ public final class MilvusAclAwareHybridSearchOperations implements VectorAclAwar
     static final String SPARSE_VECTOR_FIELD = "sparse_vector";
     private static final List<String> OUTPUT_FIELDS = List.of("content", "metadata");
 
-    private final MilvusClientV2 client;
+    private final Function<HybridSearchReq, SearchResp> hybridSearch;
     private final EmbeddingModel embeddingModel;
     private final VectorFilterCompiler filterCompiler;
 
     public MilvusAclAwareHybridSearchOperations(
             MilvusClientV2 client, EmbeddingModel embeddingModel, VectorFilterCompiler filterCompiler) {
-        this.client = client;
+        this(client::hybridSearch, embeddingModel, filterCompiler);
+    }
+
+    /** Package-visible seam for request-contract tests without a live Milvus client. */
+    MilvusAclAwareHybridSearchOperations(
+            Function<HybridSearchReq, SearchResp> hybridSearch,
+            EmbeddingModel embeddingModel,
+            VectorFilterCompiler filterCompiler) {
+        this.hybridSearch = hybridSearch;
         this.embeddingModel = embeddingModel;
         this.filterCompiler = filterCompiler;
     }
@@ -112,7 +121,7 @@ public final class MilvusAclAwareHybridSearchOperations implements VectorAclAwar
             weights.add((float) keywordWeight);
         }
 
-        SearchResp response = client.hybridSearch(HybridSearchReq.builder()
+        SearchResp response = hybridSearch.apply(HybridSearchReq.builder()
                 .collectionName(indexName)
                 .searchRequests(List.copyOf(requests))
                 .ranker(WeightedRanker.builder().weights(List.copyOf(weights)).build())

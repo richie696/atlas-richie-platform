@@ -10,6 +10,9 @@ import cn.richie696.component.vector.filter.SpringAiVectorFilterCompiler;
 import cn.richie696.component.vector.filter.VectorFilterCompiler;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
+import cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations;
+import cn.richie696.component.vector.model.HybridStoreOptions;
+import cn.richie696.component.vector.service.impl.Neo4jAclAwareHybridSearchOperations;
 import cn.richie696.component.vector.service.impl.Neo4jVectorServiceImpl;
 import cn.richie696.component.vector.topology.VectorCapability;
 import cn.richie696.component.vector.topology.VectorConnectionDefinition;
@@ -46,7 +49,9 @@ public final class Neo4jVectorProviderFactory implements VectorProviderFactory {
             "uri", "username", "password", "database", "max-connection-pool-size",
             "max-connection-lifetime-ms", "connection-acquisition-timeout-ms",
             "connection-timeout-ms", "max-transaction-retry-time-ms", "encryption-enabled", "user-agent");
-    private static final Set<String> INDEX_ADDITIONAL_FIELDS = Set.of("initialize-schema");
+    private static final Set<String> INDEX_ADDITIONAL_FIELDS = Set.of("initialize-schema", "acl-fields",
+            "hybrid-enabled", "dense-field", "sparse-field", "sparse-vectorizer",
+            "hybrid-candidate-limit", "hybrid-fallback-mode");
     private static final VectorStoreCapabilities CAPABILITIES = VectorStoreCapabilities.of(
             VectorCapability.NATIVE_FILTER,
             VectorCapability.SCORE_STAGES,
@@ -124,6 +129,8 @@ public final class Neo4jVectorProviderFactory implements VectorProviderFactory {
                     "Neo4j index-params are not applied by the current adapter and must be empty");
         }
         booleanValue(index.additionalFields(), "initialize-schema", false);
+        aclFields(index.additionalFields().get("acl-fields"));
+        HybridStoreOptions.fromAdditionalFields(index.additionalFields());
     }
 
     @Override
@@ -131,7 +138,7 @@ public final class Neo4jVectorProviderFactory implements VectorProviderFactory {
             VectorConnectionDefinition connection,
             VectorStoreDefinition store) {
         requireProvider(connection);
-        return CAPABILITIES;
+        return storeCapabilities(boundIndex(store));
     }
 
     @Override
@@ -169,6 +176,7 @@ public final class Neo4jVectorProviderFactory implements VectorProviderFactory {
         String label = "VectorDocument_" + index.name();
         String vectorIndex = index.name() + "_idx";
         boolean initializeSchema = booleanValue(index.additionalFields(), "initialize-schema", false);
+        HybridStoreOptions hybrid = HybridStoreOptions.fromAdditionalFields(index.additionalFields());
         Neo4jVectorStore vectorStore = Neo4jVectorStore.builder(neo4jConnection.driver(), embeddingModel.model())
                 .sessionConfig(neo4jConnection.sessionConfig())
                 .databaseName(neo4jConnection.sessionConfig().database().orElse("neo4j"))
@@ -183,6 +191,7 @@ public final class Neo4jVectorProviderFactory implements VectorProviderFactory {
                 .initializeSchema(initializeSchema)
                 .build();
         if (initializeSchema) vectorStore.afterPropertiesSet();
+        if (hybrid.enabled()) ensureHybridSchema(neo4jConnection.driver(), neo4jConnection.sessionConfig(), label, index.name(), aclFields(index.additionalFields().get("acl-fields")));
         VectorFilterCompiler filterCompiler = new SpringAiVectorFilterCompiler();
         Neo4jVectorServiceImpl service = new Neo4jVectorServiceImpl(
                 rerankService,
@@ -193,14 +202,17 @@ public final class Neo4jVectorProviderFactory implements VectorProviderFactory {
                 Map.of(definition.defaultIndex(), index.name()));
         service.setVectorProperties(storeProperties(definition, index));
         service.setVectorFilterCompiler(filterCompiler);
-        return VectorStoreHandle.builder(definition, provider(), service)
+        VectorStoreHandle.Builder handle = VectorStoreHandle.builder(definition, provider(), service)
                 .embeddingModel(embeddingModel)
-                .storeCapabilities(CAPABILITIES)
+                .storeCapabilities(storeCapabilities(index))
                 .capability(VectorScoreSemantics.class, scoreSemantics(index.metric()))
                 .capability(VectorFilterCompiler.class, filterCompiler)
                 .capability(VectorRecordReadOperations.class, service)
-                .capability(VectorIndexLifecycleOperations.class, service)
-                .build();
+                .capability(VectorIndexLifecycleOperations.class, service);
+        if (hybrid.enabled()) handle.capability(VectorAclAwareHybridSearchOperations.class,
+                new Neo4jAclAwareHybridSearchOperations(neo4jConnection.driver(), neo4jConnection.sessionConfig(),
+                        embeddingModel.model(), hybrid, Map.of(definition.defaultIndex(), index.name()), index.metric()));
+        return handle.build();
     }
 
     private static Driver createDriver(VectorConnectionDefinition definition) {
@@ -257,6 +269,27 @@ public final class Neo4jVectorProviderFactory implements VectorProviderFactory {
             throw new IllegalArgumentException("Neo4j default index must identify the declared Store index");
         }
         return index;
+    }
+
+    private static VectorStoreCapabilities storeCapabilities(VectorIndexDefinition index) {
+        if (!HybridStoreOptions.fromAdditionalFields(index.additionalFields()).enabled()) return CAPABILITIES;
+        java.util.List<cn.richie696.component.vector.topology.VectorCapabilityDescriptor> descriptors = new java.util.ArrayList<>(CAPABILITIES.descriptors());
+        descriptors.add(new cn.richie696.component.vector.topology.VectorCapabilityDescriptor(VectorCapability.ACL_SAFE_HYBRID, "1.0",
+                Map.of("filter-stage", "provider-recall", "execution", "core-rrf", "sparse-mode", "cypher-fulltext")));
+        return new VectorStoreCapabilities(descriptors);
+    }
+
+    private static java.util.List<String> aclFields(Object configured) {
+        if (configured == null || String.valueOf(configured).isBlank()) return java.util.List.of();
+        return java.util.Arrays.stream(String.valueOf(configured).split(",")).map(String::trim).peek(value -> identifier(value, "ACL field")).distinct().toList();
+    }
+
+    private static void ensureHybridSchema(Driver driver, SessionConfig session, String label, String base, java.util.List<String> aclFields) {
+        try (var s = driver.session(session)) {
+            s.run("CREATE FULLTEXT INDEX `" + base + "_fts` IF NOT EXISTS FOR (n:" + label + ") ON EACH [n.content]").consume();
+            for (String field : aclFields) s.run("CREATE INDEX `" + base + "_acl_" + field + "` IF NOT EXISTS FOR (n:" + label + ") ON (n.`metadata." + field + "`)").consume();
+            s.run("CALL db.awaitIndexes(300)").consume();
+        }
     }
 
     private static VectorProperties storeProperties(VectorStoreDefinition store, VectorIndexDefinition index) {

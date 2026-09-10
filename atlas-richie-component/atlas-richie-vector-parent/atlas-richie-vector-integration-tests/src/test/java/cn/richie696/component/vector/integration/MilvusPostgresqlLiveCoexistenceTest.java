@@ -11,6 +11,8 @@ import cn.richie696.component.vector.config.VectorProperties;
 import cn.richie696.component.vector.enums.VectorProvider;
 import cn.richie696.component.vector.model.SearchOptions;
 import cn.richie696.component.vector.model.VectorRecord;
+import cn.richie696.component.vector.observation.VectorStoreObservationEvent;
+import cn.richie696.component.vector.observation.VectorStoreObservationHook;
 import cn.richie696.component.vector.query.VectorDiversificationOptions;
 import cn.richie696.component.vector.query.VectorQueryRequest;
 import cn.richie696.component.vector.query.milvus.MilvusQueryOptions;
@@ -40,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -59,6 +62,7 @@ class MilvusPostgresqlLiveCoexistenceTest {
         String jdbcUrl = requiredEnv("VECTOR_IT_PG_JDBC_URL");
         String pgUsername = requiredEnv("VECTOR_IT_PG_USERNAME");
         String pgPassword = env("VECTOR_IT_PG_PASSWORD", "");
+        List<VectorStoreObservationEvent> events = new CopyOnWriteArrayList<>();
 
         executePg(jdbcUrl, pgUsername, pgPassword, "CREATE SCHEMA " + pgSchema);
         try {
@@ -71,6 +75,8 @@ class MilvusPostgresqlLiveCoexistenceTest {
                             PostgresqlVectorAutoConfiguration.class))
                     .withBean("syntheticEmbeddingModel", EmbeddingModel.class,
                             MilvusPostgresqlLiveCoexistenceTest::embeddingModel)
+                    .withBean("liveVectorObservationHook", VectorStoreObservationHook.class,
+                            () -> events::add)
                     .withPropertyValues(properties.toArray(String[]::new))
                     .run(context -> {
                         assertThat(context).hasNotFailed();
@@ -138,6 +144,16 @@ class MilvusPostgresqlLiveCoexistenceTest {
                             });
                             assertThat(queryPgSetting(
                                     jdbcUrl, pgUsername, pgPassword, "hnsw.ef_search")).isEqualTo("40");
+                            assertThat(events).anySatisfy(event -> {
+                                assertThat(event.storeId()).isEqualTo(VectorStoreId.of("milvus-live"));
+                                assertThat(event.provider()).isEqualTo(VectorProvider.MILVUS);
+                            });
+                            assertThat(events).anySatisfy(event -> {
+                                assertThat(event.storeId()).isEqualTo(VectorStoreId.of("postgresql-live"));
+                                assertThat(event.provider()).isEqualTo(VectorProvider.POSTGRESQL);
+                            });
+                            assertThat(events).allSatisfy(event -> assertThat(event.traceAttributes().toString())
+                                    .doesNotContain("synthetic milvus content", "synthetic postgresql content"));
                         } finally {
                             if (milvusLifecycle.indexExists(milvusIndex)) {
                                 milvusLifecycle.deleteIndex(milvusIndex);

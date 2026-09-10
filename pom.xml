@@ -42,6 +42,10 @@
 
         <lombok.version>1.18.46</lombok.version>
         <mapstruct.version>1.6.3</mapstruct.version>
+        <!-- Spring Boot 4.1.0 manages 1.18.10; keep the JDK 25 test runtime on the current Byte Buddy patch. -->
+        <byte-buddy.version>1.18.13</byte-buddy.version>
+        <!-- Required because Surefire/Failsafe use @{argLine} for late JaCoCo expansion. -->
+        <argLine/>
 
         <!-- spring properties -->
         <spring-boot.version>${spring-boot-dependencies.version}</spring-boot.version>
@@ -202,6 +206,19 @@
         </contributor>
     </contributors>
 
+    <dependencies>
+        <!--
+            Mockito's inline mock maker requires startup-time instrumentation on JDK 21+.
+            Declaring the agent artifact in the common test scope guarantees that each inherited
+            test build can resolve the same Maven-managed agent path.
+        -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
     <build>
         <pluginManagement>
             <plugins>
@@ -337,7 +354,7 @@
                             <include>**/*ITCase.java</include>
                             <include>**/*IntegrationTest.java</include>
                         </includes>
-                        <argLine>--enable-preview</argLine>
+                        <argLine>@{argLine} --enable-preview -javaagent:${org.mockito:mockito-core:jar}</argLine>
                     </configuration>
                     <executions>
                         <execution>
@@ -780,13 +797,28 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
-                        <argLine>--enable-preview</argLine>
+                        <argLine>@{argLine} --enable-preview -javaagent:${org.mockito:mockito-core:jar}</argLine>
                     </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
 
         <plugins>
+            <!-- Resolve the actual Maven artifact path used by the Mockito Java agent. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>resolve-mockito-agent</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- Maven Enforcer 插件 - 约束 Maven 和 JDK 版本 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -918,7 +918,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
-                        <argLine>--enable-preview</argLine>
+                        <argLine>@{argLine} --enable-preview -javaagent:${org.mockito:mockito-core:jar}</argLine>
                     </configuration>
                 </plugin>
 

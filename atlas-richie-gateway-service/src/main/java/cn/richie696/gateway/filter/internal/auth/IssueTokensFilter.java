@@ -33,6 +33,7 @@ import cn.richie696.gateway.service.SignatureService;
 import cn.richie696.gateway.util.HardwareFingerprintUtils;
 import cn.richie696.gateway.utils.MfaTokenUtils;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -145,6 +146,7 @@ public class IssueTokensFilter extends AbstractBaseFilter {
                             ApiResult<LoginUserPrincipal> result = JsonUtils.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSSX").deserialize(responseData, new TypeReference<>() {
                             });
                             // 如果当前报文是有效的登录请求，则进行令牌签发操作
+                            byte[] responseBytes = temporaryBuffers;
                             if (result != null && result.isSuccess() && result.getData() != null) {
                                 LoginUserPrincipal userVO = result.getData();
 
@@ -180,7 +182,9 @@ public class IssueTokensFilter extends AbstractBaseFilter {
 
                                             String jsonResponse = JsonUtils.getInstance().serialize(mfaRequiredResponse);
                                             Objects.requireNonNull(jsonResponse, "The serialized string cannot be null.");
-                                            return response.bufferFactory().wrap(jsonResponse.getBytes(StandardCharsets.UTF_8));
+                                            byte[] mfaResponseBytes = jsonResponse.getBytes(StandardCharsets.UTF_8);
+                                            response.getHeaders().setContentLength(mfaResponseBytes.length);
+                                            return response.bufferFactory().wrap(mfaResponseBytes);
                                         }
                                     }
                                 }
@@ -208,9 +212,15 @@ public class IssueTokensFilter extends AbstractBaseFilter {
                                 if (config.getSso().isEnable()) {
                                     setLastOnlineToken(result.getData(), signature);
                                 }
+
+                                // signParams 只用于网关内部签发 JWT，不能随登录响应返回给浏览器。
+                                // 令牌仍通过 x-rd-request-apitoken 响应头返回，响应体只保留脱敏后的用户主体。
+                                responseBytes = withoutSignParams(responseData);
+                                // 脱敏后响应体长度发生变化，必须同步修正 Content-Length，避免客户端等待原始长度导致超时。
+                                response.getHeaders().setContentLength(responseBytes.length);
                             }
-                            // 返回原始报文数据流
-                            return response.bufferFactory().wrap(temporaryBuffers);
+                            // 返回脱敏后的报文；非登录/非成功响应保持原始字节不变。
+                            return response.bufferFactory().wrap(responseBytes);
                         }));
                     }
                 }
@@ -223,6 +233,34 @@ public class IssueTokensFilter extends AbstractBaseFilter {
                 return writeWith(Flux.from(body).flatMapSequential(p -> p));
             }
         };
+    }
+
+    /**
+     * 从登录成功响应的 data 节点移除仅供网关签名使用的 signParams。
+     * <p>
+     * 解析或序列化失败时保留原始响应，避免脱敏逻辑影响正常登录链路；签名已经在调用本方法前完成。
+     *
+     * @param responseData 原始 JSON 响应
+     * @return 脱敏后的响应字节；无法处理时返回原始 UTF-8 字节
+     */
+    private byte[] withoutSignParams(String responseData) {
+        if (StringUtils.isBlank(responseData)) {
+            return responseData == null ? new byte[0] : responseData.getBytes(StandardCharsets.UTF_8);
+        }
+        try {
+            JsonNode root = JsonUtils.getInstance().convertJsonNode(responseData);
+            JsonNode data = root != null ? root.get("data") : null;
+            if (data instanceof ObjectNode dataObject && dataObject.has("signParams")) {
+                dataObject.remove("signParams");
+                String sanitized = JsonUtils.getInstance().serialize(root);
+                if (StringUtils.isNotBlank(sanitized)) {
+                    return sanitized.getBytes(StandardCharsets.UTF_8);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("移除登录响应 signParams 失败，保留原始响应", e);
+        }
+        return responseData.getBytes(StandardCharsets.UTF_8);
     }
 
     /**

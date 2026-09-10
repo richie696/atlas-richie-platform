@@ -38,6 +38,8 @@ spring:
         # Nacos配置
         nacos:
             server-addr: 127.0.0.1:8848
+            username: ${NACOS_USERNAME:nacos}
+            password: ${NACOS_PASSWORD:nacos}
             discovery:
                 namespace: public
                 group: global
@@ -80,4 +82,3 @@ management:
         metrics:
             export:
                 enabled: true
-

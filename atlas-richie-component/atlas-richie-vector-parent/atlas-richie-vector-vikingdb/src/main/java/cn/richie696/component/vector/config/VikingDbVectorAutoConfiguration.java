@@ -28,6 +28,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import cn.richie696.component.ai.service.RerankService;
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.ai.vectorstore.observation.VectorStoreObservationConvention;
+import cn.richie696.component.vector.service.SparseVectorizerRegistry;
 
 /**
  * VikingDB 的平台配置到 Atlas Richie AI VectorStore 的适配装配。
@@ -43,10 +44,12 @@ public class VikingDbVectorAutoConfiguration {
     public VikingDbVectorProviderFactory vikingDbVectorProviderFactory(
             ObjectProvider<RerankService> rerankService,
             ObjectProvider<ObservationRegistry> observationRegistry,
-            ObjectProvider<VectorStoreObservationConvention> observationConvention) {
+            ObjectProvider<VectorStoreObservationConvention> observationConvention,
+            ObjectProvider<SparseVectorizerRegistry> sparseVectorizers) {
         return new VikingDbVectorProviderFactory(rerankService.getIfAvailable(),
                 observationRegistry.getIfAvailable(() -> ObservationRegistry.NOOP),
-                observationConvention.getIfAvailable());
+                observationConvention.getIfAvailable(),
+                sparseVectorizers.getIfAvailable(() -> new SparseVectorizerRegistry(java.util.Map.of())));
     }
 
     @Bean

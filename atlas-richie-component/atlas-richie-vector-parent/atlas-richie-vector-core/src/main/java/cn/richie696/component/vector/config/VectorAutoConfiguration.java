@@ -26,6 +26,8 @@ import cn.richie696.component.vector.knowledge.KnowledgeBaseVectorService;
 import cn.richie696.component.vector.observation.VectorStoreObservationHook;
 import cn.richie696.component.vector.observation.MicrometerVectorStoreObservationHook;
 import cn.richie696.component.vector.service.VectorService;
+import cn.richie696.component.vector.service.SparseVectorizer;
+import cn.richie696.component.vector.service.SparseVectorizerRegistry;
 import cn.richie696.component.vector.topology.VectorProviderFactory;
 import cn.richie696.component.vector.topology.VectorCapabilityDiscovery;
 import cn.richie696.component.vector.topology.AuthorizedVectorStoreResolver;
@@ -79,6 +81,12 @@ import java.util.Set;
 public class VectorAutoConfiguration {
 
     @Bean
+    @ConditionalOnMissingBean(SparseVectorizerRegistry.class)
+    public SparseVectorizerRegistry sparseVectorizerRegistry(ListableBeanFactory beanFactory) {
+        return new SparseVectorizerRegistry(beanFactory.getBeansOfType(SparseVectorizer.class));
+    }
+
+    @Bean
     @ConditionalOnClass({MeterRegistry.class, ObservationRegistry.class})
     @ConditionalOnBean(MeterRegistry.class)
     @ConditionalOnMissingBean(VectorStoreObservationHook.class)
@@ -113,13 +121,15 @@ public class VectorAutoConfiguration {
             VectorTopologyDefinitions definitions,
             ObjectProvider<VectorProviderFactory> providerFactories,
             ListableBeanFactory beanFactory,
-            ObjectProvider<VectorStoreObservationHook> observationHook) {
+            ObjectProvider<VectorStoreObservationHook> observationHook,
+            SparseVectorizerRegistry sparseVectorizerRegistry) {
         return VectorTopologyBootstrap.start(
                 definitions.connections(),
                 definitions.stores(),
                 providerFactories.orderedStream().toList(),
                 new SpringNamedEmbeddingModelResolver(beanFactory),
-                observationHook.getIfAvailable());
+                observationHook.getIfAvailable(),
+                sparseVectorizerRegistry);
     }
 
     @Bean

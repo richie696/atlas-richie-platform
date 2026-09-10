@@ -99,6 +99,16 @@ class PostgresqlVectorProviderFactoryTest {
     }
 
     @Test
+    void declaresAclSafeHybridOnlyForAnExplicitHybridStore() {
+        var capabilities = factory.capabilities(connection("primary", Map.of()), store(
+                "prompt", "prompt_vectors", 2, Map.of("hybrid-enabled", true, "hybrid-candidate-limit", 10)));
+
+        assertThat(capabilities.supports(VectorCapability.ACL_SAFE_HYBRID)).isTrue();
+        assertThat(capabilities.descriptor(VectorCapability.ACL_SAFE_HYBRID).orElseThrow().constraints())
+                .containsEntry("filter-stage", "provider-recall").containsEntry("execution", "core-rrf");
+    }
+
+    @Test
     void createsIndependentLazyDataSourcesAndClosesThemDeterministically() {
         var first = (PostgresqlVectorProviderFactory.PostgresqlConnectionHandle)
                 factory.openConnection(connection("primary", Map.of()));

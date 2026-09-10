@@ -54,6 +54,8 @@ document-parser → document-chunking → vector-chunk-adapter → vector
     - [MongoDB Atlas](#mongodb-atlas)
     - [Neo4j](#neo4j)
     - [VikingDB](#vikingdb)
+    - [DashVector](#dashvector)
+    - [腾讯云 VectorDB](#腾讯云-vectordb)
 - [⏱️ 时序图详解](#⏱️-时序图详解)
     - [向量入库时序图](#向量入库时序图)
     - [知识库检索时序图](#知识库检索时序图)
@@ -82,7 +84,7 @@ documentId 删除、alias、备份、原生 hybrid、多向量）拆为可选能
 ### 主要特性
 
 - ✅ **统一门面**：简单项目继续使用 `VectorService`；多库项目通过 `VectorServiceRegistry` / `VectorStoreHandle` 使用 Store-bound 能力
-- ✅ **8 种 Provider 可插拔**：Milvus、Qdrant、Weaviate、PostgreSQL/pgvector、Redis、MongoDB Atlas、Neo4j、VikingDB，按能力而非品牌声明
+- ✅ **10 种 Provider 可插拔**：Milvus、Qdrant、Weaviate、PostgreSQL/pgvector、Redis、MongoDB Atlas、Neo4j、VikingDB、DashVector、腾讯云 VectorDB，按能力而非品牌声明
 - ✅ **ACL 强制下推**：`KnowledgeBaseVectorService` 强制把租户、可见性、状态等结构化条件在 Provider 原生 query
   阶段执行，杜绝"先 Top-K 再 JVM 过滤"导致的内容泄露
 - ✅ **能力按 capability 拆分**：核心 4 类通用能力 + 6 类可选能力接口（hybrid / multi-vector / alias / backup / read /
@@ -995,13 +997,15 @@ platform:
 | `VectorIndexLifecycleOperations`       | ✅   | createIndex / dropIndex    |
 | `VectorIndexStatsOperations`           | ✅   | 完整统计                   |
 | `VectorIndexAliasOperations`           | ✅   | createAlias / switchAlias  |
-| `VectorHybridSearchOperations`         | ❌   | 当前单 dense schema 未提供 sparse 通道 |
-| `VectorAclAwareHybridSearchOperations` | ❌   | 需先配置 dense+sparse schema          |
+| `VectorHybridSearchOperations`         | ⚠️   | 仅在新的 `hybrid-enabled` dense+sparse schema 中启用 |
+| `VectorAclAwareHybridSearchOperations` | ⚠️   | 仅在 hybrid Store 声明；同一 ACL 条件下推至双路召回 |
 | `VectorMultiVectorSearchOperations`    | ✅   | named vector               |
 | `VectorBackupOperations`               | ⚠️   | 仅 metadata 备份，不含向量 |
 | 多模态（CLIP）                         | ✅   | 1024 维共享空间            |
 
 ### Qdrant
+
+Provider 细节：[English](atlas-richie-vector-qdrant/README.md) | [中文](atlas-richie-vector-qdrant/README.zh.md)
 
 | 能力                                   | 支持 | 备注                                          |
 |----------------------------------------|------|-----------------------------------------------|
@@ -1013,7 +1017,7 @@ platform:
 | `VectorIndexStatsOperations`           | ✅   | 完整                                          |
 | `VectorIndexAliasOperations`           | ❌   | 无 alias 概念                                 |
 | `VectorHybridSearchOperations`         | ⚠️   | dense + sparse 但 sparse 需预先生成           |
-| `VectorAclAwareHybridSearchOperations` | ❌   | 当前适配器未配置 sparse/named-vector 双通道 |
+| `VectorAclAwareHybridSearchOperations` | ⚠️   | 可选 named dense+sparse schema；两路同一 Qdrant filter，Core RRF |
 | `VectorMultiVectorSearchOperations`    | ❌   | 无 named vector 概念                          |
 | `VectorBackupOperations`               | ✅   | snapshot 备份                                 |
 | 多模态（CLIP）                         | ❌   | 需第三方 CLIP 服务                            |
@@ -1037,6 +1041,8 @@ platform:
 
 ### PostgreSQL/pgvector
 
+Provider 细节：[English](atlas-richie-vector-postgresql/README.md) | [中文](atlas-richie-vector-postgresql/README.zh.md)
+
 | 能力                                   | 支持 | 备注                               |
 |----------------------------------------|------|------------------------------------|
 | `VectorSearchOperations`               | ✅   | 完整                               |
@@ -1046,14 +1052,16 @@ platform:
 | `VectorIndexLifecycleOperations`       | ✅   | DDL 完整                           |
 | `VectorIndexStatsOperations`           | ✅   | pg_stats                           |
 | `VectorIndexAliasOperations`           | ❌   | 无 alias（可用视图模拟）           |
-| `VectorHybridSearchOperations`         | ❌   | 需结合 ES 或 tsvector              |
-| `VectorAclAwareHybridSearchOperations` | ❌   | 不支持                             |
+| `VectorHybridSearchOperations`         | ⚠️   | 可选 pgvector + `tsvector` 双路候选 |
+| `VectorAclAwareHybridSearchOperations` | ⚠️   | 两路均使用参数化 JSONB ACL `WHERE`，Core RRF |
 | `VectorMultiVectorSearchOperations`    | ❌   | 单表单向量                         |
 | `VectorBackupOperations`               | ✅   | pg_dump                            |
 | 多模态（CLIP）                         | ❌   | 需外挂                             |
 | **优点**                               | —    | **事务一致性强、复用现有基础设施** |
 
 ### Redis
+
+Provider 细节：[English](atlas-richie-vector-redis/README.md) | [中文](atlas-richie-vector-redis/README.zh.md)
 
 | 能力                                   | 支持 | 备注                              |
 |----------------------------------------|------|-----------------------------------|
@@ -1064,14 +1072,16 @@ platform:
 | `VectorIndexLifecycleOperations`       | ✅   | 完整                              |
 | `VectorIndexStatsOperations`           | ✅   | 基础                              |
 | `VectorIndexAliasOperations`           | ❌   | 无                                |
-| `VectorHybridSearchOperations`         | ❌   | 不支持                            |
-| `VectorAclAwareHybridSearchOperations` | ❌   | 不支持                            |
+| `VectorHybridSearchOperations`         | ⚠️   | 可选 KNN + RediSearch 文本候选      |
+| `VectorAclAwareHybridSearchOperations` | ⚠️   | 两路使用同一 RediSearch ACL 谓词，Core RRF |
 | `VectorMultiVectorSearchOperations`    | ❌   | 不支持                            |
 | `VectorBackupOperations`               | ⚠️   | 需 RDB                            |
 | 多模态（CLIP）                         | ❌   | 不支持                            |
 | **适用**                               | —    | 中小规模、低延迟、已有 Redis 集群 |
 
 ### MongoDB Atlas
+
+Provider 细节：[English](atlas-richie-vector-mongodb-atlas/README.md) | [中文](atlas-richie-vector-mongodb-atlas/README.zh.md)
 
 | 能力                                   | 支持 | 备注              |
 |----------------------------------------|------|-------------------|
@@ -1082,14 +1092,16 @@ platform:
 | `VectorIndexLifecycleOperations`       | ✅   | collection        |
 | `VectorIndexStatsOperations`           | ✅   | 基础              |
 | `VectorIndexAliasOperations`           | ❌   | 无                |
-| `VectorHybridSearchOperations`         | ❌   | 不支持            |
-| `VectorAclAwareHybridSearchOperations` | ❌   | 不支持            |
+| `VectorHybridSearchOperations`         | ⚠️   | 可选 Atlas Vector Search + Atlas Search |
+| `VectorAclAwareHybridSearchOperations` | ⚠️   | 两条 pipeline 使用同一 Atlas ACL filter，Core RRF |
 | `VectorMultiVectorSearchOperations`    | ❌   | 不支持            |
 | `VectorBackupOperations`               | ✅   | mongodump         |
 | 多模态（CLIP）                         | ❌   | 不支持            |
 | **适用**                               | —    | 已有 MongoDB 生态 |
 
 ### Neo4j
+
+Provider 细节：[English](atlas-richie-vector-neo4j/README.md) | [中文](atlas-richie-vector-neo4j/README.zh.md)
 
 | 能力                                   | 支持 | 备注                                   |
 |----------------------------------------|------|----------------------------------------|
@@ -1100,14 +1112,16 @@ platform:
 | `VectorIndexLifecycleOperations`       | ✅   | 完整                                   |
 | `VectorIndexStatsOperations`           | ✅   | 完整                                   |
 | `VectorIndexAliasOperations`           | ❌   | 无                                     |
-| `VectorHybridSearchOperations`         | ❌   | 不支持                                 |
-| `VectorAclAwareHybridSearchOperations` | ❌   | 不支持                                 |
+| `VectorHybridSearchOperations`         | ⚠️   | 可选 dense + lexical 的 ACL-first Cypher |
+| `VectorAclAwareHybridSearchOperations` | ⚠️   | 两路参数化 ACL 谓词，Core RRF             |
 | `VectorMultiVectorSearchOperations`    | ❌   | 不支持                                 |
 | `VectorBackupOperations`               | ✅   | 完整                                   |
 | 多模态（CLIP）                         | ❌   | 不支持                                 |
 | **适用**                               | —    | **Graph-RAG：实体关系 + 向量混合检索** |
 
 ### VikingDB
+
+Provider 细节：[English](atlas-richie-vector-vikingdb/README.md) | [中文](atlas-richie-vector-vikingdb/README.zh.md)
 
 | 能力                                   | 支持 | 备注           |
 |----------------------------------------|------|----------------|
@@ -1118,12 +1132,32 @@ platform:
 | `VectorIndexLifecycleOperations`       | ✅   | 完整           |
 | `VectorIndexStatsOperations`           | ✅   | 基础           |
 | `VectorIndexAliasOperations`           | ❌   | 当前不声明     |
-| `VectorHybridSearchOperations`         | ❌   | 不支持         |
-| `VectorAclAwareHybridSearchOperations` | ❌   | 不支持         |
+| `VectorHybridSearchOperations`         | ⚠️   | `hnsw-hybrid` schema 的原生 VikingDB hybrid |
+| `VectorAclAwareHybridSearchOperations` | ⚠️   | 需显式标量 ACL 字段及 sparse 编码器          |
 | `VectorMultiVectorSearchOperations`    | ❌   | 不支持         |
 | `VectorBackupOperations`               | ❌   | 当前不声明     |
 | 多模态（CLIP）                         | ❌   | 不支持         |
 | **适用**                               | —    | 字节跳动生态内 |
+
+### DashVector
+
+Provider 细节：[English](atlas-richie-vector-dashvector/README.md) | [中文](atlas-richie-vector-dashvector/README.zh.md)
+
+| 能力 | 支持 | 备注 |
+|---|---|---|
+| `VectorSearchOperations` | ✅ | dense 检索和原生 filter |
+| `VectorAclAwareHybridSearchOperations` | ⚠️ | 可选单次 dense+sparse+同一 ACL filter 的原生请求；云端 E2E 受环境变量控制 |
+| AI 插件类型化操作 | ✅ | collection、document、partition、search 仅经 Store handle 暴露 |
+
+### 腾讯云 VectorDB
+
+Provider 细节：[English](atlas-richie-vector-tencent-vectordb/README.md) | [中文](atlas-richie-vector-tencent-vectordb/README.zh.md)
+
+| 能力 | 支持 | 备注 |
+|---|---|---|
+| `VectorSearchOperations` | ✅ | dense 检索和原生 filter |
+| `VectorAclAwareHybridSearchOperations` | ⚠️ | 原生 `HybridSearchParam` 优先；仅已分类的原生不支持错误才以同 ACL 双路请求走 Core RRF；云端 E2E 受环境变量控制 |
+| AI 插件类型化操作 | ✅ | database、collection、document、search、index 仅经 Store handle 暴露 |
 
 ---
 

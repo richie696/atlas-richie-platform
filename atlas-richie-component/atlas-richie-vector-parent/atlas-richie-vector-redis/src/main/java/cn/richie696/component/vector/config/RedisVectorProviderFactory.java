@@ -10,6 +10,11 @@ import cn.richie696.component.vector.filter.SpringAiVectorFilterCompiler;
 import cn.richie696.component.vector.filter.VectorFilterCompiler;
 import cn.richie696.component.vector.service.VectorIndexLifecycleOperations;
 import cn.richie696.component.vector.service.VectorRecordReadOperations;
+import cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations;
+import cn.richie696.component.vector.service.SparseVectorizerRegistry;
+import cn.richie696.component.vector.model.HybridStoreOptions;
+import cn.richie696.component.vector.filter.RedisSearchAclFilterCompiler;
+import cn.richie696.component.vector.service.impl.RedisAclAwareHybridSearchOperations;
 import cn.richie696.component.vector.service.impl.RedisVectorServiceImpl;
 import cn.richie696.component.vector.topology.VectorCapability;
 import cn.richie696.component.vector.topology.VectorConnectionDefinition;
@@ -42,7 +47,8 @@ public final class RedisVectorProviderFactory implements VectorProviderFactory {
             "host", "port", "ssl", "username", "password", "database", "client-name",
             "connection-timeout-ms", "socket-timeout-ms", "blocking-socket-timeout-ms");
     private static final Set<String> INDEX_ADDITIONAL_FIELDS = Set.of(
-            "initialize-schema", "metadata-fields");
+            "initialize-schema", "metadata-fields", "hybrid-enabled", "dense-field", "sparse-field",
+            "sparse-vectorizer", "hybrid-candidate-limit", "hybrid-fallback-mode");
     private static final Set<String> INDEX_PARAM_KEYS = Set.of("M", "efConstruction", "efRuntime");
     private static final VectorStoreCapabilities BASE_CAPABILITIES = VectorStoreCapabilities.of(
             VectorCapability.SCORE_STAGES,
@@ -54,9 +60,14 @@ public final class RedisVectorProviderFactory implements VectorProviderFactory {
             VectorCapability.INDEX_LIFECYCLE);
 
     private final RerankService rerankService;
+    private final SparseVectorizerRegistry sparseVectorizers;
 
     public RedisVectorProviderFactory(RerankService rerankService) {
+        this(rerankService, new SparseVectorizerRegistry(Map.of()));
+    }
+    public RedisVectorProviderFactory(RerankService rerankService, SparseVectorizerRegistry sparseVectorizers) {
         this.rerankService = rerankService;
+        this.sparseVectorizers = sparseVectorizers;
     }
 
     @Override
@@ -115,6 +126,7 @@ public final class RedisVectorProviderFactory implements VectorProviderFactory {
         rejectUnknownKeys(index.indexParams(), INDEX_PARAM_KEYS, "Redis index-params");
         booleanValue(index.additionalFields(), "initialize-schema", false);
         metadataFields(index.additionalFields().get("metadata-fields"));
+        HybridStoreOptions.fromAdditionalFields(index.additionalFields());
         if ("flat".equalsIgnoreCase(index.indexType()) && !index.indexParams().isEmpty()) {
             throw new IllegalArgumentException("Redis HNSW index-params cannot be used with a flat index");
         }
@@ -176,6 +188,7 @@ public final class RedisVectorProviderFactory implements VectorProviderFactory {
             throw new IllegalArgumentException("Redis index dimension does not match the bound EmbeddingModel");
         }
 
+        HybridStoreOptions hybrid = HybridStoreOptions.fromAdditionalFields(index.additionalFields());
         RedisVectorStore.Builder storeBuilder = RedisVectorStore.builder(redisConnection.client(), embeddingModel.model())
                 .indexName(index.name())
                 .prefix(index.name() + ":")
@@ -210,6 +223,11 @@ public final class RedisVectorProviderFactory implements VectorProviderFactory {
             service.setVectorFilterCompiler(filterCompiler);
             handle.capability(VectorFilterCompiler.class, filterCompiler);
         }
+        if (hybrid.enabled()) {
+            handle.capability(VectorAclAwareHybridSearchOperations.class,
+                    new RedisAclAwareHybridSearchOperations(redisConnection.client(), embeddingModel.model(), hybrid,
+                            new RedisSearchAclFilterCompiler(), Map.of(definition.defaultIndex(), index.name())));
+        }
         return handle.build();
     }
 
@@ -236,13 +254,19 @@ public final class RedisVectorProviderFactory implements VectorProviderFactory {
     }
 
     private static VectorStoreCapabilities storeCapabilities(VectorIndexDefinition index) {
-        return metadataFields(index.additionalFields().get("metadata-fields")).isEmpty()
+        VectorStoreCapabilities base = metadataFields(index.additionalFields().get("metadata-fields")).isEmpty()
                 ? BASE_CAPABILITIES
                 : VectorStoreCapabilities.of(
                         VectorCapability.NATIVE_FILTER,
                         VectorCapability.ACL_FILTER,
                         VectorCapability.SCORE_STAGES,
                         VectorCapability.INDEX_LIFECYCLE);
+        if (!HybridStoreOptions.fromAdditionalFields(index.additionalFields()).enabled()) return base;
+        List<cn.richie696.component.vector.topology.VectorCapabilityDescriptor> descriptors = new ArrayList<>(base.descriptors());
+        descriptors.add(new cn.richie696.component.vector.topology.VectorCapabilityDescriptor(
+                VectorCapability.ACL_SAFE_HYBRID, "1.0", Map.of("filter-stage", "provider-recall",
+                "execution", "core-rrf", "sparse-mode", "redis-fulltext")));
+        return new VectorStoreCapabilities(descriptors);
     }
 
     private static void applyHnswParams(RedisVectorStore.Builder builder, Map<String, Object> params) {

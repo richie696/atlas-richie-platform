@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <parent><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-vector-parent</artifactId><version>${revision}</version><relativePath>../pom.xml</relativePath></parent>
+    <artifactId>atlas-richie-vector-tencent-vectordb</artifactId>
+    <name>atlas-richie-vector-tencent-vectordb</name>
+    <dependencies>
+        <dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-vector-core</artifactId></dependency>
+        <dependency><groupId>cn.richie696.ai</groupId><artifactId>atlas-richie-ai-tencent-vectordb-store</artifactId></dependency>
+    </dependencies>
+</project>
