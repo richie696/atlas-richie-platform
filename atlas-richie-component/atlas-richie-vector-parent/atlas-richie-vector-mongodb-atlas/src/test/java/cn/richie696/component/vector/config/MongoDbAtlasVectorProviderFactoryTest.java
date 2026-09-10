@@ -67,6 +67,30 @@ class MongoDbAtlasVectorProviderFactoryTest {
     }
 
     @Test
+    void advertisesAclSafeHybridOnlyWhenAtlasFilterFieldsAreDeclared() {
+        var hybrid = store("documents", "vector_documents", Map.of(
+                "hybrid-enabled", true, "filter-metadata-fields", "tenantId"), Map.of());
+        assertThat(factory.capabilities(connection(), hybrid).supports(VectorCapability.ACL_SAFE_HYBRID)).isTrue();
+        assertThatThrownBy(() -> factory.validateStore(connection(), store("documents", "vector_documents", Map.of("hybrid-enabled", true), Map.of())))
+                .hasMessageContaining("filter-metadata-fields");
+    }
+
+    @Test
+    void mapsEveryAclMetadataFieldAsANestedAtlasSearchToken() {
+        org.bson.Document definition = MongoDbAtlasVectorProviderFactory.textSearchIndexDefinition(
+                "text_documents", java.util.List.of("tenantId", "principalId"));
+
+        org.bson.Document mappings = definition.get("definition", org.bson.Document.class)
+                .get("mappings", org.bson.Document.class);
+        org.bson.Document metadata = mappings.get("fields", org.bson.Document.class)
+                .get("metadata", org.bson.Document.class);
+        org.bson.Document fields = metadata.get("fields", org.bson.Document.class);
+        assertThat(metadata.getString("type")).isEqualTo("document");
+        assertThat(fields.get("tenantId", org.bson.Document.class).getString("type")).isEqualTo("token");
+        assertThat(fields.get("principalId", org.bson.Document.class).getString("type")).isEqualTo("token");
+    }
+
+    @Test
     void createsTwoStoreBoundHandlesOnOneConnectionWithoutNetworkAccess() {
         VectorConnectionHandle connection = factory.openConnection(connection());
         try {
