@@ -2,6 +2,8 @@ package cn.richie696.component.vector.integration;
 
 import cn.richie696.component.vector.config.MilvusVectorAutoConfiguration;
 import cn.richie696.component.vector.config.MilvusVectorProviderFactory;
+import cn.richie696.component.vector.config.DashVectorAutoConfiguration;
+import cn.richie696.component.vector.config.DashVectorProviderFactory;
 import cn.richie696.component.vector.config.MongoDbAtlasVectorAutoConfiguration;
 import cn.richie696.component.vector.config.MongoDbAtlasVectorProviderFactory;
 import cn.richie696.component.vector.config.Neo4jVectorAutoConfiguration;
@@ -12,6 +14,8 @@ import cn.richie696.component.vector.config.QdrantVectorAutoConfiguration;
 import cn.richie696.component.vector.config.QdrantVectorProviderFactory;
 import cn.richie696.component.vector.config.RedisVectorAutoConfiguration;
 import cn.richie696.component.vector.config.RedisVectorProviderFactory;
+import cn.richie696.component.vector.config.TencentVectorDbAutoConfiguration;
+import cn.richie696.component.vector.config.TencentVectorDbProviderFactory;
 import cn.richie696.component.vector.config.VikingDbVectorAutoConfiguration;
 import cn.richie696.component.vector.config.VikingDbVectorProviderFactory;
 import cn.richie696.component.vector.config.WeaviateVectorAutoConfiguration;
@@ -44,10 +48,12 @@ class VectorProviderClasspathCoexistenceTest {
                         RedisVectorAutoConfiguration.class,
                         MongoDbAtlasVectorAutoConfiguration.class,
                         Neo4jVectorAutoConfiguration.class,
-                        VikingDbVectorAutoConfiguration.class))
+                        VikingDbVectorAutoConfiguration.class,
+                        DashVectorAutoConfiguration.class,
+                        TencentVectorDbAutoConfiguration.class))
                 .run(context -> {
                     assertThat(context).hasNotFailed();
-                    assertThat(context.getBeansOfType(VectorProviderFactory.class)).hasSize(8);
+                    assertThat(context.getBeansOfType(VectorProviderFactory.class)).hasSize(10);
                     assertThat(context).hasSingleBean(MilvusVectorProviderFactory.class);
                     assertThat(context).hasSingleBean(PostgresqlVectorProviderFactory.class);
                     assertThat(context).hasSingleBean(WeaviateVectorProviderFactory.class);
@@ -56,6 +62,8 @@ class VectorProviderClasspathCoexistenceTest {
                     assertThat(context).hasSingleBean(MongoDbAtlasVectorProviderFactory.class);
                     assertThat(context).hasSingleBean(Neo4jVectorProviderFactory.class);
                     assertThat(context).hasSingleBean(VikingDbVectorProviderFactory.class);
+                    assertThat(context).hasSingleBean(DashVectorProviderFactory.class);
+                    assertThat(context).hasSingleBean(TencentVectorDbProviderFactory.class);
 
                     assertThat(context).doesNotHaveBean(VectorStore.class);
                     assertThat(context).doesNotHaveBean(DataSource.class);
@@ -66,6 +74,8 @@ class VectorProviderClasspathCoexistenceTest {
                     assertThat(context).doesNotHaveBean(Driver.class);
                     assertThat(context).doesNotHaveBean(
                             com.volcengine.vikingdb.runtime.vector.service.VectorService.class);
+                    assertThat(context).doesNotHaveBean(com.aliyun.dashvector.DashVectorClient.class);
+                    assertThat(context).doesNotHaveBean(com.tencent.tcvectordb.client.VectorDBClient.class);
                 });
     }
 }
