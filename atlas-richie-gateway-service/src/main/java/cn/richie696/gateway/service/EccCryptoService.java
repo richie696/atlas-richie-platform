@@ -27,7 +27,18 @@ public interface EccCryptoService {
      * @param path 请求路径
      * @return 是否需要加密
      */
-    boolean shouldEncrypt(String path);
+    default boolean shouldEncrypt(String path) {
+        return shouldEncrypt(path, null);
+    }
+
+    /**
+     * 检查请求路径与 HTTP 方法是否需要加密。
+     *
+     * @param path 请求路径
+     * @param method HTTP 方法；为空时仅用于兼容历史调用
+     * @return 是否需要加密
+     */
+    boolean shouldEncrypt(String path, String method);
 
     /**
      * 缓存客户端公钥

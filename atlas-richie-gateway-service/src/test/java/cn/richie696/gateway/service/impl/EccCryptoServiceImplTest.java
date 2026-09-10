@@ -30,12 +30,14 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.List;
+import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -150,6 +152,20 @@ class EccCryptoServiceImplTest {
 
             assertThat(result).isFalse();
         }
+
+        @Test
+        @DisplayName("精确规则应同时匹配请求方法")
+        void shouldEncrypt_ruleMatchesPathAndMethod() {
+            when(config.isEnabled()).thenReturn(true);
+            doReturn(new String[]{}).when(config).getExcludePaths();
+            EccCryptoConfig.EncryptionRule rule = new EccCryptoConfig.EncryptionRule();
+            rule.setPath("/api/admin/v1/sys/users");
+            rule.setMethods(List.of("POST"));
+            doReturn(List.of(rule)).when(config).getEncryptRules();
+
+            assertThat(service.shouldEncrypt("/api/admin/v1/sys/users", "POST")).isTrue();
+            assertThat(service.shouldEncrypt("/api/admin/v1/sys/users", "GET")).isFalse();
+        }
     }
 
     @Nested
@@ -250,20 +266,22 @@ class EccCryptoServiceImplTest {
         }
 
         @Test
-        @DisplayName("缓存命中时返回缓存的密钥")
+        @DisplayName("缓存命中时恢复并返回缓存的密钥")
         void getOrGenerateSharedKey_cacheHit_returnsCached() {
-            SecretKey cachedKey = mock(SecretKey.class);
-            when(structOps.get(anyString(), eq(SecretKey.class))).thenReturn(cachedKey);
+            byte[] encoded = new byte[16];
+            encoded[0] = 7;
+            when(valueOps.get(anyString(), eq(String.class)))
+                    .thenReturn(Base64.getEncoder().encodeToString(encoded));
 
             SecretKey result = service.getOrGenerateSharedKey(CLIENT_ID, privateKey);
 
-            assertThat(result).isEqualTo(cachedKey);
+            assertThat(result).isInstanceOf(SecretKeySpec.class);
+            assertThat(result.getEncoded()).isEqualTo(encoded);
         }
 
         @Test
         @DisplayName("缓存未命中且公钥不存在时返回 null")
         void getOrGenerateSharedKey_cacheMissNoPublicKey_returnsNull() {
-            when(structOps.get(anyString(), eq(SecretKey.class))).thenReturn(null);
             when(valueOps.get(anyString(), eq(String.class))).thenReturn(null);
 
             SecretKey result = service.getOrGenerateSharedKey(CLIENT_ID, privateKey);
@@ -274,11 +292,11 @@ class EccCryptoServiceImplTest {
         @Test
         @DisplayName("缓存未命中时生成新密钥并缓存")
         void getOrGenerateSharedKey_cacheMissGeneratesNew() throws Exception {
-            SecretKey newKey = mock(SecretKey.class);
+            SecretKey newKey = new SecretKeySpec(new byte[16], "AES");
             PublicKey pubKey = java.security.KeyFactory.getInstance("EC")
                     .generatePublic(new java.security.spec.X509EncodedKeySpec(java.util.Base64.getDecoder().decode(clientPublicKeyBase64)));
-            when(structOps.get(anyString(), eq(SecretKey.class))).thenReturn(null);
-            when(valueOps.get(anyString(), eq(String.class))).thenReturn(clientPublicKeyBase64);
+            when(valueOps.get(anyString(), eq(String.class))).thenAnswer(invocation ->
+                    invocation.<String>getArgument(0).contains("client:publickey") ? clientPublicKeyBase64 : null);
             when(config.getClientKeyCacheExpire()).thenReturn(3600L);
             eccCryptoUtilsMockedStatic.when(() -> EccCryptoUtils.base64ToPublicKey(clientPublicKeyBase64))
                     .thenReturn(pubKey);
@@ -288,7 +306,11 @@ class EccCryptoServiceImplTest {
             SecretKey result = service.getOrGenerateSharedKey(CLIENT_ID, privateKey);
 
             assertThat(result).isEqualTo(newKey);
-            verify(structOps).set(anyString(), eq(newKey), eq(3600L));
+            verify(valueOps).set(
+                    anyString(),
+                    eq(Base64.getEncoder().encodeToString(newKey.getEncoded())),
+                    eq(TimeUnit.SECONDS.toMillis(3600L))
+            );
         }
 
         @Test
@@ -296,8 +318,8 @@ class EccCryptoServiceImplTest {
         void getOrGenerateSharedKey_generateFails_returnsNull() throws Exception {
             PublicKey pubKey = java.security.KeyFactory.getInstance("EC")
                     .generatePublic(new java.security.spec.X509EncodedKeySpec(java.util.Base64.getDecoder().decode(clientPublicKeyBase64)));
-            when(structOps.get(anyString(), eq(SecretKey.class))).thenReturn(null);
-            when(valueOps.get(anyString(), eq(String.class))).thenReturn(clientPublicKeyBase64);
+            when(valueOps.get(anyString(), eq(String.class))).thenAnswer(invocation ->
+                    invocation.<String>getArgument(0).contains("client:publickey") ? clientPublicKeyBase64 : null);
             eccCryptoUtilsMockedStatic.when(() -> EccCryptoUtils.base64ToPublicKey(clientPublicKeyBase64))
                     .thenReturn(pubKey);
             eccCryptoUtilsMockedStatic.when(() -> EccCryptoUtils.generateSharedSecret(any(), any()))
@@ -315,15 +337,16 @@ class EccCryptoServiceImplTest {
             PrivateKey second = mock(PrivateKey.class);
             when(first.getEncoded()).thenReturn(new byte[]{1, 2, 3});
             when(second.getEncoded()).thenReturn(new byte[]{4, 5, 6});
-            when(structOps.get(anyString(), eq(SecretKey.class))).thenReturn(null);
             when(valueOps.get(anyString(), eq(String.class))).thenReturn(null);
 
             service.getOrGenerateSharedKey(CLIENT_ID, first);
             service.getOrGenerateSharedKey(CLIENT_ID, second);
 
             var keys = org.mockito.ArgumentCaptor.forClass(String.class);
-            verify(structOps, times(2)).get(keys.capture(), eq(SecretKey.class));
-            List<String> captured = keys.getAllValues();
+            verify(valueOps, atLeast(2)).get(keys.capture(), eq(String.class));
+            List<String> captured = keys.getAllValues().stream()
+                    .filter(key -> key.startsWith("platform:gateway:ecc:sharedkey:"))
+                    .toList();
             assertThat(captured).hasSize(2).doesNotHaveDuplicates();
             assertThat(captured.get(0)).startsWith("platform:gateway:ecc:sharedkey:" + CLIENT_ID + ":");
         }
@@ -353,7 +376,6 @@ class EccCryptoServiceImplTest {
         @Test
         @DisplayName("共享密钥获取失败时返回 null")
         void decryptRequestData_noSharedKey_returnsNull() {
-            when(structOps.get(anyString(), eq(SecretKey.class))).thenReturn(null);
             when(valueOps.get(anyString(), eq(String.class))).thenReturn(null);
 
             String result = service.decryptRequestData(ENCRYPTED_DATA, CLIENT_ID, privateKey);
@@ -364,9 +386,9 @@ class EccCryptoServiceImplTest {
         @Test
         @DisplayName("正常解密成功")
         void decryptRequestData_happy_decrypts() throws Exception {
-            SecretKey sharedKey = mock(SecretKey.class);
-            when(structOps.get(anyString(), eq(SecretKey.class))).thenReturn(null);
-            when(valueOps.get(anyString(), eq(String.class))).thenReturn(clientPublicKeyBase64);
+            SecretKey sharedKey = new SecretKeySpec(new byte[16], "AES");
+            when(valueOps.get(anyString(), eq(String.class))).thenAnswer(invocation ->
+                    invocation.<String>getArgument(0).contains("client:publickey") ? clientPublicKeyBase64 : null);
             when(config.getClientKeyCacheExpire()).thenReturn(3600L);
             PublicKey pubKey = java.security.KeyFactory.getInstance("EC")
                     .generatePublic(new java.security.spec.X509EncodedKeySpec(java.util.Base64.getDecoder().decode(clientPublicKeyBase64)));
@@ -385,8 +407,9 @@ class EccCryptoServiceImplTest {
         @Test
         @DisplayName("解密异常时返回 null")
         void decryptRequestData_decryptFails_returnsNull() throws Exception {
-            SecretKey sharedKey = mock(SecretKey.class);
-            when(structOps.get(anyString(), eq(SecretKey.class))).thenReturn(sharedKey);
+            SecretKey sharedKey = new SecretKeySpec(new byte[16], "AES");
+            when(valueOps.get(anyString(), eq(String.class)))
+                    .thenReturn(Base64.getEncoder().encodeToString(sharedKey.getEncoded()));
             eccCryptoUtilsMockedStatic.when(() -> EccCryptoUtils.decrypt(anyString(), eq(sharedKey)))
                     .thenThrow(new Exception("Decrypt failed"));
 
@@ -420,7 +443,6 @@ class EccCryptoServiceImplTest {
         @Test
         @DisplayName("共享密钥获取失败时返回 null")
         void encryptResponseData_noSharedKey_returnsNull() {
-            when(structOps.get(anyString(), eq(SecretKey.class))).thenReturn(null);
             when(valueOps.get(anyString(), eq(String.class))).thenReturn(null);
 
             String result = service.encryptResponseData(PLAIN_DATA, CLIENT_ID, privateKey);
@@ -431,8 +453,9 @@ class EccCryptoServiceImplTest {
         @Test
         @DisplayName("正常加密成功")
         void encryptResponseData_happy_encrypts() throws Exception {
-            SecretKey sharedKey = mock(SecretKey.class);
-            when(structOps.get(anyString(), eq(SecretKey.class))).thenReturn(sharedKey);
+            SecretKey sharedKey = new SecretKeySpec(new byte[16], "AES");
+            when(valueOps.get(anyString(), eq(String.class)))
+                    .thenReturn(Base64.getEncoder().encodeToString(sharedKey.getEncoded()));
             eccCryptoUtilsMockedStatic.when(() -> EccCryptoUtils.encrypt(eq(PLAIN_DATA), eq(sharedKey)))
                     .thenReturn(ENCRYPTED_DATA);
 
@@ -444,8 +467,9 @@ class EccCryptoServiceImplTest {
         @Test
         @DisplayName("加密异常时返回 null")
         void encryptResponseData_encryptFails_returnsNull() throws Exception {
-            SecretKey sharedKey = mock(SecretKey.class);
-            when(structOps.get(anyString(), eq(SecretKey.class))).thenReturn(sharedKey);
+            SecretKey sharedKey = new SecretKeySpec(new byte[16], "AES");
+            when(valueOps.get(anyString(), eq(String.class)))
+                    .thenReturn(Base64.getEncoder().encodeToString(sharedKey.getEncoded()));
             eccCryptoUtilsMockedStatic.when(() -> EccCryptoUtils.encrypt(anyString(), eq(sharedKey)))
                     .thenThrow(new Exception("Encrypt failed"));
 
