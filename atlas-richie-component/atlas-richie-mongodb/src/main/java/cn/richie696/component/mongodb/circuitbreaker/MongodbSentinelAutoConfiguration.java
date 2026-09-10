@@ -15,16 +15,16 @@
  */
 package cn.richie696.component.mongodb.circuitbreaker;
 
+import cn.richie696.context.utils.data.JsonUtils;
 import com.alibaba.csp.sentinel.datasource.Converter;
 import com.alibaba.csp.sentinel.datasource.nacos.NacosDataSource;
 import com.alibaba.csp.sentinel.slots.block.degrade.DegradeRule;
 import com.alibaba.csp.sentinel.slots.block.degrade.DegradeRuleManager;
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.TypeReference;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import tools.jackson.core.type.TypeReference;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,7 +89,7 @@ public class MongodbSentinelAutoConfiguration {
             if (source == null || source.isEmpty()) {
                 return new ArrayList<>();
             }
-            return JSON.parseObject(source, new TypeReference<List<DegradeRule>>() {
+            return JsonUtils.getInstance().deserialize(source, new TypeReference<>() {
             });
         }
     }
