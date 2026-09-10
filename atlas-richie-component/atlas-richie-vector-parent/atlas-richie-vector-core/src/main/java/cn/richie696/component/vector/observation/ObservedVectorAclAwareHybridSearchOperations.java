@@ -11,6 +11,7 @@ import cn.richie696.component.vector.model.HybridSearchOptions;
 import cn.richie696.component.vector.model.VectorFilter;
 import cn.richie696.component.vector.model.VectorSearchResult;
 import cn.richie696.component.vector.service.VectorAclAwareHybridSearchOperations;
+import cn.richie696.component.vector.service.HybridSearchExecutionMode;
 import cn.richie696.component.vector.topology.VectorStoreId;
 
 import java.time.Duration;
@@ -77,6 +78,7 @@ public final class ObservedVectorAclAwareHybridSearchOperations
         VectorStoreObservationHook.safeEmit(hook, new VectorStoreObservationEvent(
                 storeId, provider, VectorStoreOperation.SEARCH_HYBRID, result,
                 Duration.ofNanos(Math.max(0L, System.nanoTime() - started)),
-                VectorStoreObservationEvent.fingerprint(indexName), capabilities, category));
+                VectorStoreObservationEvent.fingerprint(indexName), capabilities, category,
+                delegate instanceof HybridSearchExecutionMode mode ? mode.hybridExecutionMode() : "unknown"));
     }
 }

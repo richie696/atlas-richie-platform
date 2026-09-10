@@ -179,6 +179,13 @@ public final class VectorStoreHandle {
         }
 
         public VectorStoreHandle build() {
+            boolean declaredAclHybrid = storeCapabilities.supports(VectorCapability.ACL_SAFE_HYBRID);
+            boolean exposesAclHybrid = capabilities.containsKey(VectorAclAwareHybridSearchOperations.class)
+                    || capabilitySource instanceof VectorAclAwareHybridSearchOperations;
+            if (declaredAclHybrid != exposesAclHybrid) {
+                throw new IllegalArgumentException("ACL_SAFE_HYBRID capability declaration must match "
+                        + "VectorAclAwareHybridSearchOperations registration");
+            }
             return new VectorStoreHandle(this);
         }
     }

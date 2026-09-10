@@ -125,6 +125,12 @@ public enum VectorProvider {
      */
     VIKINGDB,
 
+    /** 阿里云 DashVector 向量数据库。 */
+    DASHVECTOR,
+
+    /** 腾讯云 VectorDB 向量数据库。 */
+    TENCENT_VECTORDB,
+
     /**
      * Elasticsearch向量数据库
      * 基于Elasticsearch的向量检索能力

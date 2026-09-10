@@ -5,6 +5,9 @@
 package cn.richie696.component.vector.topology;
 
 import cn.richie696.component.vector.observation.VectorStoreObservationHook;
+import cn.richie696.component.vector.model.HybridStoreOptions;
+import cn.richie696.component.vector.query.VectorQueryDefaults;
+import cn.richie696.component.vector.service.SparseVectorizerRegistry;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,9 +38,24 @@ public final class VectorTopologyBootstrap {
             Collection<VectorProviderFactory> providerFactories,
             NamedEmbeddingModelResolver embeddingModelResolver,
             VectorStoreObservationHook observationHook) {
+        return start(connectionDefinitions, storeDefinitions, providerFactories, embeddingModelResolver,
+                observationHook, new SparseVectorizerRegistry(Map.of()));
+    }
+
+    /** Validates opt-in hybrid declarations before any provider connection is opened. */
+    public static VectorTopologyRuntime start(
+            Collection<VectorConnectionDefinition> connectionDefinitions,
+            Collection<VectorStoreDefinition> storeDefinitions,
+            Collection<VectorProviderFactory> providerFactories,
+            NamedEmbeddingModelResolver embeddingModelResolver,
+            VectorStoreObservationHook observationHook,
+            SparseVectorizerRegistry sparseVectorizers) {
         Objects.requireNonNull(connectionDefinitions, "connectionDefinitions must not be null");
         Objects.requireNonNull(storeDefinitions, "storeDefinitions must not be null");
         Objects.requireNonNull(embeddingModelResolver, "embeddingModelResolver must not be null");
+        Objects.requireNonNull(sparseVectorizers, "sparseVectorizers must not be null");
+
+        storeDefinitions.forEach(store -> validateHybridDeclaration(store, sparseVectorizers));
 
         Map<VectorConnectionId, VectorConnectionDefinition> connections = indexConnections(connectionDefinitions);
         DefaultVectorConnectionRegistry connectionRegistry = new DefaultVectorConnectionRegistry(providerFactories);
@@ -70,6 +88,23 @@ public final class VectorTopologyBootstrap {
                 startupFailure.addSuppressed(closeFailure);
             }
             throw startupFailure;
+        }
+    }
+
+    private static void validateHybridDeclaration(
+            VectorStoreDefinition store, SparseVectorizerRegistry sparseVectorizers) {
+        for (VectorIndexDefinition index : store.indexes().values()) {
+            HybridStoreOptions options = HybridStoreOptions.fromAdditionalFields(index.additionalFields());
+            if (!options.enabled()) continue;
+            if (options.vectorizerBeanName() != null) {
+                sparseVectorizers.require(options.vectorizerBeanName());
+            }
+            VectorQueryDefaults defaults = store.queryDefaults() == null
+                    ? VectorQueryDefaults.CORE_SAFE : VectorQueryDefaults.CORE_SAFE.overlay(store.queryDefaults());
+            int topK = defaults.topK() == null ? 10 : defaults.topK();
+            if (options.candidateLimit() < topK) {
+                throw new IllegalArgumentException("hybrid-candidate-limit must be greater than or equal to Store topK");
+            }
         }
     }
 
