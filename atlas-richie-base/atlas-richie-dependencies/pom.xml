@@ -98,7 +98,7 @@
         <jackson-bom.version>3.2.1</jackson-bom.version>
         <jackson-annotations.version>2.22</jackson-annotations.version>
         <grpc-bom.version>1.82.0</grpc-bom.version>
-        <jnats.version>2.25.3</jnats.version>
+        <jnats.version>2.26.2</jnats.version>
         <sentinel.version>1.8.10</sentinel.version>
         <jakarta.jakartaee-bom.version>11.0.0</jakarta.jakartaee-bom.version>
         <testcontainers.version>2.0.5</testcontainers.version>
