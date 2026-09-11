@@ -82,7 +82,7 @@
         <thumbnailator.version>0.4.21</thumbnailator.version>
 
         <!-- service dependencies -->
-        <feign.version>13.13</feign.version>
+        <feign.version>13.14</feign.version>
         <guava.version>33.6.0-jre</guava.version>
         <snakeyaml.version>2.6</snakeyaml.version>
         <netty.version>4.2.15.Final</netty.version>
