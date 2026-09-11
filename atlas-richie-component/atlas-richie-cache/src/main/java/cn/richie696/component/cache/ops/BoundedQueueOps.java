@@ -15,8 +15,8 @@
  */
 package cn.richie696.component.cache.ops;
 
-import cn.richie696.component.cache.operations.BoundedListCapacityLimits;
-import cn.richie696.component.cache.operations.BoundedQueue;
+import cn.richie696.component.cache.redis.operations.BoundedListCapacityLimits;
+import cn.richie696.component.cache.redis.operations.BoundedQueue;
 
 /**
  * 有界队列（Bounded FIFO Queue）管理接口。

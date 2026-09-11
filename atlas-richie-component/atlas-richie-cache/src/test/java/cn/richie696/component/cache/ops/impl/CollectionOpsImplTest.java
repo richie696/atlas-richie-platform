@@ -18,7 +18,7 @@ package cn.richie696.component.cache.ops.impl;
 import cn.richie696.component.cache.enums.KeyTypeEnum;
 import cn.richie696.component.cache.function.SetFunction;
 import cn.richie696.component.cache.ops.L2SyncHelper;
-import cn.richie696.component.cache.operations.SetCapacityLimits;
+import cn.richie696.component.cache.redis.operations.SetCapacityLimits;
 import cn.richie696.component.cache.support.OpsTestSupport;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

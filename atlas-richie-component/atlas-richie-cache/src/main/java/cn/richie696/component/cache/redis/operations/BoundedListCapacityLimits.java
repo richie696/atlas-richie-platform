@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cn.richie696.component.cache.operations;
+package cn.richie696.component.cache.redis.operations;
 
 import java.util.Objects;
-import java.util.List;
 
 /**
  * 有界 List 结构（队列 / 栈）容量治理常量。

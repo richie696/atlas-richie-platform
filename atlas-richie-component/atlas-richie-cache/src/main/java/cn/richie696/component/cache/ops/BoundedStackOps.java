@@ -15,7 +15,7 @@
  */
 package cn.richie696.component.cache.ops;
 
-import cn.richie696.component.cache.operations.BoundedStack;
+import cn.richie696.component.cache.redis.operations.BoundedStack;
 
 /**
  * 有界栈（Bounded LIFO Stack）管理接口。

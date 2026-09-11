@@ -16,7 +16,7 @@
 package cn.richie696.component.cache.ops.impl;
 
 import cn.richie696.component.cache.function.ZSetFunction;
-import cn.richie696.component.cache.operations.ZSetCapacityLimits;
+import cn.richie696.component.cache.redis.operations.ZSetCapacityLimits;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

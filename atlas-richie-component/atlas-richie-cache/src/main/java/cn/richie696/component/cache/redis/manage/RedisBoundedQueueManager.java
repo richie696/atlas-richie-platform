@@ -15,9 +15,9 @@
  */
 package cn.richie696.component.cache.redis.manage;
 
-import cn.richie696.component.cache.operations.BoundedListCapacityLimits;
-import cn.richie696.component.cache.operations.BoundedListRedisScripts;
-import cn.richie696.component.cache.operations.BoundedQueue;
+import cn.richie696.component.cache.redis.operations.BoundedListCapacityLimits;
+import cn.richie696.component.cache.redis.operations.BoundedListRedisScripts;
+import cn.richie696.component.cache.redis.operations.BoundedQueue;
 import cn.richie696.component.cache.ops.BoundedQueueOps;
 import cn.richie696.component.cache.redis.bean.MultiRedisTemplate;
 import cn.richie696.component.cache.redis.perf.RedisPerfGuard;

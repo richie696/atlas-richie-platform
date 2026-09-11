@@ -13,29 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cn.richie696.component.cache.operations;
+package cn.richie696.component.cache.redis.operations;
 
+import cn.richie696.component.cache.redis.operations.ZSetCapacityLimits;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class SetCapacityLimitsTest {
+class ZSetCapacityLimitsTest {
 
     @Test
     void thresholds_matchReadmeGuidance() {
-        assertThat(SetCapacityLimits.SET_RECOMMENDED_MAX_ELEMENTS).isEqualTo(5_000L);
-        assertThat(SetCapacityLimits.SET_HARD_MAX_ELEMENTS).isEqualTo(10_000L);
+        assertThat(ZSetCapacityLimits.ZSET_RECOMMENDED_MAX_ELEMENTS).isEqualTo(5_000L);
+        assertThat(ZSetCapacityLimits.ZSET_HARD_MAX_ELEMENTS).isEqualTo(10_000L);
     }
 
     @Test
     void exceedsRecommended_at5000() {
-        assertThat(SetCapacityLimits.exceedsRecommended(4_999L)).isFalse();
-        assertThat(SetCapacityLimits.exceedsRecommended(5_000L)).isTrue();
+        assertThat(ZSetCapacityLimits.exceedsRecommended(4_999L)).isFalse();
+        assertThat(ZSetCapacityLimits.exceedsRecommended(5_000L)).isTrue();
     }
 
     @Test
     void exceedsHardLimit_at10000() {
-        assertThat(SetCapacityLimits.exceedsHardLimit(9_999L)).isFalse();
-        assertThat(SetCapacityLimits.exceedsHardLimit(10_000L)).isTrue();
+        assertThat(ZSetCapacityLimits.exceedsHardLimit(9_999L)).isFalse();
+        assertThat(ZSetCapacityLimits.exceedsHardLimit(10_000L)).isTrue();
     }
 }

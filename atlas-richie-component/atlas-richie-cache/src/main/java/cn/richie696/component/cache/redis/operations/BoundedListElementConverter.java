@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cn.richie696.component.cache.operations;
+package cn.richie696.component.cache.redis.operations;
 
 import cn.richie696.context.utils.data.JsonUtils;
 import jakarta.annotation.Nullable;
