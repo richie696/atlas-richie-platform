@@ -54,7 +54,7 @@
         <spring-cloud-alibaba-dependencies.version>2025.1.0.0</spring-cloud-alibaba-dependencies.version>
         <spring-cloud-dependencies.version>2025.1.2</spring-cloud-dependencies.version>
         <spring-cloud-azure-dependencies.version>7.3.0</spring-cloud-azure-dependencies.version>
-        <spring-ai.version>2.0.0</spring-ai.version>
+        <spring-ai.version>2.0.1</spring-ai.version>
         <agentscope.version>2.0.0-RC4</agentscope.version>
 
         <!-- Maven构建的文件名时间戳格式 -->
