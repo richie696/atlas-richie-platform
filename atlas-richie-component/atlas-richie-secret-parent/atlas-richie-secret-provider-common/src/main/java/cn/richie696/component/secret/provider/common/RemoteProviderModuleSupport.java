@@ -55,6 +55,28 @@ public final class RemoteProviderModuleSupport {
             String type,
             RemoteProviderProperties properties,
             Set<SecretCapability> capabilities) {
+        validate(type, properties, capabilities, Set.of(RemoteProviderProperties.AuthenticationType.values()), false);
+    }
+
+    /**
+     * Validation entry point for providers backed by a vendor SDK.  The legacy REST wire profile,
+     * request signer and custom TLS/proxy knobs cannot be silently applied to a vendor SDK, so
+     * they are deliberately rejected instead of leaving an operator with a misleading setting.
+     */
+    public static void validateSdk(
+            String type,
+            RemoteProviderProperties properties,
+            Set<SecretCapability> capabilities,
+            Set<RemoteProviderProperties.AuthenticationType> supportedAuthenticationTypes) {
+        validate(type, properties, capabilities, supportedAuthenticationTypes, true);
+    }
+
+    private static void validate(
+            String type,
+            RemoteProviderProperties properties,
+            Set<SecretCapability> capabilities,
+            Set<RemoteProviderProperties.AuthenticationType> supportedAuthenticationTypes,
+            boolean sdkBacked) {
         if (capabilities.contains(SecretCapability.SECRET_READ)) {
             validateEndpoint(type + " Secret", properties.getSecretEndpoint());
         }
@@ -71,6 +93,9 @@ public final class RemoteProviderModuleSupport {
             required(properties.getRegion(), type + " region");
             required(properties.getNamespace(), type + " keyring namespace");
         }
+        if (!supportedAuthenticationTypes.contains(authentication.getType())) {
+            invalid(type + " SDK does not support authentication type " + authentication.getType());
+        }
         switch (authentication.getType()) {
             case BEARER_TOKEN -> required(authentication.getToken().length == 0 ? null : "configured", type + " bearer token");
             case TOKEN_FILE -> required(authentication.getTokenFile(), type + " token file");
@@ -82,6 +107,7 @@ public final class RemoteProviderModuleSupport {
             case NONE -> { }
         }
         validateWire(type, properties.getWire());
+        if (sdkBacked) validateSdkOnlySettings(type, properties);
         if (authentication.getSignature() != RemoteProviderProperties.RequestSignature.NONE) {
             required(authentication.getAccessKeyId(), type + " signing access key id");
             required(authentication.getAccessKeySecret().length == 0 ? null : "configured", type + " signing access key secret");
@@ -105,6 +131,49 @@ public final class RemoteProviderModuleSupport {
             if (entry.getValue().getField() != null) safe(entry.getValue().getField(), type + " Secret field");
         }
     }
+
+    private static void validateSdkOnlySettings(String type, RemoteProviderProperties properties) {
+        if (properties.getAuthentication().getSignature() != RemoteProviderProperties.RequestSignature.NONE) {
+            invalid(type + " SDK performs request signing itself; authentication.signature must be NONE");
+        }
+        if (hasCustomWire(properties.getWire())) {
+            invalid(type + " SDK does not support legacy wire.* overrides");
+        }
+        RemoteProviderProperties.Tls tls = properties.getTls();
+        if (notBlank(tls.getTrustStore()) || notBlank(tls.getKeyStore())) {
+            invalid(type + " SDK does not support tls trust-store/key-store overrides");
+        }
+        RemoteProviderProperties.Proxy proxy = properties.getProxy();
+        if (notBlank(proxy.getHost()) || notBlank(proxy.getUsername()) || proxy.getPassword().length > 0) {
+            invalid(type + " SDK does not support proxy overrides");
+        }
+    }
+
+    private static boolean hasCustomWire(RemoteProviderProperties.Wire wire) {
+        RemoteProviderProperties.Wire defaults = new RemoteProviderProperties.Wire();
+        return !wireProfile(wire).equals(wireProfile(defaults));
+    }
+
+    private static String wireProfile(RemoteProviderProperties.Wire wire) {
+        return String.join("\n", String.valueOf(wire.getSecretPath()), String.valueOf(wire.getSecretLatestPath()),
+                String.valueOf(wire.getSecretMethod()), String.valueOf(wire.getSecretRequestNameField()),
+                String.valueOf(wire.getSecretRequestVersionField()), String.valueOf(wire.getLatestVersionValue()),
+                String.valueOf(wire.getWrapPath()), String.valueOf(wire.getUnwrapPath()),
+                String.valueOf(wire.getSecretValueField()), String.valueOf(wire.getSecretVersionField()),
+                String.valueOf(wire.getSecretCreatedAtField()), String.valueOf(wire.getWrappedKeyField()),
+                String.valueOf(wire.getPlaintextField()), String.valueOf(wire.getSecretValueEncoding()),
+                String.valueOf(wire.getRequestValueField()), String.valueOf(wire.getRequestWrapValueField()),
+                String.valueOf(wire.getRequestUnwrapValueField()), String.valueOf(wire.getRequestAadField()),
+                String.valueOf(wire.getRequestAadEncoding()), String.valueOf(wire.getRequestKeyField()),
+                String.valueOf(wire.getRequestValueEncoding()), String.valueOf(wire.getResponseValueEncoding()),
+                String.valueOf(wire.getRequestAlgorithmField()), String.valueOf(wire.getRequestAlgorithm()),
+                String.valueOf(wire.getSecretAction()), String.valueOf(wire.getSecretApiVersion()),
+                String.valueOf(wire.getSecretSigningService()), String.valueOf(wire.getWrapAction()),
+                String.valueOf(wire.getUnwrapAction()), String.valueOf(wire.getKmsApiVersion()),
+                String.valueOf(wire.getKmsSigningService()));
+    }
+
+    private static boolean notBlank(String value) { return value != null && !value.isBlank(); }
 
     private static void validateEndpoint(String label, URI endpoint) {
         if (endpoint == null || endpoint.getHost() == null) invalid(label + " endpoint is required");

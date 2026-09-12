@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -122,6 +123,28 @@ class RemoteProviderModuleSupportTest {
         assertThat(second).isNotEqualTo(first);
         assertThat(first).doesNotContain("first").doesNotContain("second");
         assertThat(second).doesNotContain("first").doesNotContain("second");
+    }
+
+    @Test
+    void sdkProvidersFailFastForLegacyWireSigningAndProxySettings() {
+        RemoteProviderProperties valid = validNoneProperties();
+        RemoteProviderModuleSupport.validateSdk("gcp", valid,
+                Set.of(cn.richie696.component.secret.api.SecretCapability.SECRET_READ),
+                Set.of(RemoteProviderProperties.AuthenticationType.NONE));
+
+        RemoteProviderProperties wire = validNoneProperties();
+        wire.getWire().setSecretPath("/legacy/{path}");
+        assertThatThrownBy(() -> RemoteProviderModuleSupport.validateSdk("gcp", wire,
+                Set.of(cn.richie696.component.secret.api.SecretCapability.SECRET_READ),
+                Set.of(RemoteProviderProperties.AuthenticationType.NONE)))
+                .isInstanceOf(SecretConfigurationException.class).hasMessageContaining("legacy wire");
+
+        RemoteProviderProperties proxy = validNoneProperties();
+        proxy.getProxy().setHost("proxy.example"); proxy.getProxy().setPort(8080);
+        assertThatThrownBy(() -> RemoteProviderModuleSupport.validateSdk("gcp", proxy,
+                Set.of(cn.richie696.component.secret.api.SecretCapability.SECRET_READ),
+                Set.of(RemoteProviderProperties.AuthenticationType.NONE)))
+                .isInstanceOf(SecretConfigurationException.class).hasMessageContaining("proxy overrides");
     }
 
     private static RemoteProviderProperties.RequestSignature signatureFor(String provider) {

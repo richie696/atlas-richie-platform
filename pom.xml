@@ -57,6 +57,16 @@
         <spring-ai.version>2.0.0</spring-ai.version>
         <agentscope.version>2.0.0-RC4</agentscope.version>
 
+        <!-- Secret Provider SDKs: keep vendor clients pinned centrally. -->
+        <google-cloud-secretmanager.version>2.93.0</google-cloud-secretmanager.version>
+        <google-cloud-kms.version>2.95.0</google-cloud-kms.version>
+        <tencentcloud-sdk.version>3.1.1138</tencentcloud-sdk.version>
+        <huaweicloud-sdk.version>3.1.209</huaweicloud-sdk.version>
+        <volcengine-kms-sdk.version>2.0.20</volcengine-kms-sdk.version>
+        <oci-sdk.version>3.95.0</oci-sdk.version>
+        <ibm-keyprotect-sdk.version>1.0.5</ibm-keyprotect-sdk.version>
+        <baidu-bce-sdk.version>0.10.439</baidu-bce-sdk.version>
+
         <!-- Maven构建的文件名时间戳格式 -->
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 

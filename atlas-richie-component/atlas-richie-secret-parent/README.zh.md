@@ -151,7 +151,7 @@ platform:
 
 M2 同样由最终业务系统按需选择：`atlas-richie-secret-provider-azure`、`-gcp`、`-tencent`、`-huawei`、`-volcengine`、`-oci`、`-ibm-key-protect` 或 `-baidu`。
 
-这些包当前共享严格的 JSON Provider Transport，并提供 `wire` profile 将厂商官方 REST 文档中的路径和响应字段声明为配置：读取、包裹、解包支持 `{path}`、`{key}`、`{version}`、`{region}`、`{projectId}`、`{tenantId}`、`{namespace}`、`{apiVersion}` 模板，禁止明文或 Base64 伪加密回退。华为云、腾讯云、火山引擎和百度云的官方请求签名已经内聚在 Transport；GCP/Azure/OCI/IBM 使用短期 Bearer Token 或 Token File，Token 交换由 workload identity Agent 负责。真实云 E2E 在账号和测试租户到位后逐一验收，未验收前不标记为生产 GA。
+这 8 个包现已在 Provider 内部通过官方 SDK Adapter 接入：Azure Key Vault、Google Secret Manager/Cloud KMS、腾讯 SSM/KMS、华为 CSMS/KMS、火山引擎 KMS、OCI Vault/KMS、IBM Key Protect 和百度 KMS。业务侧 Secret/KMS 契约保持不变。认证和能力按厂商声明：Azure/GCP 使用默认凭据链，腾讯/华为/火山/百度使用 AccessKey，OCI 使用 Instance/Resource Principal，IBM 使用 Bearer Token；火山引擎、IBM Key Protect、百度 KMS 仅提供 KMS 能力。真实云 E2E 在账号和测试租户到位后逐一验收，未验收前不标记为生产 GA。请求映射、配置限制和跨语言契约见[官方 SDK Provider 迁移与验收清单](docs/zh/official-sdk-provider-test-plan.md)。
 
 示例（Azure，其他 M2 Provider 只替换前缀与 Maven artifact）：
 
@@ -167,22 +167,14 @@ platform:
       azure:
         endpoint: https://secret-adapter.example.internal
         authentication:
-          type: bearer-token
-          token: ${AZURE_SECRET_ADAPTER_TOKEN}
+          # Azure DefaultAzureCredential：环境变量、托管身份、开发者登录等
+          type: none
         secrets:
           database-password:
             path: applications/order-service/database
             field: password
         key-bindings:
           default-envelope: order-service-envelope
-        # 按厂商官方 REST 文档覆盖路径/响应字段；默认值为统一契约
-        wire:
-          secret-path: /secrets/{path}
-          wrap-path: /keys/{key}/wrap
-          unwrap-path: /keys/{key}/unwrap
-          secret-value-field: value
-          wrapped-key-field: wrappedKey
-          plaintext-field: plaintext
 ```
 
 业务组件自身只依赖轻量级 Bootstrap，不得将上述任何 Provider 传递给最终应用。
@@ -405,14 +397,14 @@ Provider 是否可用必须以对应版本的发布说明、兼容性矩阵和�
 | --- | --- | --- | --- | --- |
 | AWS | SDK 默认凭据链、EKS/ECS/EC2 角色 | AWS SDK 原生签名 | SDK/HTTPS；真实代理矩阵待验收 | Contract 已通过；真实云待验收 |
 | 阿里云 | SDK 默认凭据链、RAM Role/ACK/ECS 身份 | SDK 原生签名 | SDK/HTTPS；真实代理矩阵待验收 | Contract 已通过；真实云待验收 |
-| Azure | Bearer、Token File、Managed Identity Agent | 不启用通用 HMAC | TrustStore/Proxy | Wire/Contract 已通过；真实云待验收 |
-| GCP | Bearer、Token File、Workload Identity Agent | 不启用通用 HMAC | TrustStore/Proxy | Wire/Contract 已通过；真实云待验收 |
-| OCI | Bearer、Token File、Instance/Resource Principal Agent | 不启用通用 HMAC | TrustStore/Proxy | Wire/Contract 已通过；真实云待验收 |
-| IBM Key Protect | Bearer、Token File | 不启用通用 HMAC | TrustStore/Proxy | Wire/Contract 已通过；真实云待验收 |
-| 腾讯云 | AccessKey、Token File/身份 Agent | TC3-HMAC-SHA256 | TrustStore/Proxy | 签名 Contract 已通过；真实云待验收 |
-| 华为云 | AccessKey、Token File/Agency Agent | SDK-HMAC-SHA256 | TrustStore/Proxy | 签名 Contract 已通过；真实云待验收 |
-| 火山引擎 | AccessKey、Token File/身份 Agent | HMAC-SHA256、KMS Encrypt/Decrypt | TrustStore/Proxy | Wire/签名 Contract 已通过；真实云待验收 |
-| 百度云 KMS | AccessKey、Token File/身份 Agent | BCE v2 | TrustStore/Proxy | 签名 Contract 已通过；真实云待验收 |
+| Azure | `NONE` -> Azure DefaultAzureCredential | Azure SDK 原生身份 | SDK/HTTPS；自定义 TLS/代理配置拒绝 | SDK Contract 已通过；真实云待验收 |
+| GCP | `NONE` -> ADC/Workload Identity | Google SDK 原生身份 | SDK/HTTPS；自定义 TLS/代理配置拒绝 | SDK Contract 已通过；真实云待验收 |
+| OCI | `NONE` Instance Principal 或 Resource Principal | OCI SDK 原生身份 | SDK/HTTPS；自定义 TLS/代理配置拒绝 | SDK Contract 已通过；真实云待验收 |
+| IBM Key Protect | Bearer Token | IBM SDK 原生身份 | SDK/HTTPS；自定义 TLS/代理配置拒绝 | SDK Contract 已通过；真实云待验收 |
+| 腾讯云 | AccessKey + 可选 security token | SDK TC3 签名 | SDK/HTTPS；自定义 TLS/代理配置拒绝 | SDK Contract 已通过；真实云待验收 |
+| 华为云 | AccessKey + 可选 security token | SDK 原生签名 | SDK/HTTPS；自定义 TLS/代理配置拒绝 | SDK Contract 已通过；真实云待验收 |
+| 火山引擎 | AccessKey + 可选 security token | SDK 原生签名 | SDK/HTTPS；自定义 TLS/代理配置拒绝 | SDK Contract 已通过；真实云待验收 |
+| 百度云 KMS | AccessKey | SDK 原生签名 | SDK/HTTPS；自定义 TLS/代理配置拒绝 | SDK Contract 已通过；真实云待验收 |
 | OpenBao | Token、Token File | 不启用厂商 HMAC | TrustStore/Proxy；Kubernetes/JWT/AppRole 由 Agent 交换为 Token | OpenBao 2.6.2 Docker E2E 已通过 |
 | Barbican | Bearer、Token File | 不启用厂商 HMAC | TrustStore/Proxy | 协议门禁已通过；本机服务栈缺失 |
 | KMIP 2.1 | mTLS 客户端证书 | KMIP TTLV，不使用 HTTP HMAC | mTLS；代理由部署网络提供 | 本地 TLS/TTLV 已连通；PyKMIP 不支持 AES KWP |
@@ -437,28 +429,22 @@ Provider 是否可用必须以对应版本的发布说明、兼容性矩阵和�
 
 不同 Provider 只提供连接、身份、区域和产品特有参数；公共行为始终由 `platform.component.secret` 控制。
 
-M2 Provider 的默认 wire profile 已收口在组件内部：GCP 使用相互独立的
-Secret Manager 与 Cloud KMS endpoint，并通过
-`projects/{project}/secrets/{secret}/versions/{version}:access` 和
-`payload.data` Base64 载荷，OCI 使用 `secretBundle`，Azure 使用 Key Vault
-`secrets`/`wrapkey`、`RSA-OAEP-256` 和 Base64URL，IBM Key Protect 使用
-`/api/v2/keys/{id}/actions/{wrap,unwrap}`。
-火山引擎使用官方 KMS `Encrypt`/`Decrypt` Action、操作专属的
-`Plaintext`/`CiphertextBlob` 字段和 `EncryptionContext`，并且只声明
-`KEY_WRAP/KEY_UNWRAP`，Secret 读取必须路由到其他 Provider。腾讯云、华为云和百度云
-同样提供官方资源路径、请求字段和操作级 Action/API Version 默认值；如果企业网关或
-厂商 API 版本不同，可以只通过 `wire.*` 覆盖路径和响应字段。组件不会把访问密钥
-写入日志，也不会在 HTTP 失败时回退到明文或伪造值。
+官方 SDK Provider 在 Adapter 内部构造厂商请求模型：GCP 使用独立的 Secret Manager
+与 Cloud KMS client，并将 AAD 映射到 `additionalAuthenticatedData`；OCI 使用
+Secret Bundle 与 KMS `associatedData`；Azure 使用 Key Vault Secret/Keys 与
+RSA-OAEP-256；腾讯、华为使用原生 SSM/CSMS 与 KMS 模型；火山引擎使用 KMS
+`EncryptionContext`；IBM Key Protect 和百度云仅提供 KMS wrap/unwrap。组件不会把
+访问密钥写入日志，也不会在 SDK 失败时回退到明文或伪造值。完整请求映射见[官方 SDK
+Provider 迁移与验收清单](docs/zh/official-sdk-provider-test-plan.md)。
 
-云厂商的认证 token、工作负载身份交换和请求签名必须按对应官方文档配置。当前
-通用 REST 传输支持 `BEARER_TOKEN`、`TOKEN_FILE`、`WORKLOAD_IDENTITY_TOKEN_FILE`、
-`ACCESS_KEY` 和 `NONE`。当使用 `ACCESS_KEY` 时，华为云、腾讯云、火山引擎和百度云
-会自动选择对应的 HMAC 签名协议，也可以通过 `authentication.signature` 显式覆盖；
-工作负载身份文件中的短期 JWT 只作为 Bearer Token 使用，Token 交换由云平台 Agent
-或身份注入器完成。AWS、阿里云的原生 SDK Provider 继续使用各自的默认凭据链。
+云厂商凭据和工作负载身份必须按对应官方 SDK 文档配置。8 个 SDK Provider 会在启动期
+拒绝旧通用 `wire.*`、`authentication.signature`、自定义 TLS 和代理设置，不会静默忽略。
+Azure/GCP 将空 bearer 默认归一为 `NONE` 并使用默认凭据链；OCI 选择 Instance 或
+Resource Principal；腾讯/华为/火山/百度要求 AccessKey；IBM 要求 Bearer Token。
+AWS、阿里云继续使用各自原生 SDK Provider。
 
-腾讯云 SSM 与 KMS 使用不同服务域名和不同签名作用域；Action、API Version 与
-`ssm`/`kms` signing service 已由操作级 wire profile 内聚，使用者不需要重复配置：
+腾讯云 SSM 与 KMS 使用不同服务域名和不同签名作用域；Action、API Version 与签名细节
+由官方 SDK 在 Adapter 内部构造，使用者不需要重复配置：
 
 ```yaml
 platform.component.secret.tencent:
@@ -469,7 +455,6 @@ platform.component.secret.tencent:
     type: access-key
     access-key-id: ${TENCENT_SECRET_ID}
     access-key-secret: ${TENCENT_SECRET_KEY}
-    signature: tencent-tc3-hmac-sha256
 ```
 
 当 Secret Store 与 KMS 本来就共用同一服务入口，或企业反向代理把两者收口到同一
@@ -738,7 +723,7 @@ platform.component.secret.gcp.*
 ...
 ```
 
-M2 适配包统一支持 `endpoint`（同源兼容入口）、`secret-endpoint`、`kms-endpoint`、`authentication`、`secrets`、`key-bindings`、`wire`、`tls` 和 `proxy` 等稳定字段；`authentication.type` 可取 `none`、`bearer-token`、`token-file`、`workload-identity-token-file`、`access-key`，并在启动期校验凭据完整性。endpoint 强制 HTTPS，只有 loopback 本地契约测试允许 HTTP。`wire` 只描述厂商官方 REST 的路径和字段，不把密文伪装成明文，也不在配置中记录凭据。IBM Key Protect、火山引擎与百度云当前只声明 `KEY_WRAP/KEY_UNWRAP`，不会伪装成 Secret Store；华为、腾讯、火山、百度的签名协议已经实现，Azure、GCP、OCI、IBM 的真实身份链与所有 Provider 的真实 E2E 仍需目标账号验收后再进入 GA 兼容矩阵。
+M2 适配包统一保留 `endpoint`（同源兼容入口）、`secret-endpoint`、`kms-endpoint`、`authentication`、`secrets`、`key-bindings` 等稳定字段；endpoint 强制 HTTPS，只有 loopback 本地契约测试允许 HTTP。接入官方 SDK 的 Provider 不再接受旧 REST 的 `wire.*`、`authentication.signature`、自定义 `tls` 或 `proxy` 设置：这些设置会在启动期显式失败，避免配置被静默忽略。各厂商实际支持的身份链、版本语义、AAD 与资源关闭策略见[官方 SDK Provider 迁移与验收清单](docs/zh/official-sdk-provider-test-plan.md#sdk-配置与能力迁移契约)。IBM Key Protect、火山引擎与百度云当前只声明 `KEY_WRAP/KEY_UNWRAP`，不会伪装成 Secret Store；所有 Provider 的真实身份链与云端 E2E 仍需目标账号验收后才能进入 GA 兼容矩阵。
 
 M3 的专属字段为：OpenBao `kv`/`transit`/`namespace`；Barbican `project-id` 与 Secret UUID 映射；KMIP `kmips` endpoint、信任库/客户端密钥库和唯一标识映射；PKCS#11 `library`、数字 `slot`、`pin`、`signing-algorithm` 和 HSM key alias。SunPKCS11 没有可移植的 token-label 选择器，因此配置 `token-label` 会在启动期失败，避免静默选错 Token。PIN、Token、证书密码只能通过受控环境变量、文件或外部配置注入，不得写入 Git。
 
@@ -859,7 +844,7 @@ Secret Manager 主要托管可读取的密码、Token、证书等秘密；KMS �
 ### 文档索引
 
 - [完整设计方案](docs/zh/design.md)
-- Provider 实现指南：见[配置说明](#配置说明)及[厂商签名与工作负载身份兼容矩阵](#厂商签名与工作负载身份兼容矩阵)
+- Provider 实现指南：见[配置说明](#配置说明)、[厂商签名与工作负载身份兼容矩阵](#厂商签名与工作负载身份兼容矩阵)及[官方 SDK Provider 迁移与验收清单](docs/zh/official-sdk-provider-test-plan.md)
 - Binding Catalog Schema：见[项目外观 API](#项目外观-api)和完整设计方案的[业务组件接入规范](docs/zh/design.md#中台业务组件集成规范)
 - 安全运维手册：见[上线、兼容性与安全检查](#上线兼容性与安全检查)及完整设计方案的[部署与运维](docs/zh/design.md#部署与运维)
 - [厂商签名与工作负载身份兼容矩阵](#厂商签名与工作负载身份兼容矩阵)：代码级矩阵已落地，真实环境验收按 Provider 单独登记

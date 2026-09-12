@@ -151,7 +151,7 @@ The final business system selects a Provider based on its deployment environment
 
 M2 Providers are likewise chosen on demand by the final business system: `atlas-richie-secret-provider-azure`, `-gcp`, `-tencent`, `-huawei`, `-volcengine`, `-oci`, `-ibm-key-protect`, or `-baidu`.
 
-These packages currently share a strict JSON Provider Transport, and provide a `wire` profile to declare paths and response fields from the vendor's official REST documentation as configuration: read, wrap, and unwrap support `{path}`, `{key}`, `{version}`, `{region}`, `{projectId}`, `{tenantId}`, `{namespace}`, `{apiVersion}` templates, and disallow plaintext or Base64 pseudo-encryption fallback. The official request signatures of Huawei Cloud, Tencent Cloud, Volcano Engine, and Baidu Cloud have been aggregated into the Transport; GCP/Azure/OCI/IBM use short-term Bearer Tokens or Token Files, with Token exchange handled by the workload identity Agent. Real-cloud E2E validations will be performed one-by-one once accounts and test tenants are available; until validated, the providers are not marked as production GA.
+These eight packages now use their vendor SDKs behind provider-local Adapters: Azure Key Vault, Google Secret Manager/Cloud KMS, Tencent SSM/KMS, Huawei CSMS/KMS, Volcano Engine KMS, OCI Vault/KMS, IBM Key Protect, and Baidu KMS. The public Secret/KMS contracts remain unchanged. Capabilities and credential prerequisites are intentionally provider-specific: Azure/GCP use their default credential chains, Tencent/Huawei/Volcano/Baidu use AccessKey credentials, OCI uses Instance/Resource Principal, and IBM uses a bearer token. Volcano Engine, IBM Key Protect, and Baidu KMS are KMS-only. Real-cloud E2E validations will be performed one-by-one once accounts and test tenants are available; until validated, the providers are not marked as production GA. See the [official SDK migration and acceptance checklist](docs/zh/official-sdk-provider-test-plan.md) for request mappings and unsupported legacy settings.
 
 Example (Azure; other M2 Providers only need to replace the prefix and Maven artifact):
 
@@ -167,22 +167,14 @@ platform:
       azure:
         endpoint: https://secret-adapter.example.internal
         authentication:
-          type: bearer-token
-          token: ${AZURE_SECRET_ADAPTER_TOKEN}
+          # Azure DefaultAzureCredential: environment, managed identity, developer login, etc.
+          type: none
         secrets:
           database-password:
             path: applications/order-service/database
             field: password
         key-bindings:
           default-envelope: order-service-envelope
-        # Override paths/response fields according to the vendor's official REST documentation; default values follow the unified contract
-        wire:
-          secret-path: /secrets/{path}
-          wrap-path: /keys/{key}/wrap
-          unwrap-path: /keys/{key}/unwrap
-          secret-value-field: value
-          wrapped-key-field: wrappedKey
-          plaintext-field: plaintext
 ```
 
 Business components themselves only depend on the lightweight Bootstrap, and must not pass any of the above Providers to the final application.
@@ -404,14 +396,14 @@ The table below shows the current code-level compatibility boundaries. `Implemen
 | --- | --- | --- | --- | --- |
 | AWS | SDK default credential chain, EKS/ECS/EC2 role | AWS SDK native signature | SDK/HTTPS; real proxy matrix pending verification | Contract passed; real cloud pending verification |
 | Aliyun | SDK default credential chain, RAM Role/ACK/ECS identity | SDK native signature | SDK/HTTPS; real proxy matrix pending verification | Contract passed; real cloud pending verification |
-| Azure | Bearer, Token File, Managed Identity Agent | No generic HMAC enabled | TrustStore/Proxy | Wire/Contract passed; real cloud pending verification |
-| GCP | Bearer, Token File, Workload Identity Agent | No generic HMAC enabled | TrustStore/Proxy | Wire/Contract passed; real cloud pending verification |
-| OCI | Bearer, Token File, Instance/Resource Principal Agent | No generic HMAC enabled | TrustStore/Proxy | Wire/Contract passed; real cloud pending verification |
-| IBM Key Protect | Bearer, Token File | No generic HMAC enabled | TrustStore/Proxy | Wire/Contract passed; real cloud pending verification |
-| Tencent Cloud | AccessKey, Token File/identity Agent | TC3-HMAC-SHA256 | TrustStore/Proxy | Signature Contract passed; real cloud pending verification |
-| Huawei Cloud | AccessKey, Token File/Agency Agent | SDK-HMAC-SHA256 | TrustStore/Proxy | Signature Contract passed; real cloud pending verification |
-| Volcano Engine | AccessKey, Token File/identity Agent | HMAC-SHA256, KMS Encrypt/Decrypt | TrustStore/Proxy | Wire/signature Contract passed; real cloud pending verification |
-| Baidu Cloud KMS | AccessKey, Token File/identity Agent | BCE v2 | TrustStore/Proxy | Signature Contract passed; real cloud pending verification |
+| Azure | `NONE` -> Azure DefaultAzureCredential | Azure SDK native auth | SDK/HTTPS; custom TLS/proxy settings rejected | SDK contract passed; real cloud pending verification |
+| GCP | `NONE` -> Application Default Credentials / Workload Identity | Google SDK native auth | SDK/HTTPS; custom TLS/proxy settings rejected | SDK contract passed; real cloud pending verification |
+| OCI | `NONE` Instance Principal or workload type Resource Principal | OCI SDK native auth | SDK/HTTPS; custom TLS/proxy settings rejected | SDK contract passed; real cloud pending verification |
+| IBM Key Protect | Bearer token | IBM SDK native auth | SDK/HTTPS; custom TLS/proxy settings rejected | SDK contract passed; real cloud pending verification |
+| Tencent Cloud | AccessKey + optional security token | Tencent SDK TC3 signing | SDK/HTTPS; custom TLS/proxy settings rejected | SDK contract passed; real cloud pending verification |
+| Huawei Cloud | AccessKey + optional security token | Huawei SDK signing | SDK/HTTPS; custom TLS/proxy settings rejected | SDK contract passed; real cloud pending verification |
+| Volcano Engine | AccessKey + optional security token | Volcengine SDK signing | SDK/HTTPS; custom TLS/proxy settings rejected | SDK contract passed; real cloud pending verification |
+| Baidu Cloud KMS | AccessKey | BCE SDK signing | SDK/HTTPS; custom TLS/proxy settings rejected | SDK contract passed; real cloud pending verification |
 | OpenBao | Token, Token File | No vendor HMAC enabled | TrustStore/Proxy; Kubernetes/JWT/AppRole exchanged to Token by Agent | OpenBao 2.6.2 Docker E2E passed |
 | Barbican | Bearer, Token File | No vendor HMAC enabled | TrustStore/Proxy | Protocol gate passed; local service stack missing |
 | KMIP 2.1 | mTLS client certificate | KMIP TTLV, no HTTP HMAC | mTLS; proxy provided by deployment network | Local TLS/TTLV connected; PyKMIP does not support AES KWP |
@@ -436,11 +428,11 @@ Workload identity files only carry short-term tokens; the Secret component does 
 
 Different Providers only provide connection, identity, region, and product-specific parameters; common behavior is always controlled by `platform.component.secret`.
 
-The default wire profile of M2 Providers has been aggregated inside the component: GCP uses separate Secret Manager and Cloud KMS endpoints, `projects/{project}/secrets/{secret}/versions/{version}:access`, and the Base64 payload at `payload.data`; OCI uses `secretBundle`; Azure uses Key Vault `secrets`/`wrapkey`, `RSA-OAEP-256`, and Base64URL; IBM Key Protect uses `/api/v2/keys/{id}/actions/{wrap,unwrap}`. Volcano Engine uses the official KMS `Encrypt`/`Decrypt` actions, operation-specific `Plaintext`/`CiphertextBlob` fields, and `EncryptionContext`; it declares only `KEY_WRAP/KEY_UNWRAP`, so Secret reads must be routed to another Provider. Tencent Cloud, Huawei Cloud, and Baidu Cloud also provide default official resource paths, request fields, and operation-specific Action/API Version values. If the corporate gateway or vendor API version differs, paths and response fields can be overridden through `wire.*`. The component does not write access keys to logs, nor does it fall back to plaintext or fake values when HTTP fails.
+Official SDK Providers construct vendor request models internally: GCP uses separate Secret Manager and Cloud KMS clients with `additionalAuthenticatedData`; OCI uses Secret Bundle plus KMS `associatedData`; Azure uses Key Vault Secret/Keys with RSA-OAEP-256; Tencent and Huawei use their native SSM/CSMS and KMS models; Volcano Engine uses KMS `EncryptionContext`; IBM Key Protect and Baidu are KMS-only. The component does not write access keys to logs, nor does it fall back to plaintext or fake values when an SDK call fails. Detailed mappings are maintained in the [official SDK migration and acceptance checklist](docs/zh/official-sdk-provider-test-plan.md).
 
-Cloud vendor authentication tokens, workload identity exchange, and request signatures must be configured according to the corresponding official documentation. Currently the generic REST transport supports `BEARER_TOKEN`, `TOKEN_FILE`, `WORKLOAD_IDENTITY_TOKEN_FILE`, `ACCESS_KEY`, and `NONE`. When using `ACCESS_KEY`, Huawei Cloud, Tencent Cloud, Volcano Engine, and Baidu Cloud automatically select the corresponding HMAC signature protocol, which can also be explicitly overridden via `authentication.signature`; the short-term JWT in the workload identity file is only used as a Bearer Token, with Token exchange handled by the cloud platform Agent or identity injector. AWS and Aliyun's native SDK Providers continue to use their respective default credential chains.
+Cloud vendor credentials and workload identity must be configured according to the corresponding official SDK documentation. The eight SDK-backed Providers reject legacy generic `wire.*`, `authentication.signature`, custom TLS, and proxy settings at startup instead of silently ignoring them. Azure/GCP normalize an empty historical bearer default to `NONE` and use their default credential chains; OCI selects Instance or Resource Principal; Tencent/Huawei/Volcano/Baidu require AccessKey credentials; IBM requires a bearer token. AWS and Aliyun continue to use their respective native SDK Providers.
 
-Tencent SSM and KMS use different service endpoints and signing scopes. Operation-specific Action, API Version, and `ssm`/`kms` signing service values are internal wire-profile details and do not need to be repeated by applications:
+Tencent SSM and KMS use different service endpoints and signing scopes. Operation-specific request details are constructed by the official SDK and do not need to be repeated by applications:
 
 ```yaml
 platform.component.secret.tencent:
@@ -451,7 +443,6 @@ platform.component.secret.tencent:
     type: access-key
     access-key-id: ${TENCENT_SECRET_ID}
     access-key-secret: ${TENCENT_SECRET_KEY}
-    signature: tencent-tc3-hmac-sha256
 ```
 
 When Secret Store and KMS genuinely share one service entry point, or an enterprise reverse proxy consolidates both behind one origin, the compatibility field `endpoint` remains sufficient. Otherwise configure `secret-endpoint` and `kms-endpoint` separately. Azure `key-bindings` must use `<key-name>/<key-version>` so versioned `wrapkey`/`unwrapkey` calls cannot silently select an unintended version.
@@ -715,7 +706,7 @@ platform.component.secret.gcp.*
 ...
 ```
 
-M2 adaptation packages uniformly support `endpoint` (same-origin compatibility entry), `secret-endpoint`, `kms-endpoint`, `authentication`, `secrets`, `key-bindings`, `wire`, `tls`, and `proxy`; `authentication.type` can be `none`, `bearer-token`, `token-file`, `workload-identity-token-file`, `access-key`, and credentials are validated for completeness at startup. Endpoints enforce HTTPS; only loopback local contract tests allow HTTP. `wire` only describes the vendor's official REST paths and fields, and does not disguise ciphertext as plaintext, nor does it record credentials in configuration. IBM Key Protect, Volcano Engine, and Baidu Cloud currently only declare `KEY_WRAP/KEY_UNWRAP`, and will not masquerade as a Secret Store; Huawei, Tencent, Volcano Engine, and Baidu Cloud signature protocols have been implemented; real identity chains for Azure, GCP, OCI, IBM, and real E2E for all Providers still need target account verification before entering the GA compatibility matrix.
+M2 adaptation packages uniformly retain `endpoint` (same-origin compatibility entry), `secret-endpoint`, `kms-endpoint`, `authentication`, `secrets`, and `key-bindings`; endpoints enforce HTTPS, with loopback HTTP allowed only for local contract tests. Official SDK Providers reject legacy `wire.*`, `authentication.signature`, custom `tls`, and `proxy` settings at startup. IBM Key Protect, Volcano Engine, and Baidu Cloud only declare `KEY_WRAP/KEY_UNWRAP` and will not masquerade as Secret Stores. Real identity chains, IAM permissions, temporary credential renewal, and real E2E for all Providers still require target-account verification before entering the GA compatibility matrix.
 
 M3 specific fields are: OpenBao `kv`/`transit`/`namespace`; Barbican `project-id` and Secret UUID mapping; KMIP `kmips` endpoint, trust-store/client keystore, and unique identifier mapping; PKCS#11 `library`, numeric `slot`, `pin`, `signing-algorithm` and HSM key alias. SunPKCS11 has no portable token-label selector, so `token-label` is rejected at startup instead of being silently ignored. PIN, Token, and certificate passwords can only be injected through controlled environment variables, files, or external configuration, and must not be written to Git.
 
@@ -836,10 +827,11 @@ Only directories that have implemented refresh participants will switch without 
 ### Documentation Index
 
 - [Complete Design Document](docs/en/design.md)
-- Provider implementation guide: see [Configuration](#configuration) and [Vendor Signature and Workload Identity Compatibility Matrix](#vendor-signature-and-workload-identity-compatibility-matrix)
+- Provider implementation guide: see [Configuration](#configuration), [Vendor Signature and Workload Identity Compatibility Matrix](#vendor-signature-and-workload-identity-compatibility-matrix), and the [official SDK migration and acceptance checklist](docs/zh/official-sdk-provider-test-plan.md)
 - Binding Catalog Schema: see [Project Facade API](#project-facade-api) and the [Business Component Integration Specification](docs/en/design.md#business-component-integration-specification) in the complete design document
 - Security Operations Manual: see [Rollout, Compatibility and Security Checklist](#-rollout-compatibility-and-security-checklist) and [Deployment and Operations](docs/en/design.md#deployment-and-operations) in the complete design document
 - [Vendor Signature and Workload Identity Compatibility Matrix](#vendor-signature-and-workload-identity-compatibility-matrix): code-level matrix has been landed; real-environment verification is recorded separately per Provider
+- [Official SDK migration and acceptance checklist](docs/zh/official-sdk-provider-test-plan.md): request mappings, cross-language contracts, local evidence, and remaining cloud acceptance
 
 ## 📎 ⏱️ Sequence Diagrams
 
