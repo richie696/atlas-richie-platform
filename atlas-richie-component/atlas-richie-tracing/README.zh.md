@@ -1,9 +1,9 @@
 # Atlas Richie Tracing 组件 (atlas-richie-tracing)
 
-> **依赖托管模块**——统一管理 OpenTelemetry SDK、Spring Boot Starter 及导出器版本，提供开箱即用的分布式追踪依赖集。
+> **依赖托管模块**——提供官方 OpenTelemetry Spring Boot Starter，并统一 instrumentation 与 SDK 版本线，使用一套标准配置入口。
 
 本模块 **不含自定义 Java 代码**，是一个依赖聚合包（dependency aggregator）。它统一引入了 OpenTelemetry
-生态的核心依赖并锁定版本，业务方只需引入这一个模块，即可获得完整的 OTel SDK + Spring Boot 自动装配 + 多种导出器支持。
+生态的核心依赖并锁定版本，业务方只需引入这一个模块，即可获得 OTel Starter、API、注解、语义约定、SDK 自动装配和标准 OTLP 导出能力。
 
 ---
 
@@ -37,7 +37,7 @@
 | **坐标**     | `cn.richie696.component:atlas-richie-tracing` |
 | **类别**     | 依赖托管——分布式追踪                                    |
 | **适用范围** | Spring Boot 3.x / 4.x                                   |
-| **托管版本** | OpenTelemetry SDK 1.40+ / Instrumentation BOM 2.x       |
+| **托管版本** | OpenTelemetry SDK 1.65.0 / Instrumentation 2.31.1       |
 
 ### 设计目的
 
@@ -48,11 +48,11 @@ API 变更。
 本模块作为一个 **受控依赖集**，让业务方只加一个依赖就能获得：
 
 - ✅ **版本锁定**——所有 OTel 依赖版本由 `atlas-richie-component-dependencies` BOM 统一管控，不存在版本碎片
-- ✅ **协议封闭**——引入标准 OTLP exporter + Zipkin exporter（legacy），业务方不需要纠结引入哪个 exporter 版本
+- ✅ **标准协议**——统一使用 OTLP，导出器版本由官方 Starter 负责对齐
 - ✅ **注解就绪**——`@WithSpan` / `@SpanAttribute` 直接可用，不用额外加 `opentelemetry-instrumentation-annotations`
 - ✅ **自动装配就绪**——`opentelemetry-spring-boot-starter` 在 classpath 上即生效，`TracerProvider` /
   `OtlpHttpSpanExporter` 自动注册
-- ✅ **可选 Metrics**——`micrometer-registry-otlp` 标记为 optional，业务方按需启用 OTLP Metrics
+- ✅ **全信号配置**——trace、metrics、logs 均使用标准 `otel.*` / `OTEL_*` 配置
 
 ### 本模块的"是"与"不是"
 
@@ -60,9 +60,9 @@ API 变更。
 |----------------------------------------------|------------------------------------------------------|
 | OpenTelemetry 核心依赖版本管理               | 自定义 Java 自动配置或 Bean                          |
 | Spring Boot 自动装配（由 OTel Starter 提供） | 自定义 Sampler / SpanProcessor / Exporter            |
-| OTLP / Zipkin / Logging 三种导出器           | 应用层 instrumentation（需要 Java Agent 或手动 API） |
+| 官方 Starter 提供的 OTLP 导出能力           | 应用层 instrumentation（需要 Java Agent 或手动 API） |
 | `@WithSpan` / `@SpanAttribute` 注解          | 控制台 UI / 规则推送中心                             |
-| Micrometer OTLP Metrics（optional）          | 日志聚合（用 `atlas-richie-logging`）      |
+| Starter 的 Micrometer 指标桥接（显式开启）   | 日志聚合（用 `atlas-richie-logging`）      |
 | 服务名称、采样、exporter 端点等配置属性      | Profiling / Continuous Profiling                     |
 
 ---
@@ -76,25 +76,22 @@ API 变更。
 | 依赖                                        | 作用                                                                     | 何时用到                                                         |
 |---------------------------------------------|--------------------------------------------------------------------------|------------------------------------------------------------------|
 | `opentelemetry-api`                         | OTel 接口定义——`Tracer`、`Span`、`OpenTelemetry`                         | 任何使用 OTel API 的地方（手动 span、instrumentation）           |
-| `opentelemetry-sdk`                         | 完整 SDK（trace + metrics + logs）                                       | 生产运行必须                                                     |
-| `opentelemetry-sdk-trace`                   | Trace 专属 SDK（`SdkTracerProvider`、`SpanProcessor`）                   | SDK 自动装配时使用                                               |
-| `opentelemetry-sdk-extension-autoconfigure` | 从环境变量 / `otel.*` 配置初始化 SDK                                     | `OTEL_SERVICE_NAME`、`OTEL_TRACES_EXPORTER` 等环境变量生效的基础 |
 | `opentelemetry-semconv`                     | 语义约定常量——`SemanticAttributes.*`（如 `HTTP_METHOD`、`DB_STATEMENT`） | 手动 span 时设置标准化 attribute 名称                            |
 | `opentelemetry-instrumentation-annotations` | `@WithSpan`、`@SpanAttribute` 注解                                       | 需要注解式埋点时（配合 Java Agent 或 Spring AOP）                |
 
 ### 导出器依赖
 
+SDK、SDK 自动配置和导出器都是官方 Starter 的传递实现细节，本组件不再重复声明。
+
 | 依赖                             | 协议                         | 场景                                                             |
 |----------------------------------|------------------------------|------------------------------------------------------------------|
-| `opentelemetry-exporter-otlp`    | OTLP（gRPC + HTTP/protobuf） | **首选**——发送到 OTel Collector / Jaeger / Tempo / Uptrace 等    |
-| `opentelemetry-exporter-zipkin`  | Zipkin JSON（HTTP）          | **Legacy**——后端仅支持 Zipkin 时使用（OTel 官方标记 deprecated） |
-| `opentelemetry-exporter-logging` | 控制台输出                   | **开发调试**——span 打印到日志，不发送到任何后端                  |
+| Starter 管理的 OTLP exporter     | OTLP（gRPC 或 HTTP/protobuf） | **首选**——发送到 OTel Collector 或其他 OTLP 后端                |
 
 ### Spring Boot 集成
 
 | 依赖                                | 作用                 | 说明                                                                            |
 |-------------------------------------|----------------------|---------------------------------------------------------------------------------|
-| `opentelemetry-spring-boot-starter` | Spring Boot 自动装配 | 提供 `OpenTelemetry` Bean、自动注册 `SdkTracerProvider`、`OtlpHttpSpanExporter` |
+| `opentelemetry-spring-boot-starter` | Spring Boot 自动装配 | 必需；提供 `OpenTelemetry` Bean 并负责 SDK / exporter 自动配置 |
 
 **该 Starter 自动完成的工作**（来自 `io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter`）：
 
@@ -103,12 +100,6 @@ API 变更。
 - 自动注册 `OtlpHttpSpanExporter`（或 gRPC）
 - 支持 `spring-web` / `spring-webmvc` / `spring-webflux` 的 AOP 埋点
 - 支持可编程的 SDK 自定义（`AutoConfigurationCustomizerProvider`）
-
-### 可选依赖
-
-| 依赖                       | 作用                          | 启用方式                      |
-|----------------------------|-------------------------------|-------------------------------|
-| `micrometer-registry-otlp` | 将 Micrometer 指标导出为 OTLP | 在业务方 `pom.xml` 中显式引入 |
 
 ---
 
@@ -184,26 +175,31 @@ java -javaagent:opentelemetry-javaagent.jar \
 2. **配置 `application.yml`**
 
 ```yaml
-# OTel 环境变量方式（推荐——与部署环境解耦）
+# 标准 OTel 配置；这些配置也可以由 Nacos 下发
 otel:
-  service.name: my-app
-  traces.exporter: otlp
+  sdk:
+    disabled: ${OTEL_SDK_DISABLED:true}
+  service:
+    name: ${OTEL_SERVICE_NAME:${spring.application.name:unknown_service}}
+  traces:
+    exporter: ${OTEL_TRACES_EXPORTER:otlp}
+    sampler: ${OTEL_TRACES_SAMPLER:parent_based_traceidratio}
+    sampler.arg: ${OTEL_TRACES_SAMPLER_ARG:0.1}
+  metrics:
+    exporter: ${OTEL_METRICS_EXPORTER:otlp}
+  logs:
+    exporter: ${OTEL_LOGS_EXPORTER:otlp}
   exporter:
     otlp:
-      endpoint: http://otel-collector:4317
-      protocol: grpc
-
-# 或者 Spring Boot 管理属性方式
-management:
-  opentelemetry:
-    tracing:
-      export:
-        otlp:
-          endpoint: http://otel-collector:4318/v1/traces
-  tracing:
-    sampling:
-      probability: 0.1
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://otel-collector:4318}
+      protocol: ${OTEL_EXPORTER_OTLP_PROTOCOL:http/protobuf}
+  instrumentation:
+    micrometer:
+      enabled: ${OTEL_INSTRUMENTATION_MICROMETER_ENABLED:true}
 ```
+
+`otel.sdk.disabled` 在 Spring 上下文启动阶段读取，是启动期开关；Nacos 修改后需要重启应用才能重新创建 SDK，运行中的上下文不会动态替换 SDK。
+启用声明式配置（`otel.file_format`）时，关闭键应改为 `otel.disabled`。
 
 3. **完成——启动即可看到 trace**
 
@@ -303,12 +299,14 @@ span 上下文——互补，不冲突。
 
 本模块本身不定义配置属性（0 自定义代码）。所有配置来自 `opentelemetry-spring-boot-starter` 和 Spring Boot 原生 OTel 支持。
 
+旧的 `platform.cache.redis.stream.tracing.*` 和 `management.otlp.metrics.*` 配置不再读取；请统一改用下面的标准 `otel.*` 配置，确保所有组件共享同一个 SDK、采样器和 exporter。
+
 ### OTel 环境变量（推荐——部署环境解耦）
 
 | 属性                          | 示例值                                    | 说明           |
 |-------------------------------|-------------------------------------------|----------------|
 | `OTEL_SERVICE_NAME`           | `my-app`                                  | 服务名，必填   |
-| `OTEL_TRACES_EXPORTER`        | `otlp` / `zipkin` / `none`                | trace 导出器   |
+| `OTEL_TRACES_EXPORTER`        | `otlp` / `none`                           | trace 导出器   |
 | `OTEL_METRICS_EXPORTER`       | `otlp` / `none`                           | metrics 导出器 |
 | `OTEL_LOGS_EXPORTER`          | `otlp` / `none`                           | logs 导出器    |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://otel-collector:4317`              | OTLP 后端地址  |
@@ -324,23 +322,26 @@ spring:
   application:
     name: my-app
 
-management:
-  tracing:
-    sampling:
-      probability: 0.1              # 采样概率
-  opentelemetry:
-    tracing:
-      export:
-        otlp:
-          endpoint: http://localhost:4318/v1/traces
-    logging:
-      export:
-        otlp:
-          endpoint: http://localhost:4318/v1/logs
-  otlp:
-    metrics:
-      export:
-        url: http://localhost:4318/v1/metrics
+otel:
+  sdk:
+    disabled: ${OTEL_SDK_DISABLED:true}
+  service:
+    name: ${OTEL_SERVICE_NAME:${spring.application.name:unknown_service}}
+  traces:
+    exporter: ${OTEL_TRACES_EXPORTER:otlp}
+    sampler: ${OTEL_TRACES_SAMPLER:parent_based_traceidratio}
+    sampler.arg: ${OTEL_TRACES_SAMPLER_ARG:0.1}
+  metrics:
+    exporter: ${OTEL_METRICS_EXPORTER:otlp}
+  logs:
+    exporter: ${OTEL_LOGS_EXPORTER:otlp}
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}
+      protocol: ${OTEL_EXPORTER_OTLP_PROTOCOL:http/protobuf}
+  instrumentation:
+    micrometer:
+      enabled: ${OTEL_INSTRUMENTATION_MICROMETER_ENABLED:true}
 ```
 
 ### 采样策略速查
@@ -367,7 +368,7 @@ management:
 7. **不要在 span name / attribute 里放 PII**——邮箱、手机号等敏感信息不应出现在 span 中
 8. **与 `web-core` trace 透传共存时**——`web-core` 先注入 traceId，OTel SDK 自此继承；span 中会自动包含 `http.method`、
    `http.target` 等属性
-9. **Zipkin exporter 已 deprecated**——新项目用 OTLP exporter（`otlp`），兼容 Jaeger / Tempo / Uptrace / Grafana 等所有主流后端
+9. **统一使用 OTLP**——建议通过 OTel Collector 将 trace、metrics、logs 转发到后端
 
 ---
 
@@ -378,8 +379,8 @@ management:
 | **本模块不包含 Java Agent**            | 无字节码级别的全自动 instrumentation                         | 需要 `opentelemetry-javaagent.jar` 需额外下载       |
 | **Starter 的 instrumentation 有限**    | 仅 Spring Web / JDBC 等基础埋点                              | 深度埋点（Kafka / gRPC / Redis）需 Agent 或手动 API |
 | **OTLP gRPC exporter**                 | 需更多依赖，启动稍慢                                         | 默认用 `http/protobuf` 可避免                       |
-| **Zipkin exporter deprecated**         | 未来 OTel 版本可能移除                                       | 新项目用 OTLP                                       |
-| **Micrometer 集成 use Spring Boot 4+** | `management.opentelemetry.*` 属性在 Spring Boot 3.x 可能不全 | 检查具体版本的官方文档                              |
+| **Micrometer bridge 需显式开启**      | 未开启时 Micrometer 指标不会导出                               | 设置 `otel.instrumentation.micrometer.enabled=true` |
+| **Nacos 开关是启动期配置**            | 修改属性不会重建运行中的 SDK                                 | 修改 `otel.sdk.disabled` 后重启应用                 |
 
 ---
 
@@ -415,14 +416,14 @@ Starter，存量项目先试 Agent**。
 
 ### Q5：怎么用 Jaeger 而不是 OTel Collector？
 
-设置 `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317`——Jaeger 原生接受 OTLP gRPC。不需要额外的 Zipkin 桥接。
+设置 `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317` 和 `OTEL_EXPORTER_OTLP_PROTOCOL=grpc`——Jaeger 原生接受 OTLP。
 
 ### Q6：可以只 trace 部分请求吗？
 
 可以，用 `Sampler` 控制：
 
 - 环境变量：`OTEL_TRACES_SAMPLER=traceidratio` + `OTEL_TRACES_SAMPLER_ARG=0.1`
-- Spring Boot 属性：`management.tracing.sampling.probability=0.1`
+- Spring Boot 配置：`otel.traces.sampler=traceidratio` + `otel.traces.sampler.arg=0.1`
 - 编程：实现 `AutoConfigurationCustomizerProvider` 注入自定义 `Sampler`
 
 ---

@@ -30,24 +30,6 @@
             <artifactId>opentelemetry-api</artifactId>
         </dependency>
 
-        <!-- OpenTelemetry SDK -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk</artifactId>
-        </dependency>
-
-        <!-- OpenTelemetry Trace SDK -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk-trace</artifactId>
-        </dependency>
-
-        <!-- OpenTelemetry SDK 自动配置扩展 -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
-        </dependency>
-
         <!-- OpenTelemetry 语义约定 -->
         <!-- 定义了度量指标的命名规范、标签定义以及度量单位等 -->
         <dependency>
@@ -55,42 +37,13 @@
             <artifactId>opentelemetry-semconv</artifactId>
         </dependency>
 
-        <!-- ==================== OpenTelemetry 导出器 ==================== -->
-
-        <!-- OTLP 导出器（支持 gRPC 和 HTTP） -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-otlp</artifactId>
-        </dependency>
-
-        <!-- Zipkin 导出器 -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-zipkin</artifactId>
-        </dependency>
-
-        <!-- 日志导出器（用于调试） -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-logging</artifactId>
-        </dependency>
-
         <!-- ==================== Spring Boot 集成 ==================== -->
 
-        <!-- Spring Boot OpenTelemetry 自动配置（可选——防止无 collector 时控制台出现 Connection refused 错误） -->
+        <!-- 官方 Starter 统一负责 SDK、自动配置、OTLP exporter 和 Spring instrumentation。
+             是否启用由 otel.sdk.disabled / OTEL_SDK_DISABLED 控制。 -->
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-spring-boot-starter</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- ==================== Micrometer 集成（可选）==================== -->
-
-        <!-- Micrometer OTLP 导出器（用于 metrics） -->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-otlp</artifactId>
-            <optional>true</optional>
         </dependency>
     </dependencies>
 

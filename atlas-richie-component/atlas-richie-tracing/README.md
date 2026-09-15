@@ -1,13 +1,11 @@
 # Atlas Richie Tracing Component (atlas-richie-tracing)
 
-> **Dependency Management Module** — centrally manages OpenTelemetry SDK, Spring Boot Starter, and exporter versions,
-> providing a distributed tracing dependency set ready for production use.
+> **Dependency Management Module** — provides the official OpenTelemetry Spring Boot Starter with one aligned
+> instrumentation/SDK release line and a single configuration entry point.
 
 This module **contains no custom Java code**. It is a dependency aggregator that bundles the core OpenTelemetry
-ecosystem dependencies with locked versions. Teams only need to import this single module to obtain the full OTel SDK +
-annotations + multiple exporter support. The Spring Boot auto-configuration starter
-(`opentelemetry-spring-boot-starter`) is **optional** — declare it explicitly when you need auto-configuration (see
-Scenario B).
+ecosystem dependencies with locked versions. Teams only need to import this single module to obtain the OTel Starter,
+API, annotations, semantic conventions, SDK auto-configuration, and the standard OTLP exporters it owns.
 
 ---
 
@@ -20,7 +18,6 @@ Scenario B).
     - [Core Dependencies](#core-dependencies)
     - [Exporter Dependencies](#exporter-dependencies)
     - [Spring Boot Integration](#spring-boot-integration)
-    - [Optional Dependencies](#optional-dependencies)
 - [🔧 Usage Scenarios](#🔧-usage-scenarios)
     - [Scenario A: Java Agent — Zero-Code Full Instrumentation](#scenario-a-java-agent--zero-code-full-instrumentation)
     - [Scenario B: Spring Boot Starter — Code-First Integration (Recommended)](#scenario-b-spring-boot-starter--code-first-integration-recommended)
@@ -41,7 +38,7 @@ Scenario B).
 | **Coordinates**      | `cn.richie696.component:atlas-richie-tracing` |
 | **Category**         | Dependency Management — Distributed Tracing             |
 | **Scope**            | Spring Boot 3.x / 4.x                                   |
-| **Managed Versions** | OpenTelemetry SDK 1.40+ / Instrumentation BOM 2.x       |
+| **Managed Versions** | OpenTelemetry SDK 1.65.0 / Instrumentation 2.31.1       |
 
 ### Design Purpose
 
@@ -53,14 +50,12 @@ This module serves as a **controlled dependency set**, allowing teams to add a s
 
 - ✅ **Version locking** — all OTel dependency versions are governed by the `atlas-richie-component-dependencies` BOM,
   eliminating version fragmentation
-- ✅ **Protocol coverage** — standard OTLP exporter + Zipkin exporter (legacy) bundled, no need to decide which exporter
-  version to add
+- ✅ **Standard protocol** — OTLP is the single exporter path; the Starter owns its compatible exporter versions
 - ✅ **Annotations ready** — `@WithSpan` / `@SpanAttribute` usable out of the box without adding
   `opentelemetry-instrumentation-annotations` separately
-- ✅ **Auto-configuration (optional)** — `opentelemetry-spring-boot-starter` is marked as optional; add it explicitly
-  when you need Spring Boot auto-configuration. This avoids unwanted Connection refused errors when no OTel Collector is
-  running
-- ✅ **Optional Metrics** — `micrometer-registry-otlp` marked as optional, teams enable OTLP Metrics on demand
+- ✅ **Auto-configuration** — `opentelemetry-spring-boot-starter` is included transitively and is controlled by
+  `otel.sdk.disabled` / `OTEL_SDK_DISABLED`
+- ✅ **Full signal configuration** — traces, metrics, and logs use the standard `otel.*` / `OTEL_*` configuration
 
 ### What This Module Is and Is Not
 
@@ -68,9 +63,9 @@ This module serves as a **controlled dependency set**, allowing teams to add a s
 |-------------------------------------------------------------------------|-----------------------------------------------------------------------|
 | OpenTelemetry core dependency version management                        | Custom Java auto-configuration or Beans                               |
 | Spring Boot auto-configuration (from OTel Starter)                      | Custom Sampler / SpanProcessor / Exporter                             |
-| OTLP / Zipkin / Logging exporters                                       | Application-layer instrumentation (requires Java Agent or manual API) |
+| OTLP exporters supplied by the official Starter                         | Application-layer instrumentation (requires Java Agent or manual API) |
 | `@WithSpan` / `@SpanAttribute` annotations                              | Console UI / rule push center                                         |
-| Micrometer OTLP Metrics (optional)                                      | Log aggregation (use `atlas-richie-logging`)                |
+| Starter-based Micrometer metrics bridge (explicitly enable it)          | Log aggregation (use `atlas-richie-logging`)                |
 | Configuration properties for service name, sampling, exporter endpoints | Profiling / Continuous Profiling                                      |
 
 ---
@@ -84,25 +79,23 @@ All dependencies are declared in `pom.xml`. Below is a breakdown by functional g
 | Dependency                                  | Purpose                                                                                     | When It Is Used                                                                 |
 |---------------------------------------------|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
 | `opentelemetry-api`                         | OTel interface definitions — `Tracer`, `Span`, `OpenTelemetry`                              | Any code using OTel API (manual spans, instrumentation)                         |
-| `opentelemetry-sdk`                         | Full SDK (trace + metrics + logs)                                                           | Required for production operation                                               |
-| `opentelemetry-sdk-trace`                   | Trace-specific SDK (`SdkTracerProvider`, `SpanProcessor`)                                   | Used when SDK auto-configuration is active                                      |
-| `opentelemetry-sdk-extension-autoconfigure` | Initializes SDK from env vars / `otel.*` configuration                                      | Foundation for `OTEL_SERVICE_NAME`, `OTEL_TRACES_EXPORTER` etc. to take effect  |
 | `opentelemetry-semconv`                     | Semantic convention constants — `SemanticAttributes.*` (e.g. `HTTP_METHOD`, `DB_STATEMENT`) | Setting standardized attribute names in manual spans                            |
 | `opentelemetry-instrumentation-annotations` | `@WithSpan`, `@SpanAttribute` annotations                                                   | When annotation-based instrumentation is needed (with Java Agent or Spring AOP) |
+
+The SDK, SDK auto-configuration, and exporters are transitive implementation details of the official Starter. They are
+intentionally not declared again by this component.
 
 ### Exporter Dependencies
 
 | Dependency                       | Protocol                    | Scenario                                                                            |
 |----------------------------------|-----------------------------|-------------------------------------------------------------------------------------|
-| `opentelemetry-exporter-otlp`    | OTLP (gRPC + HTTP/protobuf) | **Preferred** — send to OTel Collector / Jaeger / Tempo / Uptrace etc.              |
-| `opentelemetry-exporter-zipkin`  | Zipkin JSON (HTTP)          | **Legacy** — use when the backend only supports Zipkin (deprecated by OTel project) |
-| `opentelemetry-exporter-logging` | Console output              | **Dev/Test** — spans printed to logs, not sent to any backend                       |
+| Starter-managed OTLP exporter    | OTLP (gRPC or HTTP/protobuf) | **Preferred** — send to an OTel Collector or any OTLP-compatible backend             |
 
 ### Spring Boot Integration
 
 | Dependency                          | Purpose                        | Scope    | Notes                                                                                                                                               |
 |-------------------------------------|--------------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| `opentelemetry-spring-boot-starter` | Spring Boot auto-configuration | optional | Provides `OpenTelemetry` Bean, auto-registers `SdkTracerProvider`, `OtlpHttpSpanExporter`. Not included transitively — declare explicitly to enable |
+| `opentelemetry-spring-boot-starter` | Spring Boot auto-configuration | required | Provides `OpenTelemetry` Bean and owns SDK/exporter auto-configuration |
 
 **What the Starter auto-configures** (from `io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter`):
 
@@ -111,13 +104,6 @@ All dependencies are declared in `pom.xml`. Below is a breakdown by functional g
 - Auto-registers `OtlpHttpSpanExporter` (or gRPC variant)
 - AOP instrumentation for `spring-web` / `spring-webmvc` / `spring-webflux`
 - Supports programmatic SDK customization (`AutoConfigurationCustomizerProvider`)
-
-### Optional Dependencies
-
-| Dependency                          | Purpose                            | Activation                                  |
-|-------------------------------------|------------------------------------|---------------------------------------------|
-| `opentelemetry-spring-boot-starter` | Spring Boot auto-configuration     | Declare explicitly in the project `pom.xml` |
-| `micrometer-registry-otlp`          | Export Micrometer metrics via OTLP | Declare explicitly in the project `pom.xml` |
 
 ---
 
@@ -186,42 +172,44 @@ environments where the Agent approach is restricted.
 
 1. **Dependencies**
 
-The starter is now optional — add both the tracing module and the starter explicitly:
+The tracing module already contains the Starter; add only this dependency:
 
 ```xml
 <dependency>
     <groupId>cn.richie696.component</groupId>
     <artifactId>atlas-richie-tracing</artifactId>
 </dependency>
-<dependency>
-    <groupId>io.opentelemetry.instrumentation</groupId>
-    <artifactId>opentelemetry-spring-boot-starter</artifactId>
-</dependency>
 ```
 
 2. **Configure `application.yml`**
 
 ```yaml
-# OTel environment variable approach (recommended — decoupled from deployment)
+# Standard OTel configuration. The same keys can be supplied by Nacos.
 otel:
-  service.name: my-app
-  traces.exporter: otlp
+  sdk:
+    disabled: ${OTEL_SDK_DISABLED:true}
+  service:
+    name: ${OTEL_SERVICE_NAME:${spring.application.name:unknown_service}}
+  traces:
+    exporter: ${OTEL_TRACES_EXPORTER:otlp}
+    sampler: ${OTEL_TRACES_SAMPLER:parent_based_traceidratio}
+    sampler.arg: ${OTEL_TRACES_SAMPLER_ARG:0.1}
+  metrics:
+    exporter: ${OTEL_METRICS_EXPORTER:otlp}
+  logs:
+    exporter: ${OTEL_LOGS_EXPORTER:otlp}
   exporter:
     otlp:
-      endpoint: http://otel-collector:4317
-      protocol: grpc
-
-# Or Spring Boot managed properties approach
-management:
-  opentelemetry:
-    tracing:
-      export:
-        otlp:
-          endpoint: http://otel-collector:4318/v1/traces
-  tracing:
-    sampling:
-      probability: 0.1
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://otel-collector:4318}
+      protocol: ${OTEL_EXPORTER_OTLP_PROTOCOL:http/protobuf}
+  instrumentation:
+    micrometer:
+      enabled: ${OTEL_INSTRUMENTATION_MICROMETER_ENABLED:true}
 ```
+
+`otel.sdk.disabled` is evaluated during Spring context bootstrap. It is therefore a startup switch: a Nacos change
+requires an application restart to rebuild the OTel SDK. It does not dynamically replace the SDK in a running context.
+When declarative OTel configuration (`otel.file_format`) is enabled, use `otel.disabled` instead.
 
 3. **Done — traces appear automatically**
 
@@ -324,15 +312,18 @@ complementary, not conflicting.
 
 ## ⚙️ Configuration Reference
 
-This module defines no configuration properties itself (zero custom code). All configuration comes from
-`opentelemetry-spring-boot-starter` and Spring Boot's native OTel support.
+This module defines no configuration properties itself (zero custom code). All signal configuration comes from the
+official `opentelemetry-spring-boot-starter`; there is no component-specific exporter or SDK switch.
+
+The former `platform.cache.redis.stream.tracing.*` and `management.otlp.metrics.*` settings are not read anymore. Use
+the standard `otel.*` keys below so every component shares the same SDK, sampler, and exporter configuration.
 
 ### OTel Environment Variables (Recommended — Deployment Decoupled)
 
 | Property                      | Example Value                             | Description             |
 |-------------------------------|-------------------------------------------|-------------------------|
 | `OTEL_SERVICE_NAME`           | `my-app`                                  | Service name, required  |
-| `OTEL_TRACES_EXPORTER`        | `otlp` / `zipkin` / `none`                | Trace exporter          |
+| `OTEL_TRACES_EXPORTER`        | `otlp` / `none`                           | Trace exporter          |
 | `OTEL_METRICS_EXPORTER`       | `otlp` / `none`                           | Metrics exporter        |
 | `OTEL_LOGS_EXPORTER`          | `otlp` / `none`                           | Logs exporter           |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://otel-collector:4317`              | OTLP backend address    |
@@ -349,22 +340,26 @@ spring:
     name: my-app
 
 management:
-  tracing:
-    sampling:
-      probability: 0.1
-  opentelemetry:
-    tracing:
-      export:
-        otlp:
-          endpoint: http://localhost:4318/v1/traces
-    logging:
-      export:
-        otlp:
-          endpoint: http://localhost:4318/v1/logs
-  otlp:
-    metrics:
-      export:
-        url: http://localhost:4318/v1/metrics
+otel:
+  sdk:
+    disabled: ${OTEL_SDK_DISABLED:true}
+  service:
+    name: ${OTEL_SERVICE_NAME:${spring.application.name:unknown_service}}
+  traces:
+    exporter: ${OTEL_TRACES_EXPORTER:otlp}
+    sampler: ${OTEL_TRACES_SAMPLER:parent_based_traceidratio}
+    sampler.arg: ${OTEL_TRACES_SAMPLER_ARG:0.1}
+  metrics:
+    exporter: ${OTEL_METRICS_EXPORTER:otlp}
+  logs:
+    exporter: ${OTEL_LOGS_EXPORTER:otlp}
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}
+      protocol: ${OTEL_EXPORTER_OTLP_PROTOCOL:http/protobuf}
+  instrumentation:
+    micrometer:
+      enabled: ${OTEL_INSTRUMENTATION_MICROMETER_ENABLED:true}
 ```
 
 ### Sampling Strategy Quick Reference
@@ -396,8 +391,7 @@ management:
    spans
 8. **Coexisting with `web-core` trace propagation** — `web-core` injects traceId first, OTel SDK inherits it; spans
    automatically include `http.method`, `http.target` etc.
-9. **Zipkin exporter is deprecated** — new projects should use the OTLP exporter (`otlp`), compatible with Jaeger /
-   Tempo / Uptrace / Grafana and all major backends
+9. **Use OTLP as the only exporter path** — route traces, metrics, and logs through an OTel Collector when possible
 
 ---
 
@@ -408,8 +402,8 @@ management:
 | **This module does not include the Java Agent**    | No bytecode-level auto-instrumentation                                       | Download `opentelemetry-javaagent.jar` separately                     |
 | **Starter's instrumentation scope is limited**     | Only Spring Web / JDBC etc.                                                  | Deep instrumentation (Kafka / gRPC / Redis) needs Agent or manual API |
 | **OTLP gRPC exporter**                             | More dependencies, slightly slower startup                                   | Use `http/protobuf` by default to avoid this                          |
-| **Zipkin exporter deprecated**                     | May be removed in future OTel versions                                       | Use OTLP for new projects                                             |
-| **Micrometer integration requires Spring Boot 4+** | `management.opentelemetry.*` properties may be incomplete in Spring Boot 3.x | Check the official docs for your specific version                     |
+| **Micrometer bridge is opt-in**                    | Micrometer metrics are not exported unless enabled                          | Set `otel.instrumentation.micrometer.enabled=true`                    |
+| **Nacos switch is startup-scoped**                 | Changing the property does not rebuild a running SDK                        | Restart the application after changing `otel.sdk.disabled`             |
 
 ---
 
@@ -431,9 +425,8 @@ type-safe control". **New projects should choose Starter; existing projects shou
 
 ### Q2: Does OTel SDK activate automatically when I import this module?
 
-Yes. `opentelemetry-spring-boot-starter` activates upon being on the classpath (condition: Spring Boot 3.x+, no manually
-defined `OpenTelemetry` Bean detected). You must also set `OTEL_SERVICE_NAME` or `otel.service.name` — otherwise traces
-have no service name.
+Yes. `opentelemetry-spring-boot-starter` is transitively included and activates on the classpath when no application
+`OpenTelemetry` Bean overrides it. Set `otel.service.name` (or `OTEL_SERVICE_NAME`) and choose exporters explicitly.
 
 ### Q3: What if I need more instrumentation (Kafka / Redis / gRPC)?
 
@@ -447,15 +440,14 @@ component's README for details.
 
 ### Q5: How do I use Jaeger instead of OTel Collector?
 
-Set `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317` — Jaeger natively accepts OTLP gRPC. No separate Zipkin bridge is
-needed.
+Set `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317` and `OTEL_EXPORTER_OTLP_PROTOCOL=grpc` — Jaeger accepts OTLP.
 
 ### Q6: Can I trace only a subset of requests?
 
 Yes, control this via `Sampler`:
 
 - Env var: `OTEL_TRACES_SAMPLER=traceidratio` + `OTEL_TRACES_SAMPLER_ARG=0.1`
-- Spring Boot property: `management.tracing.sampling.probability=0.1`
+- Spring Boot configuration: `otel.traces.sampler=traceidratio` + `otel.traces.sampler.arg=0.1`
 - Programmatic: implement `AutoConfigurationCustomizerProvider` with a custom `Sampler`
 
 ---
