@@ -81,9 +81,7 @@ atlas-richie-redis-streammq
 ├── config/
 │   ├── StreamMqAutoConfiguration
 │   ├── StreamMqProperties
-│   ├── RedisStreamTracingAutoConfiguration
-│   ├── RedisStreamTracingProperties
-│   ├── OtlpMeterRegistryAutoConfiguration
+│   ├── RedisStreamAutoConfiguration  ← consumes the official OpenTelemetry Bean
 │   └── MonitorAutoConfiguration
 ├── stream/
 │   ├── StreamMq                       ← facade
@@ -96,8 +94,8 @@ atlas-richie-redis-streammq
 │   └── DeadLetterPublisher
 ├── observability/
 │   ├── StreamMetricsBinder           ← Micrometer
-│   ├── StreamTracingFilter           ← OpenTelemetry
-│   └── OtlpExporter
+│   ├── RedisStreamTracingUtils       ← OpenTelemetry propagation/spans
+│   └── MeterRegistry                 ← supplied by Spring Boot/Micrometer
 ├── idempotency/
 │   ├── IdempotencyStore              ← Redis SET
 │   └── DeduplicationKey
@@ -212,6 +210,10 @@ Duplicate messages within window are dropped silently. Dedup key is `stream-name
 ### 4) `Observability`
 
 OTLP metrics auto-exported:
+
+The component records Micrometer metrics and Redis Stream spans, but does not create an exporter or SDK. Add
+`atlas-richie-tracing` to the application and configure `otel.metrics.exporter`, `otel.traces.exporter`, and
+`otel.exporter.otlp.*` there.
 
 ```
 stream.messages.total{stream,group,status}  counter

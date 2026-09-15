@@ -80,8 +80,6 @@ public final class StreammqRedisIntegrationTestSupport implements RedisIntegrati
         pairs.add("platform.cache.redis.stream.monitoring.enabled=true");
         pairs.add("platform.cache.redis.stream.monitoring.health-check.enabled=false");
         pairs.add("management.endpoint.redis-stream.enabled=false");
-        pairs.add("platform.cache.redis.stream.tracing.enabled=true");
-        pairs.add("platform.cache.redis.stream.tracing.exporters=logging");
         pairs.add("platform.cache.redis.stream.consumers.enabled=false");
     }
 }

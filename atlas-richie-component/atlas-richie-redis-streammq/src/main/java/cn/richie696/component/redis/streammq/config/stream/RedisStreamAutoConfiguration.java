@@ -23,6 +23,7 @@ import cn.richie696.component.redis.streammq.config.monitor.RedisStreamMonitorin
 import cn.richie696.component.redis.streammq.function.StreamFunction;
 import cn.richie696.component.redis.streammq.manage.RedisStreamManager;
 import cn.richie696.component.redis.streammq.monitor.RedisStreamMetrics;
+import cn.richie696.component.redis.streammq.tracing.RedisStreamTracingUtils;
 import cn.richie696.component.redis.streammq.stream.RedisStreamCleanup;
 import cn.richie696.component.redis.streammq.stream.RedisStreamConsumerValidator;
 import cn.richie696.component.redis.streammq.stream.RedisStreamIdempotencyGuard;
@@ -30,8 +31,10 @@ import cn.richie696.component.redis.streammq.stream.RedisStreamReactor;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.api.OpenTelemetry;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -48,7 +51,7 @@ import org.springframework.context.annotation.Bean;
  * @since 2025-12-09
  */
 @Slf4j
-@AutoConfiguration
+@AutoConfiguration(afterName = "io.opentelemetry.instrumentation.spring.autoconfigure.OpenTelemetryAutoConfiguration")
 @EnableConfigurationProperties({
         RedisStreamProperties.class,
         RedisStreamProperties.CleanupConfig.class,
@@ -88,11 +91,21 @@ public class RedisStreamAutoConfiguration {
     public RedisStreamManager redisStreamManager(
             @Qualifier("jsonTemplate") MultiRedisTemplate<Object> redisTemplate,
             MultiStringRedisTemplate stringRedisTemplate,
-            OpenTelemetry openTelemetry,
+            ObjectProvider<OpenTelemetry> openTelemetryProvider,
             RedisStreamReactor reactor,
             RedisStreamMetrics metrics,
             RedisPerfGuard redisPerfGuard) {
-        return new RedisStreamManager(redisTemplate, stringRedisTemplate, openTelemetry, reactor, metrics, redisPerfGuard);
+        return new RedisStreamManager(redisTemplate, stringRedisTemplate,
+                openTelemetryProvider.getIfAvailable(OpenTelemetry::noop), reactor, metrics, redisPerfGuard);
+    }
+
+    /**
+     * Redis Stream 只消费 tracing 组件提供的官方 OpenTelemetry Bean，不再自行创建 SDK。
+     */
+    @Bean
+    @ConditionalOnBean(OpenTelemetry.class)
+    public RedisStreamTracingUtils redisStreamTracingUtils(OpenTelemetry openTelemetry) {
+        return new RedisStreamTracingUtils(openTelemetry);
     }
 
     /**

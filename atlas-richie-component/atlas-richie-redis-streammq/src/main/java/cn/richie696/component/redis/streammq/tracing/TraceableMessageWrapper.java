@@ -15,7 +15,6 @@
  */
 package cn.richie696.component.redis.streammq.tracing;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
@@ -80,7 +79,7 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
     /**
      * 从当前 OpenTelemetry 上下文注入追踪信息
      *
-     * @param openTelemetry OpenTelemetry 实例（可选，优先使用 GlobalOpenTelemetry）
+     * @param openTelemetry 官方 Starter 暴露的 OpenTelemetry 实例
      */
     public void injectTraceContext (OpenTelemetry openTelemetry){
         try {
@@ -91,17 +90,8 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
                 return;
             }
 
-            // 优先使用 GlobalOpenTelemetry（Java Agent 配置的），fallback 到传入的实例
-            OpenTelemetry otel = GlobalOpenTelemetry.get();
-            if (otel == null || otel.getPropagators().getTextMapPropagator().getClass().getSimpleName().contains("Noop")) {
-                otel = openTelemetry;
-                log.debug("使用应用内 OpenTelemetry 实例");
-            } else {
-                log.debug("使用 GlobalOpenTelemetry 实例");
-            }
-
             // 使用 TextMapPropagator 注入追踪上下文
-            TextMapPropagator propagator = otel.getPropagators().getTextMapPropagator();
+            TextMapPropagator propagator = openTelemetry.getPropagators().getTextMapPropagator();
             log.debug("使用的传播器类型: {}", propagator.getClass().getSimpleName());
 
             propagator.inject(Context.current(), traceContext, (carrier, key, value) -> {
@@ -127,7 +117,7 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
     /**
      * 从消息中提取追踪上下文
      *
-     * @param openTelemetry OpenTelemetry 实例（可选，优先使用 GlobalOpenTelemetry）
+     * @param openTelemetry 官方 Starter 暴露的 OpenTelemetry 实例
      * @return 包含追踪上下文的 OpenTelemetry Context
      */
     public Context extractTraceContext (OpenTelemetry openTelemetry){
@@ -137,17 +127,8 @@ public record TraceableMessageWrapper(Object originalMessage, Map<String, String
                 return Context.current();
             }
 
-            // 优先使用 GlobalOpenTelemetry（Java Agent 配置的），fallback 到传入的实例
-            OpenTelemetry otel = GlobalOpenTelemetry.get();
-            if (otel == null || otel.getPropagators().getTextMapPropagator().getClass().getSimpleName().contains("Noop")) {
-                otel = openTelemetry;
-                log.debug("使用应用内 OpenTelemetry 实例进行提取");
-            } else {
-                log.debug("使用 GlobalOpenTelemetry 实例进行提取");
-            }
-
             // 使用 TextMapPropagator 提取上下文
-            TextMapPropagator propagator = otel.getPropagators().getTextMapPropagator();
+            TextMapPropagator propagator = openTelemetry.getPropagators().getTextMapPropagator();
             log.debug("使用的传播器类型: {}", propagator.getClass().getSimpleName());
 
             return propagator.extract(Context.current(), traceContext, new TextMapGetter<>() {

@@ -15,7 +15,6 @@
  */
 package cn.richie696.component.redis.streammq.tracing;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
@@ -23,10 +22,8 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
-import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import java.lang.AutoCloseable;
 
 /**
@@ -57,26 +54,11 @@ public class RedisStreamTracingUtils {
     private static Tracer tracer;
 
     /**
-     * 应用内注入的 OpenTelemetry，作为 fallback
+     * 使用官方 OpenTelemetry Starter 暴露的 Bean 初始化 Redis Stream tracing。
+     * 组件本身不创建 SDK，也不读取自己的 exporter 配置。
      */
-    @Autowired
-    private OpenTelemetry autowiredOpenTelemetry;
-
-    /**
-     * 初始化 OpenTelemetry 与 Tracer。
-     * 优先使用 GlobalOpenTelemetry（Java Agent 配置），否则使用应用内注入的实例。
-     */
-    @PostConstruct
-    public void init() {
-        // 优先使用 GlobalOpenTelemetry（Java Agent 配置的），fallback 到应用内注入的实例
-        openTelemetry = GlobalOpenTelemetry.get();
-        if (openTelemetry == null) {
-            openTelemetry = autowiredOpenTelemetry;
-            log.debug("使用应用内 OpenTelemetry 实例");
-        } else {
-            log.debug("使用 GlobalOpenTelemetry 实例");
-        }
-
+    public RedisStreamTracingUtils(OpenTelemetry openTelemetry) {
+        RedisStreamTracingUtils.openTelemetry = openTelemetry;
         tracer = openTelemetry.getTracer("richie-redis-stream", "1.0.0");
         log.debug("OpenTelemetry Tracer for Redis Stream initialized with propagator: {}",
                 openTelemetry.getPropagators().getTextMapPropagator().getClass().getSimpleName());

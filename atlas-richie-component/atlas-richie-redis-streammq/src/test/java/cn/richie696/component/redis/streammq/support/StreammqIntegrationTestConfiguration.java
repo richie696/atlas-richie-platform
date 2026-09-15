@@ -20,7 +20,6 @@ import cn.richie696.component.cache.local.config.LocalCacheAutoConfiguration;
 import cn.richie696.component.cache.redis.config.base.RedisBaseAutoConfiguration;
 import cn.richie696.component.redis.streammq.config.monitor.RedisStreamMonitoringAutoConfiguration;
 import cn.richie696.component.redis.streammq.config.stream.RedisStreamAutoConfiguration;
-import cn.richie696.component.redis.streammq.config.tracing.RedisStreamTracingAutoConfiguration;
 import cn.richie696.component.redis.streammq.utils.DeadLetterQueueUtil;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -34,7 +33,6 @@ import org.springframework.context.annotation.Import;
         LocalCacheAutoConfiguration.class,
         RedisStreamAutoConfiguration.class,
         RedisStreamMonitoringAutoConfiguration.class,
-        RedisStreamTracingAutoConfiguration.class,
         DeadLetterQueueUtil.class,
 })
 public class StreammqIntegrationTestConfiguration {

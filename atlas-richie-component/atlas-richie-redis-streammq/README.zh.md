@@ -80,9 +80,7 @@ atlas-richie-redis-streammq
 ├── config/
 │   ├── StreamMqAutoConfiguration
 │   ├── StreamMqProperties
-│   ├── RedisStreamTracingAutoConfiguration
-│   ├── RedisStreamTracingProperties
-│   ├── OtlpMeterRegistryAutoConfiguration
+│   ├── RedisStreamAutoConfiguration  ← 使用官方 OpenTelemetry Bean
 │   └── MonitorAutoConfiguration
 ├── stream/
 │   ├── StreamMq                       ← 门面
@@ -95,8 +93,8 @@ atlas-richie-redis-streammq
 │   └── DeadLetterPublisher
 ├── observability/
 │   ├── StreamMetricsBinder           ← Micrometer
-│   ├── StreamTracingFilter           ← OpenTelemetry
-│   └── OtlpExporter
+│   ├── RedisStreamTracingUtils       ← OpenTelemetry 透传与 span
+│   └── MeterRegistry                 ← 由 Spring Boot/Micrometer 提供
 ├── idempotency/
 │   ├── IdempotencyStore              ← Redis SET
 │   └── DeduplicationKey
@@ -211,6 +209,9 @@ idempotency:
 ### 4) 可观测性
 
 OTLP 指标自动导出：
+
+本组件只记录 Micrometer 指标和 Redis Stream span，不创建 exporter 或 SDK。业务应用引入 `atlas-richie-tracing`，统一配置
+`otel.metrics.exporter`、`otel.traces.exporter` 和 `otel.exporter.otlp.*`。
 
 ```
 stream.messages.total{stream,group,status}  counter
