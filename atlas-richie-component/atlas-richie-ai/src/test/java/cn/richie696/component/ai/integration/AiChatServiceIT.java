@@ -39,7 +39,8 @@ import static org.mockito.Mockito.when;
 
 @SpringBootTest(classes = AiIntegrationTestConfiguration.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @TestPropertySource(properties = {
-        "platform.component.ai.config-initialization-enabled=false"
+        "platform.component.ai.config-initialization-enabled=false",
+        "platform.component.http.provider=jdk"
 })
 class AiChatServiceIT {
 
