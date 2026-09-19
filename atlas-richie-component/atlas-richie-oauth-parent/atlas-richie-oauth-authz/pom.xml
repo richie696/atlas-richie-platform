@@ -43,6 +43,14 @@
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!-- Lombok 仅用于本模块编译，不向消费者传递 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -63,9 +71,9 @@
                         <include>cn/richie696/component/oauth/authz/**</include>
                     </includes>
                     <excludes>
-                        <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>
-                        <exclude>cn.richie696.component.**.config.**</exclude>
-                        <exclude>cn.richie696.component.**.enums.**</exclude>
+                        <exclude>cn/richie696/component/**/**AutoConfiguration*</exclude>
+                        <exclude>cn/richie696/component/**/config/**</exclude>
+                        <exclude>cn/richie696/component/**/enums/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -77,9 +85,9 @@
                                 <include>cn/richie696/component/oauth/authz/**</include>
                             </includes>
                             <excludes>
-                                <exclude>cn.richie696.component.**.*AutoConfiguration</exclude>
-                                <exclude>cn.richie696.component.**.config.**</exclude>
-                                <exclude>cn.richie696.component.**.enums.**</exclude>
+                                <exclude>cn/richie696/component/**/**AutoConfiguration*</exclude>
+                                <exclude>cn/richie696/component/**/config/**</exclude>
+                                <exclude>cn/richie696/component/**/enums/**</exclude>
                             </excludes>
                             <rules>
                                 <rule>

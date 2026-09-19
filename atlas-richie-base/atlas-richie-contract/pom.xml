@@ -45,10 +45,22 @@
             <artifactId>jackson-annotations</artifactId>
         </dependency>
 
+        <!-- SearchRequest exposes the Jakarta @Nullable contract. -->
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
+
         <!-- Bean Validation 注解 -->
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+
+        <!-- Platform exceptions use SLF4J MessageFormatter; keep the API explicit. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
 
         <!-- Lombok - 编译注解处理 -->
@@ -56,6 +68,7 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

@@ -8,4 +8,40 @@
         <dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-vector-core</artifactId></dependency>
         <dependency><groupId>cn.richie696.ai</groupId><artifactId>atlas-richie-ai-tencent-vectordb-store</artifactId></dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>cn/richie696/component/vector/config/TencentVectorDbProviderFactory*</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <configuration>
+                            <includes>
+                                <include>cn/richie696/component/vector/config/TencentVectorDbProviderFactory*</include>
+                            </includes>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.coverage.minimum}</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

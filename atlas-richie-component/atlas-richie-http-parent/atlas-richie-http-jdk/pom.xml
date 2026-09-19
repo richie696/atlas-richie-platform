@@ -19,6 +19,10 @@
             <groupId>cn.richie696.component</groupId>
             <artifactId>atlas-richie-http-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

@@ -54,6 +54,14 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Lombok 仅用于本模块编译，不向消费者传递 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -29,6 +29,7 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Micrometer 指标采集（可选） -->
@@ -48,6 +49,13 @@
             <artifactId>opentelemetry-context</artifactId>
         </dependency>
 
+        <!-- 统一观测边界：协议组件只依赖 Core 契约，不传递 Actuator/Exporter -->
+        <dependency>
+            <groupId>cn.richie696.component</groupId>
+            <artifactId>atlas-richie-observability-core</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
         <!-- Redis 幂等去重（可选，依赖 cache 组件的 GlobalCache） -->
         <dependency>
             <groupId>cn.richie696.component</groupId>
@@ -58,6 +66,17 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-testing</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

@@ -8,4 +8,27 @@
     <dependency><groupId>com.oracle.oci.sdk</groupId><artifactId>oci-java-sdk-secrets</artifactId><version>${oci-sdk.version}</version></dependency>
     <dependency><groupId>com.oracle.oci.sdk</groupId><artifactId>oci-java-sdk-keymanagement</artifactId><version>${oci-sdk.version}</version></dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>cn/richie696/component/secret/provider/oci/OciSecretBootstrapProviderFactory*</exclude>
+          </excludes>
+        </configuration>
+        <executions>
+          <execution>
+            <id>jacoco-check</id>
+            <configuration>
+              <excludes>
+                <exclude>cn/richie696/component/secret/provider/oci/OciSecretBootstrapProviderFactory*</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

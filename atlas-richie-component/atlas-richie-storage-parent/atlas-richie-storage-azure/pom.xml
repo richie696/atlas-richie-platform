@@ -26,6 +26,14 @@
             <artifactId>spring-cloud-azure-starter-storage-blob</artifactId>
             <version>7.3.0</version>
         </dependency>
+        <!-- Lombok 仅用于本模块编译，不向消费者传递 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 
 
