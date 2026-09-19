@@ -107,7 +107,7 @@ class GatewayErrorRegistryTest {
         assertFalse(entry.isRetryable(), "GW-AUTH-0001 不可重试");
         assertEquals("gw-auth-token-invalid", entry.getDocSlug());
         assertEquals("error.auth.token.invalid", entry.getI18nKey());
-        assertEquals("1.0.0", entry.getVersion());
+        assertEquals("4.6.0", entry.getVersion());
     }
 
     @Test

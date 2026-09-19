@@ -161,7 +161,7 @@ graph TB
 |             | **logging**         | AOP 访问日志 + 方法追踪，多存储后端                                                                            | [📖](./atlas-richie-logging/README.zh.md)         |
 |             | **http**            | 统一 HTTP 客户端门面（OkHttp/Apache5/JDK/RestClient）                                                          | [📖](./atlas-richie-http-parent/README.zh.md)            |
 |             | **concurrency**     | JDK 25 结构化并发 + 虚拟线程高频模式封装                                                                       | [📖](./atlas-richie-concurrency/README.zh.md)     |
-|             | **tracing**         | OpenTelemetry 依赖托管 + 四场景接入指南                                                                        | [📖](./atlas-richie-tracing/README.zh.md)         |
+|             | **observability**   | 完整应用可观测性接入（Trace + Metrics + Logs + JVM + Actuator + 统一开关）                                      | [📖](./atlas-richie-observability-parent/README.zh.md) |
 |             | **i18n**            | 资源文件国际化 + 字典管理 + 自动注入                                                                           | [📖](./atlas-richie-i18n/README.zh.md)            |
 |             | **desensitize**     | API/日志/审计/异常出口统一脱敏                                                                                 | [📖](./atlas-richie-desensitize-parent/README.zh.md)     |
 |             | **liquibase**       | 数据库迁移管理，多数据库 + 运行时校验                                                                          | [📖](./atlas-richie-liquibase/README.zh.md)       |
