@@ -90,7 +90,11 @@ class NatsDeadLetterAdvisoryConsumerEndToEndIT {
             + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
 
     private static final String DLQ_STREAM_NAME = STREAM_NAME + "-dlq";
-    private static final String SUBJECT = "orders.persistent";
+    // JetStream rejects overlapping subjects across streams. Keep the subject
+    // unique as well as the stream name because the shared Testcontainers NATS
+    // server runs the whole module suite in one process.
+    private static final String SUBJECT = "orders.persistent."
+            + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toLowerCase();
     private static final String DLQ_SUBJECT = SUBJECT + ".dlq";
     private static final String BUSINESS_CONSUMER = "test-consumer";
     private static final int MAX_DELIVER = 2;

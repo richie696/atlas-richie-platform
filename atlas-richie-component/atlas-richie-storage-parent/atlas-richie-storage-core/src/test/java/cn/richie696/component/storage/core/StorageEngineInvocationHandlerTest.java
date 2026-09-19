@@ -190,7 +190,10 @@ class StorageEngineInvocationHandlerTest {
             DirectUploadPolicy actual = proxy.issueDirectUploadPolicy(
                     DirectUploadRequest.builder().key("knowledge/doc.txt").build());
 
-            assertThat(actual).isSameAs(expected);
+            assertThat(actual).isNotSameAs(expected);
+            assertThat(actual.getUploadUrl()).isEqualTo(expected.getUploadUrl());
+            assertThat(actual.getHeaders()).isEmpty();
+            assertThat(actual.getFormFields()).isEmpty();
             verify((DirectStorageEngine) delegate)
                     .issueDirectUploadPolicy(any(DirectUploadRequest.class));
         }
