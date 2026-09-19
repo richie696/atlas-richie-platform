@@ -552,7 +552,7 @@ platform:
 **接入 OTel SDK**（业务方自行）：
 
 ```java
-// 1. 加依赖 io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter
+// 1. 加依赖 cn.richie696.component:atlas-richie-observability-spring-boot-starter
 // 2. 配置 OTEL exporter / resource / service name
 // 3. OtelTracingInterceptor 写入的 traceparent 与 OTel 自动织入天然兼容
 ```

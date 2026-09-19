@@ -212,7 +212,7 @@ Duplicate messages within window are dropped silently. Dedup key is `stream-name
 OTLP metrics auto-exported:
 
 The component records Micrometer metrics and Redis Stream spans, but does not create an exporter or SDK. Add
-`atlas-richie-tracing` to the application and configure `otel.metrics.exporter`, `otel.traces.exporter`, and
+`atlas-richie-observability-spring-boot-starter` to the application and configure `otel.metrics.exporter`, `otel.traces.exporter`, and
 `otel.exporter.otlp.*` there.
 
 ```
@@ -291,7 +291,7 @@ Consumers pause; auto-reconnect retries with backoff. Published messages are buf
 
 - **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
 - **Cache (Redis)** — [`../atlas-richie-cache/README.md`](../atlas-richie-cache/README.md)
-- **Tracing** — [`../atlas-richie-tracing/README.md`](../atlas-richie-tracing/README.md)
+- **Observability** — [`../atlas-richie-observability-parent/README.md`](../atlas-richie-observability-parent/README.md)
 -
 External: [Redis Streams](https://redis.io/docs/data-types/streams/) · [Spring Data Redis Stream](https://docs.spring.io/spring-data/redis/docs/current/reference/html/#redis-streams)
 

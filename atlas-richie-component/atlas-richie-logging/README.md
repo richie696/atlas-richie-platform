@@ -50,7 +50,7 @@
 
 | ✅ It gives you                                 | ❌ It does not give you                                                                                            |
 |-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| JSON layout for Logback                         | A metrics / tracing solution (use [`atlas-richie-tracing`](../atlas-richie-tracing/README.md)) |
+| JSON layout for Logback                         | The complete metrics / tracing runtime (use [`atlas-richie-observability-parent`](../atlas-richie-observability-parent/README.md)) |
 | Sensitive-field masking (phone, ID card, email) | An APM / RUM solution                                                                                              |
 | `@OperateLog` AOP interceptor for audit logs    | Long-term log archival (use external sinks)                                                                        |
 | MDC auto-population from `HeaderContextHolder`  | Custom sinks (write your own appender)                                                                             |
@@ -241,7 +241,7 @@ Use Logback's `KafkaAppender`. Configure under `platform.component.logging.kafka
 - **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
 - **Desensitize (mask at code layer)** — [
   `../atlas-richie-desensitize-parent/desensitize-logging/README.md`](../atlas-richie-desensitize-parent/desensitize-logging/README.md)
-- **Tracing** — [`../atlas-richie-tracing/README.md`](../atlas-richie-tracing/README.md)
+- **Observability** — [`../atlas-richie-observability-parent/README.md`](../atlas-richie-observability-parent/README.md)
 - External: [Logback manual](https://logback.qos.ch/manual/) · [ELK stack](https://www.elastic.co/elastic-stack)
 
 ---

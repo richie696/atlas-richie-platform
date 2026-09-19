@@ -1,6 +1,7 @@
 package cn.richie696.component.oauth.resource;
 
 import cn.richie696.component.oauth.cache.InMemoryOAuthCache;
+import cn.richie696.component.oauth.cache.OAuthCache;
 import cn.richie696.component.oauth.contract.model.OAuthIntrospectionResponse;
 import cn.richie696.component.oauth.contract.model.OAuthPrincipal;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,9 @@ import javax.net.ssl.SSLParameters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
 class ResourceServerSecurityTest {
 
@@ -100,6 +104,46 @@ class ResourceServerSecurityTest {
                 .isEqualTo(1);
         assertThat(registry.getMeters()).allMatch(meter -> meter.getId().getTags().stream()
                 .noneMatch(tag -> tag.getKey().equals("token") || tag.getKey().equals("subject")));
+    }
+
+    @Test
+    void distributedDpopReplayStoreUsesAtomicCacheInsert() {
+        OAuthCache cache = new InMemoryOAuthCache();
+        OAuthCacheDpopReplayStore store = new OAuthCacheDpopReplayStore(cache);
+        assertThat(store.markIfUnseen("jti", 1_000)).isTrue();
+        assertThat(store.markIfUnseen("jti", 1_000)).isFalse();
+    }
+
+    @Test
+    void authenticatorCoversJwtFailureDpopAndCertificateBindingPolicies() {
+        OAuthIntrospectionResponse response = new OAuthIntrospectionResponse(
+                true, "client", "Bearer", "", "user", "issuer", "api", 1, 1, "jti",
+                Map.of("cnf", Map.of("x5t#S256", "thumb")));
+        IntrospectionClient introspection = token -> response;
+        assertThatThrownBy(() -> new ResourceServerAuthenticator(null, introspection, true).authenticate("token"))
+                .isInstanceOf(ResourceServerException.class);
+        assertThatThrownBy(() -> new ResourceServerAuthenticator(token -> {
+            throw new ResourceServerException("bad");
+        }, introspection, true).authenticate("token", null, null, null, "wrong"))
+                .isInstanceOf(ResourceServerException.class)
+                .hasMessageContaining("证书");
+        assertThatThrownBy(() -> new ResourceServerAuthenticator(token -> {
+            throw new ResourceServerException("bad");
+        }, introspection, false).authenticate("token"))
+                .isInstanceOf(ResourceServerException.class);
+        assertThatThrownBy(() -> new ResourceServerAuthenticator(token ->
+                new OAuthPrincipal("user", "client", "issuer", "api", "jti", List.of(), Map.of()),
+                null, false).authenticate("token", "GET", URI.create("https://api.example/resource"), "proof"))
+                .isInstanceOf(ResourceServerException.class)
+                .hasMessageContaining("DPoP");
+        DpopProofValidator failingDpop = mock(DpopProofValidator.class);
+        doThrow(new ResourceServerException("bad dpop")).when(failingDpop)
+                .validate(any(), any(), any(), any());
+        assertThatThrownBy(() -> new ResourceServerAuthenticator(token ->
+                new OAuthPrincipal("user", "client", "issuer", "api", "jti", List.of(), Map.of()),
+                null, false, new OAuthResourceServerMetrics(new SimpleMeterRegistry()), failingDpop)
+                .authenticate("token", "GET", URI.create("https://api.example/resource"), "proof"))
+                .isInstanceOf(ResourceServerException.class);
     }
 
     private KeyPair rsa() throws Exception {

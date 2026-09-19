@@ -51,7 +51,7 @@
 |----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
 | OpenFeign declarative clients                | An API gateway (use Spring Cloud Gateway separately)                                                                      |
 | Sentinel circuit breaker for all Feign calls | Service mesh (use Istio / Linkerd separately)                                                                             |
-| Retry with exponential backoff               | Distributed tracing across services (use [`atlas-richie-tracing`](../atlas-richie-tracing/README.md)) |
+| Retry with exponential backoff               | Distributed tracing across services (use [`atlas-richie-observability-spring-boot-starter`](../atlas-richie-observability-parent/README.md)) |
 | Service discovery (Nacos / Eureka / Consul)  | A service registry itself (use external Nacos)                                                                            |
 
 ## ✨ Features
@@ -227,7 +227,7 @@ spring:
 2. **Use `connect-timeout: 2000` / `read-timeout: 5000`** as sane defaults.
 3. **Configure Sentinel per Feign method** — `resource: <client>#<method>`.
 4. **Don't use retry for non-idempotent operations** — POST without idempotency key = duplicate.
-5. **Combine with tracing** — see [`atlas-richie-tracing`](../atlas-richie-tracing/README.md).
+5. **Combine with observability** — see [`atlas-richie-observability-spring-boot-starter`](../atlas-richie-observability-parent/README.md).
 
 ## ⚠️ Known Limitations
 
@@ -262,7 +262,7 @@ Yes — Spring Cloud Contract + WireMock integrate with Feign.
 - **Parent component** — [`../README.md`](../README.md) / [`../README.zh.md`](../README.md)
 - **HTTP client (used by Feign)** — [
   `../atlas-richie-http-parent/README.md`](../atlas-richie-http-parent/README.md)
-- **Tracing** — [`../atlas-richie-tracing/README.md`](../atlas-richie-tracing/README.md)
+- **Observability** — [`../atlas-richie-observability-parent/README.md`](../atlas-richie-observability-parent/README.md)
 -
 External: [OpenFeign](https://github.com/OpenFeign/feign) · [Sentinel](https://sentinelguard.io/) · [Spring Cloud LoadBalancer](https://spring.io/projects/spring-cloud-loadbalancer)
 

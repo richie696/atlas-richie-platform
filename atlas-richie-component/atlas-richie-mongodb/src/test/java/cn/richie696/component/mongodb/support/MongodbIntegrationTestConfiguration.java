@@ -22,6 +22,8 @@ import cn.richie696.component.tenant.config.TenantAutoConfiguration;
 import com.mongodb.event.ServerListener;
 import com.mongodb.event.ServerMonitorListener;
 import io.opentelemetry.api.OpenTelemetry;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -55,5 +57,15 @@ public class MongodbIntegrationTestConfiguration {
     @ConditionalOnMissingBean(OpenTelemetry.class)
     OpenTelemetry testOpenTelemetry() {
         return OpenTelemetry.noop();
+    }
+
+    /**
+     * The component records Micrometer metrics directly, while the integration
+     * test context intentionally does not start Actuator's meter auto-configuration.
+     */
+    @Bean
+    @ConditionalOnMissingBean(MeterRegistry.class)
+    MeterRegistry testMeterRegistry() {
+        return new SimpleMeterRegistry();
     }
 }

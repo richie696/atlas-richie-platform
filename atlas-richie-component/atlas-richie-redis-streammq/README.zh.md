@@ -210,7 +210,7 @@ idempotency:
 
 OTLP 指标自动导出：
 
-本组件只记录 Micrometer 指标和 Redis Stream span，不创建 exporter 或 SDK。业务应用引入 `atlas-richie-tracing`，统一配置
+本组件只记录 Micrometer 指标和 Redis Stream span，不创建 exporter 或 SDK。业务应用引入 `atlas-richie-observability-spring-boot-starter`，统一配置
 `otel.metrics.exporter`、`otel.traces.exporter` 和 `otel.exporter.otlp.*`。
 
 ```
@@ -289,7 +289,7 @@ Consumer 暂停；自动重连退避。发布被缓冲；缓冲溢出则快速�
 
 - **父组件** — [`../README.zh.md`](../README.zh.md)
 - **Cache（Redis）** — [`../atlas-richie-cache/README.zh.md`](../atlas-richie-cache/README.zh.md)
-- **追踪** — [`./atlas-richie-tracing/README.zh.md`](./atlas-richie-tracing/README.zh.md)
+- **可观测性** — [`../atlas-richie-observability-parent/README.zh.md`](../atlas-richie-observability-parent/README.zh.md)
 -
 外部：[Redis Streams](https://redis.io/docs/data-types/streams/) · [Spring Data Redis Stream](https://docs.spring.io/spring-data/redis/docs/current/reference/html/#redis-streams)
 

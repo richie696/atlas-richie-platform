@@ -124,7 +124,7 @@ public class DefaultAuthorizationCodeStore implements AuthorizationCodeStore {
         String key = OAuth2RedisKey.OAUTH2_AUTHZ_CODE.getKey(code);
         Map<?, ?> stored = cache.get(key, Map.class);
         if (stored == null) {
-            return null;
+            return Collections.emptyMap();
         }
         Map<String, String> result = new java.util.LinkedHashMap<>();
         stored.forEach((field, value) -> result.put(String.valueOf(field), value == null ? null : String.valueOf(value)));

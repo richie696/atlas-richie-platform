@@ -23,7 +23,10 @@ import cn.richie696.component.redis.streammq.config.stream.RedisStreamAutoConfig
 import cn.richie696.component.redis.streammq.utils.DeadLetterQueueUtil;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 @SpringBootConfiguration
 @EnableAutoConfiguration
@@ -36,4 +39,9 @@ import org.springframework.context.annotation.Import;
         DeadLetterQueueUtil.class,
 })
 public class StreammqIntegrationTestConfiguration {
+
+    @Bean
+    MeterRegistry meterRegistry() {
+        return new SimpleMeterRegistry();
+    }
 }

@@ -152,7 +152,7 @@ class DefaultAuthorizationCodeStoreTest {
 
             Map<String, String> result = store.loadAuthorizationCode(code);
 
-            assertThat(result).isNull();
+            assertThat(result).isEmpty();
         }
     }
 

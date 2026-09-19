@@ -603,7 +603,7 @@ platform:
 **Adopting OTel SDK** (done by the business team):
 
 ```java
-// 1. Add dependency io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter
+// 1. Add dependency cn.richie696.component:atlas-richie-observability-spring-boot-starter
 // 2. Configure OTEL exporter / resource / service name
 // 3. The traceparent written by OtelTracingInterceptor is naturally compatible with OTel auto-instrumentation
 ```
