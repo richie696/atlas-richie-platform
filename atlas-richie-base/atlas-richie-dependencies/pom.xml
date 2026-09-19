@@ -91,6 +91,8 @@
         <!-- OpenTelemetry 相关版本：2.31.1 instrumentation BOM 对应 SDK 1.65.0 -->
         <opentelemetry.version>1.65.0</opentelemetry.version>
         <opentelemetry-instrumentation.version>2.31.1</opentelemetry-instrumentation.version>
+        <!-- Logback appender follows the instrumentation release line but is published as alpha. -->
+        <opentelemetry-logback-appender.version>2.31.1-alpha</opentelemetry-logback-appender.version>
 
         <mcp-bom.version>2.0.1</mcp-bom.version>
         <jackson-bom.version>3.2.2</jackson-bom.version>
@@ -143,6 +145,11 @@
                 <version>${opentelemetry-instrumentation.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-logback-appender-1.0</artifactId>
+                <version>${opentelemetry-logback-appender.version}</version>
             </dependency>
 
             <!-- Spring Boot 依赖管理 -->
@@ -475,6 +482,7 @@
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
                 <scope>provided</scope>
+                <optional>true</optional>
             </dependency>
             <dependency>
                 <groupId>io.zipkin.brave</groupId>
@@ -795,15 +803,6 @@
     </dependencyManagement>
 
     <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
         <!-- 单元测试 全局依赖 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

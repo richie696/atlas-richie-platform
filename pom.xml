@@ -862,7 +862,7 @@
                 <artifactId>flatten-maven-plugin</artifactId>
             </plugin>
 
-            <!-- 确保 Lombok / MapStruct 注解处理在所有模块生效 -->
+            <!-- 统一编译期处理器路径；Lombok 依赖由实际使用模块自行声明且不向消费者传递 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
