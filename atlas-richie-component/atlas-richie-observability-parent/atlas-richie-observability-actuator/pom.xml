@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>cn.richie696.component</groupId><artifactId>atlas-richie-observability-parent</artifactId>
+        <version>${revision}</version><relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>atlas-richie-observability-actuator</artifactId>
+    <name>atlas-richie-observability-actuator</name>
+    <description>Actuator、Micrometer、JVM、线程池、连接池、容器和业务 Metrics 接入</description>
+    <packaging>jar</packaging>
+    <dependencies>
+        <dependency><groupId>cn.richie696.component</groupId><artifactId>atlas-richie-observability-core</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-actuator</artifactId></dependency>
+        <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-core</artifactId></dependency>
+        <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-registry-prometheus</artifactId><optional>true</optional></dependency>
+        <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-registry-otlp</artifactId></dependency>
+    </dependencies>
+</project>
