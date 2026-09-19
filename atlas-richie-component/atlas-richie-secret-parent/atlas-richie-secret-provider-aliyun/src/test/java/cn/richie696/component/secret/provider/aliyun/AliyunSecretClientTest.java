@@ -38,6 +38,7 @@ class AliyunSecretClientTest {
     private FakeGateway gateway;
     private AliyunSecretClient client;
     private AtomicInteger closeCalls;
+    private BootstrapSecretProperties bootstrap;
 
     @BeforeEach
     void setUp() {
@@ -53,7 +54,7 @@ class AliyunSecretClientTest {
         mapping.setSecretName("prod/orders/database");
         mapping.setField("password");
         properties.setSecrets(Map.of("database-password", mapping));
-        BootstrapSecretProperties bootstrap = new BootstrapSecretProperties();
+        bootstrap = new BootstrapSecretProperties();
         bootstrap.getPropertySource().setApplication("orders");
         bootstrap.getPropertySource().setEnvironment("prod");
 
@@ -109,6 +110,44 @@ class AliyunSecretClientTest {
         }
         assertThat(gateway.lastSecretRequest.getSecretName()).isEqualTo("prod/orders/database");
         assertThat(gateway.lastSecretRequest.getVersionStage()).isEqualTo("ACSPrevious");
+    }
+
+    @Test
+    void readsFallbackBinarySecretMetadataAndExposesProviderBackends() {
+        String secretName = "company/atlas-richie/prod/orders/runtime/runtime-key";
+        String encoded = Base64.getEncoder().encodeToString("binary-value".getBytes(StandardCharsets.UTF_8));
+        gateway.put(secretName, new GetSecretValueResponse().setBody(new GetSecretValueResponseBody()
+                .setSecretName(secretName)
+                .setSecretData(encoded)
+                .setSecretDataType("binary")
+                .setVersionId("")
+                .setVersionStages(null)
+                .setCreateTime("not-an-instant")
+                .setRequestId("request-binary")));
+
+        try (var value = client.read(SecretReference.latest("runtime-key"))) {
+            assertThat(value.copyChars()).containsExactly("binary-value".toCharArray());
+        }
+        var metadata = client.metadata(SecretReference.latest("runtime-key"));
+
+        assertThat(metadata.version()).isEqualTo("current");
+        assertThat(metadata.createdAt()).isNull();
+        assertThat(metadata.attributes()).containsEntry("provider", "aliyun");
+        assertThat(client.descriptor().providerType()).isEqualTo("aliyun");
+        assertThat(client.secretBackend()).contains(client);
+        assertThat(client.keyWrappingBackend()).contains(client);
+        assertThat(client.configurationHash()).isEqualTo("configuration-hash");
+    }
+
+    @Test
+    void skipsMissingBootstrapBundleWhenLocalMissingPolicyIsSelected() {
+        bootstrap.getPropertySource().setMissingPolicy(BootstrapSecretProperties.MissingPolicy.LOCAL);
+
+        var result = client.load(new SecretBootstrapRequest(
+                "orders", "prod", List.of("missing"), List.of()));
+
+        assertThat(result.values()).isEmpty();
+        assertThat(result.requestId()).isNull();
     }
 
     @Test

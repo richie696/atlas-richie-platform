@@ -13,6 +13,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class VaultRequestIdCaptureTest {
 
     @Test
+    void createsCorrelationIdWhenNoPreviousRequestExists() throws Exception {
+        VaultRequestIdCapture capture = new VaultRequestIdCapture();
+        MockClientHttpRequest request = new MockClientHttpRequest(HttpMethod.GET, URI.create("http://vault/v1/secret"));
+        MockClientHttpResponse response = new MockClientHttpResponse(new byte[0], HttpStatus.OK);
+
+        capture.interceptor().intercept(request, new byte[0], (ignoredRequest, ignoredBody) -> response);
+
+        assertThat(request.getHeaders().getFirst(VaultRequestIdCapture.CORRELATION_HEADER)).isNotBlank();
+        capture.consume();
+    }
+
+    @Test
     void attachesAndConsumesAComponentCorrelationId() throws Exception {
         VaultRequestIdCapture capture = new VaultRequestIdCapture();
         MockClientHttpRequest request = new MockClientHttpRequest(HttpMethod.GET, URI.create("http://vault/v1/secret"));

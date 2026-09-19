@@ -4,12 +4,18 @@
  */
 package cn.richie696.component.secret.provider.vault;
 
+import cn.richie696.component.secret.api.SecretCapability;
+import cn.richie696.component.secret.api.SecretMetadata;
 import cn.richie696.component.secret.api.SecretReference;
+import cn.richie696.component.secret.api.SecretVersionSelector;
 import cn.richie696.component.secret.api.crypto.CryptoContext;
 import cn.richie696.component.secret.api.crypto.KeyReference;
+import cn.richie696.component.secret.api.crypto.KeyPurpose;
 import cn.richie696.component.secret.api.crypto.WrappedKey;
 import cn.richie696.component.secret.api.exception.SecretBootstrapException;
 import cn.richie696.component.secret.api.exception.SecretConfigurationException;
+import cn.richie696.component.secret.api.exception.SecretCryptoException;
+import cn.richie696.component.secret.api.exception.SecretException;
 import cn.richie696.component.secret.bootstrap.BootstrapSecretProperties;
 import cn.richie696.component.secret.bootstrap.spi.SecretBootstrapRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -142,6 +148,90 @@ class VaultSecretClientTest {
         assertThatThrownBy(() -> client.read(SecretReference.latest("database-password")))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("closed");
+    }
+
+    @Test
+    void exposesMetadataAndSupportsNumericVersionSelectors() {
+        backend.put("applications/orders/database",
+                versioned(Map.of("username", "orders", "password", "s3cret"), 4));
+
+        SecretMetadata metadata = client.metadata(SecretReference.latest("database-password"));
+        assertThat(metadata.version()).isEqualTo("4");
+        assertThat(metadata.attributes()).containsEntry("provider", "vault");
+
+        SecretReference versionedReference = new SecretReference(
+                "database-password", SecretVersionSelector.version("2"), null);
+        assertThat(client.read(versionedReference).copyChars())
+                .containsExactly("s3cret".toCharArray());
+    }
+
+    @Test
+    void usesDefaultRuntimePathAndScalarConversions() {
+        backend.put("atlas-richie/prod/orders/runtime/simple",
+                versioned(Map.of("value", 42), 1));
+        backend.put("atlas-richie/prod/orders/runtime/bytes",
+                versioned(Map.of("value", "raw".getBytes(StandardCharsets.UTF_8)), 1));
+
+        assertThat(client.read(SecretReference.latest("simple")).copyChars())
+                .containsExactly("42".toCharArray());
+        assertThat(client.read(SecretReference.latest("bytes")).copyBytes())
+                .containsExactly("raw".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void rejectsAmbiguousAndInvalidSecretSelectors() {
+        backend.put("atlas-richie/prod/orders/runtime/ambiguous",
+                versioned(Map.of("one", "1", "two", "2"), 1));
+        assertThatThrownBy(() -> client.read(SecretReference.latest("ambiguous")))
+                .isInstanceOf(SecretConfigurationException.class)
+                .hasMessageContaining("multiple fields");
+
+        SecretReference invalidVersion = new SecretReference(
+                "database-password", SecretVersionSelector.version("0"), null);
+        assertThatThrownBy(() -> client.read(invalidVersion))
+                .isInstanceOf(SecretConfigurationException.class)
+                .hasMessageContaining("positive integer");
+        backend.put("applications/orders/database",
+                versioned(Map.of("password", "s3cret"), 1));
+        assertThatThrownBy(() -> client.read(SecretReference.latestField("database-password", "missing")))
+                .isInstanceOf(SecretException.class)
+                .hasMessageContaining("field is missing");
+    }
+
+    @Test
+    void validatesWrappingAndSigningContracts() {
+        assertThatThrownBy(() -> client.wrap(
+                KeyReference.envelopeEncryption("default-envelope"), new byte[0], CryptoContext.empty()))
+                .isInstanceOf(SecretCryptoException.class);
+        assertThatThrownBy(() -> client.unwrap(
+                KeyReference.envelopeEncryption("default-envelope"),
+                new WrappedKey("vault:v1:ciphertext".getBytes(StandardCharsets.UTF_8), "other"),
+                CryptoContext.empty()))
+                .isInstanceOf(SecretCryptoException.class);
+        assertThatThrownBy(() -> client.unwrap(
+                KeyReference.envelopeEncryption("default-envelope"),
+                new WrappedKey("not-vault".getBytes(StandardCharsets.UTF_8), "vault-transit"),
+                CryptoContext.empty()))
+                .isInstanceOf(SecretCryptoException.class);
+
+        KeyReference encryptionKey = KeyReference.envelopeEncryption("default-envelope");
+        assertThatThrownBy(() -> client.sign(encryptionKey, new byte[]{1}, CryptoContext.empty()))
+                .isInstanceOf(SecretConfigurationException.class);
+        KeyReference signingKey = new KeyReference("oauth.signing", "current", KeyPurpose.SIGNING);
+        assertThatThrownBy(() -> client.sign(signingKey, new byte[0], CryptoContext.empty()))
+                .isInstanceOf(SecretCryptoException.class);
+        assertThatThrownBy(() -> client.verify(signingKey, new byte[]{1}, null, CryptoContext.empty()))
+                .isInstanceOf(SecretCryptoException.class);
+    }
+
+    @Test
+    void exposesProviderDescriptorAndOptionalBackends() {
+        assertThat(client.descriptor().providerType()).isEqualTo("vault");
+        assertThat(client.descriptor().capabilities()).contains(SecretCapability.SECRET_READ);
+        assertThat(client.secretBackend()).contains(client);
+        assertThat(client.keyWrappingBackend()).contains(client);
+        assertThat(client.signingBackend()).contains(client);
+        assertThat(client.configurationHash()).isEqualTo("configuration-hash");
     }
 
     private Versioned<Map<String, Object>> versioned(Map<String, Object> data, int version) {

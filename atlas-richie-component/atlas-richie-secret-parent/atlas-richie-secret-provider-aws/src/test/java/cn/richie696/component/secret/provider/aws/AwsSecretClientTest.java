@@ -132,6 +132,25 @@ class AwsSecretClientTest {
     }
 
     @Test
+    void readsFallbackSecretMetadataAndExposesProviderBackends() {
+        String secretId = "company/atlas-richie/prod/orders/runtime/runtime-key";
+        backend.put(secretId, response("", "plain-value"));
+
+        try (var value = client.read(SecretReference.latest("runtime-key"))) {
+            assertThat(value.copyChars()).containsExactly("plain-value".toCharArray());
+        }
+        var metadata = client.metadata(SecretReference.latest("runtime-key"));
+
+        assertThat(metadata.version()).isEqualTo("current");
+        assertThat(metadata.attributes()).containsEntry("provider", "aws");
+        assertThat(client.descriptor().providerType()).isEqualTo("aws");
+        assertThat(client.secretBackend()).contains(client);
+        assertThat(client.keyWrappingBackend()).contains(client);
+        assertThat(client.signingBackend()).contains(client);
+        assertThat(client.configurationHash()).isEqualTo("configuration-hash");
+    }
+
+    @Test
     void wrapsAndUnwrapsWithPhysicalKmsKnowledgeOnlyInsideProvider() {
         byte[] dataKey = "01234567890123456789012345678901".getBytes(StandardCharsets.UTF_8);
         byte[] ciphertext = "aws-kms-ciphertext".getBytes(StandardCharsets.UTF_8);

@@ -2,6 +2,9 @@ package cn.richie696.component.secret.provider.tencent;
 
 import cn.richie696.component.secret.api.SecretVersionSelector;
 import cn.richie696.component.secret.api.crypto.CryptoContext;
+import cn.richie696.component.secret.api.exception.SecretCryptoException;
+import cn.richie696.component.secret.api.exception.SecretException;
+import com.tencentcloudapi.common.exception.TencentCloudSDKException;
 import com.tencentcloudapi.kms.v20190118.KmsClient;
 import com.tencentcloudapi.kms.v20190118.models.DecryptRequest;
 import com.tencentcloudapi.kms.v20190118.models.DecryptResponse;
@@ -17,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -51,5 +55,40 @@ class TencentSdkSecretTransportTest {
         assertThat(encrypt.getValue().getEncryptionContext()).isEqualTo("atlas.secret.aad=b3JkZXJzOjQy\ntenant=t1");
         assertThat(decrypt.getValue().getEncryptionContext()).isEqualTo(encrypt.getValue().getEncryptionContext());
         assertThat(unwrapped).isEqualTo("data-key".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void supportsLatestBinarySecretsAndMapsSdkFailures() throws Exception {
+        SsmClient ssm = mock(SsmClient.class);
+        KmsClient kms = mock(KmsClient.class);
+        GetSecretValueResponse binary = new GetSecretValueResponse();
+        binary.setSecretBinary(java.util.Base64.getEncoder().encodeToString("binary".getBytes(StandardCharsets.UTF_8)));
+        binary.setVersionId("current"); binary.setRequestId("req-binary");
+        TencentCloudSDKException missing = mock(TencentCloudSDKException.class);
+        when(missing.getErrorCode()).thenReturn("ResourceNotFound");
+        TencentCloudSDKException broken = mock(TencentCloudSDKException.class);
+        when(broken.getErrorCode()).thenReturn("InternalError");
+        when(ssm.GetSecretValue(any())).thenReturn(binary).thenThrow(missing).thenThrow(broken);
+        TencentSdkSecretTransport transport = new TencentSdkSecretTransport(ssm, kms);
+
+        var secret = transport.read("database", SecretVersionSelector.latest());
+        assertThat(secret.value()).isEqualTo("binary".getBytes(StandardCharsets.UTF_8));
+        assertThat(transport.read("missing", SecretVersionSelector.latest())).isNull();
+        assertThatThrownBy(() -> transport.read("broken", SecretVersionSelector.latest()))
+                .isInstanceOf(SecretException.class).hasMessageContaining("read failed");
+    }
+
+    @Test
+    void mapsSdkCryptoFailuresAndSupportsNullContext() throws Exception {
+        SsmClient ssm = mock(SsmClient.class);
+        KmsClient kms = mock(KmsClient.class);
+        when(kms.Encrypt(any())).thenThrow(mock(TencentCloudSDKException.class));
+        when(kms.Decrypt(any())).thenThrow(mock(TencentCloudSDKException.class));
+        TencentSdkSecretTransport transport = new TencentSdkSecretTransport(ssm, kms);
+
+        assertThatThrownBy(() -> transport.wrap("key", new byte[]{1}, null))
+                .isInstanceOf(SecretCryptoException.class).hasMessageContaining("wrap failed");
+        assertThatThrownBy(() -> transport.unwrap("key", new byte[]{1}, null))
+                .isInstanceOf(SecretCryptoException.class).hasMessageContaining("unwrap failed");
     }
 }

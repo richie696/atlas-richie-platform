@@ -1,6 +1,8 @@
 package cn.richie696.component.secret.provider.common;
 
 import cn.richie696.component.secret.api.exception.SecretConfigurationException;
+import cn.richie696.component.secret.api.SecretCapability;
+import cn.richie696.component.secret.bootstrap.BootstrapSecretProperties;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -145,6 +147,46 @@ class RemoteProviderModuleSupportTest {
                 Set.of(cn.richie696.component.secret.api.SecretCapability.SECRET_READ),
                 Set.of(RemoteProviderProperties.AuthenticationType.NONE)))
                 .isInstanceOf(SecretConfigurationException.class).hasMessageContaining("proxy overrides");
+
+        RemoteProviderProperties signing = validNoneProperties();
+        signing.getAuthentication().setSignature(RemoteProviderProperties.RequestSignature.TENCENT_TC3_HMAC_SHA256);
+        signing.getAuthentication().setAccessKeyId("ak");
+        signing.getAuthentication().setAccessKeySecret("sk".toCharArray());
+        signing.getAuthentication().setSigningService("kms");
+        assertThatThrownBy(() -> RemoteProviderModuleSupport.validateSdk("gcp", signing,
+                Set.of(SecretCapability.SECRET_READ), Set.of(RemoteProviderProperties.AuthenticationType.NONE)))
+                .isInstanceOf(SecretConfigurationException.class).hasMessageContaining("request signing");
+
+        RemoteProviderProperties tls = validNoneProperties();
+        tls.getTls().setTrustStore("configured");
+        assertThatThrownBy(() -> RemoteProviderModuleSupport.validateSdk("gcp", tls,
+                Set.of(SecretCapability.SECRET_READ), Set.of(RemoteProviderProperties.AuthenticationType.NONE)))
+                .isInstanceOf(SecretConfigurationException.class).hasMessageContaining("tls");
+    }
+
+    @Test
+    void acceptsConfiguredTokenFileWorkloadAndAccessKeyModes() {
+        RemoteProviderProperties tokenFile = validNoneProperties();
+        tokenFile.getAuthentication().setType(RemoteProviderProperties.AuthenticationType.TOKEN_FILE);
+        tokenFile.getAuthentication().setTokenFile("/run/token");
+        RemoteProviderModuleSupport.validate("gcp", tokenFile);
+
+        RemoteProviderProperties workload = validNoneProperties();
+        workload.getAuthentication().setType(RemoteProviderProperties.AuthenticationType.WORKLOAD_IDENTITY_TOKEN_FILE);
+        workload.getAuthentication().setWorkloadIdentityTokenFile("/run/workload");
+        RemoteProviderModuleSupport.validate("gcp", workload);
+
+        RemoteProviderProperties accessKey = validNoneProperties();
+        accessKey.getAuthentication().setType(RemoteProviderProperties.AuthenticationType.ACCESS_KEY);
+        accessKey.getAuthentication().setAccessKeyId("ak");
+        accessKey.getAuthentication().setAccessKeySecret("sk".toCharArray());
+        RemoteProviderModuleSupport.validate("gcp", accessKey);
+
+        RemoteSecretProviderClient client = (RemoteSecretProviderClient) RemoteProviderModuleSupport.client(
+                "gcp", "gcp", "hash", accessKey, new BootstrapSecretProperties(),
+                Set.of(SecretCapability.SECRET_READ, SecretCapability.KEY_WRAP, SecretCapability.KEY_UNWRAP));
+        assertThat(client.descriptor().providerType()).isEqualTo("gcp");
+        client.close();
     }
 
     private static RemoteProviderProperties.RequestSignature signatureFor(String provider) {

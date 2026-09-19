@@ -2,6 +2,11 @@ package cn.richie696.component.secret.provider.azure;
 
 import cn.richie696.component.secret.api.SecretVersionSelector;
 import cn.richie696.component.secret.api.crypto.CryptoContext;
+import cn.richie696.component.secret.api.exception.SecretConfigurationException;
+import cn.richie696.component.secret.api.exception.SecretCryptoException;
+import cn.richie696.component.secret.api.exception.SecretException;
+import com.azure.core.exception.ResourceNotFoundException;
+import com.azure.core.http.HttpResponse;
 import com.azure.security.keyvault.keys.cryptography.CryptographyClient;
 import com.azure.security.keyvault.keys.cryptography.models.KeyWrapAlgorithm;
 import com.azure.security.keyvault.keys.cryptography.models.UnwrapResult;
@@ -15,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -43,4 +49,44 @@ class AzureSdkSecretTransportTest {
         assertThat(algorithm.getValue()).isEqualTo(KeyWrapAlgorithm.RSA_OAEP_256);
         assertThat(unwrapped).isEqualTo("data-key".getBytes(StandardCharsets.UTF_8));
     }
+
+    @Test
+    void supportsLatestMetadataAndMapsAzureFailuresToComponentErrors() {
+        SecretClient secrets = mock(SecretClient.class);
+        CryptographyClient crypto = mock(CryptographyClient.class);
+        KeyVaultSecret latest = new KeyVaultSecret("database", "secret-value");
+        latest.getProperties().setTags(Map.of("env", "prod"));
+        when(secrets.getSecret("database")).thenReturn(latest);
+        when(secrets.getSecret("missing")).thenThrow(new ResourceNotFoundException("missing", mock(HttpResponse.class)));
+        when(secrets.getSecret("broken")).thenThrow(new IllegalStateException("broken"));
+        AzureSdkSecretTransport transport = new AzureSdkSecretTransport(secrets, ignored -> crypto);
+
+        var value = transport.read("database", SecretVersionSelector.latest());
+        assertThat(value.value()).isEqualTo("secret-value");
+        assertThat(value.version()).isNull();
+        assertThat(value.attributes()).containsEntry("env", "prod");
+        assertThat(transport.read("missing", SecretVersionSelector.latest())).isNull();
+        assertThatThrownBy(() -> transport.read("broken", SecretVersionSelector.latest()))
+                .isInstanceOf(SecretException.class).hasMessageContaining("read failed");
+    }
+
+    @Test
+    void rejectsAadAndMapsCryptoFailures() {
+        CryptographyClient crypto = mock(CryptographyClient.class);
+        when(crypto.wrapKey(any(), any())).thenThrow(new IllegalStateException("wrap"));
+        when(crypto.unwrapKey(any(), any())).thenThrow(new IllegalStateException("unwrap"));
+        AzureSdkSecretTransport transport = new AzureSdkSecretTransport(mock(SecretClient.class), ignored -> crypto);
+
+        assertThatThrownBy(() -> transport.wrap("key", new byte[]{1},
+                new CryptoContext(new byte[]{1}, Map.of())))
+                .isInstanceOf(SecretConfigurationException.class).hasMessageContaining("AAD");
+        assertThatThrownBy(() -> transport.unwrap("key", new byte[]{1},
+                new CryptoContext(new byte[0], Map.of("tenant", "orders"))))
+                .isInstanceOf(SecretConfigurationException.class).hasMessageContaining("AAD");
+        assertThatThrownBy(() -> transport.wrap("key", new byte[]{1}, CryptoContext.empty()))
+                .isInstanceOf(SecretCryptoException.class).hasMessageContaining("wrap failed");
+        assertThatThrownBy(() -> transport.unwrap("key", new byte[]{1}, CryptoContext.empty()))
+                .isInstanceOf(SecretCryptoException.class).hasMessageContaining("unwrap failed");
+    }
+
 }
