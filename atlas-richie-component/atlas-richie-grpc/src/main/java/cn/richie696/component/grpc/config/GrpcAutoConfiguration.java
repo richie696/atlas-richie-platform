@@ -17,7 +17,12 @@ package cn.richie696.component.grpc.config;
 
 import cn.richie696.component.grpc.interceptor.*;
 import cn.richie696.component.grpc.lifecycle.GrpcServerGracefulShutdown;
+import cn.richie696.component.observability.core.DependencyMetricsRecorder;
+import cn.richie696.component.observability.core.ObservabilityState;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -157,8 +162,14 @@ public class GrpcAutoConfiguration {
     @Bean
     @ConditionalOnClass(name = "io.opentelemetry.api.GlobalOpenTelemetry")
     @ConditionalOnProperty(name = "platform.grpc.server.tracing-enabled", havingValue = "true", matchIfMissing = true)
-    public GrpcServerTracingInterceptor grpcServerTracingInterceptor() {
-        return new GrpcServerTracingInterceptor();
+    public GrpcServerTracingInterceptor grpcServerTracingInterceptor(
+            ObjectProvider<OpenTelemetry> openTelemetryProvider,
+            ObjectProvider<DependencyMetricsRecorder> metricsProvider,
+            ObjectProvider<ObservabilityState> stateProvider) {
+        return new GrpcServerTracingInterceptor(
+                openTelemetryProvider.getIfAvailable(GlobalOpenTelemetry::get),
+                metricsProvider.getIfAvailable(),
+                stateProvider.getIfAvailable());
     }
 
     /**
@@ -169,8 +180,14 @@ public class GrpcAutoConfiguration {
     @Bean
     @ConditionalOnClass(name = "io.opentelemetry.api.GlobalOpenTelemetry")
     @ConditionalOnProperty(name = "platform.grpc.client.tracing-enabled", havingValue = "true", matchIfMissing = true)
-    public GrpcClientTracingInterceptor grpcClientTracingInterceptor() {
-        return new GrpcClientTracingInterceptor();
+    public GrpcClientTracingInterceptor grpcClientTracingInterceptor(
+            ObjectProvider<OpenTelemetry> openTelemetryProvider,
+            ObjectProvider<DependencyMetricsRecorder> metricsProvider,
+            ObjectProvider<ObservabilityState> stateProvider) {
+        return new GrpcClientTracingInterceptor(
+                openTelemetryProvider.getIfAvailable(GlobalOpenTelemetry::get),
+                metricsProvider.getIfAvailable(),
+                stateProvider.getIfAvailable());
     }
 
     // ==================== 客户端 Sentinel ====================
