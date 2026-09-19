@@ -576,6 +576,18 @@ if (!resp.isSuccessful()) {
 可以，但 **仅** `okhttp` / `jdk` 已实现。设置 `platform.component.http.strict-ssl=false`，启动时输出明确 WARN。 **生产严禁**
 打开。
 
+## 🔭 可观测性接入（Phase 3）
+
+当应用引入 `atlas-richie-observability-spring-boot-starter` 且观测开关开启时，四种 HTTP Provider 会自动由统一的 `ObservabilityHttpClient` 装饰，不需要业务代码改写调用方式：
+
+- 每次出站请求创建一个 `CLIENT` Span，并通过 W3C `traceparent`/`tracestate` 传播当前 Trace Context；
+- 同步、回调异步、`CompletableFuture` 和 SSE 都使用同一套边界；
+- 通过 `DependencyMetricsRecorder` 记录 `dependency_type=http`、目标 host、HTTP method 和状态，标签不包含 request_id、trace_id、用户 ID、完整 URL 或请求内容；
+- SSE Span 持续到连接关闭、服务端关闭或失败，并同步活动连接数；
+- 观测关闭或没有完整 OTel runtime 时直接使用原 Provider，不改变 HTTP 业务行为。
+
+HTTP core 只依赖 `atlas-richie-observability-core` 的契约，不传递 Actuator、Exporter 或完整 Starter。具体迁移证据见观测组件的 [Phase 3 阶段记录](../atlas-richie-observability-parent/docs/PHASE_3_PROGRESS.md)。
+
 ---
 
 ## 📚 相关文档
