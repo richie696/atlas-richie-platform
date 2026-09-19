@@ -17,8 +17,8 @@
 
     <properties>
         <spring-cloud-stream-binder-kinesis.version>4.0.6</spring-cloud-stream-binder-kinesis.version>
-        <avro.version>1.12.1</avro.version>
-        <wire-runtime.version>6.3.0</wire-runtime.version>
+        <avro.version>1.12.2</avro.version>
+        <wire-runtime.version>6.4.5</wire-runtime.version>
         <wire-runtime-jvm.version>6.4.5</wire-runtime-jvm.version>
     </properties>
 
