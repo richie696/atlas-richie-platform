@@ -18,6 +18,7 @@ package cn.richie696.component.web.core.config.tracing;
 import cn.richie696.component.web.core.tracing.OtelTracingInterceptor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
@@ -29,6 +30,13 @@ import org.springframework.context.annotation.Bean;
  */
 @AutoConfiguration
 @ConditionalOnClass(OtelTracingInterceptor.class)
+/*
+ * The unified observability starter owns the HTTP server trace boundary. The
+ * legacy web interceptor only propagated an application-local trace id and
+ * must not be installed beside the new boundary, otherwise ctx.traceId can
+ * diverge from the active OTel SpanContext.
+ */
+@ConditionalOnMissingClass("cn.richie696.component.observability.core.ObservabilityState")
 public class TracingAutoConfiguration {
 
     @Bean
