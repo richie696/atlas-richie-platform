@@ -6,6 +6,10 @@ import cn.richie696.component.mcp.security.oauth.McpOAuthTokenProvider;
 import cn.richie696.component.mcp.security.oauth.McpOAuthTokenClient;
 import cn.richie696.component.mcp.security.oauth.McpOAuthTokenManager;
 import cn.richie696.component.mcp.transport.http.McpHttpToolClient;
+import cn.richie696.component.observability.core.DependencyMetricsRecorder;
+import cn.richie696.component.observability.core.ObservabilityState;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -63,7 +67,10 @@ public class McpClientAutoConfiguration {
     @ConditionalOnMissingBean
     public McpHttpToolClient mcpHttpToolClient(
             HttpClient httpClient,
-            McpClientProperties properties) {
+            McpClientProperties properties,
+            org.springframework.beans.factory.ObjectProvider<OpenTelemetry> openTelemetryProvider,
+            org.springframework.beans.factory.ObjectProvider<DependencyMetricsRecorder> metricsProvider,
+            org.springframework.beans.factory.ObjectProvider<ObservabilityState> stateProvider) {
         return new McpHttpToolClient(
                 httpClient,
                 properties.getRequestTimeout(),
@@ -71,7 +78,10 @@ public class McpClientAutoConfiguration {
                 properties.getVersion(),
                 properties.getPreferredProtocolVersion(),
                 properties.getMaxPages(),
-                properties.getMaxItems());
+                properties.getMaxItems(),
+                openTelemetryProvider.getIfAvailable(GlobalOpenTelemetry::get),
+                metricsProvider.getIfAvailable(),
+                stateProvider.getIfAvailable());
     }
 
     /**

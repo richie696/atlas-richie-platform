@@ -32,6 +32,17 @@ import cn.richie696.component.mcp.server.resource.McpResourceRegistry;
 import cn.richie696.component.mcp.server.resource.McpResourceRegistration;
 import cn.richie696.component.mcp.server.prompt.McpPromptRegistry;
 import cn.richie696.component.mcp.server.completion.McpCompletionRegistry;
+import cn.richie696.component.observability.core.DependencyMetricsRecorder;
+import cn.richie696.component.observability.core.ObservabilityContext;
+import cn.richie696.component.observability.core.ObservabilityState;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.context.propagation.TextMapGetter;
+import io.opentelemetry.context.propagation.TextMapPropagator;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -80,6 +91,11 @@ public final class McpServerHttpEndpoint {
     private final McpCancellationRegistry cancellationRegistry;
     private final McpSubscriptionManager subscriptionManager;
     private final McpCallContextFactory callContextFactory;
+    private final OpenTelemetry openTelemetry;
+    private final DependencyMetricsRecorder metrics;
+    private final boolean observabilityEnabled;
+    private final TextMapPropagator propagator;
+    private final io.opentelemetry.api.trace.Tracer tracer;
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
     private final McpDiscoveryCodec discoveryCodec = new McpDiscoveryCodec();
 
@@ -171,6 +187,23 @@ public final class McpServerHttpEndpoint {
             McpCompletionRegistry completionRegistry,
             List<McpToolInvocationInterceptor> invocationInterceptors,
             McpCallContextFactory callContextFactory) {
+        this(registry, serverInfo, originPolicy, resourceRegistry, promptRegistry, completionRegistry,
+                invocationInterceptors, callContextFactory, null, null, null);
+    }
+
+    /** Full constructor used by the Spring starter to attach the unified observability runtime. */
+    public McpServerHttpEndpoint(
+            McpToolRegistry registry,
+            McpImplementationInfo serverInfo,
+            McpOriginPolicy originPolicy,
+            McpResourceRegistry resourceRegistry,
+            McpPromptRegistry promptRegistry,
+            McpCompletionRegistry completionRegistry,
+            List<McpToolInvocationInterceptor> invocationInterceptors,
+            McpCallContextFactory callContextFactory,
+            OpenTelemetry openTelemetry,
+            DependencyMetricsRecorder metrics,
+            ObservabilityState state) {
         this.registry = Objects.requireNonNull(registry, "registry");
         this.dispatcher = new McpToolDispatcher(registry, invocationInterceptors);
         this.requestValidator = new McpStreamableHttpRequestValidator(
@@ -185,6 +218,15 @@ public final class McpServerHttpEndpoint {
         this.cancellationRegistry = new McpCancellationRegistry();
         this.subscriptionManager = new McpSubscriptionManager();
         this.callContextFactory = Objects.requireNonNull(callContextFactory, "callContextFactory");
+        this.openTelemetry = openTelemetry;
+        this.metrics = metrics;
+        this.observabilityEnabled = openTelemetry != null && (state == null || state.enabled());
+        this.propagator = observabilityEnabled
+                ? openTelemetry.getPropagators().getTextMapPropagator()
+                : null;
+        this.tracer = observabilityEnabled
+                ? openTelemetry.getTracer("atlas-richie-mcp-server", "1.0.0")
+                : null;
         registry.addChangeListener(result -> this.subscriptionManager.toolsChanged());
     }
 
@@ -209,6 +251,44 @@ public final class McpServerHttpEndpoint {
      * @return 框架无关的 HTTP 响应，普通请求为 JSON、SSE 场景为 text/event-stream
      */
     public McpHttpResponse handle(
+            String jsonBody,
+            Map<String, List<String>> headers) {
+        McpJsonRpcRequest message = parse(jsonBody);
+        String method = message.method() == null ? "unknown" : message.method();
+        Span span = null;
+        Context requestContext = Context.current();
+        long started = System.nanoTime();
+        if (observabilityEnabled) {
+            Context extracted = propagator.extract(Context.current(), headers, HEADER_GETTER);
+            span = tracer.spanBuilder("MCP " + method)
+                    .setParent(extracted)
+                    .setSpanKind(SpanKind.SERVER)
+                    .setAttribute("rpc.system", "mcp")
+                    .setAttribute("mcp.transport", "http")
+                    .setAttribute("mcp.method", method)
+                    .setAttribute("mcp.request.id", message.id() == null ? "null" : String.valueOf(message.id()))
+                    .startSpan();
+            if ("tools/call".equals(method) && message.params().get("name") instanceof String toolName) {
+                span.setAttribute("mcp.tool.name", toolName);
+            }
+            String requestId = firstHeader(headers, "x-request-id");
+            if (requestId != null) {
+                span.setAttribute("request_id", requestId);
+            }
+            requestContext = ObservabilityContext.withRequestId(requestContext.with(span),
+                   requestId);
+        }
+        try (Scope ignored = requestContext.makeCurrent()) {
+            McpHttpResponse response = handleInternal(jsonBody, headers);
+            finishSpan(span, method, response.status(), null, started);
+            return response;
+        } catch (RuntimeException | Error error) {
+            finishSpan(span, method, 500, error, started);
+            throw error;
+        }
+    }
+
+    private McpHttpResponse handleInternal(
             String jsonBody,
             Map<String, List<String>> headers) {
         McpHttpRequest request = new McpHttpRequest("POST", headers, parse(jsonBody));
@@ -319,6 +399,57 @@ public final class McpServerHttpEndpoint {
                         "_meta", Map.of(McpMetaKeys.SUBSCRIPTION_ID, String.valueOf(message.id())),
                         "notifications", raw));
         return McpHttpResponse.sse(200, subscription, List.of(accepted));
+    }
+
+    private static final TextMapGetter<Map<String, List<String>>> HEADER_GETTER = new TextMapGetter<>() {
+        @Override
+        public Iterable<String> keys(Map<String, List<String>> carrier) {
+            return carrier == null ? List.of() : carrier.keySet();
+        }
+
+        @Override
+        public String get(Map<String, List<String>> carrier, String key) {
+            return firstHeaderValue(carrier, key);
+        }
+    };
+
+    private static String firstHeader(Map<String, List<String>> headers, String name) {
+        return firstHeaderValue(headers, name);
+    }
+
+    private static String firstHeaderValue(Map<String, List<String>> headers, String name) {
+        if (headers == null) {
+            return null;
+        }
+        for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+            if (!entry.getKey().equalsIgnoreCase(name)) {
+                continue;
+            }
+            List<String> values = entry.getValue();
+            return values == null || values.isEmpty() ? null : values.get(0);
+        }
+        return null;
+    }
+
+    private void finishSpan(Span span, String operation, int status, Throwable error, long started) {
+        if (span == null) {
+            return;
+        }
+        if (error == null && status >= 200 && status < 400) {
+            span.setStatus(StatusCode.OK);
+        } else {
+            span.setStatus(StatusCode.ERROR);
+            if (error != null) {
+                span.recordException(error);
+            }
+        }
+        span.setAttribute("http.response.status_code", status);
+        if (metrics != null) {
+            metrics.recordRequest("mcp", "mcp-server", operation,
+                    error == null ? Integer.toString(status) : "error",
+                    System.nanoTime() - started);
+        }
+        span.end();
     }
 
     /**

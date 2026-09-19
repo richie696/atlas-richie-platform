@@ -18,6 +18,9 @@ import cn.richie696.component.mcp.protocol.discovery.McpDiscoverResult;
 import cn.richie696.component.mcp.security.oauth.McpOAuthAccessToken;
 import cn.richie696.component.mcp.security.oauth.McpOAuthTokenProvider;
 import cn.richie696.component.mcp.transport.http.McpHttpToolClient;
+import cn.richie696.component.observability.core.ObservabilityContext;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 
 import java.net.URI;
 import java.util.List;
@@ -551,6 +554,11 @@ public final class McpHttpOperations implements McpOperations, McpDynamicOperati
      * @return 异步完成阶段
      */
     private <T> CompletionStage<T> async(Supplier<T> action) {
-        return CompletableFuture.supplyAsync(action);
+        Context captured = ObservabilityContext.capture();
+        return CompletableFuture.supplyAsync(() -> {
+            try (Scope ignored = captured.makeCurrent()) {
+                return action.get();
+            }
+        });
     }
 }

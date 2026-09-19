@@ -681,7 +681,7 @@ MCP request
 | 幂等 | `atlas-richie-idempotent`（以实际源码 API 为准） |
 | 限流 | `atlas-richie-limiter`（以实际源码 API 为准） |
 | 审计事件 | 中台审计/消息组件，由业务配置启停 |
-| Trace/指标 | `atlas-richie-tracing` / metrics 能力 |
+| Trace/指标 | `atlas-richie-observability-core` / Micrometer 能力 |
 | 配置刷新 | 中台 config 组件 |
 | 多租户上下文 | tenant/context 组件 |
 | JSON | 中台统一 Jackson/Json Adapter，不在业务层手写多套解析 |
@@ -928,4 +928,3 @@ platform:
 - [ ] Mock Server 迁移结果。
 - [ ] 三鉴权矩阵和全链路 E2E 报告。
 - [ ] README、配置说明、迁移指南和版本发布记录。
-

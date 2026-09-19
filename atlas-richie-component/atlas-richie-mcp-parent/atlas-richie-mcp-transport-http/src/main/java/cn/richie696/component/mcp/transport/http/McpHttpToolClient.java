@@ -13,6 +13,16 @@ import cn.richie696.component.mcp.protocol.McpProtocolVersions;
 import cn.richie696.component.mcp.protocol.discovery.McpDiscoverResult;
 import cn.richie696.component.mcp.protocol.discovery.McpDiscoveryCodec;
 import cn.richie696.component.mcp.protocol.model.McpJsonRpcError;
+import cn.richie696.component.observability.core.DependencyMetricsRecorder;
+import cn.richie696.component.observability.core.ObservabilityContext;
+import cn.richie696.component.observability.core.ObservabilityState;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.context.propagation.TextMapPropagator;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -57,6 +67,11 @@ public final class McpHttpToolClient {
     private final String protocolVersion;
     private final int maxPages;
     private final int maxItems;
+    private final OpenTelemetry openTelemetry;
+    private final DependencyMetricsRecorder metrics;
+    private final boolean observabilityEnabled;
+    private final TextMapPropagator propagator;
+    private final io.opentelemetry.api.trace.Tracer tracer;
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
 
     /**
@@ -116,7 +131,7 @@ public final class McpHttpToolClient {
             String clientName,
             String clientVersion,
             String protocolVersion) {
-        this(httpClient, requestTimeout, clientName, clientVersion, protocolVersion, 100, 10_000);
+            this(httpClient, requestTimeout, clientName, clientVersion, protocolVersion, 100, 10_000);
     }
 
     /**
@@ -139,6 +154,22 @@ public final class McpHttpToolClient {
             String protocolVersion,
             int maxPages,
             int maxItems) {
+        this(httpClient, requestTimeout, clientName, clientVersion, protocolVersion,
+                maxPages, maxItems, null, null, null);
+    }
+
+    /** Full constructor used by the Spring starter to attach the unified observability runtime. */
+    public McpHttpToolClient(
+            HttpClient httpClient,
+            Duration requestTimeout,
+            String clientName,
+            String clientVersion,
+            String protocolVersion,
+            int maxPages,
+            int maxItems,
+            OpenTelemetry openTelemetry,
+            DependencyMetricsRecorder metrics,
+            ObservabilityState state) {
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient");
         this.requestTimeout = Objects.requireNonNull(requestTimeout, "requestTimeout");
         this.clientName = requiredClientValue(clientName, "clientName");
@@ -150,6 +181,15 @@ public final class McpHttpToolClient {
         if (maxPages < 1 || maxItems < 1) throw new IllegalArgumentException("MCP pagination limits must be positive");
         this.maxPages = maxPages;
         this.maxItems = maxItems;
+        this.openTelemetry = openTelemetry;
+        this.metrics = metrics;
+        this.observabilityEnabled = openTelemetry != null && (state == null || state.enabled());
+        this.propagator = observabilityEnabled
+                ? openTelemetry.getPropagators().getTextMapPropagator()
+                : null;
+        this.tracer = observabilityEnabled
+                ? openTelemetry.getTracer("atlas-richie-mcp-client", "1.0.0")
+                : null;
     }
 
     /**
@@ -159,7 +199,9 @@ public final class McpHttpToolClient {
      * @return 新实例
      */
     public McpHttpToolClient forProtocolVersion(String version) {
-        return new McpHttpToolClient(httpClient, requestTimeout, clientName, clientVersion, version, maxPages, maxItems);
+        return new McpHttpToolClient(httpClient, requestTimeout, clientName, clientVersion, version,
+                maxPages, maxItems, openTelemetry, metrics,
+                observabilityEnabled ? ObservabilityState.enabledState() : ObservabilityState.disabledState());
     }
 
     /**
@@ -500,6 +542,30 @@ public final class McpHttpToolClient {
         Map<String, Object> bodyParams = new LinkedHashMap<>(params);
         bodyParams.put("_meta", metadata);
         Map<String, Object> body = Map.of("jsonrpc", "2.0", "id", id, "method", method, "params", bodyParams);
+        Span span = null;
+        Context requestContext = Context.current();
+        long started = System.nanoTime();
+        int statusCode = -1;
+        boolean finished = false;
+        if (observabilityEnabled) {
+            span = tracer.spanBuilder("MCP " + method)
+                    .setSpanKind(SpanKind.CLIENT)
+                    .setAttribute("rpc.system", "mcp")
+                    .setAttribute("mcp.transport", "http")
+                    .setAttribute("mcp.method", method)
+                    .setAttribute("mcp.request.id", id)
+                    .setAttribute("server.address", requestUri.getHost() == null ? "unknown" : requestUri.getHost())
+                    .startSpan();
+            if ("tools/call".equals(method) && params.get("name") instanceof String toolName) {
+                span.setAttribute("mcp.tool.name", toolName);
+            }
+            String requestId = ObservabilityContext.currentRequestId();
+            if (requestId != null) {
+                span.setAttribute("request_id", requestId);
+            }
+            requestContext = ObservabilityContext.withRequestId(requestContext.with(span),
+                    requestId);
+        }
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder(requestUri)
                     .timeout(requestTimeout)
@@ -513,9 +579,23 @@ public final class McpHttpToolClient {
             if (extraHeaders != null) {
                 extraHeaders.forEach(builder::header);
             }
-            HttpResponse<String> response = httpClient.send(
-                    builder.POST(HttpRequest.BodyPublishers.ofString(writeJson(body))).build(),
-                    HttpResponse.BodyHandlers.ofString());
+            try (Scope ignored = requestContext.makeCurrent()) {
+                if (observabilityEnabled) {
+                    propagator.inject(requestContext, builder,
+                            (carrier, key, value) -> carrier.header(key, value));
+                    String requestId = ObservabilityContext.currentRequestId();
+                    if (requestId != null && (extraHeaders == null || !containsHeader(extraHeaders, "x-request-id"))) {
+                        builder.header("x-request-id", requestId);
+                    }
+                }
+            }
+            HttpResponse<String> response;
+            try (Scope ignored = requestContext.makeCurrent()) {
+                response = httpClient.send(
+                        builder.POST(HttpRequest.BodyPublishers.ofString(writeJson(body))).build(),
+                        HttpResponse.BodyHandlers.ofString());
+            }
+            statusCode = response.statusCode();
             Map<String, Object> envelope = readEnvelope(response.body(), response.statusCode(), response.headers().map());
             Object error = envelope.get("error");
             if (error instanceof Map<?, ?> rawError) {
@@ -531,15 +611,57 @@ public final class McpHttpToolClient {
                     typed.put(text, value);
                 }
             });
+            finishSpan(span, "MCP " + method, statusCode, null, started, requestUri);
+            finished = true;
             return typed;
         } catch (McpHttpClientException exception) {
+            finishSpan(span, "MCP " + method, statusCode, exception, started, requestUri);
+            finished = true;
             throw exception;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
+            finishSpan(span, "MCP " + method, statusCode, exception, started, requestUri);
+            finished = true;
             throw clientFailure("MCP HTTP request interrupted", 0, null, exception);
         } catch (Exception exception) {
+            if (!finished) {
+                finishSpan(span, "MCP " + method, statusCode, exception, started, requestUri);
+            }
             throw clientFailure("MCP HTTP request failed", 0, null, exception);
         }
+    }
+
+    private boolean containsHeader(Map<String, String> headers, String name) {
+        return headers.keySet().stream().anyMatch(key -> key.equalsIgnoreCase(name));
+    }
+
+    private void finishSpan(
+            Span span,
+            String operation,
+            int statusCode,
+            Throwable error,
+            long started,
+            URI requestUri) {
+        if (span == null) {
+            return;
+        }
+        if (error == null && statusCode >= 200 && statusCode < 400) {
+            span.setStatus(StatusCode.OK);
+        } else {
+            span.setStatus(StatusCode.ERROR);
+            if (error != null) {
+                span.recordException(error);
+            }
+        }
+        if (statusCode >= 0) {
+            span.setAttribute("http.response.status_code", statusCode);
+        }
+        if (metrics != null) {
+            metrics.recordRequest("mcp", requestUri.getHost() == null ? "unknown" : requestUri.getHost(),
+                    operation, error == null ? Integer.toString(statusCode) : "error",
+                    System.nanoTime() - started);
+        }
+        span.end();
     }
 
     /**

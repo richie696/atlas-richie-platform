@@ -1450,7 +1450,7 @@ Tasks 已移出 Core：
 - [Base Protocol `_meta`](https://modelcontextprotocol.io/specification/2026-07-28/basic)
 - [SEP-414 Trace Context](https://modelcontextprotocol.io/seps/414-request-meta)
 
-组件复用 `atlas-richie-tracing`：
+组件复用 `atlas-richie-observability-core` 的统一传播契约：
 
 - HTTP 使用标准 trace headers，并在 MCP `_meta` 同步 traceparent/tracestate/baggage；
 - 收到两处 trace context 时执行一致性检查；

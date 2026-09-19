@@ -26,6 +26,10 @@ import cn.richie696.component.mcp.server.tool.McpToolRegistry;
 import cn.richie696.component.mcp.server.tool.McpToolVisibilityPolicy;
 import cn.richie696.component.mcp.transport.http.McpOriginPolicy;
 import cn.richie696.component.mcp.transport.http.McpServerHttpEndpoint;
+import cn.richie696.component.observability.core.DependencyMetricsRecorder;
+import cn.richie696.component.observability.core.ObservabilityState;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -361,11 +365,17 @@ public class McpServerAutoConfiguration {
             McpPromptRegistry promptRegistry,
             ObjectProvider<McpCompletionRegistry> completionRegistries,
             ObjectProvider<McpToolInvocationInterceptor> invocationInterceptors,
-            McpCallContextFactory callContextFactory) {
+            McpCallContextFactory callContextFactory,
+            ObjectProvider<OpenTelemetry> openTelemetryProvider,
+            ObjectProvider<DependencyMetricsRecorder> metricsProvider,
+            ObjectProvider<ObservabilityState> stateProvider) {
         return new McpServerHttpEndpoint(
                 registry, implementationInfo, originPolicy, resourceRegistry, promptRegistry,
                 completionRegistries.getIfAvailable(), invocationInterceptors.orderedStream().toList(),
-                callContextFactory);
+                callContextFactory,
+                openTelemetryProvider.getIfAvailable(GlobalOpenTelemetry::get),
+                metricsProvider.getIfAvailable(),
+                stateProvider.getIfAvailable());
     }
 
     /**
