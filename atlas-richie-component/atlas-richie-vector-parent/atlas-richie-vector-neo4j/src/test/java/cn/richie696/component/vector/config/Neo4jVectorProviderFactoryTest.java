@@ -78,6 +78,26 @@ class Neo4jVectorProviderFactoryTest {
     }
 
     @Test
+    void createsSdkDriverFromAllConnectionSettings() {
+        Neo4jVectorProviderFactory sdkFactory = new Neo4jVectorProviderFactory(null);
+        VectorConnectionHandle connection = sdkFactory.openConnection(new VectorConnectionDefinition(
+                VectorConnectionId.of("neo4j"), VectorProvider.NEO4J, Map.ofEntries(
+                Map.entry("uri", "bolt://localhost:7687"),
+                Map.entry("username", "neo4j"),
+                Map.entry("password", "secret"),
+                Map.entry("database", "graph"),
+                Map.entry("max-connection-pool-size", "12"),
+                Map.entry("max-connection-lifetime-ms", "60000"),
+                Map.entry("connection-acquisition-timeout-ms", "2000"),
+                Map.entry("connection-timeout-ms", "1500"),
+                Map.entry("max-transaction-retry-time-ms", "3000"),
+                Map.entry("encryption-enabled", "true"),
+                Map.entry("user-agent", "vector-test"))));
+        assertThat(connection).isNotNull();
+        connection.close();
+    }
+
+    @Test
     void exposesTypedProviderFilterButNotAclFilterCapability() {
         VectorConnectionHandle connection = factory.openConnection(connection());
         try {

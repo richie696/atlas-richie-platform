@@ -5,19 +5,44 @@ import cn.richie696.component.vector.service.SparseVector;
 import cn.richie696.component.vector.service.SparseVectorizerRegistry;
 import cn.richie696.component.vector.topology.VectorCapability;
 import cn.richie696.component.vector.topology.VectorConnectionDefinition;
+import cn.richie696.component.vector.topology.VectorConnectionHandle;
 import cn.richie696.component.vector.topology.VectorConnectionId;
+import cn.richie696.component.vector.topology.VectorEmbeddingModelBinding;
 import cn.richie696.component.vector.topology.VectorIndexDefinition;
 import cn.richie696.component.vector.topology.VectorStoreDefinition;
 import cn.richie696.component.vector.topology.VectorStoreId;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.embedding.EmbeddingModel;
+import com.aliyun.dashvector.DashVectorClient;
 
 import java.util.Map;
 import java.util.Set;
+import java.lang.reflect.Proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DashVectorProviderFactoryTest {
+
+    @Test
+    void opensSdkConnectionAndBuildsPlainStoreHandle() {
+        DashVectorProviderFactory factory = new DashVectorProviderFactory(null);
+        try (var ignored = org.mockito.Mockito.mockConstruction(DashVectorClient.class)) {
+            VectorConnectionHandle connection = factory.openConnection(connection());
+            try {
+                assertThat(factory.provider()).isEqualTo(VectorProvider.DASHVECTOR);
+                assertThat(factory.adapterCapabilities().ids()).contains("NATIVE_FILTER", "ACL_FILTER");
+                assertThat(factory.physicalResourceIdentities(connection(), plainStore()))
+                        .containsExactly("collection:documents");
+                var handle = factory.createStore(connection, plainStore(),
+                        VectorEmbeddingModelBinding.of("model", embeddingModel()));
+                assertThat(handle).isNotNull();
+                assertThat(connection.toString()).contains("config=<redacted>");
+            } finally {
+                connection.close();
+            }
+        }
+    }
 
     @Test
     void exposesAclSafeHybridOnlyForAnExplicitSparseReadyStore() {
@@ -88,6 +113,20 @@ class DashVectorProviderFactoryTest {
                 Map.of(), Map.of());
         return new VectorStoreDefinition(VectorStoreId.of("documents"), VectorConnectionId.of("dash"), "model",
                 "documents", true, Set.of(), Map.of("documents", index));
+    }
+
+    private static EmbeddingModel embeddingModel() {
+        return (EmbeddingModel) Proxy.newProxyInstance(
+                EmbeddingModel.class.getClassLoader(), new Class<?>[]{EmbeddingModel.class},
+                (proxy, method, args) -> {
+                    if ("dimensions".equals(method.getName())) return 4;
+                    if ("toString".equals(method.getName())) return "TestEmbeddingModel";
+                    if ("hashCode".equals(method.getName())) return System.identityHashCode(proxy);
+                    if ("equals".equals(method.getName())) return proxy == args[0];
+                    if (method.getReturnType() == boolean.class) return false;
+                    if (method.getReturnType() == int.class) return 0;
+                    return null;
+                });
     }
 
 }

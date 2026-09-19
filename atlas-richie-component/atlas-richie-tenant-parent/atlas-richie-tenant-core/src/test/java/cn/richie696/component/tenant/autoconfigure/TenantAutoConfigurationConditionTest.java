@@ -53,7 +53,7 @@ class TenantAutoConfigurationConditionTest {
     void shouldConfigureTenantInfrastructureOnlyWhenExplicitlyEnabled() {
         TenantFeature.setEnabled(false);
 
-        contextRunner.withPropertyValues("platform.tenant.enable=true")
+        contextRunner.withPropertyValues("platform.component.tenant.enable=true")
                 .run(context -> {
                     assertThat(context).hasSingleBean(cn.richie696.component.tenant.config.MultiTenancyProperties.class);
                     assertThat(context).hasBean("tenantInfoProvider");

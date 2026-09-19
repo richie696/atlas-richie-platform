@@ -49,4 +49,22 @@ class McpStdioFrameCodecTest {
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("exceeds");
     }
+
+    @Test
+    void rejectsInvalidFramesAndConstructorValues() {
+        assertThatThrownBy(() -> new McpStdioFrameCodec(0))
+                .isInstanceOf(IllegalArgumentException.class);
+        McpStdioFrameCodec codec = new McpStdioFrameCodec(32);
+        assertThatThrownBy(() -> codec.encode(null)).isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> codec.encode(Map.of())).isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> codec.decode(null)).isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> codec.decode(" ")).isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> codec.decode("{\"a\":1}\n"))
+                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> codec.decode("[]")).isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> codec.decode("{}"))
+                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> codec.decode("{bad"))
+                .isInstanceOf(RuntimeException.class);
+    }
 }

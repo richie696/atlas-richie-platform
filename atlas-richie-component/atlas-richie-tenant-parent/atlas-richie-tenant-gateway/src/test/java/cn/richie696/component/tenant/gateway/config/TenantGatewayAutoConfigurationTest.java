@@ -43,7 +43,7 @@ class TenantGatewayAutoConfigurationTest {
 
     @Test
     void shouldCreateFilterAndDefaultPortsWhenEnabled() {
-        contextRunner.withPropertyValues("platform.tenant.enable=true")
+        contextRunner.withPropertyValues("platform.component.tenant.enable=true")
                 .run(context -> {
                     assertThat(context).hasSingleBean(TenantGatewayAutoConfiguration.class);
                     assertThat(context).hasSingleBean(cn.richie696.component.tenant.gateway.filter.TenantFilter.class);

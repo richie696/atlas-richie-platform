@@ -29,6 +29,6 @@ import org.springframework.test.context.TestPropertySource;
 @SpringBootConfiguration
 @EnableAutoConfiguration
 @Import(TenantAutoConfiguration.class)
-@TestPropertySource(properties = "platform.tenant.enable=true")
+@TestPropertySource(properties = "platform.component.tenant.enable=true")
 public class TenantIntegrationTestConfiguration {
 }

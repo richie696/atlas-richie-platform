@@ -96,6 +96,24 @@ class Neo4jVectorAutoConfigurationTest {
     }
 
     @Test
+    @DisplayName("originalNeo4jDriver 应覆盖启用加密的配置分支")
+    void originalNeo4jDriver_shouldEnableEncryptionWhenConfigured() throws Exception {
+        Neo4jConfig config = new Neo4jConfig();
+        config.setUri("bolt://localhost:7687");
+        config.setUsername("neo4j");
+        config.setPassword("password");
+        config.setEncryptionEnabled(true);
+        config.setApplicationName("encrypted-test");
+
+        var method = Neo4jVectorAutoConfiguration.class.getDeclaredMethod(
+                "originalNeo4jDriver", Neo4jConfig.class);
+        method.setAccessible(true);
+        Driver driver = (Driver) method.invoke(new Neo4jVectorAutoConfiguration(), config);
+        assertThat(driver).isNotNull();
+        driver.close();
+    }
+
+    @Test
     @DisplayName("Driver 应使用正确的连接参数")
     void driver_shouldUseCorrectConnectionParams() {
         // given

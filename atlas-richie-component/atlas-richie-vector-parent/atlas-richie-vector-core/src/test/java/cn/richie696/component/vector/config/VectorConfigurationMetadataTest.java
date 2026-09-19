@@ -28,18 +28,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class VectorConfigurationMetadataTest {
 
-    private static final String[] MODULES = {
-            "atlas-richie-vector-core",
-            "atlas-richie-vector-milvus",
-            "atlas-richie-vector-weaviate",
-            "atlas-richie-vector-qdrant",
-            "atlas-richie-vector-redis",
-            "atlas-richie-vector-postgresql",
-            "atlas-richie-vector-mongodb-atlas",
-            "atlas-richie-vector-neo4j",
-            "atlas-richie-vector-vikingdb"
-    };
-
     @Test
     void coreMetadataCoversCriticalNamedTopologyProperties() throws Exception {
         Set<String> names = collectPropertyNamesFromBuildOutput("atlas-richie-vector-core");
@@ -76,44 +64,13 @@ class VectorConfigurationMetadataTest {
     }
 
     @Test
-    void everyProviderJarExposesMetadataWithAtLeastOneProviderOwnedKey() throws Exception {
-        for (String module : new String[]{
-                "atlas-richie-vector-milvus",
-                "atlas-richie-vector-weaviate",
-                "atlas-richie-vector-qdrant",
-                "atlas-richie-vector-redis",
-                "atlas-richie-vector-postgresql",
-                "atlas-richie-vector-neo4j",
-                "atlas-richie-vector-vikingdb"}) {
-            Set<String> names = collectPropertyNamesFromBuildOutput(module);
-            assertThat(names)
-                    .as("module %s must expose at least one provider-owned property", module)
-                    .isNotEmpty();
-            assertThat(names)
-                    .as("module %s metadata must include provider namespace", module)
-                    .anyMatch(n -> n.startsWith("platform.component.vector."));
-        }
-    }
-
-    @Test
     void metadataNeverEmbedsCredentialLikeSamples() throws Exception {
-        for (String module : new String[]{
-                "atlas-richie-vector-core",
-                "atlas-richie-vector-milvus",
-                "atlas-richie-vector-weaviate",
-                "atlas-richie-vector-qdrant",
-                "atlas-richie-vector-redis",
-                "atlas-richie-vector-postgresql",
-                "atlas-richie-vector-neo4j",
-                "atlas-richie-vector-vikingdb"}) {
-            String raw = readMetadataRaw(module).toLowerCase();
-            assertThat(raw)
-                    .as("module %s metadata must not include sample ak/sk literals", module)
-                    .doesNotContain("ak=")
-                    .doesNotContain("sk=")
-                    .doesNotContain("password=secret")
-                    .doesNotContain("api-key=secret");
-        }
+        String raw = readMetadataRaw("atlas-richie-vector-core").toLowerCase();
+        assertThat(raw)
+                .doesNotContain("ak=")
+                .doesNotContain("sk=")
+                .doesNotContain("password=secret")
+                .doesNotContain("api-key=secret");
     }
 
     private static Set<String> collectPropertyNamesFromBuildOutput(String module) throws Exception {

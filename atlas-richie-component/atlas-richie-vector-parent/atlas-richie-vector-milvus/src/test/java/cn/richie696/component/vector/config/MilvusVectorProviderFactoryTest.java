@@ -7,11 +7,13 @@ package cn.richie696.component.vector.config;
 import cn.richie696.component.vector.enums.VectorProvider;
 import cn.richie696.component.vector.topology.VectorCapability;
 import cn.richie696.component.vector.topology.VectorConnectionDefinition;
+import cn.richie696.component.vector.topology.VectorConnectionHandle;
 import cn.richie696.component.vector.topology.VectorConnectionId;
 import cn.richie696.component.vector.topology.VectorIndexDefinition;
 import cn.richie696.component.vector.topology.VectorStoreDefinition;
 import cn.richie696.component.vector.topology.VectorStoreId;
 import io.milvus.client.MilvusServiceClient;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -19,9 +21,11 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import java.util.Map;
 import java.util.Set;
+import java.lang.reflect.Proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mockConstruction;
 
 class MilvusVectorProviderFactoryTest {
 
@@ -90,6 +94,26 @@ class MilvusVectorProviderFactoryTest {
     }
 
     @Test
+    void shouldOpenSdkConnectionAndBuildBoundStoreHandle() {
+        try (var ignored = mockConstruction(MilvusServiceClient.class)) {
+            VectorConnectionHandle connection = factory.openConnection(connection(Map.of(
+                    "host", "localhost", "port", 19530, "database-name", "default")));
+            try {
+                assertThat(connection.id()).isEqualTo(VectorConnectionId.of("primary"));
+                assertThat(connection.provider()).isEqualTo(VectorProvider.MILVUS);
+                assertThat(connection.toString()).contains("config=<redacted>");
+                var handle = factory.createStore(connection,
+                        store("documents", "hnsw", "cosine"),
+                        cn.richie696.component.vector.topology.VectorEmbeddingModelBinding.of(
+                                "model", embeddingModel()));
+                assertThat(handle).isNotNull();
+            } finally {
+                connection.close();
+            }
+        }
+    }
+
+    @Test
     void shouldRegisterFactoryWithoutCreatingLegacyClientOrStore() {
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(MilvusVectorAutoConfiguration.class))
@@ -122,5 +146,20 @@ class MilvusVectorProviderFactoryTest {
                 true,
                 Set.of(),
                 Map.of(indexName, index));
+    }
+
+    private static EmbeddingModel embeddingModel() {
+        return (EmbeddingModel) Proxy.newProxyInstance(
+                EmbeddingModel.class.getClassLoader(),
+                new Class<?>[]{EmbeddingModel.class},
+                (proxy, method, args) -> {
+                    if ("dimensions".equals(method.getName())) return 1536;
+                    if ("toString".equals(method.getName())) return "TestEmbeddingModel";
+                    if ("hashCode".equals(method.getName())) return System.identityHashCode(proxy);
+                    if ("equals".equals(method.getName())) return proxy == args[0];
+                    if (method.getReturnType() == boolean.class) return false;
+                    if (method.getReturnType() == int.class) return 0;
+                    return null;
+                });
     }
 }

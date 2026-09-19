@@ -18,6 +18,7 @@ package cn.richie696.component.tenant.support;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 
 import java.lang.annotation.*;
 
@@ -26,6 +27,7 @@ import java.lang.annotation.*;
 @Inherited
 @SpringBootTest(classes = TenantIntegrationTestConfiguration.class)
 @ContextConfiguration(initializers = TenantIntegrationTestInitializer.class)
+@TestPropertySource(properties = "platform.component.tenant.enable=true")
 @EnabledIf("cn.richie696.component.tenant.support.PostgresTestSupport#isEnabled")
 public @interface TenantIntegrationTest {
 }

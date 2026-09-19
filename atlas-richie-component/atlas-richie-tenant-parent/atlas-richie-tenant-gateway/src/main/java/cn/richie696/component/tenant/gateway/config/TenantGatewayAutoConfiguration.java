@@ -34,7 +34,7 @@ import jakarta.annotation.PostConstruct;
 /**
  * Gateway 租户拦截器自动配置。
  *
- * <p>仅在 {@code platform.tenant.enable=true} 且 Gateway classpath 存在时创建过滤器。
+ * <p>仅在 {@code platform.component.tenant.enable=true} 且 Gateway classpath 存在时创建过滤器。
  * Gateway 业务工程只需引入本模块，并提供过期通知、Token 作废等端口实现。</p>
  */
 @AutoConfiguration

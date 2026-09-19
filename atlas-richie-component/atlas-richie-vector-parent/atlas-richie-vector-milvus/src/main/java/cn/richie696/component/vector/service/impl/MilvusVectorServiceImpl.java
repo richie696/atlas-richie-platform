@@ -180,8 +180,22 @@ public class MilvusVectorServiceImpl extends AbstractVectorService implements Ve
         List<VectorSearchResult> results;
         try {
             boolean includeCandidateVectors = Boolean.TRUE.equals(effectiveOptions.getIncludeCandidateVectors());
-            results = similaritySearchByVector(indexName, queryVector, topK, minScore, filter,
-                    effectiveOptions.getProviderSearchParameters(), includeCandidateVectors).stream()
+            Map<String, Integer> providerSearchParameters = effectiveOptions.getProviderSearchParameters();
+            List<Document> documents;
+            if (includeCandidateVectors) {
+                documents = similaritySearchByVector(indexName, queryVector, topK, minScore, filter,
+                        providerSearchParameters, true);
+            } else if (providerSearchParameters == null || providerSearchParameters.isEmpty()) {
+                // Keep the established protected hook on the default path. Besides
+                // preserving subclass/test extension points, this avoids forcing
+                // providers that do not opt into candidate vectors through the
+                // candidate-vector implementation.
+                documents = similaritySearchByVector(indexName, queryVector, topK, minScore, filter);
+            } else {
+                documents = similaritySearchByVector(indexName, queryVector, topK, minScore, filter,
+                        providerSearchParameters);
+            }
+            results = documents.stream()
                     .map(this::toSearchResult)
                     .toList();
             RetrievalObservationHook.safeEmit(hook, RetrievalObservationEvent.success(context,

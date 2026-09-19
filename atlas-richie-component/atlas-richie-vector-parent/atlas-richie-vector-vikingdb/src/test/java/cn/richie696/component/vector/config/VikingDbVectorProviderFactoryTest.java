@@ -33,6 +33,14 @@ class VikingDbVectorProviderFactoryTest {
     private final VikingDbVectorProviderFactory factory = new VikingDbVectorProviderFactory(null);
 
     @Test
+    void exposesProviderIdentityCapabilitiesAndPhysicalResources() {
+        assertThat(factory.provider()).isEqualTo(VectorProvider.VIKINGDB);
+        assertThat(factory.adapterCapabilities().ids()).contains("QUERY_TUNING", "SCORE_STAGES");
+        assertThat(factory.physicalResourceIdentities(connection(), store()))
+                .containsExactly("collection:documents_collection");
+    }
+
+    @Test
     void validatesStrictConnectionAndProviderSchemaSettings() {
         factory.validateConnection(connection());
         factory.validateStore(connection(), store());

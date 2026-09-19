@@ -110,6 +110,26 @@ class HttpRequestTest {
         assertThat(asyncBody.get().name()).isEqualTo("ok");
     }
 
+    @Test
+    void delegatesTypeReferenceAndExposesAllRequestFields() {
+        AtomicReference<HttpRequest> captured = new AtomicReference<>();
+        HttpClient stub = new StubHttpClient(captured);
+        ByteArrayInputStream upload = new ByteArrayInputStream(new byte[]{1, 2});
+        HttpRequest request = stub.put("https://example.com/items", Map.of("name", "demo"))
+                .headers(Map.of("X-Test", "yes"))
+                .multipart("file", "demo.bin", upload)
+                .timeout(Duration.ofMillis(25));
+
+        Demo value = request.execute(new tools.jackson.core.type.TypeReference<>() {
+        });
+        assertThat(value.name()).isEqualTo("ok");
+        assertThat(request.body()).isEqualTo(Map.of("name", "demo"));
+        assertThat(request.contentType()).isEqualTo(ContentType.MULTIPART);
+        assertThat(request.headers()).containsEntry("X-Test", "yes");
+        assertThat(request.multipartData()).isSameAs(upload);
+        assertThat(captured.get()).isSameAs(request);
+    }
+
     private static final class StubHttpClient implements HttpClient {
         private final AtomicReference<HttpRequest> captured;
 

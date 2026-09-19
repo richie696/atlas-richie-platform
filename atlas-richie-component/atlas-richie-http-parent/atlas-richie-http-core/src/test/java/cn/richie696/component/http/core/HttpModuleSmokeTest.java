@@ -25,4 +25,9 @@ class HttpModuleSmokeTest {
     void modulePackage_shouldBeDefined() {
         assertThat(getClass().getPackageName()).isEqualTo("cn.richie696.component.http.core");
     }
+
+    @Test
+    void autoConfigurationCanBeConstructed() {
+        assertThat(new HttpClientCoreConfiguration()).isNotNull();
+    }
 }
