@@ -17,6 +17,7 @@ package cn.richie696.component.nats.strategy;
 
 import io.nats.client.impl.Headers;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Context;
 
 /**
  * NATS 链路追踪策略接口
@@ -34,6 +35,14 @@ import io.opentelemetry.api.trace.Span;
  * @since 1.0.0
  */
 public interface NatsTracingSupport {
+
+    /**
+     * Returns the context used while handling a message. Implementations may
+     * add the business request ID extracted from the message carrier.
+     */
+    default Context contextFor(Span span, Headers headers) {
+        return Context.current().with(span);
+    }
 
     /**
      * 创建 PRODUCER span（发布消息）

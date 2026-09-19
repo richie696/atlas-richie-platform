@@ -16,6 +16,9 @@
 package cn.richie696.component.nats.strategy;
 
 import cn.richie696.component.nats.NatsConstants;
+import cn.richie696.component.observability.core.DependencyMetricsRecorder;
+import cn.richie696.component.observability.core.ObservabilityContext;
+import cn.richie696.component.observability.core.ObservabilityState;
 import io.nats.client.impl.Headers;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
@@ -31,6 +34,8 @@ import io.opentelemetry.context.propagation.TextMapSetter;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import java.lang.Iterable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * 基于 OpenTelemetry 的 NATS 链路追踪实现
@@ -91,8 +96,11 @@ public class OpenTelemetryNatsTracingSupport implements NatsTracingSupport {
 
     /** OpenTelemetry Tracer，由 {@code openTelemetry.getTracer(...)} 解析而来，注入到所有新建 span。 */
     private final Tracer tracer;
+    private final io.opentelemetry.context.propagation.TextMapPropagator propagator;
+    private final DependencyMetricsRecorder metrics;
     /** {@code false} 时所有 {@code startXxxSpan} 直接返回 {@link Span#getInvalid()}，不再访问 Headers。 */
     private final boolean enabled;
+    private final ConcurrentMap<Span, SpanState> activeSpans = new ConcurrentHashMap<>();
 
     /**
      * 默认构造：从全局 {@link GlobalOpenTelemetry} 取 {@link Tracer}。
@@ -110,8 +118,25 @@ public class OpenTelemetryNatsTracingSupport implements NatsTracingSupport {
      * @param openTelemetry  提供 {@code Tracer} 的 SDK 实例
      */
     public OpenTelemetryNatsTracingSupport(boolean enabled, OpenTelemetry openTelemetry) {
-        this.enabled = enabled;
+        this(enabled, openTelemetry, null, null);
+    }
+
+    /** Creates the tracing support with the unified platform observability dependencies. */
+    public OpenTelemetryNatsTracingSupport(
+            boolean configuredEnabled,
+            OpenTelemetry openTelemetry,
+            DependencyMetricsRecorder metrics,
+            ObservabilityState state) {
+        this.enabled = configuredEnabled && (state == null || state.enabled());
         this.tracer = openTelemetry.getTracer(NatsConstants.TRACER_NAME, NatsConstants.TRACER_VERSION);
+        this.propagator = openTelemetry.getPropagators().getTextMapPropagator();
+        this.metrics = metrics;
+    }
+
+    @Override
+    public Context contextFor(Span span, Headers headers) {
+        Context context = Context.current().with(span);
+        return ObservabilityContext.withRequestId(context, requestId(headers));
     }
 
     /**
@@ -126,15 +151,10 @@ public class OpenTelemetryNatsTracingSupport implements NatsTracingSupport {
         if (!enabled) {
             return Span.getInvalid();
         }
-        var span = tracer.spanBuilder(subject + " publish")
-                .setSpanKind(SpanKind.PRODUCER)
-                .setAttribute(MESSAGING_SYSTEM, "nats")
-                .setAttribute(MESSAGING_DESTINATION, subject)
-                .setAttribute(MESSAGING_OPERATION, "publish")
-                .startSpan();
+        var span = startSpan(subject + " publish", subject, "publish", SpanKind.PRODUCER, headers);
 
         // 顺序：先 MDC 注入，方便后续 injectW3C 内若打日志也能正确关联；最后 W3C 注入，让对端把消息纳入同一 trace。
-        injectMdc(span);
+        injectMdc(span, requestId(headers));
         injectW3C(headers, span);
         return span;
     }
@@ -152,16 +172,10 @@ public class OpenTelemetryNatsTracingSupport implements NatsTracingSupport {
             return Span.getInvalid();
         }
         var extracted = extractW3C(headers);
-        var span = tracer.spanBuilder(subject + " receive")
-                .setParent(extracted)
-                .setSpanKind(SpanKind.CONSUMER)
-                .setAttribute(MESSAGING_SYSTEM, "nats")
-                .setAttribute(MESSAGING_DESTINATION, subject)
-                .setAttribute(MESSAGING_OPERATION, "receive")
-                .startSpan();
+        var span = startSpan(subject + " receive", subject, "receive", SpanKind.CONSUMER, headers, extracted);
 
         // 消费端不调用 injectW3C：trace 已经由 parent 决定，无需再注入 Headers。
-        injectMdc(span);
+        injectMdc(span, requestId(headers));
         return span;
     }
 
@@ -177,14 +191,9 @@ public class OpenTelemetryNatsTracingSupport implements NatsTracingSupport {
         if (!enabled) {
             return Span.getInvalid();
         }
-        var span = tracer.spanBuilder(subject + " request")
-                .setSpanKind(SpanKind.CLIENT)
-                .setAttribute(MESSAGING_SYSTEM, "nats")
-                .setAttribute(MESSAGING_DESTINATION, subject)
-                .setAttribute(MESSAGING_OPERATION, "request")
-                .startSpan();
+        var span = startSpan(subject + " request", subject, "request", SpanKind.CLIENT, headers);
 
-        injectMdc(span);
+        injectMdc(span, requestId(headers));
         injectW3C(headers, span);
         return span;
     }
@@ -202,15 +211,9 @@ public class OpenTelemetryNatsTracingSupport implements NatsTracingSupport {
             return Span.getInvalid();
         }
         var extracted = extractW3C(headers);
-        var span = tracer.spanBuilder(subject + " handle")
-                .setParent(extracted)
-                .setSpanKind(SpanKind.SERVER)
-                .setAttribute(MESSAGING_SYSTEM, "nats")
-                .setAttribute(MESSAGING_DESTINATION, subject)
-                .setAttribute(MESSAGING_OPERATION, "handle")
-                .startSpan();
+        var span = startSpan(subject + " handle", subject, "handle", SpanKind.SERVER, headers, extracted);
 
-        injectMdc(span);
+        injectMdc(span, requestId(headers));
         return span;
     }
 
@@ -234,36 +237,95 @@ public class OpenTelemetryNatsTracingSupport implements NatsTracingSupport {
                 span.setStatus(StatusCode.ERROR, errorMsg);
             }
         } finally {
+            SpanState state = activeSpans.remove(span);
+            if (state != null && metrics != null) {
+                metrics.recordRequest("nats", state.subject, state.operation,
+                        success ? "OK" : "ERROR", System.nanoTime() - state.started);
+            }
             // 必须 close span，否则 exporter 拿不到完整 span；MDC 同步清理，避免下个消息混入旧 trace。
             span.end();
             MDC.remove(NatsConstants.MDC_TRACE_ID);
             MDC.remove(NatsConstants.MDC_SPAN_ID);
+            MDC.remove(NatsConstants.MDC_TRACE_ID_CANONICAL);
+            MDC.remove(NatsConstants.MDC_SPAN_ID_CANONICAL);
+            MDC.remove(NatsConstants.MDC_REQUEST_ID);
         }
     }
 
     // ===== 内部方法 =====
 
     private void injectW3C(Headers headers, Span span) {
+        if (headers == null) {
+            return;
+        }
         // 把 span 加入当前 OTel Context 后再 makeCurrent，使 propagator 能从“当前上下文”读到正确的 trace flags。
         var otelContext = Context.current().with(span);
         try (Scope ignored = otelContext.makeCurrent()) {
             // 由全局配置的 propagator（默认 W3C TraceContext+Baggage）负责把 context 序列化为 header。
-            GlobalOpenTelemetry.getPropagators().getTextMapPropagator()
-                    .inject(otelContext, headers, SETTER);
+            propagator.inject(otelContext, headers, SETTER);
+            String requestId = ObservabilityContext.currentRequestId();
+            if (requestId != null && firstHeader(headers, NatsConstants.HEADER_REQUEST_ID) == null) {
+                headers.put(NatsConstants.HEADER_REQUEST_ID, requestId);
+            }
         }
         // try-with-resources 会在结束时把 Context 复位，避免污染调用线程的 OTel Context。
     }
 
     private Context extractW3C(Headers headers) {
         // 即使 headers 为空也要走一遍 extract，返回的 Context 就是“空的 parent”，保证 spanBuilder 拿到非 null 的 parent。
-        return GlobalOpenTelemetry.getPropagators().getTextMapPropagator()
-                .extract(Context.current(), headers, GETTER);
+        return propagator.extract(Context.current(), headers, GETTER);
     }
 
-    private void injectMdc(Span span) {
+    private void injectMdc(Span span, String requestId) {
         var spanContext = span.getSpanContext();
         // 把 traceId/spanId 写入 SLF4J MDC，方便业务侧日志框架（logback/log4j）的 pattern 直接打印 %X{traceId} 关联 trace。
         MDC.put(NatsConstants.MDC_TRACE_ID, spanContext.getTraceId());
         MDC.put(NatsConstants.MDC_SPAN_ID, spanContext.getSpanId());
+        MDC.put(NatsConstants.MDC_TRACE_ID_CANONICAL, spanContext.getTraceId());
+        MDC.put(NatsConstants.MDC_SPAN_ID_CANONICAL, spanContext.getSpanId());
+        if (requestId != null) {
+            MDC.put(NatsConstants.MDC_REQUEST_ID, requestId);
+        }
+    }
+
+    private Span startSpan(String name, String subject, String operation, SpanKind kind, Headers headers) {
+        return startSpan(name, subject, operation, kind, headers, Context.current());
+    }
+
+    private Span startSpan(String name, String subject, String operation, SpanKind kind,
+                           Headers headers, Context parent) {
+        var builder = tracer.spanBuilder(name)
+                .setParent(parent)
+                .setSpanKind(kind)
+                .setAttribute(MESSAGING_SYSTEM, "nats")
+                .setAttribute(MESSAGING_DESTINATION, subject)
+                .setAttribute(MESSAGING_OPERATION, operation);
+        String requestId = requestId(headers);
+        if (requestId != null) {
+            builder.setAttribute("request_id", requestId);
+        }
+        String messageId = firstHeader(headers, NatsConstants.HEADER_MESSAGE_ID);
+        if (messageId != null) {
+            builder.setAttribute("messaging.message.id", messageId);
+        }
+        Span span = builder.startSpan();
+        activeSpans.put(span, new SpanState(subject, operation, System.nanoTime()));
+        return span;
+    }
+
+    private String requestId(Headers headers) {
+        String requestId = firstHeader(headers, NatsConstants.HEADER_REQUEST_ID);
+        return requestId == null ? ObservabilityContext.currentRequestId() : requestId;
+    }
+
+    private String firstHeader(Headers headers, String key) {
+        if (headers == null) {
+            return null;
+        }
+        var values = headers.get(key);
+        return values == null || values.isEmpty() ? null : values.getFirst();
+    }
+
+    private record SpanState(String subject, String operation, long started) {
     }
 }

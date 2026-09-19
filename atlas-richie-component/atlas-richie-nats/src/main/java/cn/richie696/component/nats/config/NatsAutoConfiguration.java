@@ -28,6 +28,11 @@ import cn.richie696.component.nats.strategy.*;
 import io.nats.client.Connection;
 import io.nats.client.JetStream;
 import io.nats.client.JetStreamManagement;
+import cn.richie696.component.observability.core.DependencyMetricsRecorder;
+import cn.richie696.component.observability.core.ObservabilityState;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -104,8 +109,16 @@ public class NatsAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(NatsTracingSupport.class)
-    public NatsTracingSupport natsTracingSupport(NatsProperties properties) {
-        return new OpenTelemetryNatsTracingSupport(properties.getTracing().isEnabled());
+    public NatsTracingSupport natsTracingSupport(
+            NatsProperties properties,
+            ObjectProvider<OpenTelemetry> openTelemetryProvider,
+            ObjectProvider<DependencyMetricsRecorder> metricsProvider,
+            ObjectProvider<ObservabilityState> stateProvider) {
+        return new OpenTelemetryNatsTracingSupport(
+                properties.getTracing().isEnabled(),
+                openTelemetryProvider.getIfAvailable(GlobalOpenTelemetry::get),
+                metricsProvider.getIfAvailable(),
+                stateProvider.getIfAvailable());
     }
 
     /**

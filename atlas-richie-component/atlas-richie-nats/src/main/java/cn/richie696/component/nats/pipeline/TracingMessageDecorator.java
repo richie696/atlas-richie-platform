@@ -85,7 +85,7 @@ public class TracingMessageDecorator {
             boolean success = false;
             String errorMsg = null;
             // 用 try-with-resources(Scope) 保证 inner.handle 即便抛异常也能复原 OTel Context，不污染调用线程。
-            try (Scope ignored = io.opentelemetry.context.Context.current().with(span).makeCurrent()) {
+            try (Scope ignored = tracingSupport.contextFor(span, headers).makeCurrent()) {
                 inner.handle(message);
                 success = true;
             } catch (Exception e) {

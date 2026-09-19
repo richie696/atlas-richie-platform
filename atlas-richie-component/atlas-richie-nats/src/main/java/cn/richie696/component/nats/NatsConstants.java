@@ -47,6 +47,9 @@ public final class NatsConstants {
      */
     public static final String HEADER_TRACE_ID = HEADER_PREFIX + "trace-id";
 
+    /** W3C-independent business request correlation ID. */
+    public static final String HEADER_REQUEST_ID = "x-request-id";
+
     /**
      * 消息发送时间戳 Header Key（毫秒），用于端到端延迟诊断。
      */
@@ -103,4 +106,9 @@ public final class NatsConstants {
      * MDC 中 spanId 的字段名，便于定位单次请求内的具体 span。
      */
     public static final String MDC_SPAN_ID = "spanId";
+
+    /** Canonical JSON log field names used by the observability contract. */
+    public static final String MDC_TRACE_ID_CANONICAL = "trace_id";
+    public static final String MDC_SPAN_ID_CANONICAL = "span_id";
+    public static final String MDC_REQUEST_ID = "request_id";
 }

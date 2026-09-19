@@ -212,18 +212,40 @@ public class JetStreamManagementService {
         } catch (JetStreamApiException e) {
             int code = e.getErrorCode();
             if (code == 10059 || code == 404) {
-                mgmt.addStream(StreamConfiguration.builder()
-                        .name(advisoryStream)
-                        .subjects("$JS.EVENT.ADVISORY.>")
-                        .storageType(StorageType.Memory)
-                        .retentionPolicy(RetentionPolicy.Interest)
-                        .discardPolicy(DiscardPolicy.New)
-                        .build());
-                log.info("Advisory stream [{}] created", advisoryStream);
+                try {
+                    mgmt.addStream(StreamConfiguration.builder()
+                            .name(advisoryStream)
+                            .subjects("$JS.EVENT.ADVISORY.>")
+                            .storageType(StorageType.Memory)
+                            .retentionPolicy(RetentionPolicy.Interest)
+                            .discardPolicy(DiscardPolicy.New)
+                            .build());
+                    log.info("Advisory stream [{}] created", advisoryStream);
+                } catch (JetStreamApiException overlap) {
+                    if (!isAdvisorySubjectOverlap(overlap)) {
+                        throw overlap;
+                    }
+                    log.info("Advisory subject is already owned by an existing stream; skipping [{}]",
+                            advisoryStream);
+                }
+            } else if (code == 10065 || e.getApiErrorCode() == 10065
+                    || isAdvisorySubjectOverlap(e)) {
+                // NATS 2.10+ may already own $JS.EVENT.ADVISORY.> in its
+                // system stream. Subject overlap means the advisory subject
+                // is available; do not fail application startup trying to
+                // create a second stream for the same server-owned subject.
+                log.info("Advisory subject is already owned by an existing stream; skipping [{}]",
+                        advisoryStream);
             } else {
                 throw e;
             }
         }
+    }
+
+    private static boolean isAdvisorySubjectOverlap(JetStreamApiException exception) {
+        return exception.getErrorCode() == 10065
+                || exception.getApiErrorCode() == 10065
+                || String.valueOf(exception.getMessage()).contains("subjects overlap with an existing stream");
     }
 
     // ===== 内部构建方法 =====
