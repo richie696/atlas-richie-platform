@@ -47,7 +47,7 @@
         <s3.version>2.46.21</s3.version>
         <aliyun-kms.version>1.2.3</aliyun-kms.version>
         <aliyun-credentials.version>1.0.1</aliyun-credentials.version>
-        <ve-tos-java-sdk.version>2.9.16</ve-tos-java-sdk.version>
+        <ve-tos-java-sdk.version>2.9.19</ve-tos-java-sdk.version>
         <ks3-kss-java-sdk.version>1.9.0</ks3-kss-java-sdk.version>
         <jcifs.version>3.0.2</jcifs.version>
         <sshd.version>3.0.0-M3</sshd.version>
