@@ -16,12 +16,6 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- Tracing (Phase 5 集成) -->
-        <dependency>
-            <groupId>cn.richie696.component</groupId>
-            <artifactId>atlas-richie-tracing</artifactId>
-        </dependency>
-
         <!-- Tika: 文档解析核心 (PDF / Word / PPT / ODF / TXT / Markdown) -->
         <dependency>
             <groupId>org.apache.tika</groupId>
@@ -67,6 +61,14 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!-- Lombok 仅用于本模块编译，不向消费者传递 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
 
     </dependencies>
