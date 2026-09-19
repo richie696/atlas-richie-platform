@@ -16,7 +16,12 @@
 package cn.richie696.component.http.okhttp.config;
 
 import cn.richie696.component.http.core.HttpCoreProperties;
+import cn.richie696.component.http.core.HttpClient;
+import cn.richie696.component.http.core.ObservabilityHttpClient;
 import cn.richie696.component.http.okhttp.OkHttpAdapter;
+import cn.richie696.component.observability.core.DependencyMetricsRecorder;
+import cn.richie696.component.observability.core.ObservabilityState;
+import io.opentelemetry.api.OpenTelemetry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.ConnectionPool;
@@ -26,6 +31,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 
 import javax.net.ssl.SSLContext;
@@ -56,8 +62,16 @@ public class HttpAutoConfiguration {
     private final HttpCoreProperties coreProperties;
 
     @Bean
-    OkHttpAdapter httpClient(OkHttpClient okHttpClient) {
-        return new OkHttpAdapter(okHttpClient);
+    HttpClient httpClient(
+            OkHttpClient okHttpClient,
+            ObjectProvider<OpenTelemetry> openTelemetryProvider,
+            ObjectProvider<DependencyMetricsRecorder> metricsProvider,
+            ObjectProvider<ObservabilityState> stateProvider) {
+        return ObservabilityHttpClient.wrap(
+                new OkHttpAdapter(okHttpClient),
+                openTelemetryProvider.getIfAvailable(),
+                metricsProvider.getIfAvailable(),
+                stateProvider.getIfAvailable());
     }
 
     @Bean("httpComponent")

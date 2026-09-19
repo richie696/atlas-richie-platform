@@ -24,6 +24,7 @@ import okhttp3.Response;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
 import okhttp3.sse.EventSources;
+import okhttp3.logging.HttpLoggingInterceptor;
 
 import java.util.Map;
 
@@ -43,7 +44,15 @@ class OkHttpSseClient {
 
     OkHttpSseClient(OkHttpClient okHttpClient) {
         this.okHttpClient = okHttpClient;
-        this.eventSourceFactory = EventSources.createFactory(okHttpClient);
+        // BODY logging buffers the complete response body before forwarding it to
+        // the listener, which would prevent a long-lived SSE stream from ever
+        // reaching onOpen. Keep non-body logging levels, but isolate SSE from
+        // response-body logging even when it is enabled for ordinary requests.
+        OkHttpClient.Builder sseBuilder = okHttpClient.newBuilder();
+        sseBuilder.interceptors().removeIf(interceptor ->
+                interceptor instanceof HttpLoggingInterceptor logging
+                        && logging.getLevel() == HttpLoggingInterceptor.Level.BODY);
+        this.eventSourceFactory = EventSources.createFactory(sseBuilder.build());
     }
 
     SseConnection connect(String url, Map<String, String> headers, SseListener listener) {

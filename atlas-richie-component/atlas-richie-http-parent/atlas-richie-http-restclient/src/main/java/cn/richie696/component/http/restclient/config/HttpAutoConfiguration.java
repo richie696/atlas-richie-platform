@@ -15,7 +15,12 @@
  */
 package cn.richie696.component.http.restclient.config;
 
+import cn.richie696.component.http.core.HttpClient;
+import cn.richie696.component.http.core.ObservabilityHttpClient;
 import cn.richie696.component.http.restclient.RestClientAdapter;
+import cn.richie696.component.observability.core.DependencyMetricsRecorder;
+import cn.richie696.component.observability.core.ObservabilityState;
+import io.opentelemetry.api.OpenTelemetry;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -37,10 +42,18 @@ import org.springframework.web.client.RestClient;
 public class HttpAutoConfiguration {
 
     @Bean
-    RestClientAdapter httpClient(ObjectProvider<RestClient.Builder> builderProvider) {
+    HttpClient httpClient(
+            ObjectProvider<RestClient.Builder> builderProvider,
+            ObjectProvider<OpenTelemetry> openTelemetryProvider,
+            ObjectProvider<DependencyMetricsRecorder> metricsProvider,
+            ObjectProvider<ObservabilityState> stateProvider) {
         // 支持外部注入自定义 Builder；未提供时使用默认构造。
         RestClient.Builder builder = builderProvider.getIfAvailable(RestClient::builder);
-        return new RestClientAdapter(builder.build());
+        return ObservabilityHttpClient.wrap(
+                new RestClientAdapter(builder.build()),
+                openTelemetryProvider.getIfAvailable(),
+                metricsProvider.getIfAvailable(),
+                stateProvider.getIfAvailable());
     }
 
 }

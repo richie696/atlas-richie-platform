@@ -16,12 +16,18 @@
 package cn.richie696.component.http.jdk.config;
 
 import cn.richie696.component.http.core.HttpCoreProperties;
+import cn.richie696.component.http.core.ObservabilityHttpClient;
 import cn.richie696.component.http.jdk.JdkHttpAdapter;
-import lombok.extern.slf4j.Slf4j;
+import cn.richie696.component.observability.core.DependencyMetricsRecorder;
+import cn.richie696.component.observability.core.ObservabilityState;
+import io.opentelemetry.api.OpenTelemetry;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -29,7 +35,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
-import java.net.http.HttpClient;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -43,11 +48,12 @@ import java.util.concurrent.Executors;
  * @version 1.0
  * @since 1.0.0
  */
-@Slf4j
 @AutoConfiguration
 @EnableConfigurationProperties(HttpProperties.class)
 @ConditionalOnProperty(prefix = "platform.component.http", name = "provider", havingValue = "jdk")
 public class HttpAutoConfiguration {
+
+    private static final Logger log = LoggerFactory.getLogger(HttpAutoConfiguration.class);
 
     private final HttpProperties properties;
     private final HttpCoreProperties coreProperties;
@@ -58,14 +64,17 @@ public class HttpAutoConfiguration {
     }
 
     @Bean
-    public JdkHttpAdapter httpClient() {
+    public cn.richie696.component.http.core.HttpClient httpClient(
+            ObjectProvider<OpenTelemetry> openTelemetryProvider,
+            ObjectProvider<DependencyMetricsRecorder> metricsProvider,
+            ObjectProvider<ObservabilityState> stateProvider) {
         // 核心客户端参数统一由配置项驱动，便于跨环境调优。
-        var builder = HttpClient.newBuilder()
+        var builder = java.net.http.HttpClient.newBuilder()
                 .connectTimeout(properties.getConnectTimeout())
                 .version(properties.getVersion())
                 .followRedirects(properties.isFollowRedirects()
-                        ? HttpClient.Redirect.NORMAL
-                        : HttpClient.Redirect.NEVER)
+                        ? java.net.http.HttpClient.Redirect.NORMAL
+                        : java.net.http.HttpClient.Redirect.NEVER)
                 .priority(properties.getPriority());
 
         if (properties.isUseVirtualThreads()) {
@@ -87,7 +96,11 @@ public class HttpAutoConfiguration {
             builder.sslParameters(params);
         }
 
-        return new JdkHttpAdapter(builder.build());
+        return ObservabilityHttpClient.wrap(
+                new JdkHttpAdapter(builder.build()),
+                openTelemetryProvider.getIfAvailable(),
+                metricsProvider.getIfAvailable(),
+                stateProvider.getIfAvailable());
     }
 
     private static SSLContext createTrustAllContext() {

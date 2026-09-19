@@ -15,7 +15,6 @@
  */
 package cn.richie696.component.http.jdk.config;
 
-import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.net.http.HttpClient;
@@ -28,7 +27,6 @@ import java.time.Duration;
  * @version 1.0
  * @since 1.0.0
  */
-@Data
 @ConfigurationProperties(prefix = "platform.component.http.jdk")
 public class HttpProperties {
 
@@ -86,5 +84,77 @@ public class HttpProperties {
      * 异步回调使用虚拟线程（默认：true）。JDK 21+/25 推荐开启。
      */
     private boolean useVirtualThreads = true;
+
+    public Duration getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(Duration connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public HttpClient.Version getVersion() {
+        return version;
+    }
+
+    public void setVersion(HttpClient.Version version) {
+        this.version = version;
+    }
+
+    public boolean isFollowRedirects() {
+        return followRedirects;
+    }
+
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    public Duration getKeepAliveTime() {
+        return keepAliveTime;
+    }
+
+    public void setKeepAliveTime(Duration keepAliveTime) {
+        this.keepAliveTime = keepAliveTime;
+    }
+
+    public int getMaxConcurrentStreams() {
+        return maxConcurrentStreams;
+    }
+
+    public void setMaxConcurrentStreams(int maxConcurrentStreams) {
+        this.maxConcurrentStreams = maxConcurrentStreams;
+    }
+
+    public String getProxyHost() {
+        return proxyHost;
+    }
+
+    public void setProxyHost(String proxyHost) {
+        this.proxyHost = proxyHost;
+    }
+
+    public int getProxyPort() {
+        return proxyPort;
+    }
+
+    public void setProxyPort(int proxyPort) {
+        this.proxyPort = proxyPort;
+    }
+
+    public boolean isUseVirtualThreads() {
+        return useVirtualThreads;
+    }
+
+    public void setUseVirtualThreads(boolean useVirtualThreads) {
+        this.useVirtualThreads = useVirtualThreads;
+    }
 
 }

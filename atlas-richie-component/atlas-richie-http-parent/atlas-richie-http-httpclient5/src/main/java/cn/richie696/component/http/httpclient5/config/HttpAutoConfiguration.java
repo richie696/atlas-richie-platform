@@ -15,7 +15,12 @@
  */
 package cn.richie696.component.http.httpclient5.config;
 
+import cn.richie696.component.http.core.HttpClient;
+import cn.richie696.component.http.core.ObservabilityHttpClient;
 import cn.richie696.component.http.httpclient5.HttpClient5Adapter;
+import cn.richie696.component.observability.core.DependencyMetricsRecorder;
+import cn.richie696.component.observability.core.ObservabilityState;
+import io.opentelemetry.api.OpenTelemetry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -28,6 +33,7 @@ import org.apache.hc.core5.util.Timeout;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -47,8 +53,16 @@ public class HttpAutoConfiguration {
     private final HttpProperties properties;
 
     @Bean
-    HttpClient5Adapter httpClient(CloseableHttpClient httpClient) {
-        return new HttpClient5Adapter(httpClient);
+    HttpClient httpClient(
+            CloseableHttpClient httpClient,
+            ObjectProvider<OpenTelemetry> openTelemetryProvider,
+            ObjectProvider<DependencyMetricsRecorder> metricsProvider,
+            ObjectProvider<ObservabilityState> stateProvider) {
+        return ObservabilityHttpClient.wrap(
+                new HttpClient5Adapter(httpClient),
+                openTelemetryProvider.getIfAvailable(),
+                metricsProvider.getIfAvailable(),
+                stateProvider.getIfAvailable());
     }
 
     @Bean
@@ -78,5 +92,4 @@ public class HttpAutoConfiguration {
     }
 
 }
-
 
