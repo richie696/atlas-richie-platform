@@ -351,10 +351,35 @@
                 <artifactId>atlas-richie-concurrency</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
-            <!-- 链路追踪组件 -->
+            <!-- 完整可观测性应用入口及其能力模块 -->
             <dependency>
                 <groupId>cn.richie696.component</groupId>
-                <artifactId>atlas-richie-tracing</artifactId>
+                <artifactId>atlas-richie-observability-core</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-observability-spring-boot-autoconfigure</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-observability-actuator</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-observability-logging</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-observability-testkit</artifactId>
+                <version>${middle.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.richie696.component</groupId>
+                <artifactId>atlas-richie-observability-spring-boot-starter</artifactId>
                 <version>${middle.platform.version}</version>
             </dependency>
             <!-- HTTP Client -->

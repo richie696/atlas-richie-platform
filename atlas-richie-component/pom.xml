@@ -60,8 +60,8 @@
         <module>atlas-richie-microservice</module>
         <!-- 通用切面日志服务组件 -->
         <module>atlas-richie-logging</module>
-        <!-- 通用追踪组件 -->
-        <module>atlas-richie-tracing</module>
+        <!-- 统一可观测性应用接入组件：Trace + Metrics + Logs + Actuator -->
+        <module>atlas-richie-observability-parent</module>
         <!-- 并发编程组件 -->
         <module>atlas-richie-concurrency</module>
         <!-- 通用 Spring MVC 服务组件 -->
